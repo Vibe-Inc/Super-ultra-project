@@ -1,2 +1,1 @@
-python==3.13.7
 pygame-ce==2.5.5
