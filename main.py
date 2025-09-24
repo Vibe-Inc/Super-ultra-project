@@ -21,22 +21,28 @@ button_color_START = (83, 112, 44)
 button_hover_color_START = (123, 123, 34)
 button_color_EXIT = (0, 126, 183)
 button_hover_color_EXIT = (67, 152, 174)
+button_color_SETTINGS = (0, 126, 183)
+button_hover_color_SETTINGS = (67, 152, 174)
 text_color = (0, 0, 0)
 button_font = pygame.font.Font("fonts/menu_font.ttf", 60)
 
 # Тексти для кнопок
 text_surf1 = button_font.render("START", True, text_color)
 text_surf2 = button_font.render("EXIT", True, text_color)
+text_surf3 = button_font.render("SETTINGS", True, text_color)
 
 button_width, button_height = 300, 100
 gap = 50  # відстань між кнопками
 button1_x = (SCREEN_WIDTH - (2 * button_width + gap)) // 2
 button2_x = button1_x + button_width + gap
 button_y = 700
+button2_y = 900
 corner_radius = 20
 
 button1_rect = pygame.Rect(button1_x, button_y, button_width, button_height)
 button2_rect = pygame.Rect(button2_x, button_y, button_width, button_height)
+button3_rect = pygame.Rect(button1_x, button2_y, button_width, button_height)
+
 
 running = True
 while running:
@@ -57,6 +63,12 @@ while running:
     text_rect2 = text_surf2.get_rect(center=button2_rect.center)
     screen.blit(text_surf2, text_rect2)
 
+    # Третя кнопка
+    color3 = button_hover_color_SETTINGS if button3_rect.collidepoint(mouse_pos) else button_color_SETTINGS
+    pygame.draw.rect(screen, color3, button3_rect, border_radius=corner_radius)
+    text_rect3 = text_surf3.get_rect(center=button3_rect.center)
+    screen.blit(text_surf3, text_rect3)
+
     pygame.display.flip()
     pygame.time.Clock().tick(60)
 
@@ -70,3 +82,6 @@ while running:
             elif button2_rect.collidepoint(event.pos):
                 pygame.quit()
                 sys.exit()
+            elif button3_rect.collidepoint(event.pos):
+                print("SETTIGS")  
+                
