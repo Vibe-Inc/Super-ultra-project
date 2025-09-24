@@ -11,7 +11,7 @@ icon = pygame.image.load("images/smug.png")
 pygame.display.set_icon(icon)
 
 # Фон і текст
-bg = pygame.image.load("images/bg_menu.jpg")
+bg = pygame.transform.scale(pygame.image.load("images/bg_menu.jpg"), (SCREEN_WIDTH, SCREEN_HEIGHT))
 myfont = pygame.font.Font("fonts/menu_font.ttf", 60)
 text_logo = myfont.render('Super coooooool project', True, (0, 0, 0))
 text_rect = text_logo.get_rect(center=(900, 430))
