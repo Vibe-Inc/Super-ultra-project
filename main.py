@@ -260,7 +260,7 @@ class App:
     """
 
     def __init__(self):
-        self.SCREEN_WIDTH, self.SCREEN_HEIGHT = 1800, 1200
+        self.SCREEN_WIDTH, self.SCREEN_HEIGHT = 1920, 1080
         self.screen = pygame.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
         pygame.display.set_caption("super cooool project ;)")
         self.icon = pygame.image.load("images/smug.png")
