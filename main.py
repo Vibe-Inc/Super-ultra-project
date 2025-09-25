@@ -94,7 +94,7 @@ class MainMenu(Menu):
         
         start_rect = pygame.Rect((app.SCREEN_WIDTH - tot_width) // 2, 700, button_width, button_height)
         exit_rect = pygame.Rect((app.SCREEN_WIDTH - tot_width) // 2 + button_width + gap, 700, button_width, button_height)
-        settings_rect = pygame.Rect((app.SCREEN_WIDTH - tot_width) // 2, 900, button_width, button_height)
+        settings_rect = pygame.Rect((app.SCREEN_WIDTH - tot_width) // 2, 850, button_width, button_height)
 
 
         self.buttons = [
@@ -202,9 +202,11 @@ class SettingsMenu(Menu):
     def toggle_audio(self):
         if self.app.audio == "on":
             self.app.audio = "off"
+            pygame.mixer.music.set_volume(0.0)
             print("AUDIO OFF")
         else:
             self.app.audio = "on"
+            pygame.mixer.music.set_volume(0.3)
             print("AUDIO ON")
 
     def toggle_fullscreen(self):
@@ -298,7 +300,13 @@ class App:
     def set_menu(self, menu_name: str):
         self.menu_state = menu_name
 
+    def music_play(self):
+        pygame.mixer.music.load('sounds/LIFE (Instrumental).wav')
+        pygame.mixer.music.set_volume(0.3 if self.audio == "on" else 0.0)
+        pygame.mixer.music.play(-1)
+
     def run(self):
+        self.music_play()
         running = True
         while running:
             self.screen.blit(self.bg, (0, 0))
