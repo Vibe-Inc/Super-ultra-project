@@ -162,9 +162,9 @@ class SettingsMenu(Menu):
         button_width, button_height = 300, 100
         button_y = 700
 
-        audio_rect = pygame.Rect(100, button_y, button_width, button_height)
-        fullscreen_rect = pygame.Rect(500, button_y, button_width, button_height)
-        back_rect = pygame.Rect(900, button_y, button_width, button_height)
+        audio_rect = pygame.Rect(350, button_y, button_width, button_height)
+        fullscreen_rect = pygame.Rect(750, button_y, button_width, button_height)
+        back_rect = pygame.Rect(1150, button_y, button_width, button_height)
 
         self.buttons = [
             Button(
@@ -190,8 +190,8 @@ class SettingsMenu(Menu):
             Button(
                 back_rect,
                 "BACK",
-                app.button_color_SETTINGS,
-                app.button_hover_color_SETTINGS,
+                app.button_color_SETTINGS_BACK,
+                app.button_hover_color_SETTINGS_BACK,
                 app.button_font,
                 app.text_color,
                 app.corner_radius,
@@ -277,6 +277,8 @@ class App:
         self.button_hover_color_EXIT = (150, 50, 50)
         self.button_color_SETTINGS = (0, 126, 183)
         self.button_hover_color_SETTINGS = (67, 152, 174)
+        self.button_color_SETTINGS_BACK = (83, 112, 44)
+        self.button_hover_color_SETTINGS_BACK = (123, 123, 34)
         self.text_color = (0, 0, 0)
         self.button_font = pygame.font.Font("fonts/menu_font.ttf", 60)
         self.corner_radius = 20
