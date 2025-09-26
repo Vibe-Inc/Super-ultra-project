@@ -305,6 +305,7 @@ class SettingsMenu(Menu):
         super().__init__(app)
         button_width, button_height = 300, 100
         button_y = 700
+        
         audio_rect = pygame.Rect(350, button_y, button_width, button_height)
         fullscreen_rect = pygame.Rect(750, button_y, button_width, button_height)
         back_rect = pygame.Rect(1150, button_y, button_width, button_height)
@@ -500,6 +501,7 @@ class App:
         self.button_hover_color_SETTINGS_BACK = (123, 123, 34)        
         self.button_color_CREDITS = (250, 205, 82)
         self.button_hover_color_CREDITS = (255, 220, 97)
+
         self.text_color = (0, 0, 0)
         self.button_font = pygame.font.Font("fonts/menu_font.ttf", 60)
         self.corner_radius = 20
@@ -525,6 +527,11 @@ class App:
 
     def set_menu(self, menu_name: str):
         self.menu_state = menu_name
+    def music_play(self):
+        pygame.mixer.music.load('sounds/LIFE (Instrumental).wav')
+        pygame.mixer.music.set_volume(0.3 if self.audio == "on" else 0.0)
+        pygame.mixer.music.play(-1)
+
     def music_play(self):
         pygame.mixer.music.load('sounds/LIFE (Instrumental).wav')
         pygame.mixer.music.set_volume(0.3 if self.audio == "on" else 0.0)
