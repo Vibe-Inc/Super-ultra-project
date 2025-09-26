@@ -162,12 +162,8 @@ class Menu:
         self.tooltips: list[Tooltip] = [] 
 
     def draw(self, screen):
-
-        screen.blit(self.beta_logo_img, self.beta_logo_rect)
-
         for button in self.buttons:
             button.draw(screen)
-
         mouse_pos = pygame.mouse.get_pos()
         for tooltip in self.tooltips:
             tooltip.hover_update(mouse_pos)
@@ -180,6 +176,14 @@ class Menu:
                     button.on_click()
 
 class MainMenu(Menu):
+    def draw(self, screen):
+        screen.blit(self.beta_logo_img, self.beta_logo_rect)
+        for button in self.buttons:
+            button.draw(screen)
+        mouse_pos = pygame.mouse.get_pos()
+        for tooltip in self.tooltips:
+            tooltip.hover_update(mouse_pos)
+            tooltip.draw(screen)
     """
     MainMenu class represents the main menu screen of the application, inheriting from the Menu base class.
     Attributes:
