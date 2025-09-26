@@ -68,17 +68,7 @@ class Tooltip:
         draw_multiline_text(surface, x, y):
             Renders multi-line text centered within the tooltip box.
     """
-    def draw_multiline_text(self, surface, x, y): 
-
-        lines = self.text.split('\n')
-        line_height = self.font.get_height()
-        box_width = self.rect.width - 2 * self.padding if self.rect else 0
-        for i, line in enumerate(lines):
-            txt_surface = self.font.render(line, True, self.font_color)
-            line_width = txt_surface.get_width()
-            draw_x = x + (box_width - line_width) // 2 if box_width > 0 else x
-            draw_y = y + i * line_height 
-            surface.blit(txt_surface, (draw_x, draw_y))
+    
 
     def __init__(self,target_rect  ,text, color ,border_color, font , font_color, delay , padding):
         self.target_rect: pygame.Rect = target_rect
@@ -90,10 +80,21 @@ class Tooltip:
         self.delay: float=delay
         self.padding: int=padding
     
-        self.hover_start= None
-        self.active: bool = 0 
+        self.hover_start = None
+        self.active: bool = False 
         self.rect= None
-    
+
+    def draw_multiline_text(self, surface, x, y): 
+
+        lines = self.text.split('\n')
+        line_height = self.font.get_height()
+        box_width = self.rect.width - 2 * self.padding if self.rect else 0
+        for i, line in enumerate(lines):
+            txt_surface = self.font.render(line, True, self.font_color)
+            line_width = txt_surface.get_width()
+            draw_x = x + (box_width - line_width) // 2 if box_width > 0 else x
+            draw_y = y + i * line_height 
+            surface.blit(txt_surface, (draw_x, draw_y))
 
     def hover_update(self, mouse_pos):
         now = time.time() 
@@ -177,7 +178,7 @@ class Menu:
 
 class MainMenu(Menu):
     def draw(self, screen):
-        screen.blit(self.beta_logo_img, self.beta_logo_rect)
+        screen.blit(self.beta_logo_img, self.beta_logo_rect, )
         for button in self.buttons:
             button.draw(screen)
         mouse_pos = pygame.mouse.get_pos()
@@ -208,8 +209,8 @@ class MainMenu(Menu):
         
         start_rect = pygame.Rect((app.SCREEN_WIDTH - tot_width) // 2, 700, button_width, button_height)
         exit_rect = pygame.Rect((app.SCREEN_WIDTH - tot_width) // 2 + button_width + gap, 700, button_width, button_height)
-        settings_rect = pygame.Rect((app.SCREEN_WIDTH - tot_width) // 2, 900, button_width, button_height)
-        credits_rect = pygame.Rect((app.SCREEN_WIDTH - tot_width) // 2 + button_width + gap, 900, button_width, button_height)
+        settings_rect = pygame.Rect((app.SCREEN_WIDTH - tot_width) // 2, 850, button_width, button_height)
+        credits_rect = pygame.Rect((app.SCREEN_WIDTH - tot_width) // 2 + button_width + gap, 850, button_width, button_height)
 
         self.buttons = [
             Button(
@@ -244,30 +245,20 @@ class MainMenu(Menu):
             ),
            Button(
                 credits_rect,
-                "Credits",
-                app.tooltip_color_CREDITS,
-                app.tooltip_hover_color_CREDITS,
+                "CREDITS",
+                app.button_color_CREDITS,
+                app.button_hover_color_CREDITS,
                 app.button_font,
                 app.text_color,
                 app.corner_radius,
-                on_click=self.credits
+                on_click=self.open_credits
             )
         ]
         self.beta_logo_img = pygame.image.load("images/beta_logo.png")
         self.beta_logo_img = pygame.transform.scale(self.beta_logo_img, (200, 200))
-        self.beta_logo_rect = self.beta_logo_img.get_rect(center=(1500, 950))
+        self.beta_logo_rect = self.beta_logo_img.get_rect(center=(1600, 900))
 
         self.tooltips = [
-            Tooltip(
-                credits_rect,
-                "Dedicated professionals of Vibe.Inc \n After tiresly thinking about the project\nCreated Shashki",
-                app.tooltip_bg_CREDITS,
-                app.tooltip_border_CREDITS,
-                app.tooltip_font_CREDITS,
-                app.text_color,
-                app.tooltip_appear,
-                app.tooltip_padding
-            ),
             Tooltip(
                 self.beta_logo_rect,
                 "Our logo that we need to think of",
@@ -291,8 +282,8 @@ class MainMenu(Menu):
     def open_settings(self):
         self.app.current_menu = self.app.set_menu("settings")
 
-    def credits(self):
-        print("Credits")
+    def open_credits(self):
+        self.app.current_menu = self.app.set_menu("credits")
 
 class SettingsMenu(Menu):
     """
@@ -312,13 +303,11 @@ class SettingsMenu(Menu):
 
     def __init__(self, app: "App"):
         super().__init__(app)
-        
         button_width, button_height = 300, 100
         button_y = 700
-
-        audio_rect = pygame.Rect(100, button_y, button_width, button_height)
-        fullscreen_rect = pygame.Rect(500, button_y, button_width, button_height)
-        back_rect = pygame.Rect(900, button_y, button_width, button_height)
+        audio_rect = pygame.Rect(350, button_y, button_width, button_height)
+        fullscreen_rect = pygame.Rect(750, button_y, button_width, button_height)
+        back_rect = pygame.Rect(1150, button_y, button_width, button_height)
 
         self.buttons = [
             Button(
@@ -344,8 +333,8 @@ class SettingsMenu(Menu):
             Button(
                 back_rect,
                 "BACK",
-                app.button_color_SETTINGS,
-                app.button_hover_color_SETTINGS,
+                app.button_color_SETTINGS_BACK,
+                app.button_hover_color_SETTINGS_BACK,
                 app.button_font,
                 app.text_color,
                 app.corner_radius,
@@ -356,9 +345,11 @@ class SettingsMenu(Menu):
     def toggle_audio(self):
         if self.app.audio == "on":
             self.app.audio = "off"
+            pygame.mixer.music.set_volume(0.0)
             print("AUDIO OFF")
         else:
             self.app.audio = "on"
+            pygame.mixer.music.set_volume(0.3)
             print("AUDIO ON")
 
     def toggle_fullscreen(self):
@@ -374,6 +365,72 @@ class SettingsMenu(Menu):
     def back_to_main(self):
         self.app.current_menu = self.app.set_menu("main")
 
+class CreditsMenu(Menu):
+    """
+    CreditsMenu displays a credits screen with a styled box containing multi-line text and a BACK button.
+
+    Attributes:
+        buttons (list[Button]): List of buttons in the menu (only BACK).
+        credits_text (str): The credits text, with lines separated by '\n'.
+        font (pygame.font.Font): Font used for the credits text.
+        font_color (tuple): Color of the credits text.
+        padding (int): Padding around the text inside the box.
+        credits_lines (list[str]): List of lines in the credits text.
+        box_rect (pygame.Rect): Rectangle for the credits box.
+        box_color (tuple): Background color of the credits box.
+        box_border (tuple): Border color of the credits box.
+
+    Methods:
+        draw(screen): Draws the credits box, text, and BACK button.
+        back_to_main(): Returns to the main menu.
+    """
+    def __init__(self, app: "App"):
+        super().__init__(app)
+        button_width, button_height = 300, 100
+        back_rect = pygame.Rect(1400, 850, button_width, button_height)
+        self.buttons = [
+            Button(back_rect,
+                "BACK",
+                app.button_color_SETTINGS,
+                app.button_hover_color_SETTINGS,
+                app.button_font,
+                app.text_color,
+                app.corner_radius,
+                on_click=self.back_to_main
+            )
+        ]
+        self.credits_text = """CREDITS:\nVibe inc idea, production and execution\nArt by Vibe inc\nMusic by Vibe inc\nMain sponsor: Vibe inc\nSpecial thanks to Vibe inc"""
+        self.font :pygame.font.Font= app.myfont
+        self.font_color: tuple = app.text_color
+        self.padding: int = 30
+        self.credits_lines = self.credits_text.split('\n')
+        num_credits_lines = len(self.credits_lines)
+        line_height = self.font.get_height()
+        max_width = max(self.font.size(line)[0] for line in self.credits_lines)if num_credits_lines else 0
+        box_width = max_width + 2 * self.padding
+        box_height = line_height * num_credits_lines + 2 * self.padding
+        self.box_rect = pygame.Rect(
+            (app.SCREEN_WIDTH - box_width) // 2, 300, box_width, box_height)
+        self.box_color = (245, 222, 179) 
+        self.box_border = (139, 49, 19)
+
+    def draw(self, screen):
+        pygame.draw.rect(screen, self.box_color, self.box_rect, border_radius=15)
+        pygame.draw.rect(screen, self.box_border, self.box_rect, 10, border_radius=15)
+
+        y = self.box_rect.y + self.padding
+        box_width = self.box_rect.width - 2 * self.padding
+        for line in self.credits_lines:
+            surf = self.font.render(line, True, self.font_color)
+            line_width = surf.get_width()
+            x = self.box_rect.x + self.padding + (box_width - line_width) // 2
+            screen.blit(surf, (x, y))
+            y += self.font.get_height()
+        for button in self.buttons:
+            button.draw(screen)
+
+    def back_to_main(self):
+        self.app.current_menu = self.app.set_menu("main")
 class App:
     """
     Main application class for the Super Ultra Project game.
@@ -422,7 +479,7 @@ class App:
     """
 
     def __init__(self):
-        self.SCREEN_WIDTH, self.SCREEN_HEIGHT = 1800, 1200
+        self.SCREEN_WIDTH, self.SCREEN_HEIGHT = 1920, 1080
         self.screen = pygame.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
         pygame.display.set_caption("super cooool project ;)")
         self.icon = pygame.image.load("images/smug.png")
@@ -431,7 +488,7 @@ class App:
         self.bg = pygame.transform.scale(pygame.image.load("images/bg_menu.jpg"), (self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
         self.myfont = pygame.font.Font("fonts/menu_font.ttf", 60)
         self.text_logo = self.myfont.render('Super coooooool project', True, (0, 0, 0))
-        self.text_rect = self.text_logo.get_rect(center=(900, 430))
+        self.text_rect = self.text_logo.get_rect(center=(self.SCREEN_WIDTH//2, self.SCREEN_HEIGHT//2 - 150))
 
         self.button_color_START = (83, 112, 44)
         self.button_hover_color_START = (123, 123, 34)
@@ -439,20 +496,24 @@ class App:
         self.button_hover_color_EXIT = (150, 50, 50)
         self.button_color_SETTINGS = (0, 126, 183)
         self.button_hover_color_SETTINGS = (67, 152, 174)
+        self.button_color_SETTINGS_BACK = (83, 112, 44)
+        self.button_hover_color_SETTINGS_BACK = (123, 123, 34)        
+        self.button_color_CREDITS = (250, 205, 82)
+        self.button_hover_color_CREDITS = (255, 220, 97)
         self.text_color = (0, 0, 0)
         self.button_font = pygame.font.Font("fonts/menu_font.ttf", 60)
         self.corner_radius = 20
 
         self.tooltip_padding=8
         self.tooltip_appear= 0.7
-        self.tooltip_color_CREDITS = (0, 0, 255)
-        self.tooltip_hover_color_CREDITS = (123, 123, 200)
-        self.tooltip_bg_CREDITS = (255, 0, 0)
-        self.tooltip_border_CREDITS = (255, 255, 255)
+
+        self.tooltip_bg_CREDITS = (156, 179, 200)
+        self.tooltip_border_CREDITS = (54, 105, 121)
         self.tooltip_font_CREDITS = pygame.font.Font("fonts/menu_font.ttf", 20)
         self.menus = {
             "main": MainMenu(self),
-            "settings": SettingsMenu(self)
+            "settings": SettingsMenu(self),
+            "credits": CreditsMenu(self)
         }
 
         self.menu_state = "main"
@@ -464,12 +525,18 @@ class App:
 
     def set_menu(self, menu_name: str):
         self.menu_state = menu_name
+    def music_play(self):
+        pygame.mixer.music.load('sounds/LIFE (Instrumental).wav')
+        pygame.mixer.music.set_volume(0.3 if self.audio == "on" else 0.0)
+        pygame.mixer.music.play(-1)
 
     def run(self):
+        self.music_play()
         running = True
         while running:
             self.screen.blit(self.bg, (0, 0))
-            self.screen.blit(self.text_logo, self.text_rect)
+            if self.menu_state != "credits":
+                self.screen.blit(self.text_logo, self.text_rect)
 
             self.menus[self.menu_state].draw(self.screen)
 
