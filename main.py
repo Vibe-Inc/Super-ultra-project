@@ -6,6 +6,17 @@ from typing import Callable
 pygame.init()
 
 class State:
+    """
+    Represents a base state in a state management system.
+    This class should be subclassed to implement specific states for an application.
+    Each state can handle events and draw itself to the screen.
+    Attributes:
+        manager: Reference to the state manager controlling state transitions.
+    Methods:
+        handle_event(event): Handles input events specific to the state.
+        draw(screen): Renders the state to the provided screen surface.
+    """
+
     def __init__(self, manager):
         self.manager = manager
 
@@ -17,6 +28,24 @@ class State:
 
 
 class StateManager:
+    """
+    Manages different application states such as main menu, settings, and credits.
+    Args:
+        app: The main application object, passed to each state.
+    Attributes:
+        states (dict): Dictionary mapping state names to their corresponding state objects.
+        current_state: The currently active state object.
+    Methods:
+        set_state(name):
+            Sets the current state to the state associated with the given name.
+        get_state():
+            Returns the name of the currently active state, or None if no state is active.
+        handle_event(event):
+            Delegates event handling to the current state if one is active.
+        draw(screen):
+            Delegates drawing to the current state if one is active.
+    """
+
     def __init__(self, app):
         self.states = {
             "main": MainMenu(app),
