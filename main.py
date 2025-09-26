@@ -5,6 +5,44 @@ from typing import Callable
 
 pygame.init()
 
+class State:
+    def __init__(self, manager):
+        self.manager = manager
+
+    def handle_event(self, event):
+        pass
+
+    def draw(self, screen):
+        pass
+
+
+class StateManager:
+    def __init__(self, app):
+        self.states = {
+            "main": MainMenu(app),
+            "settings": SettingsMenu(app),
+            "credits": CreditsMenu(app)
+        }
+        self.current_state = None
+
+    def set_state(self, name):
+        self.current_state = self.states.get(name)
+
+    def get_state(self):
+        for name, state in self.states.items():
+            if state == self.current_state:
+                return name
+        return None
+
+    def handle_event(self, event):
+        if self.current_state:
+            self.current_state.handle_event(event)
+
+    def draw(self, screen):
+        if self.current_state:
+            self.current_state.draw(screen)
+
+
 class Button:
     """
     A class representing a clickable button in a Pygame application.
@@ -42,6 +80,7 @@ class Button:
         curr_color = self.hover_color if self.rect.collidepoint(mouse_pos) else self.color
         pygame.draw.rect(screen, curr_color, self.rect, border_radius=self.corner_width)
         screen.blit(self.text_surf, self.text_rect)      
+
 
 class Tooltip:
     """
@@ -142,8 +181,7 @@ class Tooltip:
             )
 
 
-
-class Menu:
+class Menu(State):
     """
     Represents a menu interface containing interactive buttons.
     Attributes:
@@ -176,15 +214,8 @@ class Menu:
                 if button.rect.collidepoint(event.pos):
                     button.on_click()
 
+
 class MainMenu(Menu):
-    def draw(self, screen):
-        screen.blit(self.beta_logo_img, self.beta_logo_rect, )
-        for button in self.buttons:
-            button.draw(screen)
-        mouse_pos = pygame.mouse.get_pos()
-        for tooltip in self.tooltips:
-            tooltip.hover_update(mouse_pos)
-            tooltip.draw(screen)
     """
     MainMenu class represents the main menu screen of the application, inheriting from the Menu base class.
     Attributes:
@@ -271,6 +302,14 @@ class MainMenu(Menu):
             )
         ]
 
+    def draw(self, screen):
+        screen.blit(self.beta_logo_img, self.beta_logo_rect, )
+        for button in self.buttons:
+            button.draw(screen)
+        mouse_pos = pygame.mouse.get_pos()
+        for tooltip in self.tooltips:
+            tooltip.hover_update(mouse_pos)
+            tooltip.draw(screen)
 
     def start_game(self):
         print("START")
@@ -280,10 +319,11 @@ class MainMenu(Menu):
         sys.exit()
 
     def open_settings(self):
-        self.app.current_menu = self.app.set_menu("settings")
+        self.app.manager.set_state("settings")
 
     def open_credits(self):
-        self.app.current_menu = self.app.set_menu("credits")
+        self.app.manager.set_state("credits")
+
 
 class SettingsMenu(Menu):
     """
@@ -364,7 +404,8 @@ class SettingsMenu(Menu):
             print("FULLSCREEN")
 
     def back_to_main(self):
-        self.app.current_menu = self.app.set_menu("main")
+        self.app.manager.set_state("main")
+
 
 class CreditsMenu(Menu):
     """
@@ -431,7 +472,9 @@ class CreditsMenu(Menu):
             button.draw(screen)
 
     def back_to_main(self):
-        self.app.current_menu = self.app.set_menu("main")
+        self.app.manager.set_state("main")
+
+
 class App:
     """
     Main application class for the Super Ultra Project game.
@@ -512,21 +555,15 @@ class App:
         self.tooltip_bg_CREDITS = (156, 179, 200)
         self.tooltip_border_CREDITS = (54, 105, 121)
         self.tooltip_font_CREDITS = pygame.font.Font("fonts/menu_font.ttf", 20)
-        self.menus = {
-            "main": MainMenu(self),
-            "settings": SettingsMenu(self),
-            "credits": CreditsMenu(self)
-        }
 
-        self.menu_state = "main"
         self.audio = "on"
         self.is_fullscreen = False
 
         self.clock = pygame.time.Clock()
         self.FPS = 60
 
-    def set_menu(self, menu_name: str):
-        self.menu_state = menu_name
+        self.manager = StateManager(self)
+
     def music_play(self):
         pygame.mixer.music.load('sounds/LIFE (Instrumental).wav')
         pygame.mixer.music.set_volume(0.3 if self.audio == "on" else 0.0)
@@ -538,24 +575,25 @@ class App:
         pygame.mixer.music.play(-1)
 
     def run(self):
+        self.manager.set_state("main")
+
         self.music_play()
+
         running = True
         while running:
             self.screen.blit(self.bg, (0, 0))
-            if self.menu_state != "credits":
+            if self.manager.get_state() != "credits":
                 self.screen.blit(self.text_logo, self.text_rect)
 
-            self.menus[self.menu_state].draw(self.screen)
+            self.manager.draw(self.screen)
 
             pygame.display.flip()
-            self.clock.tick(self.FPS)
-
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
                     pygame.quit()
                     sys.exit()
-                self.menus[self.menu_state].handle_event(event)
+                self.manager.handle_event(event)
 
 if __name__ == "__main__":
     app = App()
