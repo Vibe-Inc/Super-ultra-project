@@ -2,8 +2,24 @@ import pygame
 import sys
 import time
 from typing import Callable
+import pytmx
+
 
 pygame.init()
+
+class Map:
+    def __init__(self, map_file: str):
+        self.game_map: pytmx.TiledMap = pytmx.load_pygame(map_file)
+
+    def draw(self, screen):
+        for layer in self.game_map.visible_layers:
+            for x, y, gid in layer:
+                tile = self.game_map.get_tile_image_by_gid(gid)
+                if tile:
+                    screen.blit(tile, (x * self.game_map.tilewidth,
+                                       y * self.game_map.tileheight))
+
+
 
 class State:
     """
@@ -50,7 +66,8 @@ class StateManager:
         self.states = {
             "main": MainMenu(app),
             "settings": SettingsMenu(app),
-            "credits": CreditsMenu(app)
+            "credits": CreditsMenu(app),
+            "gameplay": Game(app)
         }
         self.current_state = None
 
@@ -341,7 +358,7 @@ class MainMenu(Menu):
             tooltip.draw(screen)
 
     def start_game(self):
-        print("START")
+        self.app.manager.set_state("gameplay")
 
     def exit_game(self):
         pygame.quit()
@@ -502,6 +519,31 @@ class CreditsMenu(Menu):
 
     def back_to_main(self):
         self.app.manager.set_state("main")
+
+
+class Game(State):
+    """
+    Game class represents the main gameplay state of the application.
+    Attributes:
+        app (App): Reference to the main application instance.
+        map (Map): The game map loaded from a Tiled map file.
+    Methods:
+        draw(screen):
+            Draws the game map onto the provided screen surface.
+        handle_event(event):
+            Handles pygame events specific to the gameplay state.
+    """
+
+    def __init__(self, app: "App"):
+        self.app = app
+        self.map = Map("maps/test-map-1.tmx")
+
+    def draw(self, screen):
+        self.map.draw(screen)
+
+    def handle_event(self, event: pygame.event.Event):
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            self.app.manager.set_state("main")
 
 
 class App:
