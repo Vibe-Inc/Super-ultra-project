@@ -2,8 +2,40 @@ import pygame
 import sys
 import time
 from typing import Callable
+import pytmx
+
 
 pygame.init()
+
+class Map:
+    """
+    Represents a tile-based game map loaded from a Tiled map file.
+    Attributes:
+        map_file (str): Path to the Tiled map file (.tmx).
+        game_map (pytmx.TiledMap): The loaded Tiled map object.
+    Methods:
+        __init__(map_file: str):
+            Initializes the Map instance with the given map file path.
+        draw(screen):
+            Draws the visible layers of the map onto the provided Pygame screen surface.
+            Loads the map file if it hasn't been loaded yet.
+    """
+
+    def __init__(self, map_file: str):
+        self.map_file = map_file
+        self.game_map: pytmx.TiledMap = None
+
+    def draw(self, screen):
+        if self.game_map is None:
+            self.game_map = pytmx.load_pygame(self.map_file)
+
+        for layer in self.game_map.visible_layers:
+            for x, y, gid in layer:
+                tile = self.game_map.get_tile_image_by_gid(gid)
+                if tile:
+                    screen.blit(tile, (x * self.game_map.tilewidth,
+                                       y * self.game_map.tileheight))
+
 
 class State:
     """
@@ -50,7 +82,8 @@ class StateManager:
         self.states = {
             "main": MainMenu(app),
             "settings": SettingsMenu(app),
-            "credits": CreditsMenu(app)
+            "credits": CreditsMenu(app),
+            "gameplay": Game(app)
         }
         self.current_state = None
 
@@ -145,18 +178,18 @@ class Tooltip:
         self.border_color: tuple[int, int, int] = border_color
         self.font: pygame.font.Font = font
         self.font_color: tuple[int, int, int] = font_color
-        self.delay: float=delay
-        self.padding: int=padding
+        self.delay: float = delay
+        self.padding: int = padding
     
         self.hover_start = None
         self.active: bool = False 
-        self.rect= None
+        self.rect = None
 
     def draw_multiline_text(self, surface, x, y): 
-
         lines = self.text.split('\n')
         line_height = self.font.get_height()
         box_width = self.rect.width - 2 * self.padding if self.rect else 0
+
         for i, line in enumerate(lines):
             txt_surface = self.font.render(line, True, self.font_color)
             line_width = txt_surface.get_width()
@@ -197,8 +230,9 @@ class Tooltip:
                 self.active = True
         else:
             self.hover_start = None
-            self.active = 0
+            self.active = False
             self.rect = None
+
     def draw(self, surface):
         if self.active and self.rect:
             pygame.draw.rect(surface, self.color, self.rect)
@@ -341,7 +375,7 @@ class MainMenu(Menu):
             tooltip.draw(screen)
 
     def start_game(self):
-        print("START")
+        self.app.manager.set_state("gameplay")
 
     def exit_game(self):
         pygame.quit()
@@ -375,9 +409,9 @@ class SettingsMenu(Menu):
         button_width, button_height = 300, 100
         button_y = 700
         
-        audio_rect = pygame.Rect(350, button_y, button_width, button_height)
-        fullscreen_rect = pygame.Rect(750, button_y, button_width, button_height)
-        back_rect = pygame.Rect(1150, button_y, button_width, button_height)
+        audio_rect = pygame.Rect(400, button_y, button_width, button_height)
+        fullscreen_rect = pygame.Rect(800, button_y, button_width, button_height)
+        back_rect = pygame.Rect(1200, button_y, button_width, button_height)
 
         self.buttons = [
             Button(
@@ -504,6 +538,31 @@ class CreditsMenu(Menu):
         self.app.manager.set_state("main")
 
 
+class Game(State):
+    """
+    Game class represents the main gameplay state of the application.
+    Attributes:
+        app (App): Reference to the main application instance.
+        map (Map): The game map loaded from a Tiled map file.
+    Methods:
+        draw(screen):
+            Draws the game map onto the provided screen surface.
+        handle_event(event):
+            Handles pygame events specific to the gameplay state.
+    """
+
+    def __init__(self, app: "App"):
+        self.app = app
+        self.map = Map("maps/test-map-1.tmx")
+
+    def draw(self, screen):
+        self.map.draw(screen)
+
+    def handle_event(self, event: pygame.event.Event):
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            self.app.manager.set_state("main")
+
+
 class App:
     """
     Main application class for the Super Ultra Project game.
@@ -605,7 +664,6 @@ class App:
 
     def run(self):
         self.manager.set_state("main")
-
         self.music_play()
 
         running = True
@@ -623,6 +681,7 @@ class App:
                     pygame.quit()
                     sys.exit()
                 self.manager.handle_event(event)
+            self.clock.tick(self.FPS)
 
 if __name__ == "__main__":
     app = App()
