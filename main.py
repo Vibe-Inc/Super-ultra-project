@@ -409,9 +409,9 @@ class SettingsMenu(Menu):
         button_width, button_height = 300, 100
         button_y = 700
         
-        audio_rect = pygame.Rect(350, button_y, button_width, button_height)
-        fullscreen_rect = pygame.Rect(750, button_y, button_width, button_height)
-        back_rect = pygame.Rect(1150, button_y, button_width, button_height)
+        audio_rect = pygame.Rect(400, button_y, button_width, button_height)
+        fullscreen_rect = pygame.Rect(800, button_y, button_width, button_height)
+        back_rect = pygame.Rect(1200, button_y, button_width, button_height)
 
         self.buttons = [
             Button(
