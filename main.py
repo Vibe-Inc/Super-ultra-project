@@ -8,17 +8,33 @@ import pytmx
 pygame.init()
 
 class Map:
+    """
+    Represents a tile-based game map loaded from a Tiled map file.
+    Attributes:
+        map_file (str): Path to the Tiled map file (.tmx).
+        game_map (pytmx.TiledMap): The loaded Tiled map object.
+    Methods:
+        __init__(map_file: str):
+            Initializes the Map instance with the given map file path.
+        draw(screen):
+            Draws the visible layers of the map onto the provided Pygame screen surface.
+            Loads the map file if it hasn't been loaded yet.
+    """
+
     def __init__(self, map_file: str):
-        self.game_map: pytmx.TiledMap = pytmx.load_pygame(map_file)
+        self.map_file = map_file
+        self.game_map: pytmx.TiledMap = None
 
     def draw(self, screen):
+        if self.game_map is None:
+            self.game_map = pytmx.load_pygame(self.map_file)
+
         for layer in self.game_map.visible_layers:
             for x, y, gid in layer:
                 tile = self.game_map.get_tile_image_by_gid(gid)
                 if tile:
                     screen.blit(tile, (x * self.game_map.tilewidth,
                                        y * self.game_map.tileheight))
-
 
 
 class State:
@@ -162,18 +178,18 @@ class Tooltip:
         self.border_color: tuple[int, int, int] = border_color
         self.font: pygame.font.Font = font
         self.font_color: tuple[int, int, int] = font_color
-        self.delay: float=delay
-        self.padding: int=padding
+        self.delay: float = delay
+        self.padding: int = padding
     
         self.hover_start = None
         self.active: bool = False 
-        self.rect= None
+        self.rect = None
 
     def draw_multiline_text(self, surface, x, y): 
-
         lines = self.text.split('\n')
         line_height = self.font.get_height()
         box_width = self.rect.width - 2 * self.padding if self.rect else 0
+
         for i, line in enumerate(lines):
             txt_surface = self.font.render(line, True, self.font_color)
             line_width = txt_surface.get_width()
@@ -214,8 +230,9 @@ class Tooltip:
                 self.active = True
         else:
             self.hover_start = None
-            self.active = 0
+            self.active = False
             self.rect = None
+
     def draw(self, surface):
         if self.active and self.rect:
             pygame.draw.rect(surface, self.color, self.rect)
@@ -647,7 +664,6 @@ class App:
 
     def run(self):
         self.manager.set_state("main")
-
         self.music_play()
 
         running = True
@@ -665,6 +681,7 @@ class App:
                     pygame.quit()
                     sys.exit()
                 self.manager.handle_event(event)
+            self.clock.tick(self.FPS)
 
 if __name__ == "__main__":
     app = App()
