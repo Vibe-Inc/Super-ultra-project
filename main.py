@@ -496,8 +496,8 @@ class CreditsMenu(Menu):
         self.buttons = [
             Button(back_rect,
                 "BACK",
-                app.button_color_SETTINGS,
-                app.button_hover_color_SETTINGS,
+                app.button_color_SETTINGS_BACK,
+                app.button_hover_color_SETTINGS_BACK,
                 app.button_font,
                 app.text_color,
                 app.corner_radius,
