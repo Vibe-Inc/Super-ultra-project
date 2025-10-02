@@ -732,11 +732,6 @@ class App:
         pygame.mixer.music.set_volume(0.3 if self.audio == "on" else 0.0)
         pygame.mixer.music.play(-1)
 
-    def music_play(self):
-        pygame.mixer.music.load('sounds/LIFE (Instrumental).wav')
-        pygame.mixer.music.set_volume(0.3 if self.audio == "on" else 0.0)
-        pygame.mixer.music.play(-1)
-
     def run(self):
         self.manager.set_state("main")
         self.music_play()
