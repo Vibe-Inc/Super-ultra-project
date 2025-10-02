@@ -576,6 +576,30 @@ class Character:
         """
         class entity needed might do it later
 
+        Represents the player character with animated movement in four directions.
+    
+        Attributes:
+            animations (dict): Dictionary containing lists of Pygame surfaces for each direction ("up", "down", "side").
+            direction (str): Current movement direction of the character ("up", "down", "side").
+            image (pygame.Surface): Current frame of the character to be drawn.
+            pos (pygame.Vector2): Position of the character on the screen.
+            speed (float): Movement speed of the character in pixels per second.
+
+            frame_index (int): Current frame index for animation.
+            animation_speed (float): Number of frames per second for animation.
+            time_accumulator (float): Accumulates time to control animation frame switching.
+            flip (bool): Whether to flip the character horizontally (used for left/right movement).
+            moving (bool): Whether the character is currently moving.
+
+        Methods:
+            update(dt):
+                Updates the characters position and animation based on keyboard input.
+                Args:
+                    dt (float): Time elapsed since the last frame in seconds.
+            draw(screen):
+                Draws the characters current frame to the given Pygame surface.
+                Args:
+                    screen (pygame.Surface): The surface to draw the character on.
         """
         self.animations = {
             "down":  [pygame.transform.scale(pygame.image.load(f"assets/characters/WomanHuman1(Recolor)/FrontWalk/FrontWalk{i}.png"), (85, 85)) for i in range(1, 5)],
@@ -583,22 +607,20 @@ class Character:
             "side":  [pygame.transform.scale(pygame.image.load(f"assets/characters/WomanHuman1(Recolor)/SideWalk/SideWalk{i}.png"), (85, 85)) for i in range(1, 5)],
         }
 
-        # char state
         self.direction = "down"
         self.image = self.animations[self.direction][0]
         self.pos = pygame.Vector2(960, 540)  
         self.speed = 200  
 
-        # animation
         self.frame_index = 0
-        self.animation_speed = 10  # fps
+        self.animation_speed = 10
         self.time_accumulator = 0
-        self.flip = False  # for left/right
+        self.flip = False
         self.moving = False
 
     def update(self, dt):
         keys = pygame.key.get_pressed()
-        self.moving = False  # reset each frame
+        self.moving = False 
 
         if keys[pygame.K_w]:
             self.pos.y -= self.speed * dt
@@ -619,7 +641,6 @@ class Character:
             self.flip = False
             self.moving = True
 
-        # animate only when moving
         if self.moving:
             self.time_accumulator += dt
             if self.time_accumulator > 1 / self.animation_speed:
@@ -627,7 +648,6 @@ class Character:
                 self.frame_index = (self.frame_index + 1) % len(self.animations[self.direction])
             self.image = self.animations[self.direction][self.frame_index]
         else:
-            # idle = stay at current direction, first frame
             self.frame_index = 0
             self.image = self.animations[self.direction][0]
 
