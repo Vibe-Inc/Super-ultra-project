@@ -572,8 +572,7 @@ class Game(State):
 
 
 class Character:
-    def __init__(self):
-        """
+    """
         class entity needed might do it later
 
         Represents the player character with animated movement in four directions.
@@ -601,6 +600,7 @@ class Character:
                 Args:
                     screen (pygame.Surface): The surface to draw the character on.
         """
+    def __init__(self):
         self.animations = {
             "down":  [pygame.transform.scale(pygame.image.load(f"assets/characters/WomanHuman1(Recolor)/FrontWalk/FrontWalk{i}.png"), (85, 85)) for i in range(1, 5)],
             "up":    [pygame.transform.scale(pygame.image.load(f"assets/characters/WomanHuman1(Recolor)/BackWalk/BackWalk{i}.png"), (85, 85)) for i in range(1, 5)],
