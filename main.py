@@ -49,8 +49,8 @@ class State:
         draw(screen): Renders the state to the provided screen surface.
     """
 
-    def __init__(self, manager):
-        self.manager = manager
+    def __init__(self, app: "App"):
+        self.app = app
 
     def handle_event(self, event):
         pass
@@ -78,7 +78,7 @@ class StateManager:
             Delegates drawing to the current state if one is active.
     """
 
-    def __init__(self, app):
+    def __init__(self, app: "App"):
         self.states = {
             "main": MainMenu(app),
             "settings": SettingsMenu(app),
@@ -348,7 +348,7 @@ class MainMenu(Menu):
                 on_click=self.open_credits
             )
         ]
-        self.beta_logo_img = pygame.image.load("images/beta_logo.png")
+        self.beta_logo_img = pygame.image.load("assets/beta_logo.png")
         self.beta_logo_img = pygame.transform.scale(self.beta_logo_img, (200, 200))
         self.beta_logo_rect = self.beta_logo_img.get_rect(center=(1600, 900))
 
@@ -544,23 +544,118 @@ class Game(State):
     Attributes:
         app (App): Reference to the main application instance.
         map (Map): The game map loaded from a Tiled map file.
+        character (Character): The player character instance.
     Methods:
         draw(screen):
             Draws the game map onto the provided screen surface.
         handle_event(event):
             Handles pygame events specific to the gameplay state.
+
     """
 
     def __init__(self, app: "App"):
-        self.app = app
+        super().__init__(app)
+        self.character = Character()
         self.map = Map("maps/test-map-1.tmx")
 
     def draw(self, screen):
+
         self.map.draw(screen)
+
+        dt = self.app.clock.get_time() / 1000  # seconds since last frame
+        self.character.update(dt)
+        self.character.draw(screen)
 
     def handle_event(self, event: pygame.event.Event):
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             self.app.manager.set_state("main")
+
+
+class Character:
+    """
+        class entity needed might do it later
+
+        Represents the player character with animated movement in four directions.
+    
+        Attributes:
+            animations (dict): Dictionary containing lists of Pygame surfaces for each direction ("up", "down", "side").
+            direction (str): Current movement direction of the character ("up", "down", "side").
+            image (pygame.Surface): Current frame of the character to be drawn.
+            pos (pygame.Vector2): Position of the character on the screen.
+            speed (float): Movement speed of the character in pixels per second.
+
+            frame_index (int): Current frame index for animation.
+            animation_speed (float): Number of frames per second for animation.
+            time_accumulator (float): Accumulates time to control animation frame switching.
+            flip (bool): Whether to flip the character horizontally (used for left/right movement).
+            moving (bool): Whether the character is currently moving.
+
+        Methods:
+            update(dt):
+                Updates the characters position and animation based on keyboard input.
+                Args:
+                    dt (float): Time elapsed since the last frame in seconds.
+            draw(screen):
+                Draws the characters current frame to the given Pygame surface.
+                Args:
+                    screen (pygame.Surface): The surface to draw the character on.
+        """
+    def __init__(self):
+        self.animations = {
+            "down":  [pygame.transform.scale(pygame.image.load(f"assets/characters/WomanHuman1(Recolor)/FrontWalk/FrontWalk{i}.png"), (85, 85)) for i in range(1, 5)],
+            "up":    [pygame.transform.scale(pygame.image.load(f"assets/characters/WomanHuman1(Recolor)/BackWalk/BackWalk{i}.png"), (85, 85)) for i in range(1, 5)],
+            "side":  [pygame.transform.scale(pygame.image.load(f"assets/characters/WomanHuman1(Recolor)/SideWalk/SideWalk{i}.png"), (85, 85)) for i in range(1, 5)],
+        }
+
+        self.direction = "down"
+        self.image = self.animations[self.direction][0]
+        self.pos = pygame.Vector2(960, 540)  
+        self.speed = 200  
+
+        self.frame_index = 0
+        self.animation_speed = 10
+        self.time_accumulator = 0
+        self.flip = False
+        self.moving = False
+
+    def update(self, dt):
+        keys = pygame.key.get_pressed()
+        self.moving = False 
+
+        if keys[pygame.K_w]:
+            self.pos.y -= self.speed * dt
+            self.direction = "up"
+            self.moving = True
+        elif keys[pygame.K_s]:
+            self.pos.y += self.speed * dt
+            self.direction = "down"
+            self.moving = True
+        elif keys[pygame.K_a]:
+            self.pos.x -= self.speed * dt
+            self.direction = "side"
+            self.flip = True
+            self.moving = True
+        elif keys[pygame.K_d]:
+            self.pos.x += self.speed * dt
+            self.direction = "side"
+            self.flip = False
+            self.moving = True
+
+        if self.moving:
+            self.time_accumulator += dt
+            if self.time_accumulator > 1 / self.animation_speed:
+                self.time_accumulator = 0
+                self.frame_index = (self.frame_index + 1) % len(self.animations[self.direction])
+            self.image = self.animations[self.direction][self.frame_index]
+        else:
+            self.frame_index = 0
+            self.image = self.animations[self.direction][0]
+
+    def draw(self, screen):
+        if self.direction == "side":
+            screen.blit(pygame.transform.flip(self.image, self.flip, False), self.pos)
+        else:
+            screen.blit(self.image, self.pos)
 
 
 class App:
@@ -614,10 +709,10 @@ class App:
         self.SCREEN_WIDTH, self.SCREEN_HEIGHT = 1920, 1080
         self.screen = pygame.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
         pygame.display.set_caption("super cooool project ;)")
-        self.icon = pygame.image.load("images/smug.png")
+        self.icon = pygame.image.load("assets/smug.png")
         pygame.display.set_icon(self.icon)
 
-        self.bg = pygame.transform.scale(pygame.image.load("images/bg_menu.jpg"), (self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
+        self.bg = pygame.transform.scale(pygame.image.load("assets/bg_menu.jpg"), (self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
         self.myfont = pygame.font.Font("fonts/menu_font.ttf", 60)
         self.text_logo = self.myfont.render('Super coooooool project', True, (0, 0, 0))
         self.text_rect = self.text_logo.get_rect(center=(self.SCREEN_WIDTH//2, self.SCREEN_HEIGHT//2 - 150))
@@ -657,31 +752,27 @@ class App:
         pygame.mixer.music.set_volume(0.3 if self.audio == "on" else 0.0)
         pygame.mixer.music.play(-1)
 
-    def music_play(self):
-        pygame.mixer.music.load('sounds/LIFE (Instrumental).wav')
-        pygame.mixer.music.set_volume(0.3 if self.audio == "on" else 0.0)
-        pygame.mixer.music.play(-1)
-
     def run(self):
         self.manager.set_state("main")
         self.music_play()
 
         running = True
         while running:
+            dt = self.clock.tick(self.FPS) / 1000  # seconds since last frame
+
             self.screen.blit(self.bg, (0, 0))
             if self.manager.get_state() != "credits":
                 self.screen.blit(self.text_logo, self.text_rect)
 
             self.manager.draw(self.screen)
-
             pygame.display.flip()
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
                     pygame.quit()
                     sys.exit()
                 self.manager.handle_event(event)
-            self.clock.tick(self.FPS)
 
 if __name__ == "__main__":
     app = App()
