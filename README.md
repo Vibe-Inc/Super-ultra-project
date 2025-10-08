@@ -1,6 +1,6 @@
 # Super-ultra-project
 
-Super-ultra-project is a small Pygame-based menu/demo created as an OOP study project by students of Shevchenko National University of Kyiv. The project demonstrates a simple menu system, button widgets, and a settings screen (audio/fullscreen toggles) implemented with classes.
+Super-ultra-project is a small Pygame-based game created as an OOP study project by students of Shevchenko National University of Kyiv. The project demonstrates a simple menu system, button widgets, and a settings screen (audio/fullscreen toggles) implemented with classes.
 
 ## Features
 
@@ -68,4 +68,4 @@ This is an educational project — contributions are welcome. Keep changes focus
 
 ## License
 
-This repository does not include a license file—add one if you plan to publish or share broadly.
+This repository does not include a license file.
