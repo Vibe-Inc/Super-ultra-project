@@ -409,9 +409,8 @@ class SettingsMenu(Menu):
         button_width, button_height = 300, 100
         button_y = 700
         
-        audio_rect = pygame.Rect(400, button_y, button_width, button_height)
-        fullscreen_rect = pygame.Rect(800, button_y, button_width, button_height)
-        back_rect = pygame.Rect(1200, button_y, button_width, button_height)
+        audio_rect = pygame.Rect(600, button_y, button_width, button_height)
+        back_rect = pygame.Rect(1000, button_y, button_width, button_height)
 
         self.buttons = [
             Button(
@@ -423,16 +422,6 @@ class SettingsMenu(Menu):
                 app.text_color,
                 app.corner_radius,
                 on_click=self.toggle_audio
-            ),
-            Button(
-                fullscreen_rect,
-                "FULLSC",
-                app.button_color_SETTINGS,
-                app.button_hover_color_SETTINGS,
-                app.button_font,
-                app.text_color,
-                app.corner_radius,
-                on_click=self.toggle_fullscreen
             ),
             Button(
                 back_rect,
@@ -455,16 +444,6 @@ class SettingsMenu(Menu):
             self.app.audio = "on"
             pygame.mixer.music.set_volume(0.3)
             print("AUDIO ON")
-
-    def toggle_fullscreen(self):
-        if self.app.is_fullscreen:
-            pygame.display.set_mode((self.app.SCREEN_WIDTH, self.app.SCREEN_HEIGHT))
-            self.app.is_fullscreen = False
-            print("WINDOWED")
-        else:
-            pygame.display.set_mode((self.app.SCREEN_WIDTH, self.app.SCREEN_HEIGHT), pygame.FULLSCREEN)
-            self.app.is_fullscreen = True
-            print("FULLSCREEN")
 
     def back_to_main(self):
         self.app.manager.set_state("main")
