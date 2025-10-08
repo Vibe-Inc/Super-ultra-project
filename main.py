@@ -83,7 +83,8 @@ class StateManager:
             "main": MainMenu(app),
             "settings": SettingsMenu(app),
             "credits": CreditsMenu(app),
-            "gameplay": Game(app)
+            "gameplay": Game(app),
+            "pause": PauseMenu(app)
         }
         self.current_state = None
 
@@ -483,7 +484,7 @@ class CreditsMenu(Menu):
                 on_click=self.back_to_main
             )
         ]
-        self.credits_text = """CREDITS:\nVibe inc idea, production and execution\nArt by Vibe inc\nMusic by Vibe inc\nMain sponsor: Vibe inc\nSpecial thanks to Vibe inc"""
+        self.credits_text = """CREDITS:\nVibe inc idea, production and execution\nArt not by Vibe inc\nMusic not by Vibe inc\nMain sponsor: Vibe inc\nSpecial thanks to Vibe inc"""
         self.font :pygame.font.Font= app.myfont
         self.font_color: tuple = app.text_color
         self.padding: int = 30
@@ -512,6 +513,70 @@ class CreditsMenu(Menu):
             y += self.font.get_height()
         for button in self.buttons:
             button.draw(screen)
+
+    def back_to_main(self):
+        self.app.manager.set_state("main")
+
+
+class PauseMenu(Menu):
+    """
+    Represents the pause menu in the game, providing options to resume gameplay or return to the main menu.
+    Args:
+        app (App): The main application instance containing configuration and state management.
+    Attributes:
+        app (App): Reference to the main application instance.
+        pause_menu_color (tuple): RGBA color for the pause menu overlay.
+        buttons (list[Button]): List of Button objects for menu actions ("RESUME" and "MAIN MENU").
+    Methods:
+        draw(screen):
+            Draws the pause menu overlay and its buttons on the provided screen surface.
+        resume_game():
+            Callback to resume gameplay by setting the application state to "gameplay".
+        back_to_main():
+            Callback to return to the main menu by setting the application state to "main".
+    """
+
+    def __init__(self, app: "App"):
+        self.app = app
+
+        button_width, button_height = 300, 100
+
+        self.pause_menu_color = (0, 0, 0, 180)
+
+        self.buttons = [
+            Button(
+                pygame.Rect((app.SCREEN_WIDTH - button_width) // 2, 650, button_width, button_height),
+                "RESUME",
+                app.button_color_START,
+                app.button_hover_color_START,
+                app.button_font,
+                app.text_color,
+                app.corner_radius,
+                on_click=self.resume_game
+            ),
+            Button(
+                pygame.Rect((app.SCREEN_WIDTH - button_width) // 2, 800, button_width, button_height),
+                "MAIN MENU",
+                app.button_color_EXIT,
+                app.button_hover_color_EXIT,
+                app.button_font,
+                app.text_color,
+                app.corner_radius,
+                on_click=self.back_to_main
+            )
+        ]
+
+    def draw(self, screen):
+        overlay = pygame.Surface((self.app.SCREEN_WIDTH, self.app.SCREEN_HEIGHT), pygame.SRCALPHA)
+        overlay.fill(self.pause_menu_color)
+        screen.blit(overlay, (0, 0))
+
+        for button in self.buttons:
+            button.draw(screen)
+
+
+    def resume_game(self):
+        self.app.manager.set_state("gameplay")
 
     def back_to_main(self):
         self.app.manager.set_state("main")
@@ -547,7 +612,7 @@ class Game(State):
 
     def handle_event(self, event: pygame.event.Event):
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-            self.app.manager.set_state("main")
+            self.app.manager.set_state("pause")
 
 
 class Character:
@@ -752,6 +817,7 @@ class App:
                     pygame.quit()
                     sys.exit()
                 self.manager.handle_event(event)
+
 
 if __name__ == "__main__":
     app = App()
