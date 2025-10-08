@@ -69,15 +69,3 @@ This is an educational project — contributions are welcome. Keep changes focus
 ## License
 
 This repository does not include a license file—add one if you plan to publish or share broadly.
-
----
-
-Have fun experimenting with OOP in Pygame! If you'd like, I can also:
-
-- add a small audio toggle implementation that actually mutes/unmutes sounds
-- ensure `App.screen` is updated on fullscreen toggle
-- add a simple unit test or sanity-check script
-
-Tell me which of these you'd like next.
-
-
