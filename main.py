@@ -653,7 +653,8 @@ class Character:
 
         self.direction = "down"
         self.image = self.animations[self.direction][0]
-        self.pos = pygame.Vector2(960, 540)  
+        self.pos = pygame.Vector2(960, 540)
+        self.spawn_point = self.pos.copy()
         self.speed = 200  
 
         self.frame_index = 0
@@ -661,6 +662,10 @@ class Character:
         self.time_accumulator = 0
         self.flip = False
         self.moving = False
+
+        self.hp = 100
+        self.death_count = 0
+        self.death_sound = pygame.mixer.Sound("sounds/death.mp3")
 
     def update(self, dt):
         keys = pygame.key.get_pressed()
@@ -684,6 +689,9 @@ class Character:
             self.direction = "side"
             self.flip = False
             self.moving = True
+        
+        if keys[pygame.K_SPACE]:  # press SPACE to take 100 damage (temporary cuz button can be held down insted of pressed once)
+            self.take_damage(100) 
 
         if self.moving:
             self.time_accumulator += dt
@@ -694,6 +702,20 @@ class Character:
         else:
             self.frame_index = 0
             self.image = self.animations[self.direction][0]
+
+        if self.hp <= 0:
+            self.die()
+
+    def take_damage(self, amount):
+        self.hp -= amount
+        if self.hp <= 0:
+            self.die()
+
+    def die(self):
+        self.death_sound.play()
+        self.death_count += 1
+        self.hp = 100  # reset health
+        self.pos = self.spawn_point.copy()  # teleport to spawn
 
     def draw(self, screen):
         if self.direction == "side":
