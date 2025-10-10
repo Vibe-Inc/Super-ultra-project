@@ -690,8 +690,8 @@ class Character:
             self.flip = False
             self.moving = True
         
-        if keys[pygame.K_SPACE]:  # press SPACE to take 100 damage (temporary cuz button can be held down insted of pressed once)
-            self.take_damage(100) 
+        #if keys[pygame.K_SPACE]:  # press SPACE to take 100 damage (temporary cuz button can be held down insted of pressed once)
+        #    self.take_damage(100) 
 
         if self.moving:
             self.time_accumulator += dt
