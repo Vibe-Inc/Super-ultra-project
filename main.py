@@ -1,7 +1,7 @@
 import pygame
 import sys
 import time
-from typing import Callable
+from typing import Callable, Tuple
 import pytmx
 
 
@@ -244,6 +244,83 @@ class Tooltip:
             )
 
 
+class Slider:
+    """
+    Represents a horizontal slider UI component for controlling a value, such as audio volume, in a Pygame application.
+
+    Attributes:
+        x (int): The x-coordinate of the slider track's starting position.
+        y (int): The y-coordinate of the slider track's starting position.
+        height (int): The thickness of the slider track in pixels.
+        width (int): The width of the slider track's line.
+        track_colour (tuple[int, int, int]): RGB color of the slider track.
+        knob_colour (tuple[int, int, int]): RGB color of the draggable knob.
+        knob_width (int): Width of the slider knob in pixels.
+        knob_height (int): Height of the slider knob in pixels.
+        track_length (int): Length of the slider track in pixels.
+        value (float): Current normalized value of the slider (between `min_value` and `max_value`).
+        dragging (bool): Indicates whether the slider knob is currently being dragged.
+        current_volume (float): Current value applied to the controlled parameter (e.g., audio volume).
+        knob_rect (pygame.Rect): Rectangle representing the position and size of the slider knob.
+
+    Methods:
+        draw(surface):
+            Draws the slider track and knob onto the given Pygame surface.
+
+        handle_event(event):
+            Processes Pygame events to handle dragging of the slider knob. Sets volume in appropriate level.
+    """
+
+    def __init__(self, x: int, y: int,
+                 height: int, width: int,
+                 track_colour: Tuple[int, int, int],
+                 knob_colour: Tuple[int, int, int],
+                 knob_width: int, knob_height: int,
+                 track_length: int, value: float = 0.3, dragging: bool = False,
+                 smooth_speed: float = 0.05):
+        self.x: int = x
+        self.y: int = y
+        self.height: int = height
+        self.width: int = width
+        self.smooth_speed: float = smooth_speed
+        self.knob_colour: Tuple[int, int, int] = knob_colour
+        self.knob_width: int = knob_width
+        self.knob_height: int = knob_height
+        self.value: float = value
+        self.dragging: bool = dragging
+        self.track_colour: Tuple[int, int, int] = track_colour
+        self.track_length: int = track_length
+        self.knob_rect = pygame.Rect(self.x, self.y, self.knob_width, self.knob_height)
+        self.current_volume = pygame.mixer.music.get_volume()
+
+    def draw(self, surface):
+        pygame.draw.line(surface, self.track_colour,
+                         (self.x, self.y + self.height // 2),
+                         (self.x + self.track_length, self.y + self.height // 2),
+                         width=self.width)
+
+        knob_x = self.x + int(self.value * self.track_length) - self.knob_width // 2
+        knob_y = self.y + self.height // 2 - self.knob_height // 2
+        self.knob_rect = pygame.Rect(knob_x, knob_y, self.knob_width, self.knob_height)
+        pygame.draw.rect(surface, self.knob_colour, self.knob_rect)
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mx, my = pygame.mouse.get_pos()
+            if self.knob_rect.collidepoint(mx, my):
+                self.dragging = True
+
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            self.dragging = False
+
+        elif event.type == pygame.MOUSEMOTION and self.dragging:
+            mx, my = pygame.mouse.get_pos()
+            rel_x = max(0, min(mx - self.x, self.track_length))
+            self.value = round(rel_x / self.track_length, 2)
+            pygame.mixer.music.set_volume(self.value)
+
+
+
 class Menu(State):
     """
     Represents a menu interface containing interactive buttons.
@@ -261,7 +338,7 @@ class Menu(State):
     def __init__(self, app: "App"):
         self.app = app
         self.buttons: list[Button] = []
-        self.tooltips: list[Tooltip] = [] 
+        self.tooltips: list[Tooltip] = []
 
     def draw(self, screen):
         for button in self.buttons:
@@ -408,7 +485,6 @@ class SettingsMenu(Menu):
         super().__init__(app)
         button_width, button_height = 300, 100
         button_y = 700
-        
         audio_rect = pygame.Rect(600, button_y, button_width, button_height)
         back_rect = pygame.Rect(1000, button_y, button_width, button_height)
 
@@ -434,6 +510,14 @@ class SettingsMenu(Menu):
                 on_click=self.back_to_main
             )
         ]
+
+        track_colour = (0,0,0)
+        knob_colour = (255,255,255)
+
+        self.audio_slider = Slider(600, 850, 40, 5,
+                                   track_colour, knob_colour,
+                                   20, 20,
+                                   300, value=0.3)
 
     def toggle_audio(self):
         if self.app.audio == "on":
