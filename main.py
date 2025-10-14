@@ -601,7 +601,22 @@ class Game(State):
         super().__init__(app)
         self.character = Character()
         self.map = Map("maps/test-map-1.tmx")
+        self.inventory_open = False
+        self.selected_item = None 
 
+        self.PLAYER_inventory = Inventory(
+            app.MAIN_INV_rows,
+            app.MAIN_INV_columns,
+            app.MAIN_INV_items,
+            app.MAIN_INV_slot_size,
+            app.MAIN_INV_pos_x,
+            app.MAIN_INV_pos_y,
+            app.MAIN_INV_border,
+            app.MAIN_INV_slot_color,
+            app.MAIN_INV_border_color
+        )
+    def inventory_opening(self):
+        print("Inventory opened")
     def draw(self, screen):
 
         self.map.draw(screen)
