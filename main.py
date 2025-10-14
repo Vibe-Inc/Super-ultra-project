@@ -510,6 +510,10 @@ class SettingsMenu(Menu):
                                    20, 20,
                                    300, value=initial_volume)
 
+        self.myfont = pygame.font.Font("fonts/menu_font.ttf", 60)
+        self.text_logo = self.myfont.render('Music volume', True, (0, 0, 0))
+        self.text_rect = self.text_logo.get_rect(center=(760, 650))
+
     def back_to_main(self):
         self.app.manager.set_state("main")
     
@@ -525,6 +529,7 @@ class SettingsMenu(Menu):
         for button in self.buttons:
             button.draw(surface)
         self.audio_slider.draw(surface)
+        surface.blit(self.text_logo, self.text_rect)
 
 
 class CreditsMenu(Menu):
