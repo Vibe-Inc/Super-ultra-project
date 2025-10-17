@@ -246,30 +246,23 @@ class Tooltip:
 
 class Inventory:
     """
-    Represents an inventory grid system for managing and displaying items.
+    Represents a grid-based inventory in the game.
     Attributes:
-        columns (int): Number of columns in the inventory grid.
-        rows (int): Number of rows in the inventory grid.
-        items (list): 2D list representing the items in the inventory, where each item is [Item_obj, count] or None.
-        slot_size (int): Size of each inventory slot in pixels.
-        pos_x (int): X-coordinate of the top-left corner of the inventory on the screen.
-        pos_y (int): Y-coordinate of the top-left corner of the inventory on the screen.
-        border (int): Border size between slots in pixels.
-        slot_color (tuple[int, int, int]): RGB color of the inventory slots.
-        slot_border_color (tuple[int, int, int]): RGB color of the slot borders.
+        columns (int): The number of columns in the inventory grid.
+        rows (int): The number of rows in the inventory grid.
+        items (list[list[tuple[Item, int] | None]]): A 2D list representing the slots, where each slot holds either None or a tuple of (item object, count).
+        slot_size (int): The width and height of a single slot in pixels.
+        pos_x (int): The x-coordinate (top-left) position of the inventory on the screen.
+        pos_y (int): The y-coordinate (top-left) position of the inventory on the screen.
+        border (int): The size of the border/spacing between slots.
+        slot_color (tuple[int, int, int]): The RGB color of the inventory slots.
+        slot_border_color (tuple[int, int, int]): The RGB color of the inventory's outer border.
+        selected_item (tuple[Item, int] | None): The item currently being dragged or held by the mouse from this inventory.
+
     Methods:
-        draw(surface):
-            Draws the inventory grid and its items onto the provided surface.
-        Get_pos():
-            Returns the (column_index, row_index) of the slot under the mouse, or (-1, -1) if outside the inventory.
-        add(Item, xy):
-            Attempts to add an item stack [Item_obj, count] to the slot at position xy.
-            If the slot is occupied by a different item, returns that item stack for pickup.
-            If the addition is successful (placed or stacked), returns None.
-            If xy is outside the inventory, returns the original item stack unchanged.
-        in_grid(x, y):
-            Checks if the given (x, y) indices are within the inventory grid bounds.
-            Returns True if within bounds, False otherwise.
+        __init__(self, columns, rows, items, slot_size, pos_x, pos_y, slot_border, slot_color, slot_border_color): Initializes the inventory object.
+        draw(self, screen): Renders the inventory grid, border, and items onto the screen.
+        inventory_interactions(self, event, manager): Handles mouse button events (clicks) for item picking up, dropping, stacking, swapping, and splitting within the inventory.
     """
     def __init__(self, columns, rows, items, slot_size, pos_x, pos_y, slot_border, slot_color, slot_border_color ):
         self.columns:int = columns
@@ -382,8 +375,8 @@ class MAIN_player_inventory_equipment(Inventory):
             app.MAIN_INV_equipment_rows,
             None,
             app.BASE_INV_slot_size,
-            app.MAIN_INV_pos_x + (app.BASE_INV_slot_size + app.BASE_INV_border) * 3 + app.BASE_INV_border,
-            app.MAIN_INV_pos_y-310,
+            app.MAIN_INV_equipment_pos_x,
+            app.MAIN_INV_equipment_pos_y,
             app.BASE_INV_border,
             app.BASE_INV_slot_color,
             app.BASE_INV_border_color
@@ -391,13 +384,39 @@ class MAIN_player_inventory_equipment(Inventory):
     pass
     
 class INVENTORY_manager:
+    """
+    Represents the central manager for all in-game inventory operations. 
+    It tracks which inventories are currently active/visible and manages the state 
+    of items being dragged by the player.
+
+    Attributes:
+        selected_item (tuple[Item, int] | None): The item stack (item object, count) 
+            currently held by the mouse cursor, or False/None if nothing is selected. 
+            (Note: In the provided code, it's initialized as bool=False but used as a tuple or None).
+        active_inventories (list[Inventory | None]): A list of Inventory objects 
+            (like player bag, equipment, or a chest) that should be drawn and accept interaction.
+        player_inventory_opened (bool): Flag indicating if the player's main inventory 
+            window (and associated equipment) is currently open.
+
+    Methods:
+        __init__(self): Initializes the manager state.
+        add_active_inventory(self, inventory): Adds an Inventory object to the list of active/visible inventories.
+        remove_active_inventory(self, inventory): Removes an Inventory object from the active list.
+        draw(self, screen): Draws all active inventories and the currently selected item (if any) at the mouse position.
+        handle_event(self, event): Distributes mouse events to all active inventories for interaction processing.
+        PLAYER_inventory_open(self, event: pygame.event.Event, pl_inv, equip_inv): Toggles the player's inventory 
+            and equipment windows on and off, typically upon pressing the 'I' key (pygame.K_i), 
+            and triggers interaction handling if a mouse button is clicked while open.
+    """
     def __init__(self):
         self.selected_item:bool = False
-        self.active_inventories:list = []
+        self.active_inventories:list[Inventory|None] = []
+        self.player_inventory_opened:bool = False
 
 
     def add_active_inventory (self, inventory):
-        self.active_inventories.append(inventory)
+        if inventory not in self.active_inventories:
+            self.active_inventories.append(inventory)
 
     def remove_active_inventory (self, inventory):
         if inventory in self.active_inventories:
@@ -418,12 +437,20 @@ class INVENTORY_manager:
         for inv in self.active_inventories:
             inv.inventory_interactions(event, self)
     
-    def PLAYER_inventory_open(self):
-        pygame
+    def PLAYER_inventory_open(self,event: pygame.event.Event,pl_inv,equip_inv):
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_i:
+                self.player_inventory_opened = not self.player_inventory_opened   
+                if self.player_inventory_opened is True:
+                    app.INV_manager.add_active_inventory(pl_inv)
+                    app.INV_manager.add_active_inventory(equip_inv)
+                else:
+                    app.INV_manager.remove_active_inventory(pl_inv)
+                    app.INV_manager.remove_active_inventory(equip_inv)
+        if self.player_inventory_opened is True and event.type == pygame.MOUSEBUTTONDOWN:
+            app.INV_manager.handle_event(event)
 
-
-    
-    
+   
 class TEST_ITEMS:     #only for testing 
     def __init__(self, color, id):
         self.id = id
@@ -791,7 +818,7 @@ class Game(State):
         self.character = Character()
         self.map = Map("maps/test-map-1.tmx")
 
-        self.inventory_open = False
+        app.INV_manager.player_inventory_opened
 
         self.MAIN_player_inv = MAIN_player_inventory(app)
         self.PLAYER_inventory_equipment = MAIN_player_inventory_equipment(app)
@@ -804,27 +831,14 @@ class Game(State):
         self.character.update(dt)
         self.character.draw(screen)
 
-        if self.inventory_open:
+        if  app.INV_manager.player_inventory_opened:
             app.INV_manager.draw(screen)
 
     def handle_event(self, event: pygame.event.Event):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.app.manager.set_state("pause")
-            elif event.key == pygame.K_i:
-                self.inventory_open = not self.inventory_open
-                if self.inventory_open is True:
-                    app.INV_manager.add_active_inventory(self.MAIN_player_inv)
-                    app.INV_manager.add_active_inventory(self.PLAYER_inventory_equipment)
-                else:
-                    app.INV_manager.remove_active_inventory(self.MAIN_player_inv)
-                    app.INV_manager.remove_active_inventory(self.PLAYER_inventory_equipment)
-                
-
-        if self.inventory_open and event.type == pygame.MOUSEBUTTONDOWN:
-            app.INV_manager.handle_event(event)
-
-            
+        app.INV_manager.PLAYER_inventory_open(event,self.MAIN_player_inv,self.PLAYER_inventory_equipment)
 
 class Character:
     """
@@ -933,6 +947,10 @@ class App:
         button_hover_color_EXIT (tuple): Hover color for the EXIT button.
         button_color_SETTINGS (tuple): Color for the SETTINGS button.
         button_hover_color_SETTINGS (tuple): Hover color for the SETTINGS button.
+        button_color_SETTINGS_BACK (tuple): Color for the SETTINGS 'Back' button.
+        button_hover_color_SETTINGS_BACK (tuple): Hover color for the SETTINGS 'Back' button.
+        button_color_CREDITS (tuple): Color for the CREDITS button.
+        button_hover_color_CREDITS (tuple): Hover color for the CREDITS button. 
 
         text_color (tuple): Color for button text.
         button_font (pygame.font.Font): Font used for button text.
@@ -946,33 +964,51 @@ class App:
         tooltip_border_CREDITS (tuple): Tooltip border color for credits.
         tooltip_font_CREDITS (pygame.font.Font): Tooltip font for credits.
 
+        INV_manager (INVENTORY_manager): The central manager for all inventory operations.
+
         MAIN_INV_rows (int): Number of rows in the main inventory.
         MAIN_INV_columns (int): Number of columns in the main inventory. 
         MAIN_INV_items (list): 2D list representing items in the main inventory.
-        MAIN_INV_slot_size (int): Size of each inventory slot.
-        MAIN_INV_border (int): Border size between inventory slots.
-        MAIN_INV_slot_color (tuple): Color of inventory slots. 
-        MAIN_INV_border_color (tuple): Color of inventory slot borders.
+        MAIN_INV_slot_size (int): Size of each inventory slot. # Used as BASE_INV_slot_size
+        MAIN_INV_border (int): Border size between inventory slots. # Used as BASE_INV_border
+        MAIN_INV_slot_color (tuple): Color of inventory slots. # Used as BASE_INV_slot_color
+        MAIN_INV_border_color (tuple): Color of inventory slot borders. # Used as BASE_INV_border_color
         MAIN_INV_BACKGROUND (tuple): Background color for the inventory area.
         INV_nums_font (pygame.font.Font): Font for item count numbers in inventory.
         MAIN_INV_pos_x (int): X position of the main inventory on screen.
         MAIN_INV_pos_y (int): Y position of the main inventory on screen.
+        
+        MAIN_INV_equipment_columns (int): Number of columns in the equipment inventory. 
+        MAIN_INV_equipment_rows (int): Number of rows in the equipment inventory. 
+        MAIN_INV_equipment_pos_x (int): X position of the equipment inventory.
+        MAIN_INV_equipment_pos_y (int): Y position of the equipment inventory.
+
+        BASE_INV_slot_size (int): Standard size of an inventory slot in pixels.
+        BASE_INV_border (int): Standard border/spacing size for inventory slots.
+        BASE_INV_slot_color (tuple): Standard color for inventory slots (RGB).
+        BASE_INV_border_color (tuple): Standard color for inventory borders (RGB).
+        
         INV_BUTTONS_font (pygame.font.Font): Font for inventory buttons. 
         MAIN_INV_BUTTON_color (tuple): Color for inventory buttons.
-        MAIN_INV_BUTTON_hover_color (tuple): Hover color for inventory buttons.                                  
+        MAIN_INV_BUTTON_hover_color (tuple): Hover color for inventory buttons.
 
-        menus (dict): Dictionary of menu states and their corresponding menu objects.
-        menu_state (str): Current active menu state.
+        menus (dict): Dictionary of menu states and their corresponding menu objects. # Not used in __init__
+        menu_state (str): Current active menu state. # Not used in __init__
 
         audio (str): Audio state ("on" or "off").
         is_fullscreen (bool): Fullscreen mode state.
         clock (pygame.time.Clock): Clock object for controlling frame rate.
         FPS (int): Frames per second.
+
+        manager (StateManager): The state management system controlling game/menu flow.
+
     Methods:
         set_menu(menu_name: str):
-            Sets the current menu state.
+            Sets the current menu state using the StateManager.
+        music_play():
+            Loads and starts the background music, setting the volume based on the 'audio' attribute.
         run():
-            Main loop of the application. Handles rendering, events, and menu logic.
+            Main loop of the application. Handles rendering, event processing, clock ticking, and state management logic.
     """
 
     def __init__(self):
@@ -1031,7 +1067,8 @@ class App:
 
         self.MAIN_INV_equipment_columns = 2
         self.MAIN_INV_equipment_rows = 4
-
+        self.MAIN_INV_equipment_pos_x = self.MAIN_INV_pos_x + (self.BASE_INV_slot_size + self.BASE_INV_border) * 3 + self.BASE_INV_border
+        self.MAIN_INV_equipment_pos_y =self.MAIN_INV_pos_y-310
 
         self.audio = "on"
         self.is_fullscreen = False
