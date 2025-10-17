@@ -37,6 +37,34 @@ class Map:
                                        y * self.game_map.tileheight))
 
 
+class LocalMap:
+    """
+    Represents a local area of the game world (e.g., a village, dungeon, etc.).
+    Handles transitions between map screens within the same area.
+    Attributes:
+        name (str): Name of the local map (for identification).
+        current_map (Map): The currently active map screen.
+    Methods:
+        draw(screen):
+            Draws the current map.
+        update(player):
+            Checks for player reaching screen edges and triggers transitions.
+    """
+
+    def __init__(self, name: str, map_file: str):
+        self.name = name
+        self.current_map = Map(map_file)
+
+    def draw(self, screen):
+        self.current_map.draw(screen)
+
+    def update(self, player):
+        pass #WIP
+    
+    
+        
+
+
 class State:
     """
     Represents a base state in a state management system.
@@ -56,6 +84,9 @@ class State:
         pass
 
     def draw(self, screen):
+        pass
+
+    def update(self, dt):
         pass
 
 
@@ -244,6 +275,7 @@ class Tooltip:
                 self.rect.y+self.padding
             )
 
+
 class Inventory:
     """
     Represents a grid-based inventory in the game.
@@ -336,6 +368,7 @@ class Inventory:
                     if self.items[x][y][1] <= 0:
                         self.items[x][y] = None
   
+
 class MAIN_player_inventory(Inventory):
     
     def __init__(self, app:"App"):
@@ -368,6 +401,7 @@ class MAIN_player_inventory(Inventory):
 
         return super().draw(screen)
     
+
 class MAIN_player_inventory_equipment(Inventory):
     def __init__(self,app :"App"):
         super().__init__(
@@ -383,6 +417,7 @@ class MAIN_player_inventory_equipment(Inventory):
         )
     pass
     
+
 class INVENTORY_manager:
     """
     Represents the central manager for all in-game inventory operations. 
@@ -572,6 +607,9 @@ class Menu(State):
                 if button.rect.collidepoint(event.pos):
                     button.on_click()
 
+def update(self, dt):
+        pass    
+
 
 class MainMenu(Menu):
     """
@@ -682,6 +720,9 @@ class MainMenu(Menu):
     def open_credits(self):
         self.app.manager.set_state("credits")
 
+    def update(self, dt):
+        pass
+
 
 class SettingsMenu(Menu):
     """
@@ -738,7 +779,7 @@ class SettingsMenu(Menu):
         super().handle_event(event)
         self.audio_slider.handle_event(event)
 
-    def update(self):
+    def update(self, dt):
         if hasattr(self.audio_slider, "update"):
             self.audio_slider.update()
 
@@ -816,6 +857,9 @@ class CreditsMenu(Menu):
     def back_to_main(self):
         self.app.manager.set_state("main")
 
+    def update(self, dt):
+        pass
+
 
 class PauseMenu(Menu):
     """
@@ -880,6 +924,9 @@ class PauseMenu(Menu):
     def back_to_main(self):
         self.app.manager.set_state("main")
 
+    def update(self, dt):
+        pass
+
 
 class Game(State):
     """
@@ -899,7 +946,7 @@ class Game(State):
     def __init__(self, app: "App"):
         super().__init__(app)
         self.character = Character()
-        self.map = Map("maps/test-map-1.tmx")
+        self.local_map = LocalMap("start", "maps/test-map-1.tmx")
 
         app.INV_manager.player_inventory_opened
 
@@ -908,20 +955,23 @@ class Game(State):
 
     def draw(self, screen):
 
-        self.map.draw(screen)
-
-        dt = self.app.clock.get_time() / 1000  # seconds since last frame
-        self.character.update(dt)
+        self.local_map.draw(screen)
         self.character.draw(screen)
 
-        if  app.INV_manager.player_inventory_opened:
-            app.INV_manager.draw(screen)
+        if  self.app.INV_manager.player_inventory_opened:
+            self.app.INV_manager.draw(screen)
+
+    def update(self, dt):
+        self.character.update(dt)
+        self.local_map.update(self.character)
+
 
     def handle_event(self, event: pygame.event.Event):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.app.manager.set_state("pause")
         app.INV_manager.PLAYER_inventory_open(event,self.MAIN_player_inv,self.PLAYER_inventory_equipment)
+
 
 class Character:
     """
@@ -1196,19 +1246,22 @@ class App:
         while running:
             dt = self.clock.tick(self.FPS) / 1000  # seconds since last frame
 
-            self.screen.blit(self.bg, (0, 0))
-            if self.manager.get_state() != "credits":
-                self.screen.blit(self.text_logo, self.text_rect)
-
-            self.manager.draw(self.screen)
-            pygame.display.flip()
-
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
                     pygame.quit()
                     sys.exit()
                 self.manager.handle_event(event)
+
+            if self.manager.current_state:
+                self.manager.current_state.update(dt)
+            
+            self.screen.blit(self.bg, (0, 0))
+            if self.manager.get_state() != "credits":
+                self.screen.blit(self.text_logo, self.text_rect)
+
+            self.manager.draw(self.screen)
+            pygame.display.flip()
 
 
 if __name__ == "__main__":
