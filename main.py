@@ -62,9 +62,6 @@ class LocalMap:
         pass #WIP
     
     
-        
-
-
 class State:
     """
     Represents a base state in a state management system.
@@ -607,8 +604,8 @@ class Menu(State):
                 if button.rect.collidepoint(event.pos):
                     button.on_click()
 
-def update(self, dt):
-        pass    
+    def update(self, dt):
+        pass 
 
 
 class MainMenu(Menu):
