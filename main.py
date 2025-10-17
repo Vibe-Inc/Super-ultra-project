@@ -271,10 +271,13 @@ class Inventory:
             Checks if the given (x, y) indices are within the inventory grid bounds.
             Returns True if within bounds, False otherwise.
     """
-    def __init__(self, rows, columns, items, slot_size, pos_x, pos_y, slot_border, slot_color, slot_border_color ):
-        self.rows:int = rows
+    def __init__(self, columns, rows, items, slot_size, pos_x, pos_y, slot_border, slot_color, slot_border_color ):
         self.columns:int = columns
-        self.items:list = items
+        self.rows:int = rows
+        if not items:
+            self.items:list = [[None for _ in range(self.rows)] for _ in range(self.columns)]
+        else:
+            self.items:list = items
         self.slot_size:int = slot_size
         self.pos_x:int = pos_x
         self.pos_y:int = pos_y
@@ -282,17 +285,19 @@ class Inventory:
         self.slot_color:tuple[int, int, int]= slot_color
         self.slot_border_color:tuple[int, int, int]= slot_border_color
 
+        self.selected_item = None
+
     def draw(self, screen):
         pygame.draw.rect(
             screen,
             self.slot_border_color,
             (self.pos_x, self.pos_y,
-             (self.slot_size + self.border) * self.rows + self.border,
-             (self.slot_size + self.border) * self.columns + self.border)
+             (self.slot_size + self.border) * self.columns + self.border,
+             (self.slot_size + self.border) * self.rows + self.border)
         )
       
-        for n in range(self.rows):
-            for m in range(self.columns):
+        for n in range(self.columns):
+            for m in range(self.rows):
                 rect = (
                     self.pos_x + (self.slot_size + self.border) * n + self.border,
                     self.pos_y + (self.slot_size + self.border) * m + self.border,
@@ -302,45 +307,122 @@ class Inventory:
                 pygame.draw.rect(screen, self.slot_color, rect)
 
                 if self.items[n][m]:
-                    try:
-                        screen.blit(self.items[n][m][0].resize(self.slot_size), rect)
-                    except Exception:
-                        pass
+                    item, count = self.items[n][m]
+                    screen.blit(item.resize(self.slot_size), rect)
+                    if count > 1:
+                        font_obj = app.INV_nums_font
+                        obj = font_obj.render(str(count), True, (0, 0, 0))
+                        screen.blit(obj, (rect[0] + 50, rect[1] + 50))
 
-                    try:
-                        if self.items[n][m][1] > 1:
-                            font_obj = app.INV_nums_font
-                            obj = font_obj.render(str(self.items[n][m][1]), True, (0, 0, 0))
-                            screen.blit(obj, (rect[0] +50 , rect[1] +50))
-                    except Exception:
-                        pass
-    def Get_pos(self):
-        mouse = pygame.mouse.get_pos()
-        
-        x = mouse[0] - self.pos_x
-        y = mouse[1] - self.pos_y
-        x = x//(self.slot_size + self.border)
-        y = y//(self.slot_size + self.border)
-        return (x,y)
+    def inventory_interactions(self,event,manager):
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        x = (mouse_x - self.pos_x) // (self.slot_size + self.border)
+        y = (mouse_y - self.pos_y) // (self.slot_size + self.border)
+        if 0 <= x < self.columns and 0 <= y < self.rows:
+                slot = self.items[x][y]
+                if event.button == 1:
+                    if manager.selected_item:
+                        if slot:
+                            if slot[0].id == manager.selected_item[0].id:
+                                slot[1] += manager.selected_item[1]
+                                manager.selected_item = None
+                            else:
+                                self.items[x][y], manager.selected_item = manager.selected_item, self.items[x][y]
+                        else:
+                            self.items[x][y] = manager.selected_item
+                            manager.selected_item = None
+                    else:
+                        if slot:
+                            manager.selected_item = slot
+                            self.items[x][y] = None
+
+                elif event.button == 3 and slot and not manager.selected_item and slot[1] > 1:
+                    split_count = (slot[1] + 1) // 2
+                    manager.selected_item = [slot[0], split_count]
+                    self.items[x][y][1] -= split_count
+                    if self.items[x][y][1] <= 0:
+                        self.items[x][y] = None
+  
+class MAIN_player_inventory(Inventory):
     
-    def add(self,Item,xy):
-        x, y = xy
-        if self.items[x][y]:
-            if self.items[x][y][0].id == Item[0].id:
-                self.items[x][y][1] += Item[1]
-            else:
-                temp = self.items[x][y]
-                self.items[x][y] = Item
-                return temp
-        else:
-            self.items[x][y] = Item
+    def __init__(self, app:"App"):
+        super().__init__(
+            app.MAIN_INV_columns,
+            app.MAIN_INV_rows,
+            app.MAIN_INV_items,
+            app.BASE_INV_slot_size,
+            app.MAIN_INV_pos_x,
+            app.MAIN_INV_pos_y,
+            app.BASE_INV_border,
+            app.BASE_INV_slot_color,
+            app.BASE_INV_border_color
+        )
+    def draw(self, screen):
+        pygame.draw.rect( 
+            screen,
+            app.MAIN_INV_BACKGROUND,
+            (app.MAIN_INV_pos_x-15, app.MAIN_INV_pos_y-335,
+             (app.BASE_INV_slot_size + app.BASE_INV_border) * app.MAIN_INV_columns + app.BASE_INV_border+30,
+             (app.BASE_INV_slot_size + app.BASE_INV_border) * app.MAIN_INV_rows + app.BASE_INV_border +350),
+             0, 16, 70 , 70)
+            
+        pygame.draw.rect(
+            screen,
+            (0, 0, 0),
+            (app.SCREEN_WIDTH//2+100, app.MAIN_INV_pos_y-305, 190, 275),
+            0, 15, 50, 50, 50, 50
+            ) #maybe some kind of character preview?
+
+        return super().draw(screen)
     
-    def in_grid(self,x,y):
-        if 0 > x > self.col-1:
-            return False
-        if 0 > y > self.rows-1:
-            return False
-        return True
+class MAIN_player_inventory_equipment(Inventory):
+    def __init__(self,app :"App"):
+        super().__init__(
+            app.MAIN_INV_equipment_columns,
+            app.MAIN_INV_equipment_rows,
+            None,
+            app.BASE_INV_slot_size,
+            app.MAIN_INV_pos_x + (app.BASE_INV_slot_size + app.BASE_INV_border) * 3 + app.BASE_INV_border,
+            app.MAIN_INV_pos_y-310,
+            app.BASE_INV_border,
+            app.BASE_INV_slot_color,
+            app.BASE_INV_border_color
+        )
+    pass
+    
+class INVENTORY_manager:
+    def __init__(self):
+        self.selected_item:bool = False
+        self.active_inventories:list = []
+
+
+    def add_active_inventory (self, inventory):
+        self.active_inventories.append(inventory)
+
+    def remove_active_inventory (self, inventory):
+        if inventory in self.active_inventories:
+            self.active_inventories.remove(inventory)
+    
+    def draw(self, screen):
+        for inv in self.active_inventories:
+            inv.draw(screen)
+        if self.selected_item:
+            mx, my = pygame.mouse.get_pos()
+            item, count = self.selected_item
+            screen.blit(item.resize(app.BASE_INV_slot_size), (mx - app.BASE_INV_slot_size//2, my - app.BASE_INV_slot_size//2))
+            font = app.INV_nums_font
+            obj = font.render(str(count), True, (0, 0, 0))
+            screen.blit(obj, (mx + app.BASE_INV_slot_size//2 - 20 , my + app.BASE_INV_slot_size//2 - 20))
+    
+    def handle_event(self, event):
+        for inv in self.active_inventories:
+            inv.inventory_interactions(event, self)
+    
+    def PLAYER_inventory_open(self):
+        pygame
+
+
+    
     
 class TEST_ITEMS:     #only for testing 
     def __init__(self, color, id):
@@ -710,22 +792,9 @@ class Game(State):
         self.map = Map("maps/test-map-1.tmx")
 
         self.inventory_open = False
-        self.selected_item = None 
 
-        self.PLAYER_inventory = Inventory(
-            app.MAIN_INV_rows,
-            app.MAIN_INV_columns,
-            app.MAIN_INV_items,
-            app.MAIN_INV_slot_size,
-            app.MAIN_INV_pos_x,
-            app.MAIN_INV_pos_y,
-            app.MAIN_INV_border,
-            app.MAIN_INV_slot_color,
-            app.MAIN_INV_border_color
-        )
-
-    def inventory_opening(self):
-        print("Inventory opened") #maybe for inv buttons in future
+        self.MAIN_player_inv = MAIN_player_inventory(app)
+        self.PLAYER_inventory_equipment = MAIN_player_inventory_equipment(app)
 
     def draw(self, screen):
 
@@ -734,93 +803,28 @@ class Game(State):
         dt = self.app.clock.get_time() / 1000  # seconds since last frame
         self.character.update(dt)
         self.character.draw(screen)
+
         if self.inventory_open:
-            pygame.draw.rect( 
-            screen,
-            app.MAIN_INV_BACKGROUND,
-            (app.MAIN_INV_pos_x-15, app.MAIN_INV_pos_y-335,
-             (app.MAIN_INV_slot_size + app.MAIN_INV_border) * app.MAIN_INV_rows + app.MAIN_INV_border+30,
-             (app.MAIN_INV_slot_size + app.MAIN_INV_border) * app.MAIN_INV_columns + app.MAIN_INV_border +350),
-             0, 16, 70 , 70)
-            
-            pygame.draw.rect(
-            screen,
-            (0, 0, 0),
-            (app.SCREEN_WIDTH//2+100, app.MAIN_INV_pos_y-305, 190, 275),
-            0, 15, 50, 50, 50, 50
-            ) #maybe some kind of character preview?
-
-            MAIN_INVENTORY = pygame.Rect(app.SCREEN_WIDTH//2-280, app.MAIN_INV_pos_y-310, 150, 70)
-
-            self.INV_BUTTONS = [
-                Button(
-                MAIN_INVENTORY,
-                "YOUR INVENTORY",
-                app.MAIN_INV_BUTTON_color,
-                app.MAIN_INV_BUTTON_hover_color,
-                app.INV_BUTTONS_font,
-                app.text_color,
-                app.corner_radius,
-                on_click=self.inventory_opening,
-                    
-                )
-            ]
-            
-            for button in self.INV_BUTTONS:
-                button.draw(screen)
-            self.PLAYER_inventory.draw(screen)
-
-            
-            if self.selected_item:
-                mx, my = pygame.mouse.get_pos() 
-                try:
-                    screen.blit(self.selected_item[0].resize(self.PLAYER_inventory.slot_size), (mx - app.MAIN_INV_slot_size//2, my - app.MAIN_INV_slot_size//2))
-                except Exception:
-                    pass
-                try:
-                    font = app.INV_nums_font
-                    obj = font.render(str(self.selected_item[1]), True, (0, 0, 0))
-                    screen.blit(obj, (mx + app.MAIN_INV_slot_size//2 - 20 , my + app.MAIN_INV_slot_size//2 - 20))
-                except Exception:
-                    pass
+            app.INV_manager.draw(screen)
 
     def handle_event(self, event: pygame.event.Event):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.app.manager.set_state("pause")
             elif event.key == pygame.K_i:
-                self.inventory_open = not self.inventory_open # 
+                self.inventory_open = not self.inventory_open
+                if self.inventory_open is True:
+                    app.INV_manager.add_active_inventory(self.MAIN_player_inv)
+                    app.INV_manager.add_active_inventory(self.PLAYER_inventory_equipment)
+                else:
+                    app.INV_manager.remove_active_inventory(self.MAIN_player_inv)
+                    app.INV_manager.remove_active_inventory(self.PLAYER_inventory_equipment)
+                
+
         if self.inventory_open and event.type == pygame.MOUSEBUTTONDOWN:
+            app.INV_manager.handle_event(event)
+
             
-            mouse_x, mouse_y = pygame.mouse.get_pos()
-            x = (mouse_x - self.PLAYER_inventory.pos_x) // (self.PLAYER_inventory.slot_size + self.PLAYER_inventory.border)
-            y = (mouse_y - self.PLAYER_inventory.pos_y) // (self.PLAYER_inventory.slot_size + self.PLAYER_inventory.border)
-            if 0 <= x < self.PLAYER_inventory.rows and 0 <= y < self.PLAYER_inventory.columns:
-                slot = self.PLAYER_inventory.items[x][y]
-                if event.button == 1:
-                    if self.selected_item:
-                        if slot:
-                            if slot[0].id == self.selected_item[0].id:
-                                self.PLAYER_inventory.items[x][y][1] += self.selected_item[1]
-                                self.selected_item = None
-                            else:
-                                temp = self.PLAYER_inventory.items[x][y]
-                                self.PLAYER_inventory.items[x][y] = self.selected_item
-                                self.selected_item = temp
-                        else:
-                            self.PLAYER_inventory.items[x][y] = self.selected_item
-                            self.selected_item = None
-                    else:
-                        if slot:
-                            self.selected_item = slot
-                            self.PLAYER_inventory.items[x][y] = None
-                elif event.button == 3:
-                    if not self.selected_item and slot and slot[1] > 1:
-                        split_count = (slot[1] + 1) // 2
-                        self.selected_item = [slot[0], split_count]
-                        self.PLAYER_inventory.items[x][y][1] -= split_count
-                        if self.PLAYER_inventory.items[x][y][1] <= 0:
-                            self.PLAYER_inventory.items[x][y] = None
 
 class Character:
     """
@@ -1005,23 +1009,29 @@ class App:
         self.tooltip_border_CREDITS = (54, 105, 121)
         self.tooltip_font_CREDITS = pygame.font.Font("fonts/menu_font.ttf", 20)
 
-        self.MAIN_INV_rows = 8
-        self.MAIN_INV_columns = 4
-        self.MAIN_INV_items = [[None for _ in range(self.MAIN_INV_columns)] for _ in range(self.MAIN_INV_rows)]
+        self.INV_manager = INVENTORY_manager()
+
+        self.MAIN_INV_columns = 8
+        self.MAIN_INV_rows = 4
+        self.MAIN_INV_items = [[None for _ in range(self.MAIN_INV_rows)] for _ in range(self.MAIN_INV_columns)]
         colors = [(255,0,0), (0,0,255), (255,255,0)]
-        for i in range(min(self.MAIN_INV_rows, 3)):
-            self.MAIN_INV_items[i][0] = [TEST_ITEMS(colors[i], i), i+10]  
-        self.MAIN_INV_slot_size = 70
-        self.MAIN_INV_border = 3
-        self.MAIN_INV_slot_color = (216, 223, 203)
-        self.MAIN_INV_border_color = (33, 41, 48)
+        for i in range(min(self.MAIN_INV_columns, 3)):
+            self.MAIN_INV_items[i][0] = [TEST_ITEMS(colors[i], i), i+10]
+          
+        self.BASE_INV_slot_size = 70
+        self.BASE_INV_border = 3
+        self.BASE_INV_slot_color = (216, 223, 203)
+        self.BASE_INV_border_color = (33, 41, 48)
+
         self.MAIN_INV_BACKGROUND=(109, 125, 123)
+
         self.INV_nums_font = pygame.font.Font("fonts/menu_font.ttf", 15)
-        self.MAIN_INV_pos_x = self.SCREEN_WIDTH//2- (self.MAIN_INV_slot_size + self.MAIN_INV_border) * self.MAIN_INV_columns + self.MAIN_INV_border
+        self.MAIN_INV_pos_x = self.SCREEN_WIDTH//2- (self.BASE_INV_slot_size + self.BASE_INV_border) * self.MAIN_INV_rows + self.BASE_INV_border
         self.MAIN_INV_pos_y = self.SCREEN_HEIGHT//2
-        self.INV_BUTTONS_font = pygame.font.Font("fonts/menu_font.ttf", 19)
-        self.MAIN_INV_BUTTON_color = (33, 41, 48)
-        self.MAIN_INV_BUTTON_hover_color = (53, 61, 78)
+
+        self.MAIN_INV_equipment_columns = 2
+        self.MAIN_INV_equipment_rows = 4
+
 
         self.audio = "on"
         self.is_fullscreen = False
