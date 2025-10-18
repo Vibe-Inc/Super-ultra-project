@@ -24,10 +24,15 @@ class Map:
     def __init__(self, map_file: str):
         self.map_file = map_file
         self.game_map: pytmx.TiledMap = None
+        self.pixel_width = 0
+        self.pixel_height = 0
 
     def draw(self, screen):
         if self.game_map is None:
             self.game_map = pytmx.load_pygame(self.map_file)
+            # calculate pixel dimensions
+            self.pixel_width = self.game_map.width * self.game_map.tilewidth
+            self.pixel_height = self.game_map.height * self.game_map.tileheight
 
         for layer in self.game_map.visible_layers:
             for x, y, gid in layer:
@@ -38,28 +43,50 @@ class Map:
 
 
 class LocalMap:
-    """
-    Represents a local area of the game world (e.g., a village, dungeon, etc.).
-    Handles transitions between map screens within the same area.
-    Attributes:
-        name (str): Name of the local map (for identification).
-        current_map (Map): The currently active map screen.
-    Methods:
-        draw(screen):
-            Draws the current map.
-        update(player):
-            Checks for player reaching screen edges and triggers transitions.
-    """
-
+    """ all coments temporary until pr is merged and documentation is finalised """
     def __init__(self, name: str, map_file: str):
         self.name = name
         self.current_map = Map(map_file)
+        self.current_map_path = map_file  # track current map file
 
     def draw(self, screen):
         self.current_map.draw(screen)
 
     def update(self, player):
-        pass #WIP
+        # Ensure map is loaded
+        if self.current_map.game_map is None:
+            self.current_map.game_map = pytmx.load_pygame(self.current_map.map_file)
+
+        # Map dimensions
+        map_width = self.current_map.game_map.width * self.current_map.game_map.tilewidth
+        map_height = self.current_map.game_map.height * self.current_map.game_map.tileheight
+
+        # Player position
+        x, y = player.pos.x, player.pos.y
+        w, h = player.width, player.height
+
+        # Left/right transitions
+        if self.current_map_path == "maps/test-map-1.tmx":
+            if x + w > map_width:  # Right border → map 2
+                self.switch_map("maps/test-map-2.tmx")
+                player.pos.x = 5  # just inside left edge
+
+        elif self.current_map_path == "maps/test-map-2.tmx":
+            if x < 0:  # Left border → map 1
+                self.switch_map("maps/test-map-1.tmx")
+                player.pos.x = map_width - w - 5  # appear at right edge
+            elif x + w > map_width:
+                self.switch_map("maps/test-map-3.tmx")  # next map to the right
+                player.pos.x = 5  # appear at left edge of new map
+
+
+    def switch_map(self, new_map_path):
+        """Switch to another map safely"""
+        self.current_map = Map(new_map_path)
+        self.current_map.game_map = pytmx.load_pygame(new_map_path)
+        self.current_map_path = new_map_path
+
+
     
     
 class State:
@@ -1008,6 +1035,9 @@ class Character:
 
         self.direction = "down"
         self.image = self.animations[self.direction][0]
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
+        print(self.width, self.height) #debugging
         self.pos = pygame.Vector2(960, 540)
         self.spawn_point = self.pos.copy()
         self.speed = 200  
