@@ -78,6 +78,10 @@ class LocalMap:
             elif x + w > map_width:
                 self.switch_map("maps/test-map-3.tmx")  # next map to the right
                 player.pos.x = 5  # appear at left edge of new map
+        elif self.current_map_path == "maps/test-map-3.tmx":
+            if x < 0:  # Left border → map 2
+                self.switch_map("maps/test-map-2.tmx")
+                player.pos.x = map_width - w - 5  # appear at right edge
 
 
     def switch_map(self, new_map_path):
