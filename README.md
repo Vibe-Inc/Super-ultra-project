@@ -4,7 +4,7 @@ Super-ultra-project is a small Pygame-based game created as an OOP study project
 
 ## Features
 
-- Main menu with START, EXIT and SETTINGS buttons
+- Main menu with START, EXIT and SETTINGS buttons.
 - Settings menu with AUDIO toggle, fullscreen toggle, and BACK
 - Reusable `Button` class and menu system (`Menu`, `MainMenu`, `SettingsMenu`)
 
