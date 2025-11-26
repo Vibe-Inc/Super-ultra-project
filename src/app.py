@@ -1,0 +1,81 @@
+import pygame
+import sys
+
+from src.core.state_manager import StateManager
+from src.inventory.system import INVENTORY_manager
+from src.inventory.items import TEST_ITEMS
+import src.config as cfg
+
+
+class App:
+    """
+    Main application class for the Super Ultra Project game.
+    Attributes:
+        screen (pygame.Surface): The main display surface.
+        icon (pygame.Surface): The window icon image.
+
+        menus (dict): Dictionary of menu states and their corresponding menu objects. # Not used in __init__
+        menu_state (str): Current active menu state. # Not used in __init__
+
+        audio (str): Audio state ("on" or "off").
+        is_fullscreen (bool): Fullscreen mode state.
+        clock (pygame.time.Clock): Clock object for controlling frame rate.
+
+        manager (StateManager): The state management system controlling game/menu flow.
+
+    Methods:
+        set_menu(menu_name: str):
+            Sets the current menu state using the StateManager.
+        music_play():
+            Loads and starts the background music, setting the volume based on the 'audio' attribute.
+        run():
+            Main loop of the application. Handles rendering, event processing, clock ticking, and state management logic.
+    """
+
+    def __init__(self):
+        self.screen = pygame.display.set_mode((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT))
+        pygame.display.set_caption("super cooool project ;)")
+        self.icon = pygame.image.load("assets/smug.png")
+        pygame.display.set_icon(self.icon)
+        
+
+        self.INV_manager = INVENTORY_manager()
+        self.MAIN_INV_items = [[None for _ in range(cfg.MAIN_INV_rows)] for _ in range(cfg.MAIN_INV_columns)]
+        colors = [(255, 0, 0), (0, 0, 255), (255, 255, 0)]
+        for i in range(min(cfg.MAIN_INV_columns, 3)):
+            self.MAIN_INV_items[i][0] = [TEST_ITEMS(colors[i], i), i + 10]
+
+        # Audio / fullscreen / clock
+        self.audio = "on"
+        self.is_fullscreen = False
+        self.clock = pygame.time.Clock()
+
+        # State manager
+        self.manager = StateManager(self)
+
+    def music_play(self):
+        pygame.mixer.music.load('sounds/LIFE (Instrumental).wav')
+        pygame.mixer.music.set_volume(0.3 if self.audio == "on" else 0.0)
+        pygame.mixer.music.play(-1)
+
+    def run(self):
+        self.manager.set_state("main")
+        self.music_play()
+
+        running = True
+        while running:
+            dt = self.clock.tick(cfg.FPS) / 1000  # seconds since last frame
+
+            self.screen.blit(cfg.bg, (0, 0))
+            if self.manager.get_state() != "credits":
+                self.screen.blit(cfg.text_logo, cfg.text_rect)
+
+            self.manager.draw(self.screen)
+            pygame.display.flip()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                    pygame.quit()
+                    sys.exit()
+                self.manager.handle_event(event)
