@@ -244,6 +244,7 @@ class Tooltip:
                 self.rect.y+self.padding
             )
 
+
 class Inventory:
     """
     Represents a grid-based inventory in the game.
@@ -335,7 +336,8 @@ class Inventory:
                     self.items[x][y][1] -= split_count
                     if self.items[x][y][1] <= 0:
                         self.items[x][y] = None
-  
+
+
 class MAIN_player_inventory(Inventory):
     
     def __init__(self, app:"App"):
@@ -368,6 +370,7 @@ class MAIN_player_inventory(Inventory):
 
         return super().draw(screen)
     
+
 class MAIN_player_inventory_equipment(Inventory):
     def __init__(self,app :"App"):
         super().__init__(
@@ -383,6 +386,7 @@ class MAIN_player_inventory_equipment(Inventory):
         )
     pass
     
+
 class INVENTORY_manager:
     """
     Represents the central manager for all in-game inventory operations. 
@@ -941,6 +945,7 @@ class Game(State):
                 self.app.manager.set_state("pause")
         app.INV_manager.PLAYER_inventory_open(event,self.MAIN_player_inv,self.PLAYER_inventory_equipment)
 
+
 class Character:
     """
         class entity needed might do it later
@@ -1048,6 +1053,7 @@ class Character:
             screen.blit(pygame.transform.flip(self.image, self.flip, False), self.pos)
         else:
             screen.blit(self.image, self.pos)
+
 
 class Enemy:
     """
@@ -1190,6 +1196,7 @@ class Enemy:
             screen.blit(pygame.transform.flip(self.image, self.flip, False), self.pos)
         else:
             screen.blit(self.image, self.pos)
+
 
 class App:
     """
