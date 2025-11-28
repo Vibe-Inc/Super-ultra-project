@@ -5,13 +5,13 @@ Super-ultra-project is a small Pygame-based game created as an OOP study project
 ## Features
 
 - Main menu with START, EXIT and SETTINGS buttons.
-- Settings menu with AUDIO toggle, fullscreen toggle, and BACK
-- Reusable `Button` class and menu system (`Menu`, `MainMenu`, `SettingsMenu`)
+- Settings menu with AUDIO toggle, fullscreen toggle, and BACK.
+- Reusable `Button` class and menu system (`Menu`, `MainMenu`, `SettingsMenu`).
 
 ## Requirements
 
-- Python 3.10+ (typed hints use modern syntax)
-- pygame
+- Python 3.10+ (typed hints use modern syntax).
+- pygame.
 
 Install Python packages using the provided `requirements.txt`:
 
@@ -31,11 +31,11 @@ The game opens a window with a background image and the main menu. Use the mouse
 
 ## Controls
 
-- Mouse hover highlights buttons
-- Left click to activate a button
-- START currently prints "START" to console (placeholder for gameplay)
-- EXIT closes the game
-- SETTINGS opens the settings menu where you can toggle audio and fullscreen
+- Mouse hover highlights buttons.
+- Left click to activate a button.
+- START currently prints "START" to console (placeholder for gameplay).
+- EXIT closes the game.
+- SETTINGS opens the settings menu where you can toggle audio and fullscreen.
 
 ## Project structure
 
@@ -62,9 +62,9 @@ The game opens a window with a background image and the main menu. Use the mouse
 
 This is an educational project — contributions are welcome. Keep changes focused and small. If you add features (actual gameplay, audio handling, persistent settings), consider:
 
-- Adding unit tests where practical
-- Updating the README with new usage notes
-- Keeping assets in `images/` or `fonts/` folders
+- Adding unit tests where practical.
+- Updating the README with new usage notes.
+- Keeping assets in `images/` or `fonts/` folders.
 
 ## License
 
