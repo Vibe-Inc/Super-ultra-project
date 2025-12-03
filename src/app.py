@@ -64,6 +64,12 @@ class App:
         if lang_code in cfg.SUPPORTED_LANGUAGES:
             cfg.LANGUAGE = lang_code
             i18n.install_language(lang_code)
+
+            cfg.myfont = cfg.get_font(60)
+            cfg.button_font = cfg.get_font(60)
+            cfg.tooltip_font_CREDITS = cfg.get_font(20)
+            cfg.INV_nums_font = cfg.get_font(15)
+            
             self.create_logo()
             self.manager.reinit_states()
 
