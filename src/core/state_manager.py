@@ -53,3 +53,19 @@ class StateManager:
     def draw(self, screen):
         if self.current_state:
             self.current_state.draw(screen)
+
+    def reinit_states(self):
+        current_name = self.get_state()
+        
+        gameplay_state = self.states["gameplay"]
+        
+        self.states = {
+            "main": MainMenu(self.states["main"].app),
+            "settings": SettingsMenu(self.states["settings"].app),
+            "credits": CreditsMenu(self.states["credits"].app),
+            "gameplay": gameplay_state,
+            "pause": PauseMenu(self.states["pause"].app)
+        }
+        
+        if current_name:
+            self.current_state = self.states.get(current_name)

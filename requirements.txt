@@ -1,2 +1,3 @@
 pygame-ce==2.5.5
 PyTMX==3.32
+babel==2.17.0
