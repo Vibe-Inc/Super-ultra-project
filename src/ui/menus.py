@@ -74,7 +74,7 @@ class MainMenu(Menu):
         self.buttons = [
             Button(
                 start_rect,
-                "START",
+                _("START"),
                 cfg.button_color_START,
                 cfg.button_hover_color_START,
                 cfg.button_font,
@@ -84,7 +84,7 @@ class MainMenu(Menu):
             ),
             Button(
                 exit_rect,
-                "EXIT",
+                _("EXIT"),
                 cfg.button_color_EXIT,
                 cfg.button_hover_color_EXIT,
                 cfg.button_font,
@@ -94,7 +94,7 @@ class MainMenu(Menu):
             ),
             Button(
                 settings_rect,
-                "SETTINGS",
+                _("SETTINGS"),
                 cfg.button_color_SETTINGS,
                 cfg.button_hover_color_SETTINGS,
                 cfg.button_font,
@@ -104,7 +104,7 @@ class MainMenu(Menu):
             ),
            Button(
                 credits_rect,
-                "CREDITS",
+                _("CREDITS"),
                 cfg.button_color_CREDITS,
                 cfg.button_hover_color_CREDITS,
                 cfg.button_font,
@@ -120,7 +120,7 @@ class MainMenu(Menu):
         self.tooltips = [
             Tooltip(
                 self.beta_logo_rect,
-                "Our logo that we need to think of",
+                _("Our logo that we need to think of"),
                 cfg.tooltip_bg_CREDITS,
                 cfg.tooltip_border_CREDITS,
                 cfg.tooltip_font_CREDITS,
@@ -174,17 +174,28 @@ class SettingsMenu(Menu):
         button_width, button_height = 300, 100
         button_y = 700
         back_rect = pygame.Rect(1000, button_y, button_width, button_height)
+        lang_rect = pygame.Rect(1000, 550, button_width, button_height)
 
         self.buttons = [
             Button(
                 back_rect,
-                "BACK",
+                _("BACK"),
                 cfg.button_color_SETTINGS_BACK,
                 cfg.button_hover_color_SETTINGS_BACK,
                 cfg.button_font,
                 cfg.text_color,
                 cfg.corner_radius,
                 on_click=self.back_to_main
+            ),
+            Button(
+                lang_rect,
+                f"{_('LANG')}: {cfg.LANGUAGE.upper()}",
+                cfg.button_color_SETTINGS,
+                cfg.button_hover_color_SETTINGS,
+                cfg.button_font,
+                cfg.text_color,
+                cfg.corner_radius,
+                on_click=self.toggle_language
             )
         ]
 
@@ -197,12 +208,16 @@ class SettingsMenu(Menu):
                                    20, 20,
                                    300, value=initial_volume)
 
-        self.myfont = pygame.font.Font("fonts/menu_font.ttf", 60)
-        self.text_logo = cfg.myfont.render('Music volume', True, (0, 0, 0))
-        self.text_rect = cfg.text_logo.get_rect(center=(760, 650))
+        self.myfont = cfg.get_font(60)
+        self.text_logo = self.myfont.render(_('Music volume'), True, (0, 0, 0))
+        self.text_rect = self.text_logo.get_rect(center=(760, 650))
 
     def back_to_main(self):
         self.app.manager.set_state("main")
+    
+    def toggle_language(self):
+        new_lang = 'uk' if cfg.LANGUAGE == 'en' else 'en'
+        self.app.update_language(new_lang)
     
     def handle_event(self, event):
         super().handle_event(event)
@@ -244,7 +259,7 @@ class CreditsMenu(Menu):
         back_rect = pygame.Rect(1400, 850, button_width, button_height)
         self.buttons = [
             Button(back_rect,
-                "BACK",
+                _("BACK"),
                 cfg.button_color_SETTINGS_BACK,
                 cfg.button_hover_color_SETTINGS_BACK,
                 cfg.button_font,
@@ -253,7 +268,12 @@ class CreditsMenu(Menu):
                 on_click=self.back_to_main
             )
         ]
-        self.credits_text = """CREDITS:\nVibe inc idea, production and execution\nArt not by Vibe inc\nMusic not by Vibe inc\nMain sponsor: Vibe inc\nSpecial thanks to Vibe inc"""
+        self.credits_text = _("""CREDITS:
+Vibe inc idea, production and execution
+Art not by Vibe inc
+Music not by Vibe inc
+Main sponsor: Vibe inc
+Special thanks to Vibe inc""")
         self.font :pygame.font.Font= cfg.myfont
         self.font_color: tuple = cfg.text_color
         self.padding: int = 30
@@ -315,7 +335,7 @@ class PauseMenu(Menu):
         self.buttons = [
             Button(
                 pygame.Rect((cfg.SCREEN_WIDTH - button_width) // 2, 650, button_width, button_height),
-                "RESUME",
+                _("RESUME"),
                 cfg.button_color_START,
                 cfg.button_hover_color_START,
                 cfg.button_font,
@@ -325,7 +345,7 @@ class PauseMenu(Menu):
             ),
             Button(
                 pygame.Rect((cfg.SCREEN_WIDTH - button_width) // 2, 800, button_width, button_height),
-                "MAIN MENU",
+                _("MAIN MENU"),
                 cfg.button_color_EXIT,
                 cfg.button_hover_color_EXIT,
                 cfg.button_font,

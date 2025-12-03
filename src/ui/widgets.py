@@ -34,6 +34,14 @@ class Button:
         self.on_click: Callable[[], None] = on_click
 
         self.text_surf: pygame.Surface = self.font.render(self.text, True, self.font_color)
+        
+        # Scale text if it's too wide for the button
+        if self.text_surf.get_width() > self.rect.width - 20:
+            scale_factor = (self.rect.width - 20) / self.text_surf.get_width()
+            new_width = int(self.text_surf.get_width() * scale_factor)
+            new_height = int(self.text_surf.get_height() * scale_factor)
+            self.text_surf = pygame.transform.smoothscale(self.text_surf, (new_width, new_height))
+            
         self.text_rect: pygame.Rect = self.text_surf.get_rect(center=self.rect.center)
 
     def draw(self, screen):

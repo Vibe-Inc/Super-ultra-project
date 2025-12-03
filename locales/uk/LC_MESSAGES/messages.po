@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-12-04 00:01+0200\n"
+"POT-Creation-Date: 2025-12-04 00:12+0200\n"
 "PO-Revision-Date: 2025-12-04 00:01+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: uk\n"
@@ -19,7 +19,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
-#: src/app.py:61
+#: src/app.py:60
 msgid "Super coooooool project"
 msgstr "Супер круууутий проект"
 
@@ -46,6 +46,10 @@ msgstr "Наш логотип, який нам ще треба придумат�
 #: src/ui/menus.py:182 src/ui/menus.py:262
 msgid "BACK"
 msgstr "НАЗАД"
+
+#: src/ui/menus.py:192
+msgid "LANG"
+msgstr "МОВА"
 
 #: src/ui/menus.py:212
 msgid "Music volume"
