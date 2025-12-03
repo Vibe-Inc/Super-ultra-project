@@ -4,8 +4,8 @@ SCREEN_WIDTH, SCREEN_HEIGHT = 1920, 1080
 FPS = 60
 bg = pygame.transform.scale(pygame.image.load("assets/bg_menu.jpg"), (SCREEN_WIDTH, SCREEN_HEIGHT))
 myfont = pygame.font.Font("fonts/menu_font.ttf", 60)
-text_logo = myfont.render('Super coooooool project', True, (0, 0, 0))
-text_rect = text_logo.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2 - 150))
+LANGUAGE = 'en'
+SUPPORTED_LANGUAGES = ['en', 'uk']
 
 button_color_START = (83, 112, 44)
 button_hover_color_START = (123, 123, 34)

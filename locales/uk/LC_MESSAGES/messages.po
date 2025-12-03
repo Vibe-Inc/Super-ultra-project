@@ -1,0 +1,77 @@
+# Ukrainian translations for PROJECT.
+# Copyright (C) 2025 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-12-04 00:01+0200\n"
+"PO-Revision-Date: 2025-12-04 00:01+0200\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: uk\n"
+"Language-Team: uk <LL@li.org>\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: src/app.py:61
+msgid "Super coooooool project"
+msgstr "Супер круууутий проект"
+
+#: src/ui/menus.py:77
+msgid "START"
+msgstr "СТАРТ"
+
+#: src/ui/menus.py:87
+msgid "EXIT"
+msgstr "ВИХІД"
+
+#: src/ui/menus.py:97
+msgid "SETTINGS"
+msgstr "НАЛАШТУВАННЯ"
+
+#: src/ui/menus.py:107
+msgid "CREDITS"
+msgstr "ТИТРИ"
+
+#: src/ui/menus.py:123
+msgid "Our logo that we need to think of"
+msgstr "Наш логотип, який нам ще треба придумати"
+
+#: src/ui/menus.py:182 src/ui/menus.py:262
+msgid "BACK"
+msgstr "НАЗАД"
+
+#: src/ui/menus.py:212
+msgid "Music volume"
+msgstr "Гучність музики"
+
+#: src/ui/menus.py:271
+msgid ""
+"CREDITS:\n"
+"Vibe inc idea, production and execution\n"
+"Art not by Vibe inc\n"
+"Music not by Vibe inc\n"
+"Main sponsor: Vibe inc\n"
+"Special thanks to Vibe inc"
+msgstr ""
+"ТИТРИ:\n"
+"Ідея, виробництво та виконання Vibe inc\n"
+"Арт не від Vibe inc\n"
+"Музика не від Vibe inc\n"
+"Головний спонсор: Vibe inc\n"
+"Особлива подяка Vibe inc"
+
+#: src/ui/menus.py:338
+msgid "RESUME"
+msgstr "ПРОДОВЖИТИ"
+
+#: src/ui/menus.py:348
+msgid "MAIN MENU"
+msgstr "ГОЛОВНЕ МЕНЮ"
+

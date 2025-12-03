@@ -5,6 +5,7 @@ from src.core.state_manager import StateManager
 from src.inventory.system import INVENTORY_manager
 from src.inventory.items import TEST_ITEMS
 import src.config as cfg
+import src.i18n as i18n
 
 
 class App:
@@ -37,7 +38,9 @@ class App:
         pygame.display.set_caption("super cooool project ;)")
         self.icon = pygame.image.load("assets/smug.png")
         pygame.display.set_icon(self.icon)
-        
+
+        i18n.install_language(cfg.LANGUAGE)
+        self.create_logo()
 
         self.INV_manager = INVENTORY_manager()
         self.MAIN_INV_items = [[None for _ in range(cfg.MAIN_INV_rows)] for _ in range(cfg.MAIN_INV_columns)]
@@ -52,6 +55,17 @@ class App:
 
         # State manager
         self.manager = StateManager(self)
+
+    def create_logo(self):
+        self.text_logo = cfg.myfont.render(_('Super coooooool project'), True, (0, 0, 0))
+        self.text_rect = self.text_logo.get_rect(center=(cfg.SCREEN_WIDTH//2, cfg.SCREEN_HEIGHT//2 - 150))
+
+    def update_language(self, lang_code):
+        if lang_code in cfg.SUPPORTED_LANGUAGES:
+            cfg.LANGUAGE = lang_code
+            i18n.install_language(lang_code)
+            self.create_logo()
+            self.manager.reinit_states()
 
     def music_play(self):
         pygame.mixer.music.load('sounds/LIFE (Instrumental).wav')
@@ -68,7 +82,7 @@ class App:
 
             self.screen.blit(cfg.bg, (0, 0))
             if self.manager.get_state() != "credits":
-                self.screen.blit(cfg.text_logo, cfg.text_rect)
+                self.screen.blit(self.text_logo, self.text_rect)
 
             self.manager.draw(self.screen)
             pygame.display.flip()
