@@ -8,6 +8,20 @@ if TYPE_CHECKING:
     from src.app import App
 
 class HUD:
+
+    """
+    The Head-Up Display (HUD) class, responsible for rendering critical 
+    player status information (HP, lives) and UI controls (e.g., Inventory button).
+
+    Attributes:
+        character (Character): The character object whose state is being displayed.
+        app (App): The main application object for accessing managers (e.g., INV_manager).
+        font (pygame.font.Font): The font used for rendering text.
+        hp_icon (pygame.Surface): The icon representing health (a heart).
+        life_icon (pygame.Surface): The icon representing the number of lives (a skull).
+        inv_button (Button): The button to open/close the inventory.
+    """
+
     def __init__(self, character: Character, app: "App"):
         self.character = character
         self.app = app
