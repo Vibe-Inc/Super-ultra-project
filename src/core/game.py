@@ -7,6 +7,7 @@ from src.entities.character import Character
 from src.map.map import LocalMap
 from src.inventory.system import MAIN_player_inventory, MAIN_player_inventory_equipment
 from src.entities.enemy import Enemy
+from src.ui.hud import HUD
 
 if TYPE_CHECKING:
     from src.app import App
@@ -15,6 +16,7 @@ class Game(State):
     def __init__(self, app: "App"):
         super().__init__(app)
         self.character = Character()
+        self.hud = HUD(self.character, app)
         
         # ЗМІНА 2: Використовуємо LocalMap для підтримки переходів
         self.map = LocalMap("Level1", "maps/test-map-1.tmx")
@@ -49,11 +51,14 @@ class Game(State):
         self.enemy.update(dt)
         self.enemy.draw(screen)
 
+        self.hud.draw(screen)
+
         if self.app.INV_manager.player_inventory_opened:
             self.MAIN_player_inv.draw(screen)
             self.PLAYER_inventory_equipment.draw(screen)
 
     def handle_event(self, event: pygame.event.Event):
+        self.hud.handle_event(event)
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.app.manager.set_state("pause")
