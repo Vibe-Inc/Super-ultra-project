@@ -3,32 +3,23 @@ from typing import TYPE_CHECKING
 
 from src.core.state import State
 from src.entities.character import Character
-from src.map.map import Map
+# ЗМІНА 1: Імпортуємо LocalMap
+from src.map.map import LocalMap
 from src.inventory.system import MAIN_player_inventory, MAIN_player_inventory_equipment
 from src.entities.enemy import Enemy
+from src.ui.hud import HUD
 
 if TYPE_CHECKING:
     from src.app import App
 
 class Game(State):
-    """
-    Game class represents the main gameplay state of the application.
-    Attributes:
-        app (App): Reference to the main application instance.
-        map (Map): The game map loaded from a Tiled map file.
-        character (Character): The player character instance.
-    Methods:
-        draw(screen):
-            Draws the game map onto the provided screen surface.
-        handle_event(event):
-            Handles pygame events specific to the gameplay state.
-
-    """
-
     def __init__(self, app: "App"):
         super().__init__(app)
         self.character = Character()
-        self.map = Map("maps/test-map-1.tmx")
+        self.hud = HUD(self.character, app)
+        
+        # ЗМІНА 2: Використовуємо LocalMap для підтримки переходів
+        self.map = LocalMap("Level1", "maps/test-map-1.tmx")
 
         self.player_inventory_opened = app.INV_manager.player_inventory_opened
 
@@ -48,6 +39,9 @@ class Game(State):
         self.enemy.target_entity = self.character
 
     def draw(self, screen):
+        # ЗМІНА 3: Оновлюємо мапу (тут відбувається перевірка переходів)
+        self.map.update(self.character)
+        
         self.map.draw(screen)
 
         dt = self.app.clock.get_time() / 1000
@@ -57,14 +51,16 @@ class Game(State):
         self.enemy.update(dt)
         self.enemy.draw(screen)
 
+        self.hud.draw(screen)
+
         if self.app.INV_manager.player_inventory_opened:
             self.MAIN_player_inv.draw(screen)
             self.PLAYER_inventory_equipment.draw(screen)
 
     def handle_event(self, event: pygame.event.Event):
+        self.hud.handle_event(event)
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.app.manager.set_state("pause")
 
             self.app.INV_manager.PLAYER_inventory_open(event, self.MAIN_player_inv, self.PLAYER_inventory_equipment)
-
