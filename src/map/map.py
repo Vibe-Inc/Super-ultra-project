@@ -37,19 +37,22 @@ class LocalMap:
         self.current_map = Map(map_file)
         self.current_map_path = map_file 
         
-        # === ЗМІНА 1: Збільшили буфер ===
-        # Це зона "тригера". Якщо гравець заходить у цю зону, стається перехід.
+        # Відстань від краю, коли спрацьовує перехід
         self.transition_buffer = 150 
 
     def draw(self, screen):
         self.current_map.draw(screen)
 
     def update(self, player):
+        """
+        Updates map logic.
+        Returns: string (path to new map) if switch happened, else None.
+        """
         # 1. Завантаження
         if self.current_map.game_map is None:
             self.current_map.game_map = pytmx.load_pygame(self.current_map.map_file)
 
-        # 2. Розміри карти
+        # 2. Розміри
         tmx_data = self.current_map.game_map
         map_width = tmx_data.width * tmx_data.tilewidth
         
@@ -58,40 +61,39 @@ class LocalMap:
             w = player.rect.width
         else:
             w = player.image.get_width()
-            
         x = player.pos.x
 
-        # === ЗМІНА 2: Безпечний відступ ===
-        # Куди ставити гравця після переходу. 
-        # Це має бути БІЛЬШЕ, ніж transition_buffer, інакше він одразу телепортується назад.
-        spawn_offset = self.transition_buffer + 20 
-
         # 4. Логіка переходів
-        
+        # Важливо: spawn_offset має бути БІЛЬШИМ за transition_buffer, 
+        # інакше гравець одразу телепортується назад.
+        spawn_offset = self.transition_buffer + 30 
+        new_map = None
+
         if self.current_map_path == "maps/test-map-1.tmx":
-            # Правий край
             if x + w >= map_width - self.transition_buffer:
-                self.switch_map("maps/test-map-2.tmx")
-                # Ставимо гравця зліва, але ЗА межами буфера тригера
+                new_map = "maps/test-map-2.tmx"
+                self.switch_map(new_map)
                 player.pos.x = spawn_offset  
 
         elif self.current_map_path == "maps/test-map-2.tmx":
-            # Лівий край
             if x <= self.transition_buffer:
-                self.switch_map("maps/test-map-1.tmx")
-                # Ставимо гравця справа, ЗА межами буфера
+                new_map = "maps/test-map-1.tmx"
+                self.switch_map(new_map)
                 player.pos.x = map_width - w - spawn_offset 
             
-            # Правий край
             elif x + w >= map_width - self.transition_buffer:
-                self.switch_map("maps/test-map-3.tmx")
+                new_map = "maps/test-map-3.tmx"
+                self.switch_map(new_map)
                 player.pos.x = spawn_offset
                 
         elif self.current_map_path == "maps/test-map-3.tmx":
-            # Лівий край
             if x <= self.transition_buffer:
-                self.switch_map("maps/test-map-2.tmx")
+                new_map = "maps/test-map-2.tmx"
+                self.switch_map(new_map)
                 player.pos.x = map_width - w - spawn_offset
+
+        # Повертаємо шлях до нової карти, щоб Game міг оновити ворогів
+        return new_map
 
     def switch_map(self, new_map_path):
         print(f"Switching map to: {new_map_path}")
