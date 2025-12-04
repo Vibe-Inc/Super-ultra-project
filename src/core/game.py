@@ -57,14 +57,13 @@ class Game(State):
         self.enemy.update(dt)
         self.enemy.draw(screen)
 
-        if self.app.INV_manager.player_inventory_opened:
-            self.MAIN_player_inv.draw(screen)
-            self.PLAYER_inventory_equipment.draw(screen)
+        if  self.app.INV_manager.player_inventory_opened:
+            self.app.INV_manager.draw(screen)
 
     def handle_event(self, event: pygame.event.Event):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.app.manager.set_state("pause")
 
-            self.app.INV_manager.PLAYER_inventory_open(event, self.MAIN_player_inv, self.PLAYER_inventory_equipment)
+        self.app.INV_manager.PLAYER_inventory_open(event, self.MAIN_player_inv, self.PLAYER_inventory_equipment)
 
