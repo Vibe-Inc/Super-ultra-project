@@ -74,10 +74,10 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.state</span><span class="w"> </span><span class="kn">import</span> <span class="n">State</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.character</span><span class="w"> </span><span class="kn">import</span> <span class="n">Character</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">src.map.map</span><span class="w"> </span><span class="kn">import</span> <span class="n">LocalMap</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.map.map</span><span class="w"> </span><span class="kn">import</span> <span class="n">Map</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.inventory.system</span><span class="w"> </span><span class="kn">import</span> <span class="n">MAIN_player_inventory</span><span class="p">,</span> <span class="n">MAIN_player_inventory_equipment</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.enemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enemy</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.hud</span><span class="w"> </span><span class="kn">import</span> <span class="n">HUD</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.collision_system</span><span class="w"> </span><span class="kn">import</span> <span class="n">CollisionSystem</span> 
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">src.app</span><span class="w"> </span><span class="kn">import</span> <span class="n">App</span>
@@ -86,62 +86,37 @@
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Game</span><span class="p">(</span><span class="n">State</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Main gameplay state for the application.</span>
-
-<span class="sd">    This class manages the core game loop, including the player character, map switching, enemy spawning, HUD, and inventory logic.</span>
-
+<span class="sd">    Game class represents the main gameplay state of the application.</span>
 <span class="sd">    Attributes:</span>
 <span class="sd">        app (App): Reference to the main application instance.</span>
+<span class="sd">        map (Map): The game map loaded from a Tiled map file.</span>
 <span class="sd">        character (Character): The player character instance.</span>
-<span class="sd">        map (LocalMap): The current game map.</span>
-<span class="sd">        player_inventory_opened (bool): Whether the player&#39;s inventory is open.</span>
-<span class="sd">        MAIN_player_inv: The main player inventory object.</span>
-<span class="sd">        PLAYER_inventory_equipment: The player&#39;s equipment inventory object.</span>
-<span class="sd">        ENEMY_SPAWNS (dict): Mapping of map paths to enemy spawn coordinates.</span>
-<span class="sd">        hud (HUD): The heads-up display for the player.</span>
-<span class="sd">        enemy (Enemy): The main enemy instance for the current map.</span>
-
 <span class="sd">    Methods:</span>
-<span class="sd">        __init__(app):</span>
-<span class="sd">            Initialize the game state, character, map, HUD, and enemy.</span>
-<span class="sd">        reinit_ui():</span>
-<span class="sd">            Recreate the HUD (e.g., after language change).</span>
-<span class="sd">        toggle_player_inventory():</span>
-<span class="sd">            Toggle the player&#39;s inventory open/closed.</span>
 <span class="sd">        draw(screen):</span>
-<span class="sd">            Draw the game map, character, enemy, HUD, and inventory if open.</span>
+<span class="sd">            Draws the game map onto the provided screen surface.</span>
 <span class="sd">        handle_event(event):</span>
-<span class="sd">            Handle Pygame events for HUD, inventory, and pause state.</span>
+<span class="sd">            Handles pygame events specific to the gameplay state.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
-<div class="viewcode-block" id="Game.__init__">
-<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.__init__">[docs]</a>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="s2">&quot;App&quot;</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">character</span> <span class="o">=</span> <span class="n">Character</span><span class="p">()</span>
-
-        <span class="n">initial_map_path</span> <span class="o">=</span> <span class="s2">&quot;maps/test-map-1.tmx&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">map</span> <span class="o">=</span> <span class="n">LocalMap</span><span class="p">(</span><span class="s2">&quot;Level1&quot;</span><span class="p">,</span> <span class="n">initial_map_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">map</span> <span class="o">=</span> <span class="n">Map</span><span class="p">(</span><span class="s2">&quot;maps/test-map-1.tmx&quot;</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">collision_handler</span> <span class="o">=</span> <span class="n">CollisionSystem</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">obstacles</span> <span class="o">=</span> <span class="p">[</span>
+   
+        <span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">player_inventory_opened</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">player_inventory_opened</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">MAIN_player_inv</span> <span class="o">=</span> <span class="n">MAIN_player_inventory</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">PLAYER_inventory_equipment</span> <span class="o">=</span> <span class="n">MAIN_player_inventory_equipment</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">ENEMY_SPAWNS</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="c1"># &quot;maps/test-map-1.tmx&quot;: (400, 300), # Якщо закоментувати цей рядок, ворога на старті не буде</span>
-            <span class="s2">&quot;maps/test-map-2.tmx&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">600</span><span class="p">,</span> <span class="mi">450</span><span class="p">),</span> 
-            <span class="s2">&quot;maps/test-map-3.tmx&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">300</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
-        <span class="p">}</span>
-
-        <span class="k">if</span> <span class="n">initial_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ENEMY_SPAWNS</span><span class="p">:</span>
-            <span class="n">start_x</span><span class="p">,</span> <span class="n">start_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ENEMY_SPAWNS</span><span class="p">[</span><span class="n">initial_map_path</span><span class="p">]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">start_x</span><span class="p">,</span> <span class="n">start_y</span> <span class="o">=</span> <span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="o">-</span><span class="mi">5000</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">hud</span> <span class="o">=</span> <span class="n">HUD</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">,</span> <span class="n">app</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">toggle_player_inventory</span><span class="p">)</span>
-
+        
         <span class="bp">self</span><span class="o">.</span><span class="n">enemy</span> <span class="o">=</span> <span class="n">Enemy</span><span class="p">(</span>
-            <span class="n">x</span><span class="o">=</span><span class="n">start_x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">start_y</span><span class="p">,</span>
+            <span class="n">x</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>
             <span class="n">sprite_set</span><span class="o">=</span><span class="s2">&quot;MenHuman1(Recolor)&quot;</span><span class="p">,</span>
             <span class="n">speed</span><span class="o">=</span><span class="mf">120.0</span><span class="p">,</span>
             <span class="n">hp</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
@@ -151,63 +126,50 @@
             <span class="n">detection_range</span><span class="o">=</span><span class="mf">250.0</span><span class="p">,</span>
             <span class="n">attack_range</span><span class="o">=</span><span class="mf">40.0</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">enemy</span><span class="o">.</span><span class="n">target_entity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enemy</span><span class="o">.</span><span class="n">target_entity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">enemy</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">items</span> <span class="o">=</span> <span class="p">[]</span>
 
+<div class="viewcode-block" id="Game.update">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.update">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
 
-<div class="viewcode-block" id="Game.reinit_ui">
-<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.reinit_ui">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">reinit_ui</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">hud</span> <span class="o">=</span> <span class="n">HUD</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">toggle_player_inventory</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Game.toggle_player_inventory">
-<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.toggle_player_inventory">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">toggle_player_inventory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">toggle_inventory</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">MAIN_player_inv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PLAYER_inventory_equipment</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">collision_handler</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">obstacles</span><span class="p">)</span> 
+        
+        <span class="k">for</span> <span class="n">enemy</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">:</span>
+            <span class="n">enemy</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">collision_handler</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">obstacles</span><span class="p">)</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">collision_handler</span><span class="o">.</span><span class="n">check_interactions</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Game.draw">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.draw">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
-        <span class="n">switched_map_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">switched_map_path</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Map switched to </span><span class="si">{</span><span class="n">switched_map_path</span><span class="si">}</span><span class="s2">. Respawning enemy...&quot;</span><span class="p">)</span>
-            
-            <span class="k">if</span> <span class="n">switched_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ENEMY_SPAWNS</span><span class="p">:</span>
-                <span class="n">new_x</span><span class="p">,</span> <span class="n">new_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ENEMY_SPAWNS</span><span class="p">[</span><span class="n">switched_map_path</span><span class="p">]</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">enemy</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">new_x</span><span class="p">,</span> <span class="n">new_y</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">enemy</span><span class="o">.</span><span class="n">spawn_pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">new_x</span><span class="p">,</span> <span class="n">new_y</span><span class="p">)</span>
-
-                <span class="bp">self</span><span class="o">.</span><span class="n">enemy</span><span class="o">.</span><span class="n">target</span> <span class="o">=</span> <span class="kc">None</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">enemy</span><span class="o">.</span><span class="n">ai_state</span> <span class="o">=</span> <span class="s2">&quot;idle&quot;</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">enemy</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="o">-</span><span class="mi">5000</span><span class="p">)</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
 
         <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">clock</span><span class="o">.</span><span class="n">get_time</span><span class="p">()</span> <span class="o">/</span> <span class="mi">1000</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span> 
+
         <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+        
+        <span class="k">for</span> <span class="n">enemy</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">:</span>
+             <span class="n">enemy</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">enemy</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">enemy</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">hud</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
-
-        <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">player_inventory_opened</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span></div>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">player_inventory_opened</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">MAIN_player_inv</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PLAYER_inventory_equipment</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Game.handle_event">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.handle_event">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">handle_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">Event</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">hud</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">KEYDOWN</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_ESCAPE</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;pause&quot;</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">PLAYER_inventory_open</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAIN_player_inv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PLAYER_inventory_equipment</span><span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">PLAYER_inventory_open</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAIN_player_inv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PLAYER_inventory_equipment</span><span class="p">)</span></div>
 </div>
 
 
