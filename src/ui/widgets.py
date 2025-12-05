@@ -6,21 +6,35 @@ import src.config as cfg
 
 class Button:
     """
-    A class representing a clickable button in a Pygame application.
+    Clickable button class.
+
     Attributes:
-        rect (pygame.Rect): The rectangle defining the button's position and size.
-        text (str): The text displayed on the button.
-        color (tuple[int, int, int]): The RGB color of the button in its normal state.
-        hover_color (tuple[int, int, int]): The RGB color of the button when hovered.
-        font (pygame.font.Font): The font used to render the button's text.
-        font_color (tuple[int, int, int]): The RGB color of the button's text.
-        corner_width (int): The radius of the button's corners.
-        on_click (Callable[[], None]): The function to call when the button is clicked.
-        text_surf (pygame.Surface): The rendered text surface.
-        text_rect (pygame.Rect): The rectangle for positioning the text surface.
+        rect (pygame.Rect):
+            Rectangle defining the button's position and size.
+        text (str):
+            Text displayed on the button.
+        color (tuple[int, int, int]):
+            RGB color of the button in its normal state.
+        hover_color (tuple[int, int, int]):
+            RGB color of the button when hovered.
+        font (pygame.font.Font):
+            Font used to render the button's text.
+        font_color (tuple[int, int, int]):
+            RGB color of the button's text.
+        corner_width (int):
+            Radius of the button's corners.
+        on_click (Callable[[], None]):
+            Function to call when the button is clicked.
+        text_surf (pygame.Surface):
+            Rendered text surface.
+        text_rect (pygame.Rect):
+            Rectangle for positioning the text surface.
+
     Methods:
         draw(screen):
-            Draws the button on the given screen surface, changing color on hover.
+            Draw the button on the given screen surface, changing color on hover.
+            Args:
+                screen (pygame.Surface): The surface to draw the button on.
     """
 
     def __init__(self, rect, text, color, hover_color, font, font_color, corner_width, on_click):
@@ -53,28 +67,52 @@ class Button:
 
 class Tooltip:
     """
-    Tooltip class for displaying contextual information when hovering over UI elements.
-    
+    Tooltip for displaying contextual information when hovering over UI elements.
+
     Attributes:
-        target_rect (pygame.Rect): The rectangle area that triggers the tooltip when hovered.
-        text (str): The text content displayed in the tooltip. Supports multi-line with '\n'.
-        color (tuple[int, int, int]): The background color of the tooltip box.
-        border_color (tuple[int, int, int]): The color of the tooltip border.
-        font (pygame.font.Font): The font used to render the tooltip text.
-        font_color (tuple[int, int, int]): The color of the tooltip text.
-        delay (float): Time in seconds to hover before the tooltip appears.
-        padding (int): Padding in pixels around the tooltip text inside the box.
-        hover_start (float | None): Timestamp when hover started, or None if not hovering.
-        active (bool): Whether the tooltip is currently visible.
-        rect (pygame.Rect | None): The rectangle representing the tooltip's position and size.
+        target_rect (pygame.Rect):
+            Rectangle area that triggers the tooltip when hovered.
+        text (str):
+            Text content displayed in the tooltip. Supports multi-line with '\\n'.
+        color (tuple[int, int, int]):
+            Background color of the tooltip box.
+        border_color (tuple[int, int, int]):
+            Color of the tooltip border.
+        font (pygame.font.Font):
+            Font used to render the tooltip text.
+        font_color (tuple[int, int, int]):
+            Color of the tooltip text.
+        delay (float):
+            Time in seconds to hover before the tooltip appears.
+        padding (int):
+            Padding in pixels around the tooltip text inside the box.
+        hover_start (float | None):
+            Timestamp when hover started, or None if not hovering.
+        active (bool):
+            Whether the tooltip is currently visible.
+        rect (pygame.Rect | None):
+            Rectangle representing the tooltip's position and size.
 
     Methods:
         hover_update(mouse_pos):
-            Updates the tooltip's active state and position based on mouse hover and delay.
+            Update the tooltip's active state and position based on mouse hover and delay.
+            Args:
+                mouse_pos (tuple[int, int]): Mouse position.
         draw(surface):
-            Draws the tooltip box and its text on the given surface if active.
+            Draw the tooltip box and its text on the given surface if active.
+            Args:
+                surface (pygame.Surface): The surface to draw the tooltip on.
         draw_multiline_text(surface, x, y):
-            Renders multi-line text centered within the tooltip box.
+            Render multi-line text centered within the tooltip box.
+            Args:
+                surface (pygame.Surface): The surface to draw the text on.
+                x (int): X-coordinate for text.
+                y (int): Y-coordinate for text.
+        update_target(new_rect, new_text):
+            Update the target rectangle and text for the tooltip.
+            Args:
+                new_rect (pygame.Rect): New target rectangle.
+                new_text (str): New tooltip text.
     """
     
 
@@ -160,29 +198,47 @@ class Tooltip:
 
 class Slider:
     """
-    Represents a horizontal slider UI component for controlling a value, such as audio volume, in a Pygame application.
+    Horizontal slider UI component for controlling a value (e.g., audio volume).
 
     Attributes:
-        x (int): The x-coordinate of the slider track's starting position.
-        y (int): The y-coordinate of the slider track's starting position.
-        height (int): The thickness of the slider track in pixels.
-        width (int): The width of the slider track's line.
-        track_colour (tuple[int, int, int]): RGB color of the slider track.
-        knob_colour (tuple[int, int, int]): RGB color of the draggable knob.
-        knob_width (int): Width of the slider knob in pixels.
-        knob_height (int): Height of the slider knob in pixels.
-        track_length (int): Length of the slider track in pixels.
-        value (float): Current normalized value of the slider (between `min_value` and `max_value`).
-        dragging (bool): Indicates whether the slider knob is currently being dragged.
-        current_volume (float): Current value applied to the controlled parameter (e.g., audio volume).
-        knob_rect (pygame.Rect): Rectangle representing the position and size of the slider knob.
+        x (int):
+            X-coordinate of the slider track's starting position.
+        y (int):
+            Y-coordinate of the slider track's starting position.
+        height (int):
+            Thickness of the slider track in pixels.
+        track_thickness (int):
+            Thickness of the slider track line.
+        track_colour (tuple[int, int, int]):
+            RGB color of the slider track.
+        knob_colour (tuple[int, int, int]):
+            RGB color of the draggable knob.
+        knob_width (int):
+            Width of the slider knob in pixels.
+        knob_height (int):
+            Height of the slider knob in pixels.
+        track_length (int):
+            Length of the slider track in pixels.
+        value (float):
+            Current normalized value of the slider (0.0 to 1.0).
+        dragging (bool):
+            Whether the slider knob is currently being dragged.
+        smooth_speed (float):
+            Speed of value smoothing (if implemented).
+        action (Callable[[float], None] | None):
+            Optional callback function called with the new value when the slider is moved.
+        knob_rect (pygame.Rect):
+            Rectangle representing the position and size of the slider knob.
 
     Methods:
         draw(surface):
-            Draws the slider track and knob onto the given Pygame surface.
-
+            Draw the slider track and knob onto the given Pygame surface.
+            Args:
+                surface (pygame.Surface): The surface to draw the slider on.
         handle_event(event):
-            Processes Pygame events to handle dragging of the slider knob. Sets volume in appropriate level.
+            Process Pygame events to handle dragging of the slider knob.
+            Args:
+                event (pygame.event.Event): The Pygame event to process.
     """
     def __init__(self, x, y, height, track_thickness, track_colour, knob_colour,
                  knob_width, knob_height, track_length, value=0.3, dragging=False, smooth_speed=0.05, action=None):

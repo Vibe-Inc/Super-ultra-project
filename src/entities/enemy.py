@@ -5,45 +5,67 @@ class Enemy:
     """
     Represents an enemy character that can patrol, detect, chase, and attack the player.
 
+    This class handles enemy movement, animation, AI state transitions, health, and combat logic.
+
     Attributes:
-        animations (dict): Dictionary containing lists of Pygame surfaces for each direction ("up", "down", "side").
-        direction (str): Current movement direction of the enemy ("up", "down", "side").
-        image (pygame.Surface): Current frame of the enemy to be drawn.
-        pos (pygame.Vector2): Current position of the enemy on the screen.
-        spawn_pos (pygame.Vector2): Initial spawn position used for resetting or respawning.
-        speed (float): Movement speed of the enemy in pixels per second.
-        hp (int): Current health points of the enemy.
-        max_hp (int): Maximum health points of the enemy.
-        damage (int): Damage dealt to the player when attacking.
-        frame_index (int): Current frame index for animation.
-        animation_speed (float): Number of frames per second for animation.
-        time_accumulator (float): Accumulates time to control animation frame switching.
-        flip (bool): Whether to flip the enemy horizontally (used for left/right movement).
-        moving (bool): Whether the enemy is currently moving.
-        target (pygame.Vector2 or None): Position the enemy is currently moving toward.
-        target_entity (Character or None): Reference to the player character being tracked.
-        ai_state (str): Current AI behavior state ("idle", "patrol", "chase", "attack").
-        patrol_points (list): List of (x, y) tuples representing patrol waypoints.
-        patrol_index (int): Index of the current patrol target.
-        detection_range (float): Distance within which the enemy detects the player.
-        attack_range (float): Distance within which the enemy initiates an attack.
+        pos (pygame.Vector2):
+            Current position of the enemy on the screen.
+        speed (float):
+            Movement speed of the enemy in pixels per second.
+        hp (int):
+            Current health points of the enemy.
+        spawn_pos (pygame.Vector2):
+            Initial spawn position used for resetting or respawning.
+        animations (dict[str, list[pygame.Surface]]):
+            Dictionary containing lists of Pygame surfaces for each direction ("up", "down", "side").
+        direction (str):
+            Current movement direction of the enemy ("up", "down", "side").
+        image (pygame.Surface):
+            Current frame of the enemy to be drawn.
+        flip (bool):
+            Whether to flip the enemy horizontally (used for left/right movement).
+        frame_index (int):
+            Current frame index for animation.
+        animation_speed (float):
+            Number of frames per second for animation.
+        time_accumulator (float):
+            Accumulates time to control animation frame switching.
+        moving (bool):
+            Whether the enemy is currently moving.
+        damage (int):
+            Damage dealt to the player when attacking.
+        target (pygame.Vector2 | None):
+            Position the enemy is currently moving toward.
+        target_entity (Character | None):
+            Reference to the player character being tracked.
+        ai_state (str):
+            Current AI behavior state ("idle", "patrol", "chase", "attack").
+        patrol_points (list[tuple[float, float]]):
+            List of (x, y) tuples representing patrol waypoints.
+        patrol_index (int):
+            Index of the current patrol target.
+        detection_range (float):
+            Distance within which the enemy detects the player.
+        attack_range (float):
+            Distance within which the enemy initiates an attack.
 
     Methods:
         update(dt):
-            Updates the enemy's AI state, movement, and animation.
+            Update the enemy's AI state, movement, and animation.
             Args:
                 dt (float): Time elapsed since the last frame in seconds.
-
         take_damage(amount):
-            Reduces the enemy's health by the given amount.
+            Reduce the enemy's health by the given amount.
             Args:
                 amount (int): Damage to apply.
-
+            Returns:
+                bool: True if the enemy is dead after taking damage, False otherwise.
         is_dead():
             Returns True if the enemy's health is zero or below.
-
+            Returns:
+                bool: True if dead, False otherwise.
         draw(screen):
-            Draws the enemy's current frame to the given Pygame surface.
+            Draw the enemy's current frame to the given Pygame surface.
             Args:
                 screen (pygame.Surface): The surface to draw the enemy on.
     """

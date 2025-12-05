@@ -11,16 +11,25 @@ if TYPE_CHECKING:
 
 class Menu(State):
     """
-    Represents a menu interface containing interactive buttons.
+    Base class for menu interfaces containing interactive buttons and tooltips.
+
     Attributes:
-        app (App): Reference to the main application instance.
-        buttons (list[Button]): List of Button objects displayed in the menu.
-        tooltips: list[Tooltip] List of Tooltip objects for button tooltips.
+        app (App):
+            Reference to the main application instance.
+        buttons (list[Button]):
+            List of Button objects displayed in the menu.
+        tooltips (list[Tooltip]):
+            List of Tooltip objects for button tooltips.
+
     Methods:
         draw(screen):
-            Draws all buttons onto the provided screen surface.
+            Draw all buttons and tooltips onto the provided screen surface.
+            Args:
+                screen (pygame.Surface): The surface to draw the menu on.
         handle_event(event):
-            Handles pygame events, triggering button actions when clicked.
+            Handle Pygame events, triggering button actions when clicked.
+            Args:
+                event (pygame.event.Event): The Pygame event to process.
     """
     
     def __init__(self, app: "App"):
@@ -45,18 +54,29 @@ class Menu(State):
 
 class MainMenu(Menu):
     """
-    MainMenu class represents the main menu screen of the application, inheriting from the Menu base class.
+    Main menu screen of the application.
+
+    Inherits from Menu and provides buttons for starting the game, exiting, opening settings, and viewing credits.
+
     Attributes:
-        buttons (list): A list of Button objects representing the interactive buttons on the main menu.
-    Args:
-        app (App): The main application instance, providing configuration and resources for the menu.
+        buttons (list[Button]):
+            List of Button objects for main menu actions.
+        beta_logo_img (pygame.Surface):
+            Image for the beta logo.
+        beta_logo_rect (pygame.Rect):
+            Rectangle for positioning the beta logo.
+        tooltips (list[Tooltip]):
+            List of Tooltip objects for the beta logo.
+
     Methods:
         start_game():
             Callback for the "START" button. Initiates the game start sequence.
         exit_game():
-            Callback for the "EXIT" button. Exits the application by quitting pygame and terminating the process.
+            Callback for the "EXIT" button. Exits the application.
         open_settings():
-            Callback for the "SETTINGS" button. Switches the current menu to the settings menu.
+            Callback for the "SETTINGS" button. Opens the settings menu.
+        open_credits():
+            Callback for the "CREDITS" button. Opens the credits menu.
     """
 
     def __init__(self, app: "App"):
@@ -155,18 +175,43 @@ class MainMenu(Menu):
 
 class SettingsMenu(Menu):
     """
-    SettingsMenu is a subclass of Menu that provides a settings interface for the application.
+    Settings menu interface for the application.
+
+    Inherits from Menu and provides sliders and buttons for adjusting audio, brightness, language, and returning to the main menu.
+
     Attributes:
-        buttons (list): A list of Button objects representing the settings options (Audio, Fullscreen, Back).
+        buttons (list[Button]):
+            List of Button objects for settings options.
+        brightness_slider (Slider):
+            Slider for adjusting screen brightness.
+        audio_slider (Slider):
+            Slider for adjusting music volume.
+        myfont (pygame.font.Font):
+            Font used for labels.
+        brightness_label (pygame.Surface):
+            Rendered label for brightness.
+        brightness_rect (pygame.Rect):
+            Rectangle for positioning the brightness label.
+        text_logo (pygame.Surface):
+            Rendered label for music volume.
+        text_rect (pygame.Rect):
+            Rectangle for positioning the music volume label.
+
     Methods:
-        __init__(app: "App"):
-            Initializes the SettingsMenu with buttons for toggling audio, toggling fullscreen mode, and returning to the main menu.
-        toggle_audio():
-            Toggles the application's audio setting between "on" and "off", and prints the current state.
-        toggle_fullscreen():
-            Toggles the application's display mode between fullscreen and windowed, and prints the current state.
         back_to_main():
-            Switches the current menu back to the main menu.
+            Return to the main menu.
+        toggle_language():
+            Toggle the application language.
+        handle_event(event):
+            Handle slider and button events.
+            Args:
+                event (pygame.event.Event): The Pygame event to process.
+        update():
+            Update the audio slider if needed.
+        draw(surface):
+            Draw all settings controls and labels.
+            Args:
+                surface (pygame.Surface): The surface to draw the settings menu on.
     """
 
     def __init__(self, app: "App"):
@@ -254,23 +299,37 @@ class SettingsMenu(Menu):
 
 class CreditsMenu(Menu):
     """
-    CreditsMenu displays a credits screen with a styled box containing multi-line text and a BACK button.
+    Credits screen with styled box, multi-line text, and a BACK button.
 
     Attributes:
-        buttons (list[Button]): List of buttons in the menu (only BACK).
-        credits_text (str): The credits text, with lines separated by '\n'.
-        font (pygame.font.Font): Font used for the credits text.
-        font_color (tuple): Color of the credits text.
-        padding (int): Padding around the text inside the box.
-        credits_lines (list[str]): List of lines in the credits text.
-        box_rect (pygame.Rect): Rectangle for the credits box.
-        box_color (tuple): Background color of the credits box.
-        box_border (tuple): Border color of the credits box.
+        buttons (list[Button]):
+            List of Button objects (only BACK).
+        credits_text (str):
+            The credits text, with lines separated by '\\n'.
+        font (pygame.font.Font):
+            Font used for the credits text.
+        font_color (tuple):
+            Color of the credits text.
+        padding (int):
+            Padding around the text inside the box.
+        credits_lines (list[str]):
+            List of lines in the credits text.
+        box_rect (pygame.Rect):
+            Rectangle for the credits box.
+        box_color (tuple):
+            Background color of the credits box.
+        box_border (tuple):
+            Border color of the credits box.
 
     Methods:
-        draw(screen): Draws the credits box, text, and BACK button.
-        back_to_main(): Returns to the main menu.
+        draw(screen):
+            Draw the credits box, text, and BACK button.
+            Args:
+                screen (pygame.Surface): The surface to draw the credits on.
+        back_to_main():
+            Return to the main menu.
     """
+
     def __init__(self, app: "App"):
         super().__init__(app)
         button_width, button_height = 300, 100
@@ -327,20 +386,25 @@ Special thanks to Vibe inc""")
 
 class PauseMenu(Menu):
     """
-    Represents the pause menu in the game, providing options to resume gameplay or return to the main menu.
-    Args:
-        app (App): The main application instance containing configuration and state management.
+    Pause menu for the game, providing options to resume gameplay or return to the main menu.
+
     Attributes:
-        app (App): Reference to the main application instance.
-        pause_menu_color (tuple): RGBA color for the pause menu overlay.
-        buttons (list[Button]): List of Button objects for menu actions ("RESUME" and "MAIN MENU").
+        app (App):
+            Reference to the main application instance.
+        pause_menu_color (tuple):
+            RGBA color for the pause menu overlay.
+        buttons (list[Button]):
+            List of Button objects for menu actions ("RESUME" and "MAIN MENU").
+
     Methods:
         draw(screen):
-            Draws the pause menu overlay and its buttons on the provided screen surface.
+            Draw the pause menu overlay and its buttons.
+            Args:
+                screen (pygame.Surface): The surface to draw the pause menu on.
         resume_game():
-            Callback to resume gameplay by setting the application state to "gameplay".
+            Resume gameplay by setting the application state to "gameplay".
         back_to_main():
-            Callback to return to the main menu by setting the application state to "main".
+            Return to the main menu by setting the application state to "main".
     """
 
     def __init__(self, app: "App"):

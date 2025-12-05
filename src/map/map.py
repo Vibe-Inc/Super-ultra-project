@@ -4,7 +4,26 @@ import pygame
 class Map:
     """
     Represents a tile-based game map loaded from a Tiled map file.
-    Only handles loading and drawing.
+
+    This class handles loading and drawing of the map using pytmx and pygame.
+
+    Attributes:
+        map_file (str):
+            Path to the Tiled map (.tmx) file.
+        game_map (pytmx.TiledMap | None):
+            The loaded Tiled map object.
+        pixel_width (int):
+            Width of the map in pixels.
+        pixel_height (int):
+            Height of the map in pixels.
+
+    Methods:
+        __init__(map_file):
+            Initialize the map with the given file path.
+        draw(screen):
+            Draw the map layers onto the given Pygame surface.
+            Args:
+                screen (pygame.Surface): The surface to draw the map on.
     """
 
     def __init__(self, map_file: str):
@@ -29,15 +48,44 @@ class Map:
 
 
 class LocalMap:
-    """ 
+    """
     Manages the current map and transitions between maps.
+
+    This class tracks the active map, handles map switching logic, and manages player transitions between maps.
+
+    Attributes:
+        name (str):
+            Name of the local map context.
+        current_map (Map):
+            The currently active Map object.
+        current_map_path (str):
+            Path to the currently active map file.
+        transition_buffer (int):
+            Distance from the map edge at which a transition is triggered.
+
+    Methods:
+        __init__(name, map_file):
+            Initialize the local map manager with a name and starting map file.
+        draw(screen):
+            Draw the current map onto the given Pygame surface.
+            Args:
+                screen (pygame.Surface): The surface to draw the map on.
+        update(player):
+            Update map logic and handle transitions based on player position.
+            Args:
+                player: The player object (must have pos and image/rect attributes).
+            Returns:
+                str | None: Path to the new map if switched, else None.
+        switch_map(new_map_path):
+            Switch to a new map by file path.
+            Args:
+                new_map_path (str): Path to the new map file.
     """
     def __init__(self, name: str, map_file: str):
         self.name = name
         self.current_map = Map(map_file)
         self.current_map_path = map_file 
-        
-        # Відстань від краю, коли спрацьовує перехід
+
         self.transition_buffer = 150 
 
     def draw(self, screen):
@@ -45,27 +93,21 @@ class LocalMap:
 
     def update(self, player):
         """
-        Updates map logic.
+        Updates map logic and handles transitions based on player position.
         Returns: string (path to new map) if switch happened, else None.
         """
-        # 1. Завантаження
         if self.current_map.game_map is None:
             self.current_map.game_map = pytmx.load_pygame(self.current_map.map_file)
 
-        # 2. Розміри
         tmx_data = self.current_map.game_map
         map_width = tmx_data.width * tmx_data.tilewidth
-        
-        # 3. Гравець
+
         if hasattr(player, 'rect'):
             w = player.rect.width
         else:
             w = player.image.get_width()
         x = player.pos.x
 
-        # 4. Логіка переходів
-        # Важливо: spawn_offset має бути БІЛЬШИМ за transition_buffer, 
-        # інакше гравець одразу телепортується назад.
         spawn_offset = self.transition_buffer + 30 
         new_map = None
 
@@ -92,7 +134,6 @@ class LocalMap:
                 self.switch_map(new_map)
                 player.pos.x = map_width - w - spawn_offset
 
-        # Повертаємо шлях до нової карти, щоб Game міг оновити ворогів
         return new_map
 
     def switch_map(self, new_map_path):
