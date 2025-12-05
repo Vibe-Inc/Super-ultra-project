@@ -1,0 +1,423 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.ui.widgets &mdash; Super-ultra-project  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Super-ultra-project
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">src</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Super-ultra-project</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">src.ui.widgets</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.ui.widgets</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">src.config</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cfg</span>
+
+<div class="viewcode-block" id="Button">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Button">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Button</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Clickable button class.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        rect (pygame.Rect):</span>
+<span class="sd">            Rectangle defining the button&#39;s position and size.</span>
+<span class="sd">        text (str):</span>
+<span class="sd">            Text displayed on the button.</span>
+<span class="sd">        color (tuple[int, int, int]):</span>
+<span class="sd">            RGB color of the button in its normal state.</span>
+<span class="sd">        hover_color (tuple[int, int, int]):</span>
+<span class="sd">            RGB color of the button when hovered.</span>
+<span class="sd">        font (pygame.font.Font):</span>
+<span class="sd">            Font used to render the button&#39;s text.</span>
+<span class="sd">        font_color (tuple[int, int, int]):</span>
+<span class="sd">            RGB color of the button&#39;s text.</span>
+<span class="sd">        corner_width (int):</span>
+<span class="sd">            Radius of the button&#39;s corners.</span>
+<span class="sd">        on_click (Callable[[], None]):</span>
+<span class="sd">            Function to call when the button is clicked.</span>
+<span class="sd">        text_surf (pygame.Surface):</span>
+<span class="sd">            Rendered text surface.</span>
+<span class="sd">        text_rect (pygame.Rect):</span>
+<span class="sd">            Rectangle for positioning the text surface.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        draw(screen):</span>
+<span class="sd">            Draw the button on the given screen surface, changing color on hover.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                screen (pygame.Surface): The surface to draw the button on.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rect</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">hover_color</span><span class="p">,</span> <span class="n">font</span><span class="p">,</span> <span class="n">font_color</span><span class="p">,</span> <span class="n">corner_width</span><span class="p">,</span> <span class="n">on_click</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span> <span class="o">=</span> <span class="n">rect</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">text</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">color</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">color</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hover_color</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">hover_color</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">Font</span> <span class="o">=</span> <span class="n">font</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">font_color</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">font_color</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">corner_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">corner_width</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">on_click</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">on_click</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">text_surf</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">font_color</span><span class="p">)</span>
+        
+        <span class="c1"># Scale text if it&#39;s too wide for the button</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">text_surf</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">width</span> <span class="o">-</span> <span class="mi">20</span><span class="p">:</span>
+            <span class="n">scale_factor</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">width</span> <span class="o">-</span> <span class="mi">20</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">text_surf</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>
+            <span class="n">new_width</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">text_surf</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span> <span class="o">*</span> <span class="n">scale_factor</span><span class="p">)</span>
+            <span class="n">new_height</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">text_surf</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span> <span class="o">*</span> <span class="n">scale_factor</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">text_surf</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">smoothscale</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">text_surf</span><span class="p">,</span> <span class="p">(</span><span class="n">new_width</span><span class="p">,</span> <span class="n">new_height</span><span class="p">))</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">text_rect</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">text_surf</span><span class="o">.</span><span class="n">get_rect</span><span class="p">(</span><span class="n">center</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">center</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Button.draw">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Button.draw">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
+        <span class="n">mouse_pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mouse</span><span class="o">.</span><span class="n">get_pos</span><span class="p">()</span>
+        <span class="n">curr_color</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hover_color</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">collidepoint</span><span class="p">(</span><span class="n">mouse_pos</span><span class="p">)</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">color</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">curr_color</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="p">,</span> <span class="n">border_radius</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">corner_width</span><span class="p">)</span>
+        <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">text_surf</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">text_rect</span><span class="p">)</span>      </div>
+</div>
+
+
+
+<div class="viewcode-block" id="Tooltip">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Tooltip">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Tooltip</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Tooltip for displaying contextual information when hovering over UI elements.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        target_rect (pygame.Rect):</span>
+<span class="sd">            Rectangle area that triggers the tooltip when hovered.</span>
+<span class="sd">        text (str):</span>
+<span class="sd">            Text content displayed in the tooltip. Supports multi-line with &#39;\\n&#39;.</span>
+<span class="sd">        color (tuple[int, int, int]):</span>
+<span class="sd">            Background color of the tooltip box.</span>
+<span class="sd">        border_color (tuple[int, int, int]):</span>
+<span class="sd">            Color of the tooltip border.</span>
+<span class="sd">        font (pygame.font.Font):</span>
+<span class="sd">            Font used to render the tooltip text.</span>
+<span class="sd">        font_color (tuple[int, int, int]):</span>
+<span class="sd">            Color of the tooltip text.</span>
+<span class="sd">        delay (float):</span>
+<span class="sd">            Time in seconds to hover before the tooltip appears.</span>
+<span class="sd">        padding (int):</span>
+<span class="sd">            Padding in pixels around the tooltip text inside the box.</span>
+<span class="sd">        hover_start (float | None):</span>
+<span class="sd">            Timestamp when hover started, or None if not hovering.</span>
+<span class="sd">        active (bool):</span>
+<span class="sd">            Whether the tooltip is currently visible.</span>
+<span class="sd">        rect (pygame.Rect | None):</span>
+<span class="sd">            Rectangle representing the tooltip&#39;s position and size.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        hover_update(mouse_pos):</span>
+<span class="sd">            Update the tooltip&#39;s active state and position based on mouse hover and delay.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                mouse_pos (tuple[int, int]): Mouse position.</span>
+<span class="sd">        draw(surface):</span>
+<span class="sd">            Draw the tooltip box and its text on the given surface if active.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                surface (pygame.Surface): The surface to draw the tooltip on.</span>
+<span class="sd">        draw_multiline_text(surface, x, y):</span>
+<span class="sd">            Render multi-line text centered within the tooltip box.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                surface (pygame.Surface): The surface to draw the text on.</span>
+<span class="sd">                x (int): X-coordinate for text.</span>
+<span class="sd">                y (int): Y-coordinate for text.</span>
+<span class="sd">        update_target(new_rect, new_text):</span>
+<span class="sd">            Update the target rectangle and text for the tooltip.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                new_rect (pygame.Rect): New target rectangle.</span>
+<span class="sd">                new_text (str): New tooltip text.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">target_rect</span>  <span class="p">,</span><span class="n">text</span><span class="p">,</span> <span class="n">color</span> <span class="p">,</span><span class="n">border_color</span><span class="p">,</span> <span class="n">font</span> <span class="p">,</span> <span class="n">font_color</span><span class="p">,</span> <span class="n">delay</span> <span class="p">,</span> <span class="n">padding</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_rect</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span> <span class="o">=</span> <span class="n">target_rect</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">text</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">color</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">color</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">border_color</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">border_color</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">Font</span> <span class="o">=</span> <span class="n">font</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">font_color</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">font_color</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delay</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">delay</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">padding</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">padding</span>
+    
+        <span class="bp">self</span><span class="o">.</span><span class="n">hover_start</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="Tooltip.draw_multiline_text">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Tooltip.draw_multiline_text">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw_multiline_text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">surface</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span> 
+        <span class="n">lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">line_height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
+        <span class="n">box_width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">width</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span> <span class="k">else</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
+            <span class="n">txt_surface</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">font_color</span><span class="p">)</span>
+            <span class="n">line_width</span> <span class="o">=</span> <span class="n">txt_surface</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>
+            <span class="n">draw_x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="p">(</span><span class="n">box_width</span> <span class="o">-</span> <span class="n">line_width</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">box_width</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">x</span>
+            <span class="n">draw_y</span> <span class="o">=</span> <span class="n">y</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="n">line_height</span> 
+            <span class="n">surface</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">txt_surface</span><span class="p">,</span> <span class="p">(</span><span class="n">draw_x</span><span class="p">,</span> <span class="n">draw_y</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="Tooltip.hover_update">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Tooltip.hover_update">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hover_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mouse_pos</span><span class="p">):</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_rect</span><span class="o">.</span><span class="n">collidepoint</span><span class="p">(</span><span class="n">mouse_pos</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">collidepoint</span><span class="p">(</span><span class="n">mouse_pos</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hover_start</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">hover_start</span> <span class="o">=</span> <span class="n">now</span>
+            <span class="n">hovered</span> <span class="o">=</span> <span class="n">now</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">hover_start</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="ow">and</span> <span class="n">hovered</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">delay</span><span class="p">:</span>
+                <span class="n">lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="n">num_lines</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+                <span class="n">line_height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
+                <span class="n">max_width</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">line</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">)</span> <span class="k">if</span> <span class="n">lines</span> <span class="k">else</span> <span class="mi">0</span>
+                <span class="n">total_height</span> <span class="o">=</span> <span class="n">line_height</span> <span class="o">*</span> <span class="n">num_lines</span>
+
+                <span class="n">mouse_x</span><span class="p">,</span> <span class="n">mouse_y</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mouse</span><span class="o">.</span><span class="n">get_pos</span><span class="p">()</span>
+                <span class="n">tooltip_width</span> <span class="o">=</span> <span class="n">max_width</span>
+                <span class="n">tooltip_height</span> <span class="o">=</span> <span class="n">line_height</span> <span class="o">*</span> <span class="n">num_lines</span>
+                <span class="k">if</span> <span class="n">mouse_x</span> <span class="o">&gt;</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">//</span><span class="mi">2</span> <span class="ow">and</span> <span class="n">mouse_y</span> <span class="o">&gt;</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span> <span class="o">//</span><span class="mi">2</span><span class="p">:</span>
+                    <span class="n">n</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="o">-</span><span class="n">tooltip_width</span> <span class="o">-</span><span class="mi">20</span><span class="p">,</span> <span class="o">-</span><span class="n">tooltip_height</span> <span class="o">-</span><span class="mi">20</span>
+                <span class="k">elif</span> <span class="n">mouse_x</span> <span class="o">&lt;</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">//</span><span class="mi">2</span> <span class="ow">and</span> <span class="n">mouse_y</span> <span class="o">&gt;</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span> <span class="o">//</span><span class="mi">2</span><span class="p">:</span>
+                    <span class="n">n</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span> <span class="o">-</span><span class="n">tooltip_height</span> <span class="o">-</span><span class="mi">20</span>
+                <span class="k">elif</span> <span class="n">mouse_x</span> <span class="o">&gt;</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">//</span><span class="mi">2</span> <span class="ow">and</span> <span class="n">mouse_y</span> <span class="o">&lt;</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span> <span class="o">//</span><span class="mi">2</span><span class="p">:</span>
+                    <span class="n">n</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="o">-</span><span class="n">tooltip_width</span> <span class="o">-</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span>
+                <span class="k">else</span><span class="p">:</span><span class="n">n</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span>
+                    <span class="n">mouse_pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">n</span><span class="p">,</span> 
+                    <span class="n">mouse_pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">m</span><span class="p">,</span>
+                    <span class="n">max_width</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
+                    <span class="n">total_height</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding</span> <span class="o">*</span> <span class="mi">2</span> 
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hover_start</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+    
+<div class="viewcode-block" id="Tooltip.update_target">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Tooltip.update_target">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_rect</span><span class="p">,</span> <span class="n">new_text</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_rect</span> <span class="o">!=</span> <span class="n">new_rect</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">target_rect</span> <span class="o">=</span> <span class="n">new_rect</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">new_text</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hover_start</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="Tooltip.draw">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Tooltip.draw">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">surface</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="p">:</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">color</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="p">)</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">border_color</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">draw_multiline_text</span><span class="p">(</span>
+                <span class="n">surface</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">x</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">padding</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">y</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">padding</span>
+            <span class="p">)</span></div>
+</div>
+
+
+<div class="viewcode-block" id="Slider">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Slider">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Slider</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Horizontal slider UI component for controlling a value (e.g., audio volume).</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        x (int):</span>
+<span class="sd">            X-coordinate of the slider track&#39;s starting position.</span>
+<span class="sd">        y (int):</span>
+<span class="sd">            Y-coordinate of the slider track&#39;s starting position.</span>
+<span class="sd">        height (int):</span>
+<span class="sd">            Thickness of the slider track in pixels.</span>
+<span class="sd">        track_thickness (int):</span>
+<span class="sd">            Thickness of the slider track line.</span>
+<span class="sd">        track_colour (tuple[int, int, int]):</span>
+<span class="sd">            RGB color of the slider track.</span>
+<span class="sd">        knob_colour (tuple[int, int, int]):</span>
+<span class="sd">            RGB color of the draggable knob.</span>
+<span class="sd">        knob_width (int):</span>
+<span class="sd">            Width of the slider knob in pixels.</span>
+<span class="sd">        knob_height (int):</span>
+<span class="sd">            Height of the slider knob in pixels.</span>
+<span class="sd">        track_length (int):</span>
+<span class="sd">            Length of the slider track in pixels.</span>
+<span class="sd">        value (float):</span>
+<span class="sd">            Current normalized value of the slider (0.0 to 1.0).</span>
+<span class="sd">        dragging (bool):</span>
+<span class="sd">            Whether the slider knob is currently being dragged.</span>
+<span class="sd">        smooth_speed (float):</span>
+<span class="sd">            Speed of value smoothing (if implemented).</span>
+<span class="sd">        action (Callable[[float], None] | None):</span>
+<span class="sd">            Optional callback function called with the new value when the slider is moved.</span>
+<span class="sd">        knob_rect (pygame.Rect):</span>
+<span class="sd">            Rectangle representing the position and size of the slider knob.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        draw(surface):</span>
+<span class="sd">            Draw the slider track and knob onto the given Pygame surface.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                surface (pygame.Surface): The surface to draw the slider on.</span>
+<span class="sd">        handle_event(event):</span>
+<span class="sd">            Process Pygame events to handle dragging of the slider knob.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                event (pygame.event.Event): The Pygame event to process.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">track_thickness</span><span class="p">,</span> <span class="n">track_colour</span><span class="p">,</span> <span class="n">knob_colour</span><span class="p">,</span>
+                 <span class="n">knob_width</span><span class="p">,</span> <span class="n">knob_height</span><span class="p">,</span> <span class="n">track_length</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">dragging</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">smooth_speed</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">y</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">height</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">track_thickness</span> <span class="o">=</span> <span class="n">track_thickness</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">track_colour</span> <span class="o">=</span> <span class="n">track_colour</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">knob_colour</span> <span class="o">=</span> <span class="n">knob_colour</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">knob_width</span> <span class="o">=</span> <span class="n">knob_width</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">knob_height</span> <span class="o">=</span> <span class="n">knob_height</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">track_length</span> <span class="o">=</span> <span class="n">track_length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dragging</span> <span class="o">=</span> <span class="n">dragging</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smooth_speed</span> <span class="o">=</span> <span class="n">smooth_speed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">action</span> <span class="o">=</span> <span class="n">action</span>
+
+        <span class="n">knob_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">track_length</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">knob_width</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="n">knob_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">knob_height</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">knob_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">knob_x</span><span class="p">,</span> <span class="n">knob_y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">knob_width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">knob_height</span><span class="p">)</span>
+
+        <span class="c1"># We don&#39;t set current_volume here anymore as this is a generic slider</span>
+        
+<div class="viewcode-block" id="Slider.draw">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Slider.draw">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">surface</span><span class="p">):</span>
+        <span class="n">track_start</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">track_end</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">track_length</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">track_colour</span><span class="p">,</span> <span class="n">track_start</span><span class="p">,</span> <span class="n">track_end</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">track_thickness</span><span class="p">)</span>
+
+        <span class="n">filled_end</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">track_length</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">200</span><span class="p">),</span> <span class="n">track_start</span><span class="p">,</span> <span class="n">filled_end</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">track_thickness</span><span class="p">)</span>
+
+        <span class="n">knob_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">track_length</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">knob_width</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="n">knob_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">knob_height</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">knob_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">knob_x</span><span class="p">,</span> <span class="n">knob_y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">knob_width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">knob_height</span><span class="p">)</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">knob_colour</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">knob_rect</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Slider.handle_event">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Slider.handle_event">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">handle_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">MOUSEBUTTONDOWN</span> <span class="ow">and</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">knob_rect</span><span class="o">.</span><span class="n">collidepoint</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pos</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dragging</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">MOUSEBUTTONUP</span> <span class="ow">and</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dragging</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">MOUSEMOTION</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">dragging</span><span class="p">:</span>
+            <span class="n">mx</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">pos</span>
+            <span class="n">rel_x</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">mx</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">track_length</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">rel_x</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">track_length</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">action</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">action</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div>
+</div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Vibe-inc.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,1308 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.ui package &mdash; Super-ultra-project  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="src.map package" href="src.map.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Super-ultra-project
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">src</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="src.html">src package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="src.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="src.core.html">src.core package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html">src.entities package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html">src.inventory package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.map.html">src.map package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">src.ui package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="src.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.html#module-src.app">src.app module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.html#module-src.config">src.config module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.html#module-src.i18n">src.i18n module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.html#module-src">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Super-ultra-project</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">src</a></li>
+          <li class="breadcrumb-item"><a href="src.html">src package</a></li>
+      <li class="breadcrumb-item active">src.ui package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/src.ui.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="src-ui-package">
+<h1>src.ui package<a class="headerlink" href="#src-ui-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-src.ui.hud">
+<span id="src-ui-hud-module"></span><h2>src.ui.hud module<a class="headerlink" href="#module-src.ui.hud" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="src.ui.hud.HUD">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.hud.</span></span><span class="sig-name descname"><span class="pre">HUD</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">character</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.entities.html#src.entities.character.Character" title="src.entities.character.Character"><span class="pre">Character</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">toggle_inventory_callback</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/hud.html#HUD"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.hud.HUD" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Head-Up Display (HUD) for player status and UI controls.</p>
+<p>This class is responsible for rendering player health, lives, and the inventory button, as well as handling related UI events.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.hud.HUD.character">
+<span class="sig-name descname"><span class="pre">character</span></span><a class="headerlink" href="#src.ui.hud.HUD.character" title="Link to this definition"></a></dt>
+<dd><p>The character object whose state is being displayed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="src.entities.html#src.entities.character.Character" title="src.entities.character.Character">Character</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.hud.HUD.app">
+<span class="sig-name descname"><span class="pre">app</span></span><a class="headerlink" href="#src.ui.hud.HUD.app" title="Link to this definition"></a></dt>
+<dd><p>The main application object for accessing managers (e.g., INV_manager).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="src.html#src.app.App" title="src.app.App">App</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.hud.HUD.font">
+<span class="sig-name descname"><span class="pre">font</span></span><a class="headerlink" href="#src.ui.hud.HUD.font" title="Link to this definition"></a></dt>
+<dd><p>The font used for rendering text.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.font.Font</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.hud.HUD.hp_icon">
+<span class="sig-name descname"><span class="pre">hp_icon</span></span><a class="headerlink" href="#src.ui.hud.HUD.hp_icon" title="Link to this definition"></a></dt>
+<dd><p>The icon representing health (a heart).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.Surface</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.hud.HUD.life_icon">
+<span class="sig-name descname"><span class="pre">life_icon</span></span><a class="headerlink" href="#src.ui.hud.HUD.life_icon" title="Link to this definition"></a></dt>
+<dd><p>The icon representing the number of lives (a skull).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.Surface</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.hud.HUD.inv_button">
+<span class="sig-name descname"><span class="pre">inv_button</span></span><a class="headerlink" href="#src.ui.hud.HUD.inv_button" title="Link to this definition"></a></dt>
+<dd><p>The button to open/close the inventory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#src.ui.widgets.Button" title="src.ui.widgets.Button">Button</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.hud.HUD.toggle_inventory_callback">
+<span class="sig-name descname"><span class="pre">toggle_inventory_callback</span></span><a class="headerlink" href="#src.ui.hud.HUD.toggle_inventory_callback" title="Link to this definition"></a></dt>
+<dd><p>Optional callback to toggle inventory state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>callable | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.hud.HUD.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">character</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toggle_inventory_callback</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/hud.html#HUD.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.hud.HUD.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initialize the HUD with player character, app, and optional inventory toggle callback.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.hud.HUD.toggle_inventory">
+<span class="sig-name descname"><span class="pre">toggle_inventory</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/hud.html#HUD.toggle_inventory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.hud.HUD.toggle_inventory" title="Link to this definition"></a></dt>
+<dd><p>Toggle the inventory open/closed, using callback if provided.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.hud.HUD.handle_event">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/hud.html#HUD.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.hud.HUD.handle_event" title="Link to this definition"></a></dt>
+<dd><p>Handle mouse events for the inventory button.
+:param event: The Pygame event to process.
+:type event: pygame.event.Event</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.hud.HUD.draw">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/hud.html#HUD.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.hud.HUD.draw" title="Link to this definition"></a></dt>
+<dd><p>Draw the HUD elements (health bar, lives, inventory button) on the screen.
+:param screen: The surface to draw the HUD on.
+:type screen: pygame.Surface</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/hud.html#HUD.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/hud.html#HUD.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">toggle_inventory</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/hud.html#HUD.toggle_inventory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-src.ui.menus">
+<span id="src-ui-menus-module"></span><h2>src.ui.menus module<a class="headerlink" href="#module-src.ui.menus" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="src.ui.menus.CreditsMenu">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.menus.</span></span><span class="sig-name descname"><span class="pre">CreditsMenu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#CreditsMenu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.CreditsMenu" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.ui.menus.Menu" title="src.ui.menus.Menu"><code class="xref py py-class docutils literal notranslate"><span class="pre">Menu</span></code></a></p>
+<p>Credits screen with styled box, multi-line text, and a BACK button.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.CreditsMenu.buttons">
+<span class="sig-name descname"><span class="pre">buttons</span></span><a class="headerlink" href="#src.ui.menus.CreditsMenu.buttons" title="Link to this definition"></a></dt>
+<dd><p>List of Button objects (only BACK).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[<a class="reference internal" href="#src.ui.widgets.Button" title="src.ui.widgets.Button">Button</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.CreditsMenu.credits_text">
+<span class="sig-name descname"><span class="pre">credits_text</span></span><a class="headerlink" href="#src.ui.menus.CreditsMenu.credits_text" title="Link to this definition"></a></dt>
+<dd><p>The credits text, with lines separated by ‘n’.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.CreditsMenu.font">
+<span class="sig-name descname"><span class="pre">font</span></span><a class="headerlink" href="#src.ui.menus.CreditsMenu.font" title="Link to this definition"></a></dt>
+<dd><p>Font used for the credits text.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.font.Font</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.CreditsMenu.font_color">
+<span class="sig-name descname"><span class="pre">font_color</span></span><a class="headerlink" href="#src.ui.menus.CreditsMenu.font_color" title="Link to this definition"></a></dt>
+<dd><p>Color of the credits text.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.CreditsMenu.padding">
+<span class="sig-name descname"><span class="pre">padding</span></span><a class="headerlink" href="#src.ui.menus.CreditsMenu.padding" title="Link to this definition"></a></dt>
+<dd><p>Padding around the text inside the box.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.CreditsMenu.credits_lines">
+<span class="sig-name descname"><span class="pre">credits_lines</span></span><a class="headerlink" href="#src.ui.menus.CreditsMenu.credits_lines" title="Link to this definition"></a></dt>
+<dd><p>List of lines in the credits text.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.CreditsMenu.box_rect">
+<span class="sig-name descname"><span class="pre">box_rect</span></span><a class="headerlink" href="#src.ui.menus.CreditsMenu.box_rect" title="Link to this definition"></a></dt>
+<dd><p>Rectangle for the credits box.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.Rect</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.CreditsMenu.box_color">
+<span class="sig-name descname"><span class="pre">box_color</span></span><a class="headerlink" href="#src.ui.menus.CreditsMenu.box_color" title="Link to this definition"></a></dt>
+<dd><p>Background color of the credits box.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.CreditsMenu.box_border">
+<span class="sig-name descname"><span class="pre">box_border</span></span><a class="headerlink" href="#src.ui.menus.CreditsMenu.box_border" title="Link to this definition"></a></dt>
+<dd><p>Border color of the credits box.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.CreditsMenu.draw">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#CreditsMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.CreditsMenu.draw" title="Link to this definition"></a></dt>
+<dd><p>Draw the credits box, text, and BACK button.
+:param screen: The surface to draw the credits on.
+:type screen: pygame.Surface</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.CreditsMenu.back_to_main">
+<span class="sig-name descname"><span class="pre">back_to_main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#CreditsMenu.back_to_main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.CreditsMenu.back_to_main" title="Link to this definition"></a></dt>
+<dd><p>Return to the main menu.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">back_to_main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#CreditsMenu.back_to_main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#CreditsMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
+<dd><p>Renders the state to the provided screen surface.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.ui.menus.MainMenu">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.menus.</span></span><span class="sig-name descname"><span class="pre">MainMenu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#MainMenu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.MainMenu" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.ui.menus.Menu" title="src.ui.menus.Menu"><code class="xref py py-class docutils literal notranslate"><span class="pre">Menu</span></code></a></p>
+<p>Main menu screen of the application.</p>
+<p>Inherits from Menu and provides buttons for starting the game, exiting, opening settings, and viewing credits.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.MainMenu.buttons">
+<span class="sig-name descname"><span class="pre">buttons</span></span><a class="headerlink" href="#src.ui.menus.MainMenu.buttons" title="Link to this definition"></a></dt>
+<dd><p>List of Button objects for main menu actions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[<a class="reference internal" href="#src.ui.widgets.Button" title="src.ui.widgets.Button">Button</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.MainMenu.beta_logo_img">
+<span class="sig-name descname"><span class="pre">beta_logo_img</span></span><a class="headerlink" href="#src.ui.menus.MainMenu.beta_logo_img" title="Link to this definition"></a></dt>
+<dd><p>Image for the beta logo.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.Surface</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.MainMenu.beta_logo_rect">
+<span class="sig-name descname"><span class="pre">beta_logo_rect</span></span><a class="headerlink" href="#src.ui.menus.MainMenu.beta_logo_rect" title="Link to this definition"></a></dt>
+<dd><p>Rectangle for positioning the beta logo.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.Rect</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.MainMenu.tooltips">
+<span class="sig-name descname"><span class="pre">tooltips</span></span><a class="headerlink" href="#src.ui.menus.MainMenu.tooltips" title="Link to this definition"></a></dt>
+<dd><p>List of Tooltip objects for the beta logo.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[<a class="reference internal" href="#src.ui.widgets.Tooltip" title="src.ui.widgets.Tooltip">Tooltip</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.MainMenu.start_game">
+<span class="sig-name descname"><span class="pre">start_game</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#MainMenu.start_game"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.MainMenu.start_game" title="Link to this definition"></a></dt>
+<dd><p>Callback for the “START” button. Initiates the game start sequence.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.MainMenu.exit_game">
+<span class="sig-name descname"><span class="pre">exit_game</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#MainMenu.exit_game"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.MainMenu.exit_game" title="Link to this definition"></a></dt>
+<dd><p>Callback for the “EXIT” button. Exits the application.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.MainMenu.open_settings">
+<span class="sig-name descname"><span class="pre">open_settings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#MainMenu.open_settings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.MainMenu.open_settings" title="Link to this definition"></a></dt>
+<dd><p>Callback for the “SETTINGS” button. Opens the settings menu.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.MainMenu.open_credits">
+<span class="sig-name descname"><span class="pre">open_credits</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#MainMenu.open_credits"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.MainMenu.open_credits" title="Link to this definition"></a></dt>
+<dd><p>Callback for the “CREDITS” button. Opens the credits menu.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.MainMenu.draw">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#MainMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.MainMenu.draw" title="Link to this definition"></a></dt>
+<dd><p>Renders the state to the provided screen surface.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">exit_game</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#MainMenu.exit_game"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id6">
+<span class="sig-name descname"><span class="pre">open_credits</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#MainMenu.open_credits"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id7">
+<span class="sig-name descname"><span class="pre">open_settings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#MainMenu.open_settings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id8">
+<span class="sig-name descname"><span class="pre">start_game</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#MainMenu.start_game"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.ui.menus.Menu">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.menus.</span></span><span class="sig-name descname"><span class="pre">Menu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#Menu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.Menu" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="src.core.html#src.core.state.State" title="src.core.state.State"><code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code></a></p>
+<p>Base class for menu interfaces containing interactive buttons and tooltips.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.Menu.app">
+<span class="sig-name descname"><span class="pre">app</span></span><a class="headerlink" href="#src.ui.menus.Menu.app" title="Link to this definition"></a></dt>
+<dd><p>Reference to the main application instance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="src.html#src.app.App" title="src.app.App">App</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.Menu.buttons">
+<span class="sig-name descname"><span class="pre">buttons</span></span><a class="headerlink" href="#src.ui.menus.Menu.buttons" title="Link to this definition"></a></dt>
+<dd><p>List of Button objects displayed in the menu.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[<a class="reference internal" href="#src.ui.widgets.Button" title="src.ui.widgets.Button">Button</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.Menu.tooltips">
+<span class="sig-name descname"><span class="pre">tooltips</span></span><a class="headerlink" href="#src.ui.menus.Menu.tooltips" title="Link to this definition"></a></dt>
+<dd><p>List of Tooltip objects for button tooltips.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[<a class="reference internal" href="#src.ui.widgets.Tooltip" title="src.ui.widgets.Tooltip">Tooltip</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.Menu.draw">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#Menu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.Menu.draw" title="Link to this definition"></a></dt>
+<dd><p>Draw all buttons and tooltips onto the provided screen surface.
+:param screen: The surface to draw the menu on.
+:type screen: pygame.Surface</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.Menu.handle_event">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#Menu.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.Menu.handle_event" title="Link to this definition"></a></dt>
+<dd><p>Handle Pygame events, triggering button actions when clicked.
+:param event: The Pygame event to process.
+:type event: pygame.event.Event</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id9">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#Menu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
+<dd><p>Renders the state to the provided screen surface.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id10">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#Menu.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Link to this definition"></a></dt>
+<dd><p>Handles input events specific to the state.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.ui.menus.PauseMenu">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.menus.</span></span><span class="sig-name descname"><span class="pre">PauseMenu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#PauseMenu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.PauseMenu" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.ui.menus.Menu" title="src.ui.menus.Menu"><code class="xref py py-class docutils literal notranslate"><span class="pre">Menu</span></code></a></p>
+<p>Pause menu for the game, providing options to resume gameplay or return to the main menu.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.PauseMenu.app">
+<span class="sig-name descname"><span class="pre">app</span></span><a class="headerlink" href="#src.ui.menus.PauseMenu.app" title="Link to this definition"></a></dt>
+<dd><p>Reference to the main application instance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="src.html#src.app.App" title="src.app.App">App</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.PauseMenu.pause_menu_color">
+<span class="sig-name descname"><span class="pre">pause_menu_color</span></span><a class="headerlink" href="#src.ui.menus.PauseMenu.pause_menu_color" title="Link to this definition"></a></dt>
+<dd><p>RGBA color for the pause menu overlay.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.PauseMenu.buttons">
+<span class="sig-name descname"><span class="pre">buttons</span></span><a class="headerlink" href="#src.ui.menus.PauseMenu.buttons" title="Link to this definition"></a></dt>
+<dd><p>List of Button objects for menu actions (“RESUME” and “MAIN MENU”).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[<a class="reference internal" href="#src.ui.widgets.Button" title="src.ui.widgets.Button">Button</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.PauseMenu.draw">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#PauseMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.PauseMenu.draw" title="Link to this definition"></a></dt>
+<dd><p>Draw the pause menu overlay and its buttons.
+:param screen: The surface to draw the pause menu on.
+:type screen: pygame.Surface</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.PauseMenu.resume_game">
+<span class="sig-name descname"><span class="pre">resume_game</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#PauseMenu.resume_game"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.PauseMenu.resume_game" title="Link to this definition"></a></dt>
+<dd><p>Resume gameplay by setting the application state to “gameplay”.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.PauseMenu.back_to_main">
+<span class="sig-name descname"><span class="pre">back_to_main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#PauseMenu.back_to_main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.PauseMenu.back_to_main" title="Link to this definition"></a></dt>
+<dd><p>Return to the main menu by setting the application state to “main”.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id11">
+<span class="sig-name descname"><span class="pre">back_to_main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#PauseMenu.back_to_main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id11" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id12">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#PauseMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id12" title="Link to this definition"></a></dt>
+<dd><p>Renders the state to the provided screen surface.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id13">
+<span class="sig-name descname"><span class="pre">resume_game</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#PauseMenu.resume_game"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id13" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.ui.menus.SettingsMenu">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.menus.</span></span><span class="sig-name descname"><span class="pre">SettingsMenu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SettingsMenu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SettingsMenu" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.ui.menus.Menu" title="src.ui.menus.Menu"><code class="xref py py-class docutils literal notranslate"><span class="pre">Menu</span></code></a></p>
+<p>Settings menu interface for the application.</p>
+<p>Inherits from Menu and provides sliders and buttons for adjusting audio, brightness, language, and returning to the main menu.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.SettingsMenu.buttons">
+<span class="sig-name descname"><span class="pre">buttons</span></span><a class="headerlink" href="#src.ui.menus.SettingsMenu.buttons" title="Link to this definition"></a></dt>
+<dd><p>List of Button objects for settings options.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[<a class="reference internal" href="#src.ui.widgets.Button" title="src.ui.widgets.Button">Button</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.SettingsMenu.brightness_slider">
+<span class="sig-name descname"><span class="pre">brightness_slider</span></span><a class="headerlink" href="#src.ui.menus.SettingsMenu.brightness_slider" title="Link to this definition"></a></dt>
+<dd><p>Slider for adjusting screen brightness.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#src.ui.widgets.Slider" title="src.ui.widgets.Slider">Slider</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.SettingsMenu.audio_slider">
+<span class="sig-name descname"><span class="pre">audio_slider</span></span><a class="headerlink" href="#src.ui.menus.SettingsMenu.audio_slider" title="Link to this definition"></a></dt>
+<dd><p>Slider for adjusting music volume.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#src.ui.widgets.Slider" title="src.ui.widgets.Slider">Slider</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.SettingsMenu.myfont">
+<span class="sig-name descname"><span class="pre">myfont</span></span><a class="headerlink" href="#src.ui.menus.SettingsMenu.myfont" title="Link to this definition"></a></dt>
+<dd><p>Font used for labels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.font.Font</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.SettingsMenu.brightness_label">
+<span class="sig-name descname"><span class="pre">brightness_label</span></span><a class="headerlink" href="#src.ui.menus.SettingsMenu.brightness_label" title="Link to this definition"></a></dt>
+<dd><p>Rendered label for brightness.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.Surface</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.SettingsMenu.brightness_rect">
+<span class="sig-name descname"><span class="pre">brightness_rect</span></span><a class="headerlink" href="#src.ui.menus.SettingsMenu.brightness_rect" title="Link to this definition"></a></dt>
+<dd><p>Rectangle for positioning the brightness label.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.Rect</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.SettingsMenu.text_logo">
+<span class="sig-name descname"><span class="pre">text_logo</span></span><a class="headerlink" href="#src.ui.menus.SettingsMenu.text_logo" title="Link to this definition"></a></dt>
+<dd><p>Rendered label for music volume.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.Surface</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.SettingsMenu.text_rect">
+<span class="sig-name descname"><span class="pre">text_rect</span></span><a class="headerlink" href="#src.ui.menus.SettingsMenu.text_rect" title="Link to this definition"></a></dt>
+<dd><p>Rectangle for positioning the music volume label.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.Rect</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.SettingsMenu.back_to_main">
+<span class="sig-name descname"><span class="pre">back_to_main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SettingsMenu.back_to_main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SettingsMenu.back_to_main" title="Link to this definition"></a></dt>
+<dd><p>Return to the main menu.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.SettingsMenu.toggle_language">
+<span class="sig-name descname"><span class="pre">toggle_language</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SettingsMenu.toggle_language"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SettingsMenu.toggle_language" title="Link to this definition"></a></dt>
+<dd><p>Toggle the application language.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.SettingsMenu.handle_event">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SettingsMenu.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SettingsMenu.handle_event" title="Link to this definition"></a></dt>
+<dd><p>Handle slider and button events.
+:param event: The Pygame event to process.
+:type event: pygame.event.Event</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.SettingsMenu.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SettingsMenu.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SettingsMenu.update" title="Link to this definition"></a></dt>
+<dd><p>Update the audio slider if needed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.SettingsMenu.draw">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SettingsMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SettingsMenu.draw" title="Link to this definition"></a></dt>
+<dd><p>Draw all settings controls and labels.
+:param surface: The surface to draw the settings menu on.
+:type surface: pygame.Surface</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id14">
+<span class="sig-name descname"><span class="pre">back_to_main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SettingsMenu.back_to_main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id14" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id15">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SettingsMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id15" title="Link to this definition"></a></dt>
+<dd><p>Renders the state to the provided screen surface.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id16">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SettingsMenu.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id16" title="Link to this definition"></a></dt>
+<dd><p>Handles input events specific to the state.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id17">
+<span class="sig-name descname"><span class="pre">toggle_language</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SettingsMenu.toggle_language"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id17" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id18">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SettingsMenu.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id18" title="Link to this definition"></a></dt>
+<dd><p>Updates the state’s logic.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-src.ui.widgets">
+<span id="src-ui-widgets-module"></span><h2>src.ui.widgets module<a class="headerlink" href="#module-src.ui.widgets" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="src.ui.widgets.Button">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.widgets.</span></span><span class="sig-name descname"><span class="pre">Button</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rect</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hover_color</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">font</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">font_color</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corner_width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">on_click</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Button"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.widgets.Button" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Clickable button class.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Button.rect">
+<span class="sig-name descname"><span class="pre">rect</span></span><a class="headerlink" href="#src.ui.widgets.Button.rect" title="Link to this definition"></a></dt>
+<dd><p>Rectangle defining the button’s position and size.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.Rect</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Button.text">
+<span class="sig-name descname"><span class="pre">text</span></span><a class="headerlink" href="#src.ui.widgets.Button.text" title="Link to this definition"></a></dt>
+<dd><p>Text displayed on the button.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Button.color">
+<span class="sig-name descname"><span class="pre">color</span></span><a class="headerlink" href="#src.ui.widgets.Button.color" title="Link to this definition"></a></dt>
+<dd><p>RGB color of the button in its normal state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[int, int, int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Button.hover_color">
+<span class="sig-name descname"><span class="pre">hover_color</span></span><a class="headerlink" href="#src.ui.widgets.Button.hover_color" title="Link to this definition"></a></dt>
+<dd><p>RGB color of the button when hovered.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[int, int, int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Button.font">
+<span class="sig-name descname"><span class="pre">font</span></span><a class="headerlink" href="#src.ui.widgets.Button.font" title="Link to this definition"></a></dt>
+<dd><p>Font used to render the button’s text.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.font.Font</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Button.font_color">
+<span class="sig-name descname"><span class="pre">font_color</span></span><a class="headerlink" href="#src.ui.widgets.Button.font_color" title="Link to this definition"></a></dt>
+<dd><p>RGB color of the button’s text.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[int, int, int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Button.corner_width">
+<span class="sig-name descname"><span class="pre">corner_width</span></span><a class="headerlink" href="#src.ui.widgets.Button.corner_width" title="Link to this definition"></a></dt>
+<dd><p>Radius of the button’s corners.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Button.on_click">
+<span class="sig-name descname"><span class="pre">on_click</span></span><a class="headerlink" href="#src.ui.widgets.Button.on_click" title="Link to this definition"></a></dt>
+<dd><p>Function to call when the button is clicked.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Callable[[], None]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Button.text_surf">
+<span class="sig-name descname"><span class="pre">text_surf</span></span><a class="headerlink" href="#src.ui.widgets.Button.text_surf" title="Link to this definition"></a></dt>
+<dd><p>Rendered text surface.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.Surface</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Button.text_rect">
+<span class="sig-name descname"><span class="pre">text_rect</span></span><a class="headerlink" href="#src.ui.widgets.Button.text_rect" title="Link to this definition"></a></dt>
+<dd><p>Rectangle for positioning the text surface.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.Rect</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.widgets.Button.draw">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Button.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.widgets.Button.draw" title="Link to this definition"></a></dt>
+<dd><p>Draw the button on the given screen surface, changing color on hover.
+:param screen: The surface to draw the button on.
+:type screen: pygame.Surface</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id19">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Button.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id19" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.ui.widgets.Slider">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.widgets.</span></span><span class="sig-name descname"><span class="pre">Slider</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track_thickness</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track_colour</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">knob_colour</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">knob_width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">knob_height</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track_length</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dragging</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth_speed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Slider"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.widgets.Slider" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Horizontal slider UI component for controlling a value (e.g., audio volume).</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Slider.x">
+<span class="sig-name descname"><span class="pre">x</span></span><a class="headerlink" href="#src.ui.widgets.Slider.x" title="Link to this definition"></a></dt>
+<dd><p>X-coordinate of the slider track’s starting position.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Slider.y">
+<span class="sig-name descname"><span class="pre">y</span></span><a class="headerlink" href="#src.ui.widgets.Slider.y" title="Link to this definition"></a></dt>
+<dd><p>Y-coordinate of the slider track’s starting position.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Slider.height">
+<span class="sig-name descname"><span class="pre">height</span></span><a class="headerlink" href="#src.ui.widgets.Slider.height" title="Link to this definition"></a></dt>
+<dd><p>Thickness of the slider track in pixels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Slider.track_thickness">
+<span class="sig-name descname"><span class="pre">track_thickness</span></span><a class="headerlink" href="#src.ui.widgets.Slider.track_thickness" title="Link to this definition"></a></dt>
+<dd><p>Thickness of the slider track line.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Slider.track_colour">
+<span class="sig-name descname"><span class="pre">track_colour</span></span><a class="headerlink" href="#src.ui.widgets.Slider.track_colour" title="Link to this definition"></a></dt>
+<dd><p>RGB color of the slider track.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[int, int, int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Slider.knob_colour">
+<span class="sig-name descname"><span class="pre">knob_colour</span></span><a class="headerlink" href="#src.ui.widgets.Slider.knob_colour" title="Link to this definition"></a></dt>
+<dd><p>RGB color of the draggable knob.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[int, int, int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Slider.knob_width">
+<span class="sig-name descname"><span class="pre">knob_width</span></span><a class="headerlink" href="#src.ui.widgets.Slider.knob_width" title="Link to this definition"></a></dt>
+<dd><p>Width of the slider knob in pixels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Slider.knob_height">
+<span class="sig-name descname"><span class="pre">knob_height</span></span><a class="headerlink" href="#src.ui.widgets.Slider.knob_height" title="Link to this definition"></a></dt>
+<dd><p>Height of the slider knob in pixels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Slider.track_length">
+<span class="sig-name descname"><span class="pre">track_length</span></span><a class="headerlink" href="#src.ui.widgets.Slider.track_length" title="Link to this definition"></a></dt>
+<dd><p>Length of the slider track in pixels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Slider.value">
+<span class="sig-name descname"><span class="pre">value</span></span><a class="headerlink" href="#src.ui.widgets.Slider.value" title="Link to this definition"></a></dt>
+<dd><p>Current normalized value of the slider (0.0 to 1.0).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Slider.dragging">
+<span class="sig-name descname"><span class="pre">dragging</span></span><a class="headerlink" href="#src.ui.widgets.Slider.dragging" title="Link to this definition"></a></dt>
+<dd><p>Whether the slider knob is currently being dragged.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Slider.smooth_speed">
+<span class="sig-name descname"><span class="pre">smooth_speed</span></span><a class="headerlink" href="#src.ui.widgets.Slider.smooth_speed" title="Link to this definition"></a></dt>
+<dd><p>Speed of value smoothing (if implemented).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Slider.action">
+<span class="sig-name descname"><span class="pre">action</span></span><a class="headerlink" href="#src.ui.widgets.Slider.action" title="Link to this definition"></a></dt>
+<dd><p>Optional callback function called with the new value when the slider is moved.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Callable[[float], None] | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Slider.knob_rect">
+<span class="sig-name descname"><span class="pre">knob_rect</span></span><a class="headerlink" href="#src.ui.widgets.Slider.knob_rect" title="Link to this definition"></a></dt>
+<dd><p>Rectangle representing the position and size of the slider knob.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.Rect</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.widgets.Slider.draw">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Slider.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.widgets.Slider.draw" title="Link to this definition"></a></dt>
+<dd><p>Draw the slider track and knob onto the given Pygame surface.
+:param surface: The surface to draw the slider on.
+:type surface: pygame.Surface</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.widgets.Slider.handle_event">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Slider.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.widgets.Slider.handle_event" title="Link to this definition"></a></dt>
+<dd><p>Process Pygame events to handle dragging of the slider knob.
+:param event: The Pygame event to process.
+:type event: pygame.event.Event</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id20">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Slider.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id20" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id21">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Slider.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id21" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.widgets.</span></span><span class="sig-name descname"><span class="pre">Tooltip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_rect</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">border_color</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">font</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">font_color</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">padding</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Tooltip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.widgets.Tooltip" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Tooltip for displaying contextual information when hovering over UI elements.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.target_rect">
+<span class="sig-name descname"><span class="pre">target_rect</span></span><a class="headerlink" href="#src.ui.widgets.Tooltip.target_rect" title="Link to this definition"></a></dt>
+<dd><p>Rectangle area that triggers the tooltip when hovered.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.Rect</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.text">
+<span class="sig-name descname"><span class="pre">text</span></span><a class="headerlink" href="#src.ui.widgets.Tooltip.text" title="Link to this definition"></a></dt>
+<dd><p>Text content displayed in the tooltip. Supports multi-line with ‘n’.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.color">
+<span class="sig-name descname"><span class="pre">color</span></span><a class="headerlink" href="#src.ui.widgets.Tooltip.color" title="Link to this definition"></a></dt>
+<dd><p>Background color of the tooltip box.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[int, int, int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.border_color">
+<span class="sig-name descname"><span class="pre">border_color</span></span><a class="headerlink" href="#src.ui.widgets.Tooltip.border_color" title="Link to this definition"></a></dt>
+<dd><p>Color of the tooltip border.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[int, int, int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.font">
+<span class="sig-name descname"><span class="pre">font</span></span><a class="headerlink" href="#src.ui.widgets.Tooltip.font" title="Link to this definition"></a></dt>
+<dd><p>Font used to render the tooltip text.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.font.Font</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.font_color">
+<span class="sig-name descname"><span class="pre">font_color</span></span><a class="headerlink" href="#src.ui.widgets.Tooltip.font_color" title="Link to this definition"></a></dt>
+<dd><p>Color of the tooltip text.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[int, int, int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.delay">
+<span class="sig-name descname"><span class="pre">delay</span></span><a class="headerlink" href="#src.ui.widgets.Tooltip.delay" title="Link to this definition"></a></dt>
+<dd><p>Time in seconds to hover before the tooltip appears.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.padding">
+<span class="sig-name descname"><span class="pre">padding</span></span><a class="headerlink" href="#src.ui.widgets.Tooltip.padding" title="Link to this definition"></a></dt>
+<dd><p>Padding in pixels around the tooltip text inside the box.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.hover_start">
+<span class="sig-name descname"><span class="pre">hover_start</span></span><a class="headerlink" href="#src.ui.widgets.Tooltip.hover_start" title="Link to this definition"></a></dt>
+<dd><p>Timestamp when hover started, or None if not hovering.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.active">
+<span class="sig-name descname"><span class="pre">active</span></span><a class="headerlink" href="#src.ui.widgets.Tooltip.active" title="Link to this definition"></a></dt>
+<dd><p>Whether the tooltip is currently visible.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.rect">
+<span class="sig-name descname"><span class="pre">rect</span></span><a class="headerlink" href="#src.ui.widgets.Tooltip.rect" title="Link to this definition"></a></dt>
+<dd><p>Rectangle representing the tooltip’s position and size.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.Rect | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.hover_update">
+<span class="sig-name descname"><span class="pre">hover_update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mouse_pos</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Tooltip.hover_update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.widgets.Tooltip.hover_update" title="Link to this definition"></a></dt>
+<dd><p>Update the tooltip’s active state and position based on mouse hover and delay.
+:param mouse_pos: Mouse position.
+:type mouse_pos: tuple[int, int]</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.draw">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Tooltip.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.widgets.Tooltip.draw" title="Link to this definition"></a></dt>
+<dd><p>Draw the tooltip box and its text on the given surface if active.
+:param surface: The surface to draw the tooltip on.
+:type surface: pygame.Surface</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.draw_multiline_text">
+<span class="sig-name descname"><span class="pre">draw_multiline_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surface</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Tooltip.draw_multiline_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.widgets.Tooltip.draw_multiline_text" title="Link to this definition"></a></dt>
+<dd><p>Render multi-line text centered within the tooltip box.
+:param surface: The surface to draw the text on.
+:type surface: pygame.Surface
+:param x: X-coordinate for text.
+:type x: int
+:param y: Y-coordinate for text.
+:type y: int</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.update_target">
+<span class="sig-name descname"><span class="pre">update_target</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_rect</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Tooltip.update_target"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.widgets.Tooltip.update_target" title="Link to this definition"></a></dt>
+<dd><p>Update the target rectangle and text for the tooltip.
+:param new_rect: New target rectangle.
+:type new_rect: pygame.Rect
+:param new_text: New tooltip text.
+:type new_text: str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id22">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Tooltip.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id22" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id23">
+<span class="sig-name descname"><span class="pre">draw_multiline_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surface</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Tooltip.draw_multiline_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id23" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id24">
+<span class="sig-name descname"><span class="pre">hover_update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mouse_pos</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Tooltip.hover_update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id24" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id25">
+<span class="sig-name descname"><span class="pre">update_target</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_rect</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Tooltip.update_target"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id25" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-src.ui">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-src.ui" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="src.map.html" class="btn btn-neutral float-left" title="src.map package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Vibe-inc.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

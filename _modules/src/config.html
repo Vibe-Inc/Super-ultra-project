@@ -1,0 +1,197 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.config &mdash; Super-ultra-project  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Super-ultra-project
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">src</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Super-ultra-project</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">src.config</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.config</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Configuration module for Super Ultra Project.</span>
+
+<span class="sd">This module defines global constants, color schemes, font utilities, and layout settings for the game UI and inventory system.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="n">pygame</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+
+<span class="n">BASE_DIR</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)))</span>
+
+<span class="n">SCREEN_WIDTH</span><span class="p">,</span> <span class="n">SCREEN_HEIGHT</span> <span class="o">=</span> <span class="mi">1920</span><span class="p">,</span> <span class="mi">1080</span>
+<span class="n">FPS</span> <span class="o">=</span> <span class="mi">60</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">bg_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s2">&quot;assets&quot;</span><span class="p">,</span> <span class="s2">&quot;bg_menu.jpg&quot;</span><span class="p">)</span>
+    <span class="n">bg</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">bg_path</span><span class="p">),</span> <span class="p">(</span><span class="n">SCREEN_WIDTH</span><span class="p">,</span> <span class="n">SCREEN_HEIGHT</span><span class="p">))</span>
+<span class="k">except</span> <span class="p">(</span><span class="ne">FileNotFoundError</span><span class="p">,</span> <span class="n">pygame</span><span class="o">.</span><span class="n">error</span><span class="p">):</span>
+    <span class="n">bg</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">SCREEN_WIDTH</span><span class="p">,</span> <span class="n">SCREEN_HEIGHT</span><span class="p">))</span>
+
+<span class="n">SCREEN_BRIGHTNESS</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+<span class="n">LANGUAGE</span> <span class="o">=</span> <span class="s1">&#39;en&#39;</span>
+<span class="n">SUPPORTED_LANGUAGES</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;en&#39;</span><span class="p">,</span> <span class="s1">&#39;ua&#39;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="get_font">
+<a class="viewcode-back" href="../../src.html#src.config.get_font">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_font</span><span class="p">(</span><span class="n">size</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get a Pygame font object for the current language and size.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        size (int): Font size in points.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pygame.font.Font: The font object for rendering text.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">LANGUAGE</span> <span class="o">==</span> <span class="s1">&#39;ua&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">pygame</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">SysFont</span><span class="p">(</span><span class="s2">&quot;arial&quot;</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">font_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s2">&quot;fonts&quot;</span><span class="p">,</span> <span class="s2">&quot;menu_font.ttf&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pygame</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">Font</span><span class="p">(</span><span class="n">font_path</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">pygame</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">SysFont</span><span class="p">(</span><span class="s2">&quot;arial&quot;</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span></div>
+
+
+<span class="n">myfont</span> <span class="o">=</span> <span class="n">get_font</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span>
+
+<span class="n">button_color_START</span> <span class="o">=</span> <span class="p">(</span><span class="mi">83</span><span class="p">,</span> <span class="mi">112</span><span class="p">,</span> <span class="mi">44</span><span class="p">)</span>
+<span class="n">button_hover_color_START</span> <span class="o">=</span> <span class="p">(</span><span class="mi">123</span><span class="p">,</span> <span class="mi">123</span><span class="p">,</span> <span class="mi">34</span><span class="p">)</span>
+<span class="n">button_color_EXIT</span> <span class="o">=</span> <span class="p">(</span><span class="mi">150</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">button_hover_color_EXIT</span> <span class="o">=</span> <span class="p">(</span><span class="mi">150</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+<span class="n">button_color_SETTINGS</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">126</span><span class="p">,</span> <span class="mi">183</span><span class="p">)</span>
+<span class="n">button_hover_color_SETTINGS</span> <span class="o">=</span> <span class="p">(</span><span class="mi">67</span><span class="p">,</span> <span class="mi">152</span><span class="p">,</span> <span class="mi">174</span><span class="p">)</span>
+<span class="n">button_color_SETTINGS_BACK</span> <span class="o">=</span> <span class="p">(</span><span class="mi">83</span><span class="p">,</span> <span class="mi">112</span><span class="p">,</span> <span class="mi">44</span><span class="p">)</span>
+<span class="n">button_hover_color_SETTINGS_BACK</span> <span class="o">=</span> <span class="p">(</span><span class="mi">123</span><span class="p">,</span> <span class="mi">123</span><span class="p">,</span> <span class="mi">34</span><span class="p">)</span>        
+<span class="n">button_color_CREDITS</span> <span class="o">=</span> <span class="p">(</span><span class="mi">250</span><span class="p">,</span> <span class="mi">205</span><span class="p">,</span> <span class="mi">82</span><span class="p">)</span>
+<span class="n">button_hover_color_CREDITS</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">220</span><span class="p">,</span> <span class="mi">97</span><span class="p">)</span>
+
+<span class="n">text_color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">button_font</span> <span class="o">=</span> <span class="n">get_font</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span>
+<span class="n">corner_radius</span> <span class="o">=</span> <span class="mi">20</span>
+
+<span class="n">tooltip_padding</span><span class="o">=</span><span class="mi">8</span>
+<span class="n">tooltip_appear</span><span class="o">=</span> <span class="mf">0.7</span>
+
+<span class="n">inventory_tooltip_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">inventory_tooltip_bg</span> <span class="o">=</span> <span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+<span class="n">inventory_tooltip_border</span> <span class="o">=</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+<span class="n">inventory_tooltip_font</span> <span class="o">=</span> <span class="n">get_font</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">inventory_tooltip_font_color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+
+<span class="n">tooltip_bg_CREDITS</span> <span class="o">=</span> <span class="p">(</span><span class="mi">156</span><span class="p">,</span> <span class="mi">179</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+<span class="n">tooltip_border_CREDITS</span> <span class="o">=</span> <span class="p">(</span><span class="mi">54</span><span class="p">,</span> <span class="mi">105</span><span class="p">,</span> <span class="mi">121</span><span class="p">)</span>
+<span class="n">tooltip_font_CREDITS</span> <span class="o">=</span> <span class="n">get_font</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+
+<span class="n">MAIN_INV_columns</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">MAIN_INV_rows</span> <span class="o">=</span> <span class="mi">4</span>
+          
+<span class="n">BASE_INV_slot_size</span> <span class="o">=</span> <span class="mi">70</span>
+<span class="n">BASE_INV_border</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">BASE_INV_slot_color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">216</span><span class="p">,</span> <span class="mi">223</span><span class="p">,</span> <span class="mi">203</span><span class="p">)</span>
+<span class="n">BASE_INV_border_color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">33</span><span class="p">,</span> <span class="mi">41</span><span class="p">,</span> <span class="mi">48</span><span class="p">)</span>
+
+<span class="n">MAIN_INV_BACKGROUND</span><span class="o">=</span><span class="p">(</span><span class="mi">109</span><span class="p">,</span> <span class="mi">125</span><span class="p">,</span> <span class="mi">123</span><span class="p">)</span>
+
+<span class="n">INV_nums_font</span> <span class="o">=</span> <span class="n">get_font</span><span class="p">(</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">MAIN_INV_pos_x</span> <span class="o">=</span> <span class="n">SCREEN_WIDTH</span><span class="o">//</span><span class="mi">2</span><span class="o">-</span> <span class="p">(</span><span class="n">BASE_INV_slot_size</span> <span class="o">+</span> <span class="n">BASE_INV_border</span><span class="p">)</span> <span class="o">*</span> <span class="n">MAIN_INV_rows</span> <span class="o">+</span> <span class="n">BASE_INV_border</span>
+<span class="n">MAIN_INV_pos_y</span> <span class="o">=</span> <span class="n">SCREEN_HEIGHT</span><span class="o">//</span><span class="mi">2</span>
+
+<span class="n">MAIN_INV_equipment_columns</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">MAIN_INV_equipment_rows</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">MAIN_INV_equipment_pos_x</span> <span class="o">=</span> <span class="n">MAIN_INV_pos_x</span> <span class="o">+</span> <span class="p">(</span><span class="n">BASE_INV_slot_size</span> <span class="o">+</span> <span class="n">BASE_INV_border</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="n">BASE_INV_border</span>
+<span class="n">MAIN_INV_equipment_pos_y</span> <span class="o">=</span><span class="n">MAIN_INV_pos_y</span><span class="o">-</span><span class="mi">310</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Vibe-inc.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

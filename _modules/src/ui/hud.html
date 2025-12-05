@@ -1,0 +1,240 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.ui.hud &mdash; Super-ultra-project  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Super-ultra-project
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">src</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Super-ultra-project</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">src.ui.hud</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.ui.hud</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.character</span><span class="w"> </span><span class="kn">import</span> <span class="n">Character</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.widgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">Button</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">src.config</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cfg</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">src.app</span><span class="w"> </span><span class="kn">import</span> <span class="n">App</span>
+
+<div class="viewcode-block" id="HUD">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.hud.HUD">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">HUD</span><span class="p">:</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Head-Up Display (HUD) for player status and UI controls.</span>
+
+<span class="sd">    This class is responsible for rendering player health, lives, and the inventory button, as well as handling related UI events.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        character (Character):</span>
+<span class="sd">            The character object whose state is being displayed.</span>
+<span class="sd">        app (App):</span>
+<span class="sd">            The main application object for accessing managers (e.g., INV_manager).</span>
+<span class="sd">        font (pygame.font.Font):</span>
+<span class="sd">            The font used for rendering text.</span>
+<span class="sd">        hp_icon (pygame.Surface):</span>
+<span class="sd">            The icon representing health (a heart).</span>
+<span class="sd">        life_icon (pygame.Surface):</span>
+<span class="sd">            The icon representing the number of lives (a skull).</span>
+<span class="sd">        inv_button (Button):</span>
+<span class="sd">            The button to open/close the inventory.</span>
+<span class="sd">        toggle_inventory_callback (callable | None):</span>
+<span class="sd">            Optional callback to toggle inventory state.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(character, app, toggle_inventory_callback=None):</span>
+<span class="sd">            Initialize the HUD with player character, app, and optional inventory toggle callback.</span>
+<span class="sd">        toggle_inventory():</span>
+<span class="sd">            Toggle the inventory open/closed, using callback if provided.</span>
+<span class="sd">        handle_event(event):</span>
+<span class="sd">            Handle mouse events for the inventory button.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                event (pygame.event.Event): The Pygame event to process.</span>
+<span class="sd">        draw(screen):</span>
+<span class="sd">            Draw the HUD elements (health bar, lives, inventory button) on the screen.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                screen (pygame.Surface): The surface to draw the HUD on.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="HUD.__init__">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.hud.HUD.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">character</span><span class="p">:</span> <span class="n">Character</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="s2">&quot;App&quot;</span><span class="p">,</span> <span class="n">toggle_inventory_callback</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">character</span> <span class="o">=</span> <span class="n">character</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="o">=</span> <span class="n">app</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">toggle_inventory_callback</span> <span class="o">=</span> <span class="n">toggle_inventory_callback</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">font</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get_font</span><span class="p">(</span><span class="mi">40</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hp_icon</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;assets/heart.png&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hp_icon</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hp_icon</span><span class="p">,</span> <span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hp_icon</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">circle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hp_icon</span><span class="p">,</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">25</span><span class="p">,</span> <span class="mi">25</span><span class="p">),</span> <span class="mi">25</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">life_icon</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;assets/skull.png&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">life_icon</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">life_icon</span><span class="p">,</span> <span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">life_icon</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">circle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">life_icon</span><span class="p">,</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">200</span><span class="p">),</span> <span class="p">(</span><span class="mi">25</span><span class="p">,</span> <span class="mi">25</span><span class="p">),</span> <span class="mi">25</span><span class="p">)</span>
+
+        <span class="n">button_width</span> <span class="o">=</span> <span class="mi">200</span>
+        <span class="n">button_height</span> <span class="o">=</span> <span class="mi">50</span>
+        <span class="n">button_x</span> <span class="o">=</span> <span class="mi">200</span>
+        <span class="n">button_y</span> <span class="o">=</span> <span class="mi">240</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">inv_button</span> <span class="o">=</span> <span class="n">Button</span><span class="p">(</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">button_x</span><span class="p">,</span> <span class="n">button_y</span><span class="p">,</span> <span class="n">button_width</span><span class="p">,</span> <span class="n">button_height</span><span class="p">),</span>
+            <span class="n">_</span><span class="p">(</span><span class="s2">&quot;INVENTORY&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">150</span><span class="p">,</span> <span class="mi">150</span><span class="p">,</span> <span class="mi">150</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="p">,</span>
+            <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
+            <span class="mi">10</span><span class="p">,</span>
+            <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">toggle_inventory</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HUD.toggle_inventory">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.hud.HUD.toggle_inventory">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">toggle_inventory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">toggle_inventory_callback</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">toggle_inventory_callback</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">player_inventory_opened</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">player_inventory_opened</span></div>
+
+
+<div class="viewcode-block" id="HUD.handle_event">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.hud.HUD.handle_event">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">handle_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">Event</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">MOUSEBUTTONDOWN</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">inv_button</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">collidepoint</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pos</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">inv_button</span><span class="o">.</span><span class="n">on_click</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">inv_button</span><span class="o">.</span><span class="n">on_click</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="HUD.draw">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.hud.HUD.draw">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">):</span>
+        <span class="n">icon_x</span><span class="p">,</span> <span class="n">icon_y</span> <span class="o">=</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">120</span>
+        <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hp_icon</span><span class="p">,</span> <span class="p">(</span><span class="n">icon_x</span><span class="p">,</span> <span class="n">icon_y</span><span class="p">))</span>
+
+        <span class="n">bar_x</span> <span class="o">=</span> <span class="n">icon_x</span> <span class="o">+</span> <span class="mi">60</span>
+        <span class="n">bar_y</span> <span class="o">=</span> <span class="n">icon_y</span> <span class="o">+</span> <span class="mi">10</span>
+        <span class="n">bar_width</span> <span class="o">=</span> <span class="mi">300</span>
+        <span class="n">bar_height</span> <span class="o">=</span> <span class="mi">30</span>
+
+        <span class="n">hp_percent</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">hp</span> <span class="o">/</span> <span class="mf">100.0</span><span class="p">)</span>
+        <span class="n">current_bar_width</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">bar_width</span> <span class="o">*</span> <span class="n">hp_percent</span><span class="p">)</span>
+
+        <span class="c1"># Draw Background</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">),</span> <span class="p">(</span><span class="n">bar_x</span><span class="p">,</span> <span class="n">bar_y</span><span class="p">,</span> <span class="n">bar_width</span><span class="p">,</span> <span class="n">bar_height</span><span class="p">))</span>
+        <span class="c1"># Draw HP</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="p">(</span><span class="mi">220</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">60</span><span class="p">),</span> <span class="p">(</span><span class="n">bar_x</span><span class="p">,</span> <span class="n">bar_y</span><span class="p">,</span> <span class="n">current_bar_width</span><span class="p">,</span> <span class="n">bar_height</span><span class="p">))</span>
+        <span class="c1"># Draw Border</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span> <span class="p">(</span><span class="n">bar_x</span><span class="p">,</span> <span class="n">bar_y</span><span class="p">,</span> <span class="n">bar_width</span><span class="p">,</span> <span class="n">bar_height</span><span class="p">),</span> <span class="mi">3</span><span class="p">)</span>
+
+
+        <span class="n">lives_icon_x</span> <span class="o">=</span> <span class="n">icon_x</span>
+        <span class="n">lives_icon_y</span> <span class="o">=</span> <span class="n">icon_y</span> <span class="o">+</span> <span class="mi">60</span>
+
+        <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">life_icon</span><span class="p">,</span> <span class="p">(</span><span class="n">lives_icon_x</span><span class="p">,</span> <span class="n">lives_icon_y</span><span class="p">))</span>
+
+        <span class="n">lives_text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;x </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">death_count</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">))</span>
+        <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">lives_text</span><span class="p">,</span> <span class="p">(</span><span class="n">lives_icon_x</span> <span class="o">+</span> <span class="mi">60</span><span class="p">,</span> <span class="n">lives_icon_y</span> <span class="o">+</span> <span class="mi">5</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">inv_button</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Vibe-inc.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

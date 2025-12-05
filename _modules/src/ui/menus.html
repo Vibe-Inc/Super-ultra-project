@@ -1,0 +1,620 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.ui.menus &mdash; Super-ultra-project  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Super-ultra-project
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">src</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Super-ultra-project</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">src.ui.menus</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.ui.menus</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.widgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">Button</span><span class="p">,</span> <span class="n">Tooltip</span><span class="p">,</span> <span class="n">Slider</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.state</span><span class="w"> </span><span class="kn">import</span> <span class="n">State</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">src.config</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cfg</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">src.app</span><span class="w"> </span><span class="kn">import</span> <span class="n">App</span>
+
+<div class="viewcode-block" id="Menu">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.Menu">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Menu</span><span class="p">(</span><span class="n">State</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Base class for menu interfaces containing interactive buttons and tooltips.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        app (App):</span>
+<span class="sd">            Reference to the main application instance.</span>
+<span class="sd">        buttons (list[Button]):</span>
+<span class="sd">            List of Button objects displayed in the menu.</span>
+<span class="sd">        tooltips (list[Tooltip]):</span>
+<span class="sd">            List of Tooltip objects for button tooltips.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        draw(screen):</span>
+<span class="sd">            Draw all buttons and tooltips onto the provided screen surface.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                screen (pygame.Surface): The surface to draw the menu on.</span>
+<span class="sd">        handle_event(event):</span>
+<span class="sd">            Handle Pygame events, triggering button actions when clicked.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                event (pygame.event.Event): The Pygame event to process.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="s2">&quot;App&quot;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="o">=</span> <span class="n">app</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Button</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tooltips</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Tooltip</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="Menu.draw">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.Menu.draw">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">button</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span><span class="p">:</span>
+            <span class="n">button</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+        <span class="n">mouse_pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mouse</span><span class="o">.</span><span class="n">get_pos</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">tooltip</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tooltips</span><span class="p">:</span>
+            <span class="n">tooltip</span><span class="o">.</span><span class="n">hover_update</span><span class="p">(</span><span class="n">mouse_pos</span><span class="p">)</span>
+            <span class="n">tooltip</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Menu.handle_event">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.Menu.handle_event">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">handle_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">Event</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">MOUSEBUTTONDOWN</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">button</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">button</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">collidepoint</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pos</span><span class="p">):</span>
+                    <span class="n">button</span><span class="o">.</span><span class="n">on_click</span><span class="p">()</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="MainMenu">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.MainMenu">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MainMenu</span><span class="p">(</span><span class="n">Menu</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Main menu screen of the application.</span>
+
+<span class="sd">    Inherits from Menu and provides buttons for starting the game, exiting, opening settings, and viewing credits.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        buttons (list[Button]):</span>
+<span class="sd">            List of Button objects for main menu actions.</span>
+<span class="sd">        beta_logo_img (pygame.Surface):</span>
+<span class="sd">            Image for the beta logo.</span>
+<span class="sd">        beta_logo_rect (pygame.Rect):</span>
+<span class="sd">            Rectangle for positioning the beta logo.</span>
+<span class="sd">        tooltips (list[Tooltip]):</span>
+<span class="sd">            List of Tooltip objects for the beta logo.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        start_game():</span>
+<span class="sd">            Callback for the &quot;START&quot; button. Initiates the game start sequence.</span>
+<span class="sd">        exit_game():</span>
+<span class="sd">            Callback for the &quot;EXIT&quot; button. Exits the application.</span>
+<span class="sd">        open_settings():</span>
+<span class="sd">            Callback for the &quot;SETTINGS&quot; button. Opens the settings menu.</span>
+<span class="sd">        open_credits():</span>
+<span class="sd">            Callback for the &quot;CREDITS&quot; button. Opens the credits menu.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="s2">&quot;App&quot;</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+
+        <span class="n">button_width</span><span class="p">,</span> <span class="n">button_height</span> <span class="o">=</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">100</span>
+        <span class="n">gap</span> <span class="o">=</span> <span class="mi">50</span>
+        <span class="n">tot_width</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">button_width</span> <span class="o">+</span> <span class="n">gap</span>
+        
+        <span class="n">start_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">-</span> <span class="n">tot_width</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">700</span><span class="p">,</span> <span class="n">button_width</span><span class="p">,</span> <span class="n">button_height</span><span class="p">)</span>
+        <span class="n">exit_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">-</span> <span class="n">tot_width</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">button_width</span> <span class="o">+</span> <span class="n">gap</span><span class="p">,</span> <span class="mi">700</span><span class="p">,</span> <span class="n">button_width</span><span class="p">,</span> <span class="n">button_height</span><span class="p">)</span>
+        <span class="n">settings_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">-</span> <span class="n">tot_width</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">850</span><span class="p">,</span> <span class="n">button_width</span><span class="p">,</span> <span class="n">button_height</span><span class="p">)</span>
+        <span class="n">credits_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">-</span> <span class="n">tot_width</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">button_width</span> <span class="o">+</span> <span class="n">gap</span><span class="p">,</span> <span class="mi">850</span><span class="p">,</span> <span class="n">button_width</span><span class="p">,</span> <span class="n">button_height</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">Button</span><span class="p">(</span>
+                <span class="n">start_rect</span><span class="p">,</span>
+                <span class="n">_</span><span class="p">(</span><span class="s2">&quot;START&quot;</span><span class="p">),</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_color_START</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_hover_color_START</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_font</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">text_color</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">corner_radius</span><span class="p">,</span>
+                <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">start_game</span>
+            <span class="p">),</span>
+            <span class="n">Button</span><span class="p">(</span>
+                <span class="n">exit_rect</span><span class="p">,</span>
+                <span class="n">_</span><span class="p">(</span><span class="s2">&quot;EXIT&quot;</span><span class="p">),</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_color_EXIT</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_hover_color_EXIT</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_font</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">text_color</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">corner_radius</span><span class="p">,</span>
+                <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">exit_game</span>
+            <span class="p">),</span>
+            <span class="n">Button</span><span class="p">(</span>
+                <span class="n">settings_rect</span><span class="p">,</span>
+                <span class="n">_</span><span class="p">(</span><span class="s2">&quot;SETTINGS&quot;</span><span class="p">),</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_color_SETTINGS</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_hover_color_SETTINGS</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_font</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">text_color</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">corner_radius</span><span class="p">,</span>
+                <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">open_settings</span>
+            <span class="p">),</span>
+           <span class="n">Button</span><span class="p">(</span>
+                <span class="n">credits_rect</span><span class="p">,</span>
+                <span class="n">_</span><span class="p">(</span><span class="s2">&quot;CREDITS&quot;</span><span class="p">),</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_color_CREDITS</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_hover_color_CREDITS</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_font</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">text_color</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">corner_radius</span><span class="p">,</span>
+                <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">open_credits</span>
+            <span class="p">)</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta_logo_img</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;assets/beta_logo.png&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta_logo_img</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">beta_logo_img</span><span class="p">,</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">200</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta_logo_rect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta_logo_img</span><span class="o">.</span><span class="n">get_rect</span><span class="p">(</span><span class="n">center</span><span class="o">=</span><span class="p">(</span><span class="mi">1600</span><span class="p">,</span> <span class="mi">900</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">tooltips</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">Tooltip</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">beta_logo_rect</span><span class="p">,</span>
+                <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Our logo that we need to think of&quot;</span><span class="p">),</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">tooltip_bg_CREDITS</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">tooltip_border_CREDITS</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">tooltip_font_CREDITS</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">text_color</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">tooltip_appear</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">tooltip_padding</span>
+            <span class="p">)</span>
+        <span class="p">]</span>
+
+<div class="viewcode-block" id="MainMenu.draw">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.MainMenu.draw">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
+        <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">beta_logo_img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta_logo_rect</span><span class="p">,</span> <span class="p">)</span>
+        <span class="k">for</span> <span class="n">button</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span><span class="p">:</span>
+            <span class="n">button</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+        <span class="n">mouse_pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mouse</span><span class="o">.</span><span class="n">get_pos</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">tooltip</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tooltips</span><span class="p">:</span>
+            <span class="n">tooltip</span><span class="o">.</span><span class="n">hover_update</span><span class="p">(</span><span class="n">mouse_pos</span><span class="p">)</span>
+            <span class="n">tooltip</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MainMenu.start_game">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.MainMenu.start_game">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">start_game</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;gameplay&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MainMenu.exit_game">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.MainMenu.exit_game">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">exit_game</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="MainMenu.open_settings">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.MainMenu.open_settings">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">open_settings</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;settings&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MainMenu.open_credits">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.MainMenu.open_credits">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">open_credits</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;credits&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SettingsMenu">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.SettingsMenu">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SettingsMenu</span><span class="p">(</span><span class="n">Menu</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Settings menu interface for the application.</span>
+
+<span class="sd">    Inherits from Menu and provides sliders and buttons for adjusting audio, brightness, language, and returning to the main menu.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        buttons (list[Button]):</span>
+<span class="sd">            List of Button objects for settings options.</span>
+<span class="sd">        brightness_slider (Slider):</span>
+<span class="sd">            Slider for adjusting screen brightness.</span>
+<span class="sd">        audio_slider (Slider):</span>
+<span class="sd">            Slider for adjusting music volume.</span>
+<span class="sd">        myfont (pygame.font.Font):</span>
+<span class="sd">            Font used for labels.</span>
+<span class="sd">        brightness_label (pygame.Surface):</span>
+<span class="sd">            Rendered label for brightness.</span>
+<span class="sd">        brightness_rect (pygame.Rect):</span>
+<span class="sd">            Rectangle for positioning the brightness label.</span>
+<span class="sd">        text_logo (pygame.Surface):</span>
+<span class="sd">            Rendered label for music volume.</span>
+<span class="sd">        text_rect (pygame.Rect):</span>
+<span class="sd">            Rectangle for positioning the music volume label.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        back_to_main():</span>
+<span class="sd">            Return to the main menu.</span>
+<span class="sd">        toggle_language():</span>
+<span class="sd">            Toggle the application language.</span>
+<span class="sd">        handle_event(event):</span>
+<span class="sd">            Handle slider and button events.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                event (pygame.event.Event): The Pygame event to process.</span>
+<span class="sd">        update():</span>
+<span class="sd">            Update the audio slider if needed.</span>
+<span class="sd">        draw(surface):</span>
+<span class="sd">            Draw all settings controls and labels.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                surface (pygame.Surface): The surface to draw the settings menu on.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="s2">&quot;App&quot;</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+        <span class="n">button_width</span><span class="p">,</span> <span class="n">button_height</span> <span class="o">=</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">100</span>
+        <span class="n">button_y</span> <span class="o">=</span> <span class="mi">700</span>
+        <span class="n">back_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="n">button_y</span><span class="p">,</span> <span class="n">button_width</span><span class="p">,</span> <span class="n">button_height</span><span class="p">)</span>
+        <span class="n">lang_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">550</span><span class="p">,</span> <span class="n">button_width</span><span class="p">,</span> <span class="n">button_height</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">Button</span><span class="p">(</span>
+                <span class="n">back_rect</span><span class="p">,</span>
+                <span class="n">_</span><span class="p">(</span><span class="s2">&quot;BACK&quot;</span><span class="p">),</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_color_SETTINGS_BACK</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_hover_color_SETTINGS_BACK</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_font</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">text_color</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">corner_radius</span><span class="p">,</span>
+                <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">back_to_main</span>
+            <span class="p">),</span>
+            <span class="n">Button</span><span class="p">(</span>
+                <span class="n">lang_rect</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;LANG&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">LANGUAGE</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_color_SETTINGS</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_hover_color_SETTINGS</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_font</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">text_color</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">corner_radius</span><span class="p">,</span>
+                <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">toggle_language</span>
+            <span class="p">)</span>
+        <span class="p">]</span>
+
+        <span class="n">track_colour</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">knob_colour</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+        <span class="n">initial_volume</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">music</span><span class="o">.</span><span class="n">get_volume</span><span class="p">()</span> <span class="k">if</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">get_init</span><span class="p">()</span> <span class="k">else</span> <span class="mf">0.3</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">brightness_slider</span> <span class="o">=</span> <span class="n">Slider</span><span class="p">(</span>
+            <span class="mi">600</span><span class="p">,</span> <span class="mi">550</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span>
+            <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
+            <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span>
+            <span class="n">value</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_BRIGHTNESS</span><span class="p">,</span>
+            <span class="n">action</span><span class="o">=</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="nb">setattr</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="s1">&#39;SCREEN_BRIGHTNESS&#39;</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">myfont</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get_font</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">brightness_label</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">myfont</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Brightness&#39;</span><span class="p">),</span> <span class="kc">True</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">brightness_rect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">brightness_label</span><span class="o">.</span><span class="n">get_rect</span><span class="p">(</span><span class="n">center</span><span class="o">=</span><span class="p">(</span><span class="mi">760</span><span class="p">,</span> <span class="mi">480</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">audio_slider</span> <span class="o">=</span> <span class="n">Slider</span><span class="p">(</span>
+            <span class="mi">600</span><span class="p">,</span> <span class="mi">730</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span>
+            <span class="n">track_colour</span><span class="p">,</span> <span class="n">knob_colour</span><span class="p">,</span>
+            <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span>
+            <span class="n">value</span><span class="o">=</span><span class="n">initial_volume</span><span class="p">,</span>
+            <span class="n">action</span><span class="o">=</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">music</span><span class="o">.</span><span class="n">set_volume</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">myfont</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get_font</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text_logo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">myfont</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Music volume&#39;</span><span class="p">),</span> <span class="kc">True</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text_rect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">text_logo</span><span class="o">.</span><span class="n">get_rect</span><span class="p">(</span><span class="n">center</span><span class="o">=</span><span class="p">(</span><span class="mi">760</span><span class="p">,</span> <span class="mi">650</span><span class="p">))</span>
+
+<div class="viewcode-block" id="SettingsMenu.back_to_main">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.SettingsMenu.back_to_main">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">back_to_main</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;main&quot;</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="SettingsMenu.toggle_language">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.SettingsMenu.toggle_language">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">toggle_language</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">new_lang</span> <span class="o">=</span> <span class="s1">&#39;ua&#39;</span> <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">LANGUAGE</span> <span class="o">==</span> <span class="s1">&#39;en&#39;</span> <span class="k">else</span> <span class="s1">&#39;en&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">update_language</span><span class="p">(</span><span class="n">new_lang</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="SettingsMenu.handle_event">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.SettingsMenu.handle_event">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">handle_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">audio_slider</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">brightness_slider</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SettingsMenu.update">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.SettingsMenu.update">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_slider</span><span class="p">,</span> <span class="s2">&quot;update&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">audio_slider</span><span class="o">.</span><span class="n">update</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="SettingsMenu.draw">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.SettingsMenu.draw">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">surface</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">button</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span><span class="p">:</span>
+            <span class="n">button</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">surface</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">audio_slider</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">surface</span><span class="p">)</span>
+        <span class="n">surface</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">text_logo</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">text_rect</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">brightness_slider</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">surface</span><span class="p">)</span>
+        <span class="n">surface</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">brightness_label</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">brightness_rect</span><span class="p">)</span></div>
+</div>
+
+
+<div class="viewcode-block" id="CreditsMenu">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.CreditsMenu">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CreditsMenu</span><span class="p">(</span><span class="n">Menu</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Credits screen with styled box, multi-line text, and a BACK button.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        buttons (list[Button]):</span>
+<span class="sd">            List of Button objects (only BACK).</span>
+<span class="sd">        credits_text (str):</span>
+<span class="sd">            The credits text, with lines separated by &#39;\\n&#39;.</span>
+<span class="sd">        font (pygame.font.Font):</span>
+<span class="sd">            Font used for the credits text.</span>
+<span class="sd">        font_color (tuple):</span>
+<span class="sd">            Color of the credits text.</span>
+<span class="sd">        padding (int):</span>
+<span class="sd">            Padding around the text inside the box.</span>
+<span class="sd">        credits_lines (list[str]):</span>
+<span class="sd">            List of lines in the credits text.</span>
+<span class="sd">        box_rect (pygame.Rect):</span>
+<span class="sd">            Rectangle for the credits box.</span>
+<span class="sd">        box_color (tuple):</span>
+<span class="sd">            Background color of the credits box.</span>
+<span class="sd">        box_border (tuple):</span>
+<span class="sd">            Border color of the credits box.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        draw(screen):</span>
+<span class="sd">            Draw the credits box, text, and BACK button.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                screen (pygame.Surface): The surface to draw the credits on.</span>
+<span class="sd">        back_to_main():</span>
+<span class="sd">            Return to the main menu.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="s2">&quot;App&quot;</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+        <span class="n">button_width</span><span class="p">,</span> <span class="n">button_height</span> <span class="o">=</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">100</span>
+        <span class="n">back_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="mi">1400</span><span class="p">,</span> <span class="mi">850</span><span class="p">,</span> <span class="n">button_width</span><span class="p">,</span> <span class="n">button_height</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">Button</span><span class="p">(</span><span class="n">back_rect</span><span class="p">,</span>
+                <span class="n">_</span><span class="p">(</span><span class="s2">&quot;BACK&quot;</span><span class="p">),</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_color_SETTINGS_BACK</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_hover_color_SETTINGS_BACK</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_font</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">text_color</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">corner_radius</span><span class="p">,</span>
+                <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">back_to_main</span>
+            <span class="p">)</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">credits_text</span> <span class="o">=</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;CREDITS:</span>
+<span class="s2">Vibe inc idea, production and execution</span>
+<span class="s2">Art not by Vibe inc</span>
+<span class="s2">Music not by Vibe inc</span>
+<span class="s2">Main sponsor: Vibe inc</span>
+<span class="s2">Special thanks to Vibe inc&quot;&quot;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">font</span> <span class="p">:</span><span class="n">pygame</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">Font</span><span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">myfont</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">font_color</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">text_color</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">padding</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">30</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">credits_lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">credits_text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">num_credits_lines</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">credits_lines</span><span class="p">)</span>
+        <span class="n">line_height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
+        <span class="n">max_width</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">line</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">credits_lines</span><span class="p">)</span><span class="k">if</span> <span class="n">num_credits_lines</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="n">box_width</span> <span class="o">=</span> <span class="n">max_width</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding</span>
+        <span class="n">box_height</span> <span class="o">=</span> <span class="n">line_height</span> <span class="o">*</span> <span class="n">num_credits_lines</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">box_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">-</span> <span class="n">box_width</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="n">box_width</span><span class="p">,</span> <span class="n">box_height</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">box_color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">245</span><span class="p">,</span> <span class="mi">222</span><span class="p">,</span> <span class="mi">179</span><span class="p">)</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">box_border</span> <span class="o">=</span> <span class="p">(</span><span class="mi">139</span><span class="p">,</span> <span class="mi">49</span><span class="p">,</span> <span class="mi">19</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CreditsMenu.draw">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.CreditsMenu.draw">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">box_color</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">box_rect</span><span class="p">,</span> <span class="n">border_radius</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">box_border</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">box_rect</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">border_radius</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+
+        <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">box_rect</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding</span>
+        <span class="n">box_width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">box_rect</span><span class="o">.</span><span class="n">width</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">credits_lines</span><span class="p">:</span>
+            <span class="n">surf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">font_color</span><span class="p">)</span>
+            <span class="n">line_width</span> <span class="o">=</span> <span class="n">surf</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">box_rect</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding</span> <span class="o">+</span> <span class="p">(</span><span class="n">box_width</span> <span class="o">-</span> <span class="n">line_width</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+            <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+            <span class="n">y</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">button</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span><span class="p">:</span>
+            <span class="n">button</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CreditsMenu.back_to_main">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.CreditsMenu.back_to_main">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">back_to_main</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;main&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="PauseMenu">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.PauseMenu">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PauseMenu</span><span class="p">(</span><span class="n">Menu</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Pause menu for the game, providing options to resume gameplay or return to the main menu.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        app (App):</span>
+<span class="sd">            Reference to the main application instance.</span>
+<span class="sd">        pause_menu_color (tuple):</span>
+<span class="sd">            RGBA color for the pause menu overlay.</span>
+<span class="sd">        buttons (list[Button]):</span>
+<span class="sd">            List of Button objects for menu actions (&quot;RESUME&quot; and &quot;MAIN MENU&quot;).</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        draw(screen):</span>
+<span class="sd">            Draw the pause menu overlay and its buttons.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                screen (pygame.Surface): The surface to draw the pause menu on.</span>
+<span class="sd">        resume_game():</span>
+<span class="sd">            Resume gameplay by setting the application state to &quot;gameplay&quot;.</span>
+<span class="sd">        back_to_main():</span>
+<span class="sd">            Return to the main menu by setting the application state to &quot;main&quot;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="s2">&quot;App&quot;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="o">=</span> <span class="n">app</span>
+
+        <span class="n">button_width</span><span class="p">,</span> <span class="n">button_height</span> <span class="o">=</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">100</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pause_menu_color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">180</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">Button</span><span class="p">(</span>
+                <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">-</span> <span class="n">button_width</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">650</span><span class="p">,</span> <span class="n">button_width</span><span class="p">,</span> <span class="n">button_height</span><span class="p">),</span>
+                <span class="n">_</span><span class="p">(</span><span class="s2">&quot;RESUME&quot;</span><span class="p">),</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_color_START</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_hover_color_START</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_font</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">text_color</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">corner_radius</span><span class="p">,</span>
+                <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">resume_game</span>
+            <span class="p">),</span>
+            <span class="n">Button</span><span class="p">(</span>
+                <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">-</span> <span class="n">button_width</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">800</span><span class="p">,</span> <span class="n">button_width</span><span class="p">,</span> <span class="n">button_height</span><span class="p">),</span>
+                <span class="n">_</span><span class="p">(</span><span class="s2">&quot;MAIN MENU&quot;</span><span class="p">),</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_color_EXIT</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_hover_color_EXIT</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_font</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">text_color</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">corner_radius</span><span class="p">,</span>
+                <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">back_to_main</span>
+            <span class="p">)</span>
+        <span class="p">]</span>
+
+<div class="viewcode-block" id="PauseMenu.draw">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.PauseMenu.draw">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
+        <span class="n">overlay</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span><span class="p">),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+        <span class="n">overlay</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pause_menu_color</span><span class="p">)</span>
+        <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">button</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span><span class="p">:</span>
+            <span class="n">button</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="PauseMenu.resume_game">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.PauseMenu.resume_game">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">resume_game</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;gameplay&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PauseMenu.back_to_main">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.PauseMenu.back_to_main">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">back_to_main</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;main&quot;</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Vibe-inc.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

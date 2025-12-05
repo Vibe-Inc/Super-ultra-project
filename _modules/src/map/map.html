@@ -1,0 +1,267 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.map.map &mdash; Super-ultra-project  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Super-ultra-project
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">src</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Super-ultra-project</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">src.map.map</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.map.map</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pytmx</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
+
+<div class="viewcode-block" id="Map">
+<a class="viewcode-back" href="../../../src.map.html#src.map.map.Map">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Map</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents a tile-based game map loaded from a Tiled map file.</span>
+
+<span class="sd">    This class handles loading and drawing of the map using pytmx and pygame.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        map_file (str):</span>
+<span class="sd">            Path to the Tiled map (.tmx) file.</span>
+<span class="sd">        game_map (pytmx.TiledMap | None):</span>
+<span class="sd">            The loaded Tiled map object.</span>
+<span class="sd">        pixel_width (int):</span>
+<span class="sd">            Width of the map in pixels.</span>
+<span class="sd">        pixel_height (int):</span>
+<span class="sd">            Height of the map in pixels.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(map_file):</span>
+<span class="sd">            Initialize the map with the given file path.</span>
+<span class="sd">        draw(screen):</span>
+<span class="sd">            Draw the map layers onto the given Pygame surface.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                screen (pygame.Surface): The surface to draw the map on.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Map.__init__">
+<a class="viewcode-back" href="../../../src.map.html#src.map.map.Map.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">map_file</span> <span class="o">=</span> <span class="n">map_file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pixel_width</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pixel_height</span> <span class="o">=</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="Map.draw">
+<a class="viewcode-back" href="../../../src.map.html#src.map.map.Map.draw">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span> <span class="o">=</span> <span class="n">pytmx</span><span class="o">.</span><span class="n">load_pygame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">map_file</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pixel_width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">width</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">tilewidth</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pixel_height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">height</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">tileheight</span>
+
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">visible_layers</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">pytmx</span><span class="o">.</span><span class="n">TiledTileLayer</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">gid</span> <span class="ow">in</span> <span class="n">layer</span><span class="p">:</span>
+                    <span class="n">tile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">get_tile_image_by_gid</span><span class="p">(</span><span class="n">gid</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">tile</span><span class="p">:</span>
+                        <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">tile</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">tilewidth</span><span class="p">,</span>
+                                           <span class="n">y</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">tileheight</span><span class="p">))</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="LocalMap">
+<a class="viewcode-back" href="../../../src.map.html#src.map.map.LocalMap">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LocalMap</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Manages the current map and transitions between maps.</span>
+
+<span class="sd">    This class tracks the active map, handles map switching logic, and manages player transitions between maps.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        name (str):</span>
+<span class="sd">            Name of the local map context.</span>
+<span class="sd">        current_map (Map):</span>
+<span class="sd">            The currently active Map object.</span>
+<span class="sd">        current_map_path (str):</span>
+<span class="sd">            Path to the currently active map file.</span>
+<span class="sd">        transition_buffer (int):</span>
+<span class="sd">            Distance from the map edge at which a transition is triggered.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(name, map_file):</span>
+<span class="sd">            Initialize the local map manager with a name and starting map file.</span>
+<span class="sd">        draw(screen):</span>
+<span class="sd">            Draw the current map onto the given Pygame surface.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                screen (pygame.Surface): The surface to draw the map on.</span>
+<span class="sd">        update(player):</span>
+<span class="sd">            Update map logic and handle transitions based on player position.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                player: The player object (must have pos and image/rect attributes).</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                str | None: Path to the new map if switched, else None.</span>
+<span class="sd">        switch_map(new_map_path):</span>
+<span class="sd">            Switch to a new map by file path.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                new_map_path (str): Path to the new map file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="LocalMap.__init__">
+<a class="viewcode-back" href="../../../src.map.html#src.map.map.LocalMap.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">map_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_map</span> <span class="o">=</span> <span class="n">Map</span><span class="p">(</span><span class="n">map_file</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="o">=</span> <span class="n">map_file</span> 
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">transition_buffer</span> <span class="o">=</span> <span class="mi">150</span> </div>
+
+
+<div class="viewcode-block" id="LocalMap.draw">
+<a class="viewcode-back" href="../../../src.map.html#src.map.map.LocalMap.draw">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LocalMap.update">
+<a class="viewcode-back" href="../../../src.map.html#src.map.map.LocalMap.update">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">player</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates map logic and handles transitions based on player position.</span>
+<span class="sd">        Returns: string (path to new map) if switch happened, else None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">game_map</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">game_map</span> <span class="o">=</span> <span class="n">pytmx</span><span class="o">.</span><span class="n">load_pygame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">map_file</span><span class="p">)</span>
+
+        <span class="n">tmx_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">game_map</span>
+        <span class="n">map_width</span> <span class="o">=</span> <span class="n">tmx_data</span><span class="o">.</span><span class="n">width</span> <span class="o">*</span> <span class="n">tmx_data</span><span class="o">.</span><span class="n">tilewidth</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">player</span><span class="p">,</span> <span class="s1">&#39;rect&#39;</span><span class="p">):</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="n">player</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">width</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="n">player</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span>
+
+        <span class="n">spawn_offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_buffer</span> <span class="o">+</span> <span class="mi">30</span> 
+        <span class="n">new_map</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="o">==</span> <span class="s2">&quot;maps/test-map-1.tmx&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">x</span> <span class="o">+</span> <span class="n">w</span> <span class="o">&gt;=</span> <span class="n">map_width</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_buffer</span><span class="p">:</span>
+                <span class="n">new_map</span> <span class="o">=</span> <span class="s2">&quot;maps/test-map-2.tmx&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_map</span><span class="p">(</span><span class="n">new_map</span><span class="p">)</span>
+                <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">spawn_offset</span>  
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="o">==</span> <span class="s2">&quot;maps/test-map-2.tmx&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_buffer</span><span class="p">:</span>
+                <span class="n">new_map</span> <span class="o">=</span> <span class="s2">&quot;maps/test-map-1.tmx&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_map</span><span class="p">(</span><span class="n">new_map</span><span class="p">)</span>
+                <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">map_width</span> <span class="o">-</span> <span class="n">w</span> <span class="o">-</span> <span class="n">spawn_offset</span> 
+            
+            <span class="k">elif</span> <span class="n">x</span> <span class="o">+</span> <span class="n">w</span> <span class="o">&gt;=</span> <span class="n">map_width</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_buffer</span><span class="p">:</span>
+                <span class="n">new_map</span> <span class="o">=</span> <span class="s2">&quot;maps/test-map-3.tmx&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_map</span><span class="p">(</span><span class="n">new_map</span><span class="p">)</span>
+                <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">spawn_offset</span>
+                
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="o">==</span> <span class="s2">&quot;maps/test-map-3.tmx&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_buffer</span><span class="p">:</span>
+                <span class="n">new_map</span> <span class="o">=</span> <span class="s2">&quot;maps/test-map-2.tmx&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_map</span><span class="p">(</span><span class="n">new_map</span><span class="p">)</span>
+                <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">map_width</span> <span class="o">-</span> <span class="n">w</span> <span class="o">-</span> <span class="n">spawn_offset</span>
+
+        <span class="k">return</span> <span class="n">new_map</span></div>
+
+
+<div class="viewcode-block" id="LocalMap.switch_map">
+<a class="viewcode-back" href="../../../src.map.html#src.map.map.LocalMap.switch_map">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">switch_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_map_path</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Switching map to: </span><span class="si">{</span><span class="n">new_map_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_map</span> <span class="o">=</span> <span class="n">Map</span><span class="p">(</span><span class="n">new_map_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="o">=</span> <span class="n">new_map_path</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Vibe-inc.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
