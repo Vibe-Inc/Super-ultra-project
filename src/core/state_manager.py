@@ -1,7 +1,7 @@
 import pygame
 from typing import TYPE_CHECKING
 
-from src.ui.menus import MainMenu, SettingsMenu, CreditsMenu, PauseMenu
+from src.ui.menus import MainMenu, SettingsMenu, CreditsMenu, PauseMenu, SaveLoadMenu
 from src.core.game import Game
 
 if TYPE_CHECKING:
@@ -39,7 +39,8 @@ class StateManager:
             "settings": SettingsMenu(app),
             "credits": CreditsMenu(app),
             "gameplay": Game(app),
-            "pause": PauseMenu(app)
+            "pause": PauseMenu(app),
+            "save_load": SaveLoadMenu(app)
         }
         self.current_state = None
 
