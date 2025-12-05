@@ -1,5 +1,5 @@
 import pygame
-from src.inventory.item_database import Item_database
+from src.items.item_database import Item_database
 
 class Item:
     """
