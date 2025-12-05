@@ -2,7 +2,7 @@ import pygame
 from typing import TYPE_CHECKING
 
 import src.config as cfg
-from src.ui.widgets import Tooltip
+from src.ui.widgets import Tooltip, Slider, Button
 
 if TYPE_CHECKING:
     from src.app import App
@@ -90,6 +90,11 @@ class Inventory:
 
                 if self.items[n][m]:
                     item, count = self.items[n][m]
+
+                    if count <= 0:
+                        self.items[n][m] = None
+                        continue
+
                     screen.blit(item.resize(self.slot_size), rect)
                     if count > 1:
                         font_obj = cfg.INV_nums_font
@@ -97,6 +102,9 @@ class Inventory:
                         screen.blit(obj, (rect[0] + 50, rect[1] + 50))
 
     def inventory_interactions(self,event,manager):
+        if event.type != pygame.MOUSEBUTTONDOWN:
+            return
+
         mouse_x, mouse_y = pygame.mouse.get_pos()
         x = (mouse_x - self.pos_x) // (self.slot_size + self.border)
         y = (mouse_y - self.pos_y) // (self.slot_size + self.border)
@@ -118,12 +126,14 @@ class Inventory:
                             manager.selected_item = slot
                             self.items[x][y] = None
 
-                elif event.button == 3 and slot and not manager.selected_item and slot[1] > 1:
-                    split_count = (slot[1] + 1) // 2
-                    manager.selected_item = [slot[0], split_count]
-                    self.items[x][y][1] -= split_count
-                    if self.items[x][y][1] <= 0:
-                        self.items[x][y] = None
+                elif event.button == 3:
+                    if slot and not manager.selected_item and slot[1] > 1:
+                        rect = pygame.Rect(
+                            self.pos_x + (self.slot_size + self.border) * x + self.border,
+                            self.pos_y + (self.slot_size + self.border) * y + self.border,
+                            self.slot_size, self.slot_size
+                        )
+                        manager.active_split_popup = Split_popup(manager, slot, rect)
 
     def get_slot_under_mouse(self):
         mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -153,6 +163,99 @@ class Inventory:
         
         return None
 
+class Inventory_slider(Slider):
+    def __init__(self, x, y, width, max_qty, action_callback):
+        self.max_qty = max_qty
+        self.external_callback = action_callback
+
+        super().__init__(
+            x=x, y=y, height=20, track_thickness=4, 
+            track_colour=(40, 40, 40), knob_colour=(200, 200, 200),
+            knob_width=12, knob_height=18, 
+            track_length=width,
+            value=0.0, 
+            action=self._convert_to_int
+        )
+
+    def _convert_to_int(self, float_value):
+        if self.max_qty <= 1:
+            result = 1
+        else:
+            result = 1 + int(float_value * (self.max_qty - 1))
+        
+        if self.external_callback:
+            self.external_callback(result)
+
+
+class Split_popup:
+    def __init__(self, manager, slot_ref, rect_pos):
+        self.manager = manager
+        self.slot_ref = slot_ref
+        self.item_obj, self.total_count = slot_ref
+
+        self.width = 180
+        self.height = 90
+        self.x = rect_pos.right + 5
+        self.y = rect_pos.y
+
+        if self.x + self.width > cfg.SCREEN_WIDTH:
+            self.x = rect_pos.left - self.width - 5
+            
+        self.bg_rect = pygame.Rect(self.x, self.y, self.width, self.height)
+        self.split_amount = 1 
+
+        self.slider = Inventory_slider(
+            x=self.x + 10,
+            y=self.y + 35,
+            width=self.width - 20,
+            max_qty=self.total_count,
+            action_callback=self.update_count 
+        )
+
+        self.confirm_btn = Button(
+            rect=pygame.Rect(self.x + 40, self.y + 60, 100, 20),
+            text="Confirm",
+            color=(60, 120, 60),        
+            hover_color=(80, 150, 80),  
+            font=cfg.INV_nums_font,
+            font_color=(255, 255, 255),
+            corner_width=5,             
+            on_click=self.confirm       
+        )
+
+    def update_count(self, int_val):
+        self.split_amount = int_val
+
+    def confirm(self):
+        if self.split_amount < self.total_count:
+            self.manager.selected_item = [self.item_obj, self.split_amount]
+            self.slot_ref[1] -= self.split_amount
+        else:
+            self.manager.selected_item = [self.item_obj, self.total_count]
+            self.slot_ref[1] = 0 
+            
+        self.manager.active_split_popup = None
+
+    def handle_event(self, event):
+        self.slider.handle_event(event)
+        
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if self.confirm_btn.rect.collidepoint(event.pos):
+                self.confirm_btn.on_click()
+                
+            elif not self.bg_rect.collidepoint(event.pos):
+                self.manager.active_split_popup = None
+                
+    def draw(self, screen):
+        pygame.draw.rect(screen, (45, 45, 50), self.bg_rect)
+        pygame.draw.rect(screen, (100, 100, 100), self.bg_rect, 2)
+
+        font = cfg.INV_nums_font
+        text = font.render(f"Take: {self.split_amount}", True, (255, 255, 255))
+        screen.blit(text, (self.x + 10, self.y + 5))
+
+        self.slider.draw(screen)
+        self.confirm_btn.draw(screen)
 
 
 class MAIN_player_inventory(Inventory):
@@ -265,6 +368,7 @@ class INVENTORY_manager:
     """
     def __init__(self):
         self.selected_item:bool = False
+        self.active_split_popup = None
         self.active_inventories:list[Inventory|None] = []
         self.player_inventory_opened:bool = False
 
@@ -311,8 +415,13 @@ class INVENTORY_manager:
                 self.inventory_tooltip.update_target(pygame.Rect(-100,-100,0,0), "")
             self.inventory_tooltip.hover_update(pygame.mouse.get_pos())
             self.inventory_tooltip.draw(screen)
+        if self.active_split_popup:
+            self.active_split_popup.draw(screen)
     
     def handle_event(self, event):
+        if self.active_split_popup:
+            self.active_split_popup.handle_event(event)
+            return 
         for inv in self.active_inventories:
             inv.inventory_interactions(event, self)
 
@@ -329,5 +438,7 @@ class INVENTORY_manager:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_i:
                 self.toggle_inventory(pl_inv, equip_inv)
-        if self.player_inventory_opened is True and event.type == pygame.MOUSEBUTTONDOWN:
-            self.handle_event(event)
+
+        if self.player_inventory_opened is True:
+            if event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.MOUSEMOTION):
+                self.handle_event(event)
