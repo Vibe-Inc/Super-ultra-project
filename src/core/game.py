@@ -4,7 +4,8 @@ from typing import TYPE_CHECKING
 from src.core.state import State
 from src.entities.character import Character
 from src.map.map import LocalMap
-from src.inventory.system import MAIN_player_inventory, MAIN_player_inventory_equipment
+from src.inventory.system import MAIN_player_inventory, MAIN_player_inventory_equipment, ShopInventory
+from src.inventory.items import create_item
 from src.entities.enemy import Enemy
 from src.entities.npc import NPC
 from src.ui.hud import HUD
@@ -80,6 +81,11 @@ class Game(State):
         self.enemy.target_entity = self.character
 
         self.npc = NPC(x=400, y=400, sprite_set="MenHuman1")
+        
+        shop_items = [
+            (create_item("apple"), 10)
+        ]
+        self.shop_inv = ShopInventory(app, shop_items)
 
     def reinit_ui(self):
         self.hud = HUD(self.character, self.app, self.toggle_player_inventory)
@@ -125,6 +131,9 @@ class Game(State):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.app.manager.set_state("pause")
+            if event.key == pygame.K_e:
+                if self.npc.is_interactable:
+                    self.app.INV_manager.toggle_trade(self.MAIN_player_inv, self.shop_inv)
 
         self.app.INV_manager.PLAYER_inventory_open(event, self.MAIN_player_inv, self.PLAYER_inventory_equipment)
 
