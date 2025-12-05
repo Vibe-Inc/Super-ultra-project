@@ -126,7 +126,7 @@ class HUD:
         stamina_bar_width = 600
         stamina_bar_height = 25
         stamina_bar_x = (cfg.SCREEN_WIDTH - stamina_bar_width) // 2
-        stamina_bar_y = cfg.SCREEN_HEIGHT - stamina_bar_height - 30
+        stamina_bar_y = 920
 
         stamina_percent = max(0, self.character.stamina / self.character.max_stamina)
         current_stamina_width = int(stamina_bar_width * stamina_percent)
