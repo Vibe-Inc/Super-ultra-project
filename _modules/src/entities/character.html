@@ -146,9 +146,15 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">flip</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">moving</span> <span class="o">=</span> <span class="kc">False</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">hp</span> <span class="o">=</span> <span class="mi">100</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span> <span class="o">=</span> <span class="mi">100</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">death_count</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">death_sound</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">Sound</span><span class="p">(</span><span class="s2">&quot;sounds/death.mp3&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Level system</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xp</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xp_to_next_level</span> <span class="o">=</span> <span class="mi">100</span>
 
         <span class="c1"># Stamina system</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_stamina</span> <span class="o">=</span> <span class="mi">100</span>
@@ -172,6 +178,25 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">effect</span><span class="p">)</span>
                 <span class="k">return</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">effect</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Character.gain_xp">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.gain_xp">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">gain_xp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xp</span> <span class="o">+=</span> <span class="n">amount</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp_to_next_level</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">xp</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp_to_next_level</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">level_up</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Character.level_up">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.level_up">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">level_up</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xp_to_next_level</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xp_to_next_level</span> <span class="o">*</span> <span class="mf">1.5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span> <span class="o">+=</span> <span class="mi">20</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span> 
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Level Up! Level: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">level</span><span class="si">}</span><span class="s2">, Max HP: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Character.update">
@@ -264,7 +289,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">die</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">death_sound</span><span class="o">.</span><span class="n">play</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">death_count</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">hp</span> <span class="o">=</span> <span class="mi">100</span>  <span class="c1"># reset health</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span>  <span class="c1"># reset health</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spawn_point</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>  <span class="c1"># teleport to spawn</span></div>
 
 
