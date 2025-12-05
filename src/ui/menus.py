@@ -203,10 +203,23 @@ class SettingsMenu(Menu):
         knob_colour = (255, 255, 255)
         initial_volume = pygame.mixer.music.get_volume() if pygame.mixer.get_init() else 0.3
 
-        self.audio_slider = Slider(600, 730, 40, 5,
-                                   track_colour, knob_colour,
-                                   20, 20,
-                                   300, value=initial_volume)
+        self.brightness_slider = Slider(
+            600, 550, 40, 5,
+            (0, 0, 0), (255, 255, 255),
+            20, 20, 300,
+            value=cfg.SCREEN_BRIGHTNESS
+        )
+
+        self.myfont = cfg.get_font(60)
+        self.brightness_label = self.myfont.render(_('Brightness'), True, (0, 0, 0))
+        self.brightness_rect = self.brightness_label.get_rect(center=(760, 480))
+
+        self.audio_slider = Slider(
+            600, 730, 40, 5,
+            track_colour, knob_colour,
+            20, 20, 300,
+            value=initial_volume
+        )
 
         self.myfont = cfg.get_font(60)
         self.text_logo = self.myfont.render(_('Music volume'), True, (0, 0, 0))
@@ -222,6 +235,8 @@ class SettingsMenu(Menu):
     def handle_event(self, event):
         super().handle_event(event)
         self.audio_slider.handle_event(event)
+        self.brightness_slider.handle_event(event)
+        cfg.SCREEN_BRIGHTNESS = self.brightness_slider.value
 
     def update(self):
         if hasattr(self.audio_slider, "update"):
@@ -233,6 +248,8 @@ class SettingsMenu(Menu):
         self.audio_slider.draw(surface)
         surface.blit(self.text_logo, self.text_rect)
 
+        self.brightness_slider.draw(surface)
+        surface.blit(self.brightness_label, self.brightness_rect)
 
 class CreditsMenu(Menu):
     """
