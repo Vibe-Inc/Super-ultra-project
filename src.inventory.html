@@ -96,297 +96,11 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
 </section>
-<section id="module-src.inventory.item_database">
-<span id="src-inventory-item-database-module"></span><h2>src.inventory.item_database module<a class="headerlink" href="#module-src.inventory.item_database" title="Link to this heading"></a></h2>
+<section id="src-inventory-item-database-module">
+<h2>src.inventory.item_database module<a class="headerlink" href="#src-inventory-item-database-module" title="Link to this heading"></a></h2>
 </section>
-<section id="module-src.inventory.items">
-<span id="src-inventory-items-module"></span><h2>src.inventory.items module<a class="headerlink" href="#module-src.inventory.items" title="Link to this heading"></a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="src.inventory.items.Armor">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.inventory.items.</span></span><span class="sig-name descname"><span class="pre">Armor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/items.html#Armor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.items.Armor" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#src.inventory.items.Item" title="src.inventory.items.Item"><code class="xref py py-class docutils literal notranslate"><span class="pre">Item</span></code></a></p>
-<p>Represents an armor item. (Extend with armor-specific stats as needed.)</p>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="src.inventory.items.Consumable">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.inventory.items.</span></span><span class="sig-name descname"><span class="pre">Consumable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/items.html#Consumable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.items.Consumable" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#src.inventory.items.Item" title="src.inventory.items.Item"><code class="xref py py-class docutils literal notranslate"><span class="pre">Item</span></code></a></p>
-<p>Represents a consumable item (e.g., food, potion).</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.inventory.items.Consumable.heal_amount">
-<span class="sig-name descname"><span class="pre">heal_amount</span></span><a class="headerlink" href="#src.inventory.items.Consumable.heal_amount" title="Link to this definition"></a></dt>
-<dd><p>The amount of HP restored by this item.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.inventory.items.Consumable.effects_data">
-<span class="sig-name descname"><span class="pre">effects_data</span></span><a class="headerlink" href="#src.inventory.items.Consumable.effects_data" title="Link to this definition"></a></dt>
-<dd><p>Configuration for effects to apply.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>list[dict]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.inventory.items.Consumable.get_tooltip_text">
-<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/items.html#Consumable.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.items.Consumable.get_tooltip_text" title="Link to this definition"></a></dt>
-<dd><p>Get a tooltip string with consumable stats and description.
-:returns: Tooltip text.
-:rtype: str</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.inventory.items.Consumable.use">
-<span class="sig-name descname"><span class="pre">use</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/items.html#Consumable.use"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.items.Consumable.use" title="Link to this definition"></a></dt>
-<dd><p>Apply healing and effects to the target.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id0">
-<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/items.html#Consumable.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id1">
-<span class="sig-name descname"><span class="pre">use</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/items.html#Consumable.use"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
-<dd><p>Use the item on the target character.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="src.inventory.items.Item">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.inventory.items.</span></span><span class="sig-name descname"><span class="pre">Item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/items.html#Item"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.items.Item" title="Link to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Represents a generic inventory item.</p>
-<p>This class provides basic item properties, image loading, and translation support for name and description.</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.inventory.items.Item.id">
-<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#src.inventory.items.Item.id" title="Link to this definition"></a></dt>
-<dd><p>Unique identifier for the item.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.inventory.items.Item.name_key">
-<span class="sig-name descname"><span class="pre">name_key</span></span><a class="headerlink" href="#src.inventory.items.Item.name_key" title="Link to this definition"></a></dt>
-<dd><p>The original (untranslated) name string for translation lookup.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.inventory.items.Item.type">
-<span class="sig-name descname"><span class="pre">type</span></span><a class="headerlink" href="#src.inventory.items.Item.type" title="Link to this definition"></a></dt>
-<dd><p>The type/category of the item (e.g., ‘weapon’, ‘food’, ‘armor’).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.inventory.items.Item.max_stack">
-<span class="sig-name descname"><span class="pre">max_stack</span></span><a class="headerlink" href="#src.inventory.items.Item.max_stack" title="Link to this definition"></a></dt>
-<dd><p>Maximum number of items per inventory slot.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.inventory.items.Item.desc_key">
-<span class="sig-name descname"><span class="pre">desc_key</span></span><a class="headerlink" href="#src.inventory.items.Item.desc_key" title="Link to this definition"></a></dt>
-<dd><p>The original (untranslated) description string for translation lookup.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.inventory.items.Item.image">
-<span class="sig-name descname"><span class="pre">image</span></span><a class="headerlink" href="#src.inventory.items.Item.image" title="Link to this definition"></a></dt>
-<dd><p>The item’s image surface.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pygame.Surface</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.inventory.items.Item._cached_image">
-<span class="sig-name descname"><span class="pre">_cached_image</span></span><a class="headerlink" href="#src.inventory.items.Item._cached_image" title="Link to this definition"></a></dt>
-<dd><p>Cached resized image for performance.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pygame.Surface | None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.inventory.items.Item._cached_size">
-<span class="sig-name descname"><span class="pre">_cached_size</span></span><a class="headerlink" href="#src.inventory.items.Item._cached_size" title="Link to this definition"></a></dt>
-<dd><p>Size of the cached image.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="simple">
-<dt>Properties:</dt><dd><dl class="simple">
-<dt>name (str):</dt><dd><p>The translated name of the item.</p>
-</dd>
-<dt>description (str):</dt><dd><p>The translated description of the item.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="src.inventory.items.Item.resize">
-<span class="sig-name descname"><span class="pre">resize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/items.html#Item.resize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.items.Item.resize" title="Link to this definition"></a></dt>
-<dd><p>Resize and cache the item’s image.
-:param size: The desired size in pixels.
-:type size: int</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The resized image.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>pygame.Surface</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.inventory.items.Item.get_tooltip_text">
-<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/items.html#Item.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.items.Item.get_tooltip_text" title="Link to this definition"></a></dt>
-<dd><p>Get a tooltip string with the item’s name and description.
-:returns: Tooltip text.
-:rtype: str</p>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="src.inventory.items.Item.description">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">description</span></span><a class="headerlink" href="#src.inventory.items.Item.description" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id2">
-<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/items.html#Item.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="src.inventory.items.Item.name">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#src.inventory.items.Item.name" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id3">
-<span class="sig-name descname"><span class="pre">resize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/items.html#Item.resize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.inventory.items.Item.use">
-<span class="sig-name descname"><span class="pre">use</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/items.html#Item.use"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.items.Item.use" title="Link to this definition"></a></dt>
-<dd><p>Use the item on the target character.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="src.inventory.items.Weapon">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.inventory.items.</span></span><span class="sig-name descname"><span class="pre">Weapon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/items.html#Weapon"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.items.Weapon" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#src.inventory.items.Item" title="src.inventory.items.Item"><code class="xref py py-class docutils literal notranslate"><span class="pre">Item</span></code></a></p>
-<p>Represents a weapon item with damage and durability.</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.inventory.items.Weapon.damage">
-<span class="sig-name descname"><span class="pre">damage</span></span><a class="headerlink" href="#src.inventory.items.Weapon.damage" title="Link to this definition"></a></dt>
-<dd><p>The amount of damage this weapon deals.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.inventory.items.Weapon.durability">
-<span class="sig-name descname"><span class="pre">durability</span></span><a class="headerlink" href="#src.inventory.items.Weapon.durability" title="Link to this definition"></a></dt>
-<dd><p>The remaining durability of the weapon.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.inventory.items.Weapon.range">
-<span class="sig-name descname"><span class="pre">range</span></span><a class="headerlink" href="#src.inventory.items.Weapon.range" title="Link to this definition"></a></dt>
-<dd><p>The attack range of the weapon.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.inventory.items.Weapon.get_tooltip_text">
-<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/items.html#Weapon.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.items.Weapon.get_tooltip_text" title="Link to this definition"></a></dt>
-<dd><p>Get a tooltip string with weapon stats and description.
-:returns: Tooltip text.
-:rtype: str</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id4">
-<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/items.html#Weapon.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="src.inventory.items.create_item">
-<span class="sig-prename descclassname"><span class="pre">src.inventory.items.</span></span><span class="sig-name descname"><span class="pre">create_item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/items.html#create_item"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.items.create_item" title="Link to this definition"></a></dt>
-<dd><p>Factory function to create an item instance by ID.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>item_id</strong> (<em>str</em>) – The unique identifier of the item in the item database.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The instantiated item object of the appropriate type.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#src.inventory.items.Item" title="src.inventory.items.Item">Item</a> | <a class="reference internal" href="#src.inventory.items.Weapon" title="src.inventory.items.Weapon">Weapon</a> | <a class="reference internal" href="#src.inventory.items.Consumable" title="src.inventory.items.Consumable">Consumable</a> | <a class="reference internal" href="#src.inventory.items.Armor" title="src.inventory.items.Armor">Armor</a></p>
-</dd>
-</dl>
-</dd></dl>
-
+<section id="src-inventory-items-module">
+<h2>src.inventory.items module<a class="headerlink" href="#src-inventory-items-module" title="Link to this heading"></a></h2>
 </section>
 <section id="module-src.inventory.system">
 <span id="src-inventory-system-module"></span><h2>src.inventory.system module<a class="headerlink" href="#module-src.inventory.system" title="Link to this heading"></a></h2>
@@ -402,7 +116,7 @@
 <dd><p>The item stack (item object, count) currently held by the mouse cursor, or None if nothing is selected.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple[<a class="reference internal" href="#src.inventory.items.Item" title="src.inventory.items.Item">Item</a>, int] | None</p>
+<dd class="field-odd"><p>tuple[Item, int] | None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -495,33 +209,33 @@
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">PLAYER_inventory_open</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pl_inv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">equip_inv</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#INVENTORY_manager.PLAYER_inventory_open"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">add_active_inventory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inventory</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#INVENTORY_manager.add_active_inventory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#INVENTORY_manager.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#INVENTORY_manager.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">remove_active_inventory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inventory</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#INVENTORY_manager.remove_active_inventory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="id5">
-<span class="sig-name descname"><span class="pre">PLAYER_inventory_open</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pl_inv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">equip_inv</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#INVENTORY_manager.PLAYER_inventory_open"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id6">
-<span class="sig-name descname"><span class="pre">add_active_inventory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inventory</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#INVENTORY_manager.add_active_inventory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id7">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#INVENTORY_manager.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id8">
-<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#INVENTORY_manager.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id9">
-<span class="sig-name descname"><span class="pre">remove_active_inventory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inventory</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#INVENTORY_manager.remove_active_inventory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id10">
-<span class="sig-name descname"><span class="pre">toggle_inventory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pl_inv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">equip_inv</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#INVENTORY_manager.toggle_inventory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">toggle_inventory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pl_inv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">equip_inv</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#INVENTORY_manager.toggle_inventory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -565,7 +279,7 @@
 <dd><p>2D list representing the slots, where each slot holds either None or a tuple of (item object, count).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>list[list[tuple[<a class="reference internal" href="#src.inventory.items.Item" title="src.inventory.items.Item">Item</a>, int] | None]]</p>
+<dd class="field-odd"><p>list[list[tuple[Item, int] | None]]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -642,7 +356,7 @@
 <dd><p>The item currently being dragged or held by the mouse from this inventory.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple[<a class="reference internal" href="#src.inventory.items.Item" title="src.inventory.items.Item">Item</a>, int] | None</p>
+<dd class="field-odd"><p>tuple[Item, int] | None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -680,18 +394,18 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id11">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Inventory.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id11" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id6">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Inventory.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id12">
-<span class="sig-name descname"><span class="pre">get_slot_under_mouse</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Inventory.get_slot_under_mouse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id12" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id7">
+<span class="sig-name descname"><span class="pre">get_slot_under_mouse</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Inventory.get_slot_under_mouse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id13">
-<span class="sig-name descname"><span class="pre">inventory_interactions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Inventory.inventory_interactions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id13" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id8">
+<span class="sig-name descname"><span class="pre">inventory_interactions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Inventory.inventory_interactions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -711,8 +425,8 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id14">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_inventory.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id14" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id9">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_inventory.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
