@@ -2,6 +2,7 @@ import pygame
 from typing import TYPE_CHECKING
 import copy
 
+from src.core.logger import logger
 import src.config as cfg
 from src.ui.widgets import Tooltip
 
@@ -125,6 +126,7 @@ class Inventory:
                         item = slot[0]
                         game_state = manager.app.manager.states.get("gameplay")
                         if game_state and hasattr(item, "use"):
+                            logger.info(f"Used item: {item.id}")
                             item.use(game_state.character)
                             self.items[x][y] = None
                     elif slot[1] > 1:
@@ -245,6 +247,7 @@ class ShopInventory(Inventory):
                     price = self.prices.get(item.id, 10) 
                     
                     self.app.money += price * count
+                    logger.info(f"Sold {count}x {item.id} for ${price * count}. New balance: ${self.app.money}")
                     manager.selected_item = None
                     # Item is consumed (sold)
                 else:
@@ -254,10 +257,13 @@ class ShopInventory(Inventory):
                         price = self.prices.get(item.id, 0)
                         if self.app.money >= price:
                             self.app.money -= price
+                            logger.info(f"Bought {item.id} for ${price}. New balance: ${self.app.money}")
                             # Create a copy for the player
                             new_item = copy.copy(item)
                             manager.selected_item = [new_item, 1]
                             # Do not remove from shop (infinite stock)
+                        else:
+                            logger.warning(f"Not enough money to buy {item.id}. Cost: ${price}, Balance: ${self.app.money}")
 
 
 class MAIN_player_inventory(Inventory):

@@ -1,6 +1,7 @@
 import json
 import os
 import datetime
+from src.core.logger import logger
 from src.items.items import create_item
 import src.config as cfg
 
@@ -24,7 +25,7 @@ class SaveManager:
         
         game_state = app.manager.states.get("gameplay")
         if not game_state:
-            print("Error: Cannot save, gameplay state not found.")
+            logger.error("Cannot save, gameplay state not found.")
             return
 
         # Serialize Inventory
@@ -81,13 +82,13 @@ class SaveManager:
         file_path = os.path.join(SAVES_DIR, f"{slot_name}.json")
         with open(file_path, 'w') as f:
             json.dump(save_data, f, indent=4)
-        print(f"Game saved to {file_path}")
+        logger.info(f"Game saved to {file_path}")
 
     @staticmethod
     def load_game(app, slot_name):
         file_path = os.path.join(SAVES_DIR, f"{slot_name}.json")
         if not os.path.exists(file_path):
-            print(f"Error: Save file {file_path} not found.")
+            logger.error(f"Save file {file_path} not found.")
             return False
 
         with open(file_path, 'r') as f:
@@ -141,7 +142,7 @@ class SaveManager:
                 else:
                     equip_inv.items[col][row] = None
         
-        print(f"Game loaded from {file_path}")
+        logger.info(f"Game loaded from {file_path}")
         return True
 
     @staticmethod
@@ -149,4 +150,4 @@ class SaveManager:
         file_path = os.path.join(SAVES_DIR, f"{slot_name}.json")
         if os.path.exists(file_path):
             os.remove(file_path)
-            print(f"Deleted save {file_path}")
+            logger.info(f"Deleted save {file_path}")
