@@ -85,7 +85,21 @@ class Character:
         self.is_sprinting = False
         self.can_sprint = True
 
+        # Effects
+        self.effects = []
+        self.confused = False
+        self.dizzy = False
+
+    def add_effect(self, effect):
+        self.effects.append(effect)
+
     def update(self, dt):
+        # Update effects
+        for effect in self.effects[:]:
+            effect.update(dt, self)
+            if effect.is_finished:
+                self.effects.remove(effect)
+
         keys = pygame.key.get_pressed()
         self.moving = False
         self.is_sprinting = False
@@ -96,20 +110,30 @@ class Character:
 
         current_speed = self.speed * self.sprint_multiplier if self.is_sprinting else self.speed
 
-        if keys[pygame.K_w]:
+        # Movement logic with confusion support
+        up_key = pygame.K_w
+        down_key = pygame.K_s
+        left_key = pygame.K_a
+        right_key = pygame.K_d
+
+        if self.confused:
+            up_key, down_key = down_key, up_key
+            left_key, right_key = right_key, left_key
+
+        if keys[up_key]:
             self.pos.y -= current_speed * dt
             self.direction = "up"
             self.moving = True
-        elif keys[pygame.K_s]:
+        elif keys[down_key]:
             self.pos.y += current_speed * dt
             self.direction = "down"
             self.moving = True
-        elif keys[pygame.K_a]:
+        elif keys[left_key]:
             self.pos.x -= current_speed * dt
             self.direction = "side"
             self.flip = True
             self.moving = True
-        elif keys[pygame.K_d]:
+        elif keys[right_key]:
             self.pos.x += current_speed * dt
             self.direction = "side"
             self.flip = False

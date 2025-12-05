@@ -1,5 +1,6 @@
 import pygame
 from src.inventory.item_database import Item_database
+from src.inventory.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, DizzinessEffect
 
 class Item:
     """
@@ -71,6 +72,12 @@ class Item:
     def get_tooltip_text(self):
         return f"{self.name}\n{self.description}"
 
+    def use(self, target):
+        """
+        Use the item on the target character.
+        """
+        pass
+
 class Weapon(Item):
     """
     Represents a weapon item with damage and durability.
@@ -106,20 +113,61 @@ class Consumable(Item):
     Attributes:
         heal_amount (int):
             The amount of HP restored by this item.
+        effects_data (list[dict]):
+            Configuration for effects to apply.
 
     Methods:
         get_tooltip_text():
             Get a tooltip string with consumable stats and description.
             Returns:
                 str: Tooltip text.
+        use(target):
+            Apply healing and effects to the target.
     """
     def __init__(self, data: dict):
         super().__init__(data)
         self.heal_amount = data.get("heal_amount", 0)
+        self.effects_data = data.get("effects", [])
         
     def get_tooltip_text(self):
-        stats = f"{_('Type')}: {_('Consumable')}\n{_('Heal')}: +{self.heal_amount} {_('HP')}"
+        stats = f"{_('Type')}: {_('Consumable')}"
+        if self.heal_amount > 0:
+            stats += f"\n{_('Heal')}: +{self.heal_amount} {_('HP')}"
+        
+        if self.effects_data:
+            stats += f"\n{_('Effects')}:"
+            for effect in self.effects_data:
+                etype = effect.get("type")
+                duration = effect.get("duration")
+                if etype == "regeneration":
+                    stats += f"\n - {_('Regen')} ({duration}s)"
+                elif etype == "poison":
+                    stats += f"\n - {_('Poison')} ({duration}s)"
+                elif etype == "confusion":
+                    stats += f"\n - {_('Confusion')} ({duration}s)"
+                elif etype == "dizziness":
+                    stats += f"\n - {_('Dizziness')} ({duration}s)"
+
         return f"{self.name}\n{stats}\n{self.description}"
+
+    def use(self, target):
+        if self.heal_amount > 0:
+            target.hp = min(100, target.hp + self.heal_amount)
+        
+        for effect_data in self.effects_data:
+            etype = effect_data.get("type")
+            duration = effect_data.get("duration", 0)
+            
+            if etype == "regeneration":
+                amount = effect_data.get("amount", 1)
+                target.add_effect(RegenerationEffect(duration, amount))
+            elif etype == "poison":
+                damage = effect_data.get("damage", 1)
+                target.add_effect(PoisonEffect(duration, damage))
+            elif etype == "confusion":
+                target.add_effect(ConfusionEffect(duration))
+            elif etype == "dizziness":
+                target.add_effect(DizzinessEffect(duration))
 
 
 class Armor(Item):
