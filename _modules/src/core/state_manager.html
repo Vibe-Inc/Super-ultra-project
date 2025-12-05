@@ -72,7 +72,7 @@
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.menus</span><span class="w"> </span><span class="kn">import</span> <span class="n">MainMenu</span><span class="p">,</span> <span class="n">SettingsMenu</span><span class="p">,</span> <span class="n">CreditsMenu</span><span class="p">,</span> <span class="n">PauseMenu</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.menus</span><span class="w"> </span><span class="kn">import</span> <span class="n">MainMenu</span><span class="p">,</span> <span class="n">SettingsMenu</span><span class="p">,</span> <span class="n">CreditsMenu</span><span class="p">,</span> <span class="n">PauseMenu</span><span class="p">,</span> <span class="n">SaveLoadMenu</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.game</span><span class="w"> </span><span class="kn">import</span> <span class="n">Game</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
@@ -114,7 +114,8 @@
             <span class="s2">&quot;settings&quot;</span><span class="p">:</span> <span class="n">SettingsMenu</span><span class="p">(</span><span class="n">app</span><span class="p">),</span>
             <span class="s2">&quot;credits&quot;</span><span class="p">:</span> <span class="n">CreditsMenu</span><span class="p">(</span><span class="n">app</span><span class="p">),</span>
             <span class="s2">&quot;gameplay&quot;</span><span class="p">:</span> <span class="n">Game</span><span class="p">(</span><span class="n">app</span><span class="p">),</span>
-            <span class="s2">&quot;pause&quot;</span><span class="p">:</span> <span class="n">PauseMenu</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+            <span class="s2">&quot;pause&quot;</span><span class="p">:</span> <span class="n">PauseMenu</span><span class="p">(</span><span class="n">app</span><span class="p">),</span>
+            <span class="s2">&quot;save_load&quot;</span><span class="p">:</span> <span class="n">SaveLoadMenu</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current_state</span> <span class="o">=</span> <span class="kc">None</span></div>
 

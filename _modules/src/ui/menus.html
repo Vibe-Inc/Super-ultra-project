@@ -75,6 +75,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.widgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">Button</span><span class="p">,</span> <span class="n">Tooltip</span><span class="p">,</span> <span class="n">Slider</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.state</span><span class="w"> </span><span class="kn">import</span> <span class="n">State</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.save_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">SaveManager</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">src.config</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cfg</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
@@ -172,6 +173,7 @@
         <span class="n">exit_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">-</span> <span class="n">tot_width</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">button_width</span> <span class="o">+</span> <span class="n">gap</span><span class="p">,</span> <span class="mi">700</span><span class="p">,</span> <span class="n">button_width</span><span class="p">,</span> <span class="n">button_height</span><span class="p">)</span>
         <span class="n">settings_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">-</span> <span class="n">tot_width</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">850</span><span class="p">,</span> <span class="n">button_width</span><span class="p">,</span> <span class="n">button_height</span><span class="p">)</span>
         <span class="n">credits_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">-</span> <span class="n">tot_width</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">button_width</span> <span class="o">+</span> <span class="n">gap</span><span class="p">,</span> <span class="mi">850</span><span class="p">,</span> <span class="n">button_width</span><span class="p">,</span> <span class="n">button_height</span><span class="p">)</span>
+        <span class="n">load_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">-</span> <span class="n">tot_width</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">button_width</span> <span class="o">+</span> <span class="n">gap</span><span class="p">,</span> <span class="mi">550</span><span class="p">,</span> <span class="n">button_width</span><span class="p">,</span> <span class="n">button_height</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">Button</span><span class="p">(</span>
@@ -183,6 +185,16 @@
                 <span class="n">cfg</span><span class="o">.</span><span class="n">text_color</span><span class="p">,</span>
                 <span class="n">cfg</span><span class="o">.</span><span class="n">corner_radius</span><span class="p">,</span>
                 <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">start_game</span>
+            <span class="p">),</span>
+            <span class="n">Button</span><span class="p">(</span>
+                <span class="n">load_rect</span><span class="p">,</span>
+                <span class="n">_</span><span class="p">(</span><span class="s2">&quot;LOAD&quot;</span><span class="p">),</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_color_SETTINGS</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_hover_color_SETTINGS</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_font</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">text_color</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">corner_radius</span><span class="p">,</span>
+                <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">open_load_menu</span>
             <span class="p">),</span>
             <span class="n">Button</span><span class="p">(</span>
                 <span class="n">exit_rect</span><span class="p">,</span>
@@ -267,6 +279,14 @@
 <a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.MainMenu.open_credits">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">open_credits</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;credits&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MainMenu.open_load_menu">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.MainMenu.open_load_menu">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">open_load_menu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">states</span><span class="p">[</span><span class="s2">&quot;save_load&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="s2">&quot;load&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">states</span><span class="p">[</span><span class="s2">&quot;save_load&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">refresh_saves</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;save_load&quot;</span><span class="p">)</span></div>
 </div>
 
 
@@ -543,6 +563,16 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">Button</span><span class="p">(</span>
+                <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">-</span> <span class="n">button_width</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="n">button_width</span><span class="p">,</span> <span class="n">button_height</span><span class="p">),</span>
+                <span class="n">_</span><span class="p">(</span><span class="s2">&quot;SAVE&quot;</span><span class="p">),</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_color_SETTINGS</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_hover_color_SETTINGS</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_font</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">text_color</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">corner_radius</span><span class="p">,</span>
+                <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">open_save_menu</span>
+            <span class="p">),</span>
+            <span class="n">Button</span><span class="p">(</span>
                 <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">-</span> <span class="n">button_width</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">650</span><span class="p">,</span> <span class="n">button_width</span><span class="p">,</span> <span class="n">button_height</span><span class="p">),</span>
                 <span class="n">_</span><span class="p">(</span><span class="s2">&quot;RESUME&quot;</span><span class="p">),</span>
                 <span class="n">cfg</span><span class="o">.</span><span class="n">button_color_START</span><span class="p">,</span>
@@ -575,6 +605,13 @@
             <span class="n">button</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="PauseMenu.open_save_menu">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.PauseMenu.open_save_menu">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">open_save_menu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">states</span><span class="p">[</span><span class="s2">&quot;save_load&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="s2">&quot;save&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">states</span><span class="p">[</span><span class="s2">&quot;save_load&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">refresh_saves</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;save_load&quot;</span><span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="PauseMenu.resume_game">
 <a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.PauseMenu.resume_game">[docs]</a>
@@ -586,6 +623,124 @@
 <a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.PauseMenu.back_to_main">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">back_to_main</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;main&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SaveLoadMenu">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.SaveLoadMenu">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SaveLoadMenu</span><span class="p">(</span><span class="n">Menu</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="s2">&quot;App&quot;</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="s2">&quot;save&quot;</span> <span class="c1"># &quot;save&quot; or &quot;load&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">slots</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;save1&quot;</span><span class="p">,</span> <span class="s2">&quot;save2&quot;</span><span class="p">,</span> <span class="s2">&quot;save3&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh_saves</span><span class="p">()</span>
+
+<div class="viewcode-block" id="SaveLoadMenu.refresh_saves">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.SaveLoadMenu.refresh_saves">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">refresh_saves</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="c1"># Back button</span>
+        <span class="n">back_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="mi">250</span><span class="p">,</span> <span class="mi">170</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Button</span><span class="p">(</span>
+            <span class="n">back_rect</span><span class="p">,</span>
+            <span class="n">_</span><span class="p">(</span><span class="s2">&quot;BACK&quot;</span><span class="p">),</span>
+            <span class="n">cfg</span><span class="o">.</span><span class="n">button_color_SETTINGS_BACK</span><span class="p">,</span>
+            <span class="n">cfg</span><span class="o">.</span><span class="n">button_hover_color_SETTINGS_BACK</span><span class="p">,</span>
+            <span class="n">cfg</span><span class="o">.</span><span class="n">button_font</span><span class="p">,</span>
+            <span class="n">cfg</span><span class="o">.</span><span class="n">text_color</span><span class="p">,</span>
+            <span class="n">cfg</span><span class="o">.</span><span class="n">corner_radius</span><span class="p">,</span>
+            <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">go_back</span>
+        <span class="p">))</span>
+
+        <span class="c1"># Slot buttons</span>
+        <span class="n">start_y</span> <span class="o">=</span> <span class="mi">370</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">slot</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slots</span><span class="p">):</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">start_y</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">150</span>
+            
+            <span class="c1"># Check if save exists</span>
+            <span class="n">exists</span> <span class="o">=</span> <span class="n">slot</span> <span class="o">+</span> <span class="s2">&quot;.json&quot;</span> <span class="ow">in</span> <span class="n">SaveManager</span><span class="o">.</span><span class="n">get_save_files</span><span class="p">()</span>
+            
+            <span class="n">label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Slot&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">if</span> <span class="n">exists</span><span class="p">:</span>
+                <span class="n">label</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; (</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Used&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">label</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; (</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Empty&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+            <span class="c1"># Main slot button (Save or Load)</span>
+            <span class="n">slot_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">200</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="mi">400</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Button</span><span class="p">(</span>
+                <span class="n">slot_rect</span><span class="p">,</span>
+                <span class="n">label</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_color_START</span> <span class="k">if</span> <span class="n">exists</span> <span class="k">else</span> <span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_hover_color_START</span> <span class="k">if</span> <span class="n">exists</span> <span class="k">else</span> <span class="p">(</span><span class="mi">120</span><span class="p">,</span> <span class="mi">120</span><span class="p">,</span> <span class="mi">120</span><span class="p">),</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_font</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">text_color</span><span class="p">,</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">corner_radius</span><span class="p">,</span>
+                <span class="n">on_click</span><span class="o">=</span><span class="k">lambda</span> <span class="n">s</span><span class="o">=</span><span class="n">slot</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_slot_click</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+            <span class="p">))</span>
+
+            <span class="c1"># Delete button (only if exists)</span>
+            <span class="k">if</span> <span class="n">exists</span><span class="p">:</span>
+                <span class="n">del_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">250</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="mi">150</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Button</span><span class="p">(</span>
+                    <span class="n">del_rect</span><span class="p">,</span>
+                    <span class="n">_</span><span class="p">(</span><span class="s2">&quot;DEL&quot;</span><span class="p">),</span>
+                    <span class="n">cfg</span><span class="o">.</span><span class="n">button_color_EXIT</span><span class="p">,</span>
+                    <span class="n">cfg</span><span class="o">.</span><span class="n">button_hover_color_EXIT</span><span class="p">,</span>
+                    <span class="n">cfg</span><span class="o">.</span><span class="n">button_font</span><span class="p">,</span>
+                    <span class="n">cfg</span><span class="o">.</span><span class="n">text_color</span><span class="p">,</span>
+                    <span class="n">cfg</span><span class="o">.</span><span class="n">corner_radius</span><span class="p">,</span>
+                    <span class="n">on_click</span><span class="o">=</span><span class="k">lambda</span> <span class="n">s</span><span class="o">=</span><span class="n">slot</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">delete_slot</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+                <span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="SaveLoadMenu.on_slot_click">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.SaveLoadMenu.on_slot_click">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_slot_click</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot_name</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;save&quot;</span><span class="p">:</span>
+            <span class="n">SaveManager</span><span class="o">.</span><span class="n">save_game</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="n">slot_name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">refresh_saves</span><span class="p">()</span> <span class="c1"># Update UI to show &quot;Used&quot;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;load&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">SaveManager</span><span class="o">.</span><span class="n">load_game</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="n">slot_name</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;gameplay&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SaveLoadMenu.delete_slot">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.SaveLoadMenu.delete_slot">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">delete_slot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot_name</span><span class="p">):</span>
+        <span class="n">SaveManager</span><span class="o">.</span><span class="n">delete_save</span><span class="p">(</span><span class="n">slot_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh_saves</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="SaveLoadMenu.go_back">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.SaveLoadMenu.go_back">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">go_back</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;save&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;pause&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;main&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SaveLoadMenu.draw">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.menus.SaveLoadMenu.draw">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
+        <span class="c1"># Draw background (maybe semi-transparent if coming from pause)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;save&quot;</span><span class="p">:</span>
+             <span class="n">overlay</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span><span class="p">),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+             <span class="n">overlay</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">180</span><span class="p">))</span>
+             <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+             <span class="c1"># If loading from main menu, maybe draw background image</span>
+             <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">bg</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+        <span class="n">title</span> <span class="o">=</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;SAVE GAME&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;save&quot;</span> <span class="k">else</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;LOAD GAME&quot;</span><span class="p">)</span>
+        <span class="n">title_surf</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get_font</span><span class="p">(</span><span class="mi">80</span><span class="p">)</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">))</span>
+        <span class="n">title_rect</span> <span class="o">=</span> <span class="n">title_surf</span><span class="o">.</span><span class="n">get_rect</span><span class="p">(</span><span class="n">center</span><span class="o">=</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">220</span><span class="p">))</span>
+        <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">title_surf</span><span class="p">,</span> <span class="n">title_rect</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

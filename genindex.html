@@ -290,6 +290,8 @@
 </li>
       <li><a href="src.ui.html#src.ui.widgets.Tooltip.delay">delay (src.ui.widgets.Tooltip attribute)</a>
 </li>
+      <li><a href="src.ui.html#src.ui.menus.SaveLoadMenu.delete_slot">delete_slot() (src.ui.menus.SaveLoadMenu method)</a>
+</li>
       <li><a href="src.inventory.html#src.inventory.items.Item.desc_key">desc_key (src.inventory.items.Item attribute)</a>
 </li>
       <li><a href="src.inventory.html#src.inventory.items.Item.description">description (src.inventory.items.Item property)</a>
@@ -338,6 +340,8 @@
         <li><a href="src.ui.html#id9">(src.ui.menus.Menu method)</a>, <a href="src.ui.html#src.ui.menus.Menu.draw">[1]</a>
 </li>
         <li><a href="src.ui.html#id12">(src.ui.menus.PauseMenu method)</a>, <a href="src.ui.html#src.ui.menus.PauseMenu.draw">[1]</a>
+</li>
+        <li><a href="src.ui.html#src.ui.menus.SaveLoadMenu.draw">(src.ui.menus.SaveLoadMenu method)</a>
 </li>
         <li><a href="src.ui.html#id15">(src.ui.menus.SettingsMenu method)</a>, <a href="src.ui.html#src.ui.menus.SettingsMenu.draw">[1]</a>
 </li>
@@ -422,10 +426,10 @@
 </li>
       <li><a href="src.html#src.config.get_font">get_font() (in module src.config)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.inventory.html#id11">get_slot_under_mouse() (src.inventory.system.Inventory method)</a>, <a href="src.inventory.html#src.inventory.system.Inventory.get_slot_under_mouse">[1]</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.core.html#id8">get_state() (src.core.state_manager.StateManager method)</a>, <a href="src.core.html#src.core.state_manager.StateManager.get_state">[1]</a>
 </li>
       <li><a href="src.inventory.html#id0">get_tooltip_text() (src.inventory.items.Consumable method)</a>, <a href="src.inventory.html#src.inventory.items.Consumable.get_tooltip_text">[1]</a>
@@ -436,6 +440,8 @@
         <li><a href="src.inventory.html#id3">(src.inventory.items.Weapon method)</a>, <a href="src.inventory.html#src.inventory.items.Weapon.get_tooltip_text">[1]</a>
 </li>
       </ul></li>
+      <li><a href="src.ui.html#src.ui.menus.SaveLoadMenu.go_back">go_back() (src.ui.menus.SaveLoadMenu method)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -669,9 +675,15 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.ui.html#src.ui.widgets.Button.on_click">on_click (src.ui.widgets.Button attribute)</a>
 </li>
+      <li><a href="src.ui.html#src.ui.menus.SaveLoadMenu.on_slot_click">on_slot_click() (src.ui.menus.SaveLoadMenu method)</a>
+</li>
+      <li><a href="src.ui.html#id6">open_credits() (src.ui.menus.MainMenu method)</a>, <a href="src.ui.html#src.ui.menus.MainMenu.open_credits">[1]</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="src.ui.html#id6">open_credits() (src.ui.menus.MainMenu method)</a>, <a href="src.ui.html#src.ui.menus.MainMenu.open_credits">[1]</a>
+      <li><a href="src.ui.html#src.ui.menus.MainMenu.open_load_menu">open_load_menu() (src.ui.menus.MainMenu method)</a>
+</li>
+      <li><a href="src.ui.html#src.ui.menus.PauseMenu.open_save_menu">open_save_menu() (src.ui.menus.PauseMenu method)</a>
 </li>
       <li><a href="src.ui.html#id7">open_settings() (src.ui.menus.MainMenu method)</a>, <a href="src.ui.html#src.ui.menus.MainMenu.open_settings">[1]</a>
 </li>
@@ -735,12 +747,14 @@
         <li><a href="src.ui.html#src.ui.widgets.Tooltip.rect">(src.ui.widgets.Tooltip attribute)</a>
 </li>
       </ul></li>
-      <li><a href="src.core.html#id10">reinit_states() (src.core.state_manager.StateManager method)</a>, <a href="src.core.html#src.core.state_manager.StateManager.reinit_states">[1]</a>
+      <li><a href="src.ui.html#src.ui.menus.SaveLoadMenu.refresh_saves">refresh_saves() (src.ui.menus.SaveLoadMenu method)</a>
 </li>
-      <li><a href="src.core.html#id2">reinit_ui() (src.core.game.Game method)</a>, <a href="src.core.html#src.core.game.Game.reinit_ui">[1]</a>
+      <li><a href="src.core.html#id10">reinit_states() (src.core.state_manager.StateManager method)</a>, <a href="src.core.html#src.core.state_manager.StateManager.reinit_states">[1]</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="src.core.html#id2">reinit_ui() (src.core.game.Game method)</a>, <a href="src.core.html#src.core.game.Game.reinit_ui">[1]</a>
+</li>
       <li><a href="src.inventory.html#id8">remove_active_inventory() (src.inventory.system.INVENTORY_manager method)</a>, <a href="src.inventory.html#src.inventory.system.INVENTORY_manager.remove_active_inventory">[1]</a>
 </li>
       <li><a href="src.inventory.html#id2">resize() (src.inventory.items.Item method)</a>, <a href="src.inventory.html#src.inventory.items.Item.resize">[1]</a>
@@ -757,6 +771,8 @@
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="src.ui.html#src.ui.menus.SaveLoadMenu">SaveLoadMenu (class in src.ui.menus)</a>
+</li>
       <li><a href="src.html#src.app.App.screen">screen (src.app.App attribute)</a>
 </li>
       <li><a href="src.inventory.html#src.inventory.system.Inventory.selected_item">selected_item (src.inventory.system.Inventory attribute)</a>
