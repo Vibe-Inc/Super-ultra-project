@@ -71,6 +71,7 @@
   <h1>Source code for src.inventory.items</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.inventory.item_database</span><span class="w"> </span><span class="kn">import</span> <span class="n">Item_database</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.inventory.effects</span><span class="w"> </span><span class="kn">import</span> <span class="n">RegenerationEffect</span><span class="p">,</span> <span class="n">PoisonEffect</span><span class="p">,</span> <span class="n">ConfusionEffect</span><span class="p">,</span> <span class="n">DizzinessEffect</span>
 
 <div class="viewcode-block" id="Item">
 <a class="viewcode-back" href="../../../src.inventory.html#src.inventory.items.Item">[docs]</a>
@@ -148,6 +149,15 @@
 <a class="viewcode-back" href="../../../src.inventory.html#src.inventory.items.Item.get_tooltip_text">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_tooltip_text</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+<div class="viewcode-block" id="Item.use">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.items.Item.use">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">use</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Use the item on the target character.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
 </div>
 
 
@@ -194,22 +204,66 @@
 <span class="sd">    Attributes:</span>
 <span class="sd">        heal_amount (int):</span>
 <span class="sd">            The amount of HP restored by this item.</span>
+<span class="sd">        effects_data (list[dict]):</span>
+<span class="sd">            Configuration for effects to apply.</span>
 
 <span class="sd">    Methods:</span>
 <span class="sd">        get_tooltip_text():</span>
 <span class="sd">            Get a tooltip string with consumable stats and description.</span>
 <span class="sd">            Returns:</span>
 <span class="sd">                str: Tooltip text.</span>
+<span class="sd">        use(target):</span>
+<span class="sd">            Apply healing and effects to the target.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">heal_amount</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;heal_amount&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">effects_data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;effects&quot;</span><span class="p">,</span> <span class="p">[])</span>
         
 <div class="viewcode-block" id="Consumable.get_tooltip_text">
 <a class="viewcode-back" href="../../../src.inventory.html#src.inventory.items.Consumable.get_tooltip_text">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_tooltip_text</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">stats</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Type&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Consumable&#39;</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Heal&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: +</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">heal_amount</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;HP&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">stats</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Type&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Consumable&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">heal_amount</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">stats</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Heal&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: +</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">heal_amount</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;HP&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">effects_data</span><span class="p">:</span>
+            <span class="n">stats</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Effects&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">:&quot;</span>
+            <span class="k">for</span> <span class="n">effect</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">effects_data</span><span class="p">:</span>
+                <span class="n">etype</span> <span class="o">=</span> <span class="n">effect</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">)</span>
+                <span class="n">duration</span> <span class="o">=</span> <span class="n">effect</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;duration&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">etype</span> <span class="o">==</span> <span class="s2">&quot;regeneration&quot;</span><span class="p">:</span>
+                    <span class="n">stats</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2"> - </span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Regen&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">duration</span><span class="si">}</span><span class="s2">s)&quot;</span>
+                <span class="k">elif</span> <span class="n">etype</span> <span class="o">==</span> <span class="s2">&quot;poison&quot;</span><span class="p">:</span>
+                    <span class="n">stats</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2"> - </span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Poison&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">duration</span><span class="si">}</span><span class="s2">s)&quot;</span>
+                <span class="k">elif</span> <span class="n">etype</span> <span class="o">==</span> <span class="s2">&quot;confusion&quot;</span><span class="p">:</span>
+                    <span class="n">stats</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2"> - </span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Confusion&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">duration</span><span class="si">}</span><span class="s2">s)&quot;</span>
+                <span class="k">elif</span> <span class="n">etype</span> <span class="o">==</span> <span class="s2">&quot;dizziness&quot;</span><span class="p">:</span>
+                    <span class="n">stats</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2"> - </span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Dizziness&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">duration</span><span class="si">}</span><span class="s2">s)&quot;</span>
+
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">stats</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+<div class="viewcode-block" id="Consumable.use">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.items.Consumable.use">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">use</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">heal_amount</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">hp</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">target</span><span class="o">.</span><span class="n">hp</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">heal_amount</span><span class="p">)</span>
+        
+        <span class="k">for</span> <span class="n">effect_data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">effects_data</span><span class="p">:</span>
+            <span class="n">etype</span> <span class="o">=</span> <span class="n">effect_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">)</span>
+            <span class="n">duration</span> <span class="o">=</span> <span class="n">effect_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;duration&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">etype</span> <span class="o">==</span> <span class="s2">&quot;regeneration&quot;</span><span class="p">:</span>
+                <span class="n">amount</span> <span class="o">=</span> <span class="n">effect_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;amount&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">target</span><span class="o">.</span><span class="n">add_effect</span><span class="p">(</span><span class="n">RegenerationEffect</span><span class="p">(</span><span class="n">duration</span><span class="p">,</span> <span class="n">amount</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">etype</span> <span class="o">==</span> <span class="s2">&quot;poison&quot;</span><span class="p">:</span>
+                <span class="n">damage</span> <span class="o">=</span> <span class="n">effect_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;damage&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">target</span><span class="o">.</span><span class="n">add_effect</span><span class="p">(</span><span class="n">PoisonEffect</span><span class="p">(</span><span class="n">duration</span><span class="p">,</span> <span class="n">damage</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">etype</span> <span class="o">==</span> <span class="s2">&quot;confusion&quot;</span><span class="p">:</span>
+                <span class="n">target</span><span class="o">.</span><span class="n">add_effect</span><span class="p">(</span><span class="n">ConfusionEffect</span><span class="p">(</span><span class="n">duration</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">etype</span> <span class="o">==</span> <span class="s2">&quot;dizziness&quot;</span><span class="p">:</span>
+                <span class="n">target</span><span class="o">.</span><span class="n">add_effect</span><span class="p">(</span><span class="n">DizzinessEffect</span><span class="p">(</span><span class="n">duration</span><span class="p">))</span></div>
 </div>
 
 

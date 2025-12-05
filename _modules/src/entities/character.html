@@ -158,9 +158,31 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">is_sprinting</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">can_sprint</span> <span class="o">=</span> <span class="kc">True</span>
 
+        <span class="c1"># Effects</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">effects</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">confused</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dizzy</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="Character.add_effect">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.add_effect">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_effect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">effect</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">effect</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">effect</span><span class="p">)</span>
+                <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">effect</span><span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="Character.update">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.update">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+        <span class="c1"># Update effects</span>
+        <span class="k">for</span> <span class="n">effect</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="p">[:]:</span>
+            <span class="n">effect</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">effect</span><span class="o">.</span><span class="n">is_finished</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">effect</span><span class="p">)</span>
+
         <span class="n">keys</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">key</span><span class="o">.</span><span class="n">get_pressed</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">moving</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_sprinting</span> <span class="o">=</span> <span class="kc">False</span>
@@ -171,20 +193,30 @@
 
         <span class="n">current_speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sprint_multiplier</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_sprinting</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed</span>
 
-        <span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="n">pygame</span><span class="o">.</span><span class="n">K_w</span><span class="p">]:</span>
+        <span class="c1"># Movement logic with confusion support</span>
+        <span class="n">up_key</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_w</span>
+        <span class="n">down_key</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_s</span>
+        <span class="n">left_key</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_a</span>
+        <span class="n">right_key</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_d</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">confused</span><span class="p">:</span>
+            <span class="n">up_key</span><span class="p">,</span> <span class="n">down_key</span> <span class="o">=</span> <span class="n">down_key</span><span class="p">,</span> <span class="n">up_key</span>
+            <span class="n">left_key</span><span class="p">,</span> <span class="n">right_key</span> <span class="o">=</span> <span class="n">right_key</span><span class="p">,</span> <span class="n">left_key</span>
+
+        <span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="n">up_key</span><span class="p">]:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">-=</span> <span class="n">current_speed</span> <span class="o">*</span> <span class="n">dt</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;up&quot;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">moving</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">elif</span> <span class="n">keys</span><span class="p">[</span><span class="n">pygame</span><span class="o">.</span><span class="n">K_s</span><span class="p">]:</span>
+        <span class="k">elif</span> <span class="n">keys</span><span class="p">[</span><span class="n">down_key</span><span class="p">]:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="n">current_speed</span> <span class="o">*</span> <span class="n">dt</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;down&quot;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">moving</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">elif</span> <span class="n">keys</span><span class="p">[</span><span class="n">pygame</span><span class="o">.</span><span class="n">K_a</span><span class="p">]:</span>
+        <span class="k">elif</span> <span class="n">keys</span><span class="p">[</span><span class="n">left_key</span><span class="p">]:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">-=</span> <span class="n">current_speed</span> <span class="o">*</span> <span class="n">dt</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;side&quot;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">flip</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">moving</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">elif</span> <span class="n">keys</span><span class="p">[</span><span class="n">pygame</span><span class="o">.</span><span class="n">K_d</span><span class="p">]:</span>
+        <span class="k">elif</span> <span class="n">keys</span><span class="p">[</span><span class="n">right_key</span><span class="p">]:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="n">current_speed</span> <span class="o">*</span> <span class="n">dt</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;side&quot;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">flip</span> <span class="o">=</span> <span class="kc">False</span>

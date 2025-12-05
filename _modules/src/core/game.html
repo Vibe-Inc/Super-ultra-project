@@ -77,6 +77,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.map.map</span><span class="w"> </span><span class="kn">import</span> <span class="n">LocalMap</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.inventory.system</span><span class="w"> </span><span class="kn">import</span> <span class="n">MAIN_player_inventory</span><span class="p">,</span> <span class="n">MAIN_player_inventory_equipment</span><span class="p">,</span> <span class="n">ShopInventory</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.inventory.items</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_item</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.inventory.effects</span><span class="w"> </span><span class="kn">import</span> <span class="n">RegenerationEffect</span><span class="p">,</span> <span class="n">PoisonEffect</span><span class="p">,</span> <span class="n">ConfusionEffect</span><span class="p">,</span> <span class="n">DizzinessEffect</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.enemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enemy</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.npc</span><span class="w"> </span><span class="kn">import</span> <span class="n">NPC</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.hud</span><span class="w"> </span><span class="kn">import</span> <span class="n">HUD</span>
@@ -207,6 +208,15 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
 
+        <span class="c1"># Dizziness effect (visual)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">dizzy</span><span class="p">:</span>
+            <span class="c1"># Simulate blur/dizziness with a semi-transparent overlay that changes alpha</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+            <span class="n">alpha</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">100</span> <span class="o">+</span> <span class="mi">50</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span> <span class="o">*</span> <span class="mf">0.005</span><span class="p">))</span>
+            <span class="n">overlay</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">(</span><span class="n">screen</span><span class="o">.</span><span class="n">get_size</span><span class="p">(),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+            <span class="n">overlay</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="n">alpha</span><span class="p">))</span>
+            <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">hud</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
 
         <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">player_inventory_opened</span><span class="p">:</span>
@@ -223,6 +233,20 @@
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_e</span><span class="p">:</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">is_interactable</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">toggle_trade</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">MAIN_player_inv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shop_inv</span><span class="p">)</span>
+            
+            <span class="c1">#Test keys for effects</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            if event.key == pygame.K_1:</span>
+<span class="sd">                self.character.add_effect(RegenerationEffect(5, 5)) # 5 sec, 5 hp/sec</span>
+<span class="sd">            if event.key == pygame.K_2:</span>
+<span class="sd">                self.character.add_effect(PoisonEffect(5, 5)) # 5 sec, 5 dmg/sec</span>
+<span class="sd">            if event.key == pygame.K_3:</span>
+<span class="sd">                self.character.add_effect(ConfusionEffect(5)) # 5 sec</span>
+<span class="sd">            if event.key == pygame.K_4:</span>
+<span class="sd">                self.character.add_effect(DizzinessEffect(5)) # 5 sec</span>
+<span class="sd">            if event.key == pygame.K_5:</span>
+<span class="sd">                self.character.take_damage(10)</span>
+<span class="sd">            &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">PLAYER_inventory_open</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAIN_player_inv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PLAYER_inventory_equipment</span><span class="p">)</span></div>
 </div>
