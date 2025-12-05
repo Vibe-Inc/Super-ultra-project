@@ -55,9 +55,9 @@ class Character:
         """
     def __init__(self):
         self.animations = {
-            "down":  [pygame.transform.scale(pygame.image.load(f"assets/characters/WomanHuman1(Recolor)/FrontWalk/FrontWalk{i}.png"), (85, 85)) for i in range(1, 5)],
-            "up":    [pygame.transform.scale(pygame.image.load(f"assets/characters/WomanHuman1(Recolor)/BackWalk/BackWalk{i}.png"), (85, 85)) for i in range(1, 5)],
-            "side":  [pygame.transform.scale(pygame.image.load(f"assets/characters/WomanHuman1(Recolor)/SideWalk/SideWalk{i}.png"), (85, 85)) for i in range(1, 5)],
+            "down": 	[pygame.transform.scale(pygame.image.load(f"assets/characters/WomanHuman1(Recolor)/FrontWalk/FrontWalk{i}.png"), (85, 85)) for i in range(1, 5)],
+            "up": 	[pygame.transform.scale(pygame.image.load(f"assets/characters/WomanHuman1(Recolor)/BackWalk/BackWalk{i}.png"), (85, 85)) for i in range(1, 5)],
+            "side": 	[pygame.transform.scale(pygame.image.load(f"assets/characters/WomanHuman1(Recolor)/SideWalk/SideWalk{i}.png"), (85, 85)) for i in range(1, 5)],
         }
 
         self.direction = "down"
@@ -65,6 +65,10 @@ class Character:
         self.pos = pygame.Vector2(960, 540)
         self.spawn_point = self.pos.copy()
         self.speed = 200  
+        
+        self.rect = self.image.get_rect(topleft=(self.pos.x, self.pos.y))
+        self.velocity = pygame.Vector2(0, 0)
+        self.hit_cooldown = 0
 
         self.frame_index = 0
         self.animation_speed = 10
@@ -76,31 +80,39 @@ class Character:
         self.death_count = 0
         self.death_sound = pygame.mixer.Sound("sounds/death.mp3")
 
-    def update(self, dt):
+    def get_rect(self):
+        self.rect.topleft = (int(self.pos.x), int(self.pos.y))
+        return self.rect
+    
+    def _set_velocity(self):
         keys = pygame.key.get_pressed()
-        self.moving = False 
+        self.velocity.x = 0
+        self.velocity.y = 0
+        self.moving = False
 
         if keys[pygame.K_w]:
-            self.pos.y -= self.speed * dt
-            self.direction = "up"
+            self.velocity.y -= 1
+        if keys[pygame.K_s]:
+            self.velocity.y += 1
+        if keys[pygame.K_a]:
+            self.velocity.x -= 1
+        if keys[pygame.K_d]:
+            self.velocity.x += 1
+            
+        if self.velocity.length_squared() > 0:
+            self.velocity = self.velocity.normalize()
             self.moving = True
-        elif keys[pygame.K_s]:
-            self.pos.y += self.speed * dt
-            self.direction = "down"
-            self.moving = True
-        elif keys[pygame.K_a]:
-            self.pos.x -= self.speed * dt
-            self.direction = "side"
-            self.flip = True
-            self.moving = True
-        elif keys[pygame.K_d]:
-            self.pos.x += self.speed * dt
-            self.direction = "side"
-            self.flip = False
-            self.moving = True
+            
+            if abs(self.velocity.x) > abs(self.velocity.y):
+                self.direction = "side"
+                self.flip = self.velocity.x < 0
+            else:
+                self.direction = "down" if self.velocity.y > 0 else "up"
+
+    def update(self, dt, collision_system, obstacles):
+        self._set_velocity()
         
-        #if keys[pygame.K_SPACE]:  # press SPACE to take 100 damage (temporary cuz button can be held down insted of pressed once)
-        #    self.take_damage(100) 
+        collision_system.handle_movement_and_collision(self, dt, obstacles)
 
         if self.moving:
             self.time_accumulator += dt
@@ -112,22 +124,27 @@ class Character:
             self.frame_index = 0
             self.image = self.animations[self.direction][0]
 
+        if self.hit_cooldown > 0:
+            self.hit_cooldown -= dt
+
         if self.hp <= 0:
             self.die()
 
     def take_damage(self, amount):
-        self.hp -= amount
-        if self.hp <= 0:
-            self.die()
+        if self.hit_cooldown <= 0:
+            self.hp -= amount
+            self.hit_cooldown = 1.0
+            if self.hp <= 0:
+                self.die()
 
     def die(self):
         self.death_sound.play()
         self.death_count += 1
-        self.hp = 100  # reset health
-        self.pos = self.spawn_point.copy()  # teleport to spawn
+        self.hp = 100  
+        self.pos = self.spawn_point.copy()
 
     def draw(self, screen):
         if self.direction == "side":
-            screen.blit(pygame.transform.flip(self.image, self.flip, False), self.pos)
+            screen.blit(pygame.transform.flip(self.image, self.flip, False), self.get_rect())
         else:
-            screen.blit(self.image, self.pos)
+            screen.blit(self.image, self.get_rect())

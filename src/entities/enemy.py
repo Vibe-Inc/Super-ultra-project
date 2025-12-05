@@ -81,6 +81,9 @@ class Enemy:
             "up":    [pygame.transform.scale(pygame.image.load(f"assets/characters/{sprite_set}/BackWalk/BackWalk{i}.png"), animation_size) for i in range(1, 5)],
             "side":  [pygame.transform.scale(pygame.image.load(f"assets/characters/{sprite_set}/SideWalk/SideWalk{i}.png"), animation_size) for i in range(1, 5)],
         }
+        
+        self.rect = self.animations["down"][0].get_rect(topleft=(x, y))
+        self.velocity = pygame.Vector2(0, 0)
 
         self.direction = "down"
         self.image = self.animations[self.direction][0]
@@ -93,15 +96,22 @@ class Enemy:
         self.damage = damage
         self.target = None
         self.target_entity = None
-        self.ai_state = "idle" # idle, patrol, chase, attack
+        self.ai_state = "idle" 
         self.patrol_points = patrol_points or []
         self.patrol_index = 0
         self.detection_range = detection_range
         self.attack_range = attack_range
 
-    def update(self, dt: float):
+    def get_rect(self):
+        self.rect.topleft = (int(self.pos.x), int(self.pos.y))
+        return self.rect
+        
+    def update(self, dt: float, collision_system: object, obstacles: list[pygame.Rect]):
         self._update_ai()
         self._move(dt)
+        
+        collision_system.handle_movement_and_collision(self, dt, obstacles)
+        
         self._update_animation(dt)
 
     def _update_ai(self):
@@ -120,26 +130,31 @@ class Enemy:
             self.ai_state = "patrol"
             patrol_target = pygame.Vector2(self.patrol_points[self.patrol_index])
             if (patrol_target - self.pos).length() < 5:
-                self.patrol_index = (self.patrol_index + 1) % len(self.patrol_points)
+                pass
             self.target = patrol_target
         else:
             self.ai_state = "idle"
             self.target = None
 
     def _move(self, dt: float):
+        self.velocity = pygame.Vector2(0, 0)
         self.moving = False
-        if self.target:
+        
+        if self.target and self.ai_state != "attack":
             direction_vector = self.target - self.pos
+            
             if direction_vector.length() > 1:
-                direction_vector = direction_vector.normalize()
-                self.pos += direction_vector * self.speed * dt
+                self.velocity = direction_vector.normalize()
                 self.moving = True
-
-                if abs(direction_vector.x) > abs(direction_vector.y):
+                
+                if abs(self.velocity.x) > abs(self.velocity.y):
                     self.direction = "side"
-                    self.flip = direction_vector.x < 0
+                    self.flip = self.velocity.x < 0
                 else:
-                    self.direction = "down" if direction_vector.y > 0 else "up"
+                    self.direction = "down" if self.velocity.y > 0 else "up"
+            else:
+                if self.ai_state == "patrol":
+                     self.patrol_index = (self.patrol_index + 1) % len(self.patrol_points)
 
     def _update_animation(self, dt: float):
         if self.moving:
@@ -161,6 +176,6 @@ class Enemy:
 
     def draw(self, screen: pygame.Surface):
         if self.direction == "side":
-            screen.blit(pygame.transform.flip(self.image, self.flip, False), self.pos)
+            screen.blit(pygame.transform.flip(self.image, self.flip, False), self.get_rect())
         else:
-            screen.blit(self.image, self.pos)
+            screen.blit(self.image, self.get_rect())
