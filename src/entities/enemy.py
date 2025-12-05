@@ -12,6 +12,11 @@ class Enemy:
             Current position of the enemy on the screen.
         speed (float):
             Movement speed of the enemy in pixels per second.
+        
+        # New attributes for CollisionSystem
+        rect (pygame.Rect): Collision and drawing rectangle.
+        velocity (pygame.Vector2): Normalized vector representing desired movement direction.
+
         hp (int):
             Current health points of the enemy.
         spawn_pos (pygame.Vector2):
@@ -50,24 +55,20 @@ class Enemy:
             Distance within which the enemy initiates an attack.
 
     Methods:
-        update(dt):
-            Update the enemy's AI state, movement, and animation.
+        get_rect():
+            Returns the collision rectangle, updated to the current float position.
+        update(dt, collision_system, obstacles):
+            Update the enemy's AI state, set velocity, and apply movement via collision system.
             Args:
                 dt (float): Time elapsed since the last frame in seconds.
+                collision_system (CollisionSystem): The external collision handler.
+                obstacles (list[pygame.Rect]): List of static walls.
         take_damage(amount):
             Reduce the enemy's health by the given amount.
-            Args:
-                amount (int): Damage to apply.
-            Returns:
-                bool: True if the enemy is dead after taking damage, False otherwise.
         is_dead():
             Returns True if the enemy's health is zero or below.
-            Returns:
-                bool: True if dead, False otherwise.
         draw(screen):
             Draw the enemy's current frame to the given Pygame surface.
-            Args:
-                screen (pygame.Surface): The surface to draw the enemy on.
     """
 
     def __init__(self, x, y, sprite_set, speed, hp, damage, animation_size, animation_speed, detection_range, attack_range, patrol_points=None):
@@ -84,6 +85,11 @@ class Enemy:
 
         self.direction = "down"
         self.image = self.animations[self.direction][0]
+        
+        # New attributes for collision
+        self.rect = self.image.get_rect(topleft=(x, y))
+        self.velocity = pygame.Vector2(0, 0)
+
         self.flip = False
         self.frame_index = 0
         self.animation_speed = animation_speed
@@ -99,9 +105,17 @@ class Enemy:
         self.detection_range = detection_range
         self.attack_range = attack_range
 
-    def update(self, dt: float):
+    def get_rect(self):
+        self.rect.topleft = (int(self.pos.x), int(self.pos.y))
+        return self.rect
+
+    def update(self, dt: float, collision_system, obstacles):
         self._update_ai()
-        self._move(dt)
+        self._move(dt) # Now sets self.velocity instead of moving directly
+        
+        # Collision system
+        collision_system.handle_movement_and_collision(self, dt, obstacles)
+        
         self._update_animation(dt)
 
     def _update_ai(self):
@@ -120,26 +134,36 @@ class Enemy:
             self.ai_state = "patrol"
             patrol_target = pygame.Vector2(self.patrol_points[self.patrol_index])
             if (patrol_target - self.pos).length() < 5:
-                self.patrol_index = (self.patrol_index + 1) % len(self.patrol_points)
+
+
+                pass 
             self.target = patrol_target
         else:
             self.ai_state = "idle"
             self.target = None
 
     def _move(self, dt: float):
+        self.velocity = pygame.Vector2(0, 0)
         self.moving = False
+
         if self.target:
             direction_vector = self.target - self.pos
+            
             if direction_vector.length() > 1:
-                direction_vector = direction_vector.normalize()
-                self.pos += direction_vector * self.speed * dt
+                # Calculate normalized direction
+                self.velocity = direction_vector.normalize()
                 self.moving = True
 
-                if abs(direction_vector.x) > abs(direction_vector.y):
+                # Determine animation direction
+                if abs(self.velocity.x) > abs(self.velocity.y):
                     self.direction = "side"
-                    self.flip = direction_vector.x < 0
+                    self.flip = self.velocity.x < 0
                 else:
-                    self.direction = "down" if direction_vector.y > 0 else "up"
+                    self.direction = "down" if self.velocity.y > 0 else "up"
+            else:
+                # We reached the target
+                if self.ai_state == "patrol":
+                    self.patrol_index = (self.patrol_index + 1) % len(self.patrol_points)
 
     def _update_animation(self, dt: float):
         if self.moving:
@@ -161,6 +185,6 @@ class Enemy:
 
     def draw(self, screen: pygame.Surface):
         if self.direction == "side":
-            screen.blit(pygame.transform.flip(self.image, self.flip, False), self.pos)
+            screen.blit(pygame.transform.flip(self.image, self.flip, False), self.get_rect())
         else:
-            screen.blit(self.image, self.pos)
+            screen.blit(self.image, self.get_rect())
