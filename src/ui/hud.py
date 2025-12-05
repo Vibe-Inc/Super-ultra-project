@@ -26,10 +26,7 @@ class HUD:
         self.character = character
         self.app = app
         self.toggle_inventory_callback = toggle_inventory_callback
-        try:
-            self.font = pygame.font.Font("fonts/menu_font.ttf", 40)
-        except FileNotFoundError:
-            self.font = pygame.font.SysFont("Arial", 40)
+        self.font = cfg.get_font(40)
 
         try:
             self.hp_icon = pygame.image.load("assets/heart.png")
@@ -52,7 +49,7 @@ class HUD:
         
         self.inv_button = Button(
             pygame.Rect(button_x, button_y, button_width, button_height),
-            "INVENTORY",
+            _("INVENTORY"),
             (100, 100, 100),
             (150, 150, 150),
             self.font,

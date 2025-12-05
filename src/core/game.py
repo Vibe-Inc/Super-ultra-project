@@ -51,6 +51,9 @@ class Game(State):
         )
         self.enemy.target_entity = self.character
 
+    def reinit_ui(self):
+        self.hud = HUD(self.character, self.app, self.toggle_player_inventory)
+
     def toggle_player_inventory(self):
         self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
 

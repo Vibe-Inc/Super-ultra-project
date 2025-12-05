@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-12-04 00:12+0200\n"
+"POT-Creation-Date: 2025-12-05 12:14+0200\n"
 "PO-Revision-Date: 2025-12-04 00:01+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -18,8 +18,60 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
-#: src/app.py:60
+#: src/app.py:59
 msgid "Super coooooool project"
+msgstr ""
+
+#: src/inventory/item_database.py:7
+msgid "Dull Sword"
+msgstr ""
+
+#: src/inventory/item_database.py:11
+msgid "A worn-out sword with a dull blade. Thats about it."
+msgstr ""
+
+#: src/inventory/item_database.py:19
+msgid "Apple"
+msgstr ""
+
+#: src/inventory/item_database.py:23
+msgid "An apple."
+msgstr ""
+
+#: src/inventory/items.py:8
+msgid "name"
+msgstr ""
+
+#: src/inventory/items.py:34 src/inventory/items.py:43
+msgid "Type"
+msgstr ""
+
+#: src/inventory/items.py:34
+msgid "Weapon"
+msgstr ""
+
+#: src/inventory/items.py:34
+msgid "Damage"
+msgstr ""
+
+#: src/inventory/items.py:34
+msgid "Durability"
+msgstr ""
+
+#: src/inventory/items.py:43
+msgid "Consumable"
+msgstr ""
+
+#: src/inventory/items.py:43
+msgid "Heal"
+msgstr ""
+
+#: src/inventory/items.py:43
+msgid "HP"
+msgstr ""
+
+#: src/ui/hud.py:52
+msgid "INVENTORY"
 msgstr ""
 
 #: src/ui/menus.py:77
