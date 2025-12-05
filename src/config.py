@@ -5,10 +5,10 @@ FPS = 60
 bg = pygame.transform.scale(pygame.image.load("assets/bg_menu.jpg"), (SCREEN_WIDTH, SCREEN_HEIGHT))
 
 LANGUAGE = 'en'
-SUPPORTED_LANGUAGES = ['en', 'uk']
+SUPPORTED_LANGUAGES = ['en', 'ua']
 
 def get_font(size):
-    if LANGUAGE == 'uk':
+    if LANGUAGE == 'ua':
         return pygame.font.SysFont("arial", size)
     try:
         return pygame.font.Font("fonts/menu_font.ttf", size)

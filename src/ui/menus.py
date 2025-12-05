@@ -216,7 +216,7 @@ class SettingsMenu(Menu):
         self.app.manager.set_state("main")
     
     def toggle_language(self):
-        new_lang = 'uk' if cfg.LANGUAGE == 'en' else 'en'
+        new_lang = 'ua' if cfg.LANGUAGE == 'en' else 'en'
         self.app.update_language(new_lang)
     
     def handle_event(self, event):
