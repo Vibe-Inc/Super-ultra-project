@@ -73,9 +73,15 @@ class Character:
         self.flip = False
         self.moving = False
 
-        self.hp = 100
+        self.max_hp = 100
+        self.hp = self.max_hp
         self.death_count = 0
         self.death_sound = pygame.mixer.Sound("sounds/death.mp3")
+
+        # Level system
+        self.xp = 0
+        self.level = 1
+        self.xp_to_next_level = 100
 
         # Stamina system
         self.max_stamina = 100
@@ -97,6 +103,19 @@ class Character:
                 self.effects.append(effect)
                 return
         self.effects.append(effect)
+
+    def gain_xp(self, amount):
+        self.xp += amount
+        while self.xp >= self.xp_to_next_level:
+            self.xp -= self.xp_to_next_level
+            self.level_up()
+
+    def level_up(self):
+        self.level += 1
+        self.xp_to_next_level = int(self.xp_to_next_level * 1.5)
+        self.max_hp += 20
+        self.hp = self.max_hp 
+        print(f"Level Up! Level: {self.level}, Max HP: {self.max_hp}")
 
     def update(self, dt):
         # Update effects
@@ -180,7 +199,7 @@ class Character:
     def die(self):
         self.death_sound.play()
         self.death_count += 1
-        self.hp = 100  # reset health
+        self.hp = self.max_hp  # reset health
         self.pos = self.spawn_point.copy()  # teleport to spawn
 
     def draw(self, screen):
