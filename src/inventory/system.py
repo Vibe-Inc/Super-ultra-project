@@ -168,6 +168,7 @@ class MAIN_player_inventory(Inventory):
                 screen (pygame.Surface): The surface to draw the inventory on.
     """
     def __init__(self, app:"App"):
+        self.app = app
         super().__init__(
             cfg.MAIN_INV_columns,
             cfg.MAIN_INV_rows,
@@ -194,6 +195,11 @@ class MAIN_player_inventory(Inventory):
             (cfg.SCREEN_WIDTH//2+100, cfg.MAIN_INV_pos_y-305, 190, 275),
             0, 15, 50, 50, 50, 50
             ) #maybe some kind of character preview?
+
+        # Draw money
+        money_text = f"{_('Money')}: {self.app.money}"
+        text_surf = cfg.tooltip_font_CREDITS.render(money_text, True, (255, 255, 255))
+        screen.blit(text_surf, (cfg.SCREEN_WIDTH//2+100, cfg.MAIN_INV_pos_y - 20))
 
         return super().draw(screen)
     
