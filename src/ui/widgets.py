@@ -139,6 +139,14 @@ class Tooltip:
             self.hover_start = None
             self.active = False
             self.rect = None
+    
+    def update_target(self, new_rect, new_text):
+        if self.target_rect != new_rect:
+            self.target_rect = new_rect
+            self.text = new_text
+            self.hover_start = None
+            self.active = False
+            self.rect = None
 
     def draw(self, surface):
         if self.active and self.rect:

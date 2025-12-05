@@ -3,7 +3,7 @@ import sys
 
 from src.core.state_manager import StateManager
 from src.inventory.system import INVENTORY_manager
-from src.inventory.items import TEST_ITEMS
+from src.inventory.items import create_item
 import src.config as cfg
 import src.i18n as i18n
 
@@ -44,9 +44,8 @@ class App:
 
         self.INV_manager = INVENTORY_manager()
         self.MAIN_INV_items = [[None for _ in range(cfg.MAIN_INV_rows)] for _ in range(cfg.MAIN_INV_columns)]
-        colors = [(255, 0, 0), (0, 0, 255), (255, 255, 0)]
-        for i in range(min(cfg.MAIN_INV_columns, 3)):
-            self.MAIN_INV_items[i][0] = [TEST_ITEMS(colors[i], i), i + 10]
+        self.MAIN_INV_items[0][0] = [create_item("dull_sword"), 1]
+        self.MAIN_INV_items[1][0] = [create_item("apple"), 5]
 
         # Audio / fullscreen / clock
         self.audio = "on"

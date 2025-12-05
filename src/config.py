@@ -35,6 +35,12 @@ corner_radius = 20
 tooltip_padding=8
 tooltip_appear= 0.7
 
+inventory_tooltip_rect = pygame.Rect(0,0,1,1)
+inventory_tooltip_bg = (50, 50, 50)
+inventory_tooltip_border = (200, 200, 200)
+inventory_tooltip_font = get_font(20)
+inventory_tooltip_font_color = (255, 255, 255)
+
 tooltip_bg_CREDITS = (156, 179, 200)
 tooltip_border_CREDITS = (54, 105, 121)
 tooltip_font_CREDITS = get_font(20)
