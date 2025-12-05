@@ -297,7 +297,25 @@ class MAIN_player_inventory(Inventory):
             (0, 0, 0),
             (preview_x, self.pos_y-305, 190, 275),
             0, 15, 50, 50, 50, 50
-            ) #maybe some kind of character preview?
+            ) 
+        
+        # Draw character preview
+        game_state = self.app.manager.states.get("gameplay")
+        if game_state and hasattr(game_state, "character"):
+            # Get the current frame of the character
+            char_img = game_state.character.image
+            
+            # Scale it up to fit the preview box
+            scale_factor = 2.5
+            new_width = int(char_img.get_width() * scale_factor)
+            new_height = int(char_img.get_height() * scale_factor)
+            scaled_img = pygame.transform.scale(char_img, (new_width, new_height))
+            
+            # Center the image in the preview box
+            preview_rect = pygame.Rect(preview_x, self.pos_y-305, 190, 275)
+            img_rect = scaled_img.get_rect(center=preview_rect.center)
+            
+            screen.blit(scaled_img, img_rect)
 
         # Draw money
         money_text = f"{_('Money')}: {self.app.money}"
