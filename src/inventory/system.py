@@ -2,6 +2,7 @@ import pygame
 from typing import TYPE_CHECKING
 
 import src.config as cfg
+from src.ui.widgets import Tooltip
 
 if TYPE_CHECKING:
     from src.app import App
@@ -99,6 +100,35 @@ class Inventory:
                     if self.items[x][y][1] <= 0:
                         self.items[x][y] = None
 
+    def get_slot_under_mouse(self):
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+
+        total_width = (self.slot_size + self.border) * self.columns
+        total_height = (self.slot_size + self.border) * self.rows
+        if not (self.pos_x <= mouse_x <= self.pos_x + total_width and 
+                self.pos_y <= mouse_y <= self.pos_y + total_height):
+            return None
+
+        col = (mouse_x - self.pos_x) // (self.slot_size + self.border)
+        row = (mouse_y - self.pos_y) // (self.slot_size + self.border)
+
+        if 0 <= col < self.columns and 0 <= row < self.rows:
+            slot_data = self.items[col][row]
+
+            rect = pygame.Rect(
+                self.pos_x + (self.slot_size + self.border) * col + self.border,
+                self.pos_y + (self.slot_size + self.border) * row + self.border,
+                self.slot_size,
+                self.slot_size
+            )
+
+            if slot_data:
+                item, count = slot_data
+                return rect, item
+        
+        return None
+
+
 
 class MAIN_player_inventory(Inventory):
     
@@ -179,6 +209,16 @@ class INVENTORY_manager:
         self.active_inventories:list[Inventory|None] = []
         self.player_inventory_opened:bool = False
 
+        self.inventory_tooltip = Tooltip(
+            cfg.inventory_tooltip_rect,
+            "",
+            cfg.inventory_tooltip_bg,
+            cfg.inventory_tooltip_border,
+            cfg.INV_nums_font,
+            cfg.inventory_tooltip_font_color,
+            cfg.tooltip_appear,
+            cfg.tooltip_padding
+        )
 
     def add_active_inventory (self, inventory):
         if inventory not in self.active_inventories:
@@ -198,23 +238,37 @@ class INVENTORY_manager:
             font = cfg.INV_nums_font
             obj = font.render(str(count), True, (0, 0, 0))
             screen.blit(obj, (mx + cfg.BASE_INV_slot_size//2 - 20 , my + cfg.BASE_INV_slot_size//2 - 20))
+        
+        if not self.selected_item:
+            found_item = False
+            for inv in self.active_inventories:
+                result = inv.get_slot_under_mouse()
+                if result:
+                    rect, item = result
+                    self.inventory_tooltip.update_target(rect, item.get_tooltip_text())
+                    found_item = True
+                    break
+            if not found_item:
+                self.inventory_tooltip.update_target(pygame.Rect(-100,-100,0,0), "")
+            self.inventory_tooltip.hover_update(pygame.mouse.get_pos())
+            self.inventory_tooltip.draw(screen)
     
     def handle_event(self, event):
         for inv in self.active_inventories:
             inv.inventory_interactions(event, self)
+
+    def toggle_inventory(self, pl_inv, equip_inv):
+        self.player_inventory_opened = not self.player_inventory_opened   
+        if self.player_inventory_opened is True:
+            self.add_active_inventory(pl_inv)
+            self.add_active_inventory(equip_inv)
+        else:
+            self.remove_active_inventory(pl_inv)
+            self.remove_active_inventory(equip_inv)
     
     def PLAYER_inventory_open(self,event: pygame.event.Event,pl_inv,equip_inv):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_i:
-                self.player_inventory_opened = not self.player_inventory_opened   
-                if self.player_inventory_opened is True:
-                    self.add_active_inventory(pl_inv)
-                    self.add_active_inventory(equip_inv)
-                else:
-                    self.remove_active_inventory(pl_inv)
-                    self.remove_active_inventory(equip_inv)
+                self.toggle_inventory(pl_inv, equip_inv)
         if self.player_inventory_opened is True and event.type == pygame.MOUSEBUTTONDOWN:
             self.handle_event(event)
-
-
-    

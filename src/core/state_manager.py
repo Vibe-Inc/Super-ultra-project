@@ -58,6 +58,8 @@ class StateManager:
         current_name = self.get_state()
         
         gameplay_state = self.states["gameplay"]
+        if hasattr(gameplay_state, "reinit_ui"):
+            gameplay_state.reinit_ui()
         
         self.states = {
             "main": MainMenu(self.states["main"].app),

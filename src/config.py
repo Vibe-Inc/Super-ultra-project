@@ -4,11 +4,13 @@ SCREEN_WIDTH, SCREEN_HEIGHT = 1920, 1080
 FPS = 60
 bg = pygame.transform.scale(pygame.image.load("assets/bg_menu.jpg"), (SCREEN_WIDTH, SCREEN_HEIGHT))
 
+SCREEN_BRIGHTNESS = 1.0
+
 LANGUAGE = 'en'
-SUPPORTED_LANGUAGES = ['en', 'uk']
+SUPPORTED_LANGUAGES = ['en', 'ua']
 
 def get_font(size):
-    if LANGUAGE == 'uk':
+    if LANGUAGE == 'ua':
         return pygame.font.SysFont("arial", size)
     try:
         return pygame.font.Font("fonts/menu_font.ttf", size)
@@ -34,6 +36,12 @@ corner_radius = 20
 
 tooltip_padding=8
 tooltip_appear= 0.7
+
+inventory_tooltip_rect = pygame.Rect(0,0,1,1)
+inventory_tooltip_bg = (50, 50, 50)
+inventory_tooltip_border = (200, 200, 200)
+inventory_tooltip_font = get_font(20)
+inventory_tooltip_font_color = (255, 255, 255)
 
 tooltip_bg_CREDITS = (156, 179, 200)
 tooltip_border_CREDITS = (54, 105, 121)

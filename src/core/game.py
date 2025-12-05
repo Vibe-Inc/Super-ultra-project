@@ -42,6 +42,8 @@ class Game(State):
             start_x, start_y = -5000, -5000
 
         # Створюємо ворога з правильними координатами
+        self.hud = HUD(self.character, app, self.toggle_player_inventory)
+
         self.enemy = Enemy(
             x=start_x, y=start_y,
             sprite_set="MenHuman1(Recolor)",
@@ -54,6 +56,12 @@ class Game(State):
             attack_range=40.0
         )
         self.enemy.target_entity = self.character
+
+    def reinit_ui(self):
+        self.hud = HUD(self.character, self.app, self.toggle_player_inventory)
+
+    def toggle_player_inventory(self):
+        self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
 
     def draw(self, screen):
         # 1. Оновлюємо мапу і перевіряємо, чи був перехід
@@ -88,9 +96,8 @@ class Game(State):
 
         self.hud.draw(screen)
 
-        if self.app.INV_manager.player_inventory_opened:
-            self.MAIN_player_inv.draw(screen)
-            self.PLAYER_inventory_equipment.draw(screen)
+        if  self.app.INV_manager.player_inventory_opened:
+            self.app.INV_manager.draw(screen)
 
     def handle_event(self, event: pygame.event.Event):
         self.hud.handle_event(event)
@@ -98,4 +105,5 @@ class Game(State):
             if event.key == pygame.K_ESCAPE:
                 self.app.manager.set_state("pause")
 
-            self.app.INV_manager.PLAYER_inventory_open(event, self.MAIN_player_inv, self.PLAYER_inventory_equipment)
+        self.app.INV_manager.PLAYER_inventory_open(event, self.MAIN_player_inv, self.PLAYER_inventory_equipment)
+

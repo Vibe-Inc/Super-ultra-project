@@ -3,7 +3,7 @@ import sys
 
 from src.core.state_manager import StateManager
 from src.inventory.system import INVENTORY_manager
-from src.inventory.items import TEST_ITEMS
+from src.inventory.items import create_item
 import src.config as cfg
 import src.i18n as i18n
 
@@ -11,6 +11,7 @@ import src.i18n as i18n
 class App:
     """
     Main application class for the Super Ultra Project game.
+
     Attributes:
         screen (pygame.Surface): The main display surface.
         icon (pygame.Surface): The window icon image.
@@ -44,9 +45,10 @@ class App:
 
         self.INV_manager = INVENTORY_manager()
         self.MAIN_INV_items = [[None for _ in range(cfg.MAIN_INV_rows)] for _ in range(cfg.MAIN_INV_columns)]
-        colors = [(255, 0, 0), (0, 0, 255), (255, 255, 0)]
-        for i in range(min(cfg.MAIN_INV_columns, 3)):
-            self.MAIN_INV_items[i][0] = [TEST_ITEMS(colors[i], i), i + 10]
+        self.MAIN_INV_items[0][0] = [create_item("dull_sword"), 1]
+        self.MAIN_INV_items[1][0] = [create_item("apple"), 5]
+
+        SCREEN_BRIGHTNESS = 1.0
 
         # Audio / fullscreen / clock
         self.audio = "on"
@@ -91,6 +93,13 @@ class App:
                 self.screen.blit(self.text_logo, self.text_rect)
 
             self.manager.draw(self.screen)
+
+            if cfg.SCREEN_BRIGHTNESS < 1:
+                dark = pygame.Surface((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT))
+                dark.set_alpha(int((1 - cfg.SCREEN_BRIGHTNESS) * 255))
+                dark.fill((0, 0, 0))
+                self.screen.blit(dark, (0, 0))
+
             pygame.display.flip()
 
             for event in pygame.event.get():
