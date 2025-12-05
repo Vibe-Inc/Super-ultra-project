@@ -155,6 +155,13 @@ This is an educational project — contributions are welcome. Consider:
 - **Assets**: Organize art/audio by type in `assets/` subdirectories
 - **Translations**: Update `.pot` file and generate `.po`/`.mo` files via Babel
 
+## Documentation
+
+Automatically generated documentation for this project is available at the following link:
+[GitHub Pages Documentation](https://vibe-inc.github.io/Super-ultra-project/)
+
+The documentation is generated after each code update using GitHub Actions and Sphinx.
+
 ## License
 
 This repository does not include a license file.
