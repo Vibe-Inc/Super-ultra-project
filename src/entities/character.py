@@ -91,6 +91,11 @@ class Character:
         self.dizzy = False
 
     def add_effect(self, effect):
+        for e in self.effects:
+            if type(e) == type(effect):
+                self.effects.remove(e)
+                self.effects.append(effect)
+                return
         self.effects.append(effect)
 
     def update(self, dt):
