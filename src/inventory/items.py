@@ -2,6 +2,47 @@ import pygame
 from src.inventory.item_database import Item_database
 
 class Item:
+    """
+    Represents a generic inventory item.
+
+    This class provides basic item properties, image loading, and translation support for name and description.
+
+    Attributes:
+        id (str):
+            Unique identifier for the item.
+        name_key (str):
+            The original (untranslated) name string for translation lookup.
+        type (str):
+            The type/category of the item (e.g., 'weapon', 'food', 'armor').
+        max_stack (int):
+            Maximum number of items per inventory slot.
+        desc_key (str):
+            The original (untranslated) description string for translation lookup.
+        image (pygame.Surface):
+            The item's image surface.
+        _cached_image (pygame.Surface | None):
+            Cached resized image for performance.
+        _cached_size (int):
+            Size of the cached image.
+
+    Properties:
+        name (str):
+            The translated name of the item.
+        description (str):
+            The translated description of the item.
+
+    Methods:
+        resize(size):
+            Resize and cache the item's image.
+            Args:
+                size (int): The desired size in pixels.
+            Returns:
+                pygame.Surface: The resized image.
+        get_tooltip_text():
+            Get a tooltip string with the item's name and description.
+            Returns:
+                str: Tooltip text.
+    """
     def __init__(self, data: dict):
         self.id = data["id"]
         self.name_key = data["name"]
@@ -31,6 +72,23 @@ class Item:
         return f"{self.name}\n{self.description}"
 
 class Weapon(Item):
+    """
+    Represents a weapon item with damage and durability.
+
+    Attributes:
+        damage (int):
+            The amount of damage this weapon deals.
+        durability (int):
+            The remaining durability of the weapon.
+        range (float):
+            The attack range of the weapon.
+
+    Methods:
+        get_tooltip_text():
+            Get a tooltip string with weapon stats and description.
+            Returns:
+                str: Tooltip text.
+    """
     def __init__(self, data: dict):
         super().__init__(data)
         self.damage = data.get("damage", 1)
@@ -42,6 +100,19 @@ class Weapon(Item):
         return f"{self.name}\n{stats}\n{self.description}"    
 
 class Consumable(Item):
+    """
+    Represents a consumable item (e.g., food, potion).
+
+    Attributes:
+        heal_amount (int):
+            The amount of HP restored by this item.
+
+    Methods:
+        get_tooltip_text():
+            Get a tooltip string with consumable stats and description.
+            Returns:
+                str: Tooltip text.
+    """
     def __init__(self, data: dict):
         super().__init__(data)
         self.heal_amount = data.get("heal_amount", 0)
@@ -52,11 +123,23 @@ class Consumable(Item):
 
 
 class Armor(Item):
+    """
+    Represents an armor item. (Extend with armor-specific stats as needed.)
+    """
     def __init__(self, data: dict):
         super().__init__(data)
         pass
 
 def create_item(item_id: str):
+    """
+    Factory function to create an item instance by ID.
+
+    Args:
+        item_id (str): The unique identifier of the item in the item database.
+
+    Returns:
+        Item | Weapon | Consumable | Armor: The instantiated item object of the appropriate type.
+    """
     data = Item_database.get(item_id)
     item_type = data.get("type")
     
