@@ -256,16 +256,19 @@ class INVENTORY_manager:
     def handle_event(self, event):
         for inv in self.active_inventories:
             inv.inventory_interactions(event, self)
+
+    def toggle_inventory(self, pl_inv, equip_inv):
+        self.player_inventory_opened = not self.player_inventory_opened   
+        if self.player_inventory_opened is True:
+            self.add_active_inventory(pl_inv)
+            self.add_active_inventory(equip_inv)
+        else:
+            self.remove_active_inventory(pl_inv)
+            self.remove_active_inventory(equip_inv)
     
     def PLAYER_inventory_open(self,event: pygame.event.Event,pl_inv,equip_inv):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_i:
-                self.player_inventory_opened = not self.player_inventory_opened   
-                if self.player_inventory_opened is True:
-                    self.add_active_inventory(pl_inv)
-                    self.add_active_inventory(equip_inv)
-                else:
-                    self.remove_active_inventory(pl_inv)
-                    self.remove_active_inventory(equip_inv)
+                self.toggle_inventory(pl_inv, equip_inv)
         if self.player_inventory_opened is True and event.type == pygame.MOUSEBUTTONDOWN:
             self.handle_event(event)

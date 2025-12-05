@@ -22,9 +22,10 @@ class HUD:
         inv_button (Button): The button to open/close the inventory.
     """
 
-    def __init__(self, character: Character, app: "App"):
+    def __init__(self, character: Character, app: "App", toggle_inventory_callback=None):
         self.character = character
         self.app = app
+        self.toggle_inventory_callback = toggle_inventory_callback
         try:
             self.font = pygame.font.Font("fonts/menu_font.ttf", 40)
         except FileNotFoundError:
@@ -61,7 +62,11 @@ class HUD:
         )
 
     def toggle_inventory(self):
-        self.app.INV_manager.player_inventory_opened = not self.app.INV_manager.player_inventory_opened
+        if self.toggle_inventory_callback:
+            self.toggle_inventory_callback()
+        else:
+            # Fallback if no callback provided (though it won't fix the bug fully without the callback)
+            self.app.INV_manager.player_inventory_opened = not self.app.INV_manager.player_inventory_opened
 
     def handle_event(self, event: pygame.event.Event):
         if event.type == pygame.MOUSEBUTTONDOWN:

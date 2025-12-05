@@ -30,12 +30,14 @@ class Game(State):
         super().__init__(app)
         self.character = Character()
         self.map = Map("maps/test-map-1.tmx")
-        self.hud = HUD(self.character, app)
 
         self.player_inventory_opened = app.INV_manager.player_inventory_opened
 
         self.MAIN_player_inv = MAIN_player_inventory(app)
         self.PLAYER_inventory_equipment = MAIN_player_inventory_equipment(app)
+        
+        self.hud = HUD(self.character, app, self.toggle_player_inventory)
+
         self.enemy = Enemy(
             x=400, y=300,
             sprite_set="MenHuman1(Recolor)",
@@ -48,6 +50,9 @@ class Game(State):
             attack_range=40.0
         )
         self.enemy.target_entity = self.character
+
+    def toggle_player_inventory(self):
+        self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
 
     def draw(self, screen):
         self.map.draw(screen)
