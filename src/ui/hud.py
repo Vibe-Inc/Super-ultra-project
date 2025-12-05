@@ -122,3 +122,26 @@ class HUD:
         screen.blit(lives_text, (lives_icon_x + 60, lives_icon_y + 5))
 
         self.inv_button.draw(screen)
+
+        stamina_bar_width = 600
+        stamina_bar_height = 25
+        stamina_bar_x = (cfg.SCREEN_WIDTH - stamina_bar_width) // 2
+        stamina_bar_y = 920
+
+        stamina_percent = max(0, self.character.stamina / self.character.max_stamina)
+        current_stamina_width = int(stamina_bar_width * stamina_percent)
+
+        if self.character.stamina <= 0:
+            stamina_color = (150, 0, 0)  # Dark red when depleted
+        elif self.character.is_sprinting:
+            stamina_color = (255, 200, 0)  # Orange while sprinting
+        else:
+            stamina_color = (0, 200, 255)  # Cyan when full/regenerating
+
+        pygame.draw.rect(screen, (40, 40, 40), (stamina_bar_x, stamina_bar_y, stamina_bar_width, stamina_bar_height))
+        pygame.draw.rect(screen, stamina_color, (stamina_bar_x, stamina_bar_y, current_stamina_width, stamina_bar_height))
+        pygame.draw.rect(screen, (200, 200, 200), (stamina_bar_x, stamina_bar_y, stamina_bar_width, stamina_bar_height), 3)
+
+        stamina_label = pygame.font.Font(None, 24).render("STAMINA", True, (255, 255, 255))
+        label_rect = stamina_label.get_rect(center=(stamina_bar_x + stamina_bar_width // 2, stamina_bar_y - 15))
+        screen.blit(stamina_label, label_rect)

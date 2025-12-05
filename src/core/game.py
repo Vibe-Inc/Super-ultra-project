@@ -6,6 +6,7 @@ from src.entities.character import Character
 from src.map.map import LocalMap
 from src.inventory.system import MAIN_player_inventory, MAIN_player_inventory_equipment, ShopInventory
 from src.items.items import create_item
+from src.items.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, DizzinessEffect
 from src.entities.enemy import Enemy
 from src.entities.npc import NPC
 from src.ui.hud import HUD
@@ -125,6 +126,15 @@ class Game(State):
         self.npc.update(self.character.pos)
         self.npc.draw(screen)
 
+        # Dizziness effect (visual)
+        if self.character.dizzy:
+            # Simulate blur/dizziness with a semi-transparent overlay that changes alpha
+            import math
+            alpha = int(100 + 50 * math.sin(pygame.time.get_ticks() * 0.005))
+            overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+            overlay.fill((255, 255, 255, alpha))
+            screen.blit(overlay, (0, 0))
+
         self.hud.draw(screen)
 
         if  self.app.INV_manager.player_inventory_opened:
@@ -138,6 +148,20 @@ class Game(State):
             if event.key == pygame.K_e:
                 if self.npc.is_interactable:
                     self.app.INV_manager.toggle_trade(self.MAIN_player_inv, self.shop_inv)
+            
+            #Test keys for effects
+            """
+            if event.key == pygame.K_1:
+                self.character.add_effect(RegenerationEffect(5, 5)) # 5 sec, 5 hp/sec
+            if event.key == pygame.K_2:
+                self.character.add_effect(PoisonEffect(5, 5)) # 5 sec, 5 dmg/sec
+            if event.key == pygame.K_3:
+                self.character.add_effect(ConfusionEffect(5)) # 5 sec
+            if event.key == pygame.K_4:
+                self.character.add_effect(DizzinessEffect(5)) # 5 sec
+            if event.key == pygame.K_5:
+                self.character.take_damage(10)
+            """
 
         self.app.INV_manager.PLAYER_inventory_open(event, self.MAIN_player_inv, self.PLAYER_inventory_equipment)
 

@@ -64,7 +64,8 @@ class Character:
         self.image = self.animations[self.direction][0]
         self.pos = pygame.Vector2(960, 540)
         self.spawn_point = self.pos.copy()
-        self.speed = 200  
+        self.speed = 200
+        self.sprint_multiplier = 1.8 
 
         self.frame_index = 0
         self.animation_speed = 10
@@ -76,28 +77,84 @@ class Character:
         self.death_count = 0
         self.death_sound = pygame.mixer.Sound("sounds/death.mp3")
 
-    def update(self, dt):
-        keys = pygame.key.get_pressed()
-        self.moving = False 
+        # Stamina system
+        self.max_stamina = 100
+        self.stamina = self.max_stamina
+        self.stamina_drain_rate = 35  
+        self.stamina_regen_rate = 25  
+        self.is_sprinting = False
+        self.can_sprint = True
 
-        if keys[pygame.K_w]:
-            self.pos.y -= self.speed * dt
+        # Effects
+        self.effects = []
+        self.confused = False
+        self.dizzy = False
+
+    def add_effect(self, effect):
+        for e in self.effects:
+            if type(e) == type(effect):
+                self.effects.remove(e)
+                self.effects.append(effect)
+                return
+        self.effects.append(effect)
+
+    def update(self, dt):
+        # Update effects
+        for effect in self.effects[:]:
+            effect.update(dt, self)
+            if effect.is_finished:
+                self.effects.remove(effect)
+
+        keys = pygame.key.get_pressed()
+        self.moving = False
+        self.is_sprinting = False
+
+        wants_to_sprint = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]
+        if wants_to_sprint and self.stamina > 0 and self.can_sprint:
+            self.is_sprinting = True
+
+        current_speed = self.speed * self.sprint_multiplier if self.is_sprinting else self.speed
+
+        # Movement logic with confusion support
+        up_key = pygame.K_w
+        down_key = pygame.K_s
+        left_key = pygame.K_a
+        right_key = pygame.K_d
+
+        if self.confused:
+            up_key, down_key = down_key, up_key
+            left_key, right_key = right_key, left_key
+
+        if keys[up_key]:
+            self.pos.y -= current_speed * dt
             self.direction = "up"
             self.moving = True
-        elif keys[pygame.K_s]:
-            self.pos.y += self.speed * dt
+        elif keys[down_key]:
+            self.pos.y += current_speed * dt
             self.direction = "down"
             self.moving = True
-        elif keys[pygame.K_a]:
-            self.pos.x -= self.speed * dt
+        elif keys[left_key]:
+            self.pos.x -= current_speed * dt
             self.direction = "side"
             self.flip = True
             self.moving = True
-        elif keys[pygame.K_d]:
-            self.pos.x += self.speed * dt
+        elif keys[right_key]:
+            self.pos.x += current_speed * dt
             self.direction = "side"
             self.flip = False
             self.moving = True
+        
+        # Stamina management
+        if self.moving and self.is_sprinting:
+            self.stamina -= self.stamina_drain_rate * dt
+            if self.stamina <= 0:
+                self.stamina = 0
+                self.can_sprint = False  
+        elif not self.moving:
+            self.stamina += self.stamina_regen_rate * dt
+            if self.stamina >= self.max_stamina:
+                self.stamina = self.max_stamina
+                self.can_sprint = True  
         
         #if keys[pygame.K_SPACE]:  # press SPACE to take 100 damage (temporary cuz button can be held down insted of pressed once)
         #    self.take_damage(100) 
