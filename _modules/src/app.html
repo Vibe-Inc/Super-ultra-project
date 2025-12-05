@@ -72,6 +72,7 @@
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.state_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">StateManager</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.inventory.system</span><span class="w"> </span><span class="kn">import</span> <span class="n">INVENTORY_manager</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.items.items</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_item</span>
@@ -123,6 +124,7 @@
 <div class="viewcode-block" id="App.__init__">
 <a class="viewcode-back" href="../../src.html#src.app.App.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Initializing Application...&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">screen</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_mode</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span><span class="p">))</span>
         <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_caption</span><span class="p">(</span><span class="s2">&quot;super cooool project ;)&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">icon</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;assets/smug.png&quot;</span><span class="p">)</span>

@@ -72,6 +72,7 @@
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.state</span><span class="w"> </span><span class="kn">import</span> <span class="n">State</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.character</span><span class="w"> </span><span class="kn">import</span> <span class="n">Character</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.map.map</span><span class="w"> </span><span class="kn">import</span> <span class="n">LocalMap</span>
@@ -120,6 +121,7 @@
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="s2">&quot;App&quot;</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Initializing Game State...&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">character</span> <span class="o">=</span> <span class="n">Character</span><span class="p">()</span>
 
         <span class="n">initial_map_path</span> <span class="o">=</span> <span class="s2">&quot;maps/test-map-1.tmx&quot;</span>
@@ -184,7 +186,7 @@
 
         <span class="k">if</span> <span class="n">switched_map_path</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="o">=</span> <span class="n">switched_map_path</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Map switched to </span><span class="si">{</span><span class="n">switched_map_path</span><span class="si">}</span><span class="s2">. Respawning enemy...&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Map switched to </span><span class="si">{</span><span class="n">switched_map_path</span><span class="si">}</span><span class="s2">. Respawning enemy...&quot;</span><span class="p">)</span>
             
             <span class="k">if</span> <span class="n">switched_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ENEMY_SPAWNS</span><span class="p">:</span>
                 <span class="n">new_x</span><span class="p">,</span> <span class="n">new_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ENEMY_SPAWNS</span><span class="p">[</span><span class="n">switched_map_path</span><span class="p">]</span>

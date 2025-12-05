@@ -70,7 +70,7 @@
              
   <h1>Source code for src.entities.character</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
-
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
 
 <div class="viewcode-block" id="Character">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character">[docs]</a>
@@ -184,6 +184,7 @@
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.gain_xp">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">gain_xp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">xp</span> <span class="o">+=</span> <span class="n">amount</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Gained </span><span class="si">{</span><span class="n">amount</span><span class="si">}</span><span class="s2"> XP. Current XP: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">xp</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">xp_to_next_level</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp_to_next_level</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">xp</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xp_to_next_level</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">level_up</span><span class="p">()</span></div>
@@ -196,6 +197,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">xp_to_next_level</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xp_to_next_level</span> <span class="o">*</span> <span class="mf">1.5</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span> <span class="o">+=</span> <span class="mi">20</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span> 
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Level Up! Level: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">level</span><span class="si">}</span><span class="s2">, Max HP: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Level Up! Level: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">level</span><span class="si">}</span><span class="s2">, Max HP: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 
@@ -280,6 +282,7 @@
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.take_damage">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">take_damage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hp</span> <span class="o">-=</span> <span class="n">amount</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Player took </span><span class="si">{</span><span class="n">amount</span><span class="si">}</span><span class="s2"> damage. HP: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">hp</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hp</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">die</span><span class="p">()</span></div>
 
@@ -287,10 +290,12 @@
 <div class="viewcode-block" id="Character.die">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.die">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">die</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Player died!&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">death_sound</span><span class="o">.</span><span class="n">play</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">death_count</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span>  <span class="c1"># reset health</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spawn_point</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>  <span class="c1"># teleport to spawn</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spawn_point</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>  <span class="c1"># teleport to spawn</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Player respawned at </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="si">}</span><span class="s2">. Death count: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">death_count</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Character.draw">

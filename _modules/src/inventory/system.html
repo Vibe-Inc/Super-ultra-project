@@ -73,6 +73,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">src.config</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cfg</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.widgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tooltip</span>
 
@@ -206,6 +207,7 @@
                         <span class="n">item</span> <span class="o">=</span> <span class="n">slot</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                         <span class="n">game_state</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gameplay&quot;</span><span class="p">)</span>
                         <span class="k">if</span> <span class="n">game_state</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;use&quot;</span><span class="p">):</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Used item: </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                             <span class="n">item</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="n">game_state</span><span class="o">.</span><span class="n">character</span><span class="p">)</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
                     <span class="k">elif</span> <span class="n">slot</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
@@ -338,6 +340,7 @@
                     <span class="n">price</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prices</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span> 
                     
                     <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span> <span class="o">+=</span> <span class="n">price</span> <span class="o">*</span> <span class="n">count</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sold </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2">x </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> for $</span><span class="si">{</span><span class="n">price</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">count</span><span class="si">}</span><span class="s2">. New balance: $</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                     <span class="n">manager</span><span class="o">.</span><span class="n">selected_item</span> <span class="o">=</span> <span class="kc">None</span>
                     <span class="c1"># Item is consumed (sold)</span>
                 <span class="k">else</span><span class="p">:</span>
@@ -347,12 +350,15 @@
                         <span class="n">price</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prices</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
                         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span> <span class="o">&gt;=</span> <span class="n">price</span><span class="p">:</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span> <span class="o">-=</span> <span class="n">price</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Bought </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> for $</span><span class="si">{</span><span class="n">price</span><span class="si">}</span><span class="s2">. New balance: $</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                             <span class="c1"># Create a copy for the player</span>
                             <span class="n">new_item</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
-                            <span class="n">manager</span><span class="o">.</span><span class="n">selected_item</span> <span class="o">=</span> <span class="p">[</span><span class="n">new_item</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span></div>
+                            <span class="n">manager</span><span class="o">.</span><span class="n">selected_item</span> <span class="o">=</span> <span class="p">[</span><span class="n">new_item</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+                            <span class="c1"># Do not remove from shop (infinite stock)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Not enough money to buy </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">. Cost: $</span><span class="si">{</span><span class="n">price</span><span class="si">}</span><span class="s2">, Balance: $</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 </div>
 
-                            <span class="c1"># Do not remove from shop (infinite stock)</span>
 
 
 <div class="viewcode-block" id="MAIN_player_inventory">
