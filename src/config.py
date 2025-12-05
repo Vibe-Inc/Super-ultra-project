@@ -4,6 +4,8 @@ SCREEN_WIDTH, SCREEN_HEIGHT = 1920, 1080
 FPS = 60
 bg = pygame.transform.scale(pygame.image.load("assets/bg_menu.jpg"), (SCREEN_WIDTH, SCREEN_HEIGHT))
 
+SCREEN_BRIGHTNESS = 1.0
+
 LANGUAGE = 'en'
 SUPPORTED_LANGUAGES = ['en', 'ua']
 
