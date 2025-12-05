@@ -1,8 +1,24 @@
+"""
+Configuration module for Super Ultra Project.
+
+This module defines global constants, color schemes, font utilities, and layout settings for the game UI and inventory system.
+"""
+
 import pygame
+import os
+
+pygame.font.init()
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 SCREEN_WIDTH, SCREEN_HEIGHT = 1920, 1080
 FPS = 60
-bg = pygame.transform.scale(pygame.image.load("assets/bg_menu.jpg"), (SCREEN_WIDTH, SCREEN_HEIGHT))
+
+try:
+    bg_path = os.path.join(BASE_DIR, "assets", "bg_menu.jpg")
+    bg = pygame.transform.scale(pygame.image.load(bg_path), (SCREEN_WIDTH, SCREEN_HEIGHT))
+except (FileNotFoundError, pygame.error):
+    bg = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 SCREEN_BRIGHTNESS = 1.0
 
@@ -10,10 +26,20 @@ LANGUAGE = 'en'
 SUPPORTED_LANGUAGES = ['en', 'ua']
 
 def get_font(size):
+    """
+    Get a Pygame font object for the current language and size.
+
+    Args:
+        size (int): Font size in points.
+
+    Returns:
+        pygame.font.Font: The font object for rendering text.
+    """
     if LANGUAGE == 'ua':
         return pygame.font.SysFont("arial", size)
     try:
-        return pygame.font.Font("fonts/menu_font.ttf", size)
+        font_path = os.path.join(BASE_DIR, "fonts", "menu_font.ttf")
+        return pygame.font.Font(font_path, size)
     except:
         return pygame.font.SysFont("arial", size)
 

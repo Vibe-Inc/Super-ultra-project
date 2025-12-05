@@ -12,6 +12,34 @@ if TYPE_CHECKING:
     from src.app import App
 
 class Game(State):
+    """
+    Main gameplay state for the application.
+
+    This class manages the core game loop, including the player character, map switching, enemy spawning, HUD, and inventory logic.
+
+    Attributes:
+        app (App): Reference to the main application instance.
+        character (Character): The player character instance.
+        map (LocalMap): The current game map.
+        player_inventory_opened (bool): Whether the player's inventory is open.
+        MAIN_player_inv: The main player inventory object.
+        PLAYER_inventory_equipment: The player's equipment inventory object.
+        ENEMY_SPAWNS (dict): Mapping of map paths to enemy spawn coordinates.
+        hud (HUD): The heads-up display for the player.
+        enemy (Enemy): The main enemy instance for the current map.
+
+    Methods:
+        __init__(app):
+            Initialize the game state, character, map, HUD, and enemy.
+        reinit_ui():
+            Recreate the HUD (e.g., after language change).
+        toggle_player_inventory():
+            Toggle the player's inventory open/closed.
+        draw(screen):
+            Draw the game map, character, enemy, HUD, and inventory if open.
+        handle_event(event):
+            Handle Pygame events for HUD, inventory, and pause state.
+    """
     def __init__(self, app: "App"):
         super().__init__(app)
         self.character = Character()

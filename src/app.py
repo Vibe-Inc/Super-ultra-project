@@ -12,24 +12,37 @@ class App:
     """
     Main application class for the Super Ultra Project game.
 
+    This class initializes the game window, manages global state, handles language and audio, and runs the main game loop.
+
     Attributes:
-        screen (pygame.Surface): The main display surface.
-        icon (pygame.Surface): The window icon image.
-
-        menus (dict): Dictionary of menu states and their corresponding menu objects. # Not used in __init__
-        menu_state (str): Current active menu state. # Not used in __init__
-
-        audio (str): Audio state ("on" or "off").
-        is_fullscreen (bool): Fullscreen mode state.
-        clock (pygame.time.Clock): Clock object for controlling frame rate.
-
-        manager (StateManager): The state management system controlling game/menu flow.
+        screen (pygame.Surface):
+            The main display surface.
+        icon (pygame.Surface):
+            The window icon image.
+        INV_manager (INVENTORY_manager):
+            The inventory manager instance.
+        MAIN_INV_items (list[list[tuple[Item, int] | None]]):
+            2D list of main inventory items (item object, count) or None.
+        audio (str):
+            Audio state ("on" or "off").
+        is_fullscreen (bool):
+            Fullscreen mode state.
+        clock (pygame.time.Clock):
+            Clock object for controlling frame rate.
+        manager (StateManager):
+            The state management system controlling game/menu flow.
 
     Methods:
-        set_menu(menu_name: str):
-            Sets the current menu state using the StateManager.
+        __init__():
+            Initialize the application, window, inventory, and state manager.
+        create_logo():
+            Render and position the main logo text.
+        update_language(lang_code):
+            Change the application language and update fonts/UI.
+            Args:
+                lang_code (str): Language code to switch to (e.g., 'en', 'ua').
         music_play():
-            Loads and starts the background music, setting the volume based on the 'audio' attribute.
+            Load and start the background music, setting the volume based on the audio attribute.
         run():
             Main loop of the application. Handles rendering, event processing, clock ticking, and state management logic.
     """

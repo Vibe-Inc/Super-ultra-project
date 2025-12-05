@@ -3,32 +3,55 @@ import pygame
 
 class Character:
     """
-        class entity needed might do it later
+    Represents the player character with animated movement in four directions.
 
-        Represents the player character with animated movement in four directions.
-    
-        Attributes:
-            animations (dict): Dictionary containing lists of Pygame surfaces for each direction ("up", "down", "side").
-            direction (str): Current movement direction of the character ("up", "down", "side").
-            image (pygame.Surface): Current frame of the character to be drawn.
-            pos (pygame.Vector2): Position of the character on the screen.
-            speed (float): Movement speed of the character in pixels per second.
+    This class handles player movement, animation, health, and respawn logic.
 
-            frame_index (int): Current frame index for animation.
-            animation_speed (float): Number of frames per second for animation.
-            time_accumulator (float): Accumulates time to control animation frame switching.
-            flip (bool): Whether to flip the character horizontally (used for left/right movement).
-            moving (bool): Whether the character is currently moving.
+    Attributes:
+        animations (dict[str, list[pygame.Surface]]):
+            Dictionary containing lists of Pygame surfaces for each direction ("up", "down", "side").
+        direction (str):
+            Current movement direction of the character ("up", "down", "side").
+        image (pygame.Surface):
+            Current frame of the character to be drawn.
+        pos (pygame.Vector2):
+            Position of the character on the screen.
+        spawn_point (pygame.Vector2):
+            The respawn point for the character.
+        speed (float):
+            Movement speed of the character in pixels per second.
+        frame_index (int):
+            Current frame index for animation.
+        animation_speed (float):
+            Number of frames per second for animation.
+        time_accumulator (float):
+            Accumulates time to control animation frame switching.
+        flip (bool):
+            Whether to flip the character horizontally (used for left/right movement).
+        moving (bool):
+            Whether the character is currently moving.
+        hp (int):
+            Current health points of the character.
+        death_count (int):
+            Number of times the character has died.
+        death_sound (pygame.mixer.Sound):
+            Sound effect played on death.
 
-        Methods:
-            update(dt):
-                Updates the characters position and animation based on keyboard input.
-                Args:
-                    dt (float): Time elapsed since the last frame in seconds.
-            draw(screen):
-                Draws the characters current frame to the given Pygame surface.
-                Args:
-                    screen (pygame.Surface): The surface to draw the character on.
+    Methods:
+        update(dt):
+            Update the character's position and animation based on keyboard input.
+            Args:
+                dt (float): Time elapsed since the last frame in seconds.
+        take_damage(amount):
+            Reduce the character's health by the given amount and handle death.
+            Args:
+                amount (int): Amount of damage to take.
+        die():
+            Handle character death, play sound, increment death count, reset health and position.
+        draw(screen):
+            Draw the character's current frame to the given Pygame surface.
+            Args:
+                screen (pygame.Surface): The surface to draw the character on.
         """
     def __init__(self):
         self.animations = {

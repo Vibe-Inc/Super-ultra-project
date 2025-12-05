@@ -6,9 +6,23 @@ if TYPE_CHECKING:
 
 class State:
     """
-    Represents a base state in a state management system.
-    This class should be subclassed to implement specific states for an application.
-    Each state can handle events and draw itself to the screen.
+    Abstract base class for application states.
+
+    This class should be subclassed to implement specific states (e.g., menus, gameplay) for the application.
+    Each state can handle events, draw itself, and update its logic.
+
+    Attributes:
+        app (App): Reference to the main application instance.
+
+    Methods:
+        __init__(app):
+            Initialize the state with a reference to the main app.
+        handle_event(event):
+            Handle input events specific to the state.
+        draw(screen):
+            Render the state to the provided screen surface.
+        update(dt):
+            Update the state's logic.
     """
 
     def __init__(self, app: "App"):
