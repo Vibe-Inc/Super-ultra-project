@@ -61,9 +61,6 @@ class Game(State):
 
         self.hud.draw(screen)
 
-        if self.app.INV_manager.player_inventory_opened:
-            self.MAIN_player_inv.draw(screen)
-            self.PLAYER_inventory_equipment.draw(screen)
         if  self.app.INV_manager.player_inventory_opened:
             self.app.INV_manager.draw(screen)
 
