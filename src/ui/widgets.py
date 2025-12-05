@@ -185,7 +185,7 @@ class Slider:
             Processes Pygame events to handle dragging of the slider knob. Sets volume in appropriate level.
     """
     def __init__(self, x, y, height, track_thickness, track_colour, knob_colour,
-                 knob_width, knob_height, track_length, value=0.3, dragging=False, smooth_speed=0.05):
+                 knob_width, knob_height, track_length, value=0.3, dragging=False, smooth_speed=0.05, action=None):
         self.x = x
         self.y = y
         self.height = height
@@ -198,16 +198,14 @@ class Slider:
         self.value = value
         self.dragging = dragging
         self.smooth_speed = smooth_speed
+        self.action = action
 
         knob_x = self.x + int(self.value * self.track_length) - self.knob_width // 2
         knob_y = self.y + self.height // 2 - self.knob_height // 2
         self.knob_rect = pygame.Rect(knob_x, knob_y, self.knob_width, self.knob_height)
 
-        try:
-            self.current_volume = pygame.mixer.music.get_volume()
-        except pygame.error:
-            self.current_volume = self.value
-
+        # We don't set current_volume here anymore as this is a generic slider
+        
     def draw(self, surface):
         track_start = (self.x, self.y + self.height // 2)
         track_end = (self.x + self.track_length, self.y + self.height // 2)
@@ -233,5 +231,6 @@ class Slider:
             mx, _ = event.pos
             rel_x = max(0, min(mx - self.x, self.track_length))
             self.value = round(rel_x / self.track_length, 2)
-            pygame.mixer.music.set_volume(self.value)
+            if self.action:
+                self.action(self.value)
 

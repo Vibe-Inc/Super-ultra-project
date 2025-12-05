@@ -1,18 +1,25 @@
 import pygame
 from src.inventory.item_database import Item_database
-from typing import TYPE_CHECKING
 
 class Item:
     def __init__(self, data: dict):
         self.id = data["id"]
-        self.name = data["name"]
+        self.name_key = data["name"]
         self.type = data["type"]
         self.max_stack = data.get("max_stack", 64)
-        self.description = data.get("description", "")
+        self.desc_key = data.get("description", "")
         self.image = pygame.image.load(data["image_path"]).convert_alpha()
 
         self._cached_image = None
         self._cached_size = 0
+
+    @property
+    def name(self):
+        return _(self.name_key)
+
+    @property
+    def description(self):
+        return _(self.desc_key)
 
     def resize(self, size: int):
         if self._cached_size != size:
@@ -31,7 +38,7 @@ class Weapon(Item):
         self.range = data.get("range", 1.0)
 
     def get_tooltip_text(self):
-        stats = f"Type: Weapon\nDamage: {self.damage}\nDurability: {self.durability}"
+        stats = f"{_('Type')}: {_('Weapon')}\n{_('Damage')}: {self.damage}\n{_('Durability')}: {self.durability}"
         return f"{self.name}\n{stats}\n{self.description}"    
 
 class Consumable(Item):
@@ -40,7 +47,7 @@ class Consumable(Item):
         self.heal_amount = data.get("heal_amount", 0)
         
     def get_tooltip_text(self):
-        stats = f"Type: Consumable\nHeal: +{self.heal_amount} HP"
+        stats = f"{_('Type')}: {_('Consumable')}\n{_('Heal')}: +{self.heal_amount} {_('HP')}"
         return f"{self.name}\n{stats}\n{self.description}"
 
 

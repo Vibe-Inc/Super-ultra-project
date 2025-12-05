@@ -207,7 +207,8 @@ class SettingsMenu(Menu):
             600, 550, 40, 5,
             (0, 0, 0), (255, 255, 255),
             20, 20, 300,
-            value=cfg.SCREEN_BRIGHTNESS
+            value=cfg.SCREEN_BRIGHTNESS,
+            action=lambda v: setattr(cfg, 'SCREEN_BRIGHTNESS', v)
         )
 
         self.myfont = cfg.get_font(60)
@@ -218,7 +219,8 @@ class SettingsMenu(Menu):
             600, 730, 40, 5,
             track_colour, knob_colour,
             20, 20, 300,
-            value=initial_volume
+            value=initial_volume,
+            action=lambda v: pygame.mixer.music.set_volume(v)
         )
 
         self.myfont = cfg.get_font(60)
@@ -236,7 +238,6 @@ class SettingsMenu(Menu):
         super().handle_event(event)
         self.audio_slider.handle_event(event)
         self.brightness_slider.handle_event(event)
-        cfg.SCREEN_BRIGHTNESS = self.brightness_slider.value
 
     def update(self):
         if hasattr(self.audio_slider, "update"):
