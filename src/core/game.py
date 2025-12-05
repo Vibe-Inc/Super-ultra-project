@@ -47,6 +47,7 @@ class Game(State):
         self.character = Character()
 
         initial_map_path = "maps/test-map-1.tmx"
+        self.current_map_path = initial_map_path
         self.map = LocalMap("Level1", initial_map_path)
 
         self.player_inventory_opened = app.INV_manager.player_inventory_opened
@@ -97,6 +98,7 @@ class Game(State):
         switched_map_path = self.map.update(self.character)
 
         if switched_map_path:
+            self.current_map_path = switched_map_path
             print(f"Map switched to {switched_map_path}. Respawning enemy...")
             
             if switched_map_path in self.ENEMY_SPAWNS:
