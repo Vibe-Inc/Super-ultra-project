@@ -1,5 +1,5 @@
 import pygame
-
+from src.core.logger import logger
 
 class Character:
     """
@@ -106,6 +106,7 @@ class Character:
 
     def gain_xp(self, amount):
         self.xp += amount
+        logger.info(f"Gained {amount} XP. Current XP: {self.xp}/{self.xp_to_next_level}")
         while self.xp >= self.xp_to_next_level:
             self.xp -= self.xp_to_next_level
             self.level_up()
@@ -115,6 +116,7 @@ class Character:
         self.xp_to_next_level = int(self.xp_to_next_level * 1.5)
         self.max_hp += 20
         self.hp = self.max_hp 
+        logger.info(f"Level Up! Level: {self.level}, Max HP: {self.max_hp}")
         print(f"Level Up! Level: {self.level}, Max HP: {self.max_hp}")
 
     def update(self, dt):
@@ -193,14 +195,17 @@ class Character:
 
     def take_damage(self, amount):
         self.hp -= amount
+        logger.info(f"Player took {amount} damage. HP: {self.hp}/{self.max_hp}")
         if self.hp <= 0:
             self.die()
 
     def die(self):
+        logger.warning("Player died!")
         self.death_sound.play()
         self.death_count += 1
         self.hp = self.max_hp  # reset health
         self.pos = self.spawn_point.copy()  # teleport to spawn
+        logger.info(f"Player respawned at {self.pos}. Death count: {self.death_count}")
 
     def draw(self, screen):
         if self.direction == "side":
