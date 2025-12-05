@@ -10,21 +10,27 @@ if TYPE_CHECKING:
 
 class StateManager:
     """
-    Manages different application states such as main menu, settings, and credits.
-    Args:
-        app: The main application object, passed to each state.
+    Manages the application's high-level states (main menu, settings, credits, gameplay, pause).
+
+    This class is responsible for switching between different UI/game states, delegating event handling and drawing, and reinitializing states when needed (e.g., after a language change).
+
     Attributes:
-        states (dict): Dictionary mapping state names to their corresponding state objects.
-        current_state: The currently active state object.
+        states (dict[str, State]): Mapping of state names to their corresponding state objects.
+        current_state (State | None): The currently active state object.
+
     Methods:
+        __init__(app):
+            Initialize all states and set the current state to None.
         set_state(name):
-            Sets the current state to the state associated with the given name.
+            Set the current state by name.
         get_state():
-            Returns the name of the currently active state, or None if no state is active.
+            Get the name of the currently active state, or None if no state is active.
         handle_event(event):
-            Delegates event handling to the current state if one is active.
+            Delegate event handling to the current state.
         draw(screen):
-            Delegates drawing to the current state if one is active.
+            Delegate drawing to the current state.
+        reinit_states():
+            Reinitialize all states (except gameplay), preserving the current state and refreshing UI as needed.
     """
 
     def __init__(self, app: "App"):
@@ -58,6 +64,8 @@ class StateManager:
         current_name = self.get_state()
         
         gameplay_state = self.states["gameplay"]
+        if hasattr(gameplay_state, "reinit_ui"):
+            gameplay_state.reinit_ui()
         
         self.states = {
             "main": MainMenu(self.states["main"].app),

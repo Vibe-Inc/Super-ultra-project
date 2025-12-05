@@ -10,25 +10,46 @@ if TYPE_CHECKING:
 class HUD:
 
     """
-    The Head-Up Display (HUD) class, responsible for rendering critical 
-    player status information (HP, lives) and UI controls (e.g., Inventory button).
+    Head-Up Display (HUD) for player status and UI controls.
+
+    This class is responsible for rendering player health, lives, and the inventory button, as well as handling related UI events.
 
     Attributes:
-        character (Character): The character object whose state is being displayed.
-        app (App): The main application object for accessing managers (e.g., INV_manager).
-        font (pygame.font.Font): The font used for rendering text.
-        hp_icon (pygame.Surface): The icon representing health (a heart).
-        life_icon (pygame.Surface): The icon representing the number of lives (a skull).
-        inv_button (Button): The button to open/close the inventory.
+        character (Character):
+            The character object whose state is being displayed.
+        app (App):
+            The main application object for accessing managers (e.g., INV_manager).
+        font (pygame.font.Font):
+            The font used for rendering text.
+        hp_icon (pygame.Surface):
+            The icon representing health (a heart).
+        life_icon (pygame.Surface):
+            The icon representing the number of lives (a skull).
+        inv_button (Button):
+            The button to open/close the inventory.
+        toggle_inventory_callback (callable | None):
+            Optional callback to toggle inventory state.
+
+    Methods:
+        __init__(character, app, toggle_inventory_callback=None):
+            Initialize the HUD with player character, app, and optional inventory toggle callback.
+        toggle_inventory():
+            Toggle the inventory open/closed, using callback if provided.
+        handle_event(event):
+            Handle mouse events for the inventory button.
+            Args:
+                event (pygame.event.Event): The Pygame event to process.
+        draw(screen):
+            Draw the HUD elements (health bar, lives, inventory button) on the screen.
+            Args:
+                screen (pygame.Surface): The surface to draw the HUD on.
     """
 
-    def __init__(self, character: Character, app: "App"):
+    def __init__(self, character: Character, app: "App", toggle_inventory_callback=None):
         self.character = character
         self.app = app
-        try:
-            self.font = pygame.font.Font("fonts/menu_font.ttf", 40)
-        except FileNotFoundError:
-            self.font = pygame.font.SysFont("Arial", 40)
+        self.toggle_inventory_callback = toggle_inventory_callback
+        self.font = cfg.get_font(40)
 
         try:
             self.hp_icon = pygame.image.load("assets/heart.png")
@@ -51,7 +72,7 @@ class HUD:
         
         self.inv_button = Button(
             pygame.Rect(button_x, button_y, button_width, button_height),
-            "INVENTORY",
+            _("INVENTORY"),
             (100, 100, 100),
             (150, 150, 150),
             self.font,
@@ -61,7 +82,10 @@ class HUD:
         )
 
     def toggle_inventory(self):
-        self.app.INV_manager.player_inventory_opened = not self.app.INV_manager.player_inventory_opened
+        if self.toggle_inventory_callback:
+            self.toggle_inventory_callback()
+        else:
+            self.app.INV_manager.player_inventory_opened = not self.app.INV_manager.player_inventory_opened
 
     def handle_event(self, event: pygame.event.Event):
         if event.type == pygame.MOUSEBUTTONDOWN:

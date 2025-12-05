@@ -7,21 +7,67 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-12-04 00:12+0200\n"
+"POT-Creation-Date: 2025-12-05 12:26+0200\n"
 "PO-Revision-Date: 2025-12-04 00:01+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language: uk\n"
-"Language-Team: uk <LL@li.org>\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
-"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Language: ua\n"
+"Language-Team: ua <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
-#: src/app.py:60
+#: src/app.py:62
 msgid "Super coooooool project"
 msgstr "Супер круууутий проект"
+
+#: src/inventory/item_database.py:7
+msgid "Dull Sword"
+msgstr "Тупий меч"
+
+#: src/inventory/item_database.py:11
+msgid "A worn-out sword with a dull blade. Thats about it."
+msgstr "Зношений меч з тупим лезом. Це все."
+
+#: src/inventory/item_database.py:19
+msgid "Apple"
+msgstr "Яблуко"
+
+#: src/inventory/item_database.py:23
+msgid "An apple."
+msgstr "Яблуко."
+
+#: src/inventory/items.py:41 src/inventory/items.py:50
+msgid "Type"
+msgstr "Тип"
+
+#: src/inventory/items.py:41
+msgid "Weapon"
+msgstr "Зброя"
+
+#: src/inventory/items.py:41
+msgid "Damage"
+msgstr "Шкода"
+
+#: src/inventory/items.py:41
+msgid "Durability"
+msgstr "Міцність"
+
+#: src/inventory/items.py:50
+msgid "Consumable"
+msgstr "Споживане"
+
+#: src/inventory/items.py:50
+msgid "Heal"
+msgstr "Лікування"
+
+#: src/inventory/items.py:50
+msgid "HP"
+msgstr "ОЗ"
+
+#: src/ui/hud.py:52
+msgid "INVENTORY"
+msgstr "ІНВЕНТАР"
 
 #: src/ui/menus.py:77
 msgid "START"
@@ -43,7 +89,7 @@ msgstr "ТИТРИ"
 msgid "Our logo that we need to think of"
 msgstr "Наш логотип, який нам ще треба придумати"
 
-#: src/ui/menus.py:182 src/ui/menus.py:262
+#: src/ui/menus.py:182 src/ui/menus.py:279
 msgid "BACK"
 msgstr "НАЗАД"
 
@@ -51,11 +97,15 @@ msgstr "НАЗАД"
 msgid "LANG"
 msgstr "МОВА"
 
-#: src/ui/menus.py:212
+#: src/ui/menus.py:214
+msgid "Brightness"
+msgstr "Яскравість"
+
+#: src/ui/menus.py:225
 msgid "Music volume"
 msgstr "Гучність музики"
 
-#: src/ui/menus.py:271
+#: src/ui/menus.py:288
 msgid ""
 "CREDITS:\n"
 "Vibe inc idea, production and execution\n"
@@ -71,11 +121,14 @@ msgstr ""
 "Головний спонсор: Vibe inc\n"
 "Особлива подяка Vibe inc"
 
-#: src/ui/menus.py:338
+#: src/ui/menus.py:355
 msgid "RESUME"
 msgstr "ПРОДОВЖИТИ"
 
-#: src/ui/menus.py:348
+#: src/ui/menus.py:365
 msgid "MAIN MENU"
 msgstr "ГОЛОВНЕ МЕНЮ"
+
+#~ msgid "name"
+#~ msgstr "Шкода"
 
