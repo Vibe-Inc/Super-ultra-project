@@ -103,6 +103,8 @@
       <li><a href="src.html#src.app.App.__init__">__init__() (src.app.App method)</a>
 
       <ul>
+        <li><a href="src.core.html#src.core.game.Game.__init__">(src.core.game.Game method)</a>
+</li>
         <li><a href="src.core.html#src.core.state.State.__init__">(src.core.state.State method)</a>
 </li>
         <li><a href="src.core.html#src.core.state_manager.StateManager.__init__">(src.core.state_manager.StateManager method)</a>
@@ -154,9 +156,11 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.html#src.app.App">App (class in src.app)</a>
 </li>
-      <li><a href="src.core.html#src.core.state.State.app">app (src.core.state.State attribute)</a>
+      <li><a href="src.core.html#src.core.game.Game.app">app (src.core.game.Game attribute)</a>
 
       <ul>
+        <li><a href="src.core.html#src.core.state.State.app">(src.core.state.State attribute)</a>
+</li>
         <li><a href="src.ui.html#src.ui.hud.HUD.app">(src.ui.hud.HUD attribute)</a>
 </li>
         <li><a href="src.ui.html#src.ui.menus.Menu.app">(src.ui.menus.Menu attribute)</a>
@@ -305,9 +309,9 @@
       <li><a href="src.core.html#id0">draw() (src.core.game.Game method)</a>, <a href="src.core.html#src.core.game.Game.draw">[1]</a>
 
       <ul>
-        <li><a href="src.core.html#id2">(src.core.state.State method)</a>, <a href="src.core.html#src.core.state.State.draw">[1]</a>
+        <li><a href="src.core.html#id4">(src.core.state.State method)</a>, <a href="src.core.html#src.core.state.State.draw">[1]</a>
 </li>
-        <li><a href="src.core.html#id5">(src.core.state_manager.StateManager method)</a>, <a href="src.core.html#src.core.state_manager.StateManager.draw">[1]</a>
+        <li><a href="src.core.html#id7">(src.core.state_manager.StateManager method)</a>, <a href="src.core.html#src.core.state_manager.StateManager.draw">[1]</a>
 </li>
         <li><a href="src.entities.html#id1">(src.entities.character.Character method)</a>, <a href="src.entities.html#src.entities.character.Character.draw">[1]</a>
 </li>
@@ -356,8 +360,12 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.entities.html#src.entities.enemy.Enemy">Enemy (class in src.entities.enemy)</a>
 </li>
+      <li><a href="src.core.html#src.core.game.Game.enemy">enemy (src.core.game.Game attribute)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="src.core.html#src.core.game.Game.ENEMY_SPAWNS">ENEMY_SPAWNS (src.core.game.Game attribute)</a>
+</li>
       <li><a href="src.ui.html#id5">exit_game() (src.ui.menus.MainMenu method)</a>, <a href="src.ui.html#src.ui.menus.MainMenu.exit_game">[1]</a>
 </li>
   </ul></td>
@@ -412,17 +420,11 @@
 </li>
       <li><a href="src.html#src.config.get_font">get_font() (in module src.config)</a>
 </li>
-      <li><a href="src.entities.html#src.entities.character.Character.get_rect">get_rect() (src.entities.character.Character method)</a>
-
-      <ul>
-        <li><a href="src.entities.html#src.entities.enemy.Enemy.get_rect">(src.entities.enemy.Enemy method)</a>
-</li>
-      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.inventory.html#id11">get_slot_under_mouse() (src.inventory.system.Inventory method)</a>, <a href="src.inventory.html#src.inventory.system.Inventory.get_slot_under_mouse">[1]</a>
 </li>
-      <li><a href="src.core.html#id6">get_state() (src.core.state_manager.StateManager method)</a>, <a href="src.core.html#src.core.state_manager.StateManager.get_state">[1]</a>
+      <li><a href="src.core.html#id8">get_state() (src.core.state_manager.StateManager method)</a>, <a href="src.core.html#src.core.state_manager.StateManager.get_state">[1]</a>
 </li>
       <li><a href="src.inventory.html#id0">get_tooltip_text() (src.inventory.items.Consumable method)</a>, <a href="src.inventory.html#src.inventory.items.Consumable.get_tooltip_text">[1]</a>
 
@@ -441,9 +443,9 @@
       <li><a href="src.core.html#id1">handle_event() (src.core.game.Game method)</a>, <a href="src.core.html#src.core.game.Game.handle_event">[1]</a>
 
       <ul>
-        <li><a href="src.core.html#id3">(src.core.state.State method)</a>, <a href="src.core.html#src.core.state.State.handle_event">[1]</a>
+        <li><a href="src.core.html#id5">(src.core.state.State method)</a>, <a href="src.core.html#src.core.state.State.handle_event">[1]</a>
 </li>
-        <li><a href="src.core.html#id7">(src.core.state_manager.StateManager method)</a>, <a href="src.core.html#src.core.state_manager.StateManager.handle_event">[1]</a>
+        <li><a href="src.core.html#id9">(src.core.state_manager.StateManager method)</a>, <a href="src.core.html#src.core.state_manager.StateManager.handle_event">[1]</a>
 </li>
         <li><a href="src.inventory.html#id7">(src.inventory.system.INVENTORY_manager method)</a>, <a href="src.inventory.html#src.inventory.system.INVENTORY_manager.handle_event">[1]</a>
 </li>
@@ -456,10 +458,10 @@
         <li><a href="src.ui.html#id21">(src.ui.widgets.Slider method)</a>, <a href="src.ui.html#src.ui.widgets.Slider.handle_event">[1]</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.inventory.html#src.inventory.items.Consumable.heal_amount">heal_amount (src.inventory.items.Consumable attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.ui.html#src.ui.widgets.Slider.height">height (src.ui.widgets.Slider attribute)</a>
 </li>
       <li><a href="src.ui.html#src.ui.widgets.Button.hover_color">hover_color (src.ui.widgets.Button attribute)</a>
@@ -477,6 +479,8 @@
       <li><a href="src.ui.html#src.ui.hud.HUD.hp_icon">hp_icon (src.ui.hud.HUD attribute)</a>
 </li>
       <li><a href="src.ui.html#src.ui.hud.HUD">HUD (class in src.ui.hud)</a>
+</li>
+      <li><a href="src.core.html#src.core.game.Game.hud">hud (src.core.game.Game attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -555,6 +559,8 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.html#src.app.App.MAIN_INV_items">MAIN_INV_items (src.app.App attribute)</a>
+</li>
+      <li><a href="src.core.html#src.core.game.Game.MAIN_player_inv">MAIN_player_inv (src.core.game.Game attribute)</a>
 </li>
       <li><a href="src.inventory.html#src.inventory.system.MAIN_player_inventory">MAIN_player_inventory (class in src.inventory.system)</a>
 </li>
@@ -685,14 +691,20 @@
 </li>
       <li><a href="src.map.html#src.map.map.Map.pixel_height">pixel_height (src.map.map.Map attribute)</a>
 </li>
+      <li><a href="src.map.html#src.map.map.Map.pixel_width">pixel_width (src.map.map.Map attribute)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="src.map.html#src.map.map.Map.pixel_width">pixel_width (src.map.map.Map attribute)</a>
+      <li><a href="src.core.html#src.core.game.Game.PLAYER_inventory_equipment">PLAYER_inventory_equipment (src.core.game.Game attribute)</a>
 </li>
       <li><a href="src.inventory.html#id4">PLAYER_inventory_open() (src.inventory.system.INVENTORY_manager method)</a>, <a href="src.inventory.html#src.inventory.system.INVENTORY_manager.PLAYER_inventory_open">[1]</a>
 </li>
-      <li><a href="src.inventory.html#src.inventory.system.INVENTORY_manager.player_inventory_opened">player_inventory_opened (src.inventory.system.INVENTORY_manager attribute)</a>
+      <li><a href="src.core.html#src.core.game.Game.player_inventory_opened">player_inventory_opened (src.core.game.Game attribute)</a>
+
+      <ul>
+        <li><a href="src.inventory.html#src.inventory.system.INVENTORY_manager.player_inventory_opened">(src.inventory.system.INVENTORY_manager attribute)</a>
 </li>
+      </ul></li>
       <li><a href="src.entities.html#src.entities.character.Character.pos">pos (src.entities.character.Character attribute)</a>
 
       <ul>
@@ -717,7 +729,9 @@
         <li><a href="src.ui.html#src.ui.widgets.Tooltip.rect">(src.ui.widgets.Tooltip attribute)</a>
 </li>
       </ul></li>
-      <li><a href="src.core.html#id8">reinit_states() (src.core.state_manager.StateManager method)</a>, <a href="src.core.html#src.core.state_manager.StateManager.reinit_states">[1]</a>
+      <li><a href="src.core.html#id10">reinit_states() (src.core.state_manager.StateManager method)</a>, <a href="src.core.html#src.core.state_manager.StateManager.reinit_states">[1]</a>
+</li>
+      <li><a href="src.core.html#id2">reinit_ui() (src.core.game.Game method)</a>, <a href="src.core.html#src.core.game.Game.reinit_ui">[1]</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -745,7 +759,7 @@
         <li><a href="src.inventory.html#src.inventory.system.INVENTORY_manager.selected_item">(src.inventory.system.INVENTORY_manager attribute)</a>
 </li>
       </ul></li>
-      <li><a href="src.core.html#id9">set_state() (src.core.state_manager.StateManager method)</a>, <a href="src.core.html#src.core.state_manager.StateManager.set_state">[1]</a>
+      <li><a href="src.core.html#id11">set_state() (src.core.state_manager.StateManager method)</a>, <a href="src.core.html#src.core.state_manager.StateManager.set_state">[1]</a>
 </li>
       <li><a href="src.ui.html#src.ui.menus.SettingsMenu">SettingsMenu (class in src.ui.menus)</a>
 </li>
@@ -980,6 +994,8 @@
 </li>
       <li><a href="src.ui.html#id17">toggle_language() (src.ui.menus.SettingsMenu method)</a>, <a href="src.ui.html#src.ui.menus.SettingsMenu.toggle_language">[1]</a>
 </li>
+      <li><a href="src.core.html#id3">toggle_player_inventory() (src.core.game.Game method)</a>, <a href="src.core.html#src.core.game.Game.toggle_player_inventory">[1]</a>
+</li>
       <li><a href="src.ui.html#src.ui.widgets.Tooltip">Tooltip (class in src.ui.widgets)</a>
 </li>
       <li><a href="src.ui.html#src.ui.menus.MainMenu.tooltips">tooltips (src.ui.menus.MainMenu attribute)</a>
@@ -1004,11 +1020,9 @@
 <h2 id="U">U</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="src.core.html#src.core.game.Game.update">update() (src.core.game.Game method)</a>
+      <li><a href="src.core.html#id6">update() (src.core.state.State method)</a>, <a href="src.core.html#src.core.state.State.update">[1]</a>
 
       <ul>
-        <li><a href="src.core.html#id4">(src.core.state.State method)</a>, <a href="src.core.html#src.core.state.State.update">[1]</a>
-</li>
         <li><a href="src.entities.html#id3">(src.entities.character.Character method)</a>, <a href="src.entities.html#src.entities.character.Character.update">[1]</a>
 </li>
         <li><a href="src.entities.html#id7">(src.entities.enemy.Enemy method)</a>, <a href="src.entities.html#src.entities.enemy.Enemy.update">[1]</a>
