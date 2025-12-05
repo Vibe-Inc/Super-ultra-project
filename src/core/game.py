@@ -5,8 +5,8 @@ from src.core.state import State
 from src.entities.character import Character
 from src.map.map import LocalMap
 from src.inventory.system import MAIN_player_inventory, MAIN_player_inventory_equipment, ShopInventory
-from src.inventory.items import create_item
-from src.inventory.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, DizzinessEffect
+from src.items.items import create_item
+from src.items.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, DizzinessEffect
 from src.entities.enemy import Enemy
 from src.entities.npc import NPC
 from src.ui.hud import HUD

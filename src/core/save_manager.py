@@ -1,7 +1,7 @@
 import json
 import os
 import datetime
-from src.inventory.items import create_item
+from src.items.items import create_item
 import src.config as cfg
 
 SAVES_DIR = "saves"

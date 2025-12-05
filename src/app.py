@@ -3,7 +3,7 @@ import sys
 
 from src.core.state_manager import StateManager
 from src.inventory.system import INVENTORY_manager
-from src.inventory.items import create_item
+from src.items.items import create_item
 import src.config as cfg
 import src.i18n as i18n
 

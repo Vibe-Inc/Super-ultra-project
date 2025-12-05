@@ -1,6 +1,6 @@
 import pygame
-from src.inventory.item_database import Item_database
-from src.inventory.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, DizzinessEffect
+from src.items.item_database import Item_database
+from src.items.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, DizzinessEffect
 
 class Item:
     """
