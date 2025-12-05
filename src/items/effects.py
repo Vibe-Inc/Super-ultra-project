@@ -36,7 +36,7 @@ class RegenerationEffect(Effect):
         self.accumulator += self.amount_per_sec * dt
         if self.accumulator >= 1:
             heal = int(self.accumulator)
-            target.hp = min(100, target.hp + heal)
+            target.hp = min(target.max_hp, target.hp + heal)
             self.accumulator -= heal
 
 class PoisonEffect(Effect):

@@ -62,6 +62,10 @@ class SaveManager:
                 "pos_x": game_state.character.pos.x,
                 "pos_y": game_state.character.pos.y,
                 "hp": game_state.character.hp,
+                "max_hp": game_state.character.max_hp,
+                "xp": game_state.character.xp,
+                "level": game_state.character.level,
+                "xp_to_next_level": game_state.character.xp_to_next_level,
                 "map_path": game_state.current_map_path if hasattr(game_state, "current_map_path") else "maps/test-map-1.tmx",
             },
             "inventory": serialized_inv,
@@ -119,6 +123,10 @@ class SaveManager:
         game_state.character.pos.x = player_data.get("pos_x", 0)
         game_state.character.pos.y = player_data.get("pos_y", 0)
         game_state.character.hp = player_data.get("hp", 100)
+        game_state.character.max_hp = player_data.get("max_hp", 100)
+        game_state.character.xp = player_data.get("xp", 0)
+        game_state.character.level = player_data.get("level", 1)
+        game_state.character.xp_to_next_level = player_data.get("xp_to_next_level", 100)
         
         # Restore Equipment
         equip_data = data.get("equipment", [])
