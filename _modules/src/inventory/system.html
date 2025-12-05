@@ -256,6 +256,7 @@
 <span class="sd">                screen (pygame.Surface): The surface to draw the inventory on.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span><span class="s2">&quot;App&quot;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="o">=</span> <span class="n">app</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">cfg</span><span class="o">.</span><span class="n">MAIN_INV_columns</span><span class="p">,</span>
             <span class="n">cfg</span><span class="o">.</span><span class="n">MAIN_INV_rows</span><span class="p">,</span>
@@ -284,6 +285,11 @@
             <span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span><span class="o">//</span><span class="mi">2</span><span class="o">+</span><span class="mi">100</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">MAIN_INV_pos_y</span><span class="o">-</span><span class="mi">305</span><span class="p">,</span> <span class="mi">190</span><span class="p">,</span> <span class="mi">275</span><span class="p">),</span>
             <span class="mi">0</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span>
             <span class="p">)</span> <span class="c1">#maybe some kind of character preview?</span>
+
+        <span class="c1"># Draw money</span>
+        <span class="n">money_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Money&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">text_surf</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">tooltip_font_CREDITS</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">money_text</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">))</span>
+        <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">text_surf</span><span class="p">,</span> <span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span><span class="o">//</span><span class="mi">2</span><span class="o">+</span><span class="mi">100</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">MAIN_INV_pos_y</span> <span class="o">-</span> <span class="mi">20</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span></div>
 </div>
