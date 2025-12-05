@@ -84,9 +84,11 @@ class Game(State):
         self.npc = NPC(x=400, y=400, sprite_set="MenHuman1")
         
         shop_items = [
-            (create_item("apple"), 10)
-        ]
-        self.shop_inv = ShopInventory(app, shop_items)
+            create_item("dull_sword"),
+            create_item("apple")
+            ]
+
+        self.shop_inv = ShopInventory(self.app, shop_items)
 
     def reinit_ui(self):
         self.hud = HUD(self.character, self.app, self.toggle_player_inventory)

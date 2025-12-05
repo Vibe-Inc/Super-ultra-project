@@ -8,6 +8,7 @@ Weapon_database = {
         "image_path": "assets/items/weapons/swords/dull_sword.png",
         "damage": 5,
         "durability": 50,
+        "price": 50,
         "description": _("A worn-out sword with a dull blade. Thats about it.")
     }
 }
@@ -20,6 +21,7 @@ Consumable_database = {
         "image_path": "assets/items/consumables/food/apple.png",
         "heal_amount": 10,
         "max_stack": 64,
+        "price": 5,
         "description": _("An apple.")
     }
 }

@@ -260,19 +260,14 @@ class Split_popup:
 
 
 class ShopInventory(Inventory):
-    def __init__(self, app, items_data):
-        """
-        items_data: list of tuples (item_obj, price)
-        """
+    def __init__(self, app, items_list):
         self.app = app
-        self.shop_items_data = items_data
-        self.prices = {item.id: price for item, price in items_data}
         
         rows = 4
         columns = 4
         items_grid = [[None for _ in range(rows)] for _ in range(columns)]
         
-        for i, (item, price) in enumerate(items_data):
+        for i, item in enumerate(items_list):
             x = i % columns
             y = i // columns
             if y < rows:
@@ -306,7 +301,7 @@ class ShopInventory(Inventory):
             for y in range(self.rows):
                 if self.items[x][y]:
                     item = self.items[x][y][0]
-                    price = self.prices.get(item.id, 0)
+                    price = getattr(item, 'price', 0)
                     
                     font = cfg.INV_nums_font
                     text = font.render(f"${price}", True, (255, 255, 0))
@@ -316,6 +311,9 @@ class ShopInventory(Inventory):
                     screen.blit(text, (rect_x + 5, rect_y + 50))
 
     def inventory_interactions(self, event, manager):
+        if event.type != pygame.MOUSEBUTTONDOWN:
+            return
+
         mouse_x, mouse_y = pygame.mouse.get_pos()
         
         # Check if mouse is within inventory bounds
@@ -335,22 +333,23 @@ class ShopInventory(Inventory):
                 if manager.selected_item:
                     # Selling
                     item, count = manager.selected_item
+                    base_price = getattr(item, 'price', 0)
                     # Sell price logic (e.g. same as buy price or half)
                     # If item is in shop, use its price, else default 10
-                    price = self.prices.get(item.id, 10) 
+                    sell_price = int(base_price* 1)
                     
-                    self.app.money += price * count
+                    self.app.money += sell_price * count                
                     manager.selected_item = None
                     # Item is consumed (sold)
                 else:
                     # Buying
                     if slot:
-                        item, _ = slot
-                        price = self.prices.get(item.id, 0)
-                        if self.app.money >= price:
-                            self.app.money -= price
+                        shop_item, _ = slot
+                        buy_price = getattr(shop_item, 'price', 0)
+                        if self.app.money >= buy_price:
+                            self.app.money -= buy_price
                             # Create a copy for the player
-                            new_item = copy.copy(item)
+                            new_item = copy.copy(shop_item)
                             manager.selected_item = [new_item, 1]
                             # Do not remove from shop (infinite stock)
 

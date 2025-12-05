@@ -48,6 +48,7 @@ class Item:
         self.name_key = data["name"]
         self.type = data["type"]
         self.max_stack = data.get("max_stack", 64)
+        self.price = data.get("price", 0)
         self.desc_key = data.get("description", "")
         self.image = pygame.image.load(data["image_path"]).convert_alpha()
 
@@ -96,7 +97,7 @@ class Weapon(Item):
         self.range = data.get("range", 1.0)
 
     def get_tooltip_text(self):
-        stats = f"{_('Type')}: {_('Weapon')}\n{_('Damage')}: {self.damage}\n{_('Durability')}: {self.durability}"
+        stats = f"{_('Type')}: {_('Weapon')}\n{_('Damage')}: {self.damage}\n{_('Durability')}: {self.durability}\nPrice: ${self.price}"
         return f"{self.name}\n{stats}\n{self.description}"    
 
 class Consumable(Item):
@@ -118,7 +119,7 @@ class Consumable(Item):
         self.heal_amount = data.get("heal_amount", 0)
         
     def get_tooltip_text(self):
-        stats = f"{_('Type')}: {_('Consumable')}\n{_('Heal')}: +{self.heal_amount} {_('HP')}"
+        stats = f"{_('Type')}: {_('Consumable')}\n{_('Heal')}: +{self.heal_amount} {_('HP')}\nPrice: ${self.price}"
         return f"{self.name}\n{stats}\n{self.description}"
 
 

@@ -60,6 +60,8 @@ class ShopInventory(Inventory):
                     screen.blit(text, (rect_x + 5, rect_y + 50))
 
     def inventory_interactions(self, event, manager):
+        if event.type != pygame.MOUSEBUTTONDOWN:
+            return
         mouse_x, mouse_y = pygame.mouse.get_pos()
         
         # Check if mouse is within inventory bounds
