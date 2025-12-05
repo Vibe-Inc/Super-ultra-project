@@ -1,5 +1,6 @@
 import pygame
 from typing import TYPE_CHECKING
+import copy
 
 import src.config as cfg
 from src.ui.widgets import Tooltip
@@ -155,6 +156,102 @@ class Inventory:
 
 
 
+class ShopInventory(Inventory):
+    def __init__(self, app, items_data):
+        """
+        items_data: list of tuples (item_obj, price)
+        """
+        self.app = app
+        self.shop_items_data = items_data
+        self.prices = {item.id: price for item, price in items_data}
+        
+        rows = 4
+        columns = 4
+        items_grid = [[None for _ in range(rows)] for _ in range(columns)]
+        
+        for i, (item, price) in enumerate(items_data):
+            x = i % columns
+            y = i // columns
+            if y < rows:
+                items_grid[x][y] = [item, 1]
+        
+        # Position will be set by the manager when opening trade
+        super().__init__(
+            columns, rows, items_grid, 
+            cfg.BASE_INV_slot_size, 
+            0, 0, 
+            cfg.BASE_INV_border, 
+            cfg.BASE_INV_slot_color, 
+            cfg.BASE_INV_border_color
+        )
+
+    def draw(self, screen):
+        # Draw background for shop
+        pygame.draw.rect(
+            screen,
+            cfg.MAIN_INV_BACKGROUND,
+            (self.pos_x - 15, self.pos_y - 15,
+             (self.slot_size + self.border) * self.columns + self.border + 30,
+             (self.slot_size + self.border) * self.rows + self.border + 30),
+            0, 16
+        )
+        
+        super().draw(screen)
+        
+        # Draw prices
+        for x in range(self.columns):
+            for y in range(self.rows):
+                if self.items[x][y]:
+                    item = self.items[x][y][0]
+                    price = self.prices.get(item.id, 0)
+                    
+                    font = cfg.INV_nums_font
+                    text = font.render(f"${price}", True, (255, 255, 0))
+                    rect_x = self.pos_x + (self.slot_size + self.border) * x + self.border
+                    rect_y = self.pos_y + (self.slot_size + self.border) * y + self.border
+                    
+                    screen.blit(text, (rect_x + 5, rect_y + 50))
+
+    def inventory_interactions(self, event, manager):
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        
+        # Check if mouse is within inventory bounds
+        total_width = (self.slot_size + self.border) * self.columns
+        total_height = (self.slot_size + self.border) * self.rows
+        if not (self.pos_x <= mouse_x <= self.pos_x + total_width and 
+                self.pos_y <= mouse_y <= self.pos_y + total_height):
+            return
+
+        x = (mouse_x - self.pos_x) // (self.slot_size + self.border)
+        y = (mouse_y - self.pos_y) // (self.slot_size + self.border)
+        
+        if 0 <= x < self.columns and 0 <= y < self.rows:
+            slot = self.items[x][y]
+            
+            if event.button == 1: # Left click
+                if manager.selected_item:
+                    # Selling
+                    item, count = manager.selected_item
+                    # Sell price logic (e.g. same as buy price or half)
+                    # If item is in shop, use its price, else default 10
+                    price = self.prices.get(item.id, 10) 
+                    
+                    self.app.money += price * count
+                    manager.selected_item = None
+                    # Item is consumed (sold)
+                else:
+                    # Buying
+                    if slot:
+                        item, _ = slot
+                        price = self.prices.get(item.id, 0)
+                        if self.app.money >= price:
+                            self.app.money -= price
+                            # Create a copy for the player
+                            new_item = copy.copy(item)
+                            manager.selected_item = [new_item, 1]
+                            # Do not remove from shop (infinite stock)
+
+
 class MAIN_player_inventory(Inventory):
     """
     Represents the main player inventory grid.
@@ -184,22 +281,46 @@ class MAIN_player_inventory(Inventory):
         pygame.draw.rect( 
             screen,
             cfg.MAIN_INV_BACKGROUND,
-            (cfg.MAIN_INV_pos_x-15, cfg.MAIN_INV_pos_y-335,
-             (cfg.BASE_INV_slot_size + cfg.BASE_INV_border) * cfg.MAIN_INV_columns + cfg.BASE_INV_border+30,
-             (cfg.BASE_INV_slot_size + cfg.BASE_INV_border) * cfg.MAIN_INV_rows + cfg.BASE_INV_border +350),
+            (self.pos_x-15, self.pos_y-335,
+             (self.slot_size + self.border) * self.columns + self.border+30,
+             (self.slot_size + self.border) * self.rows + self.border +350),
              0, 16, 70 , 70)
             
+        # Character preview (relative to pos_x)
+        # Offset calculated from original values: (SCREEN_WIDTH//2+100) - MAIN_INV_pos_x
+        # Assuming MAIN_INV_pos_x is around 671 and preview_x is 1060, offset is ~389
+        preview_offset_x = 389
+        preview_x = self.pos_x + preview_offset_x
+        
         pygame.draw.rect(
             screen,
             (0, 0, 0),
-            (cfg.SCREEN_WIDTH//2+100, cfg.MAIN_INV_pos_y-305, 190, 275),
+            (preview_x, self.pos_y-305, 190, 275),
             0, 15, 50, 50, 50, 50
-            ) #maybe some kind of character preview?
+            ) 
+        
+        # Draw character preview
+        game_state = self.app.manager.states.get("gameplay")
+        if game_state and hasattr(game_state, "character"):
+            # Get the current frame of the character
+            char_img = game_state.character.image
+            
+            # Scale it up to fit the preview box
+            scale_factor = 2.5
+            new_width = int(char_img.get_width() * scale_factor)
+            new_height = int(char_img.get_height() * scale_factor)
+            scaled_img = pygame.transform.scale(char_img, (new_width, new_height))
+            
+            # Center the image in the preview box
+            preview_rect = pygame.Rect(preview_x, self.pos_y-305, 190, 275)
+            img_rect = scaled_img.get_rect(center=preview_rect.center)
+            
+            screen.blit(scaled_img, img_rect)
 
         # Draw money
         money_text = f"{_('Money')}: {self.app.money}"
         text_surf = cfg.tooltip_font_CREDITS.render(money_text, True, (255, 255, 255))
-        screen.blit(text_surf, (cfg.SCREEN_WIDTH//2+100, cfg.MAIN_INV_pos_y - 20))
+        screen.blit(text_surf, (preview_x, self.pos_y - 20))
 
         return super().draw(screen)
     
@@ -330,6 +451,40 @@ class INVENTORY_manager:
         else:
             self.remove_active_inventory(pl_inv)
             self.remove_active_inventory(equip_inv)
+
+    def toggle_trade(self, pl_inv, shop_inv):
+        # If inventory is already open (normal mode), close it first or switch mode?
+        # Let's assume trade mode is separate.
+        
+        # Check if shop_inv is already active
+        if shop_inv in self.active_inventories:
+            # Close Trade
+            self.remove_active_inventory(shop_inv)
+            self.remove_active_inventory(pl_inv)
+            
+            # Reset Player Inventory Position
+            pl_inv.pos_x = cfg.MAIN_INV_pos_x
+            self.player_inventory_opened = False
+        else:
+            # Open Trade
+            # Close normal inventory if open
+            if self.player_inventory_opened:
+                # Just remove equipment, keep player inv but move it
+                # self.remove_active_inventory(equip_inv) # Need reference to equip_inv?
+                # Assuming toggle_trade is called instead of toggle_inventory
+                pass
+            
+            self.player_inventory_opened = True # Mark as open so other logic knows
+            
+            # Shift Player Inventory to Left
+            pl_inv.pos_x = cfg.SCREEN_WIDTH // 2 - 500 
+            
+            # Position Shop Inventory to Right
+            shop_inv.pos_x = cfg.SCREEN_WIDTH // 2 + 100
+            shop_inv.pos_y = pl_inv.pos_y
+            
+            self.add_active_inventory(pl_inv)
+            self.add_active_inventory(shop_inv)
     
     def PLAYER_inventory_open(self,event: pygame.event.Event,pl_inv,equip_inv):
         if event.type == pygame.KEYDOWN:
