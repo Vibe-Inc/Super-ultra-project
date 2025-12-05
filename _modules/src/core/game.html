@@ -75,8 +75,10 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.state</span><span class="w"> </span><span class="kn">import</span> <span class="n">State</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.character</span><span class="w"> </span><span class="kn">import</span> <span class="n">Character</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.map.map</span><span class="w"> </span><span class="kn">import</span> <span class="n">LocalMap</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">src.inventory.system</span><span class="w"> </span><span class="kn">import</span> <span class="n">MAIN_player_inventory</span><span class="p">,</span> <span class="n">MAIN_player_inventory_equipment</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.inventory.system</span><span class="w"> </span><span class="kn">import</span> <span class="n">MAIN_player_inventory</span><span class="p">,</span> <span class="n">MAIN_player_inventory_equipment</span><span class="p">,</span> <span class="n">ShopInventory</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.inventory.items</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_item</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.enemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enemy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.npc</span><span class="w"> </span><span class="kn">import</span> <span class="n">NPC</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.hud</span><span class="w"> </span><span class="kn">import</span> <span class="n">HUD</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
@@ -151,7 +153,14 @@
             <span class="n">detection_range</span><span class="o">=</span><span class="mf">250.0</span><span class="p">,</span>
             <span class="n">attack_range</span><span class="o">=</span><span class="mf">40.0</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">enemy</span><span class="o">.</span><span class="n">target_entity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enemy</span><span class="o">.</span><span class="n">target_entity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">npc</span> <span class="o">=</span> <span class="n">NPC</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="n">sprite_set</span><span class="o">=</span><span class="s2">&quot;MenHuman1&quot;</span><span class="p">)</span>
+        
+        <span class="n">shop_items</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;apple&quot;</span><span class="p">),</span> <span class="mi">10</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shop_inv</span> <span class="o">=</span> <span class="n">ShopInventory</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">shop_items</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Game.reinit_ui">
@@ -193,6 +202,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">enemy</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">enemy</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">hud</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
 
         <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">player_inventory_opened</span><span class="p">:</span>
@@ -206,6 +218,9 @@
         <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">KEYDOWN</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_ESCAPE</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;pause&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_e</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">is_interactable</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">toggle_trade</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">MAIN_player_inv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shop_inv</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">PLAYER_inventory_open</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAIN_player_inv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PLAYER_inventory_equipment</span><span class="p">)</span></div>
 </div>

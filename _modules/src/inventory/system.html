@@ -71,6 +71,7 @@
   <h1>Source code for src.inventory.system</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">src.config</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cfg</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.widgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tooltip</span>
@@ -241,6 +242,111 @@
 
 
 
+<div class="viewcode-block" id="ShopInventory">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.ShopInventory">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ShopInventory</span><span class="p">(</span><span class="n">Inventory</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">,</span> <span class="n">items_data</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        items_data: list of tuples (item_obj, price)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="o">=</span> <span class="n">app</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shop_items_data</span> <span class="o">=</span> <span class="n">items_data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prices</span> <span class="o">=</span> <span class="p">{</span><span class="n">item</span><span class="o">.</span><span class="n">id</span><span class="p">:</span> <span class="n">price</span> <span class="k">for</span> <span class="n">item</span><span class="p">,</span> <span class="n">price</span> <span class="ow">in</span> <span class="n">items_data</span><span class="p">}</span>
+        
+        <span class="n">rows</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="n">columns</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="n">items_grid</span> <span class="o">=</span> <span class="p">[[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rows</span><span class="p">)]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">columns</span><span class="p">)]</span>
+        
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">price</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">items_data</span><span class="p">):</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">i</span> <span class="o">%</span> <span class="n">columns</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">i</span> <span class="o">//</span> <span class="n">columns</span>
+            <span class="k">if</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">rows</span><span class="p">:</span>
+                <span class="n">items_grid</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        
+        <span class="c1"># Position will be set by the manager when opening trade</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">columns</span><span class="p">,</span> <span class="n">rows</span><span class="p">,</span> <span class="n">items_grid</span><span class="p">,</span> 
+            <span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_slot_size</span><span class="p">,</span> 
+            <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> 
+            <span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_border</span><span class="p">,</span> 
+            <span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_slot_color</span><span class="p">,</span> 
+            <span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_border_color</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="ShopInventory.draw">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.ShopInventory.draw">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
+        <span class="c1"># Draw background for shop</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span>
+            <span class="n">screen</span><span class="p">,</span>
+            <span class="n">cfg</span><span class="o">.</span><span class="n">MAIN_INV_BACKGROUND</span><span class="p">,</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos_x</span> <span class="o">-</span> <span class="mi">15</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_y</span> <span class="o">-</span> <span class="mi">15</span><span class="p">,</span>
+             <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span> <span class="o">+</span> <span class="mi">30</span><span class="p">,</span>
+             <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rows</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span> <span class="o">+</span> <span class="mi">30</span><span class="p">),</span>
+            <span class="mi">0</span><span class="p">,</span> <span class="mi">16</span>
+        <span class="p">)</span>
+        
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+        
+        <span class="c1"># Draw prices</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rows</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">y</span><span class="p">]:</span>
+                    <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">y</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">price</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prices</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                    
+                    <span class="n">font</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">INV_nums_font</span>
+                    <span class="n">text</span> <span class="o">=</span> <span class="n">font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;$</span><span class="si">{</span><span class="n">price</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+                    <span class="n">rect_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_x</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span>
+                    <span class="n">rect_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_y</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="n">y</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span>
+                    
+                    <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="p">(</span><span class="n">rect_x</span> <span class="o">+</span> <span class="mi">5</span><span class="p">,</span> <span class="n">rect_y</span> <span class="o">+</span> <span class="mi">50</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="ShopInventory.inventory_interactions">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.ShopInventory.inventory_interactions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">inventory_interactions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">manager</span><span class="p">):</span>
+        <span class="n">mouse_x</span><span class="p">,</span> <span class="n">mouse_y</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mouse</span><span class="o">.</span><span class="n">get_pos</span><span class="p">()</span>
+        
+        <span class="c1"># Check if mouse is within inventory bounds</span>
+        <span class="n">total_width</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span>
+        <span class="n">total_height</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rows</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos_x</span> <span class="o">&lt;=</span> <span class="n">mouse_x</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_x</span> <span class="o">+</span> <span class="n">total_width</span> <span class="ow">and</span> 
+                <span class="bp">self</span><span class="o">.</span><span class="n">pos_y</span> <span class="o">&lt;=</span> <span class="n">mouse_y</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_y</span> <span class="o">+</span> <span class="n">total_height</span><span class="p">):</span>
+            <span class="k">return</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">mouse_x</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_x</span><span class="p">)</span> <span class="o">//</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="p">(</span><span class="n">mouse_y</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_y</span><span class="p">)</span> <span class="o">//</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">rows</span><span class="p">:</span>
+            <span class="n">slot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">y</span><span class="p">]</span>
+            
+            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> <span class="c1"># Left click</span>
+                <span class="k">if</span> <span class="n">manager</span><span class="o">.</span><span class="n">selected_item</span><span class="p">:</span>
+                    <span class="c1"># Selling</span>
+                    <span class="n">item</span><span class="p">,</span> <span class="n">count</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">selected_item</span>
+                    <span class="c1"># Sell price logic (e.g. same as buy price or half)</span>
+                    <span class="c1"># If item is in shop, use its price, else default 10</span>
+                    <span class="n">price</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prices</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span> 
+                    
+                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span> <span class="o">+=</span> <span class="n">price</span> <span class="o">*</span> <span class="n">count</span>
+                    <span class="n">manager</span><span class="o">.</span><span class="n">selected_item</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="c1"># Item is consumed (sold)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Buying</span>
+                    <span class="k">if</span> <span class="n">slot</span><span class="p">:</span>
+                        <span class="n">item</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">slot</span>
+                        <span class="n">price</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prices</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span> <span class="o">&gt;=</span> <span class="n">price</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span> <span class="o">-=</span> <span class="n">price</span>
+                            <span class="c1"># Create a copy for the player</span>
+                            <span class="n">new_item</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                            <span class="n">manager</span><span class="o">.</span><span class="n">selected_item</span> <span class="o">=</span> <span class="p">[</span><span class="n">new_item</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span></div>
+</div>
+
+                            <span class="c1"># Do not remove from shop (infinite stock)</span>
+
+
 <div class="viewcode-block" id="MAIN_player_inventory">
 <a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.MAIN_player_inventory">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MAIN_player_inventory</span><span class="p">(</span><span class="n">Inventory</span><span class="p">):</span>
@@ -274,22 +380,46 @@
         <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span> 
             <span class="n">screen</span><span class="p">,</span>
             <span class="n">cfg</span><span class="o">.</span><span class="n">MAIN_INV_BACKGROUND</span><span class="p">,</span>
-            <span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">MAIN_INV_pos_x</span><span class="o">-</span><span class="mi">15</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">MAIN_INV_pos_y</span><span class="o">-</span><span class="mi">335</span><span class="p">,</span>
-             <span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_slot_size</span> <span class="o">+</span> <span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_border</span><span class="p">)</span> <span class="o">*</span> <span class="n">cfg</span><span class="o">.</span><span class="n">MAIN_INV_columns</span> <span class="o">+</span> <span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_border</span><span class="o">+</span><span class="mi">30</span><span class="p">,</span>
-             <span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_slot_size</span> <span class="o">+</span> <span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_border</span><span class="p">)</span> <span class="o">*</span> <span class="n">cfg</span><span class="o">.</span><span class="n">MAIN_INV_rows</span> <span class="o">+</span> <span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_border</span> <span class="o">+</span><span class="mi">350</span><span class="p">),</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos_x</span><span class="o">-</span><span class="mi">15</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_y</span><span class="o">-</span><span class="mi">335</span><span class="p">,</span>
+             <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="o">+</span><span class="mi">30</span><span class="p">,</span>
+             <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rows</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span> <span class="o">+</span><span class="mi">350</span><span class="p">),</span>
              <span class="mi">0</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">70</span> <span class="p">,</span> <span class="mi">70</span><span class="p">)</span>
             
+        <span class="c1"># Character preview (relative to pos_x)</span>
+        <span class="c1"># Offset calculated from original values: (SCREEN_WIDTH//2+100) - MAIN_INV_pos_x</span>
+        <span class="c1"># Assuming MAIN_INV_pos_x is around 671 and preview_x is 1060, offset is ~389</span>
+        <span class="n">preview_offset_x</span> <span class="o">=</span> <span class="mi">389</span>
+        <span class="n">preview_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_x</span> <span class="o">+</span> <span class="n">preview_offset_x</span>
+        
         <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span>
             <span class="n">screen</span><span class="p">,</span>
             <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
-            <span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span><span class="o">//</span><span class="mi">2</span><span class="o">+</span><span class="mi">100</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">MAIN_INV_pos_y</span><span class="o">-</span><span class="mi">305</span><span class="p">,</span> <span class="mi">190</span><span class="p">,</span> <span class="mi">275</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">preview_x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_y</span><span class="o">-</span><span class="mi">305</span><span class="p">,</span> <span class="mi">190</span><span class="p">,</span> <span class="mi">275</span><span class="p">),</span>
             <span class="mi">0</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span>
-            <span class="p">)</span> <span class="c1">#maybe some kind of character preview?</span>
+            <span class="p">)</span> 
+        
+        <span class="c1"># Draw character preview</span>
+        <span class="n">game_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gameplay&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">game_state</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">game_state</span><span class="p">,</span> <span class="s2">&quot;character&quot;</span><span class="p">):</span>
+            <span class="c1"># Get the current frame of the character</span>
+            <span class="n">char_img</span> <span class="o">=</span> <span class="n">game_state</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">image</span>
+            
+            <span class="c1"># Scale it up to fit the preview box</span>
+            <span class="n">scale_factor</span> <span class="o">=</span> <span class="mf">2.5</span>
+            <span class="n">new_width</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">char_img</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span> <span class="o">*</span> <span class="n">scale_factor</span><span class="p">)</span>
+            <span class="n">new_height</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">char_img</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span> <span class="o">*</span> <span class="n">scale_factor</span><span class="p">)</span>
+            <span class="n">scaled_img</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">char_img</span><span class="p">,</span> <span class="p">(</span><span class="n">new_width</span><span class="p">,</span> <span class="n">new_height</span><span class="p">))</span>
+            
+            <span class="c1"># Center the image in the preview box</span>
+            <span class="n">preview_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">preview_x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_y</span><span class="o">-</span><span class="mi">305</span><span class="p">,</span> <span class="mi">190</span><span class="p">,</span> <span class="mi">275</span><span class="p">)</span>
+            <span class="n">img_rect</span> <span class="o">=</span> <span class="n">scaled_img</span><span class="o">.</span><span class="n">get_rect</span><span class="p">(</span><span class="n">center</span><span class="o">=</span><span class="n">preview_rect</span><span class="o">.</span><span class="n">center</span><span class="p">)</span>
+            
+            <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">scaled_img</span><span class="p">,</span> <span class="n">img_rect</span><span class="p">)</span>
 
         <span class="c1"># Draw money</span>
         <span class="n">money_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Money&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="n">text_surf</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">tooltip_font_CREDITS</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">money_text</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">))</span>
-        <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">text_surf</span><span class="p">,</span> <span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span><span class="o">//</span><span class="mi">2</span><span class="o">+</span><span class="mi">100</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">MAIN_INV_pos_y</span> <span class="o">-</span> <span class="mi">20</span><span class="p">))</span>
+        <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">text_surf</span><span class="p">,</span> <span class="p">(</span><span class="n">preview_x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_y</span> <span class="o">-</span> <span class="mi">20</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span></div>
 </div>
@@ -441,6 +571,43 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">remove_active_inventory</span><span class="p">(</span><span class="n">pl_inv</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">remove_active_inventory</span><span class="p">(</span><span class="n">equip_inv</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="INVENTORY_manager.toggle_trade">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.INVENTORY_manager.toggle_trade">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">toggle_trade</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pl_inv</span><span class="p">,</span> <span class="n">shop_inv</span><span class="p">):</span>
+        <span class="c1"># If inventory is already open (normal mode), close it first or switch mode?</span>
+        <span class="c1"># Let&#39;s assume trade mode is separate.</span>
+        
+        <span class="c1"># Check if shop_inv is already active</span>
+        <span class="k">if</span> <span class="n">shop_inv</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_inventories</span><span class="p">:</span>
+            <span class="c1"># Close Trade</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">remove_active_inventory</span><span class="p">(</span><span class="n">shop_inv</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">remove_active_inventory</span><span class="p">(</span><span class="n">pl_inv</span><span class="p">)</span>
+            
+            <span class="c1"># Reset Player Inventory Position</span>
+            <span class="n">pl_inv</span><span class="o">.</span><span class="n">pos_x</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">MAIN_INV_pos_x</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">player_inventory_opened</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Open Trade</span>
+            <span class="c1"># Close normal inventory if open</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">player_inventory_opened</span><span class="p">:</span>
+                <span class="c1"># Just remove equipment, keep player inv but move it</span>
+                <span class="c1"># self.remove_active_inventory(equip_inv) # Need reference to equip_inv?</span>
+                <span class="c1"># Assuming toggle_trade is called instead of toggle_inventory</span>
+                <span class="k">pass</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">player_inventory_opened</span> <span class="o">=</span> <span class="kc">True</span> <span class="c1"># Mark as open so other logic knows</span>
+            
+            <span class="c1"># Shift Player Inventory to Left</span>
+            <span class="n">pl_inv</span><span class="o">.</span><span class="n">pos_x</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">500</span> 
+            
+            <span class="c1"># Position Shop Inventory to Right</span>
+            <span class="n">shop_inv</span><span class="o">.</span><span class="n">pos_x</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">100</span>
+            <span class="n">shop_inv</span><span class="o">.</span><span class="n">pos_y</span> <span class="o">=</span> <span class="n">pl_inv</span><span class="o">.</span><span class="n">pos_y</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_active_inventory</span><span class="p">(</span><span class="n">pl_inv</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_active_inventory</span><span class="p">(</span><span class="n">shop_inv</span><span class="p">)</span></div>
 
     
 <div class="viewcode-block" id="INVENTORY_manager.PLAYER_inventory_open">
