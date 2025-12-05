@@ -1,6 +1,6 @@
 import pygame
 from src.inventory.item_database import Item_database
-
+from typing import TYPE_CHECKING
 
 class Item:
     def __init__(self, data: dict):
@@ -20,6 +20,8 @@ class Item:
             self._cached_size = size
         return self._cached_image
     
+    def get_tooltip_text(self):
+        return f"{self.name}\n{self.description}"
 
 class Weapon(Item):
     def __init__(self, data: dict):
@@ -28,11 +30,18 @@ class Weapon(Item):
         self.durability = data.get("durability", 100)
         self.range = data.get("range", 1.0)
 
+    def get_tooltip_text(self):
+        stats = f"Type: Weapon\nDamage: {self.damage}\nDurability: {self.durability}"
+        return f"{self.name}\n{stats}\n{self.description}"    
 
 class Consumable(Item):
     def __init__(self, data: dict):
         super().__init__(data)
         self.heal_amount = data.get("heal_amount", 0)
+        
+    def get_tooltip_text(self):
+        stats = f"Type: Consumable\nHeal: +{self.heal_amount} HP"
+        return f"{self.name}\n{stats}\n{self.description}"
 
 
 class Armor(Item):
