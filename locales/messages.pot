@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-12-05 12:14+0200\n"
+"POT-Creation-Date: 2025-12-05 12:26+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
-#: src/app.py:59
+#: src/app.py:62
 msgid "Super coooooool project"
 msgstr ""
 
@@ -37,35 +37,31 @@ msgstr ""
 msgid "An apple."
 msgstr ""
 
-#: src/inventory/items.py:8
-msgid "name"
-msgstr ""
-
-#: src/inventory/items.py:34 src/inventory/items.py:43
+#: src/inventory/items.py:41 src/inventory/items.py:50
 msgid "Type"
 msgstr ""
 
-#: src/inventory/items.py:34
+#: src/inventory/items.py:41
 msgid "Weapon"
 msgstr ""
 
-#: src/inventory/items.py:34
+#: src/inventory/items.py:41
 msgid "Damage"
 msgstr ""
 
-#: src/inventory/items.py:34
+#: src/inventory/items.py:41
 msgid "Durability"
 msgstr ""
 
-#: src/inventory/items.py:43
+#: src/inventory/items.py:50
 msgid "Consumable"
 msgstr ""
 
-#: src/inventory/items.py:43
+#: src/inventory/items.py:50
 msgid "Heal"
 msgstr ""
 
-#: src/inventory/items.py:43
+#: src/inventory/items.py:50
 msgid "HP"
 msgstr ""
 
@@ -93,7 +89,7 @@ msgstr ""
 msgid "Our logo that we need to think of"
 msgstr ""
 
-#: src/ui/menus.py:182 src/ui/menus.py:262
+#: src/ui/menus.py:182 src/ui/menus.py:279
 msgid "BACK"
 msgstr ""
 
@@ -101,11 +97,15 @@ msgstr ""
 msgid "LANG"
 msgstr ""
 
-#: src/ui/menus.py:212
+#: src/ui/menus.py:214
+msgid "Brightness"
+msgstr ""
+
+#: src/ui/menus.py:225
 msgid "Music volume"
 msgstr ""
 
-#: src/ui/menus.py:271
+#: src/ui/menus.py:288
 msgid ""
 "CREDITS:\n"
 "Vibe inc idea, production and execution\n"
@@ -115,11 +115,11 @@ msgid ""
 "Special thanks to Vibe inc"
 msgstr ""
 
-#: src/ui/menus.py:338
+#: src/ui/menus.py:355
 msgid "RESUME"
 msgstr ""
 
-#: src/ui/menus.py:348
+#: src/ui/menus.py:365
 msgid "MAIN MENU"
 msgstr ""
 
