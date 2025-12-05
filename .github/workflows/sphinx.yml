@@ -3,7 +3,7 @@ name: Documentation
 on:
   push:
     branches:
-      - main  # Або master, перевірте назву вашої гілки!
+      - main
 
 permissions:
   contents: write
