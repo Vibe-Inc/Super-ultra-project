@@ -11,6 +11,7 @@ import src.i18n as i18n
 class App:
     """
     Main application class for the Super Ultra Project game.
+
     Attributes:
         screen (pygame.Surface): The main display surface.
         icon (pygame.Surface): The window icon image.
@@ -47,6 +48,8 @@ class App:
         colors = [(255, 0, 0), (0, 0, 255), (255, 255, 0)]
         for i in range(min(cfg.MAIN_INV_columns, 3)):
             self.MAIN_INV_items[i][0] = [TEST_ITEMS(colors[i], i), i + 10]
+
+        SCREEN_BRIGHTNESS = 1.0
 
         # Audio / fullscreen / clock
         self.audio = "on"
@@ -91,6 +94,13 @@ class App:
                 self.screen.blit(self.text_logo, self.text_rect)
 
             self.manager.draw(self.screen)
+
+            if cfg.SCREEN_BRIGHTNESS < 1:
+                dark = pygame.Surface((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT))
+                dark.set_alpha(int((1 - cfg.SCREEN_BRIGHTNESS) * 255))
+                dark.fill((0, 0, 0))
+                self.screen.blit(dark, (0, 0))
+
             pygame.display.flip()
 
             for event in pygame.event.get():
