@@ -11,6 +11,7 @@ from src.items.effects import RegenerationEffect, PoisonEffect, ConfusionEffect,
 from src.entities.enemy import Enemy
 from src.entities.npc import NPC
 from src.ui.hud import HUD
+from src.core.collision_system import CollisionSystem
 
 if TYPE_CHECKING:
     from src.app import App
@@ -53,6 +54,10 @@ class Game(State):
         self.current_map_path = initial_map_path
         self.map = LocalMap("Level1", initial_map_path)
 
+        self.collision_handler = CollisionSystem()
+        
+        self.obstacles = []
+
         self.player_inventory_opened = app.INV_manager.player_inventory_opened
 
         self.MAIN_player_inv = MAIN_player_inventory(app)
@@ -83,6 +88,9 @@ class Game(State):
             attack_range=40.0
         )
         self.enemy.target_entity = self.character
+        
+        self.enemies = [self.enemy]
+        self.items = []
 
         self.npc = NPC(x=400, y=400, sprite_set="MenHuman1")
         
@@ -105,7 +113,7 @@ class Game(State):
     def toggle_player_inventory(self):
         self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
 
-    def draw(self, screen):
+    def update(self, dt):
         switched_map_path = self.map.update(self.character)
 
         if switched_map_path:
@@ -122,16 +130,28 @@ class Game(State):
             else:
                 self.enemy.pos = pygame.Vector2(-5000, -5000)
 
-        self.map.draw(screen)
+        self.character.update(dt, self.collision_handler, self.obstacles)
 
-        dt = self.app.clock.get_time() / 1000
-        self.character.update(dt)
-        self.character.draw(screen)
+        for enemy in self.enemies:
+            enemy.update(dt, self.collision_handler, self.obstacles)
 
-        self.enemy.update(dt)
-        self.enemy.draw(screen)
+        self.collision_handler.check_interactions(
+            self.character, self.enemies, self.items
+        )
 
         self.npc.update(self.character.pos)
+
+    def draw(self, screen):
+        dt = self.app.clock.get_time() / 1000
+        self.update(dt)
+
+        self.map.draw(screen)
+
+        self.character.draw(screen)
+
+        for enemy in self.enemies:
+            enemy.draw(screen)
+
         self.npc.draw(screen)
 
         if not self.npc.is_interactable:
