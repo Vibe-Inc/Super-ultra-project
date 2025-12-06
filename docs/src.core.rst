@@ -12,6 +12,22 @@ src.core.game module
    :show-inheritance:
    :undoc-members:
 
+src.core.logger module
+----------------------
+
+.. automodule:: src.core.logger
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+src.core.save\_manager module
+-----------------------------
+
+.. automodule:: src.core.save_manager
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 src.core.state module
 ---------------------
 

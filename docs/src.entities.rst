@@ -20,6 +20,14 @@ src.entities.enemy module
    :show-inheritance:
    :undoc-members:
 
+src.entities.npc module
+-----------------------
+
+.. automodule:: src.entities.npc
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 Module contents
 ---------------
 

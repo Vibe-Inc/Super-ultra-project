@@ -8,19 +8,52 @@ import src.config as cfg
 SAVES_DIR = "saves"
 
 class SaveManager:
+    """
+    Manages game saving and loading functionality.
+
+    This class handles the serialization and deserialization of game state, including player stats, inventory, and equipment, to and from JSON files.
+
+    Methods:
+        ensure_saves_dir():
+            Ensure the saves directory exists.
+        get_save_files():
+            Get a list of available save files.
+        save_game(app, slot_name):
+            Save the current game state to a file.
+        load_game(app, slot_name):
+            Load a game state from a file.
+        delete_save(slot_name):
+            Delete a specific save file.
+    """
     @staticmethod
     def ensure_saves_dir():
+        """
+        Ensure that the directory for save files exists.
+        """
         if not os.path.exists(SAVES_DIR):
             os.makedirs(SAVES_DIR)
 
     @staticmethod
     def get_save_files():
+        """
+        Retrieve a list of all available save files in the saves directory.
+
+        Returns:
+            list[str]: A list of filenames ending with '.json'.
+        """
         SaveManager.ensure_saves_dir()
         files = [f for f in os.listdir(SAVES_DIR) if f.endswith('.json')]
         return files
 
     @staticmethod
     def save_game(app, slot_name):
+        """
+        Save the current game state to a JSON file.
+
+        Args:
+            app (App): The main application instance containing the game state.
+            slot_name (str): The name of the save slot (filename without extension).
+        """
         SaveManager.ensure_saves_dir()
         
         game_state = app.manager.states.get("gameplay")
@@ -86,6 +119,16 @@ class SaveManager:
 
     @staticmethod
     def load_game(app, slot_name):
+        """
+        Load the game state from a JSON file and restore it to the application.
+
+        Args:
+            app (App): The main application instance to restore the state into.
+            slot_name (str): The name of the save slot to load.
+
+        Returns:
+            bool: True if the game was successfully loaded, False otherwise.
+        """
         file_path = os.path.join(SAVES_DIR, f"{slot_name}.json")
         if not os.path.exists(file_path):
             logger.error(f"Save file {file_path} not found.")
@@ -147,6 +190,12 @@ class SaveManager:
 
     @staticmethod
     def delete_save(slot_name):
+        """
+        Delete a specific save file.
+
+        Args:
+            slot_name (str): The name of the save slot to delete.
+        """
         file_path = os.path.join(SAVES_DIR, f"{slot_name}.json")
         if os.path.exists(file_path):
             os.remove(file_path)
