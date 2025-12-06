@@ -70,6 +70,10 @@ class Game(State):
             "maps/test-map-3.tmx": (300, 200)
         }
 
+        self.NPC_SPAWNS = {
+            "maps/test-map-1.tmx": (400, 400)
+        }
+
         if initial_map_path in self.ENEMY_SPAWNS:
             start_x, start_y = self.ENEMY_SPAWNS[initial_map_path]
         else:
@@ -97,7 +101,12 @@ class Game(State):
         self.enemy_spawn_timer = 0.0
         self.enemy_spawn_interval = 30.0 # seconds
 
-        self.npc = NPC(x=400, y=400, sprite_set="MenHuman1")
+        if initial_map_path in self.NPC_SPAWNS:
+            npc_x, npc_y = self.NPC_SPAWNS[initial_map_path]
+        else:
+            npc_x, npc_y = -5000, -5000
+
+        self.npc = NPC(x=npc_x, y=npc_y, sprite_set="MenHuman1")
         
         shop_items = [
             create_item("dull_sword"),
@@ -194,6 +203,12 @@ class Game(State):
         if self.enemy_spawn_timer >= self.enemy_spawn_interval:
             self.enemy_spawn_timer = 0
             self.spawn_random_enemy()
+
+            if switched_map_path in self.NPC_SPAWNS:
+                npc_x, npc_y = self.NPC_SPAWNS[switched_map_path]
+                self.npc.pos = pygame.Vector2(npc_x, npc_y)
+            else:
+                self.npc.pos = pygame.Vector2(-5000, -5000)
 
         self.character.update(dt, self.collision_handler, self.obstacles)
 
