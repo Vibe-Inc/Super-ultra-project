@@ -4,6 +4,7 @@ import copy
 
 import src.config as cfg
 from src.ui.widgets import Tooltip, Slider, Button
+from src.items.items import Consumable
 
 if TYPE_CHECKING:
     from src.app import App
@@ -127,7 +128,7 @@ class Inventory:
                             manager.selected_item = slot
                             self.items[x][y] = None
 
-                elif event.button == 3:
+                elif event.button == 2:
                     if slot and not manager.selected_item and slot[1] > 1:
                         rect = pygame.Rect(
                             self.pos_x + (self.slot_size + self.border) * x + self.border,
@@ -136,20 +137,14 @@ class Inventory:
                         )
                         manager.active_split_popup = Split_popup(manager, slot, rect)
                 elif event.button == 3 and slot and not manager.selected_item:
-                    if slot[1] == 1:
-                        # Use item
-                        item = slot[0]
+                    item, count = slot
+                    if isinstance(item, Consumable):
                         game_state = manager.app.manager.states.get("gameplay")
-                        if game_state and hasattr(item, "use"):
-                            item.use(game_state.character)
-                            self.items[x][y] = None
-                    elif slot[1] > 1:
-                        split_count = (slot[1] + 1) // 2
-                        manager.selected_item = [slot[0], split_count]
-                        self.items[x][y][1] -= split_count
-                        if self.items[x][y][1] <= 0:
-                            self.items[x][y] = None
-
+                        if game_state:
+                            if item.use(game_state.character):
+                                slot[1] -= 1
+                                if slot[1] <= 0:
+                                    self.items[x][y] = None             
     def get_slot_under_mouse(self):
         mouse_x, mouse_y = pygame.mouse.get_pos()
 

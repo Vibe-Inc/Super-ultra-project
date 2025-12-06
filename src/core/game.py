@@ -150,7 +150,7 @@ class Game(State):
                     self.app.INV_manager.toggle_trade(self.MAIN_player_inv, self.shop_inv)
             
             #Test keys for effects
-            """
+            
             if event.key == pygame.K_1:
                 self.character.add_effect(RegenerationEffect(5, 5)) # 5 sec, 5 hp/sec
             if event.key == pygame.K_2:
@@ -161,7 +161,7 @@ class Game(State):
                 self.character.add_effect(DizzinessEffect(5)) # 5 sec
             if event.key == pygame.K_5:
                 self.character.take_damage(10)
-            """
+            
 
         self.app.INV_manager.PLAYER_inventory_open(event, self.MAIN_player_inv, self.PLAYER_inventory_equipment)
 

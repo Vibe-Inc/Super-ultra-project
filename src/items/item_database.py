@@ -13,8 +13,10 @@ Weapon_database = {
     }
 }
 
-Consumable_database = {
-    "apple": {
+
+
+Food_database = {
+"apple": {
         "id": "apple",
         "type": "food",
         "name": _("Apple"),
@@ -22,8 +24,17 @@ Consumable_database = {
         "heal_amount": 10,
         "max_stack": 64,
         "price": 5,
-        "description": _("An apple.")
+        "description": _("An apple."),
+        "effects": [
+            {"type": "regeneration", "duration": 5, "amount_per_sec": 2}
+        ]
     }
+}
+#Potion_database = {}
+
+Consumable_database = {
+**Food_database
+#**Potion_database
 }
 
 Item_database = {
