@@ -86,7 +86,13 @@ class Game(State):
         
         shop_items = [
             create_item("dull_sword"),
-            create_item("apple")
+            create_item("apple"),
+            create_item("small_health_potion"),
+            create_item("large_health_potion"),
+            create_item("large_health_potion"),
+            create_item("large_health_potion"),
+            create_item("potion_of_confusion"),
+            create_item("moldy_bread")
             ]
 
         self.shop_inv = ShopInventory(self.app, shop_items)
@@ -126,6 +132,10 @@ class Game(State):
         self.npc.update(self.character.pos)
         self.npc.draw(screen)
 
+        if not self.npc.is_interactable:
+            if getattr(self.app.INV_manager, 'current_shop_inv', None) is not None:
+                self.app.INV_manager.toggle_trade(self.MAIN_player_inv, self.shop_inv)
+
         # Dizziness effect (visual)
         if self.character.dizzy:
             # Simulate blur/dizziness with a semi-transparent overlay that changes alpha
@@ -145,23 +155,9 @@ class Game(State):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.app.manager.set_state("pause")
-            if event.key == pygame.K_e:
+            if event.key == pygame.K_e and self.app.INV_manager.player_inventory_opened == False:
                 if self.npc.is_interactable:
                     self.app.INV_manager.toggle_trade(self.MAIN_player_inv, self.shop_inv)
-            
-            #Test keys for effects
-            
-            if event.key == pygame.K_1:
-                self.character.add_effect(RegenerationEffect(5, 5)) # 5 sec, 5 hp/sec
-            if event.key == pygame.K_2:
-                self.character.add_effect(PoisonEffect(5, 5)) # 5 sec, 5 dmg/sec
-            if event.key == pygame.K_3:
-                self.character.add_effect(ConfusionEffect(5)) # 5 sec
-            if event.key == pygame.K_4:
-                self.character.add_effect(DizzinessEffect(5)) # 5 sec
-            if event.key == pygame.K_5:
-                self.character.take_damage(10)
-            
 
         self.app.INV_manager.PLAYER_inventory_open(event, self.MAIN_player_inv, self.PLAYER_inventory_equipment)
 

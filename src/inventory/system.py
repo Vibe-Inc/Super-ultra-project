@@ -507,6 +507,7 @@ class INVENTORY_manager:
         self.active_split_popup = None
         self.active_inventories:list[Inventory|None] = []
         self.player_inventory_opened:bool = False
+        self.current_shop_inv:Inventory|None = None
 
         self.inventory_tooltip = Tooltip(
             cfg.inventory_tooltip_rect,
@@ -569,6 +570,10 @@ class INVENTORY_manager:
         else:
             self.remove_active_inventory(pl_inv)
             self.remove_active_inventory(equip_inv)
+            if self.current_shop_inv:
+                self.remove_active_inventory(self.current_shop_inv)
+                self.current_shop_inv = None
+                pl_inv.pos_x = cfg.MAIN_INV_pos_x
 
     def toggle_trade(self, pl_inv, shop_inv):
         # If inventory is already open (normal mode), close it first or switch mode?
@@ -583,6 +588,8 @@ class INVENTORY_manager:
             # Reset Player Inventory Position
             pl_inv.pos_x = cfg.MAIN_INV_pos_x
             self.player_inventory_opened = False
+            if self.current_shop_inv is shop_inv:
+                self.current_shop_inv = None
         else:
             # Open Trade
             # Close normal inventory if open
@@ -603,6 +610,7 @@ class INVENTORY_manager:
             
             self.add_active_inventory(pl_inv)
             self.add_active_inventory(shop_inv)
+            self.current_shop_inv = shop_inv
     
     def PLAYER_inventory_open(self,event: pygame.event.Event,pl_inv,equip_inv):
         if event.type == pygame.KEYDOWN:

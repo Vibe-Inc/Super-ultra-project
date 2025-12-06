@@ -148,11 +148,13 @@ class Consumable(Item):
         return f"{self.name}\n{stats}\n{self.description}"
 
     def use(self, target):
+        used = False 
         if self.heal_amount > 0:
             target.hp = min(100, target.hp + self.heal_amount)
             used = True
         
         if self.effects_list:
+            used = True 
             for effect_data in self.effects_list:
                 effect_obj = create_effect(effect_data)
                 
@@ -184,7 +186,7 @@ def create_item(item_id: str):
     
     if item_type == "weapon":
         return Weapon(data)
-    elif item_type == "food":
+    elif item_type == "food" or item_type == "potion":
         return Consumable(data)
     elif item_type == "armor":
         return Armor(data)
