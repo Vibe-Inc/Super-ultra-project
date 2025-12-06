@@ -86,3 +86,19 @@ class DizzinessEffect(Effect):
 
     def on_end(self, target):
         target.dizzy = False
+
+Effect_list = {
+    "regeneration": RegenerationEffect,
+    "poison": PoisonEffect,
+    "confusion": ConfusionEffect,
+    "dizziness": DizzinessEffect
+}
+
+def create_effect(effect_data: dict):
+    data = effect_data.copy()
+    effect_type = data.pop("type", None) 
+    effect_class = Effect_list.get(effect_type)
+    if effect_class:
+        return effect_class(**data)
+    else:
+        return None

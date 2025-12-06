@@ -1,7 +1,7 @@
 import pygame
 from src.core.logger import logger
 from src.items.item_database import Item_database
-from src.items.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, DizzinessEffect
+from src.items.effects import create_effect
 
 class Item:
     """
@@ -50,6 +50,7 @@ class Item:
         self.name_key = data["name"]
         self.type = data["type"]
         self.max_stack = data.get("max_stack", 64)
+        self.price = data.get("price", 0)
         self.desc_key = data.get("description", "")
         self.image = pygame.image.load(data["image_path"]).convert_alpha()
 
@@ -104,7 +105,7 @@ class Weapon(Item):
         self.range = data.get("range", 1.0)
 
     def get_tooltip_text(self):
-        stats = f"{_('Type')}: {_('Weapon')}\n{_('Damage')}: {self.damage}\n{_('Durability')}: {self.durability}"
+        stats = f"{_('Type')}: {_('Weapon')}\n{_('Damage')}: {self.damage}\n{_('Durability')}: {self.durability}\nPrice: ${self.price}"
         return f"{self.name}\n{stats}\n{self.description}"    
 
 class Consumable(Item):
@@ -125,50 +126,42 @@ class Consumable(Item):
         use(target):
             Apply healing and effects to the target.
     """
+
     def __init__(self, data: dict):
         super().__init__(data)
         self.heal_amount = data.get("heal_amount", 0)
-        self.effects_data = data.get("effects", [])
+        self.effects_list = data.get("effects", [])
         
     def get_tooltip_text(self):
         stats = f"{_('Type')}: {_('Consumable')}"
         if self.heal_amount > 0:
             stats += f"\n{_('Heal')}: +{self.heal_amount} {_('HP')}"
         
-        if self.effects_data:
+        if self.effects_list:
             stats += f"\n{_('Effects')}:"
-            for effect in self.effects_data:
-                etype = effect.get("type")
-                duration = effect.get("duration")
-                if etype == "regeneration":
-                    stats += f"\n - {_('Regen')} ({duration}s)"
-                elif etype == "poison":
-                    stats += f"\n - {_('Poison')} ({duration}s)"
-                elif etype == "confusion":
-                    stats += f"\n - {_('Confusion')} ({duration}s)"
-                elif etype == "dizziness":
-                    stats += f"\n - {_('Dizziness')} ({duration}s)"
+            for effect_data in self.effects_list:
+                etype = effect_data.get("type")
+                dur = effect_data.get("duration")
 
+                stats += f"\n - {etype.capitalize()} ({dur}s)"
+        
+        stats += f"\nPrice: ${self.price}"
         return f"{self.name}\n{stats}\n{self.description}"
 
     def use(self, target):
+        used = False 
         if self.heal_amount > 0:
             target.hp = min(100, target.hp + self.heal_amount)
+            used = True
         
-        for effect_data in self.effects_data:
-            etype = effect_data.get("type")
-            duration = effect_data.get("duration", 0)
-            
-            if etype == "regeneration":
-                amount = effect_data.get("amount", 1)
-                target.add_effect(RegenerationEffect(duration, amount))
-            elif etype == "poison":
-                damage = effect_data.get("damage", 1)
-                target.add_effect(PoisonEffect(duration, damage))
-            elif etype == "confusion":
-                target.add_effect(ConfusionEffect(duration))
-            elif etype == "dizziness":
-                target.add_effect(DizzinessEffect(duration))
+        if self.effects_list:
+            used = True 
+            for effect_data in self.effects_list:
+                effect_obj = create_effect(effect_data)
+                
+                if effect_obj:
+                    target.add_effect(effect_obj)
+        return used
 
 
 class Armor(Item):
@@ -198,7 +191,7 @@ def create_item(item_id: str):
     
     if item_type == "weapon":
         return Weapon(data)
-    elif item_type == "food":
+    elif item_type == "food" or item_type == "potion":
         return Consumable(data)
     elif item_type == "armor":
         return Armor(data)
