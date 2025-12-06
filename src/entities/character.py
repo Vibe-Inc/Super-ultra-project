@@ -308,13 +308,15 @@ class Character:
         if self.hp <= 0:
             self.die()
 
-    def take_damage(self, amount):
-        if self.invulnerable:
+    def take_damage(self, amount, ignore_invulnerability=False):
+        if self.invulnerable and not ignore_invulnerability:
             return
             
         self.hp -= amount
-        self.invulnerable = True
-        self.invulnerability_timer = self.invulnerability_duration
+        
+        if not ignore_invulnerability:
+            self.invulnerable = True
+            self.invulnerability_timer = self.invulnerability_duration
         
         logger.info(f"Player took {amount} damage. HP: {self.hp}/{self.max_hp}")
         if self.hp <= 0:

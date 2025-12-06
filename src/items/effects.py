@@ -114,7 +114,7 @@ class PoisonEffect(Effect):
         self.accumulator += self.damage_per_sec * dt
         if self.accumulator >= 1:
             dmg = int(self.accumulator)
-            target.take_damage(dmg)
+            target.take_damage(dmg, ignore_invulnerability=True)
             self.accumulator -= dmg
 
 class ConfusionEffect(Effect):
