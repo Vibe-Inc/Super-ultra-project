@@ -98,6 +98,7 @@ class Enemy:
 
         self.damage = damage
         self.target = None
+        self.hit_flash_timer = 0.0
         self.target_entity = None
         self.ai_state = "idle" # idle, patrol, chase, attack
         self.patrol_points = patrol_points or []
@@ -106,10 +107,24 @@ class Enemy:
         self.attack_range = attack_range
 
     def get_rect(self):
-        self.rect.topleft = (int(self.pos.x), int(self.pos.y))
+        # Define a smaller hitbox for the feet
+        hitbox_width = 40
+        hitbox_height = 20
+        
+        # Assuming animation_size is (85, 85) or similar
+        sprite_width = self.image.get_width()
+        sprite_height = self.image.get_height()
+        
+        offset_x = (sprite_width - hitbox_width) // 2
+        offset_y = sprite_height - hitbox_height
+        
+        self.rect = pygame.Rect(int(self.pos.x + offset_x), int(self.pos.y + offset_y), hitbox_width, hitbox_height)
         return self.rect
 
     def update(self, dt: float, collision_system, obstacles):
+        if self.hit_flash_timer > 0:
+            self.hit_flash_timer -= dt
+
         self._update_ai()
         self._move(dt) # Now sets self.velocity instead of moving directly
         
@@ -178,13 +193,20 @@ class Enemy:
 
     def take_damage(self, amount: int) -> bool:
         self.hp = max(0, self.hp - amount)
+        self.hit_flash_timer = 0.2
         return self.hp <= 0
 
     def is_dead(self) -> bool:
         return self.hp <= 0
 
     def draw(self, screen: pygame.Surface):
+        img = self.image
+        if self.hit_flash_timer > 0:
+            img = img.copy()
+            img.fill((255, 50, 50), special_flags=pygame.BLEND_ADD)
+            
+        draw_pos = (int(self.pos.x), int(self.pos.y))
         if self.direction == "side":
-            screen.blit(pygame.transform.flip(self.image, self.flip, False), self.get_rect())
+            screen.blit(pygame.transform.flip(img, self.flip, False), draw_pos)
         else:
-            screen.blit(self.image, self.get_rect())
+            screen.blit(img, draw_pos)

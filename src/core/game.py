@@ -1,5 +1,6 @@
 import pygame
 from typing import TYPE_CHECKING
+import random
 
 from src.core.logger import logger
 from src.core.state import State
@@ -56,7 +57,7 @@ class Game(State):
 
         self.collision_handler = CollisionSystem()
         
-        self.obstacles = []
+        self.obstacles = self.map.get_obstacles()
 
         self.player_inventory_opened = app.INV_manager.player_inventory_opened
 
@@ -119,6 +120,7 @@ class Game(State):
         if switched_map_path:
             self.current_map_path = switched_map_path
             logger.info(f"Map switched to {switched_map_path}. Respawning enemy...")
+            self.obstacles = self.map.get_obstacles()
             
             if switched_map_path in self.ENEMY_SPAWNS:
                 new_x, new_y = self.ENEMY_SPAWNS[switched_map_path]
@@ -138,6 +140,22 @@ class Game(State):
         self.collision_handler.check_interactions(
             self.character, self.enemies, self.items
         )
+
+        # Remove dead enemies
+        for enemy in self.enemies[:]:
+            if enemy.is_dead():
+                logger.info("Enemy defeated!")
+                
+                # Random XP [30, 60]
+                xp_gain = random.randint(30, 60)
+                self.character.gain_xp(xp_gain)
+                
+                # Random Money [5, 20]
+                money_gain = random.randint(5, 20)
+                self.app.money += money_gain
+                logger.info(f"Gained {money_gain} money. Total: {self.app.money}")
+                
+                self.enemies.remove(enemy)
 
         self.npc.update(self.character.pos)
 
@@ -177,9 +195,28 @@ class Game(State):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.app.manager.set_state("pause")
+            
+            # Combat input
+            if event.key == pygame.K_SPACE:
+                self.character.attack(self.enemies)
+
             if event.key == pygame.K_e and self.app.INV_manager.player_inventory_opened == False:
                 if self.npc.is_interactable:
                     self.app.INV_manager.toggle_trade(self.MAIN_player_inv, self.shop_inv)
+            
+            # Test keys
+            if event.key == pygame.K_1:
+                self.character.add_effect(RegenerationEffect(5, 5)) # 5 sec, 5 hp/sec
+            if event.key == pygame.K_2:
+                self.character.add_effect(PoisonEffect(5, 5)) # 5 sec, 5 dmg/sec
+            if event.key == pygame.K_3:
+                self.character.add_effect(ConfusionEffect(5)) # 5 sec
+            if event.key == pygame.K_4:
+                self.character.add_effect(DizzinessEffect(5)) # 5 sec
+            if event.key == pygame.K_5:
+                self.character.take_damage(10)
+            if event.key == pygame.K_6:
+                self.character.gain_xp(50)
 
         self.app.INV_manager.PLAYER_inventory_open(event, self.MAIN_player_inv, self.PLAYER_inventory_equipment)
 

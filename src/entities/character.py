@@ -95,6 +95,11 @@ class Character:
         self.hp = self.max_hp
         self.death_count = 0
         self.death_sound = pygame.mixer.Sound("sounds/death.mp3")
+        
+        # Invulnerability
+        self.invulnerable = False
+        self.invulnerability_timer = 0.0
+        self.invulnerability_duration = 1.0 # seconds
 
         # Level system
         self.xp = 0
@@ -113,6 +118,13 @@ class Character:
         self.effects = []
         self.confused = False
         self.dizzy = False
+
+        # Combat stats
+        self.attack_damage = 35
+        self.attack_range = 65
+        self.attack_cooldown = 500  # ms
+        self.last_attack_time = 0
+        self.is_attacking = False
 
     def add_effect(self, effect):
         for e in self.effects:
@@ -137,16 +149,56 @@ class Character:
         logger.info(f"Level Up! Level: {self.level}, Max HP: {self.max_hp}")
         print(f"Level Up! Level: {self.level}, Max HP: {self.max_hp}")
 
-    def update(self, dt):
-        # Update effects
-        for effect in self.effects[:]:
-            effect.update(dt, self)
-            if effect.is_finished:
-                self.effects.remove(effect)
+    def attack(self, enemies):
+        current_time = pygame.time.get_ticks()
+        if current_time - self.last_attack_time < self.attack_cooldown:
+            return
+
+        self.last_attack_time = current_time
+        self.is_attacking = True
+        logger.info("Player attacks!")
+
+        # Simple hitbox logic based on direction
+        attack_rect = self.get_rect().copy()
+        if self.direction == "up":
+            attack_rect.y -= self.attack_range
+            attack_rect.height = self.attack_range
+        elif self.direction == "down":
+            attack_rect.y += self.rect.height
+            attack_rect.height = self.attack_range
+        elif self.direction == "side":
+            if self.flip: # Left
+                attack_rect.x -= self.attack_range
+                attack_rect.width = self.attack_range
+            else: # Right
+                attack_rect.x += self.rect.width
+                attack_rect.width = self.attack_range
+
+        # Check for hits
+        for enemy in enemies:
+            if attack_rect.colliderect(enemy.get_rect()):
+                logger.info(f"Hit enemy for {self.attack_damage} damage!")
+                enemy.take_damage(self.attack_damage)
+                # Knockback
+                knockback_force = 20
+                direction = pygame.Vector2(0, 0)
+                if self.direction == "up": direction.y = -1
+                elif self.direction == "down": direction.y = 1
+                elif self.direction == "side": direction.x = -1 if self.flip else 1
+                
+                enemy.pos += direction * knockback_force
 
     def get_rect(self):
-        """Returns the collision rectangle, updated to the current float position."""
-        self.rect.topleft = (int(self.pos.x), int(self.pos.y))
+        """Returns the collision rectangle (hitbox), updated to the current float position."""
+        # Define a smaller hitbox for the feet (e.g., 40x20 pixels)
+        hitbox_width = 40
+        hitbox_height = 20
+        
+        # Center the hitbox horizontally, place it at the bottom vertically
+        offset_x = (85 - hitbox_width) // 2
+        offset_y = 85 - hitbox_height
+        
+        self.rect = pygame.Rect(int(self.pos.x + offset_x), int(self.pos.y + offset_y), hitbox_width, hitbox_height)
         return self.rect
     
     def _set_velocity(self):
@@ -162,7 +214,6 @@ class Character:
             self.is_sprinting = True
 
         current_speed = self.speed * self.sprint_multiplier if self.is_sprinting else self.speed
-        
         self.speed = current_speed 
 
         # Movement logic with confusion support
@@ -176,20 +227,18 @@ class Character:
             left_key, right_key = right_key, left_key
 
         if keys[up_key]:
-            self.pos.y -= current_speed * dt
+            self.velocity.y = -1
             self.direction = "up"
-            self.moving = True
         elif keys[down_key]:
-            self.pos.y += current_speed * dt
+            self.velocity.y = 1
             self.direction = "down"
-            self.moving = True
-        elif keys[left_key]:
-            self.pos.x -= current_speed * dt
+        
+        if keys[left_key]:
+            self.velocity.x = -1
             self.direction = "side"
             self.flip = True
-            self.moving = True
         elif keys[right_key]:
-            self.pos.x += current_speed * dt
+            self.velocity.x = 1
             self.direction = "side"
             self.flip = False
             
@@ -202,16 +251,28 @@ class Character:
                 self.flip = self.velocity.x < 0
             else:
                 self.direction = "down" if self.velocity.y > 0 else "up"
-        
-        # Stamina management logic remains here because it depends on input state
-        # Note: The actual movement delta is calculated in CollisionSystem, but stamina drain depends on INTENT to move
-        # which we capture here.
-    
+
     def update(self, dt, collision_system, obstacles):
         """
         Updates the character's state, sets desired movement, and applies movement
         using the external collision system.
         """
+        # Reset attacking flag after short duration
+        if self.is_attacking and pygame.time.get_ticks() - self.last_attack_time > 200:
+            self.is_attacking = False
+
+        # Update invulnerability
+        if self.invulnerable:
+            self.invulnerability_timer -= dt
+            if self.invulnerability_timer <= 0:
+                self.invulnerable = False
+
+        # Update effects
+        for effect in self.effects[:]:
+            effect.update(dt, self)
+            if effect.is_finished:
+                self.effects.remove(effect)
+
         self._set_velocity()
         
         # Stamina management (logic from your update method)
@@ -226,7 +287,7 @@ class Character:
                 self.stamina = self.max_stamina
                 self.can_sprint = True  
 
-        # 🔑 KEY IMPLEMENTATION STEP: Single function call for collision-aware movement
+        # KEY IMPLEMENTATION STEP: Single function call for collision-aware movement
         collision_system.handle_movement_and_collision(self, dt, obstacles)
         
         # Reset speed to base speed for next frame logic (if needed elsewhere)
@@ -247,7 +308,13 @@ class Character:
             self.die()
 
     def take_damage(self, amount):
+        if self.invulnerable:
+            return
+            
         self.hp -= amount
+        self.invulnerable = True
+        self.invulnerability_timer = self.invulnerability_duration
+        
         logger.info(f"Player took {amount} damage. HP: {self.hp}/{self.max_hp}")
         if self.hp <= 0:
             self.die()
@@ -261,7 +328,46 @@ class Character:
         logger.info(f"Player respawned at {self.pos}. Death count: {self.death_count}")
 
     def draw(self, screen):
-        if self.direction == "side":
-            screen.blit(pygame.transform.flip(self.image, self.flip, False), self.get_rect())
+        # Blink if invulnerable
+        if self.invulnerable and int(pygame.time.get_ticks() / 100) % 2 == 0:
+            pass # Skip drawing for blinking effect
         else:
-            screen.blit(self.image, self.get_rect())
+            # Draw relative to self.pos (top-left of sprite), NOT self.get_rect() (hitbox)
+            draw_pos = (int(self.pos.x), int(self.pos.y))
+            if self.direction == "side":
+                screen.blit(pygame.transform.flip(self.image, self.flip, False), draw_pos)
+            else:
+                screen.blit(self.image, draw_pos)
+        
+        # Draw attack visual
+        if self.is_attacking:
+            attack_rect = self.get_rect().copy()
+            
+            # Create a surface for the slash
+            slash_surface = pygame.Surface((100, 100), pygame.SRCALPHA)
+            
+            # Draw a nice arc/slash
+            color = (255, 255, 255, 200)
+            width = 5
+            
+            if self.direction == "up":
+                # Arc above
+                rect = pygame.Rect(10, 50, 80, 80)
+                pygame.draw.arc(slash_surface, color, rect, 0.1, 3.0, width)
+                screen.blit(slash_surface, (self.pos.x - 10, self.pos.y - 60))
+                
+            elif self.direction == "down":
+                # Arc below
+                rect = pygame.Rect(10, -30, 80, 80)
+                pygame.draw.arc(slash_surface, color, rect, 3.2, 6.2, width)
+                screen.blit(slash_surface, (self.pos.x - 10, self.pos.y + 60))
+                
+            elif self.direction == "side":
+                if self.flip: # Left
+                    rect = pygame.Rect(30, 10, 80, 80)
+                    pygame.draw.arc(slash_surface, color, rect, 1.6, 4.6, width)
+                    screen.blit(slash_surface, (self.pos.x - 60, self.pos.y))
+                else: # Right
+                    rect = pygame.Rect(-10, 10, 80, 80)
+                    pygame.draw.arc(slash_surface, color, rect, 4.8, 1.4 + 6.28, width) # Wrap around angle
+                    screen.blit(slash_surface, (self.pos.x + 40, self.pos.y))

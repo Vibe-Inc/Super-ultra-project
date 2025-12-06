@@ -53,6 +53,30 @@ class Map:
                         screen.blit(tile, (x * self.game_map.tilewidth,
                                            y * self.game_map.tileheight))
 
+    def get_obstacles(self):
+        if self.game_map is None:
+             try:
+                self.game_map = pytmx.load_pygame(self.map_file)
+                self.pixel_width = self.game_map.width * self.game_map.tilewidth
+                self.pixel_height = self.game_map.height * self.game_map.tileheight
+             except Exception as e:
+                logger.error(f"Failed to load map {self.map_file} for obstacles: {e}")
+                return []
+
+        obstacles = []
+        if self.game_map:
+            for obj in self.game_map.objects:
+                if obj.type == "Wall" or obj.name == "Wall": # Check for object type or name
+                    obstacles.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
+            
+            # Also check for object layers named "Walls" or "Collisions"
+            for layer in self.game_map.visible_layers:
+                if isinstance(layer, pytmx.TiledObjectGroup):
+                    if "wall" in layer.name.lower() or "collision" in layer.name.lower():
+                        for obj in layer:
+                            obstacles.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
+        return obstacles
+
 
 class LocalMap:
     """
@@ -97,6 +121,9 @@ class LocalMap:
 
     def draw(self, screen):
         self.current_map.draw(screen)
+
+    def get_obstacles(self):
+        return self.current_map.get_obstacles()
 
     def update(self, player):
         """
