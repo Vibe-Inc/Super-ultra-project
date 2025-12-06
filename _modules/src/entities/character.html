@@ -168,6 +168,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">hp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">death_count</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">death_sound</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">Sound</span><span class="p">(</span><span class="s2">&quot;sounds/death.mp3&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Invulnerability</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">invulnerable</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">invulnerability_timer</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">invulnerability_duration</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="c1"># seconds</span>
 
         <span class="c1"># Level system</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">xp</span> <span class="o">=</span> <span class="mi">0</span>
@@ -186,6 +191,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">effects</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">confused</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dizzy</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># Combat stats</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attack_damage</span> <span class="o">=</span> <span class="mi">35</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attack_range</span> <span class="o">=</span> <span class="mi">65</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attack_cooldown</span> <span class="o">=</span> <span class="mi">500</span>  <span class="c1"># ms</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_attack_time</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_attacking</span> <span class="o">=</span> <span class="kc">False</span>
 
 <div class="viewcode-block" id="Character.add_effect">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.add_effect">[docs]</a>
@@ -219,18 +231,61 @@
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Level Up! Level: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">level</span><span class="si">}</span><span class="s2">, Max HP: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
-        <span class="c1"># Update effects</span>
-        <span class="k">for</span> <span class="n">effect</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="p">[:]:</span>
-            <span class="n">effect</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">effect</span><span class="o">.</span><span class="n">is_finished</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">effect</span><span class="p">)</span>
+<div class="viewcode-block" id="Character.attack">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.attack">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">attack</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enemies</span><span class="p">):</span>
+        <span class="n">current_time</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">current_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_attack_time</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">attack_cooldown</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_attack_time</span> <span class="o">=</span> <span class="n">current_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_attacking</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player attacks!&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Simple hitbox logic based on direction</span>
+        <span class="n">attack_rect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rect</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;up&quot;</span><span class="p">:</span>
+            <span class="n">attack_rect</span><span class="o">.</span><span class="n">y</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attack_range</span>
+            <span class="n">attack_rect</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attack_range</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;down&quot;</span><span class="p">:</span>
+            <span class="n">attack_rect</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">height</span>
+            <span class="n">attack_rect</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attack_range</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;side&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">flip</span><span class="p">:</span> <span class="c1"># Left</span>
+                <span class="n">attack_rect</span><span class="o">.</span><span class="n">x</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attack_range</span>
+                <span class="n">attack_rect</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attack_range</span>
+            <span class="k">else</span><span class="p">:</span> <span class="c1"># Right</span>
+                <span class="n">attack_rect</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">width</span>
+                <span class="n">attack_rect</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attack_range</span>
+
+        <span class="c1"># Check for hits</span>
+        <span class="k">for</span> <span class="n">enemy</span> <span class="ow">in</span> <span class="n">enemies</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">attack_rect</span><span class="o">.</span><span class="n">colliderect</span><span class="p">(</span><span class="n">enemy</span><span class="o">.</span><span class="n">get_rect</span><span class="p">()):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Hit enemy for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">attack_damage</span><span class="si">}</span><span class="s2"> damage!&quot;</span><span class="p">)</span>
+                <span class="n">enemy</span><span class="o">.</span><span class="n">take_damage</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attack_damage</span><span class="p">)</span>
+                <span class="c1"># Knockback</span>
+                <span class="n">knockback_force</span> <span class="o">=</span> <span class="mi">20</span>
+                <span class="n">direction</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;up&quot;</span><span class="p">:</span> <span class="n">direction</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;down&quot;</span><span class="p">:</span> <span class="n">direction</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;side&quot;</span><span class="p">:</span> <span class="n">direction</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">flip</span> <span class="k">else</span> <span class="mi">1</span>
+                
+                <span class="n">enemy</span><span class="o">.</span><span class="n">pos</span> <span class="o">+=</span> <span class="n">direction</span> <span class="o">*</span> <span class="n">knockback_force</span></div>
+
 
 <div class="viewcode-block" id="Character.get_rect">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.get_rect">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_rect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the collision rectangle, updated to the current float position.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">topleft</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">))</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the collision rectangle (hitbox), updated to the current float position.&quot;&quot;&quot;</span>
+        <span class="c1"># Define a smaller hitbox for the feet (e.g., 40x20 pixels)</span>
+        <span class="n">hitbox_width</span> <span class="o">=</span> <span class="mi">40</span>
+        <span class="n">hitbox_height</span> <span class="o">=</span> <span class="mi">20</span>
+        
+        <span class="c1"># Center the hitbox horizontally, place it at the bottom vertically</span>
+        <span class="n">offset_x</span> <span class="o">=</span> <span class="p">(</span><span class="mi">85</span> <span class="o">-</span> <span class="n">hitbox_width</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="n">offset_y</span> <span class="o">=</span> <span class="mi">85</span> <span class="o">-</span> <span class="n">hitbox_height</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">offset_x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">offset_y</span><span class="p">),</span> <span class="n">hitbox_width</span><span class="p">,</span> <span class="n">hitbox_height</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span></div>
 
     
@@ -249,7 +304,6 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">is_sprinting</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="n">current_speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sprint_multiplier</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_sprinting</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed</span>
-        
         <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">=</span> <span class="n">current_speed</span> 
 
         <span class="c1"># Movement logic with confusion support</span>
@@ -263,20 +317,18 @@
             <span class="n">left_key</span><span class="p">,</span> <span class="n">right_key</span> <span class="o">=</span> <span class="n">right_key</span><span class="p">,</span> <span class="n">left_key</span>
 
         <span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="n">up_key</span><span class="p">]:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">-=</span> <span class="n">current_speed</span> <span class="o">*</span> <span class="n">dt</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;up&quot;</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">moving</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">elif</span> <span class="n">keys</span><span class="p">[</span><span class="n">down_key</span><span class="p">]:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="n">current_speed</span> <span class="o">*</span> <span class="n">dt</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="mi">1</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;down&quot;</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">moving</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">elif</span> <span class="n">keys</span><span class="p">[</span><span class="n">left_key</span><span class="p">]:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">-=</span> <span class="n">current_speed</span> <span class="o">*</span> <span class="n">dt</span>
+        
+        <span class="k">if</span> <span class="n">keys</span><span class="p">[</span><span class="n">left_key</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;side&quot;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">flip</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">moving</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">elif</span> <span class="n">keys</span><span class="p">[</span><span class="n">right_key</span><span class="p">]:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="n">current_speed</span> <span class="o">*</span> <span class="n">dt</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">1</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;side&quot;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">flip</span> <span class="o">=</span> <span class="kc">False</span>
             
@@ -290,11 +342,7 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;down&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;up&quot;</span></div>
 
-        
-        <span class="c1"># Stamina management logic remains here because it depends on input state</span>
-        <span class="c1"># Note: The actual movement delta is calculated in CollisionSystem, but stamina drain depends on INTENT to move</span>
-        <span class="c1"># which we capture here.</span>
-    
+
 <div class="viewcode-block" id="Character.update">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.update">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">collision_system</span><span class="p">,</span> <span class="n">obstacles</span><span class="p">):</span>
@@ -302,6 +350,22 @@
 <span class="sd">        Updates the character&#39;s state, sets desired movement, and applies movement</span>
 <span class="sd">        using the external collision system.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Reset attacking flag after short duration</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_attacking</span> <span class="ow">and</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_attack_time</span> <span class="o">&gt;</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">is_attacking</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># Update invulnerability</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">invulnerable</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">invulnerability_timer</span> <span class="o">-=</span> <span class="n">dt</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">invulnerability_timer</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">invulnerable</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># Update effects</span>
+        <span class="k">for</span> <span class="n">effect</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="p">[:]:</span>
+            <span class="n">effect</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">effect</span><span class="o">.</span><span class="n">is_finished</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">effect</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_set_velocity</span><span class="p">()</span>
         
         <span class="c1"># Stamina management (logic from your update method)</span>
@@ -316,7 +380,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">stamina</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_stamina</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">can_sprint</span> <span class="o">=</span> <span class="kc">True</span>  
 
-        <span class="c1"># 🔑 KEY IMPLEMENTATION STEP: Single function call for collision-aware movement</span>
+        <span class="c1"># KEY IMPLEMENTATION STEP: Single function call for collision-aware movement</span>
         <span class="n">collision_system</span><span class="o">.</span><span class="n">handle_movement_and_collision</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">obstacles</span><span class="p">)</span>
         
         <span class="c1"># Reset speed to base speed for next frame logic (if needed elsewhere)</span>
@@ -340,7 +404,13 @@
 <div class="viewcode-block" id="Character.take_damage">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.take_damage">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">take_damage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">invulnerable</span><span class="p">:</span>
+            <span class="k">return</span>
+            
         <span class="bp">self</span><span class="o">.</span><span class="n">hp</span> <span class="o">-=</span> <span class="n">amount</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">invulnerable</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">invulnerability_timer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">invulnerability_duration</span>
+        
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Player took </span><span class="si">{</span><span class="n">amount</span><span class="si">}</span><span class="s2"> damage. HP: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">hp</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hp</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">die</span><span class="p">()</span></div>
@@ -360,10 +430,49 @@
 <div class="viewcode-block" id="Character.draw">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.draw">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;side&quot;</span><span class="p">:</span>
-            <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">flip</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rect</span><span class="p">())</span>
+        <span class="c1"># Blink if invulnerable</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">invulnerable</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span> <span class="o">/</span> <span class="mi">100</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">pass</span> <span class="c1"># Skip drawing for blinking effect</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rect</span><span class="p">())</span></div>
+            <span class="c1"># Draw relative to self.pos (top-left of sprite), NOT self.get_rect() (hitbox)</span>
+            <span class="n">draw_pos</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;side&quot;</span><span class="p">:</span>
+                <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">flip</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span> <span class="n">draw_pos</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="n">draw_pos</span><span class="p">)</span>
+        
+        <span class="c1"># Draw attack visual</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_attacking</span><span class="p">:</span>
+            <span class="n">attack_rect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rect</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            
+            <span class="c1"># Create a surface for the slash</span>
+            <span class="n">slash_surface</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+            
+            <span class="c1"># Draw a nice arc/slash</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="mi">5</span>
+            
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;up&quot;</span><span class="p">:</span>
+                <span class="c1"># Arc above</span>
+                <span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
+                <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">arc</span><span class="p">(</span><span class="n">slash_surface</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">rect</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span>
+                <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">slash_surface</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="mi">10</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="mi">60</span><span class="p">))</span>
+                
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;down&quot;</span><span class="p">:</span>
+                <span class="c1"># Arc below</span>
+                <span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="o">-</span><span class="mi">30</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
+                <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">arc</span><span class="p">(</span><span class="n">slash_surface</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">rect</span><span class="p">,</span> <span class="mf">3.2</span><span class="p">,</span> <span class="mf">6.2</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span>
+                <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">slash_surface</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="mi">10</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="mi">60</span><span class="p">))</span>
+                
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;side&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">flip</span><span class="p">:</span> <span class="c1"># Left</span>
+                    <span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
+                    <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">arc</span><span class="p">(</span><span class="n">slash_surface</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">rect</span><span class="p">,</span> <span class="mf">1.6</span><span class="p">,</span> <span class="mf">4.6</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span>
+                    <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">slash_surface</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="mi">60</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span> <span class="c1"># Right</span>
+                    <span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
+                    <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">arc</span><span class="p">(</span><span class="n">slash_surface</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">rect</span><span class="p">,</span> <span class="mf">4.8</span><span class="p">,</span> <span class="mf">1.4</span> <span class="o">+</span> <span class="mf">6.28</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span> <span class="c1"># Wrap around angle</span>
+                    <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">slash_surface</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="mi">40</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">))</span></div>
 </div>
 
 </pre></div>

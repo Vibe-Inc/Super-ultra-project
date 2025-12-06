@@ -130,6 +130,33 @@
                     <span class="k">if</span> <span class="n">tile</span><span class="p">:</span>
                         <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">tile</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">tilewidth</span><span class="p">,</span>
                                            <span class="n">y</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">tileheight</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="Map.get_obstacles">
+<a class="viewcode-back" href="../../../src.map.html#src.map.map.Map.get_obstacles">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_obstacles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+             <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span> <span class="o">=</span> <span class="n">pytmx</span><span class="o">.</span><span class="n">load_pygame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">map_file</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pixel_width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">width</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">tilewidth</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pixel_height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">height</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">tileheight</span>
+             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load map </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">map_file</span><span class="si">}</span><span class="s2"> for obstacles: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="p">[]</span>
+
+        <span class="n">obstacles</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">objects</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;Wall&quot;</span> <span class="ow">or</span> <span class="n">obj</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;Wall&quot;</span><span class="p">:</span> <span class="c1"># Check for object type or name</span>
+                    <span class="n">obstacles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">height</span><span class="p">))</span>
+            
+            <span class="c1"># Also check for object layers named &quot;Walls&quot; or &quot;Collisions&quot;</span>
+            <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">visible_layers</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">pytmx</span><span class="o">.</span><span class="n">TiledObjectGroup</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="s2">&quot;wall&quot;</span> <span class="ow">in</span> <span class="n">layer</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">or</span> <span class="s2">&quot;collision&quot;</span> <span class="ow">in</span> <span class="n">layer</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                        <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">layer</span><span class="p">:</span>
+                            <span class="n">obstacles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">height</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">obstacles</span></div>
 </div>
 
 
@@ -184,6 +211,12 @@
 <a class="viewcode-back" href="../../../src.map.html#src.map.map.LocalMap.draw">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LocalMap.get_obstacles">
+<a class="viewcode-back" href="../../../src.map.html#src.map.map.LocalMap.get_obstacles">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_obstacles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">get_obstacles</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="LocalMap.update">
