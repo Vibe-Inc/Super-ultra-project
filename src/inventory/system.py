@@ -363,7 +363,7 @@ class ShopInventory(Inventory):
                             manager.selected_item = [new_item, 1]
                             # Do not remove from shop (infinite stock)
                         else:
-                            logger.warning(f"Not enough money to buy {item.id}. Cost: ${price}, Balance: ${self.app.money}")
+                            logger.warning(f"Not enough money to buy {shop_item.id}. Cost: ${buy_price}, Balance: ${self.app.money}")
 
 
 class MAIN_player_inventory(Inventory):
