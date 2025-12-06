@@ -12,23 +12,27 @@ class CollisionSystem:
         if movement.x != 0:
             entity.pos.x += movement.x
             rect = self.rect_of(entity)
+            offset_x = rect.x - entity.pos.x
+            
             for wall in obstacles:
                 if rect.colliderect(wall):
                     if movement.x > 0:
-                        entity.pos.x = wall.left - rect.width
+                        entity.pos.x = (wall.left - rect.width) - offset_x
                     else:
-                        entity.pos.x = wall.right
+                        entity.pos.x = wall.right - offset_x
                     rect = self.rect_of(entity)
 
         if movement.y != 0:
             entity.pos.y += movement.y
             rect = self.rect_of(entity)
+            offset_y = rect.y - entity.pos.y
+            
             for wall in obstacles:
                 if rect.colliderect(wall):
                     if movement.y > 0:
-                        entity.pos.y = wall.top - rect.height
+                        entity.pos.y = (wall.top - rect.height) - offset_y
                     else:
-                        entity.pos.y = wall.bottom
+                        entity.pos.y = wall.bottom - offset_y
                     rect = self.rect_of(entity)
 
         self._resolve_static_collision(entity, obstacles)

@@ -1,5 +1,6 @@
 import pygame
 from typing import TYPE_CHECKING
+import random
 
 from src.core.logger import logger
 from src.core.state import State
@@ -140,6 +141,22 @@ class Game(State):
             self.character, self.enemies, self.items
         )
 
+        # Remove dead enemies
+        for enemy in self.enemies[:]:
+            if enemy.is_dead():
+                logger.info("Enemy defeated!")
+                
+                # Random XP [30, 60]
+                xp_gain = random.randint(30, 60)
+                self.character.gain_xp(xp_gain)
+                
+                # Random Money [5, 20]
+                money_gain = random.randint(5, 20)
+                self.app.money += money_gain
+                logger.info(f"Gained {money_gain} money. Total: {self.app.money}")
+                
+                self.enemies.remove(enemy)
+
         self.npc.update(self.character.pos)
 
     def draw(self, screen):
@@ -178,6 +195,11 @@ class Game(State):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.app.manager.set_state("pause")
+            
+            # Combat input
+            if event.key == pygame.K_SPACE:
+                self.character.attack(self.enemies)
+
             if event.key == pygame.K_e and self.app.INV_manager.player_inventory_opened == False:
                 if self.npc.is_interactable:
                     self.app.INV_manager.toggle_trade(self.MAIN_player_inv, self.shop_inv)
