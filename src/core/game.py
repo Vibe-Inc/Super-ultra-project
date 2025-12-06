@@ -56,7 +56,7 @@ class Game(State):
 
         self.collision_handler = CollisionSystem()
         
-        self.obstacles = []
+        self.obstacles = self.map.get_obstacles()
 
         self.player_inventory_opened = app.INV_manager.player_inventory_opened
 
@@ -119,6 +119,7 @@ class Game(State):
         if switched_map_path:
             self.current_map_path = switched_map_path
             logger.info(f"Map switched to {switched_map_path}. Respawning enemy...")
+            self.obstacles = self.map.get_obstacles()
             
             if switched_map_path in self.ENEMY_SPAWNS:
                 new_x, new_y = self.ENEMY_SPAWNS[switched_map_path]
@@ -180,6 +181,20 @@ class Game(State):
             if event.key == pygame.K_e and self.app.INV_manager.player_inventory_opened == False:
                 if self.npc.is_interactable:
                     self.app.INV_manager.toggle_trade(self.MAIN_player_inv, self.shop_inv)
+            
+            # Test keys
+            if event.key == pygame.K_1:
+                self.character.add_effect(RegenerationEffect(5, 5)) # 5 sec, 5 hp/sec
+            if event.key == pygame.K_2:
+                self.character.add_effect(PoisonEffect(5, 5)) # 5 sec, 5 dmg/sec
+            if event.key == pygame.K_3:
+                self.character.add_effect(ConfusionEffect(5)) # 5 sec
+            if event.key == pygame.K_4:
+                self.character.add_effect(DizzinessEffect(5)) # 5 sec
+            if event.key == pygame.K_5:
+                self.character.take_damage(10)
+            if event.key == pygame.K_6:
+                self.character.gain_xp(50)
 
         self.app.INV_manager.PLAYER_inventory_open(event, self.MAIN_player_inv, self.PLAYER_inventory_equipment)
 

@@ -137,13 +137,6 @@ class Character:
         logger.info(f"Level Up! Level: {self.level}, Max HP: {self.max_hp}")
         print(f"Level Up! Level: {self.level}, Max HP: {self.max_hp}")
 
-    def update(self, dt):
-        # Update effects
-        for effect in self.effects[:]:
-            effect.update(dt, self)
-            if effect.is_finished:
-                self.effects.remove(effect)
-
     def get_rect(self):
         """Returns the collision rectangle, updated to the current float position."""
         self.rect.topleft = (int(self.pos.x), int(self.pos.y))
@@ -162,7 +155,6 @@ class Character:
             self.is_sprinting = True
 
         current_speed = self.speed * self.sprint_multiplier if self.is_sprinting else self.speed
-        
         self.speed = current_speed 
 
         # Movement logic with confusion support
@@ -176,20 +168,18 @@ class Character:
             left_key, right_key = right_key, left_key
 
         if keys[up_key]:
-            self.pos.y -= current_speed * dt
+            self.velocity.y = -1
             self.direction = "up"
-            self.moving = True
         elif keys[down_key]:
-            self.pos.y += current_speed * dt
+            self.velocity.y = 1
             self.direction = "down"
-            self.moving = True
-        elif keys[left_key]:
-            self.pos.x -= current_speed * dt
+        
+        if keys[left_key]:
+            self.velocity.x = -1
             self.direction = "side"
             self.flip = True
-            self.moving = True
         elif keys[right_key]:
-            self.pos.x += current_speed * dt
+            self.velocity.x = 1
             self.direction = "side"
             self.flip = False
             
@@ -202,16 +192,18 @@ class Character:
                 self.flip = self.velocity.x < 0
             else:
                 self.direction = "down" if self.velocity.y > 0 else "up"
-        
-        # Stamina management logic remains here because it depends on input state
-        # Note: The actual movement delta is calculated in CollisionSystem, but stamina drain depends on INTENT to move
-        # which we capture here.
-    
+
     def update(self, dt, collision_system, obstacles):
         """
         Updates the character's state, sets desired movement, and applies movement
         using the external collision system.
         """
+        # Update effects
+        for effect in self.effects[:]:
+            effect.update(dt, self)
+            if effect.is_finished:
+                self.effects.remove(effect)
+
         self._set_velocity()
         
         # Stamina management (logic from your update method)
@@ -226,7 +218,7 @@ class Character:
                 self.stamina = self.max_stamina
                 self.can_sprint = True  
 
-        # 🔑 KEY IMPLEMENTATION STEP: Single function call for collision-aware movement
+        # KEY IMPLEMENTATION STEP: Single function call for collision-aware movement
         collision_system.handle_movement_and_collision(self, dt, obstacles)
         
         # Reset speed to base speed for next frame logic (if needed elsewhere)
