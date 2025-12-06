@@ -246,9 +246,6 @@
 <a class="viewcode-back" href="../../../src.items.html#src.items.items.Consumable.use">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">use</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
         <span class="n">used</span> <span class="o">=</span> <span class="kc">False</span> 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">heal_amount</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">target</span><span class="o">.</span><span class="n">hp</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">target</span><span class="o">.</span><span class="n">hp</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">heal_amount</span><span class="p">)</span>
-            <span class="n">used</span> <span class="o">=</span> <span class="kc">True</span>
         
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">effects_list</span><span class="p">:</span>
             <span class="n">used</span> <span class="o">=</span> <span class="kc">True</span> 
