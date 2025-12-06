@@ -6,7 +6,7 @@ Weapon_database = {
         "type": "weapon",
         "name": _("Dull Sword"),
         "image_path": "assets/items/weapons/swords/dull_sword.png",
-        "damage": 5,
+        "damage": 20,
         "durability": 50,
         "price": 50,
         "description": _("A worn-out sword with a dull blade. Thats about it.")

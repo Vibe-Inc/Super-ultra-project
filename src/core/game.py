@@ -197,6 +197,12 @@ class Game(State):
                 )
                 default_enemy.target_entity = self.character
                 self.enemies.append(default_enemy)
+
+            if switched_map_path in self.NPC_SPAWNS:
+                npc_x, npc_y = self.NPC_SPAWNS[switched_map_path]
+                self.npc.pos = pygame.Vector2(npc_x, npc_y)
+            else:
+                self.npc.pos = pygame.Vector2(-5000, -5000)
         
         # Enemy Spawning Logic
         self.enemy_spawn_timer += dt
@@ -204,11 +210,15 @@ class Game(State):
             self.enemy_spawn_timer = 0
             self.spawn_random_enemy()
 
-            if switched_map_path in self.NPC_SPAWNS:
-                npc_x, npc_y = self.NPC_SPAWNS[switched_map_path]
-                self.npc.pos = pygame.Vector2(npc_x, npc_y)
-            else:
-                self.npc.pos = pygame.Vector2(-5000, -5000)
+        # Update player damage based on equipment
+        total_damage = self.character.base_attack_damage
+        for col in self.PLAYER_inventory_equipment.items:
+            for slot in col:
+                if slot:
+                    item, count = slot
+                    if hasattr(item, 'damage'):
+                        total_damage += item.damage
+        self.character.attack_damage = total_damage
 
         self.character.update(dt, self.collision_handler, self.obstacles)
 

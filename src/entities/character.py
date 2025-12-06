@@ -120,7 +120,8 @@ class Character:
         self.dizzy = False
 
         # Combat stats
-        self.attack_damage = 35
+        self.base_attack_damage = 15
+        self.attack_damage = self.base_attack_damage
         self.attack_range = 65
         self.attack_cooldown = 500  # ms
         self.last_attack_time = 0

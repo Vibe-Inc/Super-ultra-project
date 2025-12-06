@@ -75,6 +75,7 @@ class Enemy:
         self.pos = pygame.Vector2(x, y)
         self.speed = speed
         self.hp = hp
+        self.max_hp = hp
         self.spawn_pos = self.pos.copy()
 
         self.animations = {
@@ -210,3 +211,17 @@ class Enemy:
             screen.blit(pygame.transform.flip(img, self.flip, False), draw_pos)
         else:
             screen.blit(img, draw_pos)
+
+        # Draw Health Bar
+        bar_width = 40
+        bar_height = 5
+        # Center above sprite (assuming 85px width)
+        bar_x = self.pos.x + (85 - bar_width) // 2
+        bar_y = self.pos.y - 10
+        
+        # Background (Red)
+        pygame.draw.rect(screen, (255, 0, 0), (bar_x, bar_y, bar_width, bar_height))
+        # Health (Green)
+        if self.max_hp > 0:
+            health_width = int(bar_width * (self.hp / self.max_hp))
+            pygame.draw.rect(screen, (0, 255, 0), (bar_x, bar_y, health_width, bar_height))
