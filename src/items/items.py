@@ -150,9 +150,6 @@ class Consumable(Item):
 
     def use(self, target):
         used = False 
-        if self.heal_amount > 0:
-            target.hp = min(100, target.hp + self.heal_amount)
-            used = True
         
         if self.effects_list:
             used = True 
