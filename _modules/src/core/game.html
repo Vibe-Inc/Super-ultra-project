@@ -162,9 +162,17 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">npc</span> <span class="o">=</span> <span class="n">NPC</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="n">sprite_set</span><span class="o">=</span><span class="s2">&quot;MenHuman1&quot;</span><span class="p">)</span>
         
         <span class="n">shop_items</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="p">(</span><span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;apple&quot;</span><span class="p">),</span> <span class="mi">10</span><span class="p">)</span>
-        <span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">shop_inv</span> <span class="o">=</span> <span class="n">ShopInventory</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">shop_items</span><span class="p">)</span></div>
+            <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;dull_sword&quot;</span><span class="p">),</span>
+            <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;apple&quot;</span><span class="p">),</span>
+            <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;small_health_potion&quot;</span><span class="p">),</span>
+            <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;large_health_potion&quot;</span><span class="p">),</span>
+            <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;large_health_potion&quot;</span><span class="p">),</span>
+            <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;large_health_potion&quot;</span><span class="p">),</span>
+            <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;potion_of_confusion&quot;</span><span class="p">),</span>
+            <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;moldy_bread&quot;</span><span class="p">)</span>
+            <span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">shop_inv</span> <span class="o">=</span> <span class="n">ShopInventory</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="n">shop_items</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Game.reinit_ui">
@@ -210,6 +218,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">is_interactable</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="p">,</span> <span class="s1">&#39;current_shop_inv&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">toggle_trade</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">MAIN_player_inv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shop_inv</span><span class="p">)</span>
+
         <span class="c1"># Dizziness effect (visual)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">dizzy</span><span class="p">:</span>
             <span class="c1"># Simulate blur/dizziness with a semi-transparent overlay that changes alpha</span>
@@ -232,23 +244,9 @@
         <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">KEYDOWN</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_ESCAPE</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;pause&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_e</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">player_inventory_opened</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">is_interactable</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">toggle_trade</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">MAIN_player_inv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shop_inv</span><span class="p">)</span>
-            
-            <span class="c1"># Test keys</span>
-            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_1</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">add_effect</span><span class="p">(</span><span class="n">RegenerationEffect</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span> <span class="c1"># 5 sec, 5 hp/sec</span>
-            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_2</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">add_effect</span><span class="p">(</span><span class="n">PoisonEffect</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span> <span class="c1"># 5 sec, 5 dmg/sec</span>
-            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_3</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">add_effect</span><span class="p">(</span><span class="n">ConfusionEffect</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span> <span class="c1"># 5 sec</span>
-            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_4</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">add_effect</span><span class="p">(</span><span class="n">DizzinessEffect</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span> <span class="c1"># 5 sec</span>
-            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_5</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">take_damage</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_6</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">gain_xp</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">PLAYER_inventory_open</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAIN_player_inv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PLAYER_inventory_equipment</span><span class="p">)</span></div>
 </div>

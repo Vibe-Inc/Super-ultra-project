@@ -411,6 +411,12 @@
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="src.inventory.system.Inventory_slider">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.inventory.system.</span></span><span class="sig-name descname"><span class="pre">Inventory_slider</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_qty</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_callback</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Inventory_slider"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.Inventory_slider" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="src.ui.html#src.ui.widgets.Slider" title="src.ui.widgets.Slider"><code class="xref py py-class docutils literal notranslate"><span class="pre">Slider</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="src.inventory.system.MAIN_player_inventory">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.inventory.system.</span></span><span class="sig-name descname"><span class="pre">MAIN_player_inventory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_inventory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.MAIN_player_inventory" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#src.inventory.system.Inventory" title="src.inventory.system.Inventory"><code class="xref py py-class docutils literal notranslate"><span class="pre">Inventory</span></code></a></p>
@@ -441,7 +447,7 @@ Inherits from Inventory.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="src.inventory.system.ShopInventory">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.inventory.system.</span></span><span class="sig-name descname"><span class="pre">ShopInventory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">items_data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#ShopInventory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.ShopInventory" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.inventory.system.</span></span><span class="sig-name descname"><span class="pre">ShopInventory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">items_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#ShopInventory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.ShopInventory" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#src.inventory.system.Inventory" title="src.inventory.system.Inventory"><code class="xref py py-class docutils literal notranslate"><span class="pre">Inventory</span></code></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="src.inventory.system.ShopInventory.draw">
@@ -451,6 +457,32 @@ Inherits from Inventory.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="src.inventory.system.ShopInventory.inventory_interactions">
 <span class="sig-name descname"><span class="pre">inventory_interactions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#ShopInventory.inventory_interactions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.ShopInventory.inventory_interactions" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.inventory.system.Split_popup">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.inventory.system.</span></span><span class="sig-name descname"><span class="pre">Split_popup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slot_ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rect_pos</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Split_popup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.Split_popup" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.Split_popup.confirm">
+<span class="sig-name descname"><span class="pre">confirm</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Split_popup.confirm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.Split_popup.confirm" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.Split_popup.draw">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Split_popup.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.Split_popup.draw" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.Split_popup.handle_event">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Split_popup.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.Split_popup.handle_event" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.Split_popup.update_count">
+<span class="sig-name descname"><span class="pre">update_count</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">int_val</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Split_popup.update_count"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.Split_popup.update_count" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
