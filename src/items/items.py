@@ -1,4 +1,5 @@
 import pygame
+from src.core.logger import logger
 from src.items.item_database import Item_database
 from src.items.effects import create_effect
 
@@ -182,6 +183,10 @@ def create_item(item_id: str):
         Item | Weapon | Consumable | Armor: The instantiated item object of the appropriate type.
     """
     data = Item_database.get(item_id)
+    if not data:
+        logger.error(f"Item ID not found in database: {item_id}")
+        return None
+
     item_type = data.get("type")
     
     if item_type == "weapon":
@@ -191,4 +196,5 @@ def create_item(item_id: str):
     elif item_type == "armor":
         return Armor(data)
     else:
+        logger.warning(f"Unknown item type '{item_type}' for item '{item_id}'. Defaulting to generic Item.")
         return Item(data)

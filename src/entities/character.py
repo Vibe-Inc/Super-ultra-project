@@ -1,5 +1,5 @@
 import pygame
-
+from src.core.logger import logger
 
 class Character:
     """
@@ -73,9 +73,15 @@ class Character:
         self.flip = False
         self.moving = False
 
-        self.hp = 100
+        self.max_hp = 100
+        self.hp = self.max_hp
         self.death_count = 0
         self.death_sound = pygame.mixer.Sound("sounds/death.mp3")
+
+        # Level system
+        self.xp = 0
+        self.level = 1
+        self.xp_to_next_level = 100
 
         # Stamina system
         self.max_stamina = 100
@@ -97,6 +103,21 @@ class Character:
                 self.effects.append(effect)
                 return
         self.effects.append(effect)
+
+    def gain_xp(self, amount):
+        self.xp += amount
+        logger.info(f"Gained {amount} XP. Current XP: {self.xp}/{self.xp_to_next_level}")
+        while self.xp >= self.xp_to_next_level:
+            self.xp -= self.xp_to_next_level
+            self.level_up()
+
+    def level_up(self):
+        self.level += 1
+        self.xp_to_next_level = int(self.xp_to_next_level * 1.5)
+        self.max_hp += 20
+        self.hp = self.max_hp 
+        logger.info(f"Level Up! Level: {self.level}, Max HP: {self.max_hp}")
+        print(f"Level Up! Level: {self.level}, Max HP: {self.max_hp}")
 
     def update(self, dt):
         # Update effects
@@ -174,14 +195,17 @@ class Character:
 
     def take_damage(self, amount):
         self.hp -= amount
+        logger.info(f"Player took {amount} damage. HP: {self.hp}/{self.max_hp}")
         if self.hp <= 0:
             self.die()
 
     def die(self):
+        logger.warning("Player died!")
         self.death_sound.play()
         self.death_count += 1
-        self.hp = 100  # reset health
+        self.hp = self.max_hp  # reset health
         self.pos = self.spawn_point.copy()  # teleport to spawn
+        logger.info(f"Player respawned at {self.pos}. Death count: {self.death_count}")
 
     def draw(self, screen):
         if self.direction == "side":

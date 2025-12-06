@@ -1,6 +1,7 @@
 import pygame
 import sys
 
+from src.core.logger import logger
 from src.core.state_manager import StateManager
 from src.inventory.system import INVENTORY_manager
 from src.items.items import create_item
@@ -48,6 +49,7 @@ class App:
     """
 
     def __init__(self):
+        logger.info("Initializing Application...")
         self.screen = pygame.display.set_mode((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT))
         pygame.display.set_caption("super cooool project ;)")
         self.icon = pygame.image.load("assets/smug.png")

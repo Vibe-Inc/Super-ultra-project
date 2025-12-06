@@ -2,6 +2,7 @@ import pygame
 from typing import TYPE_CHECKING
 import copy
 
+from src.core.logger import logger
 import src.config as cfg
 from src.ui.widgets import Tooltip, Slider, Button
 from src.items.items import Consumable
@@ -361,6 +362,8 @@ class ShopInventory(Inventory):
                             new_item = copy.copy(shop_item)
                             manager.selected_item = [new_item, 1]
                             # Do not remove from shop (infinite stock)
+                        else:
+                            logger.warning(f"Not enough money to buy {item.id}. Cost: ${price}, Balance: ${self.app.money}")
 
 
 class MAIN_player_inventory(Inventory):

@@ -1,6 +1,7 @@
 import pygame
 from typing import TYPE_CHECKING
 
+from src.core.logger import logger
 from src.core.state import State
 from src.entities.character import Character
 from src.map.map import LocalMap
@@ -45,6 +46,7 @@ class Game(State):
     """
     def __init__(self, app: "App"):
         super().__init__(app)
+        logger.info("Initializing Game State...")
         self.character = Character()
 
         initial_map_path = "maps/test-map-1.tmx"
@@ -108,7 +110,7 @@ class Game(State):
 
         if switched_map_path:
             self.current_map_path = switched_map_path
-            print(f"Map switched to {switched_map_path}. Respawning enemy...")
+            logger.info(f"Map switched to {switched_map_path}. Respawning enemy...")
             
             if switched_map_path in self.ENEMY_SPAWNS:
                 new_x, new_y = self.ENEMY_SPAWNS[switched_map_path]
