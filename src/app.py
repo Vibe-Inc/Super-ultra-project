@@ -1,9 +1,10 @@
 import pygame
 import sys
 
+from src.core.logger import logger
 from src.core.state_manager import StateManager
 from src.inventory.system import INVENTORY_manager
-from src.inventory.items import create_item
+from src.items.items import create_item
 import src.config as cfg
 import src.i18n as i18n
 
@@ -48,6 +49,7 @@ class App:
     """
 
     def __init__(self):
+        logger.info("Initializing Application...")
         self.screen = pygame.display.set_mode((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT))
         pygame.display.set_caption("super cooool project ;)")
         self.icon = pygame.image.load("assets/smug.png")
@@ -56,7 +58,7 @@ class App:
         i18n.install_language(cfg.LANGUAGE)
         self.create_logo()
 
-        self.INV_manager = INVENTORY_manager()
+        self.INV_manager = INVENTORY_manager(self)
         self.MAIN_INV_items = [[None for _ in range(cfg.MAIN_INV_rows)] for _ in range(cfg.MAIN_INV_columns)]
         self.MAIN_INV_items[0][0] = [create_item("dull_sword"), 1]
         self.MAIN_INV_items[1][0] = [create_item("apple"), 5]

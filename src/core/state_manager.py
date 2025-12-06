@@ -1,6 +1,7 @@
 import pygame
 from typing import TYPE_CHECKING
 
+from src.core.logger import logger
 from src.ui.menus import MainMenu, SettingsMenu, CreditsMenu, PauseMenu, SaveLoadMenu
 from src.core.game import Game
 
@@ -34,6 +35,7 @@ class StateManager:
     """
 
     def __init__(self, app: "App"):
+        logger.info("Initializing StateManager and States...")
         self.states = {
             "main": MainMenu(app),
             "settings": SettingsMenu(app),
@@ -45,7 +47,11 @@ class StateManager:
         self.current_state = None
 
     def set_state(self, name):
-        self.current_state = self.states.get(name)
+        if name in self.states:
+            logger.info(f"Switching state to: {name}")
+            self.current_state = self.states.get(name)
+        else:
+            logger.error(f"Attempted to switch to invalid state: {name}")
 
     def get_state(self):
         for name, state in self.states.items():
@@ -73,7 +79,8 @@ class StateManager:
             "settings": SettingsMenu(self.states["settings"].app),
             "credits": CreditsMenu(self.states["credits"].app),
             "gameplay": gameplay_state,
-            "pause": PauseMenu(self.states["pause"].app)
+            "pause": PauseMenu(self.states["pause"].app),
+            "save_load": SaveLoadMenu(self.states["main"].app)
         }
         
         if current_name:

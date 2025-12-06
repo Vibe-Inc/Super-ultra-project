@@ -1,5 +1,6 @@
 import pytmx
 import pygame
+from src.core.logger import logger
 
 class Map:
     """
@@ -34,9 +35,15 @@ class Map:
 
     def draw(self, screen):
         if self.game_map is None:
-            self.game_map = pytmx.load_pygame(self.map_file)
-            self.pixel_width = self.game_map.width * self.game_map.tilewidth
-            self.pixel_height = self.game_map.height * self.game_map.tileheight
+            try:
+                logger.info(f"Loading map: {self.map_file}")
+                self.game_map = pytmx.load_pygame(self.map_file)
+                self.pixel_width = self.game_map.width * self.game_map.tilewidth
+                self.pixel_height = self.game_map.height * self.game_map.tileheight
+                logger.info(f"Map loaded successfully: {self.map_file} ({self.pixel_width}x{self.pixel_height})")
+            except Exception as e:
+                logger.error(f"Failed to load map {self.map_file}: {e}")
+                return
 
         for layer in self.game_map.visible_layers:
             if isinstance(layer, pytmx.TiledTileLayer):

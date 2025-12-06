@@ -1,5 +1,5 @@
 import pygame
-
+from src.core.logger import logger
 
 class Character:
     """
@@ -91,9 +91,15 @@ class Character:
         self.flip = False
         self.moving = False
 
-        self.hp = 100
+        self.max_hp = 100
+        self.hp = self.max_hp
         self.death_count = 0
         self.death_sound = pygame.mixer.Sound("sounds/death.mp3")
+
+        # Level system
+        self.xp = 0
+        self.level = 1
+        self.xp_to_next_level = 100
 
         # Stamina system
         self.max_stamina = 100
@@ -102,6 +108,41 @@ class Character:
         self.stamina_regen_rate = 25  
         self.is_sprinting = False
         self.can_sprint = True
+
+        # Effects
+        self.effects = []
+        self.confused = False
+        self.dizzy = False
+
+    def add_effect(self, effect):
+        for e in self.effects:
+            if type(e) == type(effect):
+                self.effects.remove(e)
+                self.effects.append(effect)
+                return
+        self.effects.append(effect)
+
+    def gain_xp(self, amount):
+        self.xp += amount
+        logger.info(f"Gained {amount} XP. Current XP: {self.xp}/{self.xp_to_next_level}")
+        while self.xp >= self.xp_to_next_level:
+            self.xp -= self.xp_to_next_level
+            self.level_up()
+
+    def level_up(self):
+        self.level += 1
+        self.xp_to_next_level = int(self.xp_to_next_level * 1.5)
+        self.max_hp += 20
+        self.hp = self.max_hp 
+        logger.info(f"Level Up! Level: {self.level}, Max HP: {self.max_hp}")
+        print(f"Level Up! Level: {self.level}, Max HP: {self.max_hp}")
+
+    def update(self, dt):
+        # Update effects
+        for effect in self.effects[:]:
+            effect.update(dt, self)
+            if effect.is_finished:
+                self.effects.remove(effect)
 
     def get_rect(self):
         """Returns the collision rectangle, updated to the current float position."""
@@ -122,20 +163,35 @@ class Character:
 
         current_speed = self.speed * self.sprint_multiplier if self.is_sprinting else self.speed
         
-        # We need to temporarily modify self.speed so CollisionSystem uses the right speed
-        # But we should revert it back or handle it differently. 
-        # Better approach: We pass the effective speed to the logic implicitly by modifying velocity magnitude or handling speed inside handle_movement
-        # Since CollisionSystem uses entity.speed, let's update entity.speed to current_speed temporarily
         self.speed = current_speed 
 
-        if keys[pygame.K_w]:
-            self.velocity.y -= 1
-        if keys[pygame.K_s]:
-            self.velocity.y += 1
-        if keys[pygame.K_a]:
-            self.velocity.x -= 1
-        if keys[pygame.K_d]:
-            self.velocity.x += 1
+        # Movement logic with confusion support
+        up_key = pygame.K_w
+        down_key = pygame.K_s
+        left_key = pygame.K_a
+        right_key = pygame.K_d
+
+        if self.confused:
+            up_key, down_key = down_key, up_key
+            left_key, right_key = right_key, left_key
+
+        if keys[up_key]:
+            self.pos.y -= current_speed * dt
+            self.direction = "up"
+            self.moving = True
+        elif keys[down_key]:
+            self.pos.y += current_speed * dt
+            self.direction = "down"
+            self.moving = True
+        elif keys[left_key]:
+            self.pos.x -= current_speed * dt
+            self.direction = "side"
+            self.flip = True
+            self.moving = True
+        elif keys[right_key]:
+            self.pos.x += current_speed * dt
+            self.direction = "side"
+            self.flip = False
             
         if self.velocity.length_squared() > 0:
             self.velocity = self.velocity.normalize()
@@ -192,14 +248,17 @@ class Character:
 
     def take_damage(self, amount):
         self.hp -= amount
+        logger.info(f"Player took {amount} damage. HP: {self.hp}/{self.max_hp}")
         if self.hp <= 0:
             self.die()
 
     def die(self):
+        logger.warning("Player died!")
         self.death_sound.play()
         self.death_count += 1
-        self.hp = 100  # reset health
+        self.hp = self.max_hp  # reset health
         self.pos = self.spawn_point.copy()  # teleport to spawn
+        logger.info(f"Player respawned at {self.pos}. Death count: {self.death_count}")
 
     def draw(self, screen):
         if self.direction == "side":

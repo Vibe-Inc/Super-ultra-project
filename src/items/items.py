@@ -1,5 +1,7 @@
 import pygame
-from src.inventory.item_database import Item_database
+from src.core.logger import logger
+from src.items.item_database import Item_database
+from src.items.effects import create_effect
 
 class Item:
     """
@@ -48,6 +50,7 @@ class Item:
         self.name_key = data["name"]
         self.type = data["type"]
         self.max_stack = data.get("max_stack", 64)
+        self.price = data.get("price", 0)
         self.desc_key = data.get("description", "")
         self.image = pygame.image.load(data["image_path"]).convert_alpha()
 
@@ -70,6 +73,12 @@ class Item:
     
     def get_tooltip_text(self):
         return f"{self.name}\n{self.description}"
+
+    def use(self, target):
+        """
+        Use the item on the target character.
+        """
+        pass
 
 class Weapon(Item):
     """
@@ -96,7 +105,7 @@ class Weapon(Item):
         self.range = data.get("range", 1.0)
 
     def get_tooltip_text(self):
-        stats = f"{_('Type')}: {_('Weapon')}\n{_('Damage')}: {self.damage}\n{_('Durability')}: {self.durability}"
+        stats = f"{_('Type')}: {_('Weapon')}\n{_('Damage')}: {self.damage}\n{_('Durability')}: {self.durability}\nPrice: ${self.price}"
         return f"{self.name}\n{stats}\n{self.description}"    
 
 class Consumable(Item):
@@ -106,20 +115,53 @@ class Consumable(Item):
     Attributes:
         heal_amount (int):
             The amount of HP restored by this item.
+        effects_data (list[dict]):
+            Configuration for effects to apply.
 
     Methods:
         get_tooltip_text():
             Get a tooltip string with consumable stats and description.
             Returns:
                 str: Tooltip text.
+        use(target):
+            Apply healing and effects to the target.
     """
+
     def __init__(self, data: dict):
         super().__init__(data)
         self.heal_amount = data.get("heal_amount", 0)
+        self.effects_list = data.get("effects", [])
         
     def get_tooltip_text(self):
-        stats = f"{_('Type')}: {_('Consumable')}\n{_('Heal')}: +{self.heal_amount} {_('HP')}"
+        stats = f"{_('Type')}: {_('Consumable')}"
+        if self.heal_amount > 0:
+            stats += f"\n{_('Heal')}: +{self.heal_amount} {_('HP')}"
+        
+        if self.effects_list:
+            stats += f"\n{_('Effects')}:"
+            for effect_data in self.effects_list:
+                etype = effect_data.get("type")
+                dur = effect_data.get("duration")
+
+                stats += f"\n - {etype.capitalize()} ({dur}s)"
+        
+        stats += f"\nPrice: ${self.price}"
         return f"{self.name}\n{stats}\n{self.description}"
+
+    def use(self, target):
+        used = False 
+        if self.heal_amount > 0:
+            target.hp = min(100, target.hp + self.heal_amount)
+            used = True
+        
+        if self.effects_list:
+            used = True 
+            for effect_data in self.effects_list:
+                effect_obj = create_effect(effect_data)
+                
+                if effect_obj:
+                    target.add_effect(effect_obj)
+        return used
 
 
 class Armor(Item):
@@ -141,13 +183,18 @@ def create_item(item_id: str):
         Item | Weapon | Consumable | Armor: The instantiated item object of the appropriate type.
     """
     data = Item_database.get(item_id)
+    if not data:
+        logger.error(f"Item ID not found in database: {item_id}")
+        return None
+
     item_type = data.get("type")
     
     if item_type == "weapon":
         return Weapon(data)
-    elif item_type == "food":
+    elif item_type == "food" or item_type == "potion":
         return Consumable(data)
     elif item_type == "armor":
         return Armor(data)
     else:
+        logger.warning(f"Unknown item type '{item_type}' for item '{item_id}'. Defaulting to generic Item.")
         return Item(data)

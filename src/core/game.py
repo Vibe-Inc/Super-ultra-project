@@ -1,11 +1,13 @@
 import pygame
 from typing import TYPE_CHECKING
 
+from src.core.logger import logger
 from src.core.state import State
 from src.entities.character import Character
 from src.map.map import LocalMap
 from src.inventory.system import MAIN_player_inventory, MAIN_player_inventory_equipment, ShopInventory
-from src.inventory.items import create_item
+from src.items.items import create_item
+from src.items.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, DizzinessEffect
 from src.entities.enemy import Enemy
 from src.entities.npc import NPC
 from src.ui.hud import HUD
@@ -45,6 +47,7 @@ class Game(State):
     """
     def __init__(self, app: "App"):
         super().__init__(app)
+        logger.info("Initializing Game State...")
         self.character = Character()
 
         initial_map_path = "maps/test-map-1.tmx"
@@ -92,9 +95,17 @@ class Game(State):
         self.npc = NPC(x=400, y=400, sprite_set="MenHuman1")
         
         shop_items = [
-            (create_item("apple"), 10)
-        ]
-        self.shop_inv = ShopInventory(app, shop_items)
+            create_item("dull_sword"),
+            create_item("apple"),
+            create_item("small_health_potion"),
+            create_item("large_health_potion"),
+            create_item("large_health_potion"),
+            create_item("large_health_potion"),
+            create_item("potion_of_confusion"),
+            create_item("moldy_bread")
+            ]
+
+        self.shop_inv = ShopInventory(self.app, shop_items)
 
     def reinit_ui(self):
         self.hud = HUD(self.character, self.app, self.toggle_player_inventory)
@@ -107,7 +118,7 @@ class Game(State):
 
         if switched_map_path:
             self.current_map_path = switched_map_path
-            print(f"Map switched to {switched_map_path}. Respawning enemy...")
+            logger.info(f"Map switched to {switched_map_path}. Respawning enemy...")
             
             if switched_map_path in self.ENEMY_SPAWNS:
                 new_x, new_y = self.ENEMY_SPAWNS[switched_map_path]
@@ -143,6 +154,19 @@ class Game(State):
 
         self.npc.draw(screen)
 
+        if not self.npc.is_interactable:
+            if getattr(self.app.INV_manager, 'current_shop_inv', None) is not None:
+                self.app.INV_manager.toggle_trade(self.MAIN_player_inv, self.shop_inv)
+
+        # Dizziness effect (visual)
+        if self.character.dizzy:
+            # Simulate blur/dizziness with a semi-transparent overlay that changes alpha
+            import math
+            alpha = int(100 + 50 * math.sin(pygame.time.get_ticks() * 0.005))
+            overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+            overlay.fill((255, 255, 255, alpha))
+            screen.blit(overlay, (0, 0))
+
         self.hud.draw(screen)
 
         if  self.app.INV_manager.player_inventory_opened:
@@ -153,7 +177,7 @@ class Game(State):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.app.manager.set_state("pause")
-            if event.key == pygame.K_e:
+            if event.key == pygame.K_e and self.app.INV_manager.player_inventory_opened == False:
                 if self.npc.is_interactable:
                     self.app.INV_manager.toggle_trade(self.MAIN_player_inv, self.shop_inv)
 

@@ -290,3 +290,11 @@ class Slider:
             if self.action:
                 self.action(self.value)
 
+class Inventory_slider(Slider):
+    """
+    Slider specialized for inventory UI, inherits from the generic Slider class.
+    """
+    def __init__(self, x, y, height, track_thickness, track_colour, knob_colour,
+                 knob_width, knob_height, track_length, value=0.3, dragging=False, smooth_speed=0.05, action=None):
+        super().__init__(x, y, height, track_thickness, track_colour, knob_colour,
+                         knob_width, knob_height, track_length, value, dragging, smooth_speed, action)

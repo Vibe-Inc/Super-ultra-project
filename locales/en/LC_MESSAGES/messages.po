@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-12-05 12:26+0200\n"
+"POT-Creation-Date: 2025-12-06 11:24+0200\n"
 "PO-Revision-Date: 2025-12-04 00:01+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -18,95 +18,139 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
-#: src/app.py:62
+#: src/app.py:79
 msgid "Super coooooool project"
 msgstr ""
 
-#: src/inventory/item_database.py:7
+#: src/inventory/system.py:435
+msgid "Money"
+msgstr ""
+
+#: src/items/item_database.py:7
 msgid "Dull Sword"
 msgstr ""
 
-#: src/inventory/item_database.py:11
+#: src/items/item_database.py:12
 msgid "A worn-out sword with a dull blade. Thats about it."
 msgstr ""
 
-#: src/inventory/item_database.py:19
+#: src/items/item_database.py:22
 msgid "Apple"
 msgstr ""
 
-#: src/inventory/item_database.py:23
+#: src/items/item_database.py:27
 msgid "An apple."
 msgstr ""
 
-#: src/inventory/items.py:41 src/inventory/items.py:50
+#: src/items/item_database.py:35
+msgid "Moldy Bread"
+msgstr ""
+
+#: src/items/item_database.py:40
+msgid "A piece of bread that has gone bad."
+msgstr ""
+
+#: src/items/item_database.py:51
+msgid "Small Health Potion"
+msgstr ""
+
+#: src/items/item_database.py:56
+msgid "A small potion that restores health."
+msgstr ""
+
+#: src/items/item_database.py:64
+msgid "Large Health Potion"
+msgstr ""
+
+#: src/items/item_database.py:69
+msgid "A large potion that restores a significant amount of health."
+msgstr ""
+
+#: src/items/item_database.py:77
+msgid "Potion of Confusion"
+msgstr ""
+
+#: src/items/item_database.py:82
+msgid "A mix oh herbs and spices that causes confusion."
+msgstr ""
+
+#: src/items/items.py:108 src/items/items.py:136
 msgid "Type"
 msgstr ""
 
-#: src/inventory/items.py:41
+#: src/items/items.py:108
 msgid "Weapon"
 msgstr ""
 
-#: src/inventory/items.py:41
+#: src/items/items.py:108
 msgid "Damage"
 msgstr ""
 
-#: src/inventory/items.py:41
+#: src/items/items.py:108
 msgid "Durability"
 msgstr ""
 
-#: src/inventory/items.py:50
+#: src/items/items.py:136
 msgid "Consumable"
 msgstr ""
 
-#: src/inventory/items.py:50
+#: src/items/items.py:138
 msgid "Heal"
 msgstr ""
 
-#: src/inventory/items.py:50
+#: src/items/items.py:138
 msgid "HP"
 msgstr ""
 
-#: src/ui/hud.py:52
+#: src/items/items.py:141
+msgid "Effects"
+msgstr ""
+
+#: src/ui/hud.py:75
 msgid "INVENTORY"
 msgstr ""
 
-#: src/ui/menus.py:77
+#: src/ui/menus.py:99
 msgid "START"
 msgstr ""
 
-#: src/ui/menus.py:87
+#: src/ui/menus.py:109
+msgid "LOAD"
+msgstr ""
+
+#: src/ui/menus.py:119
 msgid "EXIT"
 msgstr ""
 
-#: src/ui/menus.py:97
+#: src/ui/menus.py:129
 msgid "SETTINGS"
 msgstr ""
 
-#: src/ui/menus.py:107
+#: src/ui/menus.py:139
 msgid "CREDITS"
 msgstr ""
 
-#: src/ui/menus.py:123
+#: src/ui/menus.py:155
 msgid "Our logo that we need to think of"
 msgstr ""
 
-#: src/ui/menus.py:182 src/ui/menus.py:279
+#: src/ui/menus.py:244 src/ui/menus.py:356 src/ui/menus.py:501
 msgid "BACK"
 msgstr ""
 
-#: src/ui/menus.py:192
+#: src/ui/menus.py:254
 msgid "LANG"
 msgstr ""
 
-#: src/ui/menus.py:214
+#: src/ui/menus.py:277
 msgid "Brightness"
 msgstr ""
 
-#: src/ui/menus.py:225
+#: src/ui/menus.py:289
 msgid "Music volume"
 msgstr ""
 
-#: src/ui/menus.py:288
+#: src/ui/menus.py:365
 msgid ""
 "CREDITS:\n"
 "Vibe inc idea, production and execution\n"
@@ -116,12 +160,40 @@ msgid ""
 "Special thanks to Vibe inc"
 msgstr ""
 
-#: src/ui/menus.py:355
+#: src/ui/menus.py:437
+msgid "SAVE"
+msgstr ""
+
+#: src/ui/menus.py:447
 msgid "RESUME"
 msgstr ""
 
-#: src/ui/menus.py:365
+#: src/ui/menus.py:457
 msgid "MAIN MENU"
+msgstr ""
+
+#: src/ui/menus.py:518
+msgid "Slot"
+msgstr ""
+
+#: src/ui/menus.py:520
+msgid "Used"
+msgstr ""
+
+#: src/ui/menus.py:522
+msgid "Empty"
+msgstr ""
+
+#: src/ui/menus.py:542
+msgid "DEL"
+msgstr ""
+
+#: src/ui/menus.py:579
+msgid "SAVE GAME"
+msgstr ""
+
+#: src/ui/menus.py:579
+msgid "LOAD GAME"
 msgstr ""
 
 #~ msgid "name"

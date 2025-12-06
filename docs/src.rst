@@ -10,6 +10,7 @@ Subpackages
    src.core
    src.entities
    src.inventory
+   src.items
    src.map
    src.ui
 

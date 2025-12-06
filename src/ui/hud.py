@@ -102,7 +102,7 @@ class HUD:
         bar_width = 300
         bar_height = 30
 
-        hp_percent = max(0, self.character.hp / 100.0)
+        hp_percent = max(0, self.character.hp / self.character.max_hp)
         current_bar_width = int(bar_width * hp_percent)
 
         # Draw Background
@@ -111,6 +111,10 @@ class HUD:
         pygame.draw.rect(screen, (220, 20, 60), (bar_x, bar_y, current_bar_width, bar_height))
         # Draw Border
         pygame.draw.rect(screen, (255, 255, 255), (bar_x, bar_y, bar_width, bar_height), 3)
+        
+        # Draw HP Text
+        hp_text = cfg.INV_nums_font.render(f"{self.character.hp}/{self.character.max_hp}", True, (255, 255, 255))
+        screen.blit(hp_text, (bar_x + bar_width // 2 - hp_text.get_width() // 2, bar_y + 5))
 
 
         lives_icon_x = icon_x
@@ -120,6 +124,26 @@ class HUD:
 
         lives_text = self.font.render(f"x {self.character.death_count}", True, (255, 255, 255))
         screen.blit(lives_text, (lives_icon_x + 60, lives_icon_y + 5))
+        
+        # XP Bar
+        xp_bar_width = 300
+        xp_bar_height = 15
+        xp_bar_x = bar_x + 1150
+        xp_bar_y = lives_icon_y - 50
+        
+        xp_percent = max(0, self.character.xp / self.character.xp_to_next_level)
+        current_xp_width = int(xp_bar_width * xp_percent)
+        
+        # Draw XP Background
+        pygame.draw.rect(screen, (50, 50, 50), (xp_bar_x, xp_bar_y, xp_bar_width, xp_bar_height))
+        # Draw XP
+        pygame.draw.rect(screen, (0, 200, 0), (xp_bar_x, xp_bar_y, current_xp_width, xp_bar_height))
+        # Draw Border
+        pygame.draw.rect(screen, (255, 255, 255), (xp_bar_x, xp_bar_y, xp_bar_width, xp_bar_height), 2)
+        
+        # Level Text
+        level_text = self.font.render(f"Lvl {self.character.level}", True, (255, 255, 255))
+        screen.blit(level_text, (xp_bar_x - 100, xp_bar_y - 15))
 
         self.inv_button.draw(screen)
 

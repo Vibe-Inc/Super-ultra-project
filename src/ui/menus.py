@@ -270,7 +270,7 @@ class SettingsMenu(Menu):
             (0, 0, 0), (255, 255, 255),
             20, 20, 300,
             value=cfg.SCREEN_BRIGHTNESS,
-            action=lambda v: setattr(cfg, 'SCREEN_BRIGHTNESS', v)
+            action=lambda v: setattr(cfg, 'SCREEN_BRIGHTNESS', max(0.3, v))
         )
 
         self.myfont = cfg.get_font(60)
