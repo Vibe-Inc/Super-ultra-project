@@ -1,0 +1,355 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.items.effects &mdash; Super-ultra-project  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Super-ultra-project
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">src</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Super-ultra-project</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">src.items.effects</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.items.effects</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
+
+<div class="viewcode-block" id="Effect">
+<a class="viewcode-back" href="../../../src.items.html#src.items.effects.Effect">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Effect</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Base class for all item effects.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        duration (float):</span>
+<span class="sd">            Total duration of the effect in seconds.</span>
+<span class="sd">        timer (float):</span>
+<span class="sd">            Current elapsed time of the effect.</span>
+<span class="sd">        is_finished (bool):</span>
+<span class="sd">            Whether the effect has completed its duration.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        update(dt, target):</span>
+<span class="sd">            Update the effect timer and apply the effect.</span>
+<span class="sd">        apply(dt, target):</span>
+<span class="sd">            Apply the effect logic to the target.</span>
+<span class="sd">        on_end(target):</span>
+<span class="sd">            Cleanup logic when the effect ends.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">duration</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">duration</span> <span class="o">=</span> <span class="n">duration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="Effect.update">
+<a class="viewcode-back" href="../../../src.items.html#src.items.effects.Effect.update">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update the effect state.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dt (float): Time elapsed since last frame.</span>
+<span class="sd">            target (Character): The entity affected by this effect.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span> <span class="o">+=</span> <span class="n">dt</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">timer</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">on_end</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Effect.apply">
+<a class="viewcode-back" href="../../../src.items.html#src.items.effects.Effect.apply">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Apply the effect&#39;s active logic.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dt (float): Time elapsed since last frame.</span>
+<span class="sd">            target (Character): The entity affected by this effect.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="Effect.on_end">
+<a class="viewcode-back" href="../../../src.items.html#src.items.effects.Effect.on_end">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Perform any cleanup when the effect expires.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            target (Character): The entity affected by this effect.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+</div>
+
+
+<div class="viewcode-block" id="RegenerationEffect">
+<a class="viewcode-back" href="../../../src.items.html#src.items.effects.RegenerationEffect">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RegenerationEffect</span><span class="p">(</span><span class="n">Effect</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Restores HP over time.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        amount_per_sec (float):</span>
+<span class="sd">            Amount of HP to restore per second.</span>
+<span class="sd">        accumulator (float):</span>
+<span class="sd">            Accumulates fractional HP restoration.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">amount_per_sec</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">duration</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amount_per_sec</span> <span class="o">=</span> <span class="n">amount_per_sec</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+<div class="viewcode-block" id="RegenerationEffect.apply">
+<a class="viewcode-back" href="../../../src.items.html#src.items.effects.RegenerationEffect.apply">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Apply regeneration to the target.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dt (float): Time elapsed since last frame.</span>
+<span class="sd">            target (Character): The entity to heal.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">amount_per_sec</span> <span class="o">*</span> <span class="n">dt</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">heal</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span><span class="p">)</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">hp</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">max_hp</span><span class="p">,</span> <span class="n">target</span><span class="o">.</span><span class="n">hp</span> <span class="o">+</span> <span class="n">heal</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span> <span class="o">-=</span> <span class="n">heal</span></div>
+</div>
+
+
+<div class="viewcode-block" id="PoisonEffect">
+<a class="viewcode-back" href="../../../src.items.html#src.items.effects.PoisonEffect">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PoisonEffect</span><span class="p">(</span><span class="n">Effect</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Deals damage over time.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        damage_per_sec (float):</span>
+<span class="sd">            Amount of damage to deal per second.</span>
+<span class="sd">        accumulator (float):</span>
+<span class="sd">            Accumulates fractional damage.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">damage_per_sec</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">duration</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">damage_per_sec</span> <span class="o">=</span> <span class="n">damage_per_sec</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+<div class="viewcode-block" id="PoisonEffect.apply">
+<a class="viewcode-back" href="../../../src.items.html#src.items.effects.PoisonEffect.apply">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Apply poison damage to the target.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dt (float): Time elapsed since last frame.</span>
+<span class="sd">            target (Character): The entity to damage.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">damage_per_sec</span> <span class="o">*</span> <span class="n">dt</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">dmg</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span><span class="p">)</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">take_damage</span><span class="p">(</span><span class="n">dmg</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span> <span class="o">-=</span> <span class="n">dmg</span></div>
+</div>
+
+
+<div class="viewcode-block" id="ConfusionEffect">
+<a class="viewcode-back" href="../../../src.items.html#src.items.effects.ConfusionEffect">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ConfusionEffect</span><span class="p">(</span><span class="n">Effect</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Inverts player controls for a duration.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        started (bool):</span>
+<span class="sd">            Whether the effect has been initialized on the target.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">duration</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">duration</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">started</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="ConfusionEffect.apply">
+<a class="viewcode-back" href="../../../src.items.html#src.items.effects.ConfusionEffect.apply">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Apply confusion (invert controls) to the target.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dt (float): Time elapsed since last frame.</span>
+<span class="sd">            target (Character): The entity to confuse.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">started</span><span class="p">:</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">confused</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">started</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="ConfusionEffect.on_end">
+<a class="viewcode-back" href="../../../src.items.html#src.items.effects.ConfusionEffect.on_end">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove confusion from the target.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            target (Character): The entity to restore.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">confused</span> <span class="o">=</span> <span class="kc">False</span></div>
+</div>
+
+
+<div class="viewcode-block" id="DizzinessEffect">
+<a class="viewcode-back" href="../../../src.items.html#src.items.effects.DizzinessEffect">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DizzinessEffect</span><span class="p">(</span><span class="n">Effect</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Causes visual dizziness (blur/shake) for a duration.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        started (bool):</span>
+<span class="sd">            Whether the effect has been initialized on the target.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">duration</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">duration</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">started</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="DizzinessEffect.apply">
+<a class="viewcode-back" href="../../../src.items.html#src.items.effects.DizzinessEffect.apply">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Apply dizziness to the target.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dt (float): Time elapsed since last frame.</span>
+<span class="sd">            target (Character): The entity to make dizzy.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">started</span><span class="p">:</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">dizzy</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">started</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="DizzinessEffect.on_end">
+<a class="viewcode-back" href="../../../src.items.html#src.items.effects.DizzinessEffect.on_end">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove dizziness from the target.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            target (Character): The entity to restore.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">dizzy</span> <span class="o">=</span> <span class="kc">False</span></div>
+</div>
+
+
+<span class="n">Effect_list</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;regeneration&quot;</span><span class="p">:</span> <span class="n">RegenerationEffect</span><span class="p">,</span>
+    <span class="s2">&quot;poison&quot;</span><span class="p">:</span> <span class="n">PoisonEffect</span><span class="p">,</span>
+    <span class="s2">&quot;confusion&quot;</span><span class="p">:</span> <span class="n">ConfusionEffect</span><span class="p">,</span>
+    <span class="s2">&quot;dizziness&quot;</span><span class="p">:</span> <span class="n">DizzinessEffect</span>
+<span class="p">}</span>
+
+<div class="viewcode-block" id="create_effect">
+<a class="viewcode-back" href="../../../src.items.html#src.items.effects.create_effect">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_effect</span><span class="p">(</span><span class="n">effect_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Factory function to create an effect instance from a dictionary.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        effect_data (dict): Dictionary containing effect type and parameters.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Effect | None: The created effect instance, or None if type is invalid.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">effect_data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">effect_type</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> 
+    <span class="n">effect_class</span> <span class="o">=</span> <span class="n">Effect_list</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">effect_type</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">effect_class</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">effect_class</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Vibe-inc.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

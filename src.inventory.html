@@ -19,7 +19,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="src.map package" href="src.map.html" />
+    <link rel="next" title="src.items package" href="src.items.html" />
     <link rel="prev" title="src.entities package" href="src.entities.html" /> 
 </head>
 
@@ -50,6 +50,7 @@
 <li class="toctree-l4"><a class="reference internal" href="src.core.html">src.core package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html">src.entities package</a></li>
 <li class="toctree-l4 current"><a class="current reference internal" href="#">src.inventory package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.items.html">src.items package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.map.html">src.map package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html">src.ui package</a></li>
 </ul>
@@ -96,12 +97,6 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
 </section>
-<section id="src-inventory-item-database-module">
-<h2>src.inventory.item_database module<a class="headerlink" href="#src-inventory-item-database-module" title="Link to this heading"></a></h2>
-</section>
-<section id="src-inventory-items-module">
-<h2>src.inventory.items module<a class="headerlink" href="#src-inventory-items-module" title="Link to this heading"></a></h2>
-</section>
 <section id="module-src.inventory.system">
 <span id="src-inventory-system-module"></span><h2>src.inventory.system module<a class="headerlink" href="#module-src.inventory.system" title="Link to this heading"></a></h2>
 <dl class="py class">
@@ -116,7 +111,7 @@
 <dd><p>The item stack (item object, count) currently held by the mouse cursor, or None if nothing is selected.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple[Item, int] | None</p>
+<dd class="field-odd"><p>tuple[<a class="reference internal" href="src.items.html#src.items.items.Item" title="src.items.items.Item">Item</a>, int] | None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -279,7 +274,7 @@
 <dd><p>2D list representing the slots, where each slot holds either None or a tuple of (item object, count).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>list[list[tuple[Item, int] | None]]</p>
+<dd class="field-odd"><p>list[list[tuple[<a class="reference internal" href="src.items.html#src.items.items.Item" title="src.items.items.Item">Item</a>, int] | None]]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -356,7 +351,7 @@
 <dd><p>The item currently being dragged or held by the mouse from this inventory.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple[Item, int] | None</p>
+<dd class="field-odd"><p>tuple[<a class="reference internal" href="src.items.html#src.items.items.Item" title="src.items.items.Item">Item</a>, int] | None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -498,7 +493,7 @@ Inherits from Inventory.</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="src.entities.html" class="btn btn-neutral float-left" title="src.entities package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="src.map.html" class="btn btn-neutral float-right" title="src.map package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="src.items.html" class="btn btn-neutral float-right" title="src.items package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

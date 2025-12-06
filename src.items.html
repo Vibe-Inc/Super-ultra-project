@@ -1,0 +1,717 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.items package &mdash; Super-ultra-project  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="src.map package" href="src.map.html" />
+    <link rel="prev" title="src.inventory package" href="src.inventory.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Super-ultra-project
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">src</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="src.html">src package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="src.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="src.core.html">src.core package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html">src.entities package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html">src.inventory package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">src.items package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.map.html">src.map package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html">src.ui package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="src.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.html#module-src.app">src.app module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.html#module-src.config">src.config module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.html#module-src.i18n">src.i18n module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.html#module-src">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Super-ultra-project</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">src</a></li>
+          <li class="breadcrumb-item"><a href="src.html">src package</a></li>
+      <li class="breadcrumb-item active">src.items package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/src.items.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="src-items-package">
+<h1>src.items package<a class="headerlink" href="#src-items-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-src.items.effects">
+<span id="src-items-effects-module"></span><h2>src.items.effects module<a class="headerlink" href="#module-src.items.effects" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="src.items.effects.ConfusionEffect">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.items.effects.</span></span><span class="sig-name descname"><span class="pre">ConfusionEffect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">duration</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/effects.html#ConfusionEffect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.effects.ConfusionEffect" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.items.effects.Effect" title="src.items.effects.Effect"><code class="xref py py-class docutils literal notranslate"><span class="pre">Effect</span></code></a></p>
+<p>Inverts player controls for a duration.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.effects.ConfusionEffect.started">
+<span class="sig-name descname"><span class="pre">started</span></span><a class="headerlink" href="#src.items.effects.ConfusionEffect.started" title="Link to this definition"></a></dt>
+<dd><p>Whether the effect has been initialized on the target.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.items.effects.ConfusionEffect.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/effects.html#ConfusionEffect.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.effects.ConfusionEffect.apply" title="Link to this definition"></a></dt>
+<dd><p>Apply confusion (invert controls) to the target.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dt</strong> (<em>float</em>) – Time elapsed since last frame.</p></li>
+<li><p><strong>target</strong> (<a class="reference internal" href="src.entities.html#src.entities.character.Character" title="src.entities.character.Character"><em>Character</em></a>) – The entity to confuse.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.items.effects.ConfusionEffect.on_end">
+<span class="sig-name descname"><span class="pre">on_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/effects.html#ConfusionEffect.on_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.effects.ConfusionEffect.on_end" title="Link to this definition"></a></dt>
+<dd><p>Remove confusion from the target.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>target</strong> (<a class="reference internal" href="src.entities.html#src.entities.character.Character" title="src.entities.character.Character"><em>Character</em></a>) – The entity to restore.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.items.effects.DizzinessEffect">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.items.effects.</span></span><span class="sig-name descname"><span class="pre">DizzinessEffect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">duration</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/effects.html#DizzinessEffect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.effects.DizzinessEffect" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.items.effects.Effect" title="src.items.effects.Effect"><code class="xref py py-class docutils literal notranslate"><span class="pre">Effect</span></code></a></p>
+<p>Causes visual dizziness (blur/shake) for a duration.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.effects.DizzinessEffect.started">
+<span class="sig-name descname"><span class="pre">started</span></span><a class="headerlink" href="#src.items.effects.DizzinessEffect.started" title="Link to this definition"></a></dt>
+<dd><p>Whether the effect has been initialized on the target.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.items.effects.DizzinessEffect.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/effects.html#DizzinessEffect.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.effects.DizzinessEffect.apply" title="Link to this definition"></a></dt>
+<dd><p>Apply dizziness to the target.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dt</strong> (<em>float</em>) – Time elapsed since last frame.</p></li>
+<li><p><strong>target</strong> (<a class="reference internal" href="src.entities.html#src.entities.character.Character" title="src.entities.character.Character"><em>Character</em></a>) – The entity to make dizzy.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.items.effects.DizzinessEffect.on_end">
+<span class="sig-name descname"><span class="pre">on_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/effects.html#DizzinessEffect.on_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.effects.DizzinessEffect.on_end" title="Link to this definition"></a></dt>
+<dd><p>Remove dizziness from the target.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>target</strong> (<a class="reference internal" href="src.entities.html#src.entities.character.Character" title="src.entities.character.Character"><em>Character</em></a>) – The entity to restore.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.items.effects.Effect">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.items.effects.</span></span><span class="sig-name descname"><span class="pre">Effect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">duration</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/effects.html#Effect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.effects.Effect" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Base class for all item effects.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.effects.Effect.duration">
+<span class="sig-name descname"><span class="pre">duration</span></span><a class="headerlink" href="#src.items.effects.Effect.duration" title="Link to this definition"></a></dt>
+<dd><p>Total duration of the effect in seconds.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.effects.Effect.timer">
+<span class="sig-name descname"><span class="pre">timer</span></span><a class="headerlink" href="#src.items.effects.Effect.timer" title="Link to this definition"></a></dt>
+<dd><p>Current elapsed time of the effect.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.effects.Effect.is_finished">
+<span class="sig-name descname"><span class="pre">is_finished</span></span><a class="headerlink" href="#src.items.effects.Effect.is_finished" title="Link to this definition"></a></dt>
+<dd><p>Whether the effect has completed its duration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.items.effects.Effect.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/effects.html#Effect.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.effects.Effect.update" title="Link to this definition"></a></dt>
+<dd><p>Update the effect timer and apply the effect.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.items.effects.Effect.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/effects.html#Effect.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.effects.Effect.apply" title="Link to this definition"></a></dt>
+<dd><p>Apply the effect logic to the target.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.items.effects.Effect.on_end">
+<span class="sig-name descname"><span class="pre">on_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/effects.html#Effect.on_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.effects.Effect.on_end" title="Link to this definition"></a></dt>
+<dd><p>Cleanup logic when the effect ends.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/effects.html#Effect.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dd><p>Apply the effect’s active logic.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dt</strong> (<em>float</em>) – Time elapsed since last frame.</p></li>
+<li><p><strong>target</strong> (<a class="reference internal" href="src.entities.html#src.entities.character.Character" title="src.entities.character.Character"><em>Character</em></a>) – The entity affected by this effect.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">on_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/effects.html#Effect.on_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
+<dd><p>Perform any cleanup when the effect expires.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>target</strong> (<a class="reference internal" href="src.entities.html#src.entities.character.Character" title="src.entities.character.Character"><em>Character</em></a>) – The entity affected by this effect.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/effects.html#Effect.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
+<dd><p>Update the effect state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dt</strong> (<em>float</em>) – Time elapsed since last frame.</p></li>
+<li><p><strong>target</strong> (<a class="reference internal" href="src.entities.html#src.entities.character.Character" title="src.entities.character.Character"><em>Character</em></a>) – The entity affected by this effect.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.items.effects.PoisonEffect">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.items.effects.</span></span><span class="sig-name descname"><span class="pre">PoisonEffect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">duration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">damage_per_sec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/effects.html#PoisonEffect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.effects.PoisonEffect" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.items.effects.Effect" title="src.items.effects.Effect"><code class="xref py py-class docutils literal notranslate"><span class="pre">Effect</span></code></a></p>
+<p>Deals damage over time.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.effects.PoisonEffect.damage_per_sec">
+<span class="sig-name descname"><span class="pre">damage_per_sec</span></span><a class="headerlink" href="#src.items.effects.PoisonEffect.damage_per_sec" title="Link to this definition"></a></dt>
+<dd><p>Amount of damage to deal per second.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.effects.PoisonEffect.accumulator">
+<span class="sig-name descname"><span class="pre">accumulator</span></span><a class="headerlink" href="#src.items.effects.PoisonEffect.accumulator" title="Link to this definition"></a></dt>
+<dd><p>Accumulates fractional damage.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.items.effects.PoisonEffect.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/effects.html#PoisonEffect.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.effects.PoisonEffect.apply" title="Link to this definition"></a></dt>
+<dd><p>Apply poison damage to the target.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dt</strong> (<em>float</em>) – Time elapsed since last frame.</p></li>
+<li><p><strong>target</strong> (<a class="reference internal" href="src.entities.html#src.entities.character.Character" title="src.entities.character.Character"><em>Character</em></a>) – The entity to damage.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.items.effects.RegenerationEffect">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.items.effects.</span></span><span class="sig-name descname"><span class="pre">RegenerationEffect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">duration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amount_per_sec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/effects.html#RegenerationEffect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.effects.RegenerationEffect" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.items.effects.Effect" title="src.items.effects.Effect"><code class="xref py py-class docutils literal notranslate"><span class="pre">Effect</span></code></a></p>
+<p>Restores HP over time.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.effects.RegenerationEffect.amount_per_sec">
+<span class="sig-name descname"><span class="pre">amount_per_sec</span></span><a class="headerlink" href="#src.items.effects.RegenerationEffect.amount_per_sec" title="Link to this definition"></a></dt>
+<dd><p>Amount of HP to restore per second.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.effects.RegenerationEffect.accumulator">
+<span class="sig-name descname"><span class="pre">accumulator</span></span><a class="headerlink" href="#src.items.effects.RegenerationEffect.accumulator" title="Link to this definition"></a></dt>
+<dd><p>Accumulates fractional HP restoration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.items.effects.RegenerationEffect.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/effects.html#RegenerationEffect.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.effects.RegenerationEffect.apply" title="Link to this definition"></a></dt>
+<dd><p>Apply regeneration to the target.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dt</strong> (<em>float</em>) – Time elapsed since last frame.</p></li>
+<li><p><strong>target</strong> (<a class="reference internal" href="src.entities.html#src.entities.character.Character" title="src.entities.character.Character"><em>Character</em></a>) – The entity to heal.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.items.effects.create_effect">
+<span class="sig-prename descclassname"><span class="pre">src.items.effects.</span></span><span class="sig-name descname"><span class="pre">create_effect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">effect_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/effects.html#create_effect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.effects.create_effect" title="Link to this definition"></a></dt>
+<dd><p>Factory function to create an effect instance from a dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>effect_data</strong> (<em>dict</em>) – Dictionary containing effect type and parameters.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The created effect instance, or None if type is invalid.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#src.items.effects.Effect" title="src.items.effects.Effect">Effect</a> | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-src.items.item_database">
+<span id="src-items-item-database-module"></span><h2>src.items.item_database module<a class="headerlink" href="#module-src.items.item_database" title="Link to this heading"></a></h2>
+</section>
+<section id="module-src.items.items">
+<span id="src-items-items-module"></span><h2>src.items.items module<a class="headerlink" href="#module-src.items.items" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="src.items.items.Armor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.items.items.</span></span><span class="sig-name descname"><span class="pre">Armor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Armor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.Armor" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.items.items.Item" title="src.items.items.Item"><code class="xref py py-class docutils literal notranslate"><span class="pre">Item</span></code></a></p>
+<p>Represents an armor item. (Extend with armor-specific stats as needed.)</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.items.items.Consumable">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.items.items.</span></span><span class="sig-name descname"><span class="pre">Consumable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Consumable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.Consumable" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.items.items.Item" title="src.items.items.Item"><code class="xref py py-class docutils literal notranslate"><span class="pre">Item</span></code></a></p>
+<p>Represents a consumable item (e.g., food, potion).</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.Consumable.heal_amount">
+<span class="sig-name descname"><span class="pre">heal_amount</span></span><a class="headerlink" href="#src.items.items.Consumable.heal_amount" title="Link to this definition"></a></dt>
+<dd><p>The amount of HP restored by this item.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.Consumable.effects_data">
+<span class="sig-name descname"><span class="pre">effects_data</span></span><a class="headerlink" href="#src.items.items.Consumable.effects_data" title="Link to this definition"></a></dt>
+<dd><p>Configuration for effects to apply.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[dict]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.items.items.Consumable.get_tooltip_text">
+<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Consumable.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.Consumable.get_tooltip_text" title="Link to this definition"></a></dt>
+<dd><p>Get a tooltip string with consumable stats and description.
+:returns: Tooltip text.
+:rtype: str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.items.items.Consumable.use">
+<span class="sig-name descname"><span class="pre">use</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Consumable.use"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.Consumable.use" title="Link to this definition"></a></dt>
+<dd><p>Apply healing and effects to the target.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Consumable.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">use</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Consumable.use"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
+<dd><p>Use the item on the target character.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.items.items.Item">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.items.items.</span></span><span class="sig-name descname"><span class="pre">Item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Item"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.Item" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Represents a generic inventory item.</p>
+<p>This class provides basic item properties, image loading, and translation support for name and description.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.Item.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#src.items.items.Item.id" title="Link to this definition"></a></dt>
+<dd><p>Unique identifier for the item.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.Item.name_key">
+<span class="sig-name descname"><span class="pre">name_key</span></span><a class="headerlink" href="#src.items.items.Item.name_key" title="Link to this definition"></a></dt>
+<dd><p>The original (untranslated) name string for translation lookup.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.Item.type">
+<span class="sig-name descname"><span class="pre">type</span></span><a class="headerlink" href="#src.items.items.Item.type" title="Link to this definition"></a></dt>
+<dd><p>The type/category of the item (e.g., ‘weapon’, ‘food’, ‘armor’).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.Item.max_stack">
+<span class="sig-name descname"><span class="pre">max_stack</span></span><a class="headerlink" href="#src.items.items.Item.max_stack" title="Link to this definition"></a></dt>
+<dd><p>Maximum number of items per inventory slot.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.Item.desc_key">
+<span class="sig-name descname"><span class="pre">desc_key</span></span><a class="headerlink" href="#src.items.items.Item.desc_key" title="Link to this definition"></a></dt>
+<dd><p>The original (untranslated) description string for translation lookup.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.Item.image">
+<span class="sig-name descname"><span class="pre">image</span></span><a class="headerlink" href="#src.items.items.Item.image" title="Link to this definition"></a></dt>
+<dd><p>The item’s image surface.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.Surface</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.Item._cached_image">
+<span class="sig-name descname"><span class="pre">_cached_image</span></span><a class="headerlink" href="#src.items.items.Item._cached_image" title="Link to this definition"></a></dt>
+<dd><p>Cached resized image for performance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.Surface | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.Item._cached_size">
+<span class="sig-name descname"><span class="pre">_cached_size</span></span><a class="headerlink" href="#src.items.items.Item._cached_size" title="Link to this definition"></a></dt>
+<dd><p>Size of the cached image.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="simple">
+<dt>Properties:</dt><dd><dl class="simple">
+<dt>name (str):</dt><dd><p>The translated name of the item.</p>
+</dd>
+<dt>description (str):</dt><dd><p>The translated description of the item.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.items.items.Item.resize">
+<span class="sig-name descname"><span class="pre">resize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Item.resize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.Item.resize" title="Link to this definition"></a></dt>
+<dd><p>Resize and cache the item’s image.
+:param size: The desired size in pixels.
+:type size: int</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The resized image.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pygame.Surface</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.items.items.Item.get_tooltip_text">
+<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Item.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.Item.get_tooltip_text" title="Link to this definition"></a></dt>
+<dd><p>Get a tooltip string with the item’s name and description.
+:returns: Tooltip text.
+:rtype: str</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="src.items.items.Item.description">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">description</span></span><a class="headerlink" href="#src.items.items.Item.description" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Item.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="src.items.items.Item.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#src.items.items.Item.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id6">
+<span class="sig-name descname"><span class="pre">resize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Item.resize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.items.items.Item.use">
+<span class="sig-name descname"><span class="pre">use</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Item.use"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.Item.use" title="Link to this definition"></a></dt>
+<dd><p>Use the item on the target character.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.items.items.Weapon">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.items.items.</span></span><span class="sig-name descname"><span class="pre">Weapon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Weapon"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.Weapon" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.items.items.Item" title="src.items.items.Item"><code class="xref py py-class docutils literal notranslate"><span class="pre">Item</span></code></a></p>
+<p>Represents a weapon item with damage and durability.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.Weapon.damage">
+<span class="sig-name descname"><span class="pre">damage</span></span><a class="headerlink" href="#src.items.items.Weapon.damage" title="Link to this definition"></a></dt>
+<dd><p>The amount of damage this weapon deals.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.Weapon.durability">
+<span class="sig-name descname"><span class="pre">durability</span></span><a class="headerlink" href="#src.items.items.Weapon.durability" title="Link to this definition"></a></dt>
+<dd><p>The remaining durability of the weapon.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.Weapon.range">
+<span class="sig-name descname"><span class="pre">range</span></span><a class="headerlink" href="#src.items.items.Weapon.range" title="Link to this definition"></a></dt>
+<dd><p>The attack range of the weapon.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.items.items.Weapon.get_tooltip_text">
+<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Weapon.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.Weapon.get_tooltip_text" title="Link to this definition"></a></dt>
+<dd><p>Get a tooltip string with weapon stats and description.
+:returns: Tooltip text.
+:rtype: str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id7">
+<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Weapon.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.items.items.create_item">
+<span class="sig-prename descclassname"><span class="pre">src.items.items.</span></span><span class="sig-name descname"><span class="pre">create_item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#create_item"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.create_item" title="Link to this definition"></a></dt>
+<dd><p>Factory function to create an item instance by ID.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>item_id</strong> (<em>str</em>) – The unique identifier of the item in the item database.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The instantiated item object of the appropriate type.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#src.items.items.Item" title="src.items.items.Item">Item</a> | <a class="reference internal" href="#src.items.items.Weapon" title="src.items.items.Weapon">Weapon</a> | <a class="reference internal" href="#src.items.items.Consumable" title="src.items.items.Consumable">Consumable</a> | <a class="reference internal" href="#src.items.items.Armor" title="src.items.items.Armor">Armor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-src.items">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-src.items" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="src.inventory.html" class="btn btn-neutral float-left" title="src.inventory package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="src.map.html" class="btn btn-neutral float-right" title="src.map package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Vibe-inc.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

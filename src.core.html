@@ -50,6 +50,7 @@
 <li class="toctree-l4 current"><a class="current reference internal" href="#">src.core package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html">src.entities package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.inventory.html">src.inventory package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.items.html">src.items package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.map.html">src.map package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html">src.ui package</a></li>
 </ul>
@@ -248,6 +249,136 @@
 </dd></dl>
 
 </section>
+<section id="module-src.core.logger">
+<span id="src-core-logger-module"></span><h2>src.core.logger module<a class="headerlink" href="#module-src.core.logger" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="src.core.logger.setup_logger">
+<span class="sig-prename descclassname"><span class="pre">src.core.logger.</span></span><span class="sig-name descname"><span class="pre">setup_logger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'GameLogger'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/logger.html#setup_logger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.logger.setup_logger" title="Link to this definition"></a></dt>
+<dd><p>Sets up a logger with the specified name, log file, and logging level.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – The name of the logger.</p></li>
+<li><p><strong>log_file</strong> (<em>str</em>) – The name of the log file. If None, generates a timestamped name.</p></li>
+<li><p><strong>level</strong> (<em>int</em>) – The logging level (e.g., logging.DEBUG, logging.INFO).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The configured logger instance.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>logging.Logger</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-src.core.save_manager">
+<span id="src-core-save-manager-module"></span><h2>src.core.save_manager module<a class="headerlink" href="#module-src.core.save_manager" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="src.core.save_manager.SaveManager">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.core.save_manager.</span></span><span class="sig-name descname"><span class="pre">SaveManager</span></span><a class="reference internal" href="_modules/src/core/save_manager.html#SaveManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.save_manager.SaveManager" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Manages game saving and loading functionality.</p>
+<p>This class handles the serialization and deserialization of game state, including player stats, inventory, and equipment, to and from JSON files.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.core.save_manager.SaveManager.ensure_saves_dir">
+<span class="sig-name descname"><span class="pre">ensure_saves_dir</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/save_manager.html#SaveManager.ensure_saves_dir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.save_manager.SaveManager.ensure_saves_dir" title="Link to this definition"></a></dt>
+<dd><p>Ensure the saves directory exists.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.core.save_manager.SaveManager.get_save_files">
+<span class="sig-name descname"><span class="pre">get_save_files</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/save_manager.html#SaveManager.get_save_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.save_manager.SaveManager.get_save_files" title="Link to this definition"></a></dt>
+<dd><p>Get a list of available save files.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.core.save_manager.SaveManager.save_game">
+<span class="sig-name descname"><span class="pre">save_game</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slot_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/save_manager.html#SaveManager.save_game"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.save_manager.SaveManager.save_game" title="Link to this definition"></a></dt>
+<dd><p>Save the current game state to a file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.core.save_manager.SaveManager.load_game">
+<span class="sig-name descname"><span class="pre">load_game</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slot_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/save_manager.html#SaveManager.load_game"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.save_manager.SaveManager.load_game" title="Link to this definition"></a></dt>
+<dd><p>Load a game state from a file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.core.save_manager.SaveManager.delete_save">
+<span class="sig-name descname"><span class="pre">delete_save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slot_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/save_manager.html#SaveManager.delete_save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.save_manager.SaveManager.delete_save" title="Link to this definition"></a></dt>
+<dd><p>Delete a specific save file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id4">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">delete_save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slot_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/save_manager.html#SaveManager.delete_save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
+<dd><p>Delete a specific save file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>slot_name</strong> (<em>str</em>) – The name of the save slot to delete.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id5">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ensure_saves_dir</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/save_manager.html#SaveManager.ensure_saves_dir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
+<dd><p>Ensure that the directory for save files exists.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id6">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_save_files</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/save_manager.html#SaveManager.get_save_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
+<dd><p>Retrieve a list of all available save files in the saves directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A list of filenames ending with ‘.json’.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id7">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load_game</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slot_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/save_manager.html#SaveManager.load_game"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
+<dd><p>Load the game state from a JSON file and restore it to the application.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>app</strong> (<a class="reference internal" href="src.html#src.app.App" title="src.app.App"><em>App</em></a>) – The main application instance to restore the state into.</p></li>
+<li><p><strong>slot_name</strong> (<em>str</em>) – The name of the save slot to load.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the game was successfully loaded, False otherwise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id8">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">save_game</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slot_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/save_manager.html#SaveManager.save_game"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
+<dd><p>Save the current game state to a JSON file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>app</strong> (<a class="reference internal" href="src.html#src.app.App" title="src.app.App"><em>App</em></a>) – The main application instance containing the game state.</p></li>
+<li><p><strong>slot_name</strong> (<em>str</em>) – The name of the save slot (filename without extension).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
 <section id="module-src.core.state">
 <span id="src-core-state-module"></span><h2>src.core.state module<a class="headerlink" href="#module-src.core.state" title="Link to this heading"></a></h2>
 <dl class="py class">
@@ -293,20 +424,20 @@ Each state can handle events, draw itself, and update its logic.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id4">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state.html#State.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id9">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state.html#State.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
 <dd><p>Renders the state to the provided screen surface.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id5">
-<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state.html#State.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id10">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state.html#State.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Link to this definition"></a></dt>
 <dd><p>Handles input events specific to the state.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id6">
-<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state.html#State.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id11">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state.html#State.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id11" title="Link to this definition"></a></dt>
 <dd><p>Updates the state’s logic.</p>
 </dd></dl>
 
@@ -380,28 +511,28 @@ Each state can handle events, draw itself, and update its logic.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id7">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id12">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id12" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id8">
-<span class="sig-name descname"><span class="pre">get_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.get_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id13">
+<span class="sig-name descname"><span class="pre">get_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.get_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id13" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id9">
-<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id14">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id14" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id10">
-<span class="sig-name descname"><span class="pre">reinit_states</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.reinit_states"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id15">
+<span class="sig-name descname"><span class="pre">reinit_states</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.reinit_states"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id15" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id11">
-<span class="sig-name descname"><span class="pre">set_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.set_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id11" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id16">
+<span class="sig-name descname"><span class="pre">set_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.set_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id16" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>

@@ -50,6 +50,7 @@
 <li class="toctree-l4"><a class="reference internal" href="src.core.html">src.core package</a></li>
 <li class="toctree-l4 current"><a class="current reference internal" href="#">src.entities package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.inventory.html">src.inventory package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.items.html">src.items package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.map.html">src.map package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html">src.ui package</a></li>
 </ul>
@@ -612,6 +613,82 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="id7">
 <span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/enemy.html#Enemy.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-src.entities.npc">
+<span id="src-entities-npc-module"></span><h2>src.entities.npc module<a class="headerlink" href="#module-src.entities.npc" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="src.entities.npc.NPC">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.entities.npc.</span></span><span class="sig-name descname"><span class="pre">NPC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sprite_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'MenHuman1'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/npc.html#NPC"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.npc.NPC" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Represents a Non-Player Character (NPC) that the player can interact with.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.entities.npc.NPC.pos">
+<span class="sig-name descname"><span class="pre">pos</span></span><a class="headerlink" href="#src.entities.npc.NPC.pos" title="Link to this definition"></a></dt>
+<dd><p>Position of the NPC on the screen.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.Vector2</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.entities.npc.NPC.image">
+<span class="sig-name descname"><span class="pre">image</span></span><a class="headerlink" href="#src.entities.npc.NPC.image" title="Link to this definition"></a></dt>
+<dd><p>Current frame of the NPC to be drawn.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.Surface</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.entities.npc.NPC.interaction_range">
+<span class="sig-name descname"><span class="pre">interaction_range</span></span><a class="headerlink" href="#src.entities.npc.NPC.interaction_range" title="Link to this definition"></a></dt>
+<dd><p>Distance within which the player can interact with the NPC.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.entities.npc.NPC.is_interactable">
+<span class="sig-name descname"><span class="pre">is_interactable</span></span><a class="headerlink" href="#src.entities.npc.NPC.is_interactable" title="Link to this definition"></a></dt>
+<dd><p>Whether the player is currently close enough to interact.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.npc.NPC.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">player_pos</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/npc.html#NPC.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.npc.NPC.update" title="Link to this definition"></a></dt>
+<dd><p>Check distance to player and update interaction status.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.npc.NPC.draw">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/npc.html#NPC.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.npc.NPC.draw" title="Link to this definition"></a></dt>
+<dd><p>Draw the NPC and the interaction prompt if applicable.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id8">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/npc.html#NPC.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id9">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">player_pos</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Vector2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/npc.html#NPC.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
