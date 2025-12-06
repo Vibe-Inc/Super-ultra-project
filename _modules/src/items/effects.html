@@ -207,7 +207,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">damage_per_sec</span> <span class="o">*</span> <span class="n">dt</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">dmg</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span><span class="p">)</span>
-            <span class="n">target</span><span class="o">.</span><span class="n">take_damage</span><span class="p">(</span><span class="n">dmg</span><span class="p">)</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">take_damage</span><span class="p">(</span><span class="n">dmg</span><span class="p">,</span> <span class="n">ignore_invulnerability</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span> <span class="o">-=</span> <span class="n">dmg</span></div>
 </div>
 

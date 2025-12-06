@@ -404,13 +404,15 @@
 
 <div class="viewcode-block" id="Character.take_damage">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.take_damage">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">take_damage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">invulnerable</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">take_damage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">,</span> <span class="n">ignore_invulnerability</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">invulnerable</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">ignore_invulnerability</span><span class="p">:</span>
             <span class="k">return</span>
             
         <span class="bp">self</span><span class="o">.</span><span class="n">hp</span> <span class="o">-=</span> <span class="n">amount</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">invulnerable</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">invulnerability_timer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">invulnerability_duration</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ignore_invulnerability</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">invulnerable</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">invulnerability_timer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">invulnerability_duration</span>
         
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Player took </span><span class="si">{</span><span class="n">amount</span><span class="si">}</span><span class="s2"> damage. HP: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">hp</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hp</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
