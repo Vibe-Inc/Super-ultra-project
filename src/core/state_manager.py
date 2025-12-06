@@ -79,7 +79,8 @@ class StateManager:
             "settings": SettingsMenu(self.states["settings"].app),
             "credits": CreditsMenu(self.states["credits"].app),
             "gameplay": gameplay_state,
-            "pause": PauseMenu(self.states["pause"].app)
+            "pause": PauseMenu(self.states["pause"].app),
+            "save_load": SaveLoadMenu(self.states["main"].app)
         }
         
         if current_name:
