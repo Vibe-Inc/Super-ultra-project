@@ -85,6 +85,11 @@
 <span class="sd">            Current position of the enemy on the screen.</span>
 <span class="sd">        speed (float):</span>
 <span class="sd">            Movement speed of the enemy in pixels per second.</span>
+<span class="sd">        </span>
+<span class="sd">        # New attributes for CollisionSystem</span>
+<span class="sd">        rect (pygame.Rect): Collision and drawing rectangle.</span>
+<span class="sd">        velocity (pygame.Vector2): Normalized vector representing desired movement direction.</span>
+
 <span class="sd">        hp (int):</span>
 <span class="sd">            Current health points of the enemy.</span>
 <span class="sd">        spawn_pos (pygame.Vector2):</span>
@@ -123,24 +128,20 @@
 <span class="sd">            Distance within which the enemy initiates an attack.</span>
 
 <span class="sd">    Methods:</span>
-<span class="sd">        update(dt):</span>
-<span class="sd">            Update the enemy&#39;s AI state, movement, and animation.</span>
+<span class="sd">        get_rect():</span>
+<span class="sd">            Returns the collision rectangle, updated to the current float position.</span>
+<span class="sd">        update(dt, collision_system, obstacles):</span>
+<span class="sd">            Update the enemy&#39;s AI state, set velocity, and apply movement via collision system.</span>
 <span class="sd">            Args:</span>
 <span class="sd">                dt (float): Time elapsed since the last frame in seconds.</span>
+<span class="sd">                collision_system (CollisionSystem): The external collision handler.</span>
+<span class="sd">                obstacles (list[pygame.Rect]): List of static walls.</span>
 <span class="sd">        take_damage(amount):</span>
 <span class="sd">            Reduce the enemy&#39;s health by the given amount.</span>
-<span class="sd">            Args:</span>
-<span class="sd">                amount (int): Damage to apply.</span>
-<span class="sd">            Returns:</span>
-<span class="sd">                bool: True if the enemy is dead after taking damage, False otherwise.</span>
 <span class="sd">        is_dead():</span>
 <span class="sd">            Returns True if the enemy&#39;s health is zero or below.</span>
-<span class="sd">            Returns:</span>
-<span class="sd">                bool: True if dead, False otherwise.</span>
 <span class="sd">        draw(screen):</span>
 <span class="sd">            Draw the enemy&#39;s current frame to the given Pygame surface.</span>
-<span class="sd">            Args:</span>
-<span class="sd">                screen (pygame.Surface): The surface to draw the enemy on.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sprite_set</span><span class="p">,</span> <span class="n">speed</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">damage</span><span class="p">,</span> <span class="n">animation_size</span><span class="p">,</span> <span class="n">animation_speed</span><span class="p">,</span> <span class="n">detection_range</span><span class="p">,</span> <span class="n">attack_range</span><span class="p">,</span> <span class="n">patrol_points</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -157,6 +158,11 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;down&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">animations</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">direction</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        
+        <span class="c1"># New attributes for collision</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_rect</span><span class="p">(</span><span class="n">topleft</span><span class="o">=</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">flip</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">frame_index</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">animation_speed</span> <span class="o">=</span> <span class="n">animation_speed</span>
@@ -172,11 +178,22 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">detection_range</span> <span class="o">=</span> <span class="n">detection_range</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attack_range</span> <span class="o">=</span> <span class="n">attack_range</span>
 
+<div class="viewcode-block" id="Enemy.get_rect">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.enemy.Enemy.get_rect">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_rect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">topleft</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span></div>
+
+
 <div class="viewcode-block" id="Enemy.update">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.enemy.Enemy.update">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">collision_system</span><span class="p">,</span> <span class="n">obstacles</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_ai</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_move</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_move</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span> <span class="c1"># Now sets self.velocity instead of moving directly</span>
+        
+        <span class="c1"># Collision system</span>
+        <span class="n">collision_system</span><span class="o">.</span><span class="n">handle_movement_and_collision</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">obstacles</span><span class="p">)</span>
+        
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_animation</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span></div>
 
 
@@ -196,26 +213,36 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">ai_state</span> <span class="o">=</span> <span class="s2">&quot;patrol&quot;</span>
             <span class="n">patrol_target</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">patrol_points</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">patrol_index</span><span class="p">])</span>
             <span class="k">if</span> <span class="p">(</span><span class="n">patrol_target</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span><span class="o">.</span><span class="n">length</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">patrol_index</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">patrol_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">patrol_points</span><span class="p">)</span>
+
+
+                <span class="k">pass</span> 
             <span class="bp">self</span><span class="o">.</span><span class="n">target</span> <span class="o">=</span> <span class="n">patrol_target</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">ai_state</span> <span class="o">=</span> <span class="s2">&quot;idle&quot;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">target</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">moving</span> <span class="o">=</span> <span class="kc">False</span>
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">:</span>
             <span class="n">direction_vector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span>
+            
             <span class="k">if</span> <span class="n">direction_vector</span><span class="o">.</span><span class="n">length</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">direction_vector</span> <span class="o">=</span> <span class="n">direction_vector</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">pos</span> <span class="o">+=</span> <span class="n">direction_vector</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">*</span> <span class="n">dt</span>
+                <span class="c1"># Calculate normalized direction</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="n">direction_vector</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">moving</span> <span class="o">=</span> <span class="kc">True</span>
 
-                <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">direction_vector</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">abs</span><span class="p">(</span><span class="n">direction_vector</span><span class="o">.</span><span class="n">y</span><span class="p">):</span>
+                <span class="c1"># Determine animation direction</span>
+                <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">y</span><span class="p">):</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;side&quot;</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">flip</span> <span class="o">=</span> <span class="n">direction_vector</span><span class="o">.</span><span class="n">x</span> <span class="o">&lt;</span> <span class="mi">0</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">flip</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">x</span> <span class="o">&lt;</span> <span class="mi">0</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;down&quot;</span> <span class="k">if</span> <span class="n">direction_vector</span><span class="o">.</span><span class="n">y</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;up&quot;</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;down&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;up&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># We reached the target</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ai_state</span> <span class="o">==</span> <span class="s2">&quot;patrol&quot;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">patrol_index</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">patrol_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">patrol_points</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_update_animation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">moving</span><span class="p">:</span>
@@ -245,9 +272,9 @@
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.enemy.Enemy.draw">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;side&quot;</span><span class="p">:</span>
-            <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">flip</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
+            <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">flip</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rect</span><span class="p">())</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span></div>
+            <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rect</span><span class="p">())</span></div>
 </div>
 
 </pre></div>

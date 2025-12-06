@@ -172,6 +172,33 @@
 </dd></dl>
 
 <dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">#</span> <span class="pre">New</span> <span class="pre">attributes</span> <span class="pre">for</span> <span class="pre">CollisionSystem</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.entities.character.Character.rect">
+<span class="sig-name descname"><span class="pre">rect</span></span><a class="headerlink" href="#src.entities.character.Character.rect" title="Link to this definition"></a></dt>
+<dd><p>Collision and drawing rectangle (for integer coordinates).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.Rect</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.entities.character.Character.velocity">
+<span class="sig-name descname"><span class="pre">velocity</span></span><a class="headerlink" href="#src.entities.character.Character.velocity" title="Link to this definition"></a></dt>
+<dd><p>Normalized vector representing the desired movement direction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.Vector2</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="src.entities.character.Character.frame_index">
 <span class="sig-name descname"><span class="pre">frame_index</span></span><a class="headerlink" href="#src.entities.character.Character.frame_index" title="Link to this definition"></a></dt>
 <dd><p>Current frame index for animation.</p>
@@ -260,11 +287,27 @@
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.get_rect">
+<span class="sig-name descname"><span class="pre">get_rect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_rect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.get_rect" title="Link to this definition"></a></dt>
+<dd><p>Returns the collision rectangle, updated to the current float position.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="src.entities.character.Character.update">
-<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.update" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collision_system</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obstacles</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.update" title="Link to this definition"></a></dt>
 <dd><p>Update the character’s position and animation based on keyboard input.
 :param dt: Time elapsed since the last frame in seconds.
-:type dt: float</p>
+:type dt: float
+:param collision_system: The external collision handler instance.
+:type collision_system: CollisionSystem
+:param obstacles: List of static collision boxes (walls).
+:type obstacles: list[pygame.Rect]</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character._set_velocity">
+<span class="sig-name descname"><span class="pre">_set_velocity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character._set_velocity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character._set_velocity" title="Link to this definition"></a></dt>
+<dd><p>Calculates the desired movement vector (velocity) based on keyboard input.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -310,19 +353,27 @@
 <dd></dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">get_rect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_rect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
+<dd><p>Returns the collision rectangle, updated to the current float position.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="src.entities.character.Character.level_up">
 <span class="sig-name descname"><span class="pre">level_up</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.level_up"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.level_up" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id2">
-<span class="sig-name descname"><span class="pre">take_damage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.take_damage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">take_damage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.take_damage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id3">
-<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collision_system</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obstacles</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
+<dd><p>Updates the character’s state, sets desired movement, and applies movement
+using the external collision system.</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -353,6 +404,33 @@
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">#</span> <span class="pre">New</span> <span class="pre">attributes</span> <span class="pre">for</span> <span class="pre">CollisionSystem</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.entities.enemy.Enemy.rect">
+<span class="sig-name descname"><span class="pre">rect</span></span><a class="headerlink" href="#src.entities.enemy.Enemy.rect" title="Link to this definition"></a></dt>
+<dd><p>Collision and drawing rectangle.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.Rect</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.entities.enemy.Enemy.velocity">
+<span class="sig-name descname"><span class="pre">velocity</span></span><a class="headerlink" href="#src.entities.enemy.Enemy.velocity" title="Link to this definition"></a></dt>
+<dd><p>Normalized vector representing desired movement direction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.Vector2</p>
 </dd>
 </dl>
 </dd></dl>
@@ -556,63 +634,64 @@
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="src.entities.enemy.Enemy.get_rect">
+<span class="sig-name descname"><span class="pre">get_rect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/enemy.html#Enemy.get_rect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.enemy.Enemy.get_rect" title="Link to this definition"></a></dt>
+<dd><p>Returns the collision rectangle, updated to the current float position.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="src.entities.enemy.Enemy.update">
-<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/enemy.html#Enemy.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.enemy.Enemy.update" title="Link to this definition"></a></dt>
-<dd><p>Update the enemy’s AI state, movement, and animation.
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collision_system</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obstacles</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/enemy.html#Enemy.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.enemy.Enemy.update" title="Link to this definition"></a></dt>
+<dd><p>Update the enemy’s AI state, set velocity, and apply movement via collision system.
 :param dt: Time elapsed since the last frame in seconds.
-:type dt: float</p>
+:type dt: float
+:param collision_system: The external collision handler.
+:type collision_system: CollisionSystem
+:param obstacles: List of static walls.
+:type obstacles: list[pygame.Rect]</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.entities.enemy.Enemy.take_damage">
 <span class="sig-name descname"><span class="pre">take_damage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/enemy.html#Enemy.take_damage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.enemy.Enemy.take_damage" title="Link to this definition"></a></dt>
-<dd><p>Reduce the enemy’s health by the given amount.
-:param amount: Damage to apply.
-:type amount: int</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>True if the enemy is dead after taking damage, False otherwise.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>bool</p>
-</dd>
-</dl>
+<dd><p>Reduce the enemy’s health by the given amount.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.entities.enemy.Enemy.is_dead">
 <span class="sig-name descname"><span class="pre">is_dead</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/enemy.html#Enemy.is_dead"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.enemy.Enemy.is_dead" title="Link to this definition"></a></dt>
-<dd><p>Returns True if the enemy’s health is zero or below.
-:returns: True if dead, False otherwise.
-:rtype: bool</p>
+<dd><p>Returns True if the enemy’s health is zero or below.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.entities.enemy.Enemy.draw">
 <span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/enemy.html#Enemy.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.enemy.Enemy.draw" title="Link to this definition"></a></dt>
-<dd><p>Draw the enemy’s current frame to the given Pygame surface.
-:param screen: The surface to draw the enemy on.
-:type screen: pygame.Surface</p>
+<dd><p>Draw the enemy’s current frame to the given Pygame surface.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id4">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/enemy.html#Enemy.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="id5">
-<span class="sig-name descname"><span class="pre">is_dead</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/src/entities/enemy.html#Enemy.is_dead"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/enemy.html#Enemy.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id6">
-<span class="sig-name descname"><span class="pre">take_damage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/src/entities/enemy.html#Enemy.take_damage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_rect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/enemy.html#Enemy.get_rect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id7">
-<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/enemy.html#Enemy.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">is_dead</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/src/entities/enemy.html#Enemy.is_dead"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id8">
+<span class="sig-name descname"><span class="pre">take_damage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/src/entities/enemy.html#Enemy.take_damage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id9">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collision_system</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obstacles</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/enemy.html#Enemy.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -682,13 +761,13 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id8">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/npc.html#NPC.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id10">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/npc.html#NPC.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id9">
-<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">player_pos</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Vector2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/npc.html#NPC.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id11">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">player_pos</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Vector2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/npc.html#NPC.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id11" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>

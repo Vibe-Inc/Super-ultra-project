@@ -124,6 +124,8 @@
 </li>
       <li><a href="src.items.html#src.items.items.Item._cached_size">_cached_size (src.items.items.Item attribute)</a>
 </li>
+      <li><a href="src.entities.html#src.entities.character.Character._set_velocity">_set_velocity() (src.entities.character.Character method)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -355,9 +357,9 @@
 </li>
         <li><a href="src.entities.html#id1">(src.entities.character.Character method)</a>, <a href="src.entities.html#src.entities.character.Character.draw">[1]</a>
 </li>
-        <li><a href="src.entities.html#id4">(src.entities.enemy.Enemy method)</a>, <a href="src.entities.html#src.entities.enemy.Enemy.draw">[1]</a>
+        <li><a href="src.entities.html#id5">(src.entities.enemy.Enemy method)</a>, <a href="src.entities.html#src.entities.enemy.Enemy.draw">[1]</a>
 </li>
-        <li><a href="src.entities.html#id8">(src.entities.npc.NPC method)</a>, <a href="src.entities.html#src.entities.npc.NPC.draw">[1]</a>
+        <li><a href="src.entities.html#id10">(src.entities.npc.NPC method)</a>, <a href="src.entities.html#src.entities.npc.NPC.draw">[1]</a>
 </li>
         <li><a href="src.inventory.html#id6">(src.inventory.system.Inventory method)</a>, <a href="src.inventory.html#src.inventory.system.Inventory.draw">[1]</a>
 </li>
@@ -482,14 +484,20 @@
 </li>
       <li><a href="src.html#src.config.get_font">get_font() (in module src.config)</a>
 </li>
+      <li><a href="src.entities.html#id2">get_rect() (src.entities.character.Character method)</a>, <a href="src.entities.html#src.entities.character.Character.get_rect">[1]</a>
+
+      <ul>
+        <li><a href="src.entities.html#id6">(src.entities.enemy.Enemy method)</a>, <a href="src.entities.html#src.entities.enemy.Enemy.get_rect">[1]</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.core.html#src.core.save_manager.SaveManager.get_save_files">get_save_files() (src.core.save_manager.SaveManager method)</a>
 
       <ul>
         <li><a href="src.core.html#id6">(src.core.save_manager.SaveManager static method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.inventory.html#id7">get_slot_under_mouse() (src.inventory.system.Inventory method)</a>, <a href="src.inventory.html#src.inventory.system.Inventory.get_slot_under_mouse">[1]</a>
 </li>
       <li><a href="src.core.html#id13">get_state() (src.core.state_manager.StateManager method)</a>, <a href="src.core.html#src.core.state_manager.StateManager.get_state">[1]</a>
@@ -602,7 +610,7 @@
       </ul></li>
       <li><a href="src.inventory.html#src.inventory.system.INVENTORY_manager.inventory_tooltip">inventory_tooltip (src.inventory.system.INVENTORY_manager attribute)</a>
 </li>
-      <li><a href="src.entities.html#id5">is_dead() (src.entities.enemy.Enemy method)</a>, <a href="src.entities.html#src.entities.enemy.Enemy.is_dead">[1]</a>
+      <li><a href="src.entities.html#id7">is_dead() (src.entities.enemy.Enemy method)</a>, <a href="src.entities.html#src.entities.enemy.Enemy.is_dead">[1]</a>
 </li>
       <li><a href="src.items.html#src.items.effects.Effect.is_finished">is_finished (src.items.effects.Effect attribute)</a>
 </li>
@@ -851,9 +859,13 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.items.html#src.items.items.Weapon.range">range (src.items.items.Weapon attribute)</a>
 </li>
-      <li><a href="src.ui.html#src.ui.widgets.Button.rect">rect (src.ui.widgets.Button attribute)</a>
+      <li><a href="src.entities.html#src.entities.character.Character.rect">rect (src.entities.character.Character attribute)</a>
 
       <ul>
+        <li><a href="src.entities.html#src.entities.enemy.Enemy.rect">(src.entities.enemy.Enemy attribute)</a>
+</li>
+        <li><a href="src.ui.html#src.ui.widgets.Button.rect">(src.ui.widgets.Button attribute)</a>
+</li>
         <li><a href="src.ui.html#src.ui.widgets.Tooltip.rect">(src.ui.widgets.Tooltip attribute)</a>
 </li>
       </ul></li>
@@ -861,10 +873,10 @@
 </li>
       <li><a href="src.items.html#src.items.effects.RegenerationEffect">RegenerationEffect (class in src.items.effects)</a>
 </li>
-      <li><a href="src.core.html#id15">reinit_states() (src.core.state_manager.StateManager method)</a>, <a href="src.core.html#src.core.state_manager.StateManager.reinit_states">[1]</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="src.core.html#id15">reinit_states() (src.core.state_manager.StateManager method)</a>, <a href="src.core.html#src.core.state_manager.StateManager.reinit_states">[1]</a>
+</li>
       <li><a href="src.core.html#id2">reinit_ui() (src.core.game.Game method)</a>, <a href="src.core.html#src.core.game.Game.reinit_ui">[1]</a>
 </li>
       <li><a href="src.inventory.html#id4">remove_active_inventory() (src.inventory.system.INVENTORY_manager method)</a>, <a href="src.inventory.html#src.inventory.system.INVENTORY_manager.remove_active_inventory">[1]</a>
@@ -1137,10 +1149,10 @@
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="src.entities.html#id2">take_damage() (src.entities.character.Character method)</a>, <a href="src.entities.html#src.entities.character.Character.take_damage">[1]</a>
+      <li><a href="src.entities.html#id3">take_damage() (src.entities.character.Character method)</a>, <a href="src.entities.html#src.entities.character.Character.take_damage">[1]</a>
 
       <ul>
-        <li><a href="src.entities.html#id6">(src.entities.enemy.Enemy method)</a>, <a href="src.entities.html#src.entities.enemy.Enemy.take_damage">[1]</a>
+        <li><a href="src.entities.html#id8">(src.entities.enemy.Enemy method)</a>, <a href="src.entities.html#src.entities.enemy.Enemy.take_damage">[1]</a>
 </li>
       </ul></li>
       <li><a href="src.entities.html#src.entities.enemy.Enemy.target">target (src.entities.enemy.Enemy attribute)</a>
@@ -1213,14 +1225,16 @@
 <h2 id="U">U</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="src.core.html#id11">update() (src.core.state.State method)</a>, <a href="src.core.html#src.core.state.State.update">[1]</a>
+      <li><a href="src.core.html#src.core.game.Game.update">update() (src.core.game.Game method)</a>
 
       <ul>
-        <li><a href="src.entities.html#id3">(src.entities.character.Character method)</a>, <a href="src.entities.html#src.entities.character.Character.update">[1]</a>
+        <li><a href="src.core.html#id11">(src.core.state.State method)</a>, <a href="src.core.html#src.core.state.State.update">[1]</a>
 </li>
-        <li><a href="src.entities.html#id7">(src.entities.enemy.Enemy method)</a>, <a href="src.entities.html#src.entities.enemy.Enemy.update">[1]</a>
+        <li><a href="src.entities.html#id4">(src.entities.character.Character method)</a>, <a href="src.entities.html#src.entities.character.Character.update">[1]</a>
 </li>
-        <li><a href="src.entities.html#id9">(src.entities.npc.NPC method)</a>, <a href="src.entities.html#src.entities.npc.NPC.update">[1]</a>
+        <li><a href="src.entities.html#id9">(src.entities.enemy.Enemy method)</a>, <a href="src.entities.html#src.entities.enemy.Enemy.update">[1]</a>
+</li>
+        <li><a href="src.entities.html#id11">(src.entities.npc.NPC method)</a>, <a href="src.entities.html#src.entities.npc.NPC.update">[1]</a>
 </li>
         <li><a href="src.items.html#id2">(src.items.effects.Effect method)</a>, <a href="src.items.html#src.items.effects.Effect.update">[1]</a>
 </li>
@@ -1251,6 +1265,14 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.ui.html#src.ui.widgets.Slider.value">value (src.ui.widgets.Slider attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="src.entities.html#src.entities.character.Character.velocity">velocity (src.entities.character.Character attribute)</a>
+
+      <ul>
+        <li><a href="src.entities.html#src.entities.enemy.Enemy.velocity">(src.entities.enemy.Enemy attribute)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 

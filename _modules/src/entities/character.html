@@ -93,6 +93,11 @@
 <span class="sd">            The respawn point for the character.</span>
 <span class="sd">        speed (float):</span>
 <span class="sd">            Movement speed of the character in pixels per second.</span>
+<span class="sd">        </span>
+<span class="sd">        # New attributes for CollisionSystem</span>
+<span class="sd">        rect (pygame.Rect): Collision and drawing rectangle (for integer coordinates).</span>
+<span class="sd">        velocity (pygame.Vector2): Normalized vector representing the desired movement direction.</span>
+
 <span class="sd">        frame_index (int):</span>
 <span class="sd">            Current frame index for animation.</span>
 <span class="sd">        animation_speed (float):</span>
@@ -111,10 +116,19 @@
 <span class="sd">            Sound effect played on death.</span>
 
 <span class="sd">    Methods:</span>
-<span class="sd">        update(dt):</span>
+<span class="sd">        get_rect():</span>
+<span class="sd">            Returns the collision rectangle, updated to the current float position.</span>
+
+<span class="sd">        update(dt, collision_system, obstacles):</span>
 <span class="sd">            Update the character&#39;s position and animation based on keyboard input.</span>
 <span class="sd">            Args:</span>
 <span class="sd">                dt (float): Time elapsed since the last frame in seconds.</span>
+<span class="sd">                collision_system (CollisionSystem): The external collision handler instance.</span>
+<span class="sd">                obstacles (list[pygame.Rect]): List of static collision boxes (walls).</span>
+<span class="sd">        </span>
+<span class="sd">        _set_velocity():</span>
+<span class="sd">            Calculates the desired movement vector (velocity) based on keyboard input.</span>
+
 <span class="sd">        take_damage(amount):</span>
 <span class="sd">            Reduce the character&#39;s health by the given amount and handle death.</span>
 <span class="sd">            Args:</span>
@@ -125,7 +139,7 @@
 <span class="sd">            Draw the character&#39;s current frame to the given Pygame surface.</span>
 <span class="sd">            Args:</span>
 <span class="sd">                screen (pygame.Surface): The surface to draw the character on.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">animations</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;down&quot;</span><span class="p">:</span>  <span class="p">[</span><span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;assets/characters/WomanHuman1(Recolor)/FrontWalk/FrontWalk</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">.png&quot;</span><span class="p">),</span> <span class="p">(</span><span class="mi">85</span><span class="p">,</span> <span class="mi">85</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)],</span>
@@ -139,6 +153,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">spawn_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">=</span> <span class="mi">200</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sprint_multiplier</span> <span class="o">=</span> <span class="mf">1.8</span> 
+        
+        <span class="c1"># New attributes for collision</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_rect</span><span class="p">(</span><span class="n">topleft</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c1"># Used to store desired movement</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">frame_index</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">animation_speed</span> <span class="o">=</span> <span class="mi">10</span>
@@ -201,8 +219,6 @@
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Level Up! Level: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">level</span><span class="si">}</span><span class="s2">, Max HP: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="Character.update">
-<a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.update">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
         <span class="c1"># Update effects</span>
         <span class="k">for</span> <span class="n">effect</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="p">[:]:</span>
@@ -210,7 +226,21 @@
             <span class="k">if</span> <span class="n">effect</span><span class="o">.</span><span class="n">is_finished</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">effect</span><span class="p">)</span>
 
+<div class="viewcode-block" id="Character.get_rect">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.get_rect">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_rect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the collision rectangle, updated to the current float position.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">topleft</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span></div>
+
+    
+<div class="viewcode-block" id="Character._set_velocity">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character._set_velocity">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_set_velocity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculates the desired movement vector (self.velocity) based on keyboard input.&quot;&quot;&quot;</span>
         <span class="n">keys</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">key</span><span class="o">.</span><span class="n">get_pressed</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">moving</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_sprinting</span> <span class="o">=</span> <span class="kc">False</span>
 
@@ -219,6 +249,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">is_sprinting</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="n">current_speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sprint_multiplier</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_sprinting</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">=</span> <span class="n">current_speed</span> 
 
         <span class="c1"># Movement logic with confusion support</span>
         <span class="n">up_key</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_w</span>
@@ -247,9 +279,32 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="n">current_speed</span> <span class="o">*</span> <span class="n">dt</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;side&quot;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">flip</span> <span class="o">=</span> <span class="kc">False</span>
+            
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">length_squared</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">moving</span> <span class="o">=</span> <span class="kc">True</span>
+            
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">y</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;side&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">flip</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">x</span> <span class="o">&lt;</span> <span class="mi">0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;down&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;up&quot;</span></div>
+
         
-        <span class="c1"># Stamina management</span>
+        <span class="c1"># Stamina management logic remains here because it depends on input state</span>
+        <span class="c1"># Note: The actual movement delta is calculated in CollisionSystem, but stamina drain depends on INTENT to move</span>
+        <span class="c1"># which we capture here.</span>
+    
+<div class="viewcode-block" id="Character.update">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.update">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">collision_system</span><span class="p">,</span> <span class="n">obstacles</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates the character&#39;s state, sets desired movement, and applies movement</span>
+<span class="sd">        using the external collision system.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_velocity</span><span class="p">()</span>
+        
+        <span class="c1"># Stamina management (logic from your update method)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">moving</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_sprinting</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">stamina</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stamina_drain_rate</span> <span class="o">*</span> <span class="n">dt</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stamina</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
@@ -260,9 +315,13 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stamina</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_stamina</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">stamina</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_stamina</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">can_sprint</span> <span class="o">=</span> <span class="kc">True</span>  
+
+        <span class="c1"># 🔑 KEY IMPLEMENTATION STEP: Single function call for collision-aware movement</span>
+        <span class="n">collision_system</span><span class="o">.</span><span class="n">handle_movement_and_collision</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">obstacles</span><span class="p">)</span>
         
-        <span class="c1">#if keys[pygame.K_SPACE]:  # press SPACE to take 100 damage (temporary cuz button can be held down insted of pressed once)</span>
-        <span class="c1">#    self.take_damage(100) </span>
+        <span class="c1"># Reset speed to base speed for next frame logic (if needed elsewhere)</span>
+        <span class="c1"># Though _set_velocity will overwrite it again next frame.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">=</span> <span class="mi">200</span> 
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">moving</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">time_accumulator</span> <span class="o">+=</span> <span class="n">dt</span>
@@ -302,9 +361,9 @@
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.draw">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;side&quot;</span><span class="p">:</span>
-            <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">flip</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
+            <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">flip</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rect</span><span class="p">())</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span></div>
+            <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rect</span><span class="p">())</span></div>
 </div>
 
 </pre></div>
