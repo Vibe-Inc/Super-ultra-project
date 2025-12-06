@@ -92,6 +92,10 @@ class Game(State):
         
         self.enemies = [self.enemy]
         self.items = []
+        
+        # Enemy spawning system
+        self.enemy_spawn_timer = 0.0
+        self.enemy_spawn_interval = 30.0 # seconds
 
         self.npc = NPC(x=400, y=400, sprite_set="MenHuman1")
         
@@ -114,6 +118,50 @@ class Game(State):
     def toggle_player_inventory(self):
         self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
 
+    def spawn_random_enemy(self):
+        if not self.map.current_map or self.map.current_map.pixel_width == 0:
+            return
+
+        map_w = self.map.current_map.pixel_width
+        map_h = self.map.current_map.pixel_height
+        
+        # Try 10 times to find a valid position
+        for _ in range(10):
+            x = random.randint(50, map_w - 50)
+            y = random.randint(50, map_h - 50)
+            pos = pygame.Vector2(x, y)
+            
+            # Check distance to player (must be at least 400 pixels away)
+            if pos.distance_to(self.character.pos) < 400:
+                continue
+                
+            # Check collision with walls
+            # Using approximate size for enemy feet/hitbox
+            rect = pygame.Rect(x, y, 40, 20) 
+            collides = False
+            for wall in self.obstacles:
+                if rect.colliderect(wall):
+                    collides = True
+                    break
+            
+            if not collides:
+                # Spawn enemy
+                new_enemy = Enemy(
+                    x=x, y=y,
+                    sprite_set="MenHuman1(Recolor)",
+                    speed=120.0,
+                    hp=100,
+                    damage=15,
+                    animation_size=(85, 85),
+                    animation_speed=6.0,
+                    detection_range=250.0,
+                    attack_range=40.0
+                )
+                new_enemy.target_entity = self.character
+                self.enemies.append(new_enemy)
+                logger.info(f"Spawned new enemy at ({x}, {y})")
+                break
+
     def update(self, dt):
         switched_map_path = self.map.update(self.character)
 
@@ -122,15 +170,30 @@ class Game(State):
             logger.info(f"Map switched to {switched_map_path}. Respawning enemy...")
             self.obstacles = self.map.get_obstacles()
             
+            # Reset enemies list and spawn default one if needed
+            self.enemies = []
+            
             if switched_map_path in self.ENEMY_SPAWNS:
                 new_x, new_y = self.ENEMY_SPAWNS[switched_map_path]
-                self.enemy.pos = pygame.Vector2(new_x, new_y)
-                self.enemy.spawn_pos = pygame.Vector2(new_x, new_y)
-
-                self.enemy.target = None
-                self.enemy.ai_state = "idle"
-            else:
-                self.enemy.pos = pygame.Vector2(-5000, -5000)
+                default_enemy = Enemy(
+                    x=new_x, y=new_y,
+                    sprite_set="MenHuman1(Recolor)",
+                    speed=120.0,
+                    hp=100,
+                    damage=15,
+                    animation_size=(85, 85),
+                    animation_speed=6.0,
+                    detection_range=250.0,
+                    attack_range=40.0
+                )
+                default_enemy.target_entity = self.character
+                self.enemies.append(default_enemy)
+        
+        # Enemy Spawning Logic
+        self.enemy_spawn_timer += dt
+        if self.enemy_spawn_timer >= self.enemy_spawn_interval:
+            self.enemy_spawn_timer = 0
+            self.spawn_random_enemy()
 
         self.character.update(dt, self.collision_handler, self.obstacles)
 
