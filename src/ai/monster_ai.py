@@ -157,6 +157,16 @@ class StalkerBrain(BaseBrain):
         player_pos = _entity_center(player)
         distance = enemy_pos.distance_to(player_pos)
 
+        wants_melee = getattr(enemy, "contact_damage", True) and getattr(enemy, "attack_controller", None) is None
+        if wants_melee:
+            if distance <= enemy.attack_range:
+                enemy.ai_state = "attack"
+                self._move_to(enemy, context, player_pos)
+                return
+            enemy.ai_state = "chase"
+            self._move_to(enemy, context, player_pos)
+            return
+
         if distance <= enemy.attack_range:
             enemy.ai_state = "attack"
             if getattr(enemy, "contact_damage", True):
