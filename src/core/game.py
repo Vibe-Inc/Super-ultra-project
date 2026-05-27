@@ -73,6 +73,7 @@ class Game(State):
         self.projectiles = []
         self.enemy_projectiles = []
         self.equipped_weapon = None
+        self._dizzy_overlay = None
 
         self.enemy_profiles = {
             "brute": {
@@ -610,11 +611,11 @@ class Game(State):
         # Dizziness effect (visual)
         if self.character.dizzy:
             # Simulate blur/dizziness with a semi-transparent overlay that changes alpha
-            import math
             alpha = int(100 + 50 * math.sin(pygame.time.get_ticks() * 0.005))
-            overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
-            overlay.fill((255, 255, 255, alpha))
-            screen.blit(overlay, (0, 0))
+            if self._dizzy_overlay is None or self._dizzy_overlay.get_size() != screen.get_size():
+                self._dizzy_overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+            self._dizzy_overlay.fill((255, 255, 255, alpha))
+            screen.blit(self._dizzy_overlay, (0, 0))
 
         self.hud.draw(screen)
 

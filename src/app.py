@@ -71,6 +71,7 @@ class App:
         self.audio = "on"
         self.is_fullscreen = False
         self.clock = pygame.time.Clock()
+        self._brightness_overlay = None
 
         # State manager
         self.manager = StateManager(self)
@@ -112,10 +113,11 @@ class App:
             self.manager.draw(self.screen)
 
             if cfg.SCREEN_BRIGHTNESS < 1:
-                dark = pygame.Surface((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT))
-                dark.set_alpha(int((1 - cfg.SCREEN_BRIGHTNESS) * 255))
-                dark.fill((0, 0, 0))
-                self.screen.blit(dark, (0, 0))
+                if self._brightness_overlay is None or self._brightness_overlay.get_size() != (cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT):
+                    self._brightness_overlay = pygame.Surface((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT))
+                self._brightness_overlay.set_alpha(int((1 - cfg.SCREEN_BRIGHTNESS) * 255))
+                self._brightness_overlay.fill((0, 0, 0))
+                self.screen.blit(self._brightness_overlay, (0, 0))
 
             pygame.display.flip()
 
