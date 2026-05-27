@@ -11,6 +11,7 @@ from src.items.items import create_item
 from src.items.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, DizzinessEffect
 from src.entities.enemy import Enemy
 from src.entities.npc import NPC
+from src.entities.projectile import Arrow
 from src.ui.hud import HUD
 from src.core.collision_system import CollisionSystem
 
@@ -63,6 +64,8 @@ class Game(State):
 
         self.MAIN_player_inv = MAIN_player_inventory(app)
         self.PLAYER_inventory_equipment = MAIN_player_inventory_equipment(app)
+        self.projectiles = []
+        self.equipped_weapon = None
 
         self.ENEMY_SPAWNS = {
             # "maps/test-map-1.tmx": (400, 300), # Якщо закоментувати цей рядок, ворога на старті не буде
@@ -110,6 +113,7 @@ class Game(State):
         
         shop_items = [
             create_item("dull_sword"),
+            create_item("wooden_bow"),
             create_item("apple"),
             create_item("small_health_potion"),
             create_item("large_health_potion"),
@@ -126,6 +130,72 @@ class Game(State):
 
     def toggle_player_inventory(self):
         self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
+
+    def _iter_equipment_items(self):
+        for col in self.PLAYER_inventory_equipment.items:
+            for slot in col:
+                if slot:
+                    item, _ = slot
+                    yield item
+
+    def _get_equipped_weapon(self):
+        for item in self._iter_equipment_items():
+            if getattr(item, "type", None) == "weapon":
+                return item
+        return None
+
+    def _sync_weapon_stats(self):
+        weapon = self._get_equipped_weapon()
+        self.equipped_weapon = weapon
+
+        if weapon:
+            self.character.attack_damage = weapon.damage
+            self.character.attack_cooldown = getattr(weapon, "cooldown", self.character.base_attack_cooldown)
+            if getattr(weapon, "weapon_class", "melee") != "bow":
+                self.character.attack_range = getattr(weapon, "range", self.character.base_attack_range)
+            else:
+                self.character.attack_range = self.character.base_attack_range
+        else:
+            self.character.attack_damage = self.character.base_attack_damage
+            self.character.attack_range = self.character.base_attack_range
+            self.character.attack_cooldown = self.character.base_attack_cooldown
+
+    def _get_attack_direction(self):
+        if self.character.direction == "up":
+            return pygame.Vector2(0, -1)
+        if self.character.direction == "down":
+            return pygame.Vector2(0, 1)
+        if self.character.direction == "side":
+            return pygame.Vector2(-1, 0) if self.character.flip else pygame.Vector2(1, 0)
+        return pygame.Vector2(1, 0)
+
+    def _spawn_arrow(self, weapon):
+        direction = self._get_attack_direction()
+        spawn_pos = self.character.pos + pygame.Vector2(42, 42) + direction * 40
+        speed = getattr(weapon, "projectile_speed", 800) or 800
+        max_range = getattr(weapon, "range", 500)
+        damage = getattr(weapon, "damage", self.character.attack_damage)
+        self.projectiles.append(Arrow(spawn_pos, direction, speed, max_range, damage))
+
+    def _update_projectiles(self, dt):
+        if not self.projectiles:
+            return
+
+        for projectile in self.projectiles:
+            projectile.update(dt, self.obstacles, self.enemies)
+
+        self.projectiles = [projectile for projectile in self.projectiles if projectile.alive]
+
+    def _handle_player_attack(self):
+        weapon = self.equipped_weapon or self._get_equipped_weapon()
+        if weapon and getattr(weapon, "weapon_class", "melee") == "bow":
+            if not self.character.can_attack():
+                return
+            self.character.start_attack(show_slash=False)
+            self._spawn_arrow(weapon)
+            return
+
+        self.character.attack(self.enemies)
 
     def spawn_random_enemy(self):
         if not self.map.current_map or self.map.current_map.pixel_width == 0:
@@ -210,20 +280,14 @@ class Game(State):
             self.enemy_spawn_timer = 0
             self.spawn_random_enemy()
 
-        # Update player damage based on equipment
-        total_damage = self.character.base_attack_damage
-        for col in self.PLAYER_inventory_equipment.items:
-            for slot in col:
-                if slot:
-                    item, count = slot
-                    if hasattr(item, 'damage'):
-                        total_damage += item.damage
-        self.character.attack_damage = total_damage
+        self._sync_weapon_stats()
 
         self.character.update(dt, self.collision_handler, self.obstacles)
 
         for enemy in self.enemies:
             enemy.update(dt, self.collision_handler, self.obstacles)
+
+        self._update_projectiles(dt)
 
         self.collision_handler.check_interactions(
             self.character, self.enemies, self.items
@@ -258,6 +322,9 @@ class Game(State):
         for enemy in self.enemies:
             enemy.draw(screen)
 
+        for projectile in self.projectiles:
+            projectile.draw(screen)
+
         self.npc.draw(screen)
 
         if not self.npc.is_interactable:
@@ -286,7 +353,7 @@ class Game(State):
             
             # Combat input
             if event.key == pygame.K_SPACE:
-                self.character.attack(self.enemies)
+                self._handle_player_attack()
 
             if event.key == pygame.K_e and self.app.INV_manager.player_inventory_opened == False:
                 if self.npc.is_interactable:

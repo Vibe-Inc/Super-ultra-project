@@ -10,6 +10,20 @@ Weapon_database = {
         "durability": 50,
         "price": 50,
         "description": _("A worn-out sword with a dull blade. Thats about it.")
+    },
+    "wooden_bow": {
+        "id": "wooden_bow",
+        "type": "weapon",
+        "weapon_class": "bow",
+        "name": _("Wooden Bow"),
+        "image_path": "assets/items/weapons/swords/dull_sword.png",
+        "damage": 14,
+        "durability": 40,
+        "range": 520,
+        "projectile_speed": 900,
+        "cooldown": 650,
+        "price": 75,
+        "description": _("A simple bow made of wood. Lightweight but reliable.")
     }
 }
 
