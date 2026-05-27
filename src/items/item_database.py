@@ -8,6 +8,7 @@ Weapon_database = {
         "image_path": "assets/items/weapons/swords/dull_sword.png",
         "damage": 20,
         "durability": 50,
+        "cone_degrees": 120,
         "price": 50,
         "description": _("A worn-out sword with a dull blade. Thats about it.")
     },
@@ -22,6 +23,7 @@ Weapon_database = {
         "range": 520,
         "projectile_speed": 900,
         "cooldown": 650,
+        "spread_degrees": 4,
         "price": 75,
         "description": _("A simple bow made of wood. Lightweight but reliable.")
     }

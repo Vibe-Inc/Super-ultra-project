@@ -1,3 +1,4 @@
+import math
 import pygame
 from src.core.logger import logger
 
@@ -131,6 +132,9 @@ class Character:
         self.attack_cooldown = self.base_attack_cooldown
         self.last_attack_time = 0
         self.is_attacking = False
+        self.last_attack_dir = pygame.Vector2(1, 0)
+        self.melee_origin_offset = 6.0
+        self.melee_slash_distance = 50.0
 
     def add_effect(self, effect):
         for e in self.effects:
@@ -166,7 +170,28 @@ class Character:
         self.last_attack_time = current_time
         self.is_attacking = show_slash
 
-    def attack(self, enemies):
+    def get_forward_direction(self):
+        if self.direction == "up":
+            return pygame.Vector2(0, -1)
+        if self.direction == "down":
+            return pygame.Vector2(0, 1)
+        if self.direction == "side":
+            return pygame.Vector2(-1, 0) if self.flip else pygame.Vector2(1, 0)
+        return pygame.Vector2(1, 0)
+
+    def get_center(self):
+        return pygame.Vector2(
+            self.pos.x + self.image.get_width() / 2,
+            self.pos.y + self.image.get_height() / 2,
+        )
+
+    def get_melee_anchor(self):
+        return pygame.Vector2(
+            self.pos.x + self.image.get_width() / 2,
+            self.pos.y + self.image.get_height() * 0.55,
+        )
+
+    def attack(self, enemies, aim_direction=None, cone_degrees=90.0):
         current_time = pygame.time.get_ticks()
         if not self.can_attack(current_time):
             return
@@ -174,35 +199,49 @@ class Character:
         self.start_attack(current_time, show_slash=True)
         logger.info("Player attacks!")
 
-        # Simple hitbox logic based on direction
-        attack_rect = self.get_rect().copy()
-        if self.direction == "up":
-            attack_rect.y -= self.attack_range
-            attack_rect.height = self.attack_range
-        elif self.direction == "down":
-            attack_rect.y += self.rect.height
-            attack_rect.height = self.attack_range
-        elif self.direction == "side":
-            if self.flip: # Left
-                attack_rect.x -= self.attack_range
-                attack_rect.width = self.attack_range
-            else: # Right
-                attack_rect.x += self.rect.width
-                attack_rect.width = self.attack_range
+        forward = self.get_forward_direction()
+        if forward.length_squared() == 0:
+            forward = pygame.Vector2(1, 0)
 
-        # Check for hits
+        if aim_direction is None:
+            aim_dir = pygame.Vector2(forward)
+        else:
+            aim_dir = pygame.Vector2(aim_direction)
+            if aim_dir.length_squared() == 0:
+                aim_dir = pygame.Vector2(forward)
+
+        aim_dir = aim_dir.normalize()
+        self.last_attack_dir = pygame.Vector2(aim_dir)
+
+        cone_half_angle = max(0.0, float(cone_degrees) * 0.5)
+        cos_half_angle = math.cos(math.radians(cone_half_angle))
+        range_sq = float(self.attack_range) * float(self.attack_range)
+        origin = self.get_melee_anchor() + aim_dir * self.melee_origin_offset
+
         for enemy in enemies:
-            if attack_rect.colliderect(enemy.get_rect()):
-                logger.info(f"Hit enemy for {self.attack_damage} damage!")
-                enemy.take_damage(self.attack_damage)
-                # Knockback
-                knockback_force = 20
-                direction = pygame.Vector2(0, 0)
-                if self.direction == "up": direction.y = -1
-                elif self.direction == "down": direction.y = 1
-                elif self.direction == "side": direction.x = -1 if self.flip else 1
-                
-                enemy.pos += direction * knockback_force
+            enemy_rect = enemy.get_rect()
+            enemy_center = pygame.Vector2(enemy_rect.centerx, enemy_rect.centery)
+            to_enemy = enemy_center - origin
+            dist_sq = to_enemy.length_squared()
+            if dist_sq > range_sq:
+                continue
+
+            if dist_sq == 0:
+                hit = True
+                knock_dir = pygame.Vector2(aim_dir)
+            else:
+                to_enemy_dir = to_enemy.normalize()
+                hit = aim_dir.dot(to_enemy_dir) >= cos_half_angle
+                knock_dir = to_enemy_dir
+
+            if not hit:
+                continue
+
+            logger.info(f"Hit enemy for {self.attack_damage} damage!")
+            enemy.take_damage(self.attack_damage)
+
+            knockback_force = 20
+            enemy.pos += knock_dir * knockback_force
 
     def get_rect(self):
         """Returns the collision rectangle (hitbox), updated to the current float position."""
@@ -361,33 +400,33 @@ class Character:
         
         # Draw attack visual
         if self.is_attacking:
-            attack_rect = self.get_rect().copy()
-            
-            # Create a surface for the slash
-            slash_surface = pygame.Surface((100, 100), pygame.SRCALPHA)
-            
-            # Draw a nice arc/slash
+            attack_dir = pygame.Vector2(self.last_attack_dir)
+            if attack_dir.length_squared() == 0:
+                attack_dir = self.get_forward_direction()
+            if attack_dir.length_squared() == 0:
+                attack_dir = pygame.Vector2(1, 0)
+            else:
+                attack_dir = attack_dir.normalize()
+
+            slash_size = 120
+            slash_surface = pygame.Surface((slash_size, slash_size), pygame.SRCALPHA)
+
             color = (255, 255, 255, 200)
             width = 5
-            
-            if self.direction == "up":
-                # Arc above
-                rect = pygame.Rect(10, 50, 80, 80)
-                pygame.draw.arc(slash_surface, color, rect, 0.1, 3.0, width)
-                screen.blit(slash_surface, (self.pos.x - 10, self.pos.y - 60))
-                
-            elif self.direction == "down":
-                # Arc below
-                rect = pygame.Rect(10, -30, 80, 80)
-                pygame.draw.arc(slash_surface, color, rect, 3.2, 6.2, width)
-                screen.blit(slash_surface, (self.pos.x - 10, self.pos.y + 60))
-                
-            elif self.direction == "side":
-                if self.flip: # Left
-                    rect = pygame.Rect(30, 10, 80, 80)
-                    pygame.draw.arc(slash_surface, color, rect, 1.6, 4.6, width)
-                    screen.blit(slash_surface, (self.pos.x - 60, self.pos.y))
-                else: # Right
-                    rect = pygame.Rect(-10, 10, 80, 80)
-                    pygame.draw.arc(slash_surface, color, rect, 4.8, 1.4 + 6.28, width) # Wrap around angle
-                    screen.blit(slash_surface, (self.pos.x + 40, self.pos.y))
+            rect = pygame.Rect(10, 10, slash_size - 20, slash_size - 20)
+            pygame.draw.arc(
+                slash_surface,
+                color,
+                rect,
+                math.radians(300),
+                math.radians(420),
+                width,
+            )
+
+            angle_deg = -math.degrees(math.atan2(attack_dir.y, attack_dir.x))
+            rotated = pygame.transform.rotate(slash_surface, angle_deg)
+
+            base_anchor = self.get_melee_anchor() + attack_dir * self.melee_origin_offset
+            center = base_anchor + attack_dir * self.melee_slash_distance
+            rotated_rect = rotated.get_rect(center=(int(center.x), int(center.y)))
+            screen.blit(rotated, rotated_rect.topleft)

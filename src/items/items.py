@@ -106,6 +106,8 @@ class Weapon(Item):
         self.weapon_class = data.get("weapon_class", "melee")
         self.cooldown = data.get("cooldown", 500)
         self.projectile_speed = data.get("projectile_speed", 0)
+        self.cone_degrees = data.get("cone_degrees", 90.0)
+        self.spread_degrees = data.get("spread_degrees", 4.0)
 
     def get_tooltip_text(self):
         weapon_label = f"{_('Weapon')} ({self.weapon_class.capitalize()})"
