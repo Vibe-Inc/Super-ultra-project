@@ -188,7 +188,10 @@ class Game(State):
 
     def _handle_player_attack(self):
         weapon = self.equipped_weapon or self._get_equipped_weapon()
-        if weapon and getattr(weapon, "weapon_class", "melee") == "bow":
+        if not weapon:
+            return
+
+        if getattr(weapon, "weapon_class", "melee") == "bow":
             if not self.character.can_attack():
                 return
             self.character.start_attack(show_slash=False)
