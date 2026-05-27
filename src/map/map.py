@@ -33,7 +33,7 @@ class Map:
         self.pixel_width = 0
         self.pixel_height = 0
 
-    def draw(self, screen):
+    def ensure_loaded(self) -> bool:
         if self.game_map is None:
             try:
                 logger.info(f"Loading map: {self.map_file}")
@@ -43,7 +43,18 @@ class Map:
                 logger.info(f"Map loaded successfully: {self.map_file} ({self.pixel_width}x{self.pixel_height})")
             except Exception as e:
                 logger.error(f"Failed to load map {self.map_file}: {e}")
-                return
+                self.game_map = None
+                return False
+        return True
+
+    def get_tmx_data(self):
+        if self.ensure_loaded():
+            return self.game_map
+        return None
+
+    def draw(self, screen):
+        if not self.ensure_loaded():
+            return
 
         for layer in self.game_map.visible_layers:
             if isinstance(layer, pytmx.TiledTileLayer):
@@ -54,14 +65,8 @@ class Map:
                                            y * self.game_map.tileheight))
 
     def get_obstacles(self):
-        if self.game_map is None:
-             try:
-                self.game_map = pytmx.load_pygame(self.map_file)
-                self.pixel_width = self.game_map.width * self.game_map.tilewidth
-                self.pixel_height = self.game_map.height * self.game_map.tileheight
-             except Exception as e:
-                logger.error(f"Failed to load map {self.map_file} for obstacles: {e}")
-                return []
+        if not self.ensure_loaded():
+            return []
 
         obstacles = []
         if self.game_map:
@@ -130,8 +135,8 @@ class LocalMap:
         Updates map logic and handles transitions based on player position.
         Returns: string (path to new map) if switch happened, else None.
         """
-        if self.current_map.game_map is None:
-            self.current_map.game_map = pytmx.load_pygame(self.current_map.map_file)
+        if not self.current_map.ensure_loaded():
+            return None
 
         tmx_data = self.current_map.game_map
         map_width = tmx_data.width * tmx_data.tilewidth

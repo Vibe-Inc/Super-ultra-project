@@ -14,6 +14,7 @@ from src.entities.npc import NPC
 from src.entities.projectile import Arrow
 from src.ui.hud import HUD
 from src.core.collision_system import CollisionSystem
+from src.ai.navigation import NavGrid
 
 if TYPE_CHECKING:
     from src.app import App
@@ -59,6 +60,8 @@ class Game(State):
         self.collision_handler = CollisionSystem()
         
         self.obstacles = self.map.get_obstacles()
+        self.nav_grid = None
+        self._rebuild_nav_grid()
 
         self.player_inventory_opened = app.INV_manager.player_inventory_opened
 
@@ -67,35 +70,73 @@ class Game(State):
         self.projectiles = []
         self.equipped_weapon = None
 
+        self.enemy_profiles = {
+            "stalker": {
+                "sprite_set": "MenHuman1(Recolor)",
+                "speed": 120.0,
+                "hp": 110,
+                "damage": 15,
+                "animation_speed": 6.0,
+                "detection_range": 260.0,
+                "attack_range": 40.0,
+                "ai_config": {
+                    "memory_duration": 3.0,
+                    "repath_interval": 0.5,
+                },
+            },
+            "skirmisher": {
+                "sprite_set": "WomanHuman1(Recolor)",
+                "speed": 140.0,
+                "hp": 85,
+                "damage": 10,
+                "animation_speed": 7.0,
+                "detection_range": 300.0,
+                "attack_range": 35.0,
+                "ai_config": {
+                    "preferred_min": 80.0,
+                    "preferred_max": 170.0,
+                    "orbit_radius": 130.0,
+                },
+            },
+            "guardian": {
+                "sprite_set": "MenHuman1",
+                "speed": 100.0,
+                "hp": 140,
+                "damage": 18,
+                "animation_speed": 5.0,
+                "detection_range": 220.0,
+                "attack_range": 45.0,
+                "patrol_radius": 120.0,
+                "ai_config": {
+                    "guard_radius": 320.0,
+                    "leash_slack": 90.0,
+                    "patrol_wait": 0.8,
+                },
+            },
+        }
+        self.enemy_profile_names = list(self.enemy_profiles.keys())
+
         self.ENEMY_SPAWNS = {
             # "maps/test-map-1.tmx": (400, 300), # Якщо закоментувати цей рядок, ворога на старті не буде
-            "maps/test-map-2.tmx": (600, 450), 
-            "maps/test-map-3.tmx": (300, 200)
+            "maps/test-map-2.tmx": {"pos": (600, 450), "profile": "guardian"},
+            "maps/test-map-3.tmx": {"pos": (300, 200), "profile": "skirmisher"},
         }
 
         self.NPC_SPAWNS = {
             "maps/test-map-1.tmx": (400, 400)
         }
 
-        if initial_map_path in self.ENEMY_SPAWNS:
-            start_x, start_y = self.ENEMY_SPAWNS[initial_map_path]
+        spawn_info = self._get_spawn_info(initial_map_path)
+        if spawn_info:
+            start_x, start_y = spawn_info["pos"]
+            default_profile = spawn_info.get("profile")
         else:
             start_x, start_y = -5000, -5000
+            default_profile = None
 
         self.hud = HUD(self.character, app, self.toggle_player_inventory)
 
-        self.enemy = Enemy(
-            x=start_x, y=start_y,
-            sprite_set="MenHuman1(Recolor)",
-            speed=120.0,
-            hp=100,
-            damage=15,
-            animation_size=(85, 85),
-            animation_speed=6.0,
-            detection_range=250.0,
-            attack_range=40.0
-        )
-        self.enemy.target_entity = self.character
+        self.enemy = self._create_enemy(start_x, start_y, profile=default_profile)
         
         self.enemies = [self.enemy]
         self.items = []
@@ -186,6 +227,58 @@ class Game(State):
 
         self.projectiles = [projectile for projectile in self.projectiles if projectile.alive]
 
+    def _rebuild_nav_grid(self):
+        tmx_data = self.map.current_map.get_tmx_data()
+        if not tmx_data:
+            self.nav_grid = None
+            return
+        self.nav_grid = NavGrid.from_tmx(tmx_data, self.obstacles)
+
+    def _get_spawn_info(self, map_path: str) -> dict | None:
+        spawn = self.ENEMY_SPAWNS.get(map_path)
+        if not spawn:
+            return None
+        if isinstance(spawn, dict):
+            return spawn
+        return {"pos": spawn, "profile": "stalker"}
+
+    def _make_patrol_points(self, center: pygame.Vector2, radius: float) -> list[tuple[float, float]]:
+        return [
+            (center.x - radius, center.y - radius),
+            (center.x + radius, center.y - radius),
+            (center.x + radius, center.y + radius),
+            (center.x - radius, center.y + radius),
+        ]
+
+    def _create_enemy(self, x: float, y: float, profile: str | None = None) -> Enemy:
+        profile_name = profile or random.choice(self.enemy_profile_names)
+        if profile_name not in self.enemy_profiles:
+            profile_name = "stalker"
+
+        settings = self.enemy_profiles[profile_name]
+        patrol_points = settings.get("patrol_points")
+        if patrol_points is None and profile_name == "guardian":
+            radius = float(settings.get("patrol_radius", 120.0))
+            patrol_points = self._make_patrol_points(pygame.Vector2(x, y), radius)
+
+        enemy = Enemy(
+            x=x,
+            y=y,
+            sprite_set=settings["sprite_set"],
+            speed=settings["speed"],
+            hp=settings["hp"],
+            damage=settings["damage"],
+            animation_size=(85, 85),
+            animation_speed=settings.get("animation_speed", 6.0),
+            detection_range=settings.get("detection_range", 250.0),
+            attack_range=settings.get("attack_range", 40.0),
+            patrol_points=patrol_points,
+            ai_profile=profile_name,
+            ai_config=settings.get("ai_config"),
+        )
+        enemy.target_entity = self.character
+        return enemy
+
     def _handle_player_attack(self):
         weapon = self.equipped_weapon or self._get_equipped_weapon()
         if not weapon:
@@ -225,21 +318,13 @@ class Game(State):
                 if rect.colliderect(wall):
                     collides = True
                     break
+
+            if self.nav_grid and not self.nav_grid.is_walkable(self.nav_grid.world_to_cell(pos)):
+                collides = True
             
             if not collides:
                 # Spawn enemy
-                new_enemy = Enemy(
-                    x=x, y=y,
-                    sprite_set="MenHuman1(Recolor)",
-                    speed=120.0,
-                    hp=100,
-                    damage=15,
-                    animation_size=(85, 85),
-                    animation_speed=6.0,
-                    detection_range=250.0,
-                    attack_range=40.0
-                )
-                new_enemy.target_entity = self.character
+                new_enemy = self._create_enemy(x, y)
                 self.enemies.append(new_enemy)
                 logger.info(f"Spawned new enemy at ({x}, {y})")
                 break
@@ -251,24 +336,16 @@ class Game(State):
             self.current_map_path = switched_map_path
             logger.info(f"Map switched to {switched_map_path}. Respawning enemy...")
             self.obstacles = self.map.get_obstacles()
+            self._rebuild_nav_grid()
             
             # Reset enemies list and spawn default one if needed
             self.enemies = []
             
-            if switched_map_path in self.ENEMY_SPAWNS:
-                new_x, new_y = self.ENEMY_SPAWNS[switched_map_path]
-                default_enemy = Enemy(
-                    x=new_x, y=new_y,
-                    sprite_set="MenHuman1(Recolor)",
-                    speed=120.0,
-                    hp=100,
-                    damage=15,
-                    animation_size=(85, 85),
-                    animation_speed=6.0,
-                    detection_range=250.0,
-                    attack_range=40.0
-                )
-                default_enemy.target_entity = self.character
+            spawn_info = self._get_spawn_info(switched_map_path)
+            if spawn_info:
+                new_x, new_y = spawn_info["pos"]
+                profile = spawn_info.get("profile")
+                default_enemy = self._create_enemy(new_x, new_y, profile=profile)
                 self.enemies.append(default_enemy)
 
             if switched_map_path in self.NPC_SPAWNS:
@@ -288,7 +365,7 @@ class Game(State):
         self.character.update(dt, self.collision_handler, self.obstacles)
 
         for enemy in self.enemies:
-            enemy.update(dt, self.collision_handler, self.obstacles)
+            enemy.update(dt, self.collision_handler, self.obstacles, self.nav_grid)
 
         self._update_projectiles(dt)
 
