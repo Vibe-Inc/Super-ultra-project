@@ -16,7 +16,7 @@ Weapon_database = {
         "type": "weapon",
         "weapon_class": "bow",
         "name": _("Wooden Bow"),
-        "image_path": "assets/items/weapons/swords/dull_sword.png",
+        "image_path": "assets/items/weapons/bows/wooden_bow.png",
         "damage": 14,
         "durability": 40,
         "range": 520,
