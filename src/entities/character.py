@@ -79,7 +79,9 @@ class Character:
         self.image = self.animations[self.direction][0]
         self.pos = pygame.Vector2(960, 540)
         self.spawn_point = self.pos.copy()
-        self.speed = 200
+        self.base_speed = 200
+        self.speed_multiplier = 1.0
+        self.speed = self.base_speed
         self.sprint_multiplier = 1.8 
         
         # New attributes for collision
@@ -227,7 +229,9 @@ class Character:
         if wants_to_sprint and self.stamina > 0 and self.can_sprint:
             self.is_sprinting = True
 
-        current_speed = self.speed * self.sprint_multiplier if self.is_sprinting else self.speed
+        current_speed = self.base_speed * self.speed_multiplier
+        if self.is_sprinting:
+            current_speed *= self.sprint_multiplier
         self.speed = current_speed 
 
         # Movement logic with confusion support
@@ -306,7 +310,7 @@ class Character:
         
         # Reset speed to base speed for next frame logic (if needed elsewhere)
         # Though _set_velocity will overwrite it again next frame.
-        self.speed = 200 
+        self.speed = self.base_speed 
 
         if self.moving:
             self.time_accumulator += dt

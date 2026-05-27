@@ -15,6 +15,8 @@ from src.entities.projectile import Arrow
 from src.ui.hud import HUD
 from src.core.collision_system import CollisionSystem
 from src.ai.navigation import NavGrid
+from src.entities.monster_visuals import build_monster_animations
+from src.entities.monster_attacks import build_attack_controller, AttackContext
 
 if TYPE_CHECKING:
     from src.app import App
@@ -71,6 +73,28 @@ class Game(State):
         self.equipped_weapon = None
 
         self.enemy_profiles = {
+            "brute": {
+                "visual_style": "brute",
+                "sprite_set": "MenHuman1",
+                "speed": 110.0,
+                "hp": 160,
+                "damage": 20,
+                "animation_speed": 5.0,
+                "detection_range": 240.0,
+                "attack_range": 45.0,
+                "ai_profile": "guardian",
+                "attack_profile": "brute",
+                "attack_config": {
+                    "cooldown_ms": 1100,
+                    "charge_cooldown_ms": 2400,
+                    "charge_duration": 0.7,
+                    "charge_speed_mult": 2.4,
+                    "slam_damage_mult": 1.5,
+                    "slow_duration": 1.5,
+                    "slow_factor": 0.6,
+                },
+                "contact_damage": False,
+            },
             "stalker": {
                 "sprite_set": "MenHuman1(Recolor)",
                 "speed": 120.0,
@@ -256,6 +280,17 @@ class Game(State):
             profile_name = "stalker"
 
         settings = self.enemy_profiles[profile_name]
+        ai_profile = settings.get("ai_profile", profile_name)
+        attack_profile = settings.get("attack_profile")
+        attack_controller = None
+        if attack_profile:
+            attack_controller = build_attack_controller(attack_profile, settings.get("attack_config"))
+        contact_damage = settings.get("contact_damage", True)
+        visual_style = settings.get("visual_style")
+        animations = None
+        if visual_style:
+            animations = build_monster_animations(visual_style, (85, 85))
+        sprite_set = settings.get("sprite_set", "MenHuman1(Recolor)")
         patrol_points = settings.get("patrol_points")
         if patrol_points is None and profile_name == "guardian":
             radius = float(settings.get("patrol_radius", 120.0))
@@ -264,7 +299,7 @@ class Game(State):
         enemy = Enemy(
             x=x,
             y=y,
-            sprite_set=settings["sprite_set"],
+            sprite_set=sprite_set,
             speed=settings["speed"],
             hp=settings["hp"],
             damage=settings["damage"],
@@ -273,8 +308,11 @@ class Game(State):
             detection_range=settings.get("detection_range", 250.0),
             attack_range=settings.get("attack_range", 40.0),
             patrol_points=patrol_points,
-            ai_profile=profile_name,
+            ai_profile=ai_profile,
             ai_config=settings.get("ai_config"),
+            animations=animations,
+            attack_controller=attack_controller,
+            contact_damage=contact_damage,
         )
         enemy.target_entity = self.character
         return enemy
@@ -364,8 +402,15 @@ class Game(State):
 
         self.character.update(dt, self.collision_handler, self.obstacles)
 
+        now_ms = pygame.time.get_ticks()
+        attack_context = AttackContext(
+            dt=dt,
+            player=self.character,
+            obstacles=self.obstacles,
+            now_ms=now_ms,
+        )
         for enemy in self.enemies:
-            enemy.update(dt, self.collision_handler, self.obstacles, self.nav_grid)
+            enemy.update(dt, self.collision_handler, self.obstacles, self.nav_grid, attack_context)
 
         self._update_projectiles(dt)
 

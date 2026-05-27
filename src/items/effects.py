@@ -183,11 +183,33 @@ class DizzinessEffect(Effect):
         """
         target.dizzy = False
 
+class SlowEffect(Effect):
+    """
+    Reduces movement speed for a duration.
+
+    Attributes:
+        speed_multiplier (float): Multiplier applied to target speed.
+        started (bool): Whether the effect has been initialized on the target.
+    """
+    def __init__(self, duration, speed_multiplier):
+        super().__init__(duration)
+        self.speed_multiplier = speed_multiplier
+        self.started = False
+
+    def apply(self, dt, target):
+        if not self.started:
+            target.speed_multiplier = min(getattr(target, "speed_multiplier", 1.0), self.speed_multiplier)
+            self.started = True
+
+    def on_end(self, target):
+        target.speed_multiplier = 1.0
+
 Effect_list = {
     "regeneration": RegenerationEffect,
     "poison": PoisonEffect,
     "confusion": ConfusionEffect,
-    "dizziness": DizzinessEffect
+    "dizziness": DizzinessEffect,
+    "slow": SlowEffect,
 }
 
 def create_effect(effect_data: dict):
