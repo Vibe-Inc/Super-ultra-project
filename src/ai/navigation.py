@@ -30,6 +30,8 @@ class NavGrid:
         self.world_width = cols * tile_width
         self.world_height = rows * tile_height
         self.world_rect = pygame.Rect(0, 0, self.world_width, self.world_height)
+        # constant for diagonal movement cost
+        self.SQRT2 = 1.4142135623730951
 
     @classmethod
     def from_tmx(cls, tmx_data, obstacles: list[pygame.Rect]) -> "NavGrid":
@@ -138,7 +140,6 @@ class NavGrid:
         x, y = cell
         directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
         diag = [(-1, -1), (1, -1), (-1, 1), (1, 1)]
-        sqrt2 = 1.41421356237
 
         for dx, dy in directions:
             neighbor = (x + dx, y + dy)
@@ -152,13 +153,15 @@ class NavGrid:
             neighbor = (x + dx, y + dy)
             if not self.is_walkable(neighbor):
                 continue
+            # prevent corner cutting
             if not (self.is_walkable((x + dx, y)) and self.is_walkable((x, y + dy))):
                 continue
-            yield neighbor, sqrt2
+            yield neighbor, self.SQRT2
 
     @staticmethod
     def _heuristic(a: tuple[int, int], b: tuple[int, int]) -> float:
         dx = abs(a[0] - b[0])
         dy = abs(a[1] - b[1])
-        sqrt2 = 1.41421356237
+        # octile distance
+        sqrt2 = 1.4142135623730951
         return (dx + dy) + (sqrt2 - 2.0) * min(dx, dy)
