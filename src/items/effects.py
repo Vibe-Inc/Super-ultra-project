@@ -117,6 +117,26 @@ class PoisonEffect(Effect):
             target.take_damage(dmg, ignore_invulnerability=True)
             self.accumulator -= dmg
 
+class BurnEffect(Effect):
+    """
+    Deals fire damage over time.
+
+    Attributes:
+        damage_per_sec (float): Amount of damage to deal per second.
+        accumulator (float): Accumulates fractional damage.
+    """
+    def __init__(self, duration, damage_per_sec):
+        super().__init__(duration)
+        self.damage_per_sec = damage_per_sec
+        self.accumulator = 0.0
+
+    def apply(self, dt, target):
+        self.accumulator += self.damage_per_sec * dt
+        if self.accumulator >= 1:
+            dmg = int(self.accumulator)
+            target.take_damage(dmg, ignore_invulnerability=True)
+            self.accumulator -= dmg
+
 class ConfusionEffect(Effect):
     """
     Inverts player controls for a duration.
@@ -207,6 +227,7 @@ class SlowEffect(Effect):
 Effect_list = {
     "regeneration": RegenerationEffect,
     "poison": PoisonEffect,
+    "burn": BurnEffect,
     "confusion": ConfusionEffect,
     "dizziness": DizzinessEffect,
     "slow": SlowEffect,

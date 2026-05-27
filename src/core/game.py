@@ -70,6 +70,7 @@ class Game(State):
         self.MAIN_player_inv = MAIN_player_inventory(app)
         self.PLAYER_inventory_equipment = MAIN_player_inventory_equipment(app)
         self.projectiles = []
+        self.enemy_projectiles = []
         self.equipped_weapon = None
 
         self.enemy_profiles = {
@@ -92,6 +93,48 @@ class Game(State):
                     "slam_damage_mult": 1.5,
                     "slow_duration": 1.5,
                     "slow_factor": 0.6,
+                },
+                "contact_damage": False,
+            },
+            "venomous": {
+                "visual_style": "venomous",
+                "sprite_set": "MenHuman1(Recolor)",
+                "speed": 130.0,
+                "hp": 95,
+                "damage": 12,
+                "animation_speed": 6.5,
+                "detection_range": 260.0,
+                "attack_range": 38.0,
+                "ai_profile": "stalker",
+                "attack_profile": "venomous",
+                "attack_config": {
+                    "cooldown_ms": 900,
+                    "poison_duration": 4.0,
+                    "poison_dps": 5.0,
+                    "strike_damage_mult": 0.85,
+                },
+                "contact_damage": False,
+            },
+            "arcanist": {
+                "visual_style": "arcanist",
+                "sprite_set": "WomanHuman1",
+                "speed": 115.0,
+                "hp": 80,
+                "damage": 14,
+                "animation_speed": 6.2,
+                "detection_range": 300.0,
+                "attack_range": 40.0,
+                "ai_profile": "stalker",
+                "attack_profile": "arcanist",
+                "attack_config": {
+                    "cooldown_ms": 950,
+                    "bolt_speed": 480.0,
+                    "bolt_range": 560.0,
+                    "bolt_damage_mult": 0.85,
+                    "burn_duration": 3.2,
+                    "burn_dps": 4.5,
+                    "cast_range": 340.0,
+                    "spread_degrees": 5.0,
                 },
                 "contact_damage": False,
             },
@@ -142,7 +185,7 @@ class Game(State):
 
         self.ENEMY_SPAWNS = {
             # "maps/test-map-1.tmx": (400, 300), # Якщо закоментувати цей рядок, ворога на старті не буде
-            "maps/test-map-2.tmx": {"pos": (600, 450), "profile": "guardian"},
+            "maps/test-map-2.tmx": {"pos": (600, 450), "profile": "stalker"},
             "maps/test-map-3.tmx": {"pos": (300, 200), "profile": "skirmisher"},
         }
 
@@ -250,6 +293,15 @@ class Game(State):
             projectile.update(dt, self.obstacles, self.enemies)
 
         self.projectiles = [projectile for projectile in self.projectiles if projectile.alive]
+
+    def _update_enemy_projectiles(self, dt):
+        if not self.enemy_projectiles:
+            return
+
+        for projectile in self.enemy_projectiles:
+            projectile.update(dt, self.obstacles, self.character)
+
+        self.enemy_projectiles = [projectile for projectile in self.enemy_projectiles if projectile.alive]
 
     def _rebuild_nav_grid(self):
         tmx_data = self.map.current_map.get_tmx_data()
@@ -407,12 +459,14 @@ class Game(State):
             dt=dt,
             player=self.character,
             obstacles=self.obstacles,
+            projectiles=self.enemy_projectiles,
             now_ms=now_ms,
         )
         for enemy in self.enemies:
             enemy.update(dt, self.collision_handler, self.obstacles, self.nav_grid, attack_context)
 
         self._update_projectiles(dt)
+        self._update_enemy_projectiles(dt)
 
         self.collision_handler.check_interactions(
             self.character, self.enemies, self.items
@@ -448,6 +502,9 @@ class Game(State):
             enemy.draw(screen)
 
         for projectile in self.projectiles:
+            projectile.draw(screen)
+
+        for projectile in self.enemy_projectiles:
             projectile.draw(screen)
 
         self.npc.draw(screen)

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import random
 import pygame
 
-from src.items.effects import SlowEffect
+from src.entities.projectile import ArcaneBolt
+from src.items.effects import PoisonEffect, SlowEffect
 
 
 @dataclass
@@ -11,6 +13,7 @@ class AttackContext:
     dt: float
     player: object | None
     obstacles: list[pygame.Rect]
+    projectiles: list
     now_ms: int
 
 
@@ -19,6 +22,13 @@ def _entity_center(entity: object) -> pygame.Vector2:
         rect = entity.get_rect()
         return pygame.Vector2(rect.centerx, rect.centery)
     return pygame.Vector2(getattr(entity, "pos", (0, 0)))
+
+
+def _has_line_of_sight(start: pygame.Vector2, end: pygame.Vector2, obstacles: list[pygame.Rect]) -> bool:
+    for wall in obstacles:
+        if wall.clipline(start, end):
+            return False
+    return True
 
 
 class BaseAttack:
@@ -104,8 +114,93 @@ class BruteAttack(BaseAttack):
         self.last_attack_time = now_ms
 
 
+class VenomousAttack(BaseAttack):
+    def __init__(self, config: dict | None = None):
+        super().__init__(config)
+        self.poison_duration = float(self.config.get("poison_duration", 3.5))
+        self.poison_dps = float(self.config.get("poison_dps", 4.0))
+        self.strike_damage_mult = float(self.config.get("strike_damage_mult", 0.9))
+        self.strike_range = float(self.config.get("strike_range", 0.0))
+
+    def update(self, enemy: object, context: AttackContext):
+        player = context.player
+        if player is None:
+            return
+
+        enemy_pos = _entity_center(enemy)
+        player_pos = _entity_center(player)
+        distance = enemy_pos.distance_to(player_pos)
+
+        effective_range = self.strike_range or float(enemy.attack_range)
+        if distance > effective_range:
+            return
+
+        if not self.ready(context.now_ms):
+            return
+
+        damage = int(enemy.damage * self.strike_damage_mult)
+        if damage > 0:
+            player.take_damage(damage)
+        player.add_effect(PoisonEffect(self.poison_duration, self.poison_dps))
+        self.last_attack_time = context.now_ms
+
+
+class ArcanistAttack(BaseAttack):
+    def __init__(self, config: dict | None = None):
+        super().__init__(config)
+        self.bolt_speed = float(self.config.get("bolt_speed", 420.0))
+        self.bolt_range = float(self.config.get("bolt_range", 520.0))
+        self.bolt_damage_mult = float(self.config.get("bolt_damage_mult", 0.8))
+        self.burn_duration = float(self.config.get("burn_duration", 3.0))
+        self.burn_dps = float(self.config.get("burn_dps", 4.0))
+        self.cast_range = float(self.config.get("cast_range", 320.0))
+        self.spread_degrees = float(self.config.get("spread_degrees", 6.0))
+
+    def update(self, enemy: object, context: AttackContext):
+        player = context.player
+        if player is None:
+            return
+
+        enemy_pos = _entity_center(enemy)
+        player_pos = _entity_center(player)
+        distance = enemy_pos.distance_to(player_pos)
+
+        if distance > self.cast_range:
+            return
+        if not self.ready(context.now_ms):
+            return
+        if not _has_line_of_sight(enemy_pos, player_pos, context.obstacles):
+            return
+
+        direction = player_pos - enemy_pos
+        if direction.length_squared() == 0:
+            direction = pygame.Vector2(1, 0)
+        else:
+            direction = direction.normalize()
+
+        if self.spread_degrees:
+            direction = direction.rotate(random.uniform(-self.spread_degrees, self.spread_degrees))
+
+        damage = max(1, int(enemy.damage * self.bolt_damage_mult))
+        bolt = ArcaneBolt(
+            enemy_pos,
+            direction,
+            self.bolt_speed,
+            self.bolt_range,
+            damage,
+            self.burn_duration,
+            self.burn_dps,
+        )
+        context.projectiles.append(bolt)
+        self.last_attack_time = context.now_ms
+
+
 def build_attack_controller(profile: str | None, config: dict | None = None) -> BaseAttack | None:
     name = (profile or "").lower()
     if name == "brute":
         return BruteAttack(config)
+    if name == "venomous":
+        return VenomousAttack(config)
+    if name == "arcanist":
+        return ArcanistAttack(config)
     return None
