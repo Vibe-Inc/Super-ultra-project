@@ -71,9 +71,12 @@ class Character:
     def __init__(self):
         self.sprite_set = "WomanHuman1(Recolor)"
         self.animations = {
-            "down":  [pygame.transform.scale(pygame.image.load(f"assets/characters/{self.sprite_set}/FrontWalk/FrontWalk{i}.png"), (85, 85)) for i in range(1, 5)],
-            "up":    [pygame.transform.scale(pygame.image.load(f"assets/characters/{self.sprite_set}/BackWalk/BackWalk{i}.png"), (85, 85)) for i in range(1, 5)],
-            "side":  [pygame.transform.scale(pygame.image.load(f"assets/characters/{self.sprite_set}/SideWalk/SideWalk{i}.png"), (85, 85)) for i in range(1, 5)],
+            "down":  [pygame.transform.scale(pygame.image.load(f"assets/characters/{self.sprite_set}/FrontWalk/FrontWalk{i}.png").convert_alpha(), (85, 85)) for i in range(1, 5)],
+            "up":    [pygame.transform.scale(pygame.image.load(f"assets/characters/{self.sprite_set}/BackWalk/BackWalk{i}.png").convert_alpha(), (85, 85)) for i in range(1, 5)],
+            "side":  [pygame.transform.scale(pygame.image.load(f"assets/characters/{self.sprite_set}/SideWalk/SideWalk{i}.png").convert_alpha(), (85, 85)) for i in range(1, 5)],
+        }
+        self.animations_flipped = {
+            "side": [pygame.transform.flip(frame, True, False) for frame in self.animations["side"]]
         }
 
         self.direction = "down"
@@ -393,10 +396,10 @@ class Character:
         else:
             # Draw relative to self.pos (top-left of sprite), NOT self.get_rect() (hitbox)
             draw_pos = (int(self.pos.x), int(self.pos.y))
-            if self.direction == "side":
-                screen.blit(pygame.transform.flip(self.image, self.flip, False), draw_pos)
-            else:
-                screen.blit(self.image, draw_pos)
+            img = self.image
+            if self.direction == "side" and self.flip:
+                img = self.animations_flipped["side"][self.frame_index]
+            screen.blit(img, draw_pos)
         
         # Draw attack visual
         if self.is_attacking:
