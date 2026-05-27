@@ -136,3 +136,116 @@ class ArcaneBolt:
         tail_offset = self.direction * -6
         tail_pos = (int(self.pos.x + tail_offset.x), int(self.pos.y + tail_offset.y))
         pygame.draw.circle(screen, (40, 90, 180), tail_pos, 3)
+
+
+class Bomb:
+    def __init__(
+        self,
+        pos,
+        direction,
+        speed,
+        max_range,
+        damage,
+        blast_radius,
+        fuse_time,
+        knockback_force=0.0,
+        explosion_duration=0.35,
+        color=(220, 150, 60),
+    ):
+        self.pos = pygame.Vector2(pos)
+        self.direction = pygame.Vector2(direction)
+        if self.direction.length_squared() == 0:
+            self.direction = pygame.Vector2(1, 0)
+        else:
+            self.direction = self.direction.normalize()
+
+        self.speed = speed
+        self.max_range = max_range
+        self.damage = damage
+        self.blast_radius = blast_radius
+        self.fuse_time = fuse_time
+        self.knockback_force = knockback_force
+        self.explosion_duration = explosion_duration
+        self.traveled = 0.0
+        self.timer = 0.0
+        self.color = color
+        self.alive = True
+        self.exploding = False
+        self.explosion_timer = 0.0
+        self.damage_applied = False
+
+    def _size(self):
+        return 12, 12
+
+    def get_rect(self):
+        width, height = self._size()
+        rect = pygame.Rect(0, 0, width, height)
+        rect.center = (int(self.pos.x), int(self.pos.y))
+        return rect
+
+    def _trigger_explosion(self):
+        if self.exploding:
+            return
+        self.exploding = True
+        self.explosion_timer = 0.0
+        self.damage_applied = False
+
+    def _player_center(self, player):
+        if player is None:
+            return None
+        if hasattr(player, "get_rect"):
+            rect = player.get_rect()
+            return pygame.Vector2(rect.centerx, rect.centery)
+        return pygame.Vector2(getattr(player, "pos", (0, 0)))
+
+    def update(self, dt, obstacles, player):
+        if not self.alive:
+            return
+
+        if self.exploding:
+            self.explosion_timer += dt
+            if not self.damage_applied:
+                player_center = self._player_center(player)
+                if player_center:
+                    distance = player_center.distance_to(self.pos)
+                    if distance <= self.blast_radius:
+                        if self.damage > 0:
+                            player.take_damage(self.damage)
+                        if self.knockback_force > 0:
+                            direction = player_center - self.pos
+                            if direction.length_squared() == 0:
+                                direction = pygame.Vector2(1, 0)
+                            player.pos += direction.normalize() * self.knockback_force
+                self.damage_applied = True
+            if self.explosion_timer >= self.explosion_duration:
+                self.alive = False
+            return
+
+        movement = self.direction * self.speed * dt
+        self.pos += movement
+        self.traveled += movement.length()
+        self.timer += dt
+
+        rect = self.get_rect()
+        for wall in obstacles:
+            if rect.colliderect(wall):
+                self._trigger_explosion()
+                return
+
+        if self.timer >= self.fuse_time or self.traveled >= self.max_range:
+            self._trigger_explosion()
+
+    def draw(self, screen):
+        if not self.exploding:
+            rect = self.get_rect()
+            pygame.draw.circle(screen, self.color, rect.center, rect.width // 2)
+            pygame.draw.circle(screen, (60, 40, 20), rect.center, 3)
+            return
+
+        progress = min(1.0, self.explosion_timer / self.explosion_duration)
+        radius = int(self.blast_radius * progress)
+        if radius <= 0:
+            return
+        surface = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+        pygame.draw.circle(surface, (255, 180, 90, 140), (radius, radius), radius)
+        screen.blit(surface, (self.pos.x - radius, self.pos.y - radius))

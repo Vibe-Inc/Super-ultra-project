@@ -5,7 +5,7 @@ import math
 import random
 import pygame
 
-from src.entities.projectile import ArcaneBolt
+from src.entities.projectile import ArcaneBolt, Bomb
 from src.items.effects import ConfusionEffect, DizzinessEffect, PoisonEffect, SlowEffect
 
 
@@ -271,6 +271,60 @@ class TricksterAttack(BaseAttack):
             self.last_attack_time = context.now_ms
 
 
+class BomberAttack(BaseAttack):
+    def __init__(self, config: dict | None = None):
+        super().__init__(config)
+        self.throw_range = float(self.config.get("throw_range", 320.0))
+        self.min_range = float(self.config.get("min_range", 80.0))
+        self.bomb_speed = float(self.config.get("bomb_speed", 260.0))
+        self.bomb_range = float(self.config.get("bomb_range", 420.0))
+        self.blast_radius = float(self.config.get("blast_radius", 95.0))
+        self.fuse_time = float(self.config.get("fuse_time", 0.9))
+        self.damage_mult = float(self.config.get("damage_mult", 1.1))
+        self.knockback_force = float(self.config.get("knockback_force", 80.0))
+        self.spread_degrees = float(self.config.get("spread_degrees", 12.0))
+
+    def update(self, enemy: object, context: AttackContext):
+        player = context.player
+        if player is None:
+            return
+
+        enemy_pos = _entity_center(enemy)
+        player_pos = _entity_center(player)
+        distance = enemy_pos.distance_to(player_pos)
+
+        if distance > self.throw_range:
+            return
+        if not self.ready(context.now_ms):
+            return
+
+        direction = player_pos - enemy_pos
+        if direction.length_squared() == 0:
+            direction = pygame.Vector2(1, 0)
+        else:
+            direction = direction.normalize()
+
+        if distance < self.min_range:
+            direction *= -1
+
+        if self.spread_degrees:
+            direction = direction.rotate(random.uniform(-self.spread_degrees, self.spread_degrees))
+
+        damage = max(1, int(enemy.damage * self.damage_mult))
+        bomb = Bomb(
+            enemy_pos + direction * 20,
+            direction,
+            self.bomb_speed,
+            self.bomb_range,
+            damage,
+            self.blast_radius,
+            self.fuse_time,
+            self.knockback_force,
+        )
+        context.projectiles.append(bomb)
+        self.last_attack_time = context.now_ms
+
+
 def build_attack_controller(profile: str | None, config: dict | None = None) -> BaseAttack | None:
     name = (profile or "").lower()
     if name == "brute":
@@ -281,4 +335,6 @@ def build_attack_controller(profile: str | None, config: dict | None = None) -> 
         return ArcanistAttack(config)
     if name == "trickster":
         return TricksterAttack(config)
+    if name == "bomber":
+        return BomberAttack(config)
     return None

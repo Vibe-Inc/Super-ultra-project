@@ -162,6 +162,36 @@ class Game(State):
                 },
                 "contact_damage": False,
             },
+            "bomber": {
+                "visual_style": "bomber",
+                "sprite_set": "MenHuman1",
+                "speed": 105.0,
+                "hp": 125,
+                "damage": 16,
+                "animation_speed": 6.0,
+                "detection_range": 320.0,
+                "attack_range": 35.0,
+                "ai_profile": "skirmisher",
+                "ai_config": {
+                    "preferred_min": 120.0,
+                    "preferred_max": 220.0,
+                    "orbit_radius": 180.0,
+                },
+                "attack_profile": "bomber",
+                "attack_config": {
+                    "cooldown_ms": 1400,
+                    "throw_range": 320.0,
+                    "min_range": 90.0,
+                    "bomb_speed": 260.0,
+                    "bomb_range": 420.0,
+                    "blast_radius": 95.0,
+                    "fuse_time": 0.9,
+                    "damage_mult": 1.1,
+                    "knockback_force": 80.0,
+                    "spread_degrees": 12.0,
+                },
+                "contact_damage": False,
+            },
             "stalker": {
                 "sprite_set": "MenHuman1(Recolor)",
                 "speed": 120.0,
@@ -209,7 +239,7 @@ class Game(State):
 
         self.ENEMY_SPAWNS = {
             # "maps/test-map-1.tmx": (400, 300), # Якщо закоментувати цей рядок, ворога на старті не буде
-            "maps/test-map-2.tmx": {"pos": (600, 450), "profile": "trickster"},
+            "maps/test-map-2.tmx": {"pos": (600, 450), "profile": "bomber"},
             "maps/test-map-3.tmx": {"pos": (300, 200), "profile": "skirmisher"},
         }
 
