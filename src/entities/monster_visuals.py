@@ -1,10 +1,16 @@
 from __future__ import annotations
 
+from functools import lru_cache
+
 import pygame
 
 
 def build_monster_animations(style: str, size: tuple[int, int]) -> dict[str, list[pygame.Surface]]:
-    style = (style or "").lower()
+    return _build_monster_animations_cached((style or "").lower(), tuple(size))
+
+
+@lru_cache(maxsize=16)
+def _build_monster_animations_cached(style: str, size: tuple[int, int]) -> dict[str, list[pygame.Surface]]:
     palette = _palette_for(style)
     offsets = [0, 1, 0, -1]
 
