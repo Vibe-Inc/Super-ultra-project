@@ -14,6 +14,9 @@ from src.entities.npc import NPC
 from src.entities.projectile import Arrow
 from src.ui.hud import HUD
 from src.core.collision_system import CollisionSystem
+from src.ai.navigation import NavGrid
+from src.entities.monster_visuals import build_monster_animations
+from src.entities.monster_attacks import build_attack_controller, AttackContext
 
 if TYPE_CHECKING:
     from src.app import App
@@ -59,43 +62,202 @@ class Game(State):
         self.collision_handler = CollisionSystem()
         
         self.obstacles = self.map.get_obstacles()
+        self.nav_grid = None
+        self._rebuild_nav_grid()
 
         self.player_inventory_opened = app.INV_manager.player_inventory_opened
 
         self.MAIN_player_inv = MAIN_player_inventory(app)
         self.PLAYER_inventory_equipment = MAIN_player_inventory_equipment(app)
         self.projectiles = []
+        self.enemy_projectiles = []
         self.equipped_weapon = None
+
+        self.enemy_profiles = {
+            "brute": {
+                "visual_style": "brute",
+                "sprite_set": "MenHuman1",
+                "speed": 110.0,
+                "hp": 160,
+                "damage": 20,
+                "animation_speed": 5.0,
+                "detection_range": 240.0,
+                "attack_range": 45.0,
+                "ai_profile": "guardian",
+                "attack_profile": "brute",
+                "attack_config": {
+                    "cooldown_ms": 1100,
+                    "charge_cooldown_ms": 2400,
+                    "charge_duration": 0.7,
+                    "charge_speed_mult": 2.4,
+                    "slam_damage_mult": 1.5,
+                    "slow_duration": 1.5,
+                    "slow_factor": 0.6,
+                },
+                "contact_damage": False,
+            },
+            "venomous": {
+                "visual_style": "venomous",
+                "sprite_set": "MenHuman1(Recolor)",
+                "speed": 130.0,
+                "hp": 95,
+                "damage": 12,
+                "animation_speed": 6.5,
+                "detection_range": 260.0,
+                "attack_range": 38.0,
+                "ai_profile": "stalker",
+                "attack_profile": "venomous",
+                "attack_config": {
+                    "cooldown_ms": 900,
+                    "poison_duration": 4.0,
+                    "poison_dps": 5.0,
+                    "strike_damage_mult": 0.85,
+                },
+                "contact_damage": False,
+            },
+            "arcanist": {
+                "visual_style": "arcanist",
+                "sprite_set": "WomanHuman1",
+                "speed": 115.0,
+                "hp": 80,
+                "damage": 14,
+                "animation_speed": 6.2,
+                "detection_range": 300.0,
+                "attack_range": 40.0,
+                "ai_profile": "stalker",
+                "attack_profile": "arcanist",
+                "attack_config": {
+                    "cooldown_ms": 950,
+                    "bolt_speed": 480.0,
+                    "bolt_range": 560.0,
+                    "bolt_damage_mult": 0.85,
+                    "burn_duration": 3.2,
+                    "burn_dps": 4.5,
+                    "cast_range": 340.0,
+                    "spread_degrees": 5.0,
+                },
+                "contact_damage": False,
+            },
+            "trickster": {
+                "visual_style": "trickster",
+                "sprite_set": "WomanHuman1(Recolor)",
+                "speed": 150.0,
+                "hp": 75,
+                "damage": 10,
+                "animation_speed": 7.5,
+                "detection_range": 280.0,
+                "attack_range": 35.0,
+                "ai_profile": "skirmisher",
+                "attack_profile": "trickster",
+                "attack_config": {
+                    "cooldown_ms": 1800,
+                    "step_range": 240.0,
+                    "step_distance": 55.0,
+                    "step_attempts": 6,
+                    "step_spread_degrees": 110.0,
+                    "strike_range": 75.0,
+                    "confuse_duration": 2.8,
+                    "dizzy_duration": 2.2,
+                    "damage_mult": 0.7,
+                },
+                "contact_damage": False,
+            },
+            "bomber": {
+                "visual_style": "bomber",
+                "sprite_set": "MenHuman1",
+                "speed": 105.0,
+                "hp": 125,
+                "damage": 16,
+                "animation_speed": 6.0,
+                "detection_range": 320.0,
+                "attack_range": 35.0,
+                "ai_profile": "skirmisher",
+                "ai_config": {
+                    "preferred_min": 120.0,
+                    "preferred_max": 220.0,
+                    "orbit_radius": 180.0,
+                },
+                "attack_profile": "bomber",
+                "attack_config": {
+                    "cooldown_ms": 1400,
+                    "throw_range": 320.0,
+                    "min_range": 90.0,
+                    "bomb_speed": 260.0,
+                    "bomb_range": 420.0,
+                    "blast_radius": 95.0,
+                    "fuse_time": 0.9,
+                    "damage_mult": 1.1,
+                    "knockback_force": 80.0,
+                    "spread_degrees": 12.0,
+                },
+                "contact_damage": False,
+            },
+            "stalker": {
+                "sprite_set": "MenHuman1(Recolor)",
+                "speed": 120.0,
+                "hp": 110,
+                "damage": 15,
+                "animation_speed": 6.0,
+                "detection_range": 260.0,
+                "attack_range": 40.0,
+                "ai_config": {
+                    "memory_duration": 3.0,
+                    "repath_interval": 0.5,
+                },
+            },
+            "skirmisher": {
+                "sprite_set": "WomanHuman1(Recolor)",
+                "speed": 140.0,
+                "hp": 85,
+                "damage": 10,
+                "animation_speed": 7.0,
+                "detection_range": 300.0,
+                "attack_range": 35.0,
+                "ai_config": {
+                    "preferred_min": 80.0,
+                    "preferred_max": 170.0,
+                    "orbit_radius": 130.0,
+                },
+            },
+            "guardian": {
+                "sprite_set": "MenHuman1",
+                "speed": 100.0,
+                "hp": 140,
+                "damage": 18,
+                "animation_speed": 5.0,
+                "detection_range": 220.0,
+                "attack_range": 45.0,
+                "patrol_radius": 120.0,
+                "ai_config": {
+                    "guard_radius": 320.0,
+                    "leash_slack": 90.0,
+                    "patrol_wait": 0.8,
+                },
+            },
+        }
+        self.enemy_profile_names = list(self.enemy_profiles.keys())
 
         self.ENEMY_SPAWNS = {
             # "maps/test-map-1.tmx": (400, 300), # Якщо закоментувати цей рядок, ворога на старті не буде
-            "maps/test-map-2.tmx": (600, 450), 
-            "maps/test-map-3.tmx": (300, 200)
+            "maps/test-map-2.tmx": {"pos": (600, 450), "profile": "trickster"},
+            "maps/test-map-3.tmx": {"pos": (300, 200), "profile": "skirmisher"},
         }
 
         self.NPC_SPAWNS = {
             "maps/test-map-1.tmx": (400, 400)
         }
 
-        if initial_map_path in self.ENEMY_SPAWNS:
-            start_x, start_y = self.ENEMY_SPAWNS[initial_map_path]
+        spawn_info = self._get_spawn_info(initial_map_path)
+        if spawn_info:
+            start_x, start_y = spawn_info["pos"]
+            default_profile = spawn_info.get("profile")
         else:
             start_x, start_y = -5000, -5000
+            default_profile = None
 
         self.hud = HUD(self.character, app, self.toggle_player_inventory)
 
-        self.enemy = Enemy(
-            x=start_x, y=start_y,
-            sprite_set="MenHuman1(Recolor)",
-            speed=120.0,
-            hp=100,
-            damage=15,
-            animation_size=(85, 85),
-            animation_speed=6.0,
-            detection_range=250.0,
-            attack_range=40.0
-        )
-        self.enemy.target_entity = self.character
+        self.enemy = self._create_enemy(start_x, start_y, profile=default_profile)
         
         self.enemies = [self.enemy]
         self.items = []
@@ -186,6 +348,81 @@ class Game(State):
 
         self.projectiles = [projectile for projectile in self.projectiles if projectile.alive]
 
+    def _update_enemy_projectiles(self, dt):
+        if not self.enemy_projectiles:
+            return
+
+        for projectile in self.enemy_projectiles:
+            projectile.update(dt, self.obstacles, self.character)
+
+        self.enemy_projectiles = [projectile for projectile in self.enemy_projectiles if projectile.alive]
+
+    def _rebuild_nav_grid(self):
+        tmx_data = self.map.current_map.get_tmx_data()
+        if not tmx_data:
+            self.nav_grid = None
+            return
+        self.nav_grid = NavGrid.from_tmx(tmx_data, self.obstacles)
+
+    def _get_spawn_info(self, map_path: str) -> dict | None:
+        spawn = self.ENEMY_SPAWNS.get(map_path)
+        if not spawn:
+            return None
+        if isinstance(spawn, dict):
+            return spawn
+        return {"pos": spawn, "profile": "stalker"}
+
+    def _make_patrol_points(self, center: pygame.Vector2, radius: float) -> list[tuple[float, float]]:
+        return [
+            (center.x - radius, center.y - radius),
+            (center.x + radius, center.y - radius),
+            (center.x + radius, center.y + radius),
+            (center.x - radius, center.y + radius),
+        ]
+
+    def _create_enemy(self, x: float, y: float, profile: str | None = None) -> Enemy:
+        profile_name = profile or random.choice(self.enemy_profile_names)
+        if profile_name not in self.enemy_profiles:
+            profile_name = "stalker"
+
+        settings = self.enemy_profiles[profile_name]
+        ai_profile = settings.get("ai_profile", profile_name)
+        attack_profile = settings.get("attack_profile")
+        attack_controller = None
+        if attack_profile:
+            attack_controller = build_attack_controller(attack_profile, settings.get("attack_config"))
+        contact_damage = settings.get("contact_damage", True)
+        visual_style = settings.get("visual_style")
+        animations = None
+        if visual_style:
+            animations = build_monster_animations(visual_style, (85, 85))
+        sprite_set = settings.get("sprite_set", "MenHuman1(Recolor)")
+        patrol_points = settings.get("patrol_points")
+        if patrol_points is None and profile_name == "guardian":
+            radius = float(settings.get("patrol_radius", 120.0))
+            patrol_points = self._make_patrol_points(pygame.Vector2(x, y), radius)
+
+        enemy = Enemy(
+            x=x,
+            y=y,
+            sprite_set=sprite_set,
+            speed=settings["speed"],
+            hp=settings["hp"],
+            damage=settings["damage"],
+            animation_size=(85, 85),
+            animation_speed=settings.get("animation_speed", 6.0),
+            detection_range=settings.get("detection_range", 250.0),
+            attack_range=settings.get("attack_range", 40.0),
+            patrol_points=patrol_points,
+            ai_profile=ai_profile,
+            ai_config=settings.get("ai_config"),
+            animations=animations,
+            attack_controller=attack_controller,
+            contact_damage=contact_damage,
+        )
+        enemy.target_entity = self.character
+        return enemy
+
     def _handle_player_attack(self):
         weapon = self.equipped_weapon or self._get_equipped_weapon()
         if not weapon:
@@ -225,21 +462,13 @@ class Game(State):
                 if rect.colliderect(wall):
                     collides = True
                     break
+
+            if self.nav_grid and not self.nav_grid.is_walkable(self.nav_grid.world_to_cell(pos)):
+                collides = True
             
             if not collides:
                 # Spawn enemy
-                new_enemy = Enemy(
-                    x=x, y=y,
-                    sprite_set="MenHuman1(Recolor)",
-                    speed=120.0,
-                    hp=100,
-                    damage=15,
-                    animation_size=(85, 85),
-                    animation_speed=6.0,
-                    detection_range=250.0,
-                    attack_range=40.0
-                )
-                new_enemy.target_entity = self.character
+                new_enemy = self._create_enemy(x, y)
                 self.enemies.append(new_enemy)
                 logger.info(f"Spawned new enemy at ({x}, {y})")
                 break
@@ -251,24 +480,16 @@ class Game(State):
             self.current_map_path = switched_map_path
             logger.info(f"Map switched to {switched_map_path}. Respawning enemy...")
             self.obstacles = self.map.get_obstacles()
+            self._rebuild_nav_grid()
             
             # Reset enemies list and spawn default one if needed
             self.enemies = []
             
-            if switched_map_path in self.ENEMY_SPAWNS:
-                new_x, new_y = self.ENEMY_SPAWNS[switched_map_path]
-                default_enemy = Enemy(
-                    x=new_x, y=new_y,
-                    sprite_set="MenHuman1(Recolor)",
-                    speed=120.0,
-                    hp=100,
-                    damage=15,
-                    animation_size=(85, 85),
-                    animation_speed=6.0,
-                    detection_range=250.0,
-                    attack_range=40.0
-                )
-                default_enemy.target_entity = self.character
+            spawn_info = self._get_spawn_info(switched_map_path)
+            if spawn_info:
+                new_x, new_y = spawn_info["pos"]
+                profile = spawn_info.get("profile")
+                default_enemy = self._create_enemy(new_x, new_y, profile=profile)
                 self.enemies.append(default_enemy)
 
             if switched_map_path in self.NPC_SPAWNS:
@@ -287,10 +508,19 @@ class Game(State):
 
         self.character.update(dt, self.collision_handler, self.obstacles)
 
+        now_ms = pygame.time.get_ticks()
+        attack_context = AttackContext(
+            dt=dt,
+            player=self.character,
+            obstacles=self.obstacles,
+            projectiles=self.enemy_projectiles,
+            now_ms=now_ms,
+        )
         for enemy in self.enemies:
-            enemy.update(dt, self.collision_handler, self.obstacles)
+            enemy.update(dt, self.collision_handler, self.obstacles, self.nav_grid, attack_context)
 
         self._update_projectiles(dt)
+        self._update_enemy_projectiles(dt)
 
         self.collision_handler.check_interactions(
             self.character, self.enemies, self.items
@@ -326,6 +556,9 @@ class Game(State):
             enemy.draw(screen)
 
         for projectile in self.projectiles:
+            projectile.draw(screen)
+
+        for projectile in self.enemy_projectiles:
             projectile.draw(screen)
 
         self.npc.draw(screen)

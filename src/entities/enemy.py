@@ -1,5 +1,7 @@
 import pygame
 
+from src.ai.monster_ai import AIContext, build_brain
+
 
 class Enemy:
     """
@@ -12,6 +14,10 @@ class Enemy:
             Current position of the enemy on the screen.
         speed (float):
             Movement speed of the enemy in pixels per second.
+        base_speed (float):
+            Base movement speed before modifiers.
+        speed_multiplier (float):
+            Multiplier applied to base speed.
         
         # New attributes for CollisionSystem
         rect (pygame.Rect): Collision and drawing rectangle.
@@ -43,6 +49,14 @@ class Enemy:
             Position the enemy is currently moving toward.
         target_entity (Character | None):
             Reference to the player character being tracked.
+        ai_profile (str):
+            Name of the AI profile used by this enemy.
+        brain (BaseBrain | None):
+            AI brain instance that drives behavior and pathing.
+        attack_controller (BaseAttack | None):
+            Attack controller for special monster mechanics.
+        contact_damage (bool):
+            Whether touching the player should deal damage.
         ai_state (str):
             Current AI behavior state ("idle", "patrol", "chase", "attack").
         patrol_points (list[tuple[float, float]]):
@@ -57,12 +71,14 @@ class Enemy:
     Methods:
         get_rect():
             Returns the collision rectangle, updated to the current float position.
-        update(dt, collision_system, obstacles):
+        update(dt, collision_system, obstacles, nav_grid=None, attack_context=None):
             Update the enemy's AI state, set velocity, and apply movement via collision system.
             Args:
                 dt (float): Time elapsed since the last frame in seconds.
                 collision_system (CollisionSystem): The external collision handler.
                 obstacles (list[pygame.Rect]): List of static walls.
+                nav_grid (NavGrid | None): Optional navigation grid for pathfinding.
+            attack_context (AttackContext | None): Optional combat context for special attacks.
         take_damage(amount):
             Reduce the enemy's health by the given amount.
         is_dead():
@@ -71,18 +87,41 @@ class Enemy:
             Draw the enemy's current frame to the given Pygame surface.
     """
 
-    def __init__(self, x, y, sprite_set, speed, hp, damage, animation_size, animation_speed, detection_range, attack_range, patrol_points=None):
+    def __init__(
+        self,
+        x,
+        y,
+        sprite_set,
+        speed,
+        hp,
+        damage,
+        animation_size,
+        animation_speed,
+        detection_range,
+        attack_range,
+        patrol_points=None,
+        ai_profile: str = "stalker",
+        ai_config: dict | None = None,
+        animations: dict[str, list[pygame.Surface]] | None = None,
+        attack_controller=None,
+        contact_damage: bool = True,
+    ):
         self.pos = pygame.Vector2(x, y)
-        self.speed = speed
+        self.base_speed = speed
+        self.speed_multiplier = 1.0
+        self.speed = self.base_speed
         self.hp = hp
         self.max_hp = hp
         self.spawn_pos = self.pos.copy()
 
-        self.animations = {
-            "down":  [pygame.transform.scale(pygame.image.load(f"assets/characters/{sprite_set}/FrontWalk/FrontWalk{i}.png"), animation_size) for i in range(1, 5)],
-            "up":    [pygame.transform.scale(pygame.image.load(f"assets/characters/{sprite_set}/BackWalk/BackWalk{i}.png"), animation_size) for i in range(1, 5)],
-            "side":  [pygame.transform.scale(pygame.image.load(f"assets/characters/{sprite_set}/SideWalk/SideWalk{i}.png"), animation_size) for i in range(1, 5)],
-        }
+        if animations is not None:
+            self.animations = animations
+        else:
+            self.animations = {
+                "down":  [pygame.transform.scale(pygame.image.load(f"assets/characters/{sprite_set}/FrontWalk/FrontWalk{i}.png"), animation_size) for i in range(1, 5)],
+                "up":    [pygame.transform.scale(pygame.image.load(f"assets/characters/{sprite_set}/BackWalk/BackWalk{i}.png"), animation_size) for i in range(1, 5)],
+                "side":  [pygame.transform.scale(pygame.image.load(f"assets/characters/{sprite_set}/SideWalk/SideWalk{i}.png"), animation_size) for i in range(1, 5)],
+            }
 
         self.direction = "down"
         self.image = self.animations[self.direction][0]
@@ -101,7 +140,11 @@ class Enemy:
         self.target = None
         self.hit_flash_timer = 0.0
         self.target_entity = None
-        self.ai_state = "idle" # idle, patrol, chase, attack
+        self.ai_profile = ai_profile
+        self.ai_state = "idle"  # idle, patrol, chase, attack
+        self.brain = build_brain(ai_profile, ai_config)
+        self.attack_controller = attack_controller
+        self.contact_damage = contact_damage
         self.patrol_points = patrol_points or []
         self.patrol_index = 0
         self.detection_range = detection_range
@@ -122,41 +165,25 @@ class Enemy:
         self.rect = pygame.Rect(int(self.pos.x + offset_x), int(self.pos.y + offset_y), hitbox_width, hitbox_height)
         return self.rect
 
-    def update(self, dt: float, collision_system, obstacles):
+    def update(self, dt: float, collision_system, obstacles, nav_grid=None, attack_context=None):
         if self.hit_flash_timer > 0:
             self.hit_flash_timer -= dt
 
-        self._update_ai()
-        self._move(dt) # Now sets self.velocity instead of moving directly
+        context = AIContext(dt=dt, nav_grid=nav_grid, obstacles=obstacles, player=self.target_entity)
+        if self.brain:
+            self.brain.update(self, context)
+
+        if self.attack_controller and attack_context:
+            self.attack_controller.update(self, attack_context)
+
+        self.speed = self.base_speed * self.speed_multiplier
+
+        self._move(dt)  # Sets self.velocity instead of moving directly
         
         # Collision system
         collision_system.handle_movement_and_collision(self, dt, obstacles)
         
         self._update_animation(dt)
-
-    def _update_ai(self):
-        if self.target_entity:
-            distance = (self.target_entity.pos - self.pos).length()
-            if distance <= self.attack_range:
-                self.target = None
-                self.ai_state = "attack"
-            elif distance <= self.detection_range:
-                self.target = self.target_entity.pos
-                self.ai_state = "chase"
-            else:
-                self.target = None
-                self.ai_state = "idle"
-        elif self.patrol_points:
-            self.ai_state = "patrol"
-            patrol_target = pygame.Vector2(self.patrol_points[self.patrol_index])
-            if (patrol_target - self.pos).length() < 5:
-
-
-                pass 
-            self.target = patrol_target
-        else:
-            self.ai_state = "idle"
-            self.target = None
 
     def _move(self, dt: float):
         self.velocity = pygame.Vector2(0, 0)
@@ -177,9 +204,7 @@ class Enemy:
                 else:
                     self.direction = "down" if self.velocity.y > 0 else "up"
             else:
-                # We reached the target
-                if self.ai_state == "patrol":
-                    self.patrol_index = (self.patrol_index + 1) % len(self.patrol_points)
+                self.target = None
 
     def _update_animation(self, dt: float):
         if self.moving:

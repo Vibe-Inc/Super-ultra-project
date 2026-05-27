@@ -69,7 +69,7 @@ class CollisionSystem:
 
         for enemy in enemies:
             if self.rect_of(player).colliderect(self.rect_of(enemy)):
-                if hasattr(enemy, "damage") and hasattr(player, "take_damage"):
+                if getattr(enemy, "contact_damage", True) and hasattr(enemy, "damage") and hasattr(player, "take_damage"):
                     player.take_damage(enemy.damage)
                 
                 if hasattr(player, "on_collision"):
