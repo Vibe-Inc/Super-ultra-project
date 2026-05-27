@@ -558,8 +558,14 @@ class Game(State):
             projectiles=self.enemy_projectiles,
             now_ms=now_ms,
         )
+        # Update enemies with LOD: skip heavy updates for distant enemies
+        LOD_DISTANCE = 800.0
+        lod_sq = LOD_DISTANCE * LOD_DISTANCE
+        player_pos = self.character.pos
         for enemy in self.enemies:
-            enemy.update(dt, self.collision_handler, self.obstacles, self.nav_grid, attack_context)
+            ediff = enemy.pos - player_pos
+            active = ediff.length_squared() <= lod_sq
+            enemy.update(dt, self.collision_handler, self.obstacles, self.nav_grid, attack_context, active=active)
 
         self._update_projectiles(dt)
         self._update_enemy_projectiles(dt)

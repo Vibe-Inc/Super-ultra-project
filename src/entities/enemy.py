@@ -158,8 +158,7 @@ class Enemy:
 
         self.direction = "down"
         self.image = self.animations[self.direction][0]
-        
-        # New attributes for collision
+
         self.rect = self.image.get_rect(topleft=(x, y))
         self.velocity = pygame.Vector2(0, 0)
 
@@ -182,13 +181,17 @@ class Enemy:
         self.patrol_index = 0
         self.detection_range = detection_range
         self.attack_range = attack_range
+        self._ai_context = AIContext(dt=0.0, nav_grid=None, obstacles=[], player=None)
+
+        self._flash_overlay = pygame.Surface(animation_size, pygame.SRCALPHA)
+        self._flash_overlay.fill((255, 50, 50, 100))
+        self._animation_size = animation_size
+        self._lod_distance = 800.0
 
     def get_rect(self):
-        # Define a smaller hitbox for the feet
         hitbox_width = 40
         hitbox_height = 20
-        
-        # Assuming animation_size is (85, 85) or similar
+
         sprite_width = self.image.get_width()
         sprite_height = self.image.get_height()
         
@@ -198,24 +201,35 @@ class Enemy:
         self.rect = pygame.Rect(int(self.pos.x + offset_x), int(self.pos.y + offset_y), hitbox_width, hitbox_height)
         return self.rect
 
-    def update(self, dt: float, collision_system, obstacles, nav_grid=None, attack_context=None):
+    def update(self, dt: float, collision_system, obstacles, nav_grid=None, attack_context=None, active: bool = True):
         if self.hit_flash_timer > 0:
             self.hit_flash_timer -= dt
 
-        context = AIContext(dt=dt, nav_grid=nav_grid, obstacles=obstacles, player=self.target_entity)
+        if not active:
+            self.time_accumulator += dt * 0.2
+            if self.time_accumulator > 1 / self.animation_speed:
+                self.time_accumulator = 0
+                self.frame_index = (self.frame_index + 1) % len(self.animations[self.direction])
+            self.image = self.animations[self.direction][self.frame_index]
+            return
+
+        self._ai_context.dt = dt
+        self._ai_context.nav_grid = nav_grid
+        self._ai_context.obstacles = obstacles
+        self._ai_context.player = self.target_entity
+
         if self.brain:
-            self.brain.update(self, context)
+            self.brain.update(self, self._ai_context)
 
         if self.attack_controller and attack_context:
             self.attack_controller.update(self, attack_context)
 
         self.speed = self.base_speed * self.speed_multiplier
 
-        self._move(dt)  # Sets self.velocity instead of moving directly
-        
-        # Collision system
+        self._move(dt)
+
         collision_system.handle_movement_and_collision(self, dt, obstacles)
-        
+
         self._update_animation(dt)
 
     def _move(self, dt: float):
@@ -225,12 +239,11 @@ class Enemy:
         if self.target:
             direction_vector = self.target - self.pos
             
-            if direction_vector.length() > 1:
-                # Calculate normalized direction
+            if direction_vector.length_squared() > 1.0:
+
                 self.velocity = direction_vector.normalize()
                 self.moving = True
 
-                # Determine animation direction
                 if abs(self.velocity.x) > abs(self.velocity.y):
                     self.direction = "side"
                     self.flip = self.velocity.x < 0
@@ -262,23 +275,19 @@ class Enemy:
         img = self.image
         if self.direction == "side" and self.flip:
             img = self.animations_flipped["side"][self.frame_index]
-        if self.hit_flash_timer > 0:
-            img = img.copy()
-            img.fill((255, 50, 50), special_flags=pygame.BLEND_ADD)
-
         draw_pos = (int(self.pos.x), int(self.pos.y))
         screen.blit(img, draw_pos)
+        if self.hit_flash_timer > 0:
+            overlay = self._flash_overlay
+            screen.blit(overlay, draw_pos, special_flags=pygame.BLEND_ADD)
 
-        # Draw Health Bar
         bar_width = 40
         bar_height = 5
-        # Center above sprite (assuming 85px width)
         bar_x = self.pos.x + (85 - bar_width) // 2
         bar_y = self.pos.y - 10
-        
-        # Background (Red)
+
         pygame.draw.rect(screen, (255, 0, 0), (bar_x, bar_y, bar_width, bar_height))
-        # Health (Green)
+
         if self.max_hp > 0:
             health_width = int(bar_width * (self.hp / self.max_hp))
             pygame.draw.rect(screen, (0, 255, 0), (bar_x, bar_y, health_width, bar_height))
