@@ -1,3 +1,4 @@
+import math
 import pygame
 from typing import TYPE_CHECKING
 import random
@@ -323,17 +324,48 @@ class Game(State):
             self.character.attack_cooldown = self.character.base_attack_cooldown
 
     def _get_attack_direction(self):
-        if self.character.direction == "up":
-            return pygame.Vector2(0, -1)
-        if self.character.direction == "down":
-            return pygame.Vector2(0, 1)
-        if self.character.direction == "side":
-            return pygame.Vector2(-1, 0) if self.character.flip else pygame.Vector2(1, 0)
-        return pygame.Vector2(1, 0)
+        return self.character.get_forward_direction()
 
-    def _spawn_arrow(self, weapon):
-        direction = self._get_attack_direction()
-        spawn_pos = self.character.pos + pygame.Vector2(42, 42) + direction * 40
+    def _get_attack_origin(self):
+        return self.character.get_center()
+
+    def _get_mouse_aim_direction(self, mouse_pos):
+        origin = self._get_attack_origin()
+        direction = pygame.Vector2(mouse_pos) - origin
+        if direction.length_squared() == 0:
+            return self._get_attack_direction()
+        return direction.normalize()
+
+    def _clamp_direction_to_cone(self, aim_dir, forward_dir, half_angle_deg):
+        if half_angle_deg <= 0:
+            return pygame.Vector2(forward_dir)
+
+        if forward_dir.length_squared() == 0:
+            forward_dir = pygame.Vector2(1, 0)
+        else:
+            forward_dir = forward_dir.normalize()
+
+        if aim_dir.length_squared() == 0:
+            return pygame.Vector2(forward_dir)
+
+        aim_dir = aim_dir.normalize()
+        cross = forward_dir.x * aim_dir.y - forward_dir.y * aim_dir.x
+        dot = forward_dir.dot(aim_dir)
+        angle = math.degrees(math.atan2(cross, dot))
+
+        if abs(angle) <= half_angle_deg:
+            return aim_dir
+
+        return forward_dir.rotate(half_angle_deg if angle > 0 else -half_angle_deg)
+
+    def _spawn_arrow(self, weapon, direction):
+        direction = pygame.Vector2(direction)
+        if direction.length_squared() == 0:
+            direction = pygame.Vector2(1, 0)
+        else:
+            direction = direction.normalize()
+
+        spawn_pos = self._get_attack_origin() + direction * 40
         speed = getattr(weapon, "projectile_speed", 800) or 800
         max_range = getattr(weapon, "range", 500)
         damage = getattr(weapon, "damage", self.character.attack_damage)
@@ -423,19 +455,27 @@ class Game(State):
         enemy.target_entity = self.character
         return enemy
 
-    def _handle_player_attack(self):
+    def _handle_player_attack(self, mouse_pos):
         weapon = self.equipped_weapon or self._get_equipped_weapon()
         if not weapon:
             return
+
+        aim_dir = self._get_mouse_aim_direction(mouse_pos)
 
         if getattr(weapon, "weapon_class", "melee") == "bow":
             if not self.character.can_attack():
                 return
             self.character.start_attack(show_slash=False)
-            self._spawn_arrow(weapon)
+            spread = float(getattr(weapon, "spread_degrees", 4.0))
+            if spread:
+                aim_dir = aim_dir.rotate(random.uniform(-spread, spread))
+            self._spawn_arrow(weapon, aim_dir)
             return
 
-        self.character.attack(self.enemies)
+        cone_degrees = float(getattr(weapon, "cone_degrees", 90.0))
+        forward_dir = self._get_attack_direction()
+        clamped_dir = self._clamp_direction_to_cone(aim_dir, forward_dir, cone_degrees * 0.5)
+        self.character.attack(self.enemies, aim_direction=clamped_dir, cone_degrees=cone_degrees)
 
     def spawn_random_enemy(self):
         if not self.map.current_map or self.map.current_map.pixel_width == 0:
@@ -587,10 +627,6 @@ class Game(State):
             if event.key == pygame.K_ESCAPE:
                 self.app.manager.set_state("pause")
             
-            # Combat input
-            if event.key == pygame.K_SPACE:
-                self._handle_player_attack()
-
             if event.key == pygame.K_e and self.app.INV_manager.player_inventory_opened == False:
                 if self.npc.is_interactable:
                     self.app.INV_manager.toggle_trade(self.MAIN_player_inv, self.shop_inv)
@@ -608,6 +644,11 @@ class Game(State):
                 self.character.take_damage(10)
             if event.key == pygame.K_6:
                 self.character.gain_xp(50)
+
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if not self.app.INV_manager.player_inventory_opened:
+                if not self.hud.inv_button.rect.collidepoint(event.pos):
+                    self._handle_player_attack(event.pos)
 
         self.app.INV_manager.PLAYER_inventory_open(event, self.MAIN_player_inv, self.PLAYER_inventory_equipment)
 
