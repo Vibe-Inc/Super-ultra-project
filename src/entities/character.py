@@ -122,9 +122,11 @@ class Character:
 
         # Combat stats
         self.base_attack_damage = 15
+        self.base_attack_range = 65
+        self.base_attack_cooldown = 500  # ms
         self.attack_damage = self.base_attack_damage
-        self.attack_range = 65
-        self.attack_cooldown = 500  # ms
+        self.attack_range = self.base_attack_range
+        self.attack_cooldown = self.base_attack_cooldown
         self.last_attack_time = 0
         self.is_attacking = False
 
@@ -151,13 +153,23 @@ class Character:
         logger.info(f"Level Up! Level: {self.level}, Max HP: {self.max_hp}")
         print(f"Level Up! Level: {self.level}, Max HP: {self.max_hp}")
 
+    def can_attack(self, current_time=None):
+        if current_time is None:
+            current_time = pygame.time.get_ticks()
+        return current_time - self.last_attack_time >= self.attack_cooldown
+
+    def start_attack(self, current_time=None, show_slash=True):
+        if current_time is None:
+            current_time = pygame.time.get_ticks()
+        self.last_attack_time = current_time
+        self.is_attacking = show_slash
+
     def attack(self, enemies):
         current_time = pygame.time.get_ticks()
-        if current_time - self.last_attack_time < self.attack_cooldown:
+        if not self.can_attack(current_time):
             return
 
-        self.last_attack_time = current_time
-        self.is_attacking = True
+        self.start_attack(current_time, show_slash=True)
         logger.info("Player attacks!")
 
         # Simple hitbox logic based on direction

@@ -102,10 +102,20 @@ class Weapon(Item):
         super().__init__(data)
         self.damage = data.get("damage", 1)
         self.durability = data.get("durability", 100)
-        self.range = data.get("range", 1.0)
+        self.range = data.get("range", 65)
+        self.weapon_class = data.get("weapon_class", "melee")
+        self.cooldown = data.get("cooldown", 500)
+        self.projectile_speed = data.get("projectile_speed", 0)
 
     def get_tooltip_text(self):
-        stats = f"{_('Type')}: {_('Weapon')}\n{_('Damage')}: {self.damage}\n{_('Durability')}: {self.durability}\nPrice: ${self.price}"
+        weapon_label = f"{_('Weapon')} ({self.weapon_class.capitalize()})"
+        stats = (
+            f"{_('Type')}: {weapon_label}\n"
+            f"{_('Damage')}: {self.damage}\n"
+            f"{_('Durability')}: {self.durability}\n"
+            f"{_('Range')}: {self.range}\n"
+            f"Price: ${self.price}"
+        )
         return f"{self.name}\n{stats}\n{self.description}"    
 
 class Consumable(Item):
