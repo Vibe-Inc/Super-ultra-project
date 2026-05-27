@@ -492,7 +492,8 @@ class Game(State):
             pos = pygame.Vector2(x, y)
             
             # Check distance to player (must be at least 400 pixels away)
-            if pos.distance_to(self.character.pos) < 400:
+            pdiff = pos - self.character.pos
+            if pdiff.length_squared() < 400 * 400:
                 continue
                 
             # Check collision with walls

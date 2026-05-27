@@ -88,15 +88,15 @@ class BruteAttack(BaseAttack):
 
         enemy_pos = _entity_center(enemy)
         player_pos = _entity_center(player)
-        distance = enemy_pos.distance_to(player_pos)
+        diff = player_pos - enemy_pos
+        distance_sq = diff.length_squared()
 
         if self.charge_timer > 0:
             self.charge_timer -= context.dt
             enemy.speed_multiplier = self.charge_speed_mult
             enemy.ai_state = "charge"
             enemy.target = enemy.pos + self.charge_direction * self.charge_distance
-
-            if distance <= enemy.attack_range * 1.1 and self.ready(context.now_ms):
+            if distance_sq <= (enemy.attack_range * 1.1) * (enemy.attack_range * 1.1) and self.ready(context.now_ms):
                 self._slam(enemy, player, enemy_pos, player_pos, context.now_ms)
                 self.charge_timer = 0.0
             if self.charge_timer <= 0:
@@ -105,11 +105,11 @@ class BruteAttack(BaseAttack):
 
         enemy.speed_multiplier = 1.0
 
-        if distance <= enemy.attack_range and self.ready(context.now_ms):
+        if distance_sq <= (enemy.attack_range * enemy.attack_range) and self.ready(context.now_ms):
             self._slam(enemy, player, enemy_pos, player_pos, context.now_ms)
             return
 
-        if distance <= self.charge_trigger_range and self._charge_ready(context.now_ms):
+        if distance_sq <= (self.charge_trigger_range * self.charge_trigger_range) and self._charge_ready(context.now_ms):
             direction = player_pos - enemy_pos
             if direction.length_squared() == 0:
                 direction = pygame.Vector2(1, 0)
@@ -148,10 +148,11 @@ class VenomousAttack(BaseAttack):
 
         enemy_pos = _entity_center(enemy)
         player_pos = _entity_center(player)
-        distance = enemy_pos.distance_to(player_pos)
+        diff = player_pos - enemy_pos
+        distance_sq = diff.length_squared()
 
         effective_range = self.strike_range or float(enemy.attack_range)
-        if distance > effective_range:
+        if distance_sq > (effective_range * effective_range):
             return
 
         if not self.ready(context.now_ms):
@@ -182,9 +183,10 @@ class ArcanistAttack(BaseAttack):
 
         enemy_pos = _entity_center(enemy)
         player_pos = _entity_center(player)
-        distance = enemy_pos.distance_to(player_pos)
+        diff = player_pos - enemy_pos
+        distance_sq = diff.length_squared()
 
-        if distance > self.cast_range:
+        if distance_sq > (self.cast_range * self.cast_range):
             return
         if not self.ready(context.now_ms):
             return
@@ -233,9 +235,10 @@ class TricksterAttack(BaseAttack):
 
         enemy_center = _entity_center(enemy)
         player_center = _entity_center(player)
-        distance = enemy_center.distance_to(player_center)
+        diff = player_center - enemy_center
+        distance_sq = diff.length_squared()
 
-        if distance > self.step_range:
+        if distance_sq > (self.step_range * self.step_range):
             return
         if not self.ready(context.now_ms):
             return
@@ -263,7 +266,8 @@ class TricksterAttack(BaseAttack):
         enemy.ai_state = "blink"
 
         new_center = _entity_center(enemy)
-        if new_center.distance_to(player_center) <= self.strike_range:
+        ndiff = new_center - player_center
+        if ndiff.length_squared() <= (self.strike_range * self.strike_range):
             damage = int(enemy.damage * self.damage_mult)
             if damage > 0:
                 player.take_damage(damage)
@@ -293,9 +297,10 @@ class BomberAttack(BaseAttack):
 
         enemy_pos = _entity_center(enemy)
         player_pos = _entity_center(player)
-        distance = enemy_pos.distance_to(player_pos)
+        diff = player_pos - enemy_pos
+        distance_sq = diff.length_squared()
 
-        if distance > self.throw_range:
+        if distance_sq > (self.throw_range * self.throw_range):
             return
         if not self.ready(context.now_ms):
             return
