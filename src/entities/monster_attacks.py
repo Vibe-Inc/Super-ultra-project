@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 import random
 import pygame
 
 from src.entities.projectile import ArcaneBolt
-from src.items.effects import PoisonEffect, SlowEffect
+from src.items.effects import ConfusionEffect, DizzinessEffect, PoisonEffect, SlowEffect
 
 
 @dataclass
@@ -27,6 +28,24 @@ def _entity_center(entity: object) -> pygame.Vector2:
 def _has_line_of_sight(start: pygame.Vector2, end: pygame.Vector2, obstacles: list[pygame.Rect]) -> bool:
     for wall in obstacles:
         if wall.clipline(start, end):
+            return False
+    return True
+
+
+def _rect_for_enemy(enemy: object, pos: pygame.Vector2) -> pygame.Rect:
+    hitbox_width = 40
+    hitbox_height = 20
+    sprite_width = enemy.image.get_width()
+    sprite_height = enemy.image.get_height()
+    offset_x = (sprite_width - hitbox_width) // 2
+    offset_y = sprite_height - hitbox_height
+    return pygame.Rect(int(pos.x + offset_x), int(pos.y + offset_y), hitbox_width, hitbox_height)
+
+
+def _is_clear(enemy: object, pos: pygame.Vector2, obstacles: list[pygame.Rect]) -> bool:
+    rect = _rect_for_enemy(enemy, pos)
+    for wall in obstacles:
+        if rect.colliderect(wall):
             return False
     return True
 
@@ -195,6 +214,63 @@ class ArcanistAttack(BaseAttack):
         self.last_attack_time = context.now_ms
 
 
+class TricksterAttack(BaseAttack):
+    def __init__(self, config: dict | None = None):
+        super().__init__(config)
+        self.step_range = float(self.config.get("step_range", 260.0))
+        self.step_distance = float(self.config.get("step_distance", 80.0))
+        self.step_attempts = int(self.config.get("step_attempts", 6))
+        self.step_spread_degrees = float(self.config.get("step_spread_degrees", 140.0))
+        self.strike_range = float(self.config.get("strike_range", 60.0))
+        self.confuse_duration = float(self.config.get("confuse_duration", 3.0))
+        self.dizzy_duration = float(self.config.get("dizzy_duration", 2.0))
+        self.damage_mult = float(self.config.get("damage_mult", 0.7))
+
+    def update(self, enemy: object, context: AttackContext):
+        player = context.player
+        if player is None:
+            return
+
+        enemy_center = _entity_center(enemy)
+        player_center = _entity_center(player)
+        distance = enemy_center.distance_to(player_center)
+
+        if distance > self.step_range:
+            return
+        if not self.ready(context.now_ms):
+            return
+
+        direction = player_center - enemy_center
+        if direction.length_squared() == 0:
+            direction = pygame.Vector2(1, 0)
+        base_angle = math.atan2(direction.y, direction.x) + math.pi
+        spread_rad = math.radians(self.step_spread_degrees)
+
+        offset = enemy_center - enemy.pos
+        new_pos = None
+        for _ in range(self.step_attempts):
+            angle = base_angle + random.uniform(-spread_rad, spread_rad)
+            candidate_center = player_center + pygame.Vector2(math.cos(angle), math.sin(angle)) * self.step_distance
+            candidate_pos = candidate_center - offset
+            if _is_clear(enemy, candidate_pos, context.obstacles):
+                new_pos = candidate_pos
+                break
+
+        if new_pos is None:
+            return
+
+        enemy.pos = new_pos
+        enemy.ai_state = "blink"
+
+        if enemy_center.distance_to(player_center) <= self.strike_range:
+            damage = int(enemy.damage * self.damage_mult)
+            if damage > 0:
+                player.take_damage(damage)
+            player.add_effect(ConfusionEffect(self.confuse_duration))
+            player.add_effect(DizzinessEffect(self.dizzy_duration))
+            self.last_attack_time = context.now_ms
+
+
 def build_attack_controller(profile: str | None, config: dict | None = None) -> BaseAttack | None:
     name = (profile or "").lower()
     if name == "brute":
@@ -203,4 +279,6 @@ def build_attack_controller(profile: str | None, config: dict | None = None) -> 
         return VenomousAttack(config)
     if name == "arcanist":
         return ArcanistAttack(config)
+    if name == "trickster":
+        return TricksterAttack(config)
     return None

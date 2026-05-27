@@ -138,6 +138,30 @@ class Game(State):
                 },
                 "contact_damage": False,
             },
+            "trickster": {
+                "visual_style": "trickster",
+                "sprite_set": "WomanHuman1(Recolor)",
+                "speed": 150.0,
+                "hp": 75,
+                "damage": 10,
+                "animation_speed": 7.5,
+                "detection_range": 280.0,
+                "attack_range": 35.0,
+                "ai_profile": "skirmisher",
+                "attack_profile": "trickster",
+                "attack_config": {
+                    "cooldown_ms": 1200,
+                    "step_range": 260.0,
+                    "step_distance": 85.0,
+                    "step_attempts": 6,
+                    "step_spread_degrees": 130.0,
+                    "strike_range": 60.0,
+                    "confuse_duration": 3.0,
+                    "dizzy_duration": 2.2,
+                    "damage_mult": 0.7,
+                },
+                "contact_damage": False,
+            },
             "stalker": {
                 "sprite_set": "MenHuman1(Recolor)",
                 "speed": 120.0,
@@ -185,7 +209,7 @@ class Game(State):
 
         self.ENEMY_SPAWNS = {
             # "maps/test-map-1.tmx": (400, 300), # Якщо закоментувати цей рядок, ворога на старті не буде
-            "maps/test-map-2.tmx": {"pos": (600, 450), "profile": "stalker"},
+            "maps/test-map-2.tmx": {"pos": (600, 450), "profile": "trickster"},
             "maps/test-map-3.tmx": {"pos": (300, 200), "profile": "skirmisher"},
         }
 
