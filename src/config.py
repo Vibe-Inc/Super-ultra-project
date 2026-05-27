@@ -21,6 +21,7 @@ except (FileNotFoundError, pygame.error):
     bg = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 SCREEN_BRIGHTNESS = 1.0
+PROFILER_ENABLED = False
 
 LANGUAGE = 'en'
 SUPPORTED_LANGUAGES = ['en', 'ua']

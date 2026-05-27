@@ -585,10 +585,17 @@ class Game(State):
 
         self.npc.update(self.character.pos)
 
+        self.app.profiler.set_gauge("enemies", len(self.enemies))
+        self.app.profiler.set_gauge("projectiles", len(self.projectiles))
+        self.app.profiler.set_gauge("enemy_projectiles", len(self.enemy_projectiles))
+
     def draw(self, screen):
         dt = self.app.clock.get_time() / 1000
+        self.app.profiler.start_section("game.update")
         self.update(dt)
+        self.app.profiler.end_section("game.update")
 
+        self.app.profiler.start_section("game.draw")
         self.map.draw(screen)
 
         self.character.draw(screen)
@@ -621,6 +628,7 @@ class Game(State):
 
         if  self.app.INV_manager.player_inventory_opened:
             self.app.INV_manager.draw(screen)
+        self.app.profiler.end_section("game.draw")
 
     def handle_event(self, event: pygame.event.Event):
         self.hud.handle_event(event)
