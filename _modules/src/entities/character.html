@@ -195,9 +195,11 @@
 
         <span class="c1"># Combat stats</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">base_attack_damage</span> <span class="o">=</span> <span class="mi">15</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">base_attack_range</span> <span class="o">=</span> <span class="mi">65</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">base_attack_cooldown</span> <span class="o">=</span> <span class="mi">500</span>  <span class="c1"># ms</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attack_damage</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_attack_damage</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">attack_range</span> <span class="o">=</span> <span class="mi">65</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">attack_cooldown</span> <span class="o">=</span> <span class="mi">500</span>  <span class="c1"># ms</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attack_range</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_attack_range</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attack_cooldown</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_attack_cooldown</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">last_attack_time</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_attacking</span> <span class="o">=</span> <span class="kc">False</span>
 
@@ -233,15 +235,31 @@
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Level Up! Level: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">level</span><span class="si">}</span><span class="s2">, Max HP: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="Character.can_attack">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.can_attack">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">can_attack</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current_time</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">current_time</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">current_time</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">current_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_attack_time</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attack_cooldown</span></div>
+
+
+<div class="viewcode-block" id="Character.start_attack">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.start_attack">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">start_attack</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_slash</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">current_time</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">current_time</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_attack_time</span> <span class="o">=</span> <span class="n">current_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_attacking</span> <span class="o">=</span> <span class="n">show_slash</span></div>
+
+
 <div class="viewcode-block" id="Character.attack">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.attack">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">attack</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enemies</span><span class="p">):</span>
         <span class="n">current_time</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">current_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_attack_time</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">attack_cooldown</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">can_attack</span><span class="p">(</span><span class="n">current_time</span><span class="p">):</span>
             <span class="k">return</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">last_attack_time</span> <span class="o">=</span> <span class="n">current_time</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">is_attacking</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_attack</span><span class="p">(</span><span class="n">current_time</span><span class="p">,</span> <span class="n">show_slash</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player attacks!&quot;</span><span class="p">)</span>
 
         <span class="c1"># Simple hitbox logic based on direction</span>
