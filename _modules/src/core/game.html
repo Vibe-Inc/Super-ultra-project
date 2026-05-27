@@ -69,7 +69,8 @@
            <div itemprop="articleBody">
              
   <h1>Source code for src.core.game</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
 
@@ -405,17 +406,48 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">attack_cooldown</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">base_attack_cooldown</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_attack_direction</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;up&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;down&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;side&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">flip</span> <span class="k">else</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">get_forward_direction</span><span class="p">()</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_spawn_arrow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">weapon</span><span class="p">):</span>
-        <span class="n">direction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_attack_direction</span><span class="p">()</span>
-        <span class="n">spawn_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span> <span class="o">+</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">42</span><span class="p">,</span> <span class="mi">42</span><span class="p">)</span> <span class="o">+</span> <span class="n">direction</span> <span class="o">*</span> <span class="mi">40</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_attack_origin</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">get_center</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_mouse_aim_direction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mouse_pos</span><span class="p">):</span>
+        <span class="n">origin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_attack_origin</span><span class="p">()</span>
+        <span class="n">direction</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">mouse_pos</span><span class="p">)</span> <span class="o">-</span> <span class="n">origin</span>
+        <span class="k">if</span> <span class="n">direction</span><span class="o">.</span><span class="n">length_squared</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_attack_direction</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">direction</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_clamp_direction_to_cone</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">aim_dir</span><span class="p">,</span> <span class="n">forward_dir</span><span class="p">,</span> <span class="n">half_angle_deg</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">half_angle_deg</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">forward_dir</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">forward_dir</span><span class="o">.</span><span class="n">length_squared</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">forward_dir</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">forward_dir</span> <span class="o">=</span> <span class="n">forward_dir</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">aim_dir</span><span class="o">.</span><span class="n">length_squared</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">forward_dir</span><span class="p">)</span>
+
+        <span class="n">aim_dir</span> <span class="o">=</span> <span class="n">aim_dir</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span>
+        <span class="n">cross</span> <span class="o">=</span> <span class="n">forward_dir</span><span class="o">.</span><span class="n">x</span> <span class="o">*</span> <span class="n">aim_dir</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">forward_dir</span><span class="o">.</span><span class="n">y</span> <span class="o">*</span> <span class="n">aim_dir</span><span class="o">.</span><span class="n">x</span>
+        <span class="n">dot</span> <span class="o">=</span> <span class="n">forward_dir</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">aim_dir</span><span class="p">)</span>
+        <span class="n">angle</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">degrees</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">atan2</span><span class="p">(</span><span class="n">cross</span><span class="p">,</span> <span class="n">dot</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">half_angle_deg</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">aim_dir</span>
+
+        <span class="k">return</span> <span class="n">forward_dir</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">half_angle_deg</span> <span class="k">if</span> <span class="n">angle</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="o">-</span><span class="n">half_angle_deg</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_spawn_arrow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">weapon</span><span class="p">,</span> <span class="n">direction</span><span class="p">):</span>
+        <span class="n">direction</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">direction</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">direction</span><span class="o">.</span><span class="n">length_squared</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">direction</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">direction</span> <span class="o">=</span> <span class="n">direction</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span>
+
+        <span class="n">spawn_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_attack_origin</span><span class="p">()</span> <span class="o">+</span> <span class="n">direction</span> <span class="o">*</span> <span class="mi">40</span>
         <span class="n">speed</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">weapon</span><span class="p">,</span> <span class="s2">&quot;projectile_speed&quot;</span><span class="p">,</span> <span class="mi">800</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">800</span>
         <span class="n">max_range</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">weapon</span><span class="p">,</span> <span class="s2">&quot;range&quot;</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span>
         <span class="n">damage</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">weapon</span><span class="p">,</span> <span class="s2">&quot;damage&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">attack_damage</span><span class="p">)</span>
@@ -505,19 +537,27 @@
         <span class="n">enemy</span><span class="o">.</span><span class="n">target_entity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span>
         <span class="k">return</span> <span class="n">enemy</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_player_attack</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_player_attack</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mouse_pos</span><span class="p">):</span>
         <span class="n">weapon</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">equipped_weapon</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_equipped_weapon</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">weapon</span><span class="p">:</span>
             <span class="k">return</span>
+
+        <span class="n">aim_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_mouse_aim_direction</span><span class="p">(</span><span class="n">mouse_pos</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">weapon</span><span class="p">,</span> <span class="s2">&quot;weapon_class&quot;</span><span class="p">,</span> <span class="s2">&quot;melee&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;bow&quot;</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">can_attack</span><span class="p">():</span>
                 <span class="k">return</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">start_attack</span><span class="p">(</span><span class="n">show_slash</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_spawn_arrow</span><span class="p">(</span><span class="n">weapon</span><span class="p">)</span>
+            <span class="n">spread</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">weapon</span><span class="p">,</span> <span class="s2">&quot;spread_degrees&quot;</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">spread</span><span class="p">:</span>
+                <span class="n">aim_dir</span> <span class="o">=</span> <span class="n">aim_dir</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="n">spread</span><span class="p">,</span> <span class="n">spread</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_spawn_arrow</span><span class="p">(</span><span class="n">weapon</span><span class="p">,</span> <span class="n">aim_dir</span><span class="p">)</span>
             <span class="k">return</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">attack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">)</span>
+        <span class="n">cone_degrees</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">weapon</span><span class="p">,</span> <span class="s2">&quot;cone_degrees&quot;</span><span class="p">,</span> <span class="mf">90.0</span><span class="p">))</span>
+        <span class="n">forward_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_attack_direction</span><span class="p">()</span>
+        <span class="n">clamped_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_clamp_direction_to_cone</span><span class="p">(</span><span class="n">aim_dir</span><span class="p">,</span> <span class="n">forward_dir</span><span class="p">,</span> <span class="n">cone_degrees</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">attack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">,</span> <span class="n">aim_direction</span><span class="o">=</span><span class="n">clamped_dir</span><span class="p">,</span> <span class="n">cone_degrees</span><span class="o">=</span><span class="n">cone_degrees</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Game.spawn_random_enemy">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.spawn_random_enemy">[docs]</a>
@@ -680,10 +720,6 @@
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_ESCAPE</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;pause&quot;</span><span class="p">)</span>
             
-            <span class="c1"># Combat input</span>
-            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_SPACE</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_handle_player_attack</span><span class="p">()</span>
-
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_e</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">player_inventory_opened</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">is_interactable</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">toggle_trade</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">MAIN_player_inv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shop_inv</span><span class="p">)</span>
@@ -701,6 +737,11 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">take_damage</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_6</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">gain_xp</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">MOUSEBUTTONDOWN</span> <span class="ow">and</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">player_inventory_opened</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">hud</span><span class="o">.</span><span class="n">inv_button</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">collidepoint</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pos</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_handle_player_attack</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">PLAYER_inventory_open</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAIN_player_inv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PLAYER_inventory_equipment</span><span class="p">)</span></div>
 </div>
