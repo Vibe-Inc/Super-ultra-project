@@ -2,6 +2,40 @@ import pygame
 
 from src.ai.monster_ai import AIContext, build_brain
 
+_ANIMATION_CACHE: dict[tuple[str, tuple[int, int]], dict[str, list[pygame.Surface]]] = {}
+_FLIPPED_CACHE: dict[tuple[str, tuple[int, int]], dict[str, list[pygame.Surface]]] = {}
+
+
+def _load_sprite_animations(
+    sprite_set: str,
+    animation_size: tuple[int, int],
+) -> tuple[dict[str, list[pygame.Surface]], dict[str, list[pygame.Surface]]]:
+    key = (sprite_set, tuple(animation_size))
+    cached = _ANIMATION_CACHE.get(key)
+    if cached is not None:
+        return cached, _FLIPPED_CACHE[key]
+
+    def _load_series(folder: str, prefix: str) -> list[pygame.Surface]:
+        frames: list[pygame.Surface] = []
+        for i in range(1, 5):
+            path = f"assets/characters/{sprite_set}/{folder}/{prefix}{i}.png"
+            image = pygame.image.load(path).convert_alpha()
+            if image.get_size() != animation_size:
+                image = pygame.transform.scale(image, animation_size)
+            frames.append(image)
+        return frames
+
+    animations = {
+        "down": _load_series("FrontWalk", "FrontWalk"),
+        "up": _load_series("BackWalk", "BackWalk"),
+        "side": _load_series("SideWalk", "SideWalk"),
+    }
+    flipped = {"side": [pygame.transform.flip(frame, True, False) for frame in animations["side"]]}
+
+    _ANIMATION_CACHE[key] = animations
+    _FLIPPED_CACHE[key] = flipped
+    return animations, flipped
+
 
 class Enemy:
     """
@@ -116,12 +150,11 @@ class Enemy:
 
         if animations is not None:
             self.animations = animations
-        else:
-            self.animations = {
-                "down":  [pygame.transform.scale(pygame.image.load(f"assets/characters/{sprite_set}/FrontWalk/FrontWalk{i}.png"), animation_size) for i in range(1, 5)],
-                "up":    [pygame.transform.scale(pygame.image.load(f"assets/characters/{sprite_set}/BackWalk/BackWalk{i}.png"), animation_size) for i in range(1, 5)],
-                "side":  [pygame.transform.scale(pygame.image.load(f"assets/characters/{sprite_set}/SideWalk/SideWalk{i}.png"), animation_size) for i in range(1, 5)],
+            self.animations_flipped = {
+                "side": [pygame.transform.flip(frame, True, False) for frame in self.animations["side"]]
             }
+        else:
+            self.animations, self.animations_flipped = _load_sprite_animations(sprite_set, animation_size)
 
         self.direction = "down"
         self.image = self.animations[self.direction][0]
@@ -227,15 +260,14 @@ class Enemy:
 
     def draw(self, screen: pygame.Surface):
         img = self.image
+        if self.direction == "side" and self.flip:
+            img = self.animations_flipped["side"][self.frame_index]
         if self.hit_flash_timer > 0:
             img = img.copy()
             img.fill((255, 50, 50), special_flags=pygame.BLEND_ADD)
-            
+
         draw_pos = (int(self.pos.x), int(self.pos.y))
-        if self.direction == "side":
-            screen.blit(pygame.transform.flip(img, self.flip, False), draw_pos)
-        else:
-            screen.blit(img, draw_pos)
+        screen.blit(img, draw_pos)
 
         # Draw Health Bar
         bar_width = 40
