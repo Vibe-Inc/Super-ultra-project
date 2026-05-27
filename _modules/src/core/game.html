@@ -85,6 +85,9 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.projectile</span><span class="w"> </span><span class="kn">import</span> <span class="n">Arrow</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.hud</span><span class="w"> </span><span class="kn">import</span> <span class="n">HUD</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.collision_system</span><span class="w"> </span><span class="kn">import</span> <span class="n">CollisionSystem</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.ai.navigation</span><span class="w"> </span><span class="kn">import</span> <span class="n">NavGrid</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.monster_visuals</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_monster_animations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.monster_attacks</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_attack_controller</span><span class="p">,</span> <span class="n">AttackContext</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">src.app</span><span class="w"> </span><span class="kn">import</span> <span class="n">App</span>
@@ -134,43 +137,202 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">collision_handler</span> <span class="o">=</span> <span class="n">CollisionSystem</span><span class="p">()</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">obstacles</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">get_obstacles</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nav_grid</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rebuild_nav_grid</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">player_inventory_opened</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">player_inventory_opened</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">MAIN_player_inv</span> <span class="o">=</span> <span class="n">MAIN_player_inventory</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">PLAYER_inventory_equipment</span> <span class="o">=</span> <span class="n">MAIN_player_inventory_equipment</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">projectiles</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enemy_projectiles</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">equipped_weapon</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">enemy_profiles</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;brute&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;visual_style&quot;</span><span class="p">:</span> <span class="s2">&quot;brute&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;sprite_set&quot;</span><span class="p">:</span> <span class="s2">&quot;MenHuman1&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;speed&quot;</span><span class="p">:</span> <span class="mf">110.0</span><span class="p">,</span>
+                <span class="s2">&quot;hp&quot;</span><span class="p">:</span> <span class="mi">160</span><span class="p">,</span>
+                <span class="s2">&quot;damage&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+                <span class="s2">&quot;animation_speed&quot;</span><span class="p">:</span> <span class="mf">5.0</span><span class="p">,</span>
+                <span class="s2">&quot;detection_range&quot;</span><span class="p">:</span> <span class="mf">240.0</span><span class="p">,</span>
+                <span class="s2">&quot;attack_range&quot;</span><span class="p">:</span> <span class="mf">45.0</span><span class="p">,</span>
+                <span class="s2">&quot;ai_profile&quot;</span><span class="p">:</span> <span class="s2">&quot;guardian&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;attack_profile&quot;</span><span class="p">:</span> <span class="s2">&quot;brute&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;attack_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;cooldown_ms&quot;</span><span class="p">:</span> <span class="mi">1100</span><span class="p">,</span>
+                    <span class="s2">&quot;charge_cooldown_ms&quot;</span><span class="p">:</span> <span class="mi">2400</span><span class="p">,</span>
+                    <span class="s2">&quot;charge_duration&quot;</span><span class="p">:</span> <span class="mf">0.7</span><span class="p">,</span>
+                    <span class="s2">&quot;charge_speed_mult&quot;</span><span class="p">:</span> <span class="mf">2.4</span><span class="p">,</span>
+                    <span class="s2">&quot;slam_damage_mult&quot;</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">,</span>
+                    <span class="s2">&quot;slow_duration&quot;</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">,</span>
+                    <span class="s2">&quot;slow_factor&quot;</span><span class="p">:</span> <span class="mf">0.6</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;contact_damage&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;venomous&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;visual_style&quot;</span><span class="p">:</span> <span class="s2">&quot;venomous&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;sprite_set&quot;</span><span class="p">:</span> <span class="s2">&quot;MenHuman1(Recolor)&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;speed&quot;</span><span class="p">:</span> <span class="mf">130.0</span><span class="p">,</span>
+                <span class="s2">&quot;hp&quot;</span><span class="p">:</span> <span class="mi">95</span><span class="p">,</span>
+                <span class="s2">&quot;damage&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span>
+                <span class="s2">&quot;animation_speed&quot;</span><span class="p">:</span> <span class="mf">6.5</span><span class="p">,</span>
+                <span class="s2">&quot;detection_range&quot;</span><span class="p">:</span> <span class="mf">260.0</span><span class="p">,</span>
+                <span class="s2">&quot;attack_range&quot;</span><span class="p">:</span> <span class="mf">38.0</span><span class="p">,</span>
+                <span class="s2">&quot;ai_profile&quot;</span><span class="p">:</span> <span class="s2">&quot;stalker&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;attack_profile&quot;</span><span class="p">:</span> <span class="s2">&quot;venomous&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;attack_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;cooldown_ms&quot;</span><span class="p">:</span> <span class="mi">900</span><span class="p">,</span>
+                    <span class="s2">&quot;poison_duration&quot;</span><span class="p">:</span> <span class="mf">4.0</span><span class="p">,</span>
+                    <span class="s2">&quot;poison_dps&quot;</span><span class="p">:</span> <span class="mf">5.0</span><span class="p">,</span>
+                    <span class="s2">&quot;strike_damage_mult&quot;</span><span class="p">:</span> <span class="mf">0.85</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;contact_damage&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;arcanist&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;visual_style&quot;</span><span class="p">:</span> <span class="s2">&quot;arcanist&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;sprite_set&quot;</span><span class="p">:</span> <span class="s2">&quot;WomanHuman1&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;speed&quot;</span><span class="p">:</span> <span class="mf">115.0</span><span class="p">,</span>
+                <span class="s2">&quot;hp&quot;</span><span class="p">:</span> <span class="mi">80</span><span class="p">,</span>
+                <span class="s2">&quot;damage&quot;</span><span class="p">:</span> <span class="mi">14</span><span class="p">,</span>
+                <span class="s2">&quot;animation_speed&quot;</span><span class="p">:</span> <span class="mf">6.2</span><span class="p">,</span>
+                <span class="s2">&quot;detection_range&quot;</span><span class="p">:</span> <span class="mf">300.0</span><span class="p">,</span>
+                <span class="s2">&quot;attack_range&quot;</span><span class="p">:</span> <span class="mf">40.0</span><span class="p">,</span>
+                <span class="s2">&quot;ai_profile&quot;</span><span class="p">:</span> <span class="s2">&quot;stalker&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;attack_profile&quot;</span><span class="p">:</span> <span class="s2">&quot;arcanist&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;attack_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;cooldown_ms&quot;</span><span class="p">:</span> <span class="mi">950</span><span class="p">,</span>
+                    <span class="s2">&quot;bolt_speed&quot;</span><span class="p">:</span> <span class="mf">480.0</span><span class="p">,</span>
+                    <span class="s2">&quot;bolt_range&quot;</span><span class="p">:</span> <span class="mf">560.0</span><span class="p">,</span>
+                    <span class="s2">&quot;bolt_damage_mult&quot;</span><span class="p">:</span> <span class="mf">0.85</span><span class="p">,</span>
+                    <span class="s2">&quot;burn_duration&quot;</span><span class="p">:</span> <span class="mf">3.2</span><span class="p">,</span>
+                    <span class="s2">&quot;burn_dps&quot;</span><span class="p">:</span> <span class="mf">4.5</span><span class="p">,</span>
+                    <span class="s2">&quot;cast_range&quot;</span><span class="p">:</span> <span class="mf">340.0</span><span class="p">,</span>
+                    <span class="s2">&quot;spread_degrees&quot;</span><span class="p">:</span> <span class="mf">5.0</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;contact_damage&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;trickster&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;visual_style&quot;</span><span class="p">:</span> <span class="s2">&quot;trickster&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;sprite_set&quot;</span><span class="p">:</span> <span class="s2">&quot;WomanHuman1(Recolor)&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;speed&quot;</span><span class="p">:</span> <span class="mf">150.0</span><span class="p">,</span>
+                <span class="s2">&quot;hp&quot;</span><span class="p">:</span> <span class="mi">75</span><span class="p">,</span>
+                <span class="s2">&quot;damage&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+                <span class="s2">&quot;animation_speed&quot;</span><span class="p">:</span> <span class="mf">7.5</span><span class="p">,</span>
+                <span class="s2">&quot;detection_range&quot;</span><span class="p">:</span> <span class="mf">280.0</span><span class="p">,</span>
+                <span class="s2">&quot;attack_range&quot;</span><span class="p">:</span> <span class="mf">35.0</span><span class="p">,</span>
+                <span class="s2">&quot;ai_profile&quot;</span><span class="p">:</span> <span class="s2">&quot;skirmisher&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;attack_profile&quot;</span><span class="p">:</span> <span class="s2">&quot;trickster&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;attack_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;cooldown_ms&quot;</span><span class="p">:</span> <span class="mi">1800</span><span class="p">,</span>
+                    <span class="s2">&quot;step_range&quot;</span><span class="p">:</span> <span class="mf">240.0</span><span class="p">,</span>
+                    <span class="s2">&quot;step_distance&quot;</span><span class="p">:</span> <span class="mf">55.0</span><span class="p">,</span>
+                    <span class="s2">&quot;step_attempts&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+                    <span class="s2">&quot;step_spread_degrees&quot;</span><span class="p">:</span> <span class="mf">110.0</span><span class="p">,</span>
+                    <span class="s2">&quot;strike_range&quot;</span><span class="p">:</span> <span class="mf">75.0</span><span class="p">,</span>
+                    <span class="s2">&quot;confuse_duration&quot;</span><span class="p">:</span> <span class="mf">2.8</span><span class="p">,</span>
+                    <span class="s2">&quot;dizzy_duration&quot;</span><span class="p">:</span> <span class="mf">2.2</span><span class="p">,</span>
+                    <span class="s2">&quot;damage_mult&quot;</span><span class="p">:</span> <span class="mf">0.7</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;contact_damage&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;bomber&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;visual_style&quot;</span><span class="p">:</span> <span class="s2">&quot;bomber&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;sprite_set&quot;</span><span class="p">:</span> <span class="s2">&quot;MenHuman1&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;speed&quot;</span><span class="p">:</span> <span class="mf">105.0</span><span class="p">,</span>
+                <span class="s2">&quot;hp&quot;</span><span class="p">:</span> <span class="mi">125</span><span class="p">,</span>
+                <span class="s2">&quot;damage&quot;</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>
+                <span class="s2">&quot;animation_speed&quot;</span><span class="p">:</span> <span class="mf">6.0</span><span class="p">,</span>
+                <span class="s2">&quot;detection_range&quot;</span><span class="p">:</span> <span class="mf">320.0</span><span class="p">,</span>
+                <span class="s2">&quot;attack_range&quot;</span><span class="p">:</span> <span class="mf">35.0</span><span class="p">,</span>
+                <span class="s2">&quot;ai_profile&quot;</span><span class="p">:</span> <span class="s2">&quot;skirmisher&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;ai_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;preferred_min&quot;</span><span class="p">:</span> <span class="mf">120.0</span><span class="p">,</span>
+                    <span class="s2">&quot;preferred_max&quot;</span><span class="p">:</span> <span class="mf">220.0</span><span class="p">,</span>
+                    <span class="s2">&quot;orbit_radius&quot;</span><span class="p">:</span> <span class="mf">180.0</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;attack_profile&quot;</span><span class="p">:</span> <span class="s2">&quot;bomber&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;attack_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;cooldown_ms&quot;</span><span class="p">:</span> <span class="mi">1400</span><span class="p">,</span>
+                    <span class="s2">&quot;throw_range&quot;</span><span class="p">:</span> <span class="mf">320.0</span><span class="p">,</span>
+                    <span class="s2">&quot;min_range&quot;</span><span class="p">:</span> <span class="mf">90.0</span><span class="p">,</span>
+                    <span class="s2">&quot;bomb_speed&quot;</span><span class="p">:</span> <span class="mf">260.0</span><span class="p">,</span>
+                    <span class="s2">&quot;bomb_range&quot;</span><span class="p">:</span> <span class="mf">420.0</span><span class="p">,</span>
+                    <span class="s2">&quot;blast_radius&quot;</span><span class="p">:</span> <span class="mf">95.0</span><span class="p">,</span>
+                    <span class="s2">&quot;fuse_time&quot;</span><span class="p">:</span> <span class="mf">0.9</span><span class="p">,</span>
+                    <span class="s2">&quot;damage_mult&quot;</span><span class="p">:</span> <span class="mf">1.1</span><span class="p">,</span>
+                    <span class="s2">&quot;knockback_force&quot;</span><span class="p">:</span> <span class="mf">80.0</span><span class="p">,</span>
+                    <span class="s2">&quot;spread_degrees&quot;</span><span class="p">:</span> <span class="mf">12.0</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;contact_damage&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;stalker&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;sprite_set&quot;</span><span class="p">:</span> <span class="s2">&quot;MenHuman1(Recolor)&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;speed&quot;</span><span class="p">:</span> <span class="mf">120.0</span><span class="p">,</span>
+                <span class="s2">&quot;hp&quot;</span><span class="p">:</span> <span class="mi">110</span><span class="p">,</span>
+                <span class="s2">&quot;damage&quot;</span><span class="p">:</span> <span class="mi">15</span><span class="p">,</span>
+                <span class="s2">&quot;animation_speed&quot;</span><span class="p">:</span> <span class="mf">6.0</span><span class="p">,</span>
+                <span class="s2">&quot;detection_range&quot;</span><span class="p">:</span> <span class="mf">260.0</span><span class="p">,</span>
+                <span class="s2">&quot;attack_range&quot;</span><span class="p">:</span> <span class="mf">40.0</span><span class="p">,</span>
+                <span class="s2">&quot;ai_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;memory_duration&quot;</span><span class="p">:</span> <span class="mf">3.0</span><span class="p">,</span>
+                    <span class="s2">&quot;repath_interval&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+                <span class="p">},</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;skirmisher&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;sprite_set&quot;</span><span class="p">:</span> <span class="s2">&quot;WomanHuman1(Recolor)&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;speed&quot;</span><span class="p">:</span> <span class="mf">140.0</span><span class="p">,</span>
+                <span class="s2">&quot;hp&quot;</span><span class="p">:</span> <span class="mi">85</span><span class="p">,</span>
+                <span class="s2">&quot;damage&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+                <span class="s2">&quot;animation_speed&quot;</span><span class="p">:</span> <span class="mf">7.0</span><span class="p">,</span>
+                <span class="s2">&quot;detection_range&quot;</span><span class="p">:</span> <span class="mf">300.0</span><span class="p">,</span>
+                <span class="s2">&quot;attack_range&quot;</span><span class="p">:</span> <span class="mf">35.0</span><span class="p">,</span>
+                <span class="s2">&quot;ai_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;preferred_min&quot;</span><span class="p">:</span> <span class="mf">80.0</span><span class="p">,</span>
+                    <span class="s2">&quot;preferred_max&quot;</span><span class="p">:</span> <span class="mf">170.0</span><span class="p">,</span>
+                    <span class="s2">&quot;orbit_radius&quot;</span><span class="p">:</span> <span class="mf">130.0</span><span class="p">,</span>
+                <span class="p">},</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;guardian&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;sprite_set&quot;</span><span class="p">:</span> <span class="s2">&quot;MenHuman1&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;speed&quot;</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span>
+                <span class="s2">&quot;hp&quot;</span><span class="p">:</span> <span class="mi">140</span><span class="p">,</span>
+                <span class="s2">&quot;damage&quot;</span><span class="p">:</span> <span class="mi">18</span><span class="p">,</span>
+                <span class="s2">&quot;animation_speed&quot;</span><span class="p">:</span> <span class="mf">5.0</span><span class="p">,</span>
+                <span class="s2">&quot;detection_range&quot;</span><span class="p">:</span> <span class="mf">220.0</span><span class="p">,</span>
+                <span class="s2">&quot;attack_range&quot;</span><span class="p">:</span> <span class="mf">45.0</span><span class="p">,</span>
+                <span class="s2">&quot;patrol_radius&quot;</span><span class="p">:</span> <span class="mf">120.0</span><span class="p">,</span>
+                <span class="s2">&quot;ai_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;guard_radius&quot;</span><span class="p">:</span> <span class="mf">320.0</span><span class="p">,</span>
+                    <span class="s2">&quot;leash_slack&quot;</span><span class="p">:</span> <span class="mf">90.0</span><span class="p">,</span>
+                    <span class="s2">&quot;patrol_wait&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>
+                <span class="p">},</span>
+            <span class="p">},</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enemy_profile_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">enemy_profiles</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">ENEMY_SPAWNS</span> <span class="o">=</span> <span class="p">{</span>
             <span class="c1"># &quot;maps/test-map-1.tmx&quot;: (400, 300), # Якщо закоментувати цей рядок, ворога на старті не буде</span>
-            <span class="s2">&quot;maps/test-map-2.tmx&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">600</span><span class="p">,</span> <span class="mi">450</span><span class="p">),</span> 
-            <span class="s2">&quot;maps/test-map-3.tmx&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">300</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+            <span class="s2">&quot;maps/test-map-2.tmx&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">600</span><span class="p">,</span> <span class="mi">450</span><span class="p">),</span> <span class="s2">&quot;profile&quot;</span><span class="p">:</span> <span class="s2">&quot;trickster&quot;</span><span class="p">},</span>
+            <span class="s2">&quot;maps/test-map-3.tmx&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">300</span><span class="p">,</span> <span class="mi">200</span><span class="p">),</span> <span class="s2">&quot;profile&quot;</span><span class="p">:</span> <span class="s2">&quot;skirmisher&quot;</span><span class="p">},</span>
         <span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">NPC_SPAWNS</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;maps/test-map-1.tmx&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">400</span><span class="p">,</span> <span class="mi">400</span><span class="p">)</span>
         <span class="p">}</span>
 
-        <span class="k">if</span> <span class="n">initial_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ENEMY_SPAWNS</span><span class="p">:</span>
-            <span class="n">start_x</span><span class="p">,</span> <span class="n">start_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ENEMY_SPAWNS</span><span class="p">[</span><span class="n">initial_map_path</span><span class="p">]</span>
+        <span class="n">spawn_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_spawn_info</span><span class="p">(</span><span class="n">initial_map_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">spawn_info</span><span class="p">:</span>
+            <span class="n">start_x</span><span class="p">,</span> <span class="n">start_y</span> <span class="o">=</span> <span class="n">spawn_info</span><span class="p">[</span><span class="s2">&quot;pos&quot;</span><span class="p">]</span>
+            <span class="n">default_profile</span> <span class="o">=</span> <span class="n">spawn_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;profile&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">start_x</span><span class="p">,</span> <span class="n">start_y</span> <span class="o">=</span> <span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="o">-</span><span class="mi">5000</span>
+            <span class="n">default_profile</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">hud</span> <span class="o">=</span> <span class="n">HUD</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">,</span> <span class="n">app</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">toggle_player_inventory</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">enemy</span> <span class="o">=</span> <span class="n">Enemy</span><span class="p">(</span>
-            <span class="n">x</span><span class="o">=</span><span class="n">start_x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">start_y</span><span class="p">,</span>
-            <span class="n">sprite_set</span><span class="o">=</span><span class="s2">&quot;MenHuman1(Recolor)&quot;</span><span class="p">,</span>
-            <span class="n">speed</span><span class="o">=</span><span class="mf">120.0</span><span class="p">,</span>
-            <span class="n">hp</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
-            <span class="n">damage</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
-            <span class="n">animation_size</span><span class="o">=</span><span class="p">(</span><span class="mi">85</span><span class="p">,</span> <span class="mi">85</span><span class="p">),</span>
-            <span class="n">animation_speed</span><span class="o">=</span><span class="mf">6.0</span><span class="p">,</span>
-            <span class="n">detection_range</span><span class="o">=</span><span class="mf">250.0</span><span class="p">,</span>
-            <span class="n">attack_range</span><span class="o">=</span><span class="mf">40.0</span>
-        <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">enemy</span><span class="o">.</span><span class="n">target_entity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enemy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_enemy</span><span class="p">(</span><span class="n">start_x</span><span class="p">,</span> <span class="n">start_y</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="n">default_profile</span><span class="p">)</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">enemy</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">items</span> <span class="o">=</span> <span class="p">[]</span>
@@ -268,6 +430,81 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">projectiles</span> <span class="o">=</span> <span class="p">[</span><span class="n">projectile</span> <span class="k">for</span> <span class="n">projectile</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">projectiles</span> <span class="k">if</span> <span class="n">projectile</span><span class="o">.</span><span class="n">alive</span><span class="p">]</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_update_enemy_projectiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemy_projectiles</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">for</span> <span class="n">projectile</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemy_projectiles</span><span class="p">:</span>
+            <span class="n">projectile</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">obstacles</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">enemy_projectiles</span> <span class="o">=</span> <span class="p">[</span><span class="n">projectile</span> <span class="k">for</span> <span class="n">projectile</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemy_projectiles</span> <span class="k">if</span> <span class="n">projectile</span><span class="o">.</span><span class="n">alive</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_rebuild_nav_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">tmx_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">get_tmx_data</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">tmx_data</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nav_grid</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nav_grid</span> <span class="o">=</span> <span class="n">NavGrid</span><span class="o">.</span><span class="n">from_tmx</span><span class="p">(</span><span class="n">tmx_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">obstacles</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_spawn_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">spawn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ENEMY_SPAWNS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">map_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">spawn</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">spawn</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">spawn</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="n">spawn</span><span class="p">,</span> <span class="s2">&quot;profile&quot;</span><span class="p">:</span> <span class="s2">&quot;stalker&quot;</span><span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_make_patrol_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">center</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">,</span> <span class="n">radius</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]:</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="p">(</span><span class="n">center</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">radius</span><span class="p">,</span> <span class="n">center</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">radius</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">center</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">radius</span><span class="p">,</span> <span class="n">center</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">radius</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">center</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">radius</span><span class="p">,</span> <span class="n">center</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">radius</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">center</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">radius</span><span class="p">,</span> <span class="n">center</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">radius</span><span class="p">),</span>
+        <span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_enemy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">profile</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Enemy</span><span class="p">:</span>
+        <span class="n">profile_name</span> <span class="o">=</span> <span class="n">profile</span> <span class="ow">or</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">enemy_profile_names</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">profile_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemy_profiles</span><span class="p">:</span>
+            <span class="n">profile_name</span> <span class="o">=</span> <span class="s2">&quot;stalker&quot;</span>
+
+        <span class="n">settings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemy_profiles</span><span class="p">[</span><span class="n">profile_name</span><span class="p">]</span>
+        <span class="n">ai_profile</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ai_profile&quot;</span><span class="p">,</span> <span class="n">profile_name</span><span class="p">)</span>
+        <span class="n">attack_profile</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attack_profile&quot;</span><span class="p">)</span>
+        <span class="n">attack_controller</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">attack_profile</span><span class="p">:</span>
+            <span class="n">attack_controller</span> <span class="o">=</span> <span class="n">build_attack_controller</span><span class="p">(</span><span class="n">attack_profile</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attack_config&quot;</span><span class="p">))</span>
+        <span class="n">contact_damage</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;contact_damage&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">visual_style</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;visual_style&quot;</span><span class="p">)</span>
+        <span class="n">animations</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">visual_style</span><span class="p">:</span>
+            <span class="n">animations</span> <span class="o">=</span> <span class="n">build_monster_animations</span><span class="p">(</span><span class="n">visual_style</span><span class="p">,</span> <span class="p">(</span><span class="mi">85</span><span class="p">,</span> <span class="mi">85</span><span class="p">))</span>
+        <span class="n">sprite_set</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sprite_set&quot;</span><span class="p">,</span> <span class="s2">&quot;MenHuman1(Recolor)&quot;</span><span class="p">)</span>
+        <span class="n">patrol_points</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;patrol_points&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">patrol_points</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">profile_name</span> <span class="o">==</span> <span class="s2">&quot;guardian&quot;</span><span class="p">:</span>
+            <span class="n">radius</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;patrol_radius&quot;</span><span class="p">,</span> <span class="mf">120.0</span><span class="p">))</span>
+            <span class="n">patrol_points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_patrol_points</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span> <span class="n">radius</span><span class="p">)</span>
+
+        <span class="n">enemy</span> <span class="o">=</span> <span class="n">Enemy</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
+            <span class="n">sprite_set</span><span class="o">=</span><span class="n">sprite_set</span><span class="p">,</span>
+            <span class="n">speed</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s2">&quot;speed&quot;</span><span class="p">],</span>
+            <span class="n">hp</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s2">&quot;hp&quot;</span><span class="p">],</span>
+            <span class="n">damage</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s2">&quot;damage&quot;</span><span class="p">],</span>
+            <span class="n">animation_size</span><span class="o">=</span><span class="p">(</span><span class="mi">85</span><span class="p">,</span> <span class="mi">85</span><span class="p">),</span>
+            <span class="n">animation_speed</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;animation_speed&quot;</span><span class="p">,</span> <span class="mf">6.0</span><span class="p">),</span>
+            <span class="n">detection_range</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;detection_range&quot;</span><span class="p">,</span> <span class="mf">250.0</span><span class="p">),</span>
+            <span class="n">attack_range</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attack_range&quot;</span><span class="p">,</span> <span class="mf">40.0</span><span class="p">),</span>
+            <span class="n">patrol_points</span><span class="o">=</span><span class="n">patrol_points</span><span class="p">,</span>
+            <span class="n">ai_profile</span><span class="o">=</span><span class="n">ai_profile</span><span class="p">,</span>
+            <span class="n">ai_config</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ai_config&quot;</span><span class="p">),</span>
+            <span class="n">animations</span><span class="o">=</span><span class="n">animations</span><span class="p">,</span>
+            <span class="n">attack_controller</span><span class="o">=</span><span class="n">attack_controller</span><span class="p">,</span>
+            <span class="n">contact_damage</span><span class="o">=</span><span class="n">contact_damage</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">enemy</span><span class="o">.</span><span class="n">target_entity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span>
+        <span class="k">return</span> <span class="n">enemy</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">_handle_player_attack</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">weapon</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">equipped_weapon</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_equipped_weapon</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">weapon</span><span class="p">:</span>
@@ -309,21 +546,13 @@
                 <span class="k">if</span> <span class="n">rect</span><span class="o">.</span><span class="n">colliderect</span><span class="p">(</span><span class="n">wall</span><span class="p">):</span>
                     <span class="n">collides</span> <span class="o">=</span> <span class="kc">True</span>
                     <span class="k">break</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nav_grid</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">nav_grid</span><span class="o">.</span><span class="n">is_walkable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nav_grid</span><span class="o">.</span><span class="n">world_to_cell</span><span class="p">(</span><span class="n">pos</span><span class="p">)):</span>
+                <span class="n">collides</span> <span class="o">=</span> <span class="kc">True</span>
             
             <span class="k">if</span> <span class="ow">not</span> <span class="n">collides</span><span class="p">:</span>
                 <span class="c1"># Spawn enemy</span>
-                <span class="n">new_enemy</span> <span class="o">=</span> <span class="n">Enemy</span><span class="p">(</span>
-                    <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
-                    <span class="n">sprite_set</span><span class="o">=</span><span class="s2">&quot;MenHuman1(Recolor)&quot;</span><span class="p">,</span>
-                    <span class="n">speed</span><span class="o">=</span><span class="mf">120.0</span><span class="p">,</span>
-                    <span class="n">hp</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
-                    <span class="n">damage</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
-                    <span class="n">animation_size</span><span class="o">=</span><span class="p">(</span><span class="mi">85</span><span class="p">,</span> <span class="mi">85</span><span class="p">),</span>
-                    <span class="n">animation_speed</span><span class="o">=</span><span class="mf">6.0</span><span class="p">,</span>
-                    <span class="n">detection_range</span><span class="o">=</span><span class="mf">250.0</span><span class="p">,</span>
-                    <span class="n">attack_range</span><span class="o">=</span><span class="mf">40.0</span>
-                <span class="p">)</span>
-                <span class="n">new_enemy</span><span class="o">.</span><span class="n">target_entity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span>
+                <span class="n">new_enemy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_enemy</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_enemy</span><span class="p">)</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Spawned new enemy at (</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
                 <span class="k">break</span></div>
@@ -338,24 +567,16 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="o">=</span> <span class="n">switched_map_path</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Map switched to </span><span class="si">{</span><span class="n">switched_map_path</span><span class="si">}</span><span class="s2">. Respawning enemy...&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">obstacles</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">get_obstacles</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_rebuild_nav_grid</span><span class="p">()</span>
             
             <span class="c1"># Reset enemies list and spawn default one if needed</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span> <span class="o">=</span> <span class="p">[]</span>
             
-            <span class="k">if</span> <span class="n">switched_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ENEMY_SPAWNS</span><span class="p">:</span>
-                <span class="n">new_x</span><span class="p">,</span> <span class="n">new_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ENEMY_SPAWNS</span><span class="p">[</span><span class="n">switched_map_path</span><span class="p">]</span>
-                <span class="n">default_enemy</span> <span class="o">=</span> <span class="n">Enemy</span><span class="p">(</span>
-                    <span class="n">x</span><span class="o">=</span><span class="n">new_x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">new_y</span><span class="p">,</span>
-                    <span class="n">sprite_set</span><span class="o">=</span><span class="s2">&quot;MenHuman1(Recolor)&quot;</span><span class="p">,</span>
-                    <span class="n">speed</span><span class="o">=</span><span class="mf">120.0</span><span class="p">,</span>
-                    <span class="n">hp</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
-                    <span class="n">damage</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
-                    <span class="n">animation_size</span><span class="o">=</span><span class="p">(</span><span class="mi">85</span><span class="p">,</span> <span class="mi">85</span><span class="p">),</span>
-                    <span class="n">animation_speed</span><span class="o">=</span><span class="mf">6.0</span><span class="p">,</span>
-                    <span class="n">detection_range</span><span class="o">=</span><span class="mf">250.0</span><span class="p">,</span>
-                    <span class="n">attack_range</span><span class="o">=</span><span class="mf">40.0</span>
-                <span class="p">)</span>
-                <span class="n">default_enemy</span><span class="o">.</span><span class="n">target_entity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span>
+            <span class="n">spawn_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_spawn_info</span><span class="p">(</span><span class="n">switched_map_path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">spawn_info</span><span class="p">:</span>
+                <span class="n">new_x</span><span class="p">,</span> <span class="n">new_y</span> <span class="o">=</span> <span class="n">spawn_info</span><span class="p">[</span><span class="s2">&quot;pos&quot;</span><span class="p">]</span>
+                <span class="n">profile</span> <span class="o">=</span> <span class="n">spawn_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;profile&quot;</span><span class="p">)</span>
+                <span class="n">default_enemy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_enemy</span><span class="p">(</span><span class="n">new_x</span><span class="p">,</span> <span class="n">new_y</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="n">profile</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">default_enemy</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">switched_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">NPC_SPAWNS</span><span class="p">:</span>
@@ -374,10 +595,19 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">collision_handler</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">obstacles</span><span class="p">)</span>
 
+        <span class="n">now_ms</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span>
+        <span class="n">attack_context</span> <span class="o">=</span> <span class="n">AttackContext</span><span class="p">(</span>
+            <span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span>
+            <span class="n">player</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">,</span>
+            <span class="n">obstacles</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">obstacles</span><span class="p">,</span>
+            <span class="n">projectiles</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">enemy_projectiles</span><span class="p">,</span>
+            <span class="n">now_ms</span><span class="o">=</span><span class="n">now_ms</span><span class="p">,</span>
+        <span class="p">)</span>
         <span class="k">for</span> <span class="n">enemy</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">:</span>
-            <span class="n">enemy</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">collision_handler</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">obstacles</span><span class="p">)</span>
+            <span class="n">enemy</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">collision_handler</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">obstacles</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nav_grid</span><span class="p">,</span> <span class="n">attack_context</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_projectiles</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_enemy_projectiles</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">collision_handler</span><span class="o">.</span><span class="n">check_interactions</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span>
@@ -416,6 +646,9 @@
             <span class="n">enemy</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">projectile</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">projectiles</span><span class="p">:</span>
+            <span class="n">projectile</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">projectile</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemy_projectiles</span><span class="p">:</span>
             <span class="n">projectile</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>

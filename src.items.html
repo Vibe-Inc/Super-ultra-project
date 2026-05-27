@@ -100,6 +100,49 @@
 <section id="module-src.items.effects">
 <span id="src-items-effects-module"></span><h2>src.items.effects module<a class="headerlink" href="#module-src.items.effects" title="Link to this heading"></a></h2>
 <dl class="py class">
+<dt class="sig sig-object py" id="src.items.effects.BurnEffect">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.items.effects.</span></span><span class="sig-name descname"><span class="pre">BurnEffect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">duration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">damage_per_sec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/effects.html#BurnEffect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.effects.BurnEffect" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.items.effects.Effect" title="src.items.effects.Effect"><code class="xref py py-class docutils literal notranslate"><span class="pre">Effect</span></code></a></p>
+<p>Deals fire damage over time.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.effects.BurnEffect.damage_per_sec">
+<span class="sig-name descname"><span class="pre">damage_per_sec</span></span><a class="headerlink" href="#src.items.effects.BurnEffect.damage_per_sec" title="Link to this definition"></a></dt>
+<dd><p>Amount of damage to deal per second.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.effects.BurnEffect.accumulator">
+<span class="sig-name descname"><span class="pre">accumulator</span></span><a class="headerlink" href="#src.items.effects.BurnEffect.accumulator" title="Link to this definition"></a></dt>
+<dd><p>Accumulates fractional damage.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.items.effects.BurnEffect.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/effects.html#BurnEffect.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.effects.BurnEffect.apply" title="Link to this definition"></a></dt>
+<dd><p>Apply the effect’s active logic.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dt</strong> (<em>float</em>) – Time elapsed since last frame.</p></li>
+<li><p><strong>target</strong> (<a class="reference internal" href="src.entities.html#src.entities.character.Character" title="src.entities.character.Character"><em>Character</em></a>) – The entity affected by this effect.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="src.items.effects.ConfusionEffect">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.items.effects.</span></span><span class="sig-name descname"><span class="pre">ConfusionEffect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">duration</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/effects.html#ConfusionEffect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.effects.ConfusionEffect" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#src.items.effects.Effect" title="src.items.effects.Effect"><code class="xref py py-class docutils literal notranslate"><span class="pre">Effect</span></code></a></p>
@@ -362,6 +405,60 @@
 <li><p><strong>dt</strong> (<em>float</em>) – Time elapsed since last frame.</p></li>
 <li><p><strong>target</strong> (<a class="reference internal" href="src.entities.html#src.entities.character.Character" title="src.entities.character.Character"><em>Character</em></a>) – The entity to heal.</p></li>
 </ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.items.effects.SlowEffect">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.items.effects.</span></span><span class="sig-name descname"><span class="pre">SlowEffect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">duration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">speed_multiplier</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/effects.html#SlowEffect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.effects.SlowEffect" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.items.effects.Effect" title="src.items.effects.Effect"><code class="xref py py-class docutils literal notranslate"><span class="pre">Effect</span></code></a></p>
+<p>Reduces movement speed for a duration.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.effects.SlowEffect.speed_multiplier">
+<span class="sig-name descname"><span class="pre">speed_multiplier</span></span><a class="headerlink" href="#src.items.effects.SlowEffect.speed_multiplier" title="Link to this definition"></a></dt>
+<dd><p>Multiplier applied to target speed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.effects.SlowEffect.started">
+<span class="sig-name descname"><span class="pre">started</span></span><a class="headerlink" href="#src.items.effects.SlowEffect.started" title="Link to this definition"></a></dt>
+<dd><p>Whether the effect has been initialized on the target.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.items.effects.SlowEffect.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/effects.html#SlowEffect.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.effects.SlowEffect.apply" title="Link to this definition"></a></dt>
+<dd><p>Apply the effect’s active logic.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dt</strong> (<em>float</em>) – Time elapsed since last frame.</p></li>
+<li><p><strong>target</strong> (<a class="reference internal" href="src.entities.html#src.entities.character.Character" title="src.entities.character.Character"><em>Character</em></a>) – The entity affected by this effect.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.items.effects.SlowEffect.on_end">
+<span class="sig-name descname"><span class="pre">on_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/effects.html#SlowEffect.on_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.effects.SlowEffect.on_end" title="Link to this definition"></a></dt>
+<dd><p>Perform any cleanup when the effect expires.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>target</strong> (<a class="reference internal" href="src.entities.html#src.entities.character.Character" title="src.entities.character.Character"><em>Character</em></a>) – The entity affected by this effect.</p>
 </dd>
 </dl>
 </dd></dl>

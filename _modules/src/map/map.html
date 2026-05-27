@@ -109,9 +109,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">pixel_height</span> <span class="o">=</span> <span class="mi">0</span></div>
 
 
-<div class="viewcode-block" id="Map.draw">
-<a class="viewcode-back" href="../../../src.map.html#src.map.map.Map.draw">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
+<div class="viewcode-block" id="Map.ensure_loaded">
+<a class="viewcode-back" href="../../../src.map.html#src.map.map.Map.ensure_loaded">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ensure_loaded</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading map: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">map_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -121,7 +121,24 @@
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Map loaded successfully: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">map_file</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">pixel_width</span><span class="si">}</span><span class="s2">x</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">pixel_height</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load map </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">map_file</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                <span class="k">return</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="Map.get_tmx_data">
+<a class="viewcode-back" href="../../../src.map.html#src.map.map.Map.get_tmx_data">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_tmx_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ensure_loaded</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="Map.draw">
+<a class="viewcode-back" href="../../../src.map.html#src.map.map.Map.draw">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">ensure_loaded</span><span class="p">():</span>
+            <span class="k">return</span>
 
         <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">visible_layers</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">pytmx</span><span class="o">.</span><span class="n">TiledTileLayer</span><span class="p">):</span>
@@ -135,14 +152,8 @@
 <div class="viewcode-block" id="Map.get_obstacles">
 <a class="viewcode-back" href="../../../src.map.html#src.map.map.Map.get_obstacles">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_obstacles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-             <span class="k">try</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span> <span class="o">=</span> <span class="n">pytmx</span><span class="o">.</span><span class="n">load_pygame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">map_file</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">pixel_width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">width</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">tilewidth</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">pixel_height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">height</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">tileheight</span>
-             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load map </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">map_file</span><span class="si">}</span><span class="s2"> for obstacles: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                <span class="k">return</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">ensure_loaded</span><span class="p">():</span>
+            <span class="k">return</span> <span class="p">[]</span>
 
         <span class="n">obstacles</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="p">:</span>
@@ -226,8 +237,8 @@
 <span class="sd">        Updates map logic and handles transitions based on player position.</span>
 <span class="sd">        Returns: string (path to new map) if switch happened, else None.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">game_map</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">game_map</span> <span class="o">=</span> <span class="n">pytmx</span><span class="o">.</span><span class="n">load_pygame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">map_file</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">ensure_loaded</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">None</span>
 
         <span class="n">tmx_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">game_map</span>
         <span class="n">map_width</span> <span class="o">=</span> <span class="n">tmx_data</span><span class="o">.</span><span class="n">width</span> <span class="o">*</span> <span class="n">tmx_data</span><span class="o">.</span><span class="n">tilewidth</span>

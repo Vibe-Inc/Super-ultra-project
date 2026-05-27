@@ -152,7 +152,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">animations</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">direction</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">960</span><span class="p">,</span> <span class="mi">540</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">spawn_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">=</span> <span class="mi">200</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">base_speed</span> <span class="o">=</span> <span class="mi">200</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">speed_multiplier</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_speed</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sprint_multiplier</span> <span class="o">=</span> <span class="mf">1.8</span> 
         
         <span class="c1"># New attributes for collision</span>
@@ -323,7 +325,9 @@
         <span class="k">if</span> <span class="n">wants_to_sprint</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">stamina</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">can_sprint</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">is_sprinting</span> <span class="o">=</span> <span class="kc">True</span>
 
-        <span class="n">current_speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sprint_multiplier</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_sprinting</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed</span>
+        <span class="n">current_speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_speed</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed_multiplier</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_sprinting</span><span class="p">:</span>
+            <span class="n">current_speed</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sprint_multiplier</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">=</span> <span class="n">current_speed</span> 
 
         <span class="c1"># Movement logic with confusion support</span>
@@ -405,7 +409,7 @@
         
         <span class="c1"># Reset speed to base speed for next frame logic (if needed elsewhere)</span>
         <span class="c1"># Though _set_velocity will overwrite it again next frame.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">=</span> <span class="mi">200</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_speed</span> 
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">moving</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">time_accumulator</span> <span class="o">+=</span> <span class="n">dt</span>

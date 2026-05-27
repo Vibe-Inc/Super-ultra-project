@@ -212,6 +212,32 @@
 </div>
 
 
+<div class="viewcode-block" id="BurnEffect">
+<a class="viewcode-back" href="../../../src.items.html#src.items.effects.BurnEffect">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BurnEffect</span><span class="p">(</span><span class="n">Effect</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Deals fire damage over time.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        damage_per_sec (float): Amount of damage to deal per second.</span>
+<span class="sd">        accumulator (float): Accumulates fractional damage.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">damage_per_sec</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">duration</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">damage_per_sec</span> <span class="o">=</span> <span class="n">damage_per_sec</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+<div class="viewcode-block" id="BurnEffect.apply">
+<a class="viewcode-back" href="../../../src.items.html#src.items.effects.BurnEffect.apply">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">damage_per_sec</span> <span class="o">*</span> <span class="n">dt</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">dmg</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span><span class="p">)</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">take_damage</span><span class="p">(</span><span class="n">dmg</span><span class="p">,</span> <span class="n">ignore_invulnerability</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span> <span class="o">-=</span> <span class="n">dmg</span></div>
+</div>
+
+
 <div class="viewcode-block" id="ConfusionEffect">
 <a class="viewcode-back" href="../../../src.items.html#src.items.effects.ConfusionEffect">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ConfusionEffect</span><span class="p">(</span><span class="n">Effect</span><span class="p">):</span>
@@ -296,11 +322,43 @@
 </div>
 
 
+<div class="viewcode-block" id="SlowEffect">
+<a class="viewcode-back" href="../../../src.items.html#src.items.effects.SlowEffect">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SlowEffect</span><span class="p">(</span><span class="n">Effect</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reduces movement speed for a duration.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        speed_multiplier (float): Multiplier applied to target speed.</span>
+<span class="sd">        started (bool): Whether the effect has been initialized on the target.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">speed_multiplier</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">duration</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">speed_multiplier</span> <span class="o">=</span> <span class="n">speed_multiplier</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">started</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="SlowEffect.apply">
+<a class="viewcode-back" href="../../../src.items.html#src.items.effects.SlowEffect.apply">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">started</span><span class="p">:</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">speed_multiplier</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="s2">&quot;speed_multiplier&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed_multiplier</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">started</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="SlowEffect.on_end">
+<a class="viewcode-back" href="../../../src.items.html#src.items.effects.SlowEffect.on_end">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">speed_multiplier</span> <span class="o">=</span> <span class="mf">1.0</span></div>
+</div>
+
+
 <span class="n">Effect_list</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;regeneration&quot;</span><span class="p">:</span> <span class="n">RegenerationEffect</span><span class="p">,</span>
     <span class="s2">&quot;poison&quot;</span><span class="p">:</span> <span class="n">PoisonEffect</span><span class="p">,</span>
+    <span class="s2">&quot;burn&quot;</span><span class="p">:</span> <span class="n">BurnEffect</span><span class="p">,</span>
     <span class="s2">&quot;confusion&quot;</span><span class="p">:</span> <span class="n">ConfusionEffect</span><span class="p">,</span>
-    <span class="s2">&quot;dizziness&quot;</span><span class="p">:</span> <span class="n">DizzinessEffect</span>
+    <span class="s2">&quot;dizziness&quot;</span><span class="p">:</span> <span class="n">DizzinessEffect</span><span class="p">,</span>
+    <span class="s2">&quot;slow&quot;</span><span class="p">:</span> <span class="n">SlowEffect</span><span class="p">,</span>
 <span class="p">}</span>
 
 <div class="viewcode-block" id="create_effect">

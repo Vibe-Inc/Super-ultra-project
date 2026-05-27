@@ -236,6 +236,8 @@
 <li class="toctree-l3"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy"><code class="docutils literal notranslate"><span class="pre">Enemy</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.pos"><code class="docutils literal notranslate"><span class="pre">Enemy.pos</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.speed"><code class="docutils literal notranslate"><span class="pre">Enemy.speed</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.base_speed"><code class="docutils literal notranslate"><span class="pre">Enemy.base_speed</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.speed_multiplier"><code class="docutils literal notranslate"><span class="pre">Enemy.speed_multiplier</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.rect"><code class="docutils literal notranslate"><span class="pre">Enemy.rect</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.velocity"><code class="docutils literal notranslate"><span class="pre">Enemy.velocity</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.hp"><code class="docutils literal notranslate"><span class="pre">Enemy.hp</span></code></a></li>
@@ -251,6 +253,10 @@
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.damage"><code class="docutils literal notranslate"><span class="pre">Enemy.damage</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.target"><code class="docutils literal notranslate"><span class="pre">Enemy.target</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.target_entity"><code class="docutils literal notranslate"><span class="pre">Enemy.target_entity</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.ai_profile"><code class="docutils literal notranslate"><span class="pre">Enemy.ai_profile</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.brain"><code class="docutils literal notranslate"><span class="pre">Enemy.brain</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.attack_controller"><code class="docutils literal notranslate"><span class="pre">Enemy.attack_controller</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.contact_damage"><code class="docutils literal notranslate"><span class="pre">Enemy.contact_damage</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.ai_state"><code class="docutils literal notranslate"><span class="pre">Enemy.ai_state</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.patrol_points"><code class="docutils literal notranslate"><span class="pre">Enemy.patrol_points</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.patrol_index"><code class="docutils literal notranslate"><span class="pre">Enemy.patrol_index</span></code></a></li>
@@ -357,6 +363,12 @@
 <li class="toctree-l1"><a class="reference internal" href="src.items.html">src.items package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="src.items.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="src.items.html#module-src.items.effects">src.items.effects module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="src.items.html#src.items.effects.BurnEffect"><code class="docutils literal notranslate"><span class="pre">BurnEffect</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.effects.BurnEffect.damage_per_sec"><code class="docutils literal notranslate"><span class="pre">BurnEffect.damage_per_sec</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.effects.BurnEffect.accumulator"><code class="docutils literal notranslate"><span class="pre">BurnEffect.accumulator</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.effects.BurnEffect.apply"><code class="docutils literal notranslate"><span class="pre">BurnEffect.apply()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="src.items.html#src.items.effects.ConfusionEffect"><code class="docutils literal notranslate"><span class="pre">ConfusionEffect</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.effects.ConfusionEffect.started"><code class="docutils literal notranslate"><span class="pre">ConfusionEffect.started</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.effects.ConfusionEffect.apply"><code class="docutils literal notranslate"><span class="pre">ConfusionEffect.apply()</span></code></a></li>
@@ -391,6 +403,13 @@
 <li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.effects.RegenerationEffect.amount_per_sec"><code class="docutils literal notranslate"><span class="pre">RegenerationEffect.amount_per_sec</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.effects.RegenerationEffect.accumulator"><code class="docutils literal notranslate"><span class="pre">RegenerationEffect.accumulator</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.effects.RegenerationEffect.apply"><code class="docutils literal notranslate"><span class="pre">RegenerationEffect.apply()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="src.items.html#src.items.effects.SlowEffect"><code class="docutils literal notranslate"><span class="pre">SlowEffect</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.effects.SlowEffect.speed_multiplier"><code class="docutils literal notranslate"><span class="pre">SlowEffect.speed_multiplier</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.effects.SlowEffect.started"><code class="docutils literal notranslate"><span class="pre">SlowEffect.started</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.effects.SlowEffect.apply"><code class="docutils literal notranslate"><span class="pre">SlowEffect.apply()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.effects.SlowEffect.on_end"><code class="docutils literal notranslate"><span class="pre">SlowEffect.on_end()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="src.items.html#src.items.effects.create_effect"><code class="docutils literal notranslate"><span class="pre">create_effect()</span></code></a></li>
@@ -466,7 +485,9 @@
 <li class="toctree-l4"><a class="reference internal" href="src.map.html#src.map.map.Map.__init__"><code class="docutils literal notranslate"><span class="pre">Map.__init__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.map.html#src.map.map.Map.draw"><code class="docutils literal notranslate"><span class="pre">Map.draw()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.map.html#id3"><code class="docutils literal notranslate"><span class="pre">Map.draw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.map.html#src.map.map.Map.ensure_loaded"><code class="docutils literal notranslate"><span class="pre">Map.ensure_loaded()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.map.html#src.map.map.Map.get_obstacles"><code class="docutils literal notranslate"><span class="pre">Map.get_obstacles()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.map.html#src.map.map.Map.get_tmx_data"><code class="docutils literal notranslate"><span class="pre">Map.get_tmx_data()</span></code></a></li>
 </ul>
 </li>
 </ul>
