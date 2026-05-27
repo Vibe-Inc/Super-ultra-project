@@ -239,7 +239,7 @@ class Game(State):
 
         self.ENEMY_SPAWNS = {
             # "maps/test-map-1.tmx": (400, 300), # Якщо закоментувати цей рядок, ворога на старті не буде
-            "maps/test-map-2.tmx": {"pos": (600, 450), "profile": "bomber"},
+            "maps/test-map-2.tmx": {"pos": (600, 450), "profile": "trickster"},
             "maps/test-map-3.tmx": {"pos": (300, 200), "profile": "skirmisher"},
         }
 

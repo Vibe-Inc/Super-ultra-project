@@ -262,13 +262,15 @@ class TricksterAttack(BaseAttack):
         enemy.pos = new_pos
         enemy.ai_state = "blink"
 
-        if enemy_center.distance_to(player_center) <= self.strike_range:
+        new_center = _entity_center(enemy)
+        if new_center.distance_to(player_center) <= self.strike_range:
             damage = int(enemy.damage * self.damage_mult)
             if damage > 0:
                 player.take_damage(damage)
             player.add_effect(ConfusionEffect(self.confuse_duration))
             player.add_effect(DizzinessEffect(self.dizzy_duration))
-            self.last_attack_time = context.now_ms
+
+        self.last_attack_time = context.now_ms
 
 
 class BomberAttack(BaseAttack):

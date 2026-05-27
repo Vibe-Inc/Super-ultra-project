@@ -159,8 +159,11 @@ class StalkerBrain(BaseBrain):
 
         if distance <= enemy.attack_range:
             enemy.ai_state = "attack"
-            enemy.target = None
-            self._clear_path()
+            if getattr(enemy, "contact_damage", True):
+                self._move_to(enemy, context, player_pos)
+            else:
+                enemy.target = None
+                self._clear_path()
             return
 
         if distance <= enemy.detection_range:
@@ -232,12 +235,18 @@ class SkirmisherBrain(BaseBrain):
 
         if distance <= enemy.attack_range:
             enemy.ai_state = "attack"
-            enemy.target = None
-            self._clear_path()
+            if getattr(enemy, "contact_damage", True):
+                self._move_to(enemy, context, player_pos)
+            else:
+                enemy.target = None
+                self._clear_path()
             return
 
         preferred_min = float(self.config.get("preferred_min", enemy.attack_range * 1.3))
         preferred_max = float(self.config.get("preferred_max", enemy.attack_range * 3.0))
+        if getattr(enemy, "contact_damage", True):
+            preferred_min = min(preferred_min, enemy.attack_range * 0.8)
+            preferred_max = max(preferred_max, enemy.attack_range * 1.6)
 
         if distance < preferred_min:
             enemy.ai_state = "retreat"
@@ -300,8 +309,11 @@ class GuardianBrain(BaseBrain):
                 if player_guard_distance <= self.guard_radius + self.leash_slack:
                     if player_distance <= enemy.attack_range:
                         enemy.ai_state = "attack"
-                        enemy.target = None
-                        self._clear_path()
+                        if getattr(enemy, "contact_damage", True):
+                            self._move_to(enemy, context, player_pos)
+                        else:
+                            enemy.target = None
+                            self._clear_path()
                         return
                     enemy.ai_state = "chase"
                     self._move_to(enemy, context, player_pos)
