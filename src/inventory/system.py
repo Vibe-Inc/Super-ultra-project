@@ -363,7 +363,7 @@ class ShopInventory(Inventory):
                             manager.selected_item = [new_item, 1]
                             # Do not remove from shop (infinite stock)
                         else:
-                            logger.warning(f"Not enough money to buy {shop_item.id}. Cost: ${buy_price}, Balance: ${self.app.money}")
+                            logger.info(f"Not enough money to buy {shop_item.id}. Cost: ${buy_price}, Balance: ${self.app.money}")
 
 
 class MAIN_player_inventory(Inventory):
@@ -380,6 +380,7 @@ class MAIN_player_inventory(Inventory):
     """
     def __init__(self, app:"App"):
         self.app = app
+        self._portrait_cache = {}
         super().__init__(
             cfg.MAIN_INV_columns,
             cfg.MAIN_INV_rows,
@@ -391,6 +392,43 @@ class MAIN_player_inventory(Inventory):
             cfg.BASE_INV_slot_color,
             cfg.BASE_INV_border_color
         )
+
+    def _load_portrait_surface(self, character):
+        sprite_set = getattr(character, "sprite_set", None)
+        if not sprite_set:
+            return None
+
+        cached = self._portrait_cache.get(sprite_set)
+        if cached:
+            return cached
+
+        portrait_path = f"assets/characters/{sprite_set}/PortraitAndShowcase/Portrait.png"
+        try:
+            portrait = pygame.image.load(portrait_path).convert_alpha()
+        except FileNotFoundError:
+            return None
+
+        self._portrait_cache[sprite_set] = portrait
+        return portrait
+
+    def _crop_face_from_frame(self, frame):
+        face_height = max(1, int(frame.get_height() * 0.4))
+        face_rect = pygame.Rect(0, 0, frame.get_width(), face_height)
+        return frame.subsurface(face_rect).copy()
+
+    def _scale_to_fit(self, surface, target_rect):
+        if surface.get_width() == 0 or surface.get_height() == 0:
+            return surface
+
+        scale = min(
+            target_rect.width / surface.get_width(),
+            target_rect.height / surface.get_height(),
+        )
+        new_size = (
+            max(1, int(surface.get_width() * scale)),
+            max(1, int(surface.get_height() * scale)),
+        )
+        return pygame.transform.smoothscale(surface, new_size)
     def draw(self, screen):
         pygame.draw.rect( 
             screen,
@@ -416,19 +454,15 @@ class MAIN_player_inventory(Inventory):
         # Draw character preview
         game_state = self.app.manager.states.get("gameplay")
         if game_state and hasattr(game_state, "character"):
-            # Get the current frame of the character
-            char_img = game_state.character.image
-            
-            # Scale it up to fit the preview box
-            scale_factor = 2.5
-            new_width = int(char_img.get_width() * scale_factor)
-            new_height = int(char_img.get_height() * scale_factor)
-            scaled_img = pygame.transform.scale(char_img, (new_width, new_height))
-            
-            # Center the image in the preview box
-            preview_rect = pygame.Rect(preview_x, self.pos_y-305, 190, 275)
+            preview_rect = pygame.Rect(preview_x, self.pos_y - 305, 190, 275)
+            character = game_state.character
+
+            portrait = self._load_portrait_surface(character)
+            if portrait is None:
+                portrait = self._crop_face_from_frame(character.image)
+
+            scaled_img = self._scale_to_fit(portrait, preview_rect)
             img_rect = scaled_img.get_rect(center=preview_rect.center)
-            
             screen.blit(scaled_img, img_rect)
 
         # Draw money
