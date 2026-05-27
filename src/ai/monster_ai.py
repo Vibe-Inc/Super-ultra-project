@@ -86,8 +86,13 @@ class BaseBrain:
             return
 
         current = _entity_center(enemy)
-        while self.path_index < len(self.path) and current.distance_to(self.path[self.path_index]) <= self.path_node_radius:
-            self.path_index += 1
+        while self.path_index < len(self.path):
+            target_node = self.path[self.path_index]
+            diff = target_node - current
+            if diff.length_squared() <= (self.path_node_radius * self.path_node_radius):
+                self.path_index += 1
+                continue
+            break
 
         if self.path_index >= len(self.path):
             self._clear_path()
@@ -123,7 +128,7 @@ class BaseBrain:
         if (
             self.roam_target is None
             or self.roam_timer <= 0
-            or current.distance_to(self.roam_target) <= self.path_node_radius * 2
+            or (self.roam_target is not None and (self.roam_target - current).length_squared() <= (self.path_node_radius * 2) * (self.path_node_radius * 2))
         ):
             self.roam_timer = interval
             self.roam_target = self._random_point_near(center, radius, context.nav_grid)
@@ -155,11 +160,12 @@ class StalkerBrain(BaseBrain):
 
         enemy_pos = _entity_center(enemy)
         player_pos = _entity_center(player)
-        distance = enemy_pos.distance_to(player_pos)
+        diff = player_pos - enemy_pos
+        distance_sq = diff.length_squared()
 
         wants_melee = getattr(enemy, "contact_damage", True) and getattr(enemy, "attack_controller", None) is None
         if wants_melee:
-            if distance <= enemy.attack_range:
+            if distance_sq <= (enemy.attack_range * enemy.attack_range):
                 enemy.ai_state = "attack"
                 self._move_to(enemy, context, player_pos)
                 return
@@ -167,7 +173,7 @@ class StalkerBrain(BaseBrain):
             self._move_to(enemy, context, player_pos)
             return
 
-        if distance <= enemy.attack_range:
+        if distance_sq <= (enemy.attack_range * enemy.attack_range):
             enemy.ai_state = "attack"
             if getattr(enemy, "contact_damage", True):
                 self._move_to(enemy, context, player_pos)
@@ -176,7 +182,7 @@ class StalkerBrain(BaseBrain):
                 self._clear_path()
             return
 
-        if distance <= enemy.detection_range:
+        if distance_sq <= (enemy.detection_range * enemy.detection_range):
             self.memory_timer = self.memory_duration
             self.last_seen_pos = pygame.Vector2(player_pos)
             enemy.ai_state = "chase"
@@ -202,7 +208,7 @@ class StalkerBrain(BaseBrain):
                 return
 
             patrol_target = pygame.Vector2(enemy.patrol_points[enemy.patrol_index])
-            if enemy_pos.distance_to(patrol_target) <= 12:
+            if (patrol_target - enemy_pos).length_squared() <= 12 * 12:
                 enemy.patrol_index = (enemy.patrol_index + 1) % len(enemy.patrol_points)
                 self.patrol_wait_timer = self.patrol_wait
                 enemy.target = None
@@ -235,15 +241,16 @@ class SkirmisherBrain(BaseBrain):
 
         enemy_pos = _entity_center(enemy)
         player_pos = _entity_center(player)
-        distance = enemy_pos.distance_to(player_pos)
+        sd = player_pos - enemy_pos
+        distance_sq = sd.length_squared()
 
-        if distance > enemy.detection_range:
+        if distance_sq > (enemy.detection_range * enemy.detection_range):
             enemy.ai_state = "roam"
             roam_radius = float(self.config.get("roam_radius", 220.0))
             self._roam(enemy, context, pygame.Vector2(enemy.spawn_pos), roam_radius, self.roam_interval)
             return
 
-        if distance <= enemy.attack_range:
+        if distance_sq <= (enemy.attack_range * enemy.attack_range):
             enemy.ai_state = "attack"
             if getattr(enemy, "contact_damage", True):
                 self._move_to(enemy, context, player_pos)
@@ -258,7 +265,7 @@ class SkirmisherBrain(BaseBrain):
             preferred_min = min(preferred_min, enemy.attack_range * 0.8)
             preferred_max = max(preferred_max, enemy.attack_range * 1.6)
 
-        if distance < preferred_min:
+        if distance_sq < (preferred_min * preferred_min):
             enemy.ai_state = "retreat"
             away = enemy_pos - player_pos
             if away.length_squared() == 0:
@@ -267,7 +274,7 @@ class SkirmisherBrain(BaseBrain):
             self._move_to(enemy, context, target)
             return
 
-        if distance > preferred_max:
+        if distance_sq > (preferred_max * preferred_max):
             enemy.ai_state = "chase"
             self._move_to(enemy, context, player_pos)
             return
@@ -309,15 +316,17 @@ class GuardianBrain(BaseBrain):
 
         if player is not None:
             player_pos = _entity_center(player)
-            player_distance = enemy_pos.distance_to(player_pos)
-            player_guard_distance = player_pos.distance_to(guard_center)
+            pdiff = player_pos - enemy_pos
+            player_distance_sq = pdiff.length_squared()
+            pgdiff = player_pos - guard_center
+            player_guard_distance_sq = pgdiff.length_squared()
 
-            if player_distance <= enemy.detection_range and player_guard_distance <= self.guard_radius:
+            if player_distance_sq <= (enemy.detection_range * enemy.detection_range) and player_guard_distance_sq <= (self.guard_radius * self.guard_radius):
                 self.alerted = True
 
             if self.alerted:
-                if player_guard_distance <= self.guard_radius + self.leash_slack:
-                    if player_distance <= enemy.attack_range:
+                if player_guard_distance_sq <= (self.guard_radius + self.leash_slack) * (self.guard_radius + self.leash_slack):
+                    if player_distance_sq <= (enemy.attack_range * enemy.attack_range):
                         enemy.ai_state = "attack"
                         if getattr(enemy, "contact_damage", True):
                             self._move_to(enemy, context, player_pos)
@@ -339,7 +348,7 @@ class GuardianBrain(BaseBrain):
                 return
 
             patrol_target = pygame.Vector2(enemy.patrol_points[enemy.patrol_index])
-            if enemy_pos.distance_to(patrol_target) <= 12:
+            if (patrol_target - enemy_pos).length_squared() <= 12 * 12:
                 enemy.patrol_index = (enemy.patrol_index + 1) % len(enemy.patrol_points)
                 self.patrol_wait_timer = self.patrol_wait
                 enemy.target = None
@@ -349,7 +358,7 @@ class GuardianBrain(BaseBrain):
             self._move_to(enemy, context, patrol_target)
             return
 
-        if enemy_pos.distance_to(guard_center) > self.guard_radius * 0.6:
+        if (enemy_pos - guard_center).length_squared() > (self.guard_radius * 0.6) * (self.guard_radius * 0.6):
             enemy.ai_state = "return"
             self._move_to(enemy, context, guard_center)
             return
