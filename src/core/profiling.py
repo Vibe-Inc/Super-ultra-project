@@ -119,6 +119,17 @@ class FrameProfiler:
                 lines.append(f"Mouse: ({mx}, {my})")
             except Exception:
                 pass
+            # show actual window size and configured size for debugging
+            try:
+                w = screen.get_width()
+                h = screen.get_height()
+                lines.append(f"Window: {w}x{h}")
+                lines.append(f"Cfg: {cfg.SCREEN_WIDTH}x{cfg.SCREEN_HEIGHT}")
+                if cfg.SCREEN_WIDTH:
+                    scale = w / cfg.SCREEN_WIDTH
+                    lines.append(f"Scale: {scale:.2f}x")
+            except Exception:
+                pass
 
         line_surfs = [self._font.render(line, True, (255, 255, 255)) for line in lines]
         max_width = max((surf.get_width() for surf in line_surfs), default=0)
