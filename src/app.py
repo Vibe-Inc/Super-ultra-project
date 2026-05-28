@@ -53,7 +53,9 @@ class App:
         logger.info("Initializing Application...")
         # Create the window at the exact configured resolution.
         # DPI awareness is enabled in `main.py`, so we want 1:1 pixels here.
-        self.screen = pygame.display.set_mode((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT))
+        self.windowed_size = (cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT)
+        self.is_fullscreen = False
+        self.screen = pygame.display.set_mode(self.windowed_size, pygame.RESIZABLE)
         pygame.display.set_caption("super cooool project ;)")
         self.icon = pygame.image.load("assets/smug.png")
         pygame.display.set_icon(self.icon)
@@ -72,7 +74,6 @@ class App:
 
         # Audio / fullscreen / clock
         self.audio = "on"
-        self.is_fullscreen = False
         self.clock = pygame.time.Clock()
         self._brightness_overlay = None
         self.profiler = FrameProfiler()
@@ -91,10 +92,11 @@ class App:
             cfg.LANGUAGE = lang_code
             i18n.install_language(lang_code)
 
-            cfg.myfont = cfg.get_font(60)
-            cfg.button_font = cfg.get_font(60)
-            cfg.tooltip_font_CREDITS = cfg.get_font(20)
-            cfg.INV_nums_font = cfg.get_font(15)
+            # Recompute scaled fonts for the new language and current screen size
+            try:
+                cfg.update_scaled_fonts()
+            except Exception:
+                pass
             
             self.create_logo()
             self.manager.reinit_states()
@@ -107,6 +109,54 @@ class App:
 
     def toggle_profiler(self):
         self.set_profiler_enabled(not cfg.PROFILER_ENABLED)
+
+    def _get_fullscreen_size(self):
+        try:
+            desktop_sizes = pygame.display.get_desktop_sizes()
+            if desktop_sizes:
+                return desktop_sizes[0]
+        except Exception:
+            pass
+
+        info = pygame.display.Info()
+        return info.current_w or cfg.SCREEN_WIDTH, info.current_h or cfg.SCREEN_HEIGHT
+
+    def _apply_display_mode(self, fullscreen: bool, update_windowed_size: bool = True):
+        if update_windowed_size and not self.is_fullscreen:
+            self.windowed_size = self.screen.get_size()
+
+        target_size = self._get_fullscreen_size() if fullscreen else self.windowed_size
+        flags = pygame.FULLSCREEN if fullscreen else pygame.RESIZABLE
+
+        cfg.set_screen_size(*target_size)
+        self.screen = pygame.display.set_mode(target_size, flags)
+        pygame.display.set_icon(self.icon)
+
+        self.is_fullscreen = fullscreen
+        self.create_logo()
+        self._brightness_overlay = None
+
+        gameplay_state = getattr(self.manager, "states", {}).get("gameplay") if hasattr(self, "manager") else None
+        if gameplay_state and hasattr(gameplay_state, "reinit_ui"):
+            gameplay_state.reinit_ui()
+
+    def toggle_display_mode(self):
+        self._apply_display_mode(not self.is_fullscreen)
+
+    def sync_display_size(self, width: int, height: int):
+        if self.is_fullscreen:
+            return
+
+        self.windowed_size = (int(width), int(height))
+        cfg.set_screen_size(*self.windowed_size)
+        self.screen = pygame.display.set_mode(self.windowed_size, pygame.RESIZABLE)
+        pygame.display.set_icon(self.icon)
+        self.create_logo()
+        self._brightness_overlay = None
+
+        gameplay_state = getattr(self.manager, "states", {}).get("gameplay") if hasattr(self, "manager") else None
+        if gameplay_state and hasattr(gameplay_state, "reinit_ui"):
+            gameplay_state.reinit_ui()
 
     def music_play(self):
         pygame.mixer.music.load('sounds/LIFE (Instrumental).wav')
@@ -150,8 +200,12 @@ class App:
                     running = False
                     pygame.quit()
                     sys.exit()
+                if event.type == pygame.VIDEORESIZE:
+                    self.sync_display_size(event.w, event.h)
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_F3:
                     self.toggle_profiler()
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
+                    self.toggle_display_mode()
                 self.manager.handle_event(event)
 
             self.profiler.end_frame()

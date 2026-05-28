@@ -49,28 +49,33 @@ class HUD:
         self.character = character
         self.app = app
         self.toggle_inventory_callback = toggle_inventory_callback
-        self.font = cfg.get_font(40)
+        self.font = cfg.get_font(max(8,int(40 * cfg.ui_scale())))
         self.stamina_font = pygame.font.Font(None, 24)
         self.stamina_label = self.stamina_font.render(_("STAMINA"), True, (255, 255, 255))
 
         try:
             self.hp_icon = pygame.image.load("assets/heart.png")
-            self.hp_icon = pygame.transform.scale(self.hp_icon, (50, 50))
+            ico = max(8,int(50 * cfg.ui_scale()))
+            self.hp_icon = pygame.transform.scale(self.hp_icon, (ico, ico))
         except FileNotFoundError:
-            self.hp_icon = pygame.Surface((50, 50), pygame.SRCALPHA)
-            pygame.draw.circle(self.hp_icon, (255, 0, 0), (25, 25), 25)
+            ico = max(8,int(50 * cfg.ui_scale()))
+            self.hp_icon = pygame.Surface((ico, ico), pygame.SRCALPHA)
+            pygame.draw.circle(self.hp_icon, (255, 0, 0), (ico//2, ico//2), ico//2)
 
         try:
             self.life_icon = pygame.image.load("assets/skull.png")
-            self.life_icon = pygame.transform.scale(self.life_icon, (50, 50))
+            ico = max(8,int(50 * cfg.ui_scale()))
+            self.life_icon = pygame.transform.scale(self.life_icon, (ico, ico))
         except FileNotFoundError:
-            self.life_icon = pygame.Surface((50, 50), pygame.SRCALPHA)
-            pygame.draw.circle(self.life_icon, (200, 200, 200), (25, 25), 25)
+            ico = max(8,int(50 * cfg.ui_scale()))
+            self.life_icon = pygame.Surface((ico, ico), pygame.SRCALPHA)
+            pygame.draw.circle(self.life_icon, (200, 200, 200), (ico//2, ico//2), ico//2)
 
-        button_width = 200
-        button_height = 50
-        button_x = 200
-        button_y = 240
+        scale = cfg.ui_scale()
+        button_width = max(1,int(200 * scale))
+        button_height = max(1,int(50 * scale))
+        button_x = int(200 * scale)
+        button_y = int(240 * scale)
 
         self.inv_button = Button(
             pygame.Rect(button_x, button_y, button_width, button_height),
@@ -79,7 +84,7 @@ class HUD:
             (150, 150, 150),
             self.font,
             (255, 255, 255),
-            10,
+            max(2,int(10 * cfg.ui_scale())),
             on_click=self.toggle_inventory
         )
 
@@ -110,18 +115,22 @@ class HUD:
         right_margin = 20
         bottom_margin = 20
         bar_width = max(220, min(320, screen_width // 4))
-        bar_height = 30
+        bar_height = max(8,int(30 * cfg.ui_scale()))
 
         self.hp_icon_pos = (left_margin, top_margin)
         self.hp_bar_rect = pygame.Rect(left_margin + 60, top_margin + 10, bar_width, bar_height)
         self.life_icon_pos = (left_margin, top_margin + 60)
 
-        button_width = 200
-        button_height = 50
+        scale = cfg.ui_scale()
+        button_width = max(1,int(200 * scale))
+        button_height = max(1,int(50 * scale))
         button_x = left_margin
-        button_y = top_margin + 170
+        button_y = top_margin + int(170 * scale)
         self.inv_button.rect = pygame.Rect(button_x, button_y, button_width, button_height)
-        self.inv_button._update_text_surface()
+        try:
+            self.inv_button._update_text_surface()
+        except Exception:
+            pass
 
         xp_bar_width = min(320, max(220, screen_width // 4))
         xp_bar_height = 15
@@ -258,7 +267,7 @@ class HUD:
         pygame.draw.rect(screen, (30, 30, 30), panel_rect)
         pygame.draw.rect(screen, (200, 200, 200), panel_rect, 2)
 
-        small_font = cfg.get_font(20)
+        small_font = cfg.get_font(max(8,int(20 * cfg.ui_scale())))
         for idx, slot in enumerate(self.skill_slot_rects, start=1):
             pygame.draw.rect(screen, (60, 60, 60), slot)
             pygame.draw.rect(screen, (180, 180, 180), slot, 2)

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 import random
 
 from src.core.logger import logger
+import src.config as cfg
 from src.core.state import State
 from src.entities.character import Character
 from src.map.map import LocalMap
@@ -291,6 +292,16 @@ class Game(State):
 
     def reinit_ui(self):
         self.hud = HUD(self.character, self.app, self.toggle_player_inventory)
+
+        self.MAIN_player_inv.pos_x = cfg.MAIN_INV_pos_x
+        self.MAIN_player_inv.pos_y = cfg.MAIN_INV_pos_y
+        self.PLAYER_inventory_equipment.pos_x = cfg.MAIN_INV_equipment_pos_x
+        self.PLAYER_inventory_equipment.pos_y = cfg.MAIN_INV_equipment_pos_y
+
+        if self.app.INV_manager.current_shop_inv:
+            self.MAIN_player_inv.pos_x = cfg.SCREEN_WIDTH // 2 - 500
+            self.app.INV_manager.current_shop_inv.pos_x = cfg.SCREEN_WIDTH // 2 + 100
+            self.app.INV_manager.current_shop_inv.pos_y = self.MAIN_player_inv.pos_y
 
     def toggle_player_inventory(self):
         self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)

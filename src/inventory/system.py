@@ -204,9 +204,10 @@ class Split_popup:
         self.slot_ref = slot_ref
         self.item_obj, self.total_count = slot_ref
 
-        self.width = 180
-        self.height = 90
-        self.x = rect_pos.right + 5
+        scale = cfg.ui_scale()
+        self.width = max(40,int(180 * scale))
+        self.height = max(20,int(90 * scale))
+        self.x = rect_pos.right + int(5 * scale)
         self.y = rect_pos.y
 
         if self.x + self.width > cfg.SCREEN_WIDTH:
@@ -215,22 +216,23 @@ class Split_popup:
         self.bg_rect = pygame.Rect(self.x, self.y, self.width, self.height)
         self.split_amount = 1 
 
+
         self.slider = Inventory_slider(
-            x=self.x + 10,
-            y=self.y + 35,
-            width=self.width - 20,
+            x=self.x + int(10 * scale),
+            y=self.y + int(35 * scale),
+            width=self.width - int(20 * scale),
             max_qty=self.total_count,
             action_callback=self.update_count 
         )
 
         self.confirm_btn = Button(
-            rect=pygame.Rect(self.x + 40, self.y + 60, 100, 20),
+            rect=pygame.Rect(self.x + int(40 * scale), self.y + int(60 * scale), max(20,int(100 * scale)), max(8,int(20 * scale))),
             text="Confirm",
             color=(60, 120, 60),        
             hover_color=(80, 150, 80),  
             font=cfg.INV_nums_font,
             font_color=(255, 255, 255),
-            corner_width=5,             
+            corner_width=max(2,int(5 * scale)),             
             on_click=self.confirm       
         )
 

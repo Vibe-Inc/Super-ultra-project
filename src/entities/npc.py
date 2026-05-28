@@ -42,7 +42,7 @@ class NPC:
         self.rect = self.image.get_rect(topleft=(x, y))
         
         # Interaction prompt (e.g., "E" key)
-        self.font = cfg.get_font(20)
+        self.font = cfg.get_font(max(8,int(20 * cfg.ui_scale())))
         self.prompt_text = self.font.render("E", True, (255, 255, 255))
         self.prompt_bg_color = (0, 0, 0)
 

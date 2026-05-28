@@ -104,16 +104,17 @@ class MainMenu(Menu):
     def __init__(self, app: "App"):
         super().__init__(app)
 
-        button_width, button_height = 360, 120
-        gap = 60
+        scale = cfg.ui_scale()
+        button_width, button_height = max(1, int(360 * scale)), max(1, int(120 * scale))
+        gap = max(4, int(60 * scale))
         tot_width = 2 * button_width + gap
         center_x = cfg.SCREEN_WIDTH // 2
 
-        start_rect = pygame.Rect(center_x - tot_width // 2, 650, button_width, button_height)
-        exit_rect = pygame.Rect(center_x - tot_width // 2 + button_width + gap, 650, button_width, button_height)
-        settings_rect = pygame.Rect(center_x - tot_width // 2, 800, button_width, button_height)
-        credits_rect = pygame.Rect(center_x - tot_width // 2 + button_width + gap, 800, button_width, button_height)
-        load_rect = pygame.Rect(center_x - button_width // 2, 520, button_width, button_height)
+        start_rect = pygame.Rect(center_x - tot_width // 2, int(650 * scale), button_width, button_height)
+        exit_rect = pygame.Rect(center_x - tot_width // 2 + button_width + gap, int(650 * scale), button_width, button_height)
+        settings_rect = pygame.Rect(center_x - tot_width // 2, int(800 * scale), button_width, button_height)
+        credits_rect = pygame.Rect(center_x - tot_width // 2 + button_width + gap, int(800 * scale), button_width, button_height)
+        load_rect = pygame.Rect(center_x - button_width // 2, int(520 * scale), button_width, button_height)
 
         self.buttons = [
             Button(
@@ -168,7 +169,8 @@ class MainMenu(Menu):
             )
         ]
         self.beta_logo_img = pygame.image.load("assets/beta_logo.png")
-        self.beta_logo_img = pygame.transform.scale(self.beta_logo_img, (280, 280))
+        logo_size = max(8, int(280 * cfg.ui_scale()))
+        self.beta_logo_img = pygame.transform.scale(self.beta_logo_img, (logo_size, logo_size))
         self.beta_logo_rect = self.beta_logo_img.get_rect()
 
         self.tooltips = [
@@ -186,8 +188,9 @@ class MainMenu(Menu):
 
     def layout(self, screen: pygame.Surface):
         sw, sh = self._screen_size(screen)
-        button_width, button_height = 360, 120
-        gap = 60
+        scale = cfg.ui_scale()
+        button_width, button_height = max(1,int(360 * scale)), max(1,int(120 * scale))
+        gap = max(4,int(60 * scale))
         tot_width = 2 * button_width + gap
         center_x = sw // 2
 
@@ -202,7 +205,8 @@ class MainMenu(Menu):
         for button, rect in zip(self.buttons, positions):
             self._apply_button_size(button, rect)
 
-        self.beta_logo_rect = self.beta_logo_img.get_rect(center=(sw - 180, sh - 180))
+        logo_off = max(20, int(180 * cfg.ui_scale()))
+        self.beta_logo_rect = self.beta_logo_img.get_rect(center=(sw - logo_off, sh - logo_off))
         self.tooltips[0].update_target(self.beta_logo_rect, self.tooltips[0].text)
 
     def draw(self, screen):
@@ -238,7 +242,7 @@ class SettingsMenu(Menu):
     """
     Settings menu interface for the application.
 
-    Inherits from Menu and provides sliders and buttons for adjusting audio, brightness, language, and returning to the main menu.
+    Inherits from Menu and provides sliders and buttons for adjusting audio, brightness, display mode, language, and returning to the main menu.
 
     Attributes:
         buttons (list[Button]):
@@ -277,20 +281,22 @@ class SettingsMenu(Menu):
 
     def __init__(self, app: "App"):
         super().__init__(app)
-        button_width, button_height = 360, 120
-        back_rect = pygame.Rect(0, 0, button_width, button_height)
+        scale = cfg.ui_scale()
+        button_width, button_height = max(1,int(360 * scale)), max(1,int(120 * scale))
+        mode_rect = pygame.Rect(0, 0, button_width, button_height)
         lang_rect = pygame.Rect(0, 0, button_width, button_height)
+        back_rect = pygame.Rect(0, 0, button_width, button_height)
 
         self.buttons = [
             Button(
-                back_rect,
-                _("BACK"),
-                cfg.button_color_SETTINGS_BACK,
-                cfg.button_hover_color_SETTINGS_BACK,
+                mode_rect,
+                self._display_mode_label(),
+                cfg.button_color_SETTINGS,
+                cfg.button_hover_color_SETTINGS,
                 cfg.button_font,
                 cfg.text_color,
                 cfg.corner_radius,
-                on_click=self.back_to_main
+                on_click=self.toggle_display_mode
             ),
             Button(
                 lang_rect,
@@ -301,6 +307,16 @@ class SettingsMenu(Menu):
                 cfg.text_color,
                 cfg.corner_radius,
                 on_click=self.toggle_language
+            ),
+            Button(
+                back_rect,
+                _("BACK"),
+                cfg.button_color_SETTINGS_BACK,
+                cfg.button_hover_color_SETTINGS_BACK,
+                cfg.button_font,
+                cfg.text_color,
+                cfg.corner_radius,
+                on_click=self.back_to_main
             )
         ]
 
@@ -309,41 +325,47 @@ class SettingsMenu(Menu):
         initial_volume = pygame.mixer.music.get_volume() if pygame.mixer.get_init() else 0.3
 
         self.brightness_slider = Slider(
-            600, 550, 40, 5,
+            int(600 * scale), int(550 * scale), max(8,int(40 * scale)), 5,
             (0, 0, 0), (255, 255, 255),
-            20, 20, 300,
+            max(6,int(20 * scale)), max(6,int(20 * scale)), max(20,int(300 * scale)),
             value=cfg.SCREEN_BRIGHTNESS,
             action=lambda v: setattr(cfg, 'SCREEN_BRIGHTNESS', max(0.3, v))
         )
 
-        self.myfont = cfg.get_font(60)
+        # use a single scaled font for labels
+        self.myfont = cfg.get_font(max(10,int(60 * scale)))
         self.brightness_label = self.myfont.render(_('Brightness'), True, (0, 0, 0))
-        self.brightness_rect = self.brightness_label.get_rect(center=(760, 480))
+        self.brightness_rect = self.brightness_label.get_rect(center=(int(760 * scale), int(480 * scale)))
 
         self.audio_slider = Slider(
-            600, 730, 40, 5,
+            int(600 * scale), int(730 * scale), max(8,int(40 * scale)), 5,
             track_colour, knob_colour,
-            20, 20, 300,
+            max(6,int(20 * scale)), max(6,int(20 * scale)), max(20,int(300 * scale)),
             value=initial_volume,
             action=lambda v: pygame.mixer.music.set_volume(v)
         )
 
-        self.myfont = cfg.get_font(60)
         self.text_logo = self.myfont.render(_('Music volume'), True, (0, 0, 0))
-        self.text_rect = self.text_logo.get_rect(center=(760, 650))
+        self.text_rect = self.text_logo.get_rect(center=(int(760 * scale), int(650 * scale)))
 
     def layout(self, screen: pygame.Surface):
         sw, sh = self._screen_size(screen)
-        button_width, button_height = 360, 120
+        scale = cfg.ui_scale()
+        button_width, button_height = max(1,int(360 * scale)), max(1,int(120 * scale))
         center_x = sw // 2
-        center_y = sh // 2
+        center_y = sh // 2 + int(80 * scale)
 
         # keep controls separated: sliders on the left, buttons on the right
-        left_column_x = center_x - 430
-        right_column_x = center_x + 70
+        left_column_x = center_x - int(430 * scale)
+        right_column_x = center_x + int(70 * scale)
 
-        self.buttons[0].rect = pygame.Rect(right_column_x, center_y + 130, button_width, button_height)
-        self.buttons[1].rect = pygame.Rect(right_column_x, center_y - 20, button_width, button_height)
+        self.buttons[0].set_text(self._display_mode_label())
+        self.buttons[1].set_text(f"{_('LANG')}: {cfg.LANGUAGE.upper()}")
+        self.buttons[2].set_text(_("BACK"))
+
+        self.buttons[0].rect = pygame.Rect(right_column_x, center_y - int(170 * scale), button_width, button_height)
+        self.buttons[1].rect = pygame.Rect(right_column_x, center_y - int(20 * scale), button_width, button_height)
+        self.buttons[2].rect = pygame.Rect(right_column_x, center_y + int(130 * scale), button_width, button_height)
         for button in self.buttons:
             try:
                 button._update_text_surface()
@@ -369,6 +391,13 @@ class SettingsMenu(Menu):
 
     def back_to_main(self):
         self.app.manager.set_state("main")
+
+    def _display_mode_label(self):
+        return f"MODE: {'FULLSCREEN' if self.app.is_fullscreen else 'WINDOW'}"
+
+    def toggle_display_mode(self):
+        self.app.toggle_display_mode()
+        self.buttons[0].set_text(self._display_mode_label())
     
     def toggle_language(self):
         new_lang = 'ua' if cfg.LANGUAGE == 'en' else 'en'
@@ -430,7 +459,8 @@ class CreditsMenu(Menu):
 
     def __init__(self, app: "App"):
         super().__init__(app)
-        button_width, button_height = 360, 120
+        scale = cfg.ui_scale()
+        button_width, button_height = max(1,int(360 * scale)), max(1,int(120 * scale))
         back_rect = pygame.Rect(0, 0, button_width, button_height)
         self.buttons = [
             Button(back_rect,
@@ -459,13 +489,15 @@ Special thanks to Vibe inc""")
         box_width = max_width + 2 * self.padding
         box_height = line_height * num_credits_lines + 2 * self.padding
         self.box_rect = pygame.Rect(
-            (cfg.SCREEN_WIDTH - box_width) // 2, 250, box_width, box_height)
+            (cfg.SCREEN_WIDTH - box_width) // 2, int(250 * cfg.ui_scale()), box_width, box_height)
         self.box_color = (245, 222, 179) 
         self.box_border = (139, 49, 19)
 
     def layout(self, screen: pygame.Surface):
         sw, sh = self._screen_size(screen)
-        self.buttons[0].rect = pygame.Rect(sw - 420, sh - 170, 360, 120)
+        scale = cfg.ui_scale()
+        btn_w, btn_h = max(1,int(360 * scale)), max(1,int(120 * scale))
+        self.buttons[0].rect = pygame.Rect(sw - int(420 * scale), sh - int(170 * scale), btn_w, btn_h)
         try:
             self.buttons[0]._update_text_surface()
         except Exception:
@@ -523,13 +555,15 @@ class PauseMenu(Menu):
     def __init__(self, app: "App"):
         self.app = app
 
-        button_width, button_height = 360, 120
+        scale = cfg.ui_scale()
+        button_width, button_height = max(1,int(360 * scale)), max(1,int(120 * scale))
 
         self.pause_menu_color = (0, 0, 0, 180)
 
+        cx = (cfg.SCREEN_WIDTH - button_width) // 2
         self.buttons = [
             Button(
-                pygame.Rect((cfg.SCREEN_WIDTH - button_width) // 2, 500, button_width, button_height),
+                pygame.Rect(cx, int(500 * scale), button_width, button_height),
                 _("SAVE"),
                 cfg.button_color_SETTINGS,
                 cfg.button_hover_color_SETTINGS,
@@ -539,7 +573,7 @@ class PauseMenu(Menu):
                 on_click=self.open_save_menu
             ),
             Button(
-                pygame.Rect((cfg.SCREEN_WIDTH - button_width) // 2, 650, button_width, button_height),
+                pygame.Rect(cx, int(650 * scale), button_width, button_height),
                 _("RESUME"),
                 cfg.button_color_START,
                 cfg.button_hover_color_START,
@@ -549,7 +583,7 @@ class PauseMenu(Menu):
                 on_click=self.resume_game
             ),
             Button(
-                pygame.Rect((cfg.SCREEN_WIDTH - button_width) // 2, 800, button_width, button_height),
+                pygame.Rect(cx, int(800 * scale), button_width, button_height),
                 _("MAIN MENU"),
                 cfg.button_color_EXIT,
                 cfg.button_hover_color_EXIT,
@@ -571,7 +605,8 @@ class PauseMenu(Menu):
 
     def layout(self, screen: pygame.Surface):
         sw, sh = self._screen_size(screen)
-        button_width, button_height = 360, 120
+        scale = cfg.ui_scale()
+        button_width, button_height = max(1,int(360 * scale)), max(1,int(120 * scale))
         center_x = sw // 2
         positions = [
             (center_x - button_width // 2, int(sh * 0.42)),
