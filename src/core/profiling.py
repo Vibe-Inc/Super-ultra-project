@@ -113,6 +113,12 @@ class FrameProfiler:
             if report["gauges"]:
                 for key, value in report["gauges"].items():
                     lines.append(f"{key}: {value}")
+            # add mouse cursor position (screen coordinates)
+            try:
+                mx, my = pygame.mouse.get_pos()
+                lines.append(f"Mouse: ({mx}, {my})")
+            except Exception:
+                pass
 
         line_surfs = [self._font.render(line, True, (255, 255, 255)) for line in lines]
         max_width = max((surf.get_width() for surf in line_surfs), default=0)
