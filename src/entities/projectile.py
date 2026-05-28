@@ -34,9 +34,10 @@ class Arrow:
         if not self.alive:
             return
 
+        # movement length is speed * dt because direction is normalized
         movement = self.direction * self.speed * dt
         self.pos += movement
-        self.traveled += movement.length()
+        self.traveled += abs(self.speed * dt)
 
         rect = self.get_rect()
         for wall in obstacles:
@@ -108,9 +109,10 @@ class ArcaneBolt:
         if not self.alive:
             return
 
+        # movement length is speed * dt because direction is normalized
         movement = self.direction * self.speed * dt
         self.pos += movement
-        self.traveled += movement.length()
+        self.traveled += abs(self.speed * dt)
 
         rect = self.get_rect()
         for wall in obstacles:
@@ -207,8 +209,8 @@ class Bomb:
             if not self.damage_applied:
                 player_center = self._player_center(player)
                 if player_center:
-                    distance = player_center.distance_to(self.pos)
-                    if distance <= self.blast_radius:
+                    pdiff = player_center - self.pos
+                    if pdiff.length_squared() <= (self.blast_radius * self.blast_radius):
                         if self.damage > 0:
                             player.take_damage(self.damage)
                         if self.knockback_force > 0:

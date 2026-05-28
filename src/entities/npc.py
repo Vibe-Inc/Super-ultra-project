@@ -47,8 +47,8 @@ class NPC:
         self.prompt_bg_color = (0, 0, 0)
 
     def update(self, player_pos: pygame.Vector2):
-        distance = self.pos.distance_to(player_pos)
-        self.is_interactable = distance <= self.interaction_range
+        diff = player_pos - self.pos
+        self.is_interactable = diff.length_squared() <= (self.interaction_range * self.interaction_range)
 
     def draw(self, screen: pygame.Surface):
         screen.blit(self.image, self.pos)

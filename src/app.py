@@ -3,6 +3,7 @@ import sys
 
 from src.core.logger import logger
 from src.core.state_manager import StateManager
+from src.core.profiling import FrameProfiler, FpsCounter
 from src.inventory.system import INVENTORY_manager
 from src.items.items import create_item
 import src.config as cfg
@@ -71,6 +72,10 @@ class App:
         self.audio = "on"
         self.is_fullscreen = False
         self.clock = pygame.time.Clock()
+        self._brightness_overlay = None
+        self.profiler = FrameProfiler()
+        self.fps_counter = FpsCounter()
+        self.set_profiler_enabled(cfg.PROFILER_ENABLED)
 
         # State manager
         self.manager = StateManager(self)
@@ -91,6 +96,15 @@ class App:
             
             self.create_logo()
             self.manager.reinit_states()
+            self.profiler.refresh_fonts()
+            self.fps_counter.refresh_fonts()
+
+    def set_profiler_enabled(self, enabled: bool):
+        cfg.PROFILER_ENABLED = bool(enabled)
+        self.profiler.set_enabled(cfg.PROFILER_ENABLED)
+
+    def toggle_profiler(self):
+        self.set_profiler_enabled(not cfg.PROFILER_ENABLED)
 
     def music_play(self):
         pygame.mixer.music.load('sounds/LIFE (Instrumental).wav')
@@ -104,18 +118,31 @@ class App:
         running = True
         while running:
             dt = self.clock.tick(cfg.FPS) / 1000  # seconds since last frame
+            self.profiler.begin_frame(dt)
+            self.fps_counter.update(dt)
 
             self.screen.blit(cfg.bg, (0, 0))
             if self.manager.get_state() != "credits":
                 self.screen.blit(self.text_logo, self.text_rect)
 
+            self.profiler.start_section("state.draw")
             self.manager.draw(self.screen)
+            self.profiler.end_section("state.draw")
 
+            self.profiler.start_section("postfx")
             if cfg.SCREEN_BRIGHTNESS < 1:
-                dark = pygame.Surface((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT))
-                dark.set_alpha(int((1 - cfg.SCREEN_BRIGHTNESS) * 255))
-                dark.fill((0, 0, 0))
-                self.screen.blit(dark, (0, 0))
+                if self._brightness_overlay is None or self._brightness_overlay.get_size() != (cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT):
+                    self._brightness_overlay = pygame.Surface((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT))
+                self._brightness_overlay.set_alpha(int((1 - cfg.SCREEN_BRIGHTNESS) * 255))
+                self._brightness_overlay.fill((0, 0, 0))
+                self.screen.blit(self._brightness_overlay, (0, 0))
+            self.profiler.end_section("postfx")
+
+            if self.profiler.enabled:
+                self.profiler.draw(self.screen, position=(190, 100))
+
+            screen_width = self.screen.get_width()
+            self.fps_counter.draw(self.screen, position=(screen_width - 12, 12), align_right=True)
 
             pygame.display.flip()
 
@@ -124,4 +151,8 @@ class App:
                     running = False
                     pygame.quit()
                     sys.exit()
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_F3:
+                    self.toggle_profiler()
                 self.manager.handle_event(event)
+
+            self.profiler.end_frame()

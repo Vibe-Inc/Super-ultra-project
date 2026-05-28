@@ -50,6 +50,8 @@ class HUD:
         self.app = app
         self.toggle_inventory_callback = toggle_inventory_callback
         self.font = cfg.get_font(40)
+        self.stamina_font = pygame.font.Font(None, 24)
+        self.stamina_label = self.stamina_font.render(_("STAMINA"), True, (255, 255, 255))
 
         try:
             self.hp_icon = pygame.image.load("assets/heart.png")
@@ -166,6 +168,5 @@ class HUD:
         pygame.draw.rect(screen, stamina_color, (stamina_bar_x, stamina_bar_y, current_stamina_width, stamina_bar_height))
         pygame.draw.rect(screen, (200, 200, 200), (stamina_bar_x, stamina_bar_y, stamina_bar_width, stamina_bar_height), 3)
 
-        stamina_label = pygame.font.Font(None, 24).render("STAMINA", True, (255, 255, 255))
-        label_rect = stamina_label.get_rect(center=(stamina_bar_x + stamina_bar_width // 2, stamina_bar_y - 15))
-        screen.blit(stamina_label, label_rect)
+        label_rect = self.stamina_label.get_rect(center=(stamina_bar_x + stamina_bar_width // 2, stamina_bar_y - 15))
+        screen.blit(self.stamina_label, label_rect)

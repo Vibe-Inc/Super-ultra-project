@@ -46,17 +46,25 @@ class Button:
         self.font_color: tuple[int, int, int] = font_color
         self.corner_width: int = corner_width
         self.on_click: Callable[[], None] = on_click
+        self._update_text_surface()
 
-        self.text_surf: pygame.Surface = self.font.render(self.text, True, self.font_color)
-        
+    def _update_text_surface(self):
+        self.text_surf = self.font.render(self.text, True, self.font_color)
+
         # Scale text if it's too wide for the button
         if self.text_surf.get_width() > self.rect.width - 20:
             scale_factor = (self.rect.width - 20) / self.text_surf.get_width()
             new_width = int(self.text_surf.get_width() * scale_factor)
             new_height = int(self.text_surf.get_height() * scale_factor)
             self.text_surf = pygame.transform.smoothscale(self.text_surf, (new_width, new_height))
-            
-        self.text_rect: pygame.Rect = self.text_surf.get_rect(center=self.rect.center)
+
+        self.text_rect = self.text_surf.get_rect(center=self.rect.center)
+
+    def set_text(self, text: str):
+        if text == self.text:
+            return
+        self.text = text
+        self._update_text_surface()
 
     def draw(self, screen):
         mouse_pos = pygame.mouse.get_pos()

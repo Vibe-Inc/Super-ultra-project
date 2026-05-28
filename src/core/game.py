@@ -73,6 +73,7 @@ class Game(State):
         self.projectiles = []
         self.enemy_projectiles = []
         self.equipped_weapon = None
+        self._dizzy_overlay = None
 
         self.enemy_profiles = {
             "brute": {
@@ -491,7 +492,8 @@ class Game(State):
             pos = pygame.Vector2(x, y)
             
             # Check distance to player (must be at least 400 pixels away)
-            if pos.distance_to(self.character.pos) < 400:
+            pdiff = pos - self.character.pos
+            if pdiff.length_squared() < 400 * 400:
                 continue
                 
             # Check collision with walls
@@ -556,8 +558,14 @@ class Game(State):
             projectiles=self.enemy_projectiles,
             now_ms=now_ms,
         )
+        # Update enemies with LOD: skip heavy updates for distant enemies
+        LOD_DISTANCE = 800.0
+        lod_sq = LOD_DISTANCE * LOD_DISTANCE
+        player_pos = self.character.pos
         for enemy in self.enemies:
-            enemy.update(dt, self.collision_handler, self.obstacles, self.nav_grid, attack_context)
+            ediff = enemy.pos - player_pos
+            active = ediff.length_squared() <= lod_sq
+            enemy.update(dt, self.collision_handler, self.obstacles, self.nav_grid, attack_context, active=active)
 
         self._update_projectiles(dt)
         self._update_enemy_projectiles(dt)
@@ -584,10 +592,17 @@ class Game(State):
 
         self.npc.update(self.character.pos)
 
+        self.app.profiler.set_gauge("enemies", len(self.enemies))
+        self.app.profiler.set_gauge("projectiles", len(self.projectiles))
+        self.app.profiler.set_gauge("enemy_projectiles", len(self.enemy_projectiles))
+
     def draw(self, screen):
         dt = self.app.clock.get_time() / 1000
+        self.app.profiler.start_section("game.update")
         self.update(dt)
+        self.app.profiler.end_section("game.update")
 
+        self.app.profiler.start_section("game.draw")
         self.map.draw(screen)
 
         self.character.draw(screen)
@@ -610,16 +625,17 @@ class Game(State):
         # Dizziness effect (visual)
         if self.character.dizzy:
             # Simulate blur/dizziness with a semi-transparent overlay that changes alpha
-            import math
             alpha = int(100 + 50 * math.sin(pygame.time.get_ticks() * 0.005))
-            overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
-            overlay.fill((255, 255, 255, alpha))
-            screen.blit(overlay, (0, 0))
+            if self._dizzy_overlay is None or self._dizzy_overlay.get_size() != screen.get_size():
+                self._dizzy_overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+            self._dizzy_overlay.fill((255, 255, 255, alpha))
+            screen.blit(self._dizzy_overlay, (0, 0))
 
         self.hud.draw(screen)
 
         if  self.app.INV_manager.player_inventory_opened:
             self.app.INV_manager.draw(screen)
+        self.app.profiler.end_section("game.draw")
 
     def handle_event(self, event: pygame.event.Event):
         self.hud.handle_event(event)

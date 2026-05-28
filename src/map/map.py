@@ -32,6 +32,7 @@ class Map:
         self.game_map = None
         self.pixel_width = 0
         self.pixel_height = 0
+        self._render_cache = None
 
     def ensure_loaded(self) -> bool:
         if self.game_map is None:
@@ -40,12 +41,27 @@ class Map:
                 self.game_map = pytmx.load_pygame(self.map_file)
                 self.pixel_width = self.game_map.width * self.game_map.tilewidth
                 self.pixel_height = self.game_map.height * self.game_map.tileheight
+                self._build_render_cache()
                 logger.info(f"Map loaded successfully: {self.map_file} ({self.pixel_width}x{self.pixel_height})")
             except Exception as e:
                 logger.error(f"Failed to load map {self.map_file}: {e}")
                 self.game_map = None
                 return False
         return True
+
+    def _build_render_cache(self):
+        if self.game_map is None:
+            self._render_cache = None
+            return
+
+        surface = pygame.Surface((self.pixel_width, self.pixel_height), pygame.SRCALPHA)
+        for layer in self.game_map.visible_layers:
+            if isinstance(layer, pytmx.TiledTileLayer):
+                for x, y, gid in layer:
+                    tile = self.game_map.get_tile_image_by_gid(gid)
+                    if tile:
+                        surface.blit(tile, (x * self.game_map.tilewidth, y * self.game_map.tileheight))
+        self._render_cache = surface
 
     def get_tmx_data(self):
         if self.ensure_loaded():
@@ -56,13 +72,10 @@ class Map:
         if not self.ensure_loaded():
             return
 
-        for layer in self.game_map.visible_layers:
-            if isinstance(layer, pytmx.TiledTileLayer):
-                for x, y, gid in layer:
-                    tile = self.game_map.get_tile_image_by_gid(gid)
-                    if tile:
-                        screen.blit(tile, (x * self.game_map.tilewidth,
-                                           y * self.game_map.tileheight))
+        if self._render_cache is None:
+            self._build_render_cache()
+        if self._render_cache is not None:
+            screen.blit(self._render_cache, (0, 0))
 
     def get_obstacles(self):
         if not self.ensure_loaded():
