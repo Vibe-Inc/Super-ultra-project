@@ -148,6 +148,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">projectiles</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">enemy_projectiles</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">equipped_weapon</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dizzy_overlay</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">enemy_profiles</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;brute&quot;</span><span class="p">:</span> <span class="p">{</span>
@@ -575,7 +576,8 @@
             <span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
             
             <span class="c1"># Check distance to player (must be at least 400 pixels away)</span>
-            <span class="k">if</span> <span class="n">pos</span><span class="o">.</span><span class="n">distance_to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">400</span><span class="p">:</span>
+            <span class="n">pdiff</span> <span class="o">=</span> <span class="n">pos</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span>
+            <span class="k">if</span> <span class="n">pdiff</span><span class="o">.</span><span class="n">length_squared</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">400</span> <span class="o">*</span> <span class="mi">400</span><span class="p">:</span>
                 <span class="k">continue</span>
                 
             <span class="c1"># Check collision with walls</span>
@@ -643,8 +645,14 @@
             <span class="n">projectiles</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">enemy_projectiles</span><span class="p">,</span>
             <span class="n">now_ms</span><span class="o">=</span><span class="n">now_ms</span><span class="p">,</span>
         <span class="p">)</span>
+        <span class="c1"># Update enemies with LOD: skip heavy updates for distant enemies</span>
+        <span class="n">LOD_DISTANCE</span> <span class="o">=</span> <span class="mf">800.0</span>
+        <span class="n">lod_sq</span> <span class="o">=</span> <span class="n">LOD_DISTANCE</span> <span class="o">*</span> <span class="n">LOD_DISTANCE</span>
+        <span class="n">player_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span>
         <span class="k">for</span> <span class="n">enemy</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">:</span>
-            <span class="n">enemy</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">collision_handler</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">obstacles</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nav_grid</span><span class="p">,</span> <span class="n">attack_context</span><span class="p">)</span>
+            <span class="n">ediff</span> <span class="o">=</span> <span class="n">enemy</span><span class="o">.</span><span class="n">pos</span> <span class="o">-</span> <span class="n">player_pos</span>
+            <span class="n">active</span> <span class="o">=</span> <span class="n">ediff</span><span class="o">.</span><span class="n">length_squared</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="n">lod_sq</span>
+            <span class="n">enemy</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">collision_handler</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">obstacles</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nav_grid</span><span class="p">,</span> <span class="n">attack_context</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="n">active</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_projectiles</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_enemy_projectiles</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
@@ -669,15 +677,22 @@
                 
                 <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">enemy</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">set_gauge</span><span class="p">(</span><span class="s2">&quot;enemies&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">set_gauge</span><span class="p">(</span><span class="s2">&quot;projectiles&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">projectiles</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">set_gauge</span><span class="p">(</span><span class="s2">&quot;enemy_projectiles&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">enemy_projectiles</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="Game.draw">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.draw">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
         <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">clock</span><span class="o">.</span><span class="n">get_time</span><span class="p">()</span> <span class="o">/</span> <span class="mi">1000</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">start_section</span><span class="p">(</span><span class="s2">&quot;game.update&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">end_section</span><span class="p">(</span><span class="s2">&quot;game.update&quot;</span><span class="p">)</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">start_section</span><span class="p">(</span><span class="s2">&quot;game.draw&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
@@ -700,16 +715,17 @@
         <span class="c1"># Dizziness effect (visual)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">dizzy</span><span class="p">:</span>
             <span class="c1"># Simulate blur/dizziness with a semi-transparent overlay that changes alpha</span>
-            <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
             <span class="n">alpha</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">100</span> <span class="o">+</span> <span class="mi">50</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span> <span class="o">*</span> <span class="mf">0.005</span><span class="p">))</span>
-            <span class="n">overlay</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">(</span><span class="n">screen</span><span class="o">.</span><span class="n">get_size</span><span class="p">(),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
-            <span class="n">overlay</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="n">alpha</span><span class="p">))</span>
-            <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dizzy_overlay</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dizzy_overlay</span><span class="o">.</span><span class="n">get_size</span><span class="p">()</span> <span class="o">!=</span> <span class="n">screen</span><span class="o">.</span><span class="n">get_size</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_dizzy_overlay</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">(</span><span class="n">screen</span><span class="o">.</span><span class="n">get_size</span><span class="p">(),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dizzy_overlay</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="n">alpha</span><span class="p">))</span>
+            <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dizzy_overlay</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">hud</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
 
         <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">player_inventory_opened</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">end_section</span><span class="p">(</span><span class="s2">&quot;game.draw&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Game.handle_event">

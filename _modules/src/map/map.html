@@ -106,7 +106,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">map_file</span> <span class="o">=</span> <span class="n">map_file</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pixel_width</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pixel_height</span> <span class="o">=</span> <span class="mi">0</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pixel_height</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_render_cache</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 <div class="viewcode-block" id="Map.ensure_loaded">
@@ -118,6 +119,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span> <span class="o">=</span> <span class="n">pytmx</span><span class="o">.</span><span class="n">load_pygame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">map_file</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">pixel_width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">width</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">tilewidth</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">pixel_height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">height</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">tileheight</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_build_render_cache</span><span class="p">()</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Map loaded successfully: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">map_file</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">pixel_width</span><span class="si">}</span><span class="s2">x</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">pixel_height</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load map </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">map_file</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -125,6 +127,20 @@
                 <span class="k">return</span> <span class="kc">False</span>
         <span class="k">return</span> <span class="kc">True</span></div>
 
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_render_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_render_cache</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">return</span>
+
+        <span class="n">surface</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">pixel_width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pixel_height</span><span class="p">),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">visible_layers</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">pytmx</span><span class="o">.</span><span class="n">TiledTileLayer</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">gid</span> <span class="ow">in</span> <span class="n">layer</span><span class="p">:</span>
+                    <span class="n">tile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">get_tile_image_by_gid</span><span class="p">(</span><span class="n">gid</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">tile</span><span class="p">:</span>
+                        <span class="n">surface</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">tile</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">tilewidth</span><span class="p">,</span> <span class="n">y</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">tileheight</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_render_cache</span> <span class="o">=</span> <span class="n">surface</span>
 
 <div class="viewcode-block" id="Map.get_tmx_data">
 <a class="viewcode-back" href="../../../src.map.html#src.map.map.Map.get_tmx_data">[docs]</a>
@@ -140,13 +156,10 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">ensure_loaded</span><span class="p">():</span>
             <span class="k">return</span>
 
-        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">visible_layers</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">pytmx</span><span class="o">.</span><span class="n">TiledTileLayer</span><span class="p">):</span>
-                <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">gid</span> <span class="ow">in</span> <span class="n">layer</span><span class="p">:</span>
-                    <span class="n">tile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">get_tile_image_by_gid</span><span class="p">(</span><span class="n">gid</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">tile</span><span class="p">:</span>
-                        <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">tile</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">tilewidth</span><span class="p">,</span>
-                                           <span class="n">y</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">tileheight</span><span class="p">))</span></div>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_render_cache</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_build_render_cache</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_render_cache</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_render_cache</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="Map.get_obstacles">

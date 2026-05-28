@@ -74,6 +74,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.state_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">StateManager</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.profiling</span><span class="w"> </span><span class="kn">import</span> <span class="n">FrameProfiler</span><span class="p">,</span> <span class="n">FpsCounter</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.inventory.system</span><span class="w"> </span><span class="kn">import</span> <span class="n">INVENTORY_manager</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.items.items</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_item</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">src.config</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cfg</span>
@@ -146,6 +147,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">audio</span> <span class="o">=</span> <span class="s2">&quot;on&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_fullscreen</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">clock</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">Clock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_brightness_overlay</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">profiler</span> <span class="o">=</span> <span class="n">FrameProfiler</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fps_counter</span> <span class="o">=</span> <span class="n">FpsCounter</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_profiler_enabled</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">PROFILER_ENABLED</span><span class="p">)</span>
 
         <span class="c1"># State manager</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">manager</span> <span class="o">=</span> <span class="n">StateManager</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
@@ -171,7 +176,22 @@
             <span class="n">cfg</span><span class="o">.</span><span class="n">INV_nums_font</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get_font</span><span class="p">(</span><span class="mi">15</span><span class="p">)</span>
             
             <span class="bp">self</span><span class="o">.</span><span class="n">create_logo</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">reinit_states</span><span class="p">()</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">reinit_states</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">refresh_fonts</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fps_counter</span><span class="o">.</span><span class="n">refresh_fonts</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="App.set_profiler_enabled">
+<a class="viewcode-back" href="../../src.html#src.app.App.set_profiler_enabled">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_profiler_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enabled</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="n">cfg</span><span class="o">.</span><span class="n">PROFILER_ENABLED</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">enabled</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">set_enabled</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">PROFILER_ENABLED</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="App.toggle_profiler">
+<a class="viewcode-back" href="../../src.html#src.app.App.toggle_profiler">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">toggle_profiler</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_profiler_enabled</span><span class="p">(</span><span class="ow">not</span> <span class="n">cfg</span><span class="o">.</span><span class="n">PROFILER_ENABLED</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="App.music_play">
@@ -191,18 +211,31 @@
         <span class="n">running</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">while</span> <span class="n">running</span><span class="p">:</span>
             <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">clock</span><span class="o">.</span><span class="n">tick</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">FPS</span><span class="p">)</span> <span class="o">/</span> <span class="mi">1000</span>  <span class="c1"># seconds since last frame</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">begin_frame</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fps_counter</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">bg</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">!=</span> <span class="s2">&quot;credits&quot;</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">text_logo</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">text_rect</span><span class="p">)</span>
 
+            <span class="bp">self</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">start_section</span><span class="p">(</span><span class="s2">&quot;state.draw&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">screen</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">end_section</span><span class="p">(</span><span class="s2">&quot;state.draw&quot;</span><span class="p">)</span>
 
+            <span class="bp">self</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">start_section</span><span class="p">(</span><span class="s2">&quot;postfx&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_BRIGHTNESS</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">dark</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span><span class="p">))</span>
-                <span class="n">dark</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="nb">int</span><span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_BRIGHTNESS</span><span class="p">)</span> <span class="o">*</span> <span class="mi">255</span><span class="p">))</span>
-                <span class="n">dark</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">dark</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_brightness_overlay</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_brightness_overlay</span><span class="o">.</span><span class="n">get_size</span><span class="p">()</span> <span class="o">!=</span> <span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_brightness_overlay</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_brightness_overlay</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="nb">int</span><span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_BRIGHTNESS</span><span class="p">)</span> <span class="o">*</span> <span class="mi">255</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_brightness_overlay</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_brightness_overlay</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">end_section</span><span class="p">(</span><span class="s2">&quot;postfx&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">enabled</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">screen</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="p">(</span><span class="mi">190</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span>
+
+            <span class="n">screen_width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">screen</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fps_counter</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">screen</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="p">(</span><span class="n">screen_width</span> <span class="o">-</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">),</span> <span class="n">align_right</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
             <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">flip</span><span class="p">()</span>
 
@@ -211,7 +244,11 @@
                     <span class="n">running</span> <span class="o">=</span> <span class="kc">False</span>
                     <span class="n">pygame</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
                     <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span></div>
+                <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">KEYDOWN</span> <span class="ow">and</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_F3</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">toggle_profiler</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">end_frame</span><span class="p">()</span></div>
 </div>
 
 </pre></div>
