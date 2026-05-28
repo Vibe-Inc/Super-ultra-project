@@ -89,12 +89,20 @@ class HUD:
         self.skill_slots_count = 6
         self.skill_panel_margin = 10
         self.skill_panel_width = self.skill_slot_size + self.skill_slot_padding * 2
-        # calculate top-left of the panel so slots are centered vertically
+        # layout will be calculated dynamically to fit current window size
         self.skill_total_slots_height = (self.skill_slot_size * self.skill_slots_count) + (self.skill_slot_padding * (self.skill_slots_count + 1))
-        self.skill_panel_x = cfg.SCREEN_WIDTH - self.skill_panel_width - self.skill_panel_margin
-        self.skill_panel_y = max(10, (cfg.SCREEN_HEIGHT - self.skill_total_slots_height) // 2)
+        self.skill_panel_x = 0
+        self.skill_panel_y = 0
 
-        # create slot rects for future input/hover handling
+        # slot rects (populated/updated per-frame or on-event)
+        self.skill_slot_rects: list[pygame.Rect] = []
+
+    def _recalc_skill_layout(self, screen_width: int, screen_height: int):
+        """Recalculate panel position and slot rects based on actual screen size."""
+        self.skill_panel_x = max(self.skill_panel_margin, screen_width - self.skill_panel_width - self.skill_panel_margin)
+        self.skill_panel_y = max(10, (screen_height - self.skill_total_slots_height) // 2)
+
+        # rebuild rects
         self.skill_slot_rects = []
         for i in range(self.skill_slots_count):
             sx = self.skill_panel_x + self.skill_slot_padding
@@ -108,6 +116,14 @@ class HUD:
             self.app.INV_manager.player_inventory_opened = not self.app.INV_manager.player_inventory_opened
 
     def handle_event(self, event: pygame.event.Event):
+        # ensure layout matches current window before handling clicks
+        try:
+            sw, sh = self.app.screen.get_size()
+            self._recalc_skill_layout(sw, sh)
+        except Exception:
+            # fallback to config values
+            self._recalc_skill_layout(cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT)
+
         if event.type == pygame.MOUSEBUTTONDOWN:
             if self.inv_button.rect.collidepoint(event.pos):
                 if self.inv_button.on_click:
@@ -118,6 +134,13 @@ class HUD:
             #         print(f"Skill slot {i} clicked")
 
     def draw(self, screen: pygame.Surface):
+        # ensure layout matches current window before drawing
+        try:
+            sw, sh = screen.get_size()
+            self._recalc_skill_layout(sw, sh)
+        except Exception:
+            self._recalc_skill_layout(cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT)
+
         icon_x, icon_y = 200, 120
         screen.blit(self.hp_icon, (icon_x, icon_y))
 
@@ -152,7 +175,8 @@ class HUD:
         # XP Bar
         xp_bar_width = 300
         xp_bar_height = 15
-        xp_bar_x = bar_x + 1150
+        # anchor XP bar to the right side of the window so it doesn't go off-screen
+        xp_bar_x = max(bar_x + 50, sw - xp_bar_width - 20)
         xp_bar_y = lives_icon_y - 50
         
         xp_percent = max(0, self.character.xp / self.character.xp_to_next_level)
@@ -169,12 +193,25 @@ class HUD:
         level_text = self.font.render(f"Lvl {self.character.level}", True, (255, 255, 255))
         screen.blit(level_text, (xp_bar_x - 100, xp_bar_y - 15))
 
+        # make sure inventory button is visible (move it left if necessary)
+        try:
+            max_inv_x = max(10, sw - self.inv_button.rect.width - 10)
+            if self.inv_button.rect.x > max_inv_x:
+                self.inv_button.rect.x = max_inv_x
+                try:
+                    self.inv_button._update_text_surface()
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
         self.inv_button.draw(screen)
 
         stamina_bar_width = 600
         stamina_bar_height = 25
-        stamina_bar_x = (cfg.SCREEN_WIDTH - stamina_bar_width) // 2
-        stamina_bar_y = 920
+        stamina_bar_x = (sw - stamina_bar_width) // 2
+        # position stamina near bottom but inside the window
+        stamina_bar_y = max(10, sh - stamina_bar_height - 20)
 
         stamina_percent = max(0, self.character.stamina / self.character.max_stamina)
         current_stamina_width = int(stamina_bar_width * stamina_percent)

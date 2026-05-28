@@ -51,6 +51,8 @@ class App:
 
     def __init__(self):
         logger.info("Initializing Application...")
+        # Create the window at the exact configured resolution.
+        # DPI awareness is enabled in `main.py`, so we want 1:1 pixels here.
         self.screen = pygame.display.set_mode((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT))
         pygame.display.set_caption("super cooool project ;)")
         self.icon = pygame.image.load("assets/smug.png")
