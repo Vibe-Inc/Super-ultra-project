@@ -38,13 +38,34 @@ class Menu(State):
         self.buttons: list[Button] = []
         self.tooltips: list[Tooltip] = []
 
+    def _apply_button_size(self, button: Button, rect: pygame.Rect):
+        button.rect = rect
+        try:
+            button._update_text_surface()
+        except Exception:
+            pass
+
+    def _screen_size(self, screen: pygame.Surface | None = None) -> tuple[int, int]:
+        if screen is not None:
+            return screen.get_width(), screen.get_height()
+        try:
+            return self.app.screen.get_width(), self.app.screen.get_height()
+        except Exception:
+            return cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT
+
     def draw(self, screen):
+        # keep UI aligned to the actual screen size
+        self.layout(screen)
         for button in self.buttons:
             button.draw(screen)
         mouse_pos = pygame.mouse.get_pos()
         for tooltip in self.tooltips:
             tooltip.hover_update(mouse_pos)
             tooltip.draw(screen)
+
+    def layout(self, screen: pygame.Surface):
+        # default menus don't need extra layout; subclasses override this
+        return
 
     def handle_event(self, event: pygame.event.Event):
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -83,15 +104,16 @@ class MainMenu(Menu):
     def __init__(self, app: "App"):
         super().__init__(app)
 
-        button_width, button_height = 300, 100
-        gap = 50
+        button_width, button_height = 360, 120
+        gap = 60
         tot_width = 2 * button_width + gap
-        
-        start_rect = pygame.Rect((cfg.SCREEN_WIDTH - tot_width) // 2, 700, button_width, button_height)
-        exit_rect = pygame.Rect((cfg.SCREEN_WIDTH - tot_width) // 2 + button_width + gap, 700, button_width, button_height)
-        settings_rect = pygame.Rect((cfg.SCREEN_WIDTH - tot_width) // 2, 850, button_width, button_height)
-        credits_rect = pygame.Rect((cfg.SCREEN_WIDTH - tot_width) // 2 + button_width + gap, 850, button_width, button_height)
-        load_rect = pygame.Rect((cfg.SCREEN_WIDTH - tot_width) // 2 + button_width + gap, 550, button_width, button_height)
+        center_x = cfg.SCREEN_WIDTH // 2
+
+        start_rect = pygame.Rect(center_x - tot_width // 2, 650, button_width, button_height)
+        exit_rect = pygame.Rect(center_x - tot_width // 2 + button_width + gap, 650, button_width, button_height)
+        settings_rect = pygame.Rect(center_x - tot_width // 2, 800, button_width, button_height)
+        credits_rect = pygame.Rect(center_x - tot_width // 2 + button_width + gap, 800, button_width, button_height)
+        load_rect = pygame.Rect(center_x - button_width // 2, 520, button_width, button_height)
 
         self.buttons = [
             Button(
@@ -146,8 +168,8 @@ class MainMenu(Menu):
             )
         ]
         self.beta_logo_img = pygame.image.load("assets/beta_logo.png")
-        self.beta_logo_img = pygame.transform.scale(self.beta_logo_img, (200, 200))
-        self.beta_logo_rect = self.beta_logo_img.get_rect(center=(1600, 900))
+        self.beta_logo_img = pygame.transform.scale(self.beta_logo_img, (280, 280))
+        self.beta_logo_rect = self.beta_logo_img.get_rect()
 
         self.tooltips = [
             Tooltip(
@@ -162,7 +184,29 @@ class MainMenu(Menu):
             )
         ]
 
+    def layout(self, screen: pygame.Surface):
+        sw, sh = self._screen_size(screen)
+        button_width, button_height = 360, 120
+        gap = 60
+        tot_width = 2 * button_width + gap
+        center_x = sw // 2
+
+        positions = [
+            pygame.Rect(center_x - tot_width // 2, int(sh * 0.60), button_width, button_height),
+            pygame.Rect(center_x - button_width // 2, int(sh * 0.48), button_width, button_height),
+            pygame.Rect(center_x - tot_width // 2 + button_width + gap, int(sh * 0.60), button_width, button_height),
+            pygame.Rect(center_x - tot_width // 2, int(sh * 0.75), button_width, button_height),
+            pygame.Rect(center_x - tot_width // 2 + button_width + gap, int(sh * 0.75), button_width, button_height),
+        ]
+
+        for button, rect in zip(self.buttons, positions):
+            self._apply_button_size(button, rect)
+
+        self.beta_logo_rect = self.beta_logo_img.get_rect(center=(sw - 180, sh - 180))
+        self.tooltips[0].update_target(self.beta_logo_rect, self.tooltips[0].text)
+
     def draw(self, screen):
+        self.layout(screen)
         screen.blit(self.beta_logo_img, self.beta_logo_rect, )
         for button in self.buttons:
             button.draw(screen)
@@ -233,10 +277,9 @@ class SettingsMenu(Menu):
 
     def __init__(self, app: "App"):
         super().__init__(app)
-        button_width, button_height = 300, 100
-        button_y = 700
-        back_rect = pygame.Rect(1000, button_y, button_width, button_height)
-        lang_rect = pygame.Rect(1000, 550, button_width, button_height)
+        button_width, button_height = 360, 120
+        back_rect = pygame.Rect(0, 0, button_width, button_height)
+        lang_rect = pygame.Rect(0, 0, button_width, button_height)
 
         self.buttons = [
             Button(
@@ -289,6 +332,41 @@ class SettingsMenu(Menu):
         self.text_logo = self.myfont.render(_('Music volume'), True, (0, 0, 0))
         self.text_rect = self.text_logo.get_rect(center=(760, 650))
 
+    def layout(self, screen: pygame.Surface):
+        sw, sh = self._screen_size(screen)
+        button_width, button_height = 360, 120
+        center_x = sw // 2
+        center_y = sh // 2
+
+        # keep controls separated: sliders on the left, buttons on the right
+        left_column_x = center_x - 430
+        right_column_x = center_x + 70
+
+        self.buttons[0].rect = pygame.Rect(right_column_x, center_y + 130, button_width, button_height)
+        self.buttons[1].rect = pygame.Rect(right_column_x, center_y - 20, button_width, button_height)
+        for button in self.buttons:
+            try:
+                button._update_text_surface()
+            except Exception:
+                pass
+
+        # Position sliders so their track centers align with button centers
+        self.brightness_slider.x = left_column_x
+        self.brightness_slider.y = self.buttons[0].rect.centery - self.brightness_slider.height // 2
+        self.audio_slider.x = left_column_x
+        self.audio_slider.y = self.buttons[1].rect.centery - self.audio_slider.height // 2
+
+        # Render labels and position them above their respective slider tracks
+        self.brightness_label = self.myfont.render(_('Brightness'), True, (0, 0, 0))
+        label_x = self.brightness_slider.x + self.brightness_slider.track_length // 2
+        label_y = self.brightness_slider.y - 18
+        self.brightness_rect = self.brightness_label.get_rect(center=(label_x, label_y))
+
+        self.text_logo = self.myfont.render(_('Music volume'), True, (0, 0, 0))
+        text_x = self.audio_slider.x + self.audio_slider.track_length // 2
+        text_y = self.audio_slider.y - 18
+        self.text_rect = self.text_logo.get_rect(center=(text_x, text_y))
+
     def back_to_main(self):
         self.app.manager.set_state("main")
     
@@ -306,13 +384,16 @@ class SettingsMenu(Menu):
             self.audio_slider.update()
 
     def draw(self, surface):
+        self.layout(surface)
         for button in self.buttons:
             button.draw(surface)
-        self.audio_slider.draw(surface)
-        surface.blit(self.text_logo, self.text_rect)
 
-        self.brightness_slider.draw(surface)
+        # Draw labels above sliders first, then sliders so labels are visually above
+        surface.blit(self.text_logo, self.text_rect)
         surface.blit(self.brightness_label, self.brightness_rect)
+
+        self.audio_slider.draw(surface)
+        self.brightness_slider.draw(surface)
 
 class CreditsMenu(Menu):
     """
@@ -349,8 +430,8 @@ class CreditsMenu(Menu):
 
     def __init__(self, app: "App"):
         super().__init__(app)
-        button_width, button_height = 300, 100
-        back_rect = pygame.Rect(1400, 850, button_width, button_height)
+        button_width, button_height = 360, 120
+        back_rect = pygame.Rect(0, 0, button_width, button_height)
         self.buttons = [
             Button(back_rect,
                 _("BACK"),
@@ -378,11 +459,26 @@ Special thanks to Vibe inc""")
         box_width = max_width + 2 * self.padding
         box_height = line_height * num_credits_lines + 2 * self.padding
         self.box_rect = pygame.Rect(
-            (cfg.SCREEN_WIDTH - box_width) // 2, 300, box_width, box_height)
+            (cfg.SCREEN_WIDTH - box_width) // 2, 250, box_width, box_height)
         self.box_color = (245, 222, 179) 
         self.box_border = (139, 49, 19)
 
+    def layout(self, screen: pygame.Surface):
+        sw, sh = self._screen_size(screen)
+        self.buttons[0].rect = pygame.Rect(sw - 420, sh - 170, 360, 120)
+        try:
+            self.buttons[0]._update_text_surface()
+        except Exception:
+            pass
+        self.box_rect = pygame.Rect(
+            (sw - self.box_rect.width) // 2,
+            int(sh * 0.28),
+            min(self.box_rect.width, sw - 180),
+            self.box_rect.height,
+        )
+
     def draw(self, screen):
+        self.layout(screen)
         pygame.draw.rect(screen, self.box_color, self.box_rect, border_radius=15)
         pygame.draw.rect(screen, self.box_border, self.box_rect, 10, border_radius=15)
 
@@ -427,7 +523,7 @@ class PauseMenu(Menu):
     def __init__(self, app: "App"):
         self.app = app
 
-        button_width, button_height = 300, 100
+        button_width, button_height = 360, 120
 
         self.pause_menu_color = (0, 0, 0, 180)
 
@@ -465,12 +561,29 @@ class PauseMenu(Menu):
         ]
 
     def draw(self, screen):
+        self.layout(screen)
         overlay = pygame.Surface((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT), pygame.SRCALPHA)
         overlay.fill(self.pause_menu_color)
         screen.blit(overlay, (0, 0))
 
         for button in self.buttons:
             button.draw(screen)
+
+    def layout(self, screen: pygame.Surface):
+        sw, sh = self._screen_size(screen)
+        button_width, button_height = 360, 120
+        center_x = sw // 2
+        positions = [
+            (center_x - button_width // 2, int(sh * 0.42)),
+            (center_x - button_width // 2, int(sh * 0.56)),
+            (center_x - button_width // 2, int(sh * 0.70)),
+        ]
+        for button, (x, y) in zip(self.buttons, positions):
+            button.rect = pygame.Rect(x, y, button_width, button_height)
+            try:
+                button._update_text_surface()
+            except Exception:
+                pass
 
     def open_save_menu(self):
         self.app.manager.states["save_load"].mode = "save"
@@ -490,6 +603,41 @@ class SaveLoadMenu(Menu):
         self.mode = "save" # "save" or "load"
         self.slots = ["save1", "save2", "save3"]
         self.refresh_saves()
+
+    def layout(self, screen: pygame.Surface):
+        sw, sh = self._screen_size(screen)
+        self.buttons[0].rect = pygame.Rect(80, 70, 240, 100)
+        try:
+            self.buttons[0]._update_text_surface()
+        except Exception:
+            pass
+
+        title_width = min(900, sw - 120)
+        self._title_rect = pygame.Rect((sw - title_width) // 2, 150, title_width, 100)
+        start_y = 320
+        slot_width = min(520, sw - 360)
+        slot_x = (sw - slot_width) // 2
+
+        button_index = 1
+        for i, slot in enumerate(self.slots):
+            y = start_y + i * 160
+            exists = slot + ".json" in SaveManager.get_save_files()
+
+            if button_index < len(self.buttons):
+                self.buttons[button_index].rect = pygame.Rect(slot_x, y, slot_width, 110)
+                try:
+                    self.buttons[button_index]._update_text_surface()
+                except Exception:
+                    pass
+                button_index += 1
+
+            if exists and button_index < len(self.buttons):
+                self.buttons[button_index].rect = pygame.Rect(slot_x + slot_width + 30, y, 180, 110)
+                try:
+                    self.buttons[button_index]._update_text_surface()
+                except Exception:
+                    pass
+                button_index += 1
 
     def refresh_saves(self):
         self.buttons = []
@@ -569,16 +717,16 @@ class SaveLoadMenu(Menu):
     def draw(self, screen):
         # Draw background (maybe semi-transparent if coming from pause)
         if self.mode == "save":
-             overlay = pygame.Surface((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT), pygame.SRCALPHA)
-             overlay.fill((0, 0, 0, 180))
-             screen.blit(overlay, (0, 0))
+            overlay = pygame.Surface((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 180))
+            screen.blit(overlay, (0, 0))
         else:
-             # If loading from main menu, maybe draw background image
-             screen.blit(cfg.bg, (0, 0))
+            # If loading from main menu, maybe draw background image
+            screen.blit(cfg.bg, (0, 0))
 
         title = _("SAVE GAME") if self.mode == "save" else _("LOAD GAME")
         title_surf = cfg.get_font(80).render(title, True, (255, 255, 255))
-        title_rect = title_surf.get_rect(center=(cfg.SCREEN_WIDTH // 2, 220))
+        title_rect = title_surf.get_rect(center=(cfg.SCREEN_WIDTH // 2, 200))
         screen.blit(title_surf, title_rect)
 
         super().draw(screen)

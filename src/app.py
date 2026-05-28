@@ -143,9 +143,6 @@ class App:
             if self.profiler.enabled:
                 self.profiler.draw(self.screen, position=(190, 100))
 
-            screen_width = self.screen.get_width()
-            self.fps_counter.draw(self.screen, position=(screen_width - 12, 12), align_right=True)
-
             pygame.display.flip()
 
             for event in pygame.event.get():

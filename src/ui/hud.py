@@ -71,7 +71,7 @@ class HUD:
         button_height = 50
         button_x = 200
         button_y = 240
-        
+
         self.inv_button = Button(
             pygame.Rect(button_x, button_y, button_width, button_height),
             _("INVENTORY"),
@@ -94,13 +94,49 @@ class HUD:
         self.skill_panel_x = 0
         self.skill_panel_y = 0
 
+        self.hp_icon_pos = (0, 0)
+        self.life_icon_pos = (0, 0)
+        self.hp_bar_rect = pygame.Rect(0, 0, 0, 0)
+        self.xp_bar_rect = pygame.Rect(0, 0, 0, 0)
+        self.stamina_bar_rect = pygame.Rect(0, 0, 0, 0)
+
         # slot rects (populated/updated per-frame or on-event)
         self.skill_slot_rects: list[pygame.Rect] = []
 
-    def _recalc_skill_layout(self, screen_width: int, screen_height: int):
-        """Recalculate panel position and slot rects based on actual screen size."""
-        self.skill_panel_x = max(self.skill_panel_margin, screen_width - self.skill_panel_width - self.skill_panel_margin)
-        self.skill_panel_y = max(10, (screen_height - self.skill_total_slots_height) // 2)
+    def _recalc_layout(self, screen_width: int, screen_height: int):
+        """Recalculate HUD positions based on the current screen size."""
+        left_margin = 20
+        top_margin = 20
+        right_margin = 20
+        bottom_margin = 20
+        bar_width = max(220, min(320, screen_width // 4))
+        bar_height = 30
+
+        self.hp_icon_pos = (left_margin, top_margin)
+        self.hp_bar_rect = pygame.Rect(left_margin + 60, top_margin + 10, bar_width, bar_height)
+        self.life_icon_pos = (left_margin, top_margin + 60)
+
+        button_width = 200
+        button_height = 50
+        button_x = left_margin
+        button_y = top_margin + 170
+        self.inv_button.rect = pygame.Rect(button_x, button_y, button_width, button_height)
+        self.inv_button._update_text_surface()
+
+        xp_bar_width = min(320, max(220, screen_width // 4))
+        xp_bar_height = 15
+        xp_bar_x = screen_width - right_margin - xp_bar_width
+        xp_bar_y = top_margin + 10
+        self.xp_bar_rect = pygame.Rect(xp_bar_x, xp_bar_y, xp_bar_width, xp_bar_height)
+
+        stamina_bar_width = min(600, max(280, screen_width // 2))
+        stamina_bar_height = 25
+        stamina_bar_x = (screen_width - stamina_bar_width) // 2
+        stamina_bar_y = screen_height - stamina_bar_height - bottom_margin
+        self.stamina_bar_rect = pygame.Rect(stamina_bar_x, stamina_bar_y, stamina_bar_width, stamina_bar_height)
+
+        self.skill_panel_x = screen_width - self.skill_panel_width - right_margin
+        self.skill_panel_y = (screen_height - self.skill_total_slots_height) // 2
 
         # rebuild rects
         self.skill_slot_rects = []
@@ -119,10 +155,10 @@ class HUD:
         # ensure layout matches current window before handling clicks
         try:
             sw, sh = self.app.screen.get_size()
-            self._recalc_skill_layout(sw, sh)
+            self._recalc_layout(sw, sh)
         except Exception:
             # fallback to config values
-            self._recalc_skill_layout(cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT)
+            self._recalc_layout(cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT)
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             if self.inv_button.rect.collidepoint(event.pos):
@@ -137,17 +173,17 @@ class HUD:
         # ensure layout matches current window before drawing
         try:
             sw, sh = screen.get_size()
-            self._recalc_skill_layout(sw, sh)
+            self._recalc_layout(sw, sh)
         except Exception:
-            self._recalc_skill_layout(cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT)
+            self._recalc_layout(cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT)
 
-        icon_x, icon_y = 200, 120
+        icon_x, icon_y = self.hp_icon_pos
         screen.blit(self.hp_icon, (icon_x, icon_y))
 
-        bar_x = icon_x + 60
-        bar_y = icon_y + 10
-        bar_width = 300
-        bar_height = 30
+        bar_x = self.hp_bar_rect.x
+        bar_y = self.hp_bar_rect.y
+        bar_width = self.hp_bar_rect.width
+        bar_height = self.hp_bar_rect.height
 
         hp_percent = max(0, self.character.hp / self.character.max_hp)
         current_bar_width = int(bar_width * hp_percent)
@@ -164,8 +200,7 @@ class HUD:
         screen.blit(hp_text, (bar_x + bar_width // 2 - hp_text.get_width() // 2, bar_y + 5))
 
 
-        lives_icon_x = icon_x
-        lives_icon_y = icon_y + 60
+        lives_icon_x, lives_icon_y = self.life_icon_pos
 
         screen.blit(self.life_icon, (lives_icon_x, lives_icon_y))
 
@@ -173,11 +208,10 @@ class HUD:
         screen.blit(lives_text, (lives_icon_x + 60, lives_icon_y + 5))
         
         # XP Bar
-        xp_bar_width = 300
-        xp_bar_height = 15
-        # anchor XP bar to the right side of the window so it doesn't go off-screen
-        xp_bar_x = max(bar_x + 50, sw - xp_bar_width - 20)
-        xp_bar_y = lives_icon_y - 50
+        xp_bar_x = self.xp_bar_rect.x
+        xp_bar_y = self.xp_bar_rect.y
+        xp_bar_width = self.xp_bar_rect.width
+        xp_bar_height = self.xp_bar_rect.height
         
         xp_percent = max(0, self.character.xp / self.character.xp_to_next_level)
         current_xp_width = int(xp_bar_width * xp_percent)
@@ -191,27 +225,15 @@ class HUD:
         
         # Level Text
         level_text = self.font.render(f"Lvl {self.character.level}", True, (255, 255, 255))
-        screen.blit(level_text, (xp_bar_x - 100, xp_bar_y - 15))
-
-        # make sure inventory button is visible (move it left if necessary)
-        try:
-            max_inv_x = max(10, sw - self.inv_button.rect.width - 10)
-            if self.inv_button.rect.x > max_inv_x:
-                self.inv_button.rect.x = max_inv_x
-                try:
-                    self.inv_button._update_text_surface()
-                except Exception:
-                    pass
-        except Exception:
-            pass
+        level_text_rect = level_text.get_rect(midright=(xp_bar_x - 12, xp_bar_y + xp_bar_height // 2))
+        screen.blit(level_text, level_text_rect)
 
         self.inv_button.draw(screen)
 
-        stamina_bar_width = 600
-        stamina_bar_height = 25
-        stamina_bar_x = (sw - stamina_bar_width) // 2
-        # position stamina near bottom but inside the window
-        stamina_bar_y = max(10, sh - stamina_bar_height - 20)
+        stamina_bar_x = self.stamina_bar_rect.x
+        stamina_bar_y = self.stamina_bar_rect.y
+        stamina_bar_width = self.stamina_bar_rect.width
+        stamina_bar_height = self.stamina_bar_rect.height
 
         stamina_percent = max(0, self.character.stamina / self.character.max_stamina)
         current_stamina_width = int(stamina_bar_width * stamina_percent)
