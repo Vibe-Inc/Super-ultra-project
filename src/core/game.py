@@ -416,6 +416,29 @@ class Game(State):
             return spawn
         return {"pos": spawn, "profile": "stalker"}
 
+    def _get_camera_offset(self) -> pygame.Vector2:
+        viewport_width, viewport_height = self.app.screen.get_size()
+
+        if self.app.is_fullscreen:
+            return pygame.Vector2(0, 0)
+
+        map_width = cfg.BASE_SCREEN_WIDTH
+        map_height = cfg.BASE_SCREEN_HEIGHT
+        if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+            map_width = min(self.map.current_map.pixel_width, cfg.BASE_SCREEN_WIDTH)
+            map_height = min(self.map.current_map.pixel_height, cfg.BASE_SCREEN_HEIGHT)
+
+        camera_x = int(self.character.get_center().x - viewport_width / 2)
+        camera_y = int(self.character.get_center().y - viewport_height / 2)
+
+        max_x = max(0, map_width - viewport_width)
+        max_y = max(0, map_height - viewport_height)
+
+        camera_x = max(0, min(camera_x, max_x))
+        camera_y = max(0, min(camera_y, max_y))
+
+        return pygame.Vector2(camera_x, camera_y)
+
     def _make_patrol_points(self, center: pygame.Vector2, radius: float) -> list[tuple[float, float]]:
         return [
             (center.x - radius, center.y - radius),
@@ -614,20 +637,22 @@ class Game(State):
         self.app.profiler.end_section("game.update")
 
         self.app.profiler.start_section("game.draw")
-        self.map.draw(screen)
+        camera_offset = self._get_camera_offset()
 
-        self.character.draw(screen)
+        self.map.draw(screen, camera_offset)
+
+        self.character.draw(screen, camera_offset)
 
         for enemy in self.enemies:
-            enemy.draw(screen)
+            enemy.draw(screen, camera_offset)
 
         for projectile in self.projectiles:
-            projectile.draw(screen)
+            projectile.draw(screen, camera_offset)
 
         for projectile in self.enemy_projectiles:
-            projectile.draw(screen)
+            projectile.draw(screen, camera_offset)
 
-        self.npc.draw(screen)
+        self.npc.draw(screen, camera_offset)
 
         if not self.npc.is_interactable:
             if getattr(self.app.INV_manager, 'current_shop_inv', None) is not None:
@@ -675,7 +700,8 @@ class Game(State):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if not self.app.INV_manager.player_inventory_opened:
                 if not self.hud.inv_button.rect.collidepoint(event.pos):
-                    self._handle_player_attack(event.pos)
+                    mouse_world_pos = pygame.Vector2(event.pos) + self._get_camera_offset()
+                    self._handle_player_attack(mouse_world_pos)
 
         self.app.INV_manager.PLAYER_inventory_open(event, self.MAIN_player_inv, self.PLAYER_inventory_equipment)
 

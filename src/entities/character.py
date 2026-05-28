@@ -389,13 +389,16 @@ class Character:
         self.pos = self.spawn_point.copy()  # teleport to spawn
         logger.info(f"Player respawned at {self.pos}. Death count: {self.death_count}")
 
-    def draw(self, screen):
+    def draw(self, screen, camera_offset=None):
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+
         # Blink if invulnerable
         if self.invulnerable and int(pygame.time.get_ticks() / 100) % 2 == 0:
             pass # Skip drawing for blinking effect
         else:
             # Draw relative to self.pos (top-left of sprite), NOT self.get_rect() (hitbox)
-            draw_pos = (int(self.pos.x), int(self.pos.y))
+            draw_pos = (int(self.pos.x - camera_offset.x), int(self.pos.y - camera_offset.y))
             img = self.image
             if self.direction == "side" and self.flip:
                 img = self.animations_flipped["side"][self.frame_index]
@@ -431,5 +434,5 @@ class Character:
 
             base_anchor = self.get_melee_anchor() + attack_dir * self.melee_origin_offset
             center = base_anchor + attack_dir * self.melee_slash_distance
-            rotated_rect = rotated.get_rect(center=(int(center.x), int(center.y)))
+            rotated_rect = rotated.get_rect(center=(int(center.x - camera_offset.x), int(center.y - camera_offset.y)))
             screen.blit(rotated, rotated_rect.topleft)

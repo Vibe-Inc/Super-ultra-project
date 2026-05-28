@@ -54,8 +54,13 @@ class Arrow:
         if self.traveled >= self.max_range:
             self.alive = False
 
-    def draw(self, screen):
+    def draw(self, screen, camera_offset=None):
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+
         rect = self.get_rect()
+        rect.x -= int(camera_offset.x)
+        rect.y -= int(camera_offset.y)
         pygame.draw.rect(screen, self.color, rect)
 
         if abs(self.direction.x) >= abs(self.direction.y):
@@ -131,12 +136,17 @@ class ArcaneBolt:
         if self.traveled >= self.max_range:
             self.alive = False
 
-    def draw(self, screen):
+    def draw(self, screen, camera_offset=None):
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+
         rect = self.get_rect()
+        rect.x -= int(camera_offset.x)
+        rect.y -= int(camera_offset.y)
         pygame.draw.ellipse(screen, self.color, rect)
 
         tail_offset = self.direction * -6
-        tail_pos = (int(self.pos.x + tail_offset.x), int(self.pos.y + tail_offset.y))
+        tail_pos = (int(self.pos.x + tail_offset.x - camera_offset.x), int(self.pos.y + tail_offset.y - camera_offset.y))
         pygame.draw.circle(screen, (40, 90, 180), tail_pos, 3)
 
 
@@ -237,9 +247,14 @@ class Bomb:
         if self.timer >= self.fuse_time or self.traveled >= self.max_range:
             self._trigger_explosion()
 
-    def draw(self, screen):
+    def draw(self, screen, camera_offset=None):
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+
         if not self.exploding:
             rect = self.get_rect()
+            rect.x -= int(camera_offset.x)
+            rect.y -= int(camera_offset.y)
             pygame.draw.circle(screen, self.color, rect.center, rect.width // 2)
             pygame.draw.circle(screen, (60, 40, 20), rect.center, 3)
             return
@@ -250,4 +265,4 @@ class Bomb:
             return
         surface = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
         pygame.draw.circle(surface, (255, 180, 90, 140), (radius, radius), radius)
-        screen.blit(surface, (self.pos.x - radius, self.pos.y - radius))
+        screen.blit(surface, (self.pos.x - radius - camera_offset.x, self.pos.y - radius - camera_offset.y))
