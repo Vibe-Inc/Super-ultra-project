@@ -11,6 +11,24 @@ from src.items.effects import ConfusionEffect, DizzinessEffect, PoisonEffect, Sl
 
 @dataclass
 class AttackContext:
+    """
+    Context object passed into monster attack controllers.
+
+    Attributes:
+        dt (float):
+            Delta time in seconds for the current update.
+        player (object | None):
+            Current player entity or None when unavailable.
+        obstacles (list[pygame.Rect]):
+            Solid world obstacles used for line-of-sight and collision tests.
+        projectiles (list):
+            Shared projectile list that attacks can append to.
+        now_ms (int):
+            Current game time in milliseconds.
+
+    Methods:
+        None.
+    """
     dt: float
     player: object | None
     obstacles: list[pygame.Rect]
@@ -51,6 +69,25 @@ def _is_clear(enemy: object, pos: pygame.Vector2, obstacles: list[pygame.Rect]) 
 
 
 class BaseAttack:
+    """
+    Base behavior controller for enemy attack patterns.
+
+    Attributes:
+        config (dict):
+            Attack tuning values.
+        cooldown_ms (int):
+            Minimum delay between attacks.
+        last_attack_time (int):
+            Timestamp of the most recent attack.
+
+    Methods:
+        __init__(config=None):
+            Initialize the attack controller.
+        ready(now_ms):
+            Return whether the attack may fire now.
+        update(enemy, context):
+            Default no-op attack update.
+    """
     def __init__(self, config: dict | None = None):
         self.config = config or {}
         self.cooldown_ms = int(self.config.get("cooldown_ms", 1000))
@@ -64,6 +101,45 @@ class BaseAttack:
 
 
 class BruteAttack(BaseAttack):
+    """
+    Heavy melee attack pattern that charges and slams the player.
+
+    Attributes:
+        charge_cooldown_ms (int):
+            Delay between charge attempts.
+        charge_duration (float):
+            Duration of an active charge.
+        charge_speed_mult (float):
+            Speed multiplier while charging.
+        charge_distance (float):
+            Distance the charge tries to cover.
+        charge_trigger_range (float):
+            Distance within which charging can begin.
+        slam_damage_mult (float):
+            Multiplier applied to base damage for the slam.
+        knockback_force (float):
+            Knockback distance applied to the player.
+        slow_duration (float):
+            Duration of the slow effect applied by the slam.
+        slow_factor (float):
+            Slow multiplier applied to the player.
+        last_charge_time (int):
+            Timestamp of the last charge start.
+        charge_timer (float):
+            Remaining time in the current charge.
+        charge_direction (pygame.Vector2):
+            Direction used while charging.
+
+    Methods:
+        __init__(config=None):
+            Initialize brute-specific tuning values.
+        update(enemy, context):
+            Drive charge and slam behavior.
+        _charge_ready(now_ms):
+            Check whether a new charge may start.
+        _slam(enemy, player, enemy_pos, player_pos, now_ms):
+            Apply slam damage, knockback, and slow.
+    """
     def __init__(self, config: dict | None = None):
         super().__init__(config)
         self.charge_cooldown_ms = int(self.config.get("charge_cooldown_ms", 2200))
@@ -134,6 +210,25 @@ class BruteAttack(BaseAttack):
 
 
 class VenomousAttack(BaseAttack):
+    """
+    Melee attack pattern that applies poison to the player.
+
+    Attributes:
+        poison_duration (float):
+            Duration of the poison effect.
+        poison_dps (float):
+            Damage per second applied by poison.
+        strike_damage_mult (float):
+            Damage multiplier for the strike.
+        strike_range (float):
+            Optional custom strike range.
+
+    Methods:
+        __init__(config=None):
+            Initialize venomous-specific tuning values.
+        update(enemy, context):
+            Apply poison if the player is in range and cooldown allows it.
+    """
     def __init__(self, config: dict | None = None):
         super().__init__(config)
         self.poison_duration = float(self.config.get("poison_duration", 3.5))
@@ -166,6 +261,31 @@ class VenomousAttack(BaseAttack):
 
 
 class ArcanistAttack(BaseAttack):
+    """
+    Ranged attack pattern that fires burning arcane bolts.
+
+    Attributes:
+        bolt_speed (float):
+            Projectile speed.
+        bolt_range (float):
+            Maximum projectile travel distance.
+        bolt_damage_mult (float):
+            Damage multiplier for each bolt.
+        burn_duration (float):
+            Duration of the burn effect applied on hit.
+        burn_dps (float):
+            Damage per second of the burn effect.
+        cast_range (float):
+            Maximum distance at which the attack can be cast.
+        spread_degrees (float):
+            Random spread applied to each shot.
+
+    Methods:
+        __init__(config=None):
+            Initialize arcanist-specific tuning values.
+        update(enemy, context):
+            Spawn an ArcaneBolt when the player is visible and in range.
+    """
     def __init__(self, config: dict | None = None):
         super().__init__(config)
         self.bolt_speed = float(self.config.get("bolt_speed", 420.0))
@@ -217,6 +337,33 @@ class ArcanistAttack(BaseAttack):
 
 
 class TricksterAttack(BaseAttack):
+    """
+    Mobility attack pattern that teleports near the player and confuses them.
+
+    Attributes:
+        step_range (float):
+            Maximum distance at which the teleport attack can trigger.
+        step_distance (float):
+            Distance used when repositioning around the player.
+        step_attempts (int):
+            Number of placement attempts before giving up.
+        step_spread_degrees (float):
+            Angular spread for candidate positions.
+        strike_range (float):
+            Distance within which the post-teleport strike lands.
+        confuse_duration (float):
+            Duration of the confusion effect.
+        dizzy_duration (float):
+            Duration of the dizziness effect.
+        damage_mult (float):
+            Damage multiplier for the strike.
+
+    Methods:
+        __init__(config=None):
+            Initialize trickster-specific tuning values.
+        update(enemy, context):
+            Teleport, strike, and apply debuffs when possible.
+    """
     def __init__(self, config: dict | None = None):
         super().__init__(config)
         self.step_range = float(self.config.get("step_range", 260.0))
@@ -278,6 +425,35 @@ class TricksterAttack(BaseAttack):
 
 
 class BomberAttack(BaseAttack):
+    """
+    Ranged attack pattern that throws timed bombs at the player.
+
+    Attributes:
+        throw_range (float):
+            Maximum distance at which bombs may be thrown.
+        min_range (float):
+            Preferred minimum distance from the player.
+        bomb_speed (float):
+            Projectile speed.
+        bomb_range (float):
+            Maximum bomb travel distance.
+        blast_radius (float):
+            Explosion radius.
+        fuse_time (float):
+            Time before the bomb explodes.
+        damage_mult (float):
+            Damage multiplier for the bomb.
+        knockback_force (float):
+            Knockback applied by the explosion.
+        spread_degrees (float):
+            Random spread applied to the throw angle.
+
+    Methods:
+        __init__(config=None):
+            Initialize bomber-specific tuning values.
+        update(enemy, context):
+            Throw a bomb when the player is in range and cooldown allows it.
+    """
     def __init__(self, config: dict | None = None):
         super().__init__(config)
         self.throw_range = float(self.config.get("throw_range", 320.0))
@@ -311,7 +487,8 @@ class BomberAttack(BaseAttack):
         else:
             direction = direction.normalize()
 
-        if distance < self.min_range:
+        # compare squared distance to avoid an unnecessary sqrt and fix NameError
+        if distance_sq < (self.min_range * self.min_range):
             direction *= -1
 
         if self.spread_degrees:

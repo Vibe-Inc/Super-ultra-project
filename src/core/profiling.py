@@ -9,6 +9,57 @@ import src.config as cfg
 
 
 class FrameProfiler:
+    """
+    Frame timing overlay used to inspect performance during gameplay.
+
+    Attributes:
+        sample_size (int):
+            Number of FPS samples kept for rolling averages.
+        font_size (int):
+            Font size used for the overlay text.
+        enabled (bool):
+            Whether the profiler is currently active.
+        _font (pygame.font.Font | None):
+            Cached font instance for drawing the overlay.
+        _fps_samples (deque):
+            Rolling list of recent FPS values.
+        _section_start (dict[str, float]):
+            Start times for named timing sections.
+        _section_times (dict[str, float]):
+            Measured duration of named timing sections in milliseconds.
+        _section_order (list[str]):
+            Rendering order for timing sections.
+        _gauges (dict[str, object]):
+            Miscellaneous profiler metrics.
+        _frame_dt (float):
+            Duration of the most recent frame in seconds.
+        _last_report (dict | None):
+            Cached data rendered by the overlay.
+
+    Methods:
+        __init__(sample_size=120, font_size=18):
+            Initialize the profiler.
+        set_enabled(enabled):
+            Enable or disable the overlay.
+        reset():
+            Clear all collected profiling data.
+        _ensure_font():
+            Lazily build the overlay font.
+        refresh_fonts():
+            Rebuild fonts after a UI scale or language change.
+        begin_frame(dt):
+            Start a new frame and record frame timing.
+        start_section(name):
+            Mark the start of a named timing section.
+        end_section(name):
+            Mark the end of a named timing section.
+        set_gauge(name, value):
+            Store an arbitrary profiler value.
+        end_frame():
+            Finalize the current frame report.
+        draw(screen, position=(12, 12)):
+            Render the profiler overlay.
+    """
     def __init__(self, sample_size: int = 120, font_size: int = 18):
         self.sample_size = sample_size
         self.font_size = font_size
@@ -113,6 +164,23 @@ class FrameProfiler:
             if report["gauges"]:
                 for key, value in report["gauges"].items():
                     lines.append(f"{key}: {value}")
+            # add mouse cursor position (screen coordinates)
+            try:
+                mx, my = pygame.mouse.get_pos()
+                lines.append(f"Mouse: ({mx}, {my})")
+            except Exception:
+                pass
+            # show actual window size and configured size for debugging
+            try:
+                w = screen.get_width()
+                h = screen.get_height()
+                lines.append(f"Window: {w}x{h}")
+                lines.append(f"Cfg: {cfg.SCREEN_WIDTH}x{cfg.SCREEN_HEIGHT}")
+                if cfg.SCREEN_WIDTH:
+                    scale = w / cfg.SCREEN_WIDTH
+                    lines.append(f"Scale: {scale:.2f}x")
+            except Exception:
+                pass
 
         line_surfs = [self._font.render(line, True, (255, 255, 255)) for line in lines]
         max_width = max((surf.get_width() for surf in line_surfs), default=0)
@@ -137,6 +205,43 @@ class FrameProfiler:
 
 
 class FpsCounter:
+    """
+    Lightweight rolling FPS display for the HUD.
+
+    Attributes:
+        sample_size (int):
+            Number of FPS values to keep for smoothing.
+        font_size (int):
+            Font size used for the counter.
+        update_interval (float):
+            Minimum delay between text refreshes.
+        enabled (bool):
+            Whether the counter is currently active.
+        _font (pygame.font.Font | None):
+            Cached font instance.
+        _samples (deque):
+            Rolling list of recent FPS values.
+        _last_update (float):
+            Timestamp of the last text refresh.
+        _text (str):
+            Current text displayed by the counter.
+        _text_surf (pygame.Surface | None):
+            Cached rendered text surface.
+        _max_text_width (int):
+            Reserved width to avoid layout jitter.
+
+    Methods:
+        __init__(sample_size=60, font_size=18, update_interval=0.25):
+            Initialize the FPS counter.
+        _ensure_font():
+            Lazily build the counter font.
+        refresh_fonts():
+            Rebuild fonts after a UI scale or language change.
+        update(dt):
+            Feed a new frame delta and refresh the displayed FPS.
+        draw(screen, position=(12, 12), align_right=False):
+            Render the FPS counter to the screen.
+    """
     def __init__(self, sample_size: int = 60, font_size: int = 18, update_interval: float = 0.25):
         self.sample_size = sample_size
         self.font_size = font_size

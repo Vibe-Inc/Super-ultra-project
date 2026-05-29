@@ -2,7 +2,7 @@ import pygame
 from typing import TYPE_CHECKING
 
 from src.core.logger import logger
-from src.ui.menus import MainMenu, SettingsMenu, CreditsMenu, PauseMenu, SaveLoadMenu
+from src.ui.menus import MainMenu, SettingsMenu, CreditsMenu, PauseMenu, SaveLoadMenu, SkillbarMenu
 from src.core.game import Game
 
 if TYPE_CHECKING:
@@ -41,6 +41,7 @@ class StateManager:
             "settings": SettingsMenu(app),
             "credits": CreditsMenu(app),
             "gameplay": Game(app),
+            "skillbar": SkillbarMenu(app),
             "pause": PauseMenu(app),
             "save_load": SaveLoadMenu(app)
         }
@@ -79,6 +80,7 @@ class StateManager:
             "settings": SettingsMenu(self.states["settings"].app),
             "credits": CreditsMenu(self.states["credits"].app),
             "gameplay": gameplay_state,
+            "skillbar": SkillbarMenu(self.states["main"].app),
             "pause": PauseMenu(self.states["pause"].app),
             "save_load": SaveLoadMenu(self.states["main"].app)
         }

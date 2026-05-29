@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 import random
 
 from src.core.logger import logger
+import src.config as cfg
 from src.core.state import State
 from src.entities.character import Character
 from src.map.map import LocalMap
@@ -257,7 +258,7 @@ class Game(State):
             start_x, start_y = -5000, -5000
             default_profile = None
 
-        self.hud = HUD(self.character, app, self.toggle_player_inventory)
+        self.hud = HUD(self.character, app, self.toggle_player_inventory, self.use_skill_slot)
 
         self.enemy = self._create_enemy(start_x, start_y, profile=default_profile)
         
@@ -290,10 +291,23 @@ class Game(State):
         self.shop_inv = ShopInventory(self.app, shop_items)
 
     def reinit_ui(self):
-        self.hud = HUD(self.character, self.app, self.toggle_player_inventory)
+        self.hud = HUD(self.character, self.app, self.toggle_player_inventory, self.use_skill_slot)
+
+        self.MAIN_player_inv.pos_x = cfg.MAIN_INV_pos_x
+        self.MAIN_player_inv.pos_y = cfg.MAIN_INV_pos_y
+        self.PLAYER_inventory_equipment.pos_x = cfg.MAIN_INV_equipment_pos_x
+        self.PLAYER_inventory_equipment.pos_y = cfg.MAIN_INV_equipment_pos_y
+
+        if self.app.INV_manager.current_shop_inv:
+            self.MAIN_player_inv.pos_x = cfg.SCREEN_WIDTH // 2 - 500
+            self.app.INV_manager.current_shop_inv.pos_x = cfg.SCREEN_WIDTH // 2 + 100
+            self.app.INV_manager.current_shop_inv.pos_y = self.MAIN_player_inv.pos_y
 
     def toggle_player_inventory(self):
         self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
+
+    def use_skill_slot(self, slot_index):
+        return self.character.use_skill_from_slot(slot_index)
 
     def _iter_equipment_items(self):
         for col in self.PLAYER_inventory_equipment.items:
@@ -404,6 +418,29 @@ class Game(State):
         if isinstance(spawn, dict):
             return spawn
         return {"pos": spawn, "profile": "stalker"}
+
+    def _get_camera_offset(self) -> pygame.Vector2:
+        viewport_width, viewport_height = self.app.screen.get_size()
+
+        if self.app.is_fullscreen:
+            return pygame.Vector2(0, 0)
+
+        map_width = cfg.BASE_SCREEN_WIDTH
+        map_height = cfg.BASE_SCREEN_HEIGHT
+        if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+            map_width = min(self.map.current_map.pixel_width, cfg.BASE_SCREEN_WIDTH)
+            map_height = min(self.map.current_map.pixel_height, cfg.BASE_SCREEN_HEIGHT)
+
+        camera_x = int(self.character.get_center().x - viewport_width / 2)
+        camera_y = int(self.character.get_center().y - viewport_height / 2)
+
+        max_x = max(0, map_width - viewport_width)
+        max_y = max(0, map_height - viewport_height)
+
+        camera_x = max(0, min(camera_x, max_x))
+        camera_y = max(0, min(camera_y, max_y))
+
+        return pygame.Vector2(camera_x, camera_y)
 
     def _make_patrol_points(self, center: pygame.Vector2, radius: float) -> list[tuple[float, float]]:
         return [
@@ -603,20 +640,22 @@ class Game(State):
         self.app.profiler.end_section("game.update")
 
         self.app.profiler.start_section("game.draw")
-        self.map.draw(screen)
+        camera_offset = self._get_camera_offset()
 
-        self.character.draw(screen)
+        self.map.draw(screen, camera_offset)
+
+        self.character.draw(screen, camera_offset)
 
         for enemy in self.enemies:
-            enemy.draw(screen)
+            enemy.draw(screen, camera_offset)
 
         for projectile in self.projectiles:
-            projectile.draw(screen)
+            projectile.draw(screen, camera_offset)
 
         for projectile in self.enemy_projectiles:
-            projectile.draw(screen)
+            projectile.draw(screen, camera_offset)
 
-        self.npc.draw(screen)
+        self.npc.draw(screen, camera_offset)
 
         if not self.npc.is_interactable:
             if getattr(self.app.INV_manager, 'current_shop_inv', None) is not None:
@@ -642,29 +681,44 @@ class Game(State):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.app.manager.set_state("pause")
+
+            if event.key == pygame.K_1:
+                self.use_skill_slot(0)
+            if event.key == pygame.K_2:
+                self.use_skill_slot(1)
+            if event.key == pygame.K_3:
+                self.use_skill_slot(2)
+            if event.key == pygame.K_4:
+                self.use_skill_slot(3)
+            if event.key == pygame.K_5:
+                self.use_skill_slot(4)
+            if event.key == pygame.K_6:
+                self.use_skill_slot(5)
             
             if event.key == pygame.K_e and self.app.INV_manager.player_inventory_opened == False:
                 if self.npc.is_interactable:
                     self.app.INV_manager.toggle_trade(self.MAIN_player_inv, self.shop_inv)
             
             # Test keys
-            if event.key == pygame.K_1:
+            if event.key == pygame.K_F1:
                 self.character.add_effect(RegenerationEffect(5, 5)) # 5 sec, 5 hp/sec
-            if event.key == pygame.K_2:
+            if event.key == pygame.K_F2:
                 self.character.add_effect(PoisonEffect(5, 5)) # 5 sec, 5 dmg/sec
-            if event.key == pygame.K_3:
+            if event.key == pygame.K_F3:
                 self.character.add_effect(ConfusionEffect(5)) # 5 sec
-            if event.key == pygame.K_4:
+            if event.key == pygame.K_F4:
                 self.character.add_effect(DizzinessEffect(5)) # 5 sec
-            if event.key == pygame.K_5:
+            if event.key == pygame.K_F5:
                 self.character.take_damage(10)
-            if event.key == pygame.K_6:
+            if event.key == pygame.K_F6:
                 self.character.gain_xp(50)
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if not self.app.INV_manager.player_inventory_opened:
-                if not self.hud.inv_button.rect.collidepoint(event.pos):
-                    self._handle_player_attack(event.pos)
+                hud_click = self.hud.inv_button.rect.collidepoint(event.pos) or any(slot.collidepoint(event.pos) for slot in self.hud.skill_slot_rects)
+                if not hud_click:
+                    mouse_world_pos = pygame.Vector2(event.pos) + self._get_camera_offset()
+                    self._handle_player_attack(mouse_world_pos)
 
         self.app.INV_manager.PLAYER_inventory_open(event, self.MAIN_player_inv, self.PLAYER_inventory_equipment)
 

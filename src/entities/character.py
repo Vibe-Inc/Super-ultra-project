@@ -138,6 +138,61 @@ class Character:
         self.last_attack_dir = pygame.Vector2(1, 0)
         self.melee_origin_offset = 6.0
         self.melee_slash_distance = 50.0
+        self.skillbook = self._build_skillbook()
+        self.skillbar = [None for _ in range(6)]
+        self.dash_speed_multiplier = 3.0
+        self.dash_duration = 0.14
+        self.dash_cooldown = 900
+        self.dash_active_time = 0.0
+        self.dash_last_used = -self.dash_cooldown
+        self.dash_direction = pygame.Vector2(1, 0)
+
+    def _build_skillbook(self):
+        return [
+            {
+                "skill_id": "dash",
+                "name": "Dash",
+                "description": "Quick burst of movement",
+                "color": (86, 132, 186),
+                "accent": (220, 235, 255),
+            }
+        ]
+
+    def get_skill_in_slot(self, slot_index):
+        if 0 <= slot_index < len(self.skillbar):
+            return self.skillbar[slot_index]
+        return None
+
+    def use_skill_from_slot(self, slot_index):
+        skill = self.get_skill_in_slot(slot_index)
+        if skill is None:
+            return False
+        return self.use_skill(skill)
+
+    def use_skill(self, skill):
+        if skill is None:
+            return False
+
+        skill_id = skill.get("skill_id", "")
+        current_time = pygame.time.get_ticks()
+
+        if skill_id == "dash":
+            if current_time - self.dash_last_used < self.dash_cooldown:
+                return False
+
+            direction = pygame.Vector2(self.velocity)
+            if direction.length_squared() == 0:
+                direction = self.get_forward_direction()
+            if direction.length_squared() == 0:
+                direction = pygame.Vector2(1, 0)
+
+            self.dash_direction = direction.normalize()
+            self.dash_active_time = self.dash_duration
+            self.dash_last_used = current_time
+            logger.info("Player used Dash.")
+            return True
+
+        return False
 
     def add_effect(self, effect):
         for e in self.effects:
@@ -267,6 +322,25 @@ class Character:
         self.moving = False
         self.is_sprinting = False
 
+        if self.dash_active_time > 0:
+            self.velocity = pygame.Vector2(self.dash_direction)
+            if self.velocity.length_squared() == 0:
+                self.velocity = self.get_forward_direction()
+            if self.velocity.length_squared() == 0:
+                self.velocity = pygame.Vector2(1, 0)
+
+            self.velocity = self.velocity.normalize()
+            self.moving = True
+
+            if abs(self.velocity.x) > abs(self.velocity.y):
+                self.direction = "side"
+                self.flip = self.velocity.x < 0
+            else:
+                self.direction = "down" if self.velocity.y > 0 else "up"
+
+            self.speed = self.base_speed * self.dash_speed_multiplier
+            return
+
         wants_to_sprint = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]
         if wants_to_sprint and self.stamina > 0 and self.can_sprint:
             self.is_sprinting = True
@@ -349,6 +423,9 @@ class Character:
 
         # KEY IMPLEMENTATION STEP: Single function call for collision-aware movement
         collision_system.handle_movement_and_collision(self, dt, obstacles)
+
+        if self.dash_active_time > 0:
+            self.dash_active_time = max(0.0, self.dash_active_time - dt)
         
         # Reset speed to base speed for next frame logic (if needed elsewhere)
         # Though _set_velocity will overwrite it again next frame.
@@ -389,13 +466,16 @@ class Character:
         self.pos = self.spawn_point.copy()  # teleport to spawn
         logger.info(f"Player respawned at {self.pos}. Death count: {self.death_count}")
 
-    def draw(self, screen):
+    def draw(self, screen, camera_offset=None):
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+
         # Blink if invulnerable
         if self.invulnerable and int(pygame.time.get_ticks() / 100) % 2 == 0:
             pass # Skip drawing for blinking effect
         else:
             # Draw relative to self.pos (top-left of sprite), NOT self.get_rect() (hitbox)
-            draw_pos = (int(self.pos.x), int(self.pos.y))
+            draw_pos = (int(self.pos.x - camera_offset.x), int(self.pos.y - camera_offset.y))
             img = self.image
             if self.direction == "side" and self.flip:
                 img = self.animations_flipped["side"][self.frame_index]
@@ -431,5 +511,5 @@ class Character:
 
             base_anchor = self.get_melee_anchor() + attack_dir * self.melee_origin_offset
             center = base_anchor + attack_dir * self.melee_slash_distance
-            rotated_rect = rotated.get_rect(center=(int(center.x), int(center.y)))
+            rotated_rect = rotated.get_rect(center=(int(center.x - camera_offset.x), int(center.y - camera_offset.y)))
             screen.blit(rotated, rotated_rect.topleft)

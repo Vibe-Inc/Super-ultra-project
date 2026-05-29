@@ -175,6 +175,21 @@ class Inventory:
         return None
 
 class Inventory_slider(Slider):
+    """
+    Slider widget that selects an inventory split amount.
+
+    Attributes:
+        max_qty (int):
+            Maximum quantity represented by the slider.
+        external_callback (callable | None):
+            Callback invoked with the selected integer amount.
+
+    Methods:
+        __init__(x, y, width, max_qty, action_callback):
+            Initialize the slider for item splitting.
+        _convert_to_int(float_value):
+            Convert the slider value to a quantity and forward it to the callback.
+    """
     def __init__(self, x, y, width, max_qty, action_callback):
         self.max_qty = max_qty
         self.external_callback = action_callback
@@ -199,14 +214,56 @@ class Inventory_slider(Slider):
 
 
 class Split_popup:
+    """
+    Popup used to split a stack of items into two parts.
+
+    Attributes:
+        manager (INVENTORY_manager):
+            Inventory manager that owns the popup.
+        slot_ref (list):
+            Reference to the original inventory slot being split.
+        item_obj (Item):
+            Item instance stored in the slot.
+        total_count (int):
+            Total stack size at the time the popup was opened.
+        width (int):
+            Popup width in pixels.
+        height (int):
+            Popup height in pixels.
+        x (int):
+            Popup x-position.
+        y (int):
+            Popup y-position.
+        bg_rect (pygame.Rect):
+            Background rectangle for the popup.
+        split_amount (int):
+            Currently selected split amount.
+        slider (Inventory_slider):
+            Slider used to choose the split amount.
+        confirm_btn (Button):
+            Button that confirms the split.
+
+    Methods:
+        __init__(manager, slot_ref, rect_pos):
+            Initialize the split popup.
+        update_count(int_val):
+            Update the selected split amount.
+        confirm():
+            Apply the split and close the popup.
+        handle_event(event):
+            Forward input events to the popup controls.
+        draw(screen):
+            Render the popup and its controls.
+    """
     def __init__(self, manager, slot_ref, rect_pos):
         self.manager = manager
         self.slot_ref = slot_ref
         self.item_obj, self.total_count = slot_ref
 
-        self.width = 180
-        self.height = 90
-        self.x = rect_pos.right + 5
+        scale = cfg.ui_scale()
+        self.width = max(40,int(180 * scale))
+        self.height = max(20,int(90 * scale))
+        self.x = rect_pos.right + int(5 * scale)
         self.y = rect_pos.y
 
         if self.x + self.width > cfg.SCREEN_WIDTH:
@@ -215,22 +272,23 @@ class Split_popup:
         self.bg_rect = pygame.Rect(self.x, self.y, self.width, self.height)
         self.split_amount = 1 
 
+
         self.slider = Inventory_slider(
-            x=self.x + 10,
-            y=self.y + 35,
-            width=self.width - 20,
+            x=self.x + int(10 * scale),
+            y=self.y + int(35 * scale),
+            width=self.width - int(20 * scale),
             max_qty=self.total_count,
             action_callback=self.update_count 
         )
 
         self.confirm_btn = Button(
-            rect=pygame.Rect(self.x + 40, self.y + 60, 100, 20),
+            rect=pygame.Rect(self.x + int(40 * scale), self.y + int(60 * scale), max(20,int(100 * scale)), max(8,int(20 * scale))),
             text="Confirm",
             color=(60, 120, 60),        
             hover_color=(80, 150, 80),  
             font=cfg.INV_nums_font,
             font_color=(255, 255, 255),
-            corner_width=5,             
+            corner_width=max(2,int(5 * scale)),             
             on_click=self.confirm       
         )
 
@@ -270,6 +328,21 @@ class Split_popup:
 
 
 class ShopInventory(Inventory):
+    """
+    Inventory view that presents shop items for buying and selling.
+
+    Attributes:
+        app (App):
+            Reference to the main application.
+
+    Methods:
+        __init__(app, items_list):
+            Build a shop inventory from a flat list of items.
+        draw(screen):
+            Render the shop background, items, and item prices.
+        inventory_interactions(event, manager):
+            Handle buying and selling interactions.
+    """
     def __init__(self, app, items_list):
         self.app = app
         
@@ -392,6 +465,20 @@ class MAIN_player_inventory(Inventory):
             cfg.BASE_INV_slot_color,
             cfg.BASE_INV_border_color
         )
+        # button to open skillbar/skills menu (rect is positioned in draw)
+        scale = cfg.ui_scale()
+        btn_w = max(20, int(160 * scale))
+        btn_h = max(8, int(36 * scale))
+        self.open_skillbar_btn = Button(
+            rect=pygame.Rect(0, 0, btn_w, btn_h),
+            text=_("SKILLBAR"),
+            color=(100, 100, 140),
+            hover_color=(140, 140, 180),
+            font=cfg.tooltip_font_CREDITS,
+            font_color=(255, 255, 255),
+            corner_width=max(2, int(8 * scale)),
+            on_click=None
+        )
 
     def _load_portrait_surface(self, character):
         sprite_set = getattr(character, "sprite_set", None)
@@ -470,7 +557,30 @@ class MAIN_player_inventory(Inventory):
         text_surf = cfg.tooltip_font_CREDITS.render(money_text, True, (255, 255, 255))
         screen.blit(text_surf, (preview_x, self.pos_y - 20))
 
+        # position the skillbar open button near the preview area and draw it
+        btn_x = preview_x
+        btn_y = self.pos_y - 60
+        self.open_skillbar_btn.rect = pygame.Rect(btn_x, btn_y, self.open_skillbar_btn.rect.width, self.open_skillbar_btn.rect.height)
+        try:
+            self.open_skillbar_btn._update_text_surface()
+        except Exception:
+            pass
+        self.open_skillbar_btn.draw(screen)
+
         return super().draw(screen)
+
+    def inventory_interactions(self, event, manager):
+        # check skillbar button first
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if hasattr(self, 'open_skillbar_btn') and self.open_skillbar_btn.rect.collidepoint(pygame.mouse.get_pos()):
+                try:
+                    self.app.manager.set_state("skillbar")
+                except Exception:
+                    pass
+                return
+
+        # fallback to normal inventory interactions
+        return super().inventory_interactions(event, manager)
     
 
 class MAIN_player_inventory_equipment(Inventory):

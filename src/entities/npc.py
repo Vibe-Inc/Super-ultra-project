@@ -42,7 +42,7 @@ class NPC:
         self.rect = self.image.get_rect(topleft=(x, y))
         
         # Interaction prompt (e.g., "E" key)
-        self.font = cfg.get_font(20)
+        self.font = cfg.get_font(max(8,int(20 * cfg.ui_scale())))
         self.prompt_text = self.font.render("E", True, (255, 255, 255))
         self.prompt_bg_color = (0, 0, 0)
 
@@ -50,11 +50,15 @@ class NPC:
         diff = player_pos - self.pos
         self.is_interactable = diff.length_squared() <= (self.interaction_range * self.interaction_range)
 
-    def draw(self, screen: pygame.Surface):
-        screen.blit(self.image, self.pos)
+    def draw(self, screen: pygame.Surface, camera_offset=None):
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+
+        draw_pos = (int(self.pos.x - camera_offset.x), int(self.pos.y - camera_offset.y))
+        screen.blit(self.image, draw_pos)
         
         if self.is_interactable:
-            prompt_rect = self.prompt_text.get_rect(center=(self.pos.x + 42, self.pos.y - 20))
+            prompt_rect = self.prompt_text.get_rect(center=(self.pos.x - camera_offset.x + 42, self.pos.y - camera_offset.y - 20))
             bg_rect = prompt_rect.inflate(10, 5)
             pygame.draw.rect(screen, self.prompt_bg_color, bg_rect, border_radius=5)
             screen.blit(self.prompt_text, prompt_rect)

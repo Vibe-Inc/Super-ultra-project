@@ -68,14 +68,17 @@ class Map:
             return self.game_map
         return None
 
-    def draw(self, screen):
+    def draw(self, screen, camera_offset=None):
         if not self.ensure_loaded():
             return
 
         if self._render_cache is None:
             self._build_render_cache()
         if self._render_cache is not None:
-            screen.blit(self._render_cache, (0, 0))
+            if camera_offset is None:
+                screen.blit(self._render_cache, (0, 0))
+            else:
+                screen.blit(self._render_cache, (-int(camera_offset.x), -int(camera_offset.y)))
 
     def get_obstacles(self):
         if not self.ensure_loaded():
@@ -137,8 +140,8 @@ class LocalMap:
 
         self.transition_buffer = 150 
 
-    def draw(self, screen):
-        self.current_map.draw(screen)
+    def draw(self, screen, camera_offset=None):
+        self.current_map.draw(screen, camera_offset)
 
     def get_obstacles(self):
         return self.current_map.get_obstacles()

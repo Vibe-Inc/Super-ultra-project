@@ -6,6 +6,7 @@ from src.ui.widgets import Button, Tooltip, Slider
 from src.core.state import State
 from src.core.save_manager import SaveManager
 import src.config as cfg
+import pygame
 
 if TYPE_CHECKING:
     from src.app import App
@@ -38,7 +39,24 @@ class Menu(State):
         self.buttons: list[Button] = []
         self.tooltips: list[Tooltip] = []
 
+    def _apply_button_size(self, button: Button, rect: pygame.Rect):
+        button.rect = rect
+        try:
+            button._update_text_surface()
+        except Exception:
+            pass
+
+    def _screen_size(self, screen: pygame.Surface | None = None) -> tuple[int, int]:
+        if screen is not None:
+            return screen.get_width(), screen.get_height()
+        try:
+            return self.app.screen.get_width(), self.app.screen.get_height()
+        except Exception:
+            return cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT
+
     def draw(self, screen):
+        # keep UI aligned to the actual screen size
+        self.layout(screen)
         for button in self.buttons:
             button.draw(screen)
         mouse_pos = pygame.mouse.get_pos()
@@ -46,52 +64,33 @@ class Menu(State):
             tooltip.hover_update(mouse_pos)
             tooltip.draw(screen)
 
+    def layout(self, screen: pygame.Surface):
+        # default menus don't need extra layout; subclasses override this
+        return
+
     def handle_event(self, event: pygame.event.Event):
         if event.type == pygame.MOUSEBUTTONDOWN:
             for button in self.buttons:
                 if button.rect.collidepoint(event.pos):
                     button.on_click()
 
-
 class MainMenu(Menu):
-    """
-    Main menu screen of the application.
-
-    Inherits from Menu and provides buttons for starting the game, exiting, opening settings, and viewing credits.
-
-    Attributes:
-        buttons (list[Button]):
-            List of Button objects for main menu actions.
-        beta_logo_img (pygame.Surface):
-            Image for the beta logo.
-        beta_logo_rect (pygame.Rect):
-            Rectangle for positioning the beta logo.
-        tooltips (list[Tooltip]):
-            List of Tooltip objects for the beta logo.
-
-    Methods:
-        start_game():
-            Callback for the "START" button. Initiates the game start sequence.
-        exit_game():
-            Callback for the "EXIT" button. Exits the application.
-        open_settings():
-            Callback for the "SETTINGS" button. Opens the settings menu.
-        open_credits():
-            Callback for the "CREDITS" button. Opens the credits menu.
-    """
+    """Main menu screen."""
 
     def __init__(self, app: "App"):
         super().__init__(app)
 
-        button_width, button_height = 300, 100
-        gap = 50
+        scale = cfg.ui_scale()
+        button_width, button_height = max(1, int(360 * scale)), max(1, int(120 * scale))
+        gap = max(4, int(60 * scale))
         tot_width = 2 * button_width + gap
-        
-        start_rect = pygame.Rect((cfg.SCREEN_WIDTH - tot_width) // 2, 700, button_width, button_height)
-        exit_rect = pygame.Rect((cfg.SCREEN_WIDTH - tot_width) // 2 + button_width + gap, 700, button_width, button_height)
-        settings_rect = pygame.Rect((cfg.SCREEN_WIDTH - tot_width) // 2, 850, button_width, button_height)
-        credits_rect = pygame.Rect((cfg.SCREEN_WIDTH - tot_width) // 2 + button_width + gap, 850, button_width, button_height)
-        load_rect = pygame.Rect((cfg.SCREEN_WIDTH - tot_width) // 2 + button_width + gap, 550, button_width, button_height)
+        center_x = cfg.SCREEN_WIDTH // 2
+
+        start_rect = pygame.Rect(center_x - tot_width // 2, int(650 * scale), button_width, button_height)
+        exit_rect = pygame.Rect(center_x - tot_width // 2 + button_width + gap, int(650 * scale), button_width, button_height)
+        settings_rect = pygame.Rect(center_x - tot_width // 2, int(800 * scale), button_width, button_height)
+        credits_rect = pygame.Rect(center_x - tot_width // 2 + button_width + gap, int(800 * scale), button_width, button_height)
+        load_rect = pygame.Rect(center_x - button_width // 2, int(520 * scale), button_width, button_height)
 
         self.buttons = [
             Button(
@@ -146,8 +145,9 @@ class MainMenu(Menu):
             )
         ]
         self.beta_logo_img = pygame.image.load("assets/beta_logo.png")
-        self.beta_logo_img = pygame.transform.scale(self.beta_logo_img, (200, 200))
-        self.beta_logo_rect = self.beta_logo_img.get_rect(center=(1600, 900))
+        logo_size = max(8, int(280 * cfg.ui_scale()))
+        self.beta_logo_img = pygame.transform.scale(self.beta_logo_img, (logo_size, logo_size))
+        self.beta_logo_rect = self.beta_logo_img.get_rect()
 
         self.tooltips = [
             Tooltip(
@@ -162,7 +162,31 @@ class MainMenu(Menu):
             )
         ]
 
+    def layout(self, screen: pygame.Surface):
+        sw, sh = self._screen_size(screen)
+        scale = cfg.ui_scale()
+        button_width, button_height = max(1,int(360 * scale)), max(1,int(120 * scale))
+        gap = max(4,int(60 * scale))
+        tot_width = 2 * button_width + gap
+        center_x = sw // 2
+
+        positions = [
+            pygame.Rect(center_x - tot_width // 2, int(sh * 0.60), button_width, button_height),
+            pygame.Rect(center_x - button_width // 2, int(sh * 0.48), button_width, button_height),
+            pygame.Rect(center_x - tot_width // 2 + button_width + gap, int(sh * 0.60), button_width, button_height),
+            pygame.Rect(center_x - tot_width // 2, int(sh * 0.75), button_width, button_height),
+            pygame.Rect(center_x - tot_width // 2 + button_width + gap, int(sh * 0.75), button_width, button_height),
+        ]
+
+        for button, rect in zip(self.buttons, positions):
+            self._apply_button_size(button, rect)
+
+        logo_off = max(20, int(180 * cfg.ui_scale()))
+        self.beta_logo_rect = self.beta_logo_img.get_rect(center=(sw - logo_off, sh - logo_off))
+        self.tooltips[0].update_target(self.beta_logo_rect, self.tooltips[0].text)
+
     def draw(self, screen):
+        self.layout(screen)
         screen.blit(self.beta_logo_img, self.beta_logo_rect, )
         for button in self.buttons:
             button.draw(screen)
@@ -194,7 +218,7 @@ class SettingsMenu(Menu):
     """
     Settings menu interface for the application.
 
-    Inherits from Menu and provides sliders and buttons for adjusting audio, brightness, language, and returning to the main menu.
+    Inherits from Menu and provides sliders and buttons for adjusting audio, brightness, display mode, language, and returning to the main menu.
 
     Attributes:
         buttons (list[Button]):
@@ -233,21 +257,22 @@ class SettingsMenu(Menu):
 
     def __init__(self, app: "App"):
         super().__init__(app)
-        button_width, button_height = 300, 100
-        button_y = 700
-        back_rect = pygame.Rect(1000, button_y, button_width, button_height)
-        lang_rect = pygame.Rect(1000, 550, button_width, button_height)
+        scale = cfg.ui_scale()
+        button_width, button_height = max(1,int(360 * scale)), max(1,int(120 * scale))
+        mode_rect = pygame.Rect(0, 0, button_width, button_height)
+        lang_rect = pygame.Rect(0, 0, button_width, button_height)
+        back_rect = pygame.Rect(0, 0, button_width, button_height)
 
         self.buttons = [
             Button(
-                back_rect,
-                _("BACK"),
-                cfg.button_color_SETTINGS_BACK,
-                cfg.button_hover_color_SETTINGS_BACK,
+                mode_rect,
+                self._display_mode_label(),
+                cfg.button_color_SETTINGS,
+                cfg.button_hover_color_SETTINGS,
                 cfg.button_font,
                 cfg.text_color,
                 cfg.corner_radius,
-                on_click=self.back_to_main
+                on_click=self.toggle_display_mode
             ),
             Button(
                 lang_rect,
@@ -258,6 +283,16 @@ class SettingsMenu(Menu):
                 cfg.text_color,
                 cfg.corner_radius,
                 on_click=self.toggle_language
+            ),
+            Button(
+                back_rect,
+                _("BACK"),
+                cfg.button_color_SETTINGS_BACK,
+                cfg.button_hover_color_SETTINGS_BACK,
+                cfg.button_font,
+                cfg.text_color,
+                cfg.corner_radius,
+                on_click=self.back_to_main
             )
         ]
 
@@ -266,36 +301,83 @@ class SettingsMenu(Menu):
         initial_volume = pygame.mixer.music.get_volume() if pygame.mixer.get_init() else 0.3
 
         self.brightness_slider = Slider(
-            600, 550, 40, 5,
+            int(600 * scale), int(550 * scale), max(8,int(40 * scale)), 5,
             (0, 0, 0), (255, 255, 255),
-            20, 20, 300,
+            max(6,int(20 * scale)), max(6,int(20 * scale)), max(20,int(300 * scale)),
             value=cfg.SCREEN_BRIGHTNESS,
             action=lambda v: setattr(cfg, 'SCREEN_BRIGHTNESS', max(0.3, v))
         )
 
-        self.myfont = cfg.get_font(60)
+        # use a single scaled font for labels
+        self.myfont = cfg.get_font(max(10,int(60 * scale)))
         self.brightness_label = self.myfont.render(_('Brightness'), True, (0, 0, 0))
-        self.brightness_rect = self.brightness_label.get_rect(center=(760, 480))
+        self.brightness_rect = self.brightness_label.get_rect(center=(int(760 * scale), int(480 * scale)))
 
         self.audio_slider = Slider(
-            600, 730, 40, 5,
+            int(600 * scale), int(730 * scale), max(8,int(40 * scale)), 5,
             track_colour, knob_colour,
-            20, 20, 300,
+            max(6,int(20 * scale)), max(6,int(20 * scale)), max(20,int(300 * scale)),
             value=initial_volume,
             action=lambda v: pygame.mixer.music.set_volume(v)
         )
 
-        self.myfont = cfg.get_font(60)
         self.text_logo = self.myfont.render(_('Music volume'), True, (0, 0, 0))
-        self.text_rect = self.text_logo.get_rect(center=(760, 650))
+        self.text_rect = self.text_logo.get_rect(center=(int(760 * scale), int(650 * scale)))
+
+    def layout(self, screen: pygame.Surface):
+        sw, sh = self._screen_size(screen)
+        scale = cfg.ui_scale()
+        button_width, button_height = max(1,int(360 * scale)), max(1,int(120 * scale))
+        center_x = sw // 2
+        center_y = sh // 2 + int(80 * scale)
+
+        # keep controls separated: sliders on the left, buttons on the right
+        left_column_x = center_x - int(430 * scale)
+        right_column_x = center_x + int(70 * scale)
+
+        self.buttons[0].set_text(self._display_mode_label())
+        self.buttons[1].set_text(f"{_('LANG')}: {cfg.LANGUAGE.upper()}")
+        self.buttons[2].set_text(_("BACK"))
+
+        self.buttons[0].rect = pygame.Rect(right_column_x, center_y - int(170 * scale), button_width, button_height)
+        self.buttons[1].rect = pygame.Rect(right_column_x, center_y - int(20 * scale), button_width, button_height)
+        self.buttons[2].rect = pygame.Rect(right_column_x, center_y + int(130 * scale), button_width, button_height)
+        for button in self.buttons:
+            try:
+                button._update_text_surface()
+            except Exception:
+                pass
+
+        # Position sliders so their track centers align with button centers
+        self.brightness_slider.x = left_column_x
+        self.brightness_slider.y = self.buttons[0].rect.centery - self.brightness_slider.height // 2
+        self.audio_slider.x = left_column_x
+        self.audio_slider.y = self.buttons[1].rect.centery - self.audio_slider.height // 2
+
+        # Render labels and position them above their respective slider tracks
+        self.brightness_label = self.myfont.render(_('Brightness'), True, (0, 0, 0))
+        label_x = self.brightness_slider.x + self.brightness_slider.track_length // 2
+        label_y = self.brightness_slider.y - 18
+        self.brightness_rect = self.brightness_label.get_rect(center=(label_x, label_y))
+
+        self.text_logo = self.myfont.render(_('Music volume'), True, (0, 0, 0))
+        text_x = self.audio_slider.x + self.audio_slider.track_length // 2
+        text_y = self.audio_slider.y - 18
+        self.text_rect = self.text_logo.get_rect(center=(text_x, text_y))
 
     def back_to_main(self):
         self.app.manager.set_state("main")
-    
+
+    def _display_mode_label(self):
+        return f"MODE: {'FULLSCREEN' if self.app.is_fullscreen else 'WINDOW'}"
+
+    def toggle_display_mode(self):
+        self.app.toggle_display_mode()
+        self.buttons[0].set_text(self._display_mode_label())
     def toggle_language(self):
         new_lang = 'ua' if cfg.LANGUAGE == 'en' else 'en'
         self.app.update_language(new_lang)
-    
+
     def handle_event(self, event):
         super().handle_event(event)
         self.audio_slider.handle_event(event)
@@ -306,13 +388,328 @@ class SettingsMenu(Menu):
             self.audio_slider.update()
 
     def draw(self, surface):
+        self.layout(surface)
         for button in self.buttons:
             button.draw(surface)
-        self.audio_slider.draw(surface)
-        surface.blit(self.text_logo, self.text_rect)
 
-        self.brightness_slider.draw(surface)
+        # Draw labels above sliders first, then sliders so labels are visually above
+        surface.blit(self.text_logo, self.text_rect)
         surface.blit(self.brightness_label, self.brightness_rect)
+
+        self.audio_slider.draw(surface)
+        self.brightness_slider.draw(surface)
+
+
+class SkillbarMenu(Menu):
+    """
+    Skillbar editor with a single-skill book and a 6-slot active bar.
+    """
+    def __init__(self, app: "App"):
+        super().__init__(app)
+        self.bar_slots_count = 6
+        self.storage_slots_count = 1
+        self.panel_margin = max(18, int(24 * cfg.ui_scale()))
+        self.grid_gap = max(6, int(8 * cfg.ui_scale()))
+        self.sidebar_width = max(280, int(340 * cfg.ui_scale()))
+        self.slot_size = 48
+
+        self.sidebar_rect = pygame.Rect(0, 0, 0, 0)
+        self.storage_grid_rect = pygame.Rect(0, 0, 0, 0)
+        self.bar_rect = pygame.Rect(0, 0, 0, 0)
+        self.storage_slot_rects: list[pygame.Rect] = []
+        self.bar_slot_rects: list[pygame.Rect] = []
+
+        self.title_font = cfg.get_font(max(10, int(32 * cfg.ui_scale())))
+        self.section_font = cfg.get_font(max(8, int(22 * cfg.ui_scale())))
+        self.small_font = cfg.get_font(max(8, int(16 * cfg.ui_scale())))
+
+        exit_width = max(120, int(160 * cfg.ui_scale()))
+        exit_height = max(44, int(52 * cfg.ui_scale()))
+        self.exit_button = Button(
+            pygame.Rect(0, 0, exit_width, exit_height),
+            _("EXIT"),
+            (110, 70, 70),
+            (150, 95, 95),
+            cfg.button_font,
+            cfg.text_color,
+            cfg.corner_radius,
+            on_click=self.exit_menu,
+        )
+        self.buttons = [self.exit_button]
+
+        self.drag_payload = None
+        self.drag_offset = (0, 0)
+
+    def _character(self):
+        gameplay_state = getattr(getattr(self.app, "manager", None), "states", {}).get("gameplay") if hasattr(self.app, "manager") else None
+        return getattr(gameplay_state, "character", None)
+
+    def _skillbook(self):
+        character = self._character()
+        if character is not None and hasattr(character, "skillbook"):
+            if not hasattr(character, "skillbar"):
+                character.skillbar = [None for _ in range(self.bar_slots_count)]
+            return character.skillbook, character.skillbar
+
+        if not hasattr(self, "_fallback_skillbook"):
+            self._fallback_skillbook = [
+                {
+                    "skill_id": "dash",
+                    "name": _("Dash"),
+                    "description": _("Quick burst of movement"),
+                    "color": (86, 132, 186),
+                    "accent": (220, 235, 255),
+                }
+            ]
+            self._fallback_skillbar = [None for _ in range(self.bar_slots_count)]
+        return self._fallback_skillbook, self._fallback_skillbar
+
+    def _storage_items(self, skillbook: list[dict], skillbar: list[dict | None]):
+        active_skill_ids = {
+            skill.get("skill_id")
+            for skill in skillbar
+            if skill is not None
+        }
+        return [skill for skill in skillbook if skill.get("skill_id") not in active_skill_ids]
+
+    def _slot_at_position(self, position: tuple[int, int]):
+        for index, slot_rect in enumerate(self.bar_slot_rects):
+            if slot_rect.collidepoint(position):
+                return ("bar", 0, index)
+
+        for index, slot_rect in enumerate(self.storage_slot_rects):
+            if slot_rect.collidepoint(position):
+                return ("storage", 0, index)
+
+        return None
+
+    def _draw_card(self, surface: pygame.Surface, rect: pygame.Rect, skill: dict | None, *, empty_label: str = "+"):
+        if skill is None:
+            pygame.draw.rect(surface, (55, 55, 62), rect, border_radius=10)
+            pygame.draw.rect(surface, (140, 140, 150), rect, 2, border_radius=10)
+            label = self.section_font.render(empty_label, True, (175, 175, 180))
+            surface.blit(label, label.get_rect(center=rect.center))
+            return
+
+        fill = skill.get("color", (80, 100, 140))
+        accent = skill.get("accent", (220, 220, 230))
+        pygame.draw.rect(surface, fill, rect, border_radius=10)
+        pygame.draw.rect(surface, accent, rect, 2, border_radius=10)
+        name = self.small_font.render(skill["name"], True, (255, 255, 255))
+        surface.blit(name, name.get_rect(center=(rect.centerx, rect.centery - 5)))
+        skill_id = skill.get("skill_id", "")
+        if skill_id:
+            ident = self.small_font.render(skill_id.replace("_", " ").upper(), True, (235, 235, 235))
+            surface.blit(ident, ident.get_rect(center=(rect.centerx, rect.centery + 13)))
+
+    def _sync_state_to_character(self):
+        character = self._character()
+        if character is None:
+            return None, None
+
+        if not hasattr(character, "skillbook"):
+            character.skillbook = []
+        if not hasattr(character, "skillbar") or len(character.skillbar) != self.bar_slots_count:
+            character.skillbar = [None for _ in range(self.bar_slots_count)]
+        return character.skillbook, character.skillbar
+
+    def _on_drop(self, source, target):
+        skillbook, skillbar = self._sync_state_to_character()
+        if skillbook is None:
+            skillbook, skillbar = self._skillbook()
+        storage_items = self._storage_items(skillbook, skillbar)
+
+        source_area, source_index = source
+        target_area, target_index = target
+
+        if source_area == "bar":
+            if target_area == "bar":
+                if source_index == target_index:
+                    return
+                skillbar[source_index], skillbar[target_index] = skillbar[target_index], skillbar[source_index]
+            elif target_area == "storage":
+                skillbar[source_index] = None
+            return
+
+        if source_area == "storage":
+            if not storage_items or target_area != "bar":
+                return
+            source_skill = storage_items[source_index]
+            if skillbar[target_index] is source_skill:
+                return
+            skillbar[target_index] = source_skill
+
+    def exit_menu(self):
+        self.app.INV_manager.player_inventory_opened = False
+        self.app.manager.set_state("gameplay")
+
+    def layout(self, screen: pygame.Surface):
+        skillbook, skillbar = self._skillbook()
+        storage_items = self._storage_items(skillbook, skillbar)
+        self.storage_slots_count = max(1, len(storage_items))
+
+        sw, sh = self._screen_size(screen)
+        margin = self.panel_margin
+        sidebar_width = min(self.sidebar_width, max(280, sw // 4))
+        sidebar_x = sw - sidebar_width - margin
+        self.sidebar_rect = pygame.Rect(sidebar_x, margin, sidebar_width, sh - margin * 2)
+
+        left_width = max(320, sidebar_x - margin * 2)
+
+        storage_size = min(
+            54,
+            max(34, (left_width - self.grid_gap * (self.storage_slots_count + 1)) // self.storage_slots_count),
+            max(34, int((sh * 0.28 - self.grid_gap * 2))),
+        )
+        bar_size = min(72, max(42, storage_size + 4))
+
+        storage_total_w = storage_size * self.storage_slots_count + self.grid_gap * (self.storage_slots_count + 1)
+        storage_total_h = storage_size + self.grid_gap * 2
+        storage_x = margin + max(0, (left_width - storage_total_w) // 2)
+        storage_y = sh - margin - storage_total_h
+        self.storage_grid_rect = pygame.Rect(storage_x - self.grid_gap, storage_y - self.grid_gap, storage_total_w, storage_total_h)
+
+        bar_total_w = bar_size * self.bar_slots_count + self.grid_gap * (self.bar_slots_count + 1)
+        bar_x = margin + max(0, (left_width - bar_total_w) // 2)
+        bar_y = margin + 84
+        self.bar_rect = pygame.Rect(bar_x - self.grid_gap, bar_y - self.grid_gap, bar_total_w, bar_size + self.grid_gap * 2)
+
+        self.storage_slot_rects = []
+        for index in range(self.storage_slots_count):
+            slot_x = storage_x + self.grid_gap + index * (storage_size + self.grid_gap)
+            slot_y = storage_y + self.grid_gap
+            self.storage_slot_rects.append(pygame.Rect(slot_x, slot_y, storage_size, storage_size))
+
+        self.bar_slot_rects = []
+        for index in range(self.bar_slots_count):
+            slot_x = bar_x + self.grid_gap + index * (bar_size + self.grid_gap)
+            slot_y = bar_y + self.grid_gap
+            self.bar_slot_rects.append(pygame.Rect(slot_x, slot_y, bar_size, bar_size))
+
+        exit_width = max(120, int(self.sidebar_rect.width * 0.55))
+        exit_height = max(44, int(52 * cfg.ui_scale()))
+        self.exit_button.rect = pygame.Rect(
+            self.sidebar_rect.centerx - exit_width // 2,
+            self.sidebar_rect.bottom - exit_height - margin,
+            exit_width,
+            exit_height,
+        )
+        try:
+            self.exit_button._update_text_surface()
+        except Exception:
+            pass
+
+    def handle_event(self, event: pygame.event.Event):
+        super().handle_event(event)
+
+        skillbook, skillbar = self._sync_state_to_character()
+        if skillbook is None:
+            skillbook, skillbar = self._skillbook()
+        storage_items = self._storage_items(skillbook, skillbar)
+
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            slot = self._slot_at_position(event.pos)
+            if slot is None:
+                return
+
+            area, column_or_none, row_or_index = slot
+            if area == "storage":
+                self.drag_payload = {"source": ("storage", row_or_index), "skill": storage_items[row_or_index]}
+                self.drag_offset = (event.pos[0] - self.storage_slot_rects[row_or_index].x, event.pos[1] - self.storage_slot_rects[row_or_index].y)
+                return
+
+            if skillbar[row_or_index] is not None:
+                self.drag_payload = {"source": ("bar", row_or_index), "skill": skillbar[row_or_index]}
+                self.drag_offset = (event.pos[0] - self.bar_slot_rects[row_or_index].x, event.pos[1] - self.bar_slot_rects[row_or_index].y)
+
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            if not self.drag_payload:
+                return
+
+            target_slot = self._slot_at_position(event.pos)
+            if target_slot is not None and target_slot[0] == "bar":
+                self._on_drop(self.drag_payload["source"], ("bar", target_slot[2]))
+            elif target_slot is not None and target_slot[0] == "storage":
+                self._on_drop(self.drag_payload["source"], ("storage", target_slot[2]))
+
+            self.drag_payload = None
+            self.drag_offset = (0, 0)
+
+    def _draw_sidebar(self, surface: pygame.Surface):
+        title = self.title_font.render(_("Skillbar"), True, (255, 255, 255))
+        surface.blit(title, (self.sidebar_rect.x + 18, self.sidebar_rect.y + 18))
+
+        hint = self.small_font.render(_("Active skills go above. Unused skills stay in the storage row below."), True, (225, 225, 230))
+        surface.blit(hint, (self.sidebar_rect.x + 18, self.sidebar_rect.y + 58))
+
+        list_top = self.sidebar_rect.y + 110
+        list_rect = pygame.Rect(self.sidebar_rect.x + 14, list_top, self.sidebar_rect.width - 28, self.exit_button.rect.top - list_top - 16)
+        pygame.draw.rect(surface, (30, 30, 38), list_rect, border_radius=12)
+        pygame.draw.rect(surface, (85, 85, 98), list_rect, 1, border_radius=12)
+
+        label = self.section_font.render(_("Storage"), True, (255, 255, 255))
+        surface.blit(label, (list_rect.x + 12, list_rect.y + 10))
+
+        skillbook, skillbar = self._sync_state_to_character()
+        if skillbook is None:
+            skillbook, skillbar = self._skillbook()
+        storage_items = self._storage_items(skillbook, skillbar)
+
+        if not storage_items:
+            empty = self.small_font.render(_("No unused skills right now."), True, (205, 205, 215))
+            surface.blit(empty, empty.get_rect(center=list_rect.center))
+            return
+
+        text_y = list_rect.y + 42
+        max_rows = max(1, (list_rect.bottom - text_y - 10) // (self.small_font.get_height() + 8))
+        for index, skill in enumerate(storage_items[:max_rows]):
+            line = self.small_font.render(f"{index + 1}. {skill['name']}", True, (235, 235, 245))
+            surface.blit(line, (list_rect.x + 12, text_y + index * (self.small_font.get_height() + 8)))
+
+    def draw(self, screen: pygame.Surface):
+        self.layout(screen)
+
+        screen.fill((16, 16, 20))
+        overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+        overlay.fill((18, 18, 26, 220))
+        screen.blit(overlay, (0, 0))
+
+        skillbook, skillbar = self._sync_state_to_character()
+        if skillbook is None:
+            skillbook, skillbar = self._skillbook()
+        storage_items = self._storage_items(skillbook, skillbar)
+
+        bar_title = self.section_font.render(_("6 active slots"), True, (235, 235, 245))
+        screen.blit(bar_title, (self.bar_rect.x, max(12, self.bar_rect.y - bar_title.get_height() - 8)))
+
+        storage_title = self.section_font.render(_("Unused skills"), True, (235, 235, 245))
+        screen.blit(storage_title, (self.storage_grid_rect.x, max(12, self.storage_grid_rect.y - storage_title.get_height() - 8)))
+
+        pygame.draw.rect(screen, (24, 24, 30), self.bar_rect, border_radius=18)
+        pygame.draw.rect(screen, (82, 82, 96), self.bar_rect, 2, border_radius=18)
+        pygame.draw.rect(screen, (24, 24, 30), self.storage_grid_rect, border_radius=18)
+        pygame.draw.rect(screen, (82, 82, 96), self.storage_grid_rect, 2, border_radius=18)
+        pygame.draw.rect(screen, (28, 28, 34), self.sidebar_rect, border_radius=18)
+        pygame.draw.rect(screen, (82, 82, 96), self.sidebar_rect, 2, border_radius=18)
+
+        for index, slot_rect in enumerate(self.bar_slot_rects):
+            self._draw_card(screen, slot_rect, skillbar[index], empty_label=str(index + 1))
+
+        for index, slot_rect in enumerate(self.storage_slot_rects):
+            skill = storage_items[index] if index < len(storage_items) else None
+            self._draw_card(screen, slot_rect, skill, empty_label="+")
+
+        self._draw_sidebar(screen)
+        self.exit_button.draw(screen)
+
+        if self.drag_payload:
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+            skill = self.drag_payload["skill"]
+            ghost_size = self.bar_slot_rects[0].width if self.bar_slot_rects else 56
+            ghost = pygame.Surface((ghost_size, ghost_size), pygame.SRCALPHA)
+            self._draw_card(ghost, ghost.get_rect(), skill, empty_label="+")
+            ghost.set_alpha(210)
+            screen.blit(ghost, (mouse_x - self.drag_offset[0], mouse_y - self.drag_offset[1]))
 
 class CreditsMenu(Menu):
     """
@@ -349,8 +746,9 @@ class CreditsMenu(Menu):
 
     def __init__(self, app: "App"):
         super().__init__(app)
-        button_width, button_height = 300, 100
-        back_rect = pygame.Rect(1400, 850, button_width, button_height)
+        scale = cfg.ui_scale()
+        button_width, button_height = max(1,int(360 * scale)), max(1,int(120 * scale))
+        back_rect = pygame.Rect(0, 0, button_width, button_height)
         self.buttons = [
             Button(back_rect,
                 _("BACK"),
@@ -378,11 +776,28 @@ Special thanks to Vibe inc""")
         box_width = max_width + 2 * self.padding
         box_height = line_height * num_credits_lines + 2 * self.padding
         self.box_rect = pygame.Rect(
-            (cfg.SCREEN_WIDTH - box_width) // 2, 300, box_width, box_height)
+            (cfg.SCREEN_WIDTH - box_width) // 2, int(250 * cfg.ui_scale()), box_width, box_height)
         self.box_color = (245, 222, 179) 
         self.box_border = (139, 49, 19)
 
+    def layout(self, screen: pygame.Surface):
+        sw, sh = self._screen_size(screen)
+        scale = cfg.ui_scale()
+        btn_w, btn_h = max(1,int(360 * scale)), max(1,int(120 * scale))
+        self.buttons[0].rect = pygame.Rect(sw - int(420 * scale), sh - int(170 * scale), btn_w, btn_h)
+        try:
+            self.buttons[0]._update_text_surface()
+        except Exception:
+            pass
+        self.box_rect = pygame.Rect(
+            (sw - self.box_rect.width) // 2,
+            int(sh * 0.28),
+            min(self.box_rect.width, sw - 180),
+            self.box_rect.height,
+        )
+
     def draw(self, screen):
+        self.layout(screen)
         pygame.draw.rect(screen, self.box_color, self.box_rect, border_radius=15)
         pygame.draw.rect(screen, self.box_border, self.box_rect, 10, border_radius=15)
 
@@ -427,13 +842,15 @@ class PauseMenu(Menu):
     def __init__(self, app: "App"):
         self.app = app
 
-        button_width, button_height = 300, 100
+        scale = cfg.ui_scale()
+        button_width, button_height = max(1,int(360 * scale)), max(1,int(120 * scale))
 
         self.pause_menu_color = (0, 0, 0, 180)
 
+        cx = (cfg.SCREEN_WIDTH - button_width) // 2
         self.buttons = [
             Button(
-                pygame.Rect((cfg.SCREEN_WIDTH - button_width) // 2, 500, button_width, button_height),
+                pygame.Rect(cx, int(500 * scale), button_width, button_height),
                 _("SAVE"),
                 cfg.button_color_SETTINGS,
                 cfg.button_hover_color_SETTINGS,
@@ -443,7 +860,7 @@ class PauseMenu(Menu):
                 on_click=self.open_save_menu
             ),
             Button(
-                pygame.Rect((cfg.SCREEN_WIDTH - button_width) // 2, 650, button_width, button_height),
+                pygame.Rect(cx, int(650 * scale), button_width, button_height),
                 _("RESUME"),
                 cfg.button_color_START,
                 cfg.button_hover_color_START,
@@ -453,7 +870,7 @@ class PauseMenu(Menu):
                 on_click=self.resume_game
             ),
             Button(
-                pygame.Rect((cfg.SCREEN_WIDTH - button_width) // 2, 800, button_width, button_height),
+                pygame.Rect(cx, int(800 * scale), button_width, button_height),
                 _("MAIN MENU"),
                 cfg.button_color_EXIT,
                 cfg.button_hover_color_EXIT,
@@ -465,12 +882,30 @@ class PauseMenu(Menu):
         ]
 
     def draw(self, screen):
+        self.layout(screen)
         overlay = pygame.Surface((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT), pygame.SRCALPHA)
         overlay.fill(self.pause_menu_color)
         screen.blit(overlay, (0, 0))
 
         for button in self.buttons:
             button.draw(screen)
+
+    def layout(self, screen: pygame.Surface):
+        sw, sh = self._screen_size(screen)
+        scale = cfg.ui_scale()
+        button_width, button_height = max(1,int(360 * scale)), max(1,int(120 * scale))
+        center_x = sw // 2
+        positions = [
+            (center_x - button_width // 2, int(sh * 0.42)),
+            (center_x - button_width // 2, int(sh * 0.56)),
+            (center_x - button_width // 2, int(sh * 0.70)),
+        ]
+        for button, (x, y) in zip(self.buttons, positions):
+            button.rect = pygame.Rect(x, y, button_width, button_height)
+            try:
+                button._update_text_surface()
+            except Exception:
+                pass
 
     def open_save_menu(self):
         self.app.manager.states["save_load"].mode = "save"
@@ -485,11 +920,71 @@ class PauseMenu(Menu):
 
 
 class SaveLoadMenu(Menu):
+    """
+    Save/load menu that manages save slots and deletion.
+
+    Attributes:
+        mode (str):
+            Current menu mode, either "save" or "load".
+        slots (list[str]):
+            List of slot identifiers displayed by the menu.
+
+    Methods:
+        __init__(app):
+            Initialize the save/load menu.
+        layout(screen):
+            Position the buttons and menu title for the current screen size.
+        refresh_saves():
+            Rebuild the button list from the available save files.
+        on_slot_click(slot_name):
+            Save to or load from a selected slot.
+        delete_slot(slot_name):
+            Delete a selected save slot.
+        go_back():
+            Return to the previous menu.
+        draw(screen):
+            Render the save/load UI.
+    """
     def __init__(self, app: "App"):
         super().__init__(app)
         self.mode = "save" # "save" or "load"
         self.slots = ["save1", "save2", "save3"]
         self.refresh_saves()
+
+    def layout(self, screen: pygame.Surface):
+        sw, sh = self._screen_size(screen)
+        self.buttons[0].rect = pygame.Rect(80, 70, 240, 100)
+        try:
+            self.buttons[0]._update_text_surface()
+        except Exception:
+            pass
+
+        title_width = min(900, sw - 120)
+        self._title_rect = pygame.Rect((sw - title_width) // 2, 150, title_width, 100)
+        start_y = 320
+        slot_width = min(520, sw - 360)
+        slot_x = (sw - slot_width) // 2
+
+        button_index = 1
+        for i, slot in enumerate(self.slots):
+            y = start_y + i * 160
+            exists = slot + ".json" in SaveManager.get_save_files()
+
+            if button_index < len(self.buttons):
+                self.buttons[button_index].rect = pygame.Rect(slot_x, y, slot_width, 110)
+                try:
+                    self.buttons[button_index]._update_text_surface()
+                except Exception:
+                    pass
+                button_index += 1
+
+            if exists and button_index < len(self.buttons):
+                self.buttons[button_index].rect = pygame.Rect(slot_x + slot_width + 30, y, 180, 110)
+                try:
+                    self.buttons[button_index]._update_text_surface()
+                except Exception:
+                    pass
+                button_index += 1
 
     def refresh_saves(self):
         self.buttons = []
@@ -569,16 +1064,16 @@ class SaveLoadMenu(Menu):
     def draw(self, screen):
         # Draw background (maybe semi-transparent if coming from pause)
         if self.mode == "save":
-             overlay = pygame.Surface((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT), pygame.SRCALPHA)
-             overlay.fill((0, 0, 0, 180))
-             screen.blit(overlay, (0, 0))
+            overlay = pygame.Surface((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 180))
+            screen.blit(overlay, (0, 0))
         else:
-             # If loading from main menu, maybe draw background image
-             screen.blit(cfg.bg, (0, 0))
+            # If loading from main menu, maybe draw background image
+            screen.blit(cfg.bg, (0, 0))
 
         title = _("SAVE GAME") if self.mode == "save" else _("LOAD GAME")
         title_surf = cfg.get_font(80).render(title, True, (255, 255, 255))
-        title_rect = title_surf.get_rect(center=(cfg.SCREEN_WIDTH // 2, 220))
+        title_rect = title_surf.get_rect(center=(cfg.SCREEN_WIDTH // 2, 200))
         screen.blit(title_surf, title_rect)
 
         super().draw(screen)

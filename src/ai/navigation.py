@@ -9,6 +9,55 @@ import pygame
 
 
 class NavGrid:
+    """
+    Navigation grid used for walkability checks and pathfinding.
+
+    Attributes:
+        cols (int):
+            Number of grid columns.
+        rows (int):
+            Number of grid rows.
+        tile_width (int):
+            Tile width in pixels.
+        tile_height (int):
+            Tile height in pixels.
+        walkable (list[list[bool]]):
+            Grid of walkability flags by row and column.
+        walkable_cells (list[tuple[int, int]]):
+            Cached list of walkable cells for random placement.
+        allow_diagonal (bool):
+            Whether diagonal steps are allowed during pathfinding.
+        world_width (int):
+            Total world width in pixels.
+        world_height (int):
+            Total world height in pixels.
+        world_rect (pygame.Rect):
+            Rect covering the full navigable world.
+        SQRT2 (float):
+            Precomputed diagonal movement cost.
+
+    Methods:
+        from_tmx(tmx_data, obstacles):
+            Build a navigation grid from TMX data and blocking rectangles.
+        clamp_world(pos):
+            Clamp a world position to the navigation bounds.
+        world_to_cell(pos):
+            Convert a world position to a grid cell.
+        cell_to_world(cell):
+            Convert a grid cell to the center point in world space.
+        in_bounds(cell):
+            Check whether a cell is inside the grid.
+        is_walkable(cell):
+            Check whether a cell can be traversed.
+        random_world_position():
+            Pick a random walkable world position.
+        find_path(start_world, goal_world):
+            Compute a path between two world positions.
+        _neighbors(cell):
+            Yield walkable neighbors and their costs.
+        _heuristic(a, b):
+            Estimate path cost between two cells.
+    """
     def __init__(
         self,
         cols: int,

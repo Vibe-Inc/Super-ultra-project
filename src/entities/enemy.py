@@ -1,6 +1,11 @@
+from typing import TYPE_CHECKING
+
 import pygame
 
 from src.ai.monster_ai import AIContext, build_brain
+
+if TYPE_CHECKING:
+    from src.entities.character import Character
 
 _ANIMATION_CACHE: dict[tuple[str, tuple[int, int]], dict[str, list[pygame.Surface]]] = {}
 _FLIPPED_CACHE: dict[tuple[str, tuple[int, int]], dict[str, list[pygame.Surface]]] = {}
@@ -171,7 +176,7 @@ class Enemy:
         self.damage = damage
         self.target = None
         self.hit_flash_timer = 0.0
-        self.target_entity = None
+        self.target_entity: Character | None = None
         self.ai_profile = ai_profile
         self.ai_state = "idle"  # idle, patrol, chase, attack
         self.brain = build_brain(ai_profile, ai_config)
@@ -265,26 +270,27 @@ class Enemy:
 
     def take_damage(self, amount: int) -> bool:
         self.hp = max(0, self.hp - amount)
-        self.hit_flash_timer = 0.2
+        # disabled hit flash overlay on damage
         return self.hp <= 0
 
     def is_dead(self) -> bool:
         return self.hp <= 0
 
-    def draw(self, screen: pygame.Surface):
+    def draw(self, screen: pygame.Surface, camera_offset=None):
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+
         img = self.image
         if self.direction == "side" and self.flip:
             img = self.animations_flipped["side"][self.frame_index]
-        draw_pos = (int(self.pos.x), int(self.pos.y))
+        draw_pos = (int(self.pos.x - camera_offset.x), int(self.pos.y - camera_offset.y))
         screen.blit(img, draw_pos)
-        if self.hit_flash_timer > 0:
-            overlay = self._flash_overlay
-            screen.blit(overlay, draw_pos, special_flags=pygame.BLEND_ADD)
+        # hit flash overlay removed
 
         bar_width = 40
         bar_height = 5
-        bar_x = self.pos.x + (85 - bar_width) // 2
-        bar_y = self.pos.y - 10
+        bar_x = self.pos.x - camera_offset.x + (85 - bar_width) // 2
+        bar_y = self.pos.y - camera_offset.y - 10
 
         pygame.draw.rect(screen, (255, 0, 0), (bar_x, bar_y, bar_width, bar_height))
 

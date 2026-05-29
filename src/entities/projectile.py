@@ -4,6 +4,39 @@ from src.items.effects import BurnEffect
 
 
 class Arrow:
+    """
+    Physical arrow projectile fired by ranged weapons.
+
+    Attributes:
+        pos (pygame.Vector2):
+            Current projectile position.
+        direction (pygame.Vector2):
+            Normalized travel direction.
+        speed (float):
+            Travel speed in pixels per second.
+        max_range (float):
+            Maximum travel distance before despawning.
+        damage (int):
+            Damage applied on hit.
+        traveled (float):
+            Distance traveled so far.
+        color (tuple):
+            Render color for the projectile.
+        alive (bool):
+            Whether the projectile should continue updating.
+
+    Methods:
+        __init__(pos, direction, speed, max_range, damage, color=(210, 180, 120)):
+            Initialize the arrow projectile.
+        _size():
+            Return the render size based on travel direction.
+        get_rect():
+            Return the arrow's collision rectangle.
+        update(dt, obstacles, enemies):
+            Advance the arrow and test for collisions.
+        draw(screen, camera_offset=None):
+            Render the arrow to the screen.
+    """
     def __init__(self, pos, direction, speed, max_range, damage, color=(210, 180, 120)):
         self.pos = pygame.Vector2(pos)
         self.direction = pygame.Vector2(direction)
@@ -54,8 +87,13 @@ class Arrow:
         if self.traveled >= self.max_range:
             self.alive = False
 
-    def draw(self, screen):
+    def draw(self, screen, camera_offset=None):
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+
         rect = self.get_rect()
+        rect.x -= int(camera_offset.x)
+        rect.y -= int(camera_offset.y)
         pygame.draw.rect(screen, self.color, rect)
 
         if abs(self.direction.x) >= abs(self.direction.y):
@@ -67,6 +105,43 @@ class Arrow:
 
 
 class ArcaneBolt:
+    """
+    Magical projectile used by arcanist enemies.
+
+    Attributes:
+        pos (pygame.Vector2):
+            Current projectile position.
+        direction (pygame.Vector2):
+            Normalized travel direction.
+        speed (float):
+            Travel speed in pixels per second.
+        max_range (float):
+            Maximum travel distance before despawning.
+        damage (int):
+            Damage applied on hit.
+        burn_duration (float):
+            Duration of the burn effect applied on hit.
+        burn_dps (float):
+            Damage per second of the burn effect.
+        traveled (float):
+            Distance traveled so far.
+        color (tuple):
+            Render color for the projectile.
+        alive (bool):
+            Whether the projectile should continue updating.
+
+    Methods:
+        __init__(pos, direction, speed, max_range, damage, burn_duration, burn_dps, color=(90, 150, 255)):
+            Initialize the bolt projectile.
+        _size():
+            Return the render size based on travel direction.
+        get_rect():
+            Return the bolt's collision rectangle.
+        update(dt, obstacles, player):
+            Advance the bolt and test for collisions.
+        draw(screen, camera_offset=None):
+            Render the bolt to the screen.
+    """
     def __init__(
         self,
         pos,
@@ -131,16 +206,74 @@ class ArcaneBolt:
         if self.traveled >= self.max_range:
             self.alive = False
 
-    def draw(self, screen):
+    def draw(self, screen, camera_offset=None):
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+
         rect = self.get_rect()
+        rect.x -= int(camera_offset.x)
+        rect.y -= int(camera_offset.y)
         pygame.draw.ellipse(screen, self.color, rect)
 
         tail_offset = self.direction * -6
-        tail_pos = (int(self.pos.x + tail_offset.x), int(self.pos.y + tail_offset.y))
+        tail_pos = (int(self.pos.x + tail_offset.x - camera_offset.x), int(self.pos.y + tail_offset.y - camera_offset.y))
         pygame.draw.circle(screen, (40, 90, 180), tail_pos, 3)
 
 
 class Bomb:
+    """
+    Throwable bomb projectile that explodes after a fuse or impact.
+
+    Attributes:
+        pos (pygame.Vector2):
+            Current projectile position.
+        direction (pygame.Vector2):
+            Normalized travel direction.
+        speed (float):
+            Travel speed in pixels per second.
+        max_range (float):
+            Maximum travel distance before forcing an explosion.
+        damage (int):
+            Damage applied by the explosion.
+        blast_radius (float):
+            Explosion radius in pixels.
+        fuse_time (float):
+            Time before detonation.
+        knockback_force (float):
+            Knockback applied to the player by the explosion.
+        explosion_duration (float):
+            How long the explosion remains active.
+        traveled (float):
+            Distance traveled so far.
+        timer (float):
+            Time spent traveling.
+        color (tuple):
+            Render color for the bomb.
+        alive (bool):
+            Whether the bomb should continue updating.
+        exploding (bool):
+            Whether the bomb is currently in its explosion state.
+        explosion_timer (float):
+            Time spent in the explosion state.
+        damage_applied (bool):
+            Whether explosion damage has already been applied.
+
+    Methods:
+        __init__(pos, direction, speed, max_range, damage, blast_radius, fuse_time, knockback_force=0.0, explosion_duration=0.35, color=(220, 150, 60)):
+            Initialize the bomb projectile.
+        _size():
+            Return the bomb's render size.
+        get_rect():
+            Return the bomb's collision rectangle.
+        _trigger_explosion():
+            Switch the bomb into explosion mode.
+        _player_center(player):
+            Return the player's center position when available.
+        update(dt, obstacles, player):
+            Advance the bomb, detonate it, and apply explosion damage.
+        draw(screen, camera_offset=None):
+            Render the bomb or explosion to the screen.
+    """
     def __init__(
         self,
         pos,
@@ -237,9 +370,14 @@ class Bomb:
         if self.timer >= self.fuse_time or self.traveled >= self.max_range:
             self._trigger_explosion()
 
-    def draw(self, screen):
+    def draw(self, screen, camera_offset=None):
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+
         if not self.exploding:
             rect = self.get_rect()
+            rect.x -= int(camera_offset.x)
+            rect.y -= int(camera_offset.y)
             pygame.draw.circle(screen, self.color, rect.center, rect.width // 2)
             pygame.draw.circle(screen, (60, 40, 20), rect.center, 3)
             return
@@ -250,4 +388,4 @@ class Bomb:
             return
         surface = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
         pygame.draw.circle(surface, (255, 180, 90, 140), (radius, radius), radius)
-        screen.blit(surface, (self.pos.x - radius, self.pos.y - radius))
+        screen.blit(surface, (self.pos.x - radius - camera_offset.x, self.pos.y - radius - camera_offset.y))

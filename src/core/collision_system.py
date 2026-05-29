@@ -1,6 +1,22 @@
 import pygame
 
 class CollisionSystem:
+    """
+    Collision helper for movement resolution and interaction checks.
+
+    Attributes:
+        None.
+
+    Methods:
+        rect_of(entity):
+            Return the collision rectangle for an entity.
+        handle_movement_and_collision(entity, dt, obstacles):
+            Move an entity and resolve wall collisions.
+        _resolve_static_collision(entity, obstacles):
+            Push an entity out of any remaining overlaps.
+        check_interactions(player, enemies, items):
+            Process player collisions with enemies and loose items.
+    """
     def rect_of(self, entity: object) -> pygame.Rect:
         if hasattr(entity, "get_rect"):
             return entity.get_rect()
