@@ -258,7 +258,7 @@ class Game(State):
             start_x, start_y = -5000, -5000
             default_profile = None
 
-        self.hud = HUD(self.character, app, self.toggle_player_inventory)
+        self.hud = HUD(self.character, app, self.toggle_player_inventory, self.use_skill_slot)
 
         self.enemy = self._create_enemy(start_x, start_y, profile=default_profile)
         
@@ -291,7 +291,7 @@ class Game(State):
         self.shop_inv = ShopInventory(self.app, shop_items)
 
     def reinit_ui(self):
-        self.hud = HUD(self.character, self.app, self.toggle_player_inventory)
+        self.hud = HUD(self.character, self.app, self.toggle_player_inventory, self.use_skill_slot)
 
         self.MAIN_player_inv.pos_x = cfg.MAIN_INV_pos_x
         self.MAIN_player_inv.pos_y = cfg.MAIN_INV_pos_y
@@ -305,6 +305,9 @@ class Game(State):
 
     def toggle_player_inventory(self):
         self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
+
+    def use_skill_slot(self, slot_index):
+        return self.character.use_skill_from_slot(slot_index)
 
     def _iter_equipment_items(self):
         for col in self.PLAYER_inventory_equipment.items:
@@ -678,28 +681,42 @@ class Game(State):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.app.manager.set_state("pause")
+
+            if event.key == pygame.K_1:
+                self.use_skill_slot(0)
+            if event.key == pygame.K_2:
+                self.use_skill_slot(1)
+            if event.key == pygame.K_3:
+                self.use_skill_slot(2)
+            if event.key == pygame.K_4:
+                self.use_skill_slot(3)
+            if event.key == pygame.K_5:
+                self.use_skill_slot(4)
+            if event.key == pygame.K_6:
+                self.use_skill_slot(5)
             
             if event.key == pygame.K_e and self.app.INV_manager.player_inventory_opened == False:
                 if self.npc.is_interactable:
                     self.app.INV_manager.toggle_trade(self.MAIN_player_inv, self.shop_inv)
             
             # Test keys
-            if event.key == pygame.K_1:
+            if event.key == pygame.K_F1:
                 self.character.add_effect(RegenerationEffect(5, 5)) # 5 sec, 5 hp/sec
-            if event.key == pygame.K_2:
+            if event.key == pygame.K_F2:
                 self.character.add_effect(PoisonEffect(5, 5)) # 5 sec, 5 dmg/sec
-            if event.key == pygame.K_3:
+            if event.key == pygame.K_F3:
                 self.character.add_effect(ConfusionEffect(5)) # 5 sec
-            if event.key == pygame.K_4:
+            if event.key == pygame.K_F4:
                 self.character.add_effect(DizzinessEffect(5)) # 5 sec
-            if event.key == pygame.K_5:
+            if event.key == pygame.K_F5:
                 self.character.take_damage(10)
-            if event.key == pygame.K_6:
+            if event.key == pygame.K_F6:
                 self.character.gain_xp(50)
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if not self.app.INV_manager.player_inventory_opened:
-                if not self.hud.inv_button.rect.collidepoint(event.pos):
+                hud_click = self.hud.inv_button.rect.collidepoint(event.pos) or any(slot.collidepoint(event.pos) for slot in self.hud.skill_slot_rects)
+                if not hud_click:
                     mouse_world_pos = pygame.Vector2(event.pos) + self._get_camera_offset()
                     self._handle_player_attack(mouse_world_pos)
 

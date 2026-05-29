@@ -6,6 +6,7 @@ from src.ui.widgets import Button, Tooltip, Slider
 from src.core.state import State
 from src.core.save_manager import SaveManager
 import src.config as cfg
+import pygame
 
 if TYPE_CHECKING:
     from src.app import App
@@ -73,33 +74,8 @@ class Menu(State):
                 if button.rect.collidepoint(event.pos):
                     button.on_click()
 
-
 class MainMenu(Menu):
-    """
-    Main menu screen of the application.
-
-    Inherits from Menu and provides buttons for starting the game, exiting, opening settings, and viewing credits.
-
-    Attributes:
-        buttons (list[Button]):
-            List of Button objects for main menu actions.
-        beta_logo_img (pygame.Surface):
-            Image for the beta logo.
-        beta_logo_rect (pygame.Rect):
-            Rectangle for positioning the beta logo.
-        tooltips (list[Tooltip]):
-            List of Tooltip objects for the beta logo.
-
-    Methods:
-        start_game():
-            Callback for the "START" button. Initiates the game start sequence.
-        exit_game():
-            Callback for the "EXIT" button. Exits the application.
-        open_settings():
-            Callback for the "SETTINGS" button. Opens the settings menu.
-        open_credits():
-            Callback for the "CREDITS" button. Opens the credits menu.
-    """
+    """Main menu screen."""
 
     def __init__(self, app: "App"):
         super().__init__(app)
@@ -398,11 +374,10 @@ class SettingsMenu(Menu):
     def toggle_display_mode(self):
         self.app.toggle_display_mode()
         self.buttons[0].set_text(self._display_mode_label())
-    
     def toggle_language(self):
         new_lang = 'ua' if cfg.LANGUAGE == 'en' else 'en'
         self.app.update_language(new_lang)
-    
+
     def handle_event(self, event):
         super().handle_event(event)
         self.audio_slider.handle_event(event)
@@ -423,6 +398,306 @@ class SettingsMenu(Menu):
 
         self.audio_slider.draw(surface)
         self.brightness_slider.draw(surface)
+
+
+class SkillbarMenu(Menu):
+    """
+    Skillbar editor with a single-skill book and a 6-slot active bar.
+    """
+    def __init__(self, app: "App"):
+        super().__init__(app)
+        self.bar_slots_count = 6
+        self.storage_columns = 1
+        self.storage_rows = 1
+        self.panel_margin = max(18, int(24 * cfg.ui_scale()))
+        self.grid_gap = max(6, int(8 * cfg.ui_scale()))
+        self.sidebar_width = max(280, int(340 * cfg.ui_scale()))
+        self.slot_size = 48
+
+        self.sidebar_rect = pygame.Rect(0, 0, 0, 0)
+        self.storage_grid_rect = pygame.Rect(0, 0, 0, 0)
+        self.bar_rect = pygame.Rect(0, 0, 0, 0)
+        self.storage_slot_rects: list[list[pygame.Rect]] = []
+        self.bar_slot_rects: list[pygame.Rect] = []
+
+        self.title_font = cfg.get_font(max(10, int(32 * cfg.ui_scale())))
+        self.section_font = cfg.get_font(max(8, int(22 * cfg.ui_scale())))
+        self.small_font = cfg.get_font(max(8, int(16 * cfg.ui_scale())))
+
+        exit_width = max(120, int(160 * cfg.ui_scale()))
+        exit_height = max(44, int(52 * cfg.ui_scale()))
+        self.exit_button = Button(
+            pygame.Rect(0, 0, exit_width, exit_height),
+            _("EXIT"),
+            (110, 70, 70),
+            (150, 95, 95),
+            cfg.button_font,
+            cfg.text_color,
+            cfg.corner_radius,
+            on_click=self.exit_menu,
+        )
+        self.buttons = [self.exit_button]
+
+        self.drag_payload = None
+        self.drag_offset = (0, 0)
+
+    def _character(self):
+        gameplay_state = getattr(getattr(self.app, "manager", None), "states", {}).get("gameplay") if hasattr(self.app, "manager") else None
+        return getattr(gameplay_state, "character", None)
+
+    def _skillbook(self):
+        character = self._character()
+        if character is not None and hasattr(character, "skillbook"):
+            if not hasattr(character, "skillbar"):
+                character.skillbar = [None for _ in range(self.bar_slots_count)]
+            return character.skillbook, character.skillbar
+
+        if not hasattr(self, "_fallback_skillbook"):
+            self._fallback_skillbook = [
+                {
+                    "skill_id": "dash",
+                    "name": _("Dash"),
+                    "description": _("Quick burst of movement"),
+                    "color": (86, 132, 186),
+                    "accent": (220, 235, 255),
+                }
+            ]
+            self._fallback_skillbar = [None for _ in range(self.bar_slots_count)]
+        return self._fallback_skillbook, self._fallback_skillbar
+
+    def _slot_at_position(self, position: tuple[int, int]):
+        for index, slot_rect in enumerate(self.bar_slot_rects):
+            if slot_rect.collidepoint(position):
+                return ("bar", 0, index)
+
+        for column_index, column_slots in enumerate(self.storage_slot_rects):
+            for row_index, slot_rect in enumerate(column_slots):
+                if slot_rect.collidepoint(position):
+                    return ("storage", column_index, row_index)
+
+        return None
+
+    def _draw_card(self, surface: pygame.Surface, rect: pygame.Rect, skill: dict | None, *, empty_label: str = "+"):
+        if skill is None:
+            pygame.draw.rect(surface, (55, 55, 62), rect, border_radius=10)
+            pygame.draw.rect(surface, (140, 140, 150), rect, 2, border_radius=10)
+            label = self.section_font.render(empty_label, True, (175, 175, 180))
+            surface.blit(label, label.get_rect(center=rect.center))
+            return
+
+        fill = skill.get("color", (80, 100, 140))
+        accent = skill.get("accent", (220, 220, 230))
+        pygame.draw.rect(surface, fill, rect, border_radius=10)
+        pygame.draw.rect(surface, accent, rect, 2, border_radius=10)
+        name = self.small_font.render(skill["name"], True, (255, 255, 255))
+        surface.blit(name, name.get_rect(center=(rect.centerx, rect.centery - 5)))
+        skill_id = skill.get("skill_id", "")
+        if skill_id:
+            ident = self.small_font.render(skill_id.replace("_", " ").upper(), True, (235, 235, 235))
+            surface.blit(ident, ident.get_rect(center=(rect.centerx, rect.centery + 13)))
+
+    def _sync_state_to_character(self):
+        character = self._character()
+        if character is None:
+            return None, None
+
+        if not hasattr(character, "skillbook"):
+            character.skillbook = []
+        if not hasattr(character, "skillbar") or len(character.skillbar) != self.bar_slots_count:
+            character.skillbar = [None for _ in range(self.bar_slots_count)]
+        return character.skillbook, character.skillbar
+
+    def _on_drop(self, source, target):
+        skillbook, skillbar = self._sync_state_to_character()
+        if skillbook is None:
+            skillbook, skillbar = self._skillbook()
+
+        source_area, source_index = source
+        target_area, target_index = target
+
+        if target_area != "bar":
+            return
+
+        if source_area == "bar":
+            if source_index == target_index:
+                return
+            skillbar[source_index], skillbar[target_index] = skillbar[target_index], skillbar[source_index]
+            return
+
+        if source_area == "storage":
+            if not skillbook:
+                return
+            skillbar[target_index] = skillbook[source_index]
+
+    def exit_menu(self):
+        self.app.INV_manager.player_inventory_opened = False
+        self.app.manager.set_state("gameplay")
+
+    def layout(self, screen: pygame.Surface):
+        sw, sh = self._screen_size(screen)
+        margin = self.panel_margin
+        sidebar_width = min(self.sidebar_width, max(280, sw // 4))
+        sidebar_x = sw - sidebar_width - margin
+        self.sidebar_rect = pygame.Rect(sidebar_x, margin, sidebar_width, sh - margin * 2)
+
+        left_width = max(320, sidebar_x - margin * 2)
+
+        storage_size = min(
+            54,
+            max(34, (left_width - self.grid_gap * (self.storage_columns + 1)) // self.storage_columns),
+            max(34, int((sh * 0.34 - self.grid_gap * (self.storage_rows + 1)) // self.storage_rows)),
+        )
+        bar_size = min(72, max(42, storage_size + 4))
+
+        storage_total_w = storage_size * self.storage_columns + self.grid_gap * (self.storage_columns + 1)
+        storage_total_h = storage_size * self.storage_rows + self.grid_gap * (self.storage_rows + 1)
+        storage_x = margin + max(0, (left_width - storage_total_w) // 2)
+        storage_y = sh - margin - storage_total_h
+        self.storage_grid_rect = pygame.Rect(storage_x - self.grid_gap, storage_y - self.grid_gap, storage_total_w, storage_total_h)
+
+        bar_total_w = bar_size * self.bar_slots_count + self.grid_gap * (self.bar_slots_count + 1)
+        bar_x = margin + max(0, (left_width - bar_total_w) // 2)
+        bar_y = margin + 84
+        self.bar_rect = pygame.Rect(bar_x - self.grid_gap, bar_y - self.grid_gap, bar_total_w, bar_size + self.grid_gap * 2)
+
+        self.storage_slot_rects = []
+        for column_index in range(self.storage_columns):
+            column_rects = []
+            for row_index in range(self.storage_rows):
+                slot_x = storage_x + self.grid_gap + column_index * (storage_size + self.grid_gap)
+                slot_y = storage_y + self.grid_gap + row_index * (storage_size + self.grid_gap)
+                column_rects.append(pygame.Rect(slot_x, slot_y, storage_size, storage_size))
+            self.storage_slot_rects.append(column_rects)
+
+        self.bar_slot_rects = []
+        for index in range(self.bar_slots_count):
+            slot_x = bar_x + self.grid_gap + index * (bar_size + self.grid_gap)
+            slot_y = bar_y + self.grid_gap
+            self.bar_slot_rects.append(pygame.Rect(slot_x, slot_y, bar_size, bar_size))
+
+        exit_width = max(120, int(self.sidebar_rect.width * 0.55))
+        exit_height = max(44, int(52 * cfg.ui_scale()))
+        self.exit_button.rect = pygame.Rect(
+            self.sidebar_rect.centerx - exit_width // 2,
+            self.sidebar_rect.bottom - exit_height - margin,
+            exit_width,
+            exit_height,
+        )
+        try:
+            self.exit_button._update_text_surface()
+        except Exception:
+            pass
+
+    def handle_event(self, event: pygame.event.Event):
+        super().handle_event(event)
+
+        skillbook, skillbar = self._sync_state_to_character()
+        if skillbook is None:
+            skillbook, skillbar = self._skillbook()
+
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            slot = self._slot_at_position(event.pos)
+            if slot is None:
+                return
+
+            area, column_or_none, row_or_index = slot
+            if area == "storage":
+                storage_index = row_or_index * self.storage_columns + column_or_none
+                self.drag_payload = {"source": ("storage", storage_index), "skill": skillbook[storage_index]}
+                self.drag_offset = (event.pos[0] - self.storage_slot_rects[column_or_none][row_or_index].x, event.pos[1] - self.storage_slot_rects[column_or_none][row_or_index].y)
+                return
+
+            if skillbar[row_or_index] is not None:
+                self.drag_payload = {"source": ("bar", row_or_index), "skill": skillbar[row_or_index]}
+                self.drag_offset = (event.pos[0] - self.bar_slot_rects[row_or_index].x, event.pos[1] - self.bar_slot_rects[row_or_index].y)
+
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            if not self.drag_payload:
+                return
+
+            target_slot = self._slot_at_position(event.pos)
+            if target_slot is not None and target_slot[0] == "bar":
+                self._on_drop(self.drag_payload["source"], ("bar", target_slot[2]))
+
+            self.drag_payload = None
+            self.drag_offset = (0, 0)
+
+    def _draw_sidebar(self, surface: pygame.Surface):
+        skillbook, skillbar = self._sync_state_to_character()
+        if skillbook is None:
+            skillbook, skillbar = self._skillbook()
+
+        title = self.title_font.render(_("Skillbar"), True, (255, 255, 255))
+        surface.blit(title, (self.sidebar_rect.x + 18, self.sidebar_rect.y + 18))
+
+        hint = self.small_font.render(_("Drag Dash into one of the 6 active slots."), True, (225, 225, 230))
+        surface.blit(hint, (self.sidebar_rect.x + 18, self.sidebar_rect.y + 58))
+
+        list_top = self.sidebar_rect.y + 110
+        list_rect = pygame.Rect(self.sidebar_rect.x + 14, list_top, self.sidebar_rect.width - 28, self.exit_button.rect.top - list_top - 16)
+        pygame.draw.rect(surface, (30, 30, 38), list_rect, border_radius=12)
+        pygame.draw.rect(surface, (85, 85, 98), list_rect, 1, border_radius=12)
+
+        label = self.section_font.render(_("Active bar"), True, (255, 255, 255))
+        surface.blit(label, (list_rect.x + 12, list_rect.y + 10))
+
+        active = [skill for skill in skillbar if skill is not None]
+        if not active:
+            empty = self.small_font.render(_("No active skills yet."), True, (205, 205, 215))
+            surface.blit(empty, empty.get_rect(center=list_rect.center))
+            return
+
+        text_y = list_rect.y + 42
+        max_rows = max(1, (list_rect.bottom - text_y - 10) // (self.small_font.get_height() + 8))
+        for index, skill in enumerate(active[:max_rows]):
+            line = self.small_font.render(f"{index + 1}. {skill['name']}", True, (235, 235, 245))
+            surface.blit(line, (list_rect.x + 12, text_y + index * (self.small_font.get_height() + 8)))
+
+    def draw(self, screen: pygame.Surface):
+        self.layout(screen)
+
+        screen.fill((16, 16, 20))
+        overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+        overlay.fill((18, 18, 26, 220))
+        screen.blit(overlay, (0, 0))
+
+        skillbook, skillbar = self._sync_state_to_character()
+        if skillbook is None:
+            skillbook, skillbar = self._skillbook()
+
+        bar_title = self.section_font.render(_("6 active slots"), True, (235, 235, 245))
+        screen.blit(bar_title, (self.bar_rect.x, max(12, self.bar_rect.y - bar_title.get_height() - 8)))
+
+        storage_title = self.section_font.render(_("1 skill"), True, (235, 235, 245))
+        screen.blit(storage_title, (self.storage_grid_rect.x, max(12, self.storage_grid_rect.y - storage_title.get_height() - 8)))
+
+        pygame.draw.rect(screen, (24, 24, 30), self.bar_rect, border_radius=18)
+        pygame.draw.rect(screen, (82, 82, 96), self.bar_rect, 2, border_radius=18)
+        pygame.draw.rect(screen, (24, 24, 30), self.storage_grid_rect, border_radius=18)
+        pygame.draw.rect(screen, (82, 82, 96), self.storage_grid_rect, 2, border_radius=18)
+        pygame.draw.rect(screen, (28, 28, 34), self.sidebar_rect, border_radius=18)
+        pygame.draw.rect(screen, (82, 82, 96), self.sidebar_rect, 2, border_radius=18)
+
+        for index, slot_rect in enumerate(self.bar_slot_rects):
+            self._draw_card(screen, slot_rect, skillbar[index], empty_label=str(index + 1))
+
+        for column_index, column_slots in enumerate(self.storage_slot_rects):
+            for row_index, slot_rect in enumerate(column_slots):
+                skill_index = row_index * self.storage_columns + column_index
+                skill = skillbook[skill_index] if skill_index < len(skillbook) else None
+                self._draw_card(screen, slot_rect, skill, empty_label="+")
+
+        self._draw_sidebar(screen)
+        self.exit_button.draw(screen)
+
+        if self.drag_payload:
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+            skill = self.drag_payload["skill"]
+            ghost_size = self.bar_slot_rects[0].width if self.bar_slot_rects else 56
+            ghost = pygame.Surface((ghost_size, ghost_size), pygame.SRCALPHA)
+            self._draw_card(ghost, ghost.get_rect(), skill, empty_label="+")
+            ghost.set_alpha(210)
+            screen.blit(ghost, (mouse_x - self.drag_offset[0], mouse_y - self.drag_offset[1]))
 
 class CreditsMenu(Menu):
     """

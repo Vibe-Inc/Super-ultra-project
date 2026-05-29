@@ -45,10 +45,11 @@ class HUD:
                 screen (pygame.Surface): The surface to draw the HUD on.
     """
 
-    def __init__(self, character: Character, app: "App", toggle_inventory_callback=None):
+    def __init__(self, character: Character, app: "App", toggle_inventory_callback=None, use_skill_callback=None):
         self.character = character
         self.app = app
         self.toggle_inventory_callback = toggle_inventory_callback
+        self.use_skill_callback = use_skill_callback
         self.font = cfg.get_font(max(8,int(40 * cfg.ui_scale())))
         self.stamina_font = pygame.font.Font(None, 24)
         self.stamina_label = self.stamina_font.render(_("STAMINA"), True, (255, 255, 255))
@@ -94,7 +95,6 @@ class HUD:
         self.skill_slots_count = 6
         self.skill_panel_margin = 10
         self.skill_panel_width = self.skill_slot_size + self.skill_slot_padding * 2
-        # layout will be calculated dynamically to fit current window size
         self.skill_total_slots_height = (self.skill_slot_size * self.skill_slots_count) + (self.skill_slot_padding * (self.skill_slots_count + 1))
         self.skill_panel_x = 0
         self.skill_panel_y = 0
@@ -107,6 +107,10 @@ class HUD:
 
         # slot rects (populated/updated per-frame or on-event)
         self.skill_slot_rects: list[pygame.Rect] = []
+        # placeholder dragging state (kept for compatibility)
+        self._dragging_placeholder = False
+        self._dragged_slot_index = None
+        self._drag_pos = (0, 0)
 
     def _recalc_layout(self, screen_width: int, screen_height: int):
         """Recalculate HUD positions based on the current screen size."""
@@ -154,6 +158,8 @@ class HUD:
             sy = self.skill_panel_y + self.skill_slot_padding + i * (self.skill_slot_size + self.skill_slot_padding)
             self.skill_slot_rects.append(pygame.Rect(sx, sy, self.skill_slot_size, self.skill_slot_size))
 
+        # top skillbar removed from layout
+
     def toggle_inventory(self):
         if self.toggle_inventory_callback:
             self.toggle_inventory_callback()
@@ -173,10 +179,18 @@ class HUD:
             if self.inv_button.rect.collidepoint(event.pos):
                 if self.inv_button.on_click:
                     self.inv_button.on_click()
-            # future: handle clicks on skill slots
-            # for i, r in enumerate(self.skill_slot_rects):
-            #     if r.collidepoint(event.pos):
-            #         print(f"Skill slot {i} clicked")
+
+            for index, slot_rect in enumerate(self.skill_slot_rects):
+                if slot_rect.collidepoint(event.pos):
+                    if self.use_skill_callback:
+                        self.use_skill_callback(index)
+                    break
+        elif event.type == pygame.MOUSEBUTTONUP:
+            # stop placeholder dragging on mouse release
+            if self._dragging_placeholder:
+                self._dragging_placeholder = False
+                self._dragged_slot_index = None
+                self._drag_pos = (0, 0)
 
     def draw(self, screen: pygame.Surface):
         # ensure layout matches current window before drawing
@@ -268,11 +282,22 @@ class HUD:
         pygame.draw.rect(screen, (200, 200, 200), panel_rect, 2)
 
         small_font = cfg.get_font(max(8,int(20 * cfg.ui_scale())))
+        skillbar = getattr(self.character, "skillbar", [])
         for idx, slot in enumerate(self.skill_slot_rects, start=1):
-            pygame.draw.rect(screen, (60, 60, 60), slot)
-            pygame.draw.rect(screen, (180, 180, 180), slot, 2)
+            skill = skillbar[idx - 1] if idx - 1 < len(skillbar) else None
+            fill = skill.get("color", (60, 60, 60)) if skill else (60, 60, 60)
+            border = skill.get("accent", (180, 180, 180)) if skill else (180, 180, 180)
+            pygame.draw.rect(screen, fill, slot)
+            pygame.draw.rect(screen, border, slot, 2)
+
+            if skill:
+                label = small_font.render(skill.get("name", ""), True, (255, 255, 255))
+                label_rect = label.get_rect(center=(slot.centerx, slot.centery - 4))
+                screen.blit(label, label_rect)
 
             # placeholder: draw a small number showing the hotkey
             num_surf = small_font.render(str(idx if idx <= 9 else idx % 10), True, (220, 220, 220))
             num_rect = num_surf.get_rect(bottomright=(slot.right - 6, slot.bottom - 6))
             screen.blit(num_surf, num_rect)
+
+        # top skillbar removed
