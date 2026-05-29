@@ -270,7 +270,7 @@ class Enemy:
 
     def take_damage(self, amount: int) -> bool:
         self.hp = max(0, self.hp - amount)
-        self.hit_flash_timer = 0.2
+        # disabled hit flash overlay on damage
         return self.hp <= 0
 
     def is_dead(self) -> bool:
@@ -285,9 +285,7 @@ class Enemy:
             img = self.animations_flipped["side"][self.frame_index]
         draw_pos = (int(self.pos.x - camera_offset.x), int(self.pos.y - camera_offset.y))
         screen.blit(img, draw_pos)
-        if self.hit_flash_timer > 0:
-            overlay = self._flash_overlay
-            screen.blit(overlay, draw_pos, special_flags=pygame.BLEND_ADD)
+        # hit flash overlay removed
 
         bar_width = 40
         bar_height = 5

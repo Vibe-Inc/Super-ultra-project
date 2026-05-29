@@ -487,7 +487,8 @@ class BomberAttack(BaseAttack):
         else:
             direction = direction.normalize()
 
-        if distance < self.min_range:
+        # compare squared distance to avoid an unnecessary sqrt and fix NameError
+        if distance_sq < (self.min_range * self.min_range):
             direction *= -1
 
         if self.spread_degrees:
