@@ -263,6 +263,23 @@
 <div class="viewcode-block" id="Inventory_slider">
 <a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.Inventory_slider">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Inventory_slider</span><span class="p">(</span><span class="n">Slider</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Slider widget that selects an inventory split amount.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        max_qty (int):</span>
+<span class="sd">            Maximum quantity represented by the slider.</span>
+<span class="sd">        external_callback (callable | None):</span>
+<span class="sd">            Callback invoked with the selected integer amount.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(x, y, width, max_qty, action_callback):</span>
+<span class="sd">            Initialize the slider for item splitting.</span>
+<span class="sd">        _convert_to_int(float_value):</span>
+<span class="sd">            Convert the slider value to a quantity and forward it to the callback.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Inventory_slider.__init__">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.Inventory_slider.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">max_qty</span><span class="p">,</span> <span class="n">action_callback</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_qty</span> <span class="o">=</span> <span class="n">max_qty</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">external_callback</span> <span class="o">=</span> <span class="n">action_callback</span>
@@ -274,8 +291,11 @@
             <span class="n">track_length</span><span class="o">=</span><span class="n">width</span><span class="p">,</span>
             <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> 
             <span class="n">action</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_convert_to_int</span>
-        <span class="p">)</span>
+        <span class="p">)</span></div>
 
+
+<div class="viewcode-block" id="Inventory_slider._convert_to_int">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.Inventory_slider._convert_to_int">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_convert_to_int</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">float_value</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_qty</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">result</span> <span class="o">=</span> <span class="mi">1</span>
@@ -284,20 +304,65 @@
         
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">external_callback</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">external_callback</span><span class="p">(</span><span class="n">result</span><span class="p">)</span></div>
+</div>
 
 
 
 <div class="viewcode-block" id="Split_popup">
 <a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.Split_popup">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Split_popup</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Popup used to split a stack of items into two parts.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        manager (INVENTORY_manager):</span>
+<span class="sd">            Inventory manager that owns the popup.</span>
+<span class="sd">        slot_ref (list):</span>
+<span class="sd">            Reference to the original inventory slot being split.</span>
+<span class="sd">        item_obj (Item):</span>
+<span class="sd">            Item instance stored in the slot.</span>
+<span class="sd">        total_count (int):</span>
+<span class="sd">            Total stack size at the time the popup was opened.</span>
+<span class="sd">        width (int):</span>
+<span class="sd">            Popup width in pixels.</span>
+<span class="sd">        height (int):</span>
+<span class="sd">            Popup height in pixels.</span>
+<span class="sd">        x (int):</span>
+<span class="sd">            Popup x-position.</span>
+<span class="sd">        y (int):</span>
+<span class="sd">            Popup y-position.</span>
+<span class="sd">        bg_rect (pygame.Rect):</span>
+<span class="sd">            Background rectangle for the popup.</span>
+<span class="sd">        split_amount (int):</span>
+<span class="sd">            Currently selected split amount.</span>
+<span class="sd">        slider (Inventory_slider):</span>
+<span class="sd">            Slider used to choose the split amount.</span>
+<span class="sd">        confirm_btn (Button):</span>
+<span class="sd">            Button that confirms the split.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(manager, slot_ref, rect_pos):</span>
+<span class="sd">            Initialize the split popup.</span>
+<span class="sd">        update_count(int_val):</span>
+<span class="sd">            Update the selected split amount.</span>
+<span class="sd">        confirm():</span>
+<span class="sd">            Apply the split and close the popup.</span>
+<span class="sd">        handle_event(event):</span>
+<span class="sd">            Forward input events to the popup controls.</span>
+<span class="sd">        draw(screen):</span>
+<span class="sd">            Render the popup and its controls.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Split_popup.__init__">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.Split_popup.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">manager</span><span class="p">,</span> <span class="n">slot_ref</span><span class="p">,</span> <span class="n">rect_pos</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">manager</span> <span class="o">=</span> <span class="n">manager</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">slot_ref</span> <span class="o">=</span> <span class="n">slot_ref</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">item_obj</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_count</span> <span class="o">=</span> <span class="n">slot_ref</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="mi">180</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="mi">90</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">rect_pos</span><span class="o">.</span><span class="n">right</span> <span class="o">+</span> <span class="mi">5</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">40</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="mi">180</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="mi">90</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">rect_pos</span><span class="o">.</span><span class="n">right</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">5</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">rect_pos</span><span class="o">.</span><span class="n">y</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">&gt;</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span><span class="p">:</span>
@@ -306,24 +371,26 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">bg_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">split_amount</span> <span class="o">=</span> <span class="mi">1</span> 
 
+
         <span class="bp">self</span><span class="o">.</span><span class="n">slider</span> <span class="o">=</span> <span class="n">Inventory_slider</span><span class="p">(</span>
-            <span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="mi">10</span><span class="p">,</span>
-            <span class="n">y</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="mi">35</span><span class="p">,</span>
-            <span class="n">width</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">-</span> <span class="mi">20</span><span class="p">,</span>
+            <span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span>
+            <span class="n">y</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">35</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span>
+            <span class="n">width</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="mi">20</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span>
             <span class="n">max_qty</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">total_count</span><span class="p">,</span>
             <span class="n">action_callback</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">update_count</span> 
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">confirm_btn</span> <span class="o">=</span> <span class="n">Button</span><span class="p">(</span>
-            <span class="n">rect</span><span class="o">=</span><span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="mi">40</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">20</span><span class="p">),</span>
+            <span class="n">rect</span><span class="o">=</span><span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">40</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">60</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)),</span> <span class="nb">max</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="mi">20</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))),</span>
             <span class="n">text</span><span class="o">=</span><span class="s2">&quot;Confirm&quot;</span><span class="p">,</span>
             <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="mi">120</span><span class="p">,</span> <span class="mi">60</span><span class="p">),</span>        
             <span class="n">hover_color</span><span class="o">=</span><span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="mi">150</span><span class="p">,</span> <span class="mi">80</span><span class="p">),</span>  
             <span class="n">font</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">INV_nums_font</span><span class="p">,</span>
             <span class="n">font_color</span><span class="o">=</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
-            <span class="n">corner_width</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>             
+            <span class="n">corner_width</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="mi">5</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)),</span>             
             <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">confirm</span>       
-        <span class="p">)</span>
+        <span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="Split_popup.update_count">
 <a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.Split_popup.update_count">[docs]</a>
@@ -376,6 +443,23 @@
 <div class="viewcode-block" id="ShopInventory">
 <a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.ShopInventory">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ShopInventory</span><span class="p">(</span><span class="n">Inventory</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Inventory view that presents shop items for buying and selling.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        app (App):</span>
+<span class="sd">            Reference to the main application.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(app, items_list):</span>
+<span class="sd">            Build a shop inventory from a flat list of items.</span>
+<span class="sd">        draw(screen):</span>
+<span class="sd">            Render the shop background, items, and item prices.</span>
+<span class="sd">        inventory_interactions(event, manager):</span>
+<span class="sd">            Handle buying and selling interactions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="ShopInventory.__init__">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.ShopInventory.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">,</span> <span class="n">items_list</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="o">=</span> <span class="n">app</span>
         
@@ -397,7 +481,8 @@
             <span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_border</span><span class="p">,</span> 
             <span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_slot_color</span><span class="p">,</span> 
             <span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_border_color</span>
-        <span class="p">)</span>
+        <span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="ShopInventory.draw">
 <a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.ShopInventory.draw">[docs]</a>
@@ -507,6 +592,20 @@
             <span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_slot_color</span><span class="p">,</span>
             <span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_border_color</span>
         <span class="p">)</span>
+        <span class="c1"># button to open skillbar/skills menu (rect is positioned in draw)</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">()</span>
+        <span class="n">btn_w</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">160</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
+        <span class="n">btn_h</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">36</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">open_skillbar_btn</span> <span class="o">=</span> <span class="n">Button</span><span class="p">(</span>
+            <span class="n">rect</span><span class="o">=</span><span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">btn_w</span><span class="p">,</span> <span class="n">btn_h</span><span class="p">),</span>
+            <span class="n">text</span><span class="o">=</span><span class="n">_</span><span class="p">(</span><span class="s2">&quot;SKILLBAR&quot;</span><span class="p">),</span>
+            <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">140</span><span class="p">),</span>
+            <span class="n">hover_color</span><span class="o">=</span><span class="p">(</span><span class="mi">140</span><span class="p">,</span> <span class="mi">140</span><span class="p">,</span> <span class="mi">180</span><span class="p">),</span>
+            <span class="n">font</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">tooltip_font_CREDITS</span><span class="p">,</span>
+            <span class="n">font_color</span><span class="o">=</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
+            <span class="n">corner_width</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">8</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)),</span>
+            <span class="n">on_click</span><span class="o">=</span><span class="kc">None</span>
+        <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_load_portrait_surface</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">character</span><span class="p">):</span>
         <span class="n">sprite_set</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">character</span><span class="p">,</span> <span class="s2">&quot;sprite_set&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -587,7 +686,33 @@
         <span class="n">text_surf</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">tooltip_font_CREDITS</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">money_text</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">))</span>
         <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">text_surf</span><span class="p">,</span> <span class="p">(</span><span class="n">preview_x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_y</span> <span class="o">-</span> <span class="mi">20</span><span class="p">))</span>
 
+        <span class="c1"># position the skillbar open button near the preview area and draw it</span>
+        <span class="n">btn_x</span> <span class="o">=</span> <span class="n">preview_x</span>
+        <span class="n">btn_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_y</span> <span class="o">-</span> <span class="mi">60</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">open_skillbar_btn</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">btn_x</span><span class="p">,</span> <span class="n">btn_y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">open_skillbar_btn</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">open_skillbar_btn</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">height</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">open_skillbar_btn</span><span class="o">.</span><span class="n">_update_text_surface</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">open_skillbar_btn</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MAIN_player_inventory.inventory_interactions">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.MAIN_player_inventory.inventory_interactions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">inventory_interactions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">manager</span><span class="p">):</span>
+        <span class="c1"># check skillbar button first</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">MOUSEBUTTONDOWN</span> <span class="ow">and</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;open_skillbar_btn&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">open_skillbar_btn</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">collidepoint</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">mouse</span><span class="o">.</span><span class="n">get_pos</span><span class="p">()):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;skillbar&quot;</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">pass</span>
+                <span class="k">return</span>
+
+        <span class="c1"># fallback to normal inventory interactions</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">inventory_interactions</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">manager</span><span class="p">)</span></div>
 </div>
 
     

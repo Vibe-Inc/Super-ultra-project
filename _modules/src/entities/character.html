@@ -211,6 +211,70 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">last_attack_dir</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">melee_origin_offset</span> <span class="o">=</span> <span class="mf">6.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">melee_slash_distance</span> <span class="o">=</span> <span class="mf">50.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skillbook</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_skillbook</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skillbar</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dash_speed_multiplier</span> <span class="o">=</span> <span class="mf">3.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dash_duration</span> <span class="o">=</span> <span class="mf">0.14</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dash_cooldown</span> <span class="o">=</span> <span class="mi">900</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dash_active_time</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dash_last_used</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">dash_cooldown</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dash_direction</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_skillbook</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;skill_id&quot;</span><span class="p">:</span> <span class="s2">&quot;dash&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Dash&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Quick burst of movement&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">86</span><span class="p">,</span> <span class="mi">132</span><span class="p">,</span> <span class="mi">186</span><span class="p">),</span>
+                <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">220</span><span class="p">,</span> <span class="mi">235</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
+            <span class="p">}</span>
+        <span class="p">]</span>
+
+<div class="viewcode-block" id="Character.get_skill_in_slot">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.get_skill_in_slot">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_skill_in_slot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot_index</span><span class="p">):</span>
+        <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">slot_index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">skillbar</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">skillbar</span><span class="p">[</span><span class="n">slot_index</span><span class="p">]</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="Character.use_skill_from_slot">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.use_skill_from_slot">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">use_skill_from_slot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot_index</span><span class="p">):</span>
+        <span class="n">skill</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_skill_in_slot</span><span class="p">(</span><span class="n">slot_index</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">skill</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_skill</span><span class="p">(</span><span class="n">skill</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Character.use_skill">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.use_skill">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">use_skill</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skill</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">skill</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="n">skill_id</span> <span class="o">=</span> <span class="n">skill</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;skill_id&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">current_time</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">skill_id</span> <span class="o">==</span> <span class="s2">&quot;dash&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">current_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">dash_last_used</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">dash_cooldown</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
+            <span class="n">direction</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">direction</span><span class="o">.</span><span class="n">length_squared</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">direction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_forward_direction</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">direction</span><span class="o">.</span><span class="n">length_squared</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">direction</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">dash_direction</span> <span class="o">=</span> <span class="n">direction</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dash_active_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dash_duration</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dash_last_used</span> <span class="o">=</span> <span class="n">current_time</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player used Dash.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="kc">False</span></div>
+
 
 <div class="viewcode-block" id="Character.add_effect">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.add_effect">[docs]</a>
@@ -372,6 +436,25 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">moving</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_sprinting</span> <span class="o">=</span> <span class="kc">False</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dash_active_time</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dash_direction</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">length_squared</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_forward_direction</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">length_squared</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">moving</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">y</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;side&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">flip</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">x</span> <span class="o">&lt;</span> <span class="mi">0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;down&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="o">.</span><span class="n">y</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;up&quot;</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_speed</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dash_speed_multiplier</span>
+            <span class="k">return</span>
+
         <span class="n">wants_to_sprint</span> <span class="o">=</span> <span class="n">keys</span><span class="p">[</span><span class="n">pygame</span><span class="o">.</span><span class="n">K_LSHIFT</span><span class="p">]</span> <span class="ow">or</span> <span class="n">keys</span><span class="p">[</span><span class="n">pygame</span><span class="o">.</span><span class="n">K_RSHIFT</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">wants_to_sprint</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">stamina</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">can_sprint</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">is_sprinting</span> <span class="o">=</span> <span class="kc">True</span>
@@ -457,6 +540,9 @@
 
         <span class="c1"># KEY IMPLEMENTATION STEP: Single function call for collision-aware movement</span>
         <span class="n">collision_system</span><span class="o">.</span><span class="n">handle_movement_and_collision</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">obstacles</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dash_active_time</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dash_active_time</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dash_active_time</span> <span class="o">-</span> <span class="n">dt</span><span class="p">)</span>
         
         <span class="c1"># Reset speed to base speed for next frame logic (if needed elsewhere)</span>
         <span class="c1"># Though _set_velocity will overwrite it again next frame.</span>
@@ -506,13 +592,16 @@
 
 <div class="viewcode-block" id="Character.draw">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.draw">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">camera_offset</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">camera_offset</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
         <span class="c1"># Blink if invulnerable</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">invulnerable</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span> <span class="o">/</span> <span class="mi">100</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">pass</span> <span class="c1"># Skip drawing for blinking effect</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># Draw relative to self.pos (top-left of sprite), NOT self.get_rect() (hitbox)</span>
-            <span class="n">draw_pos</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">))</span>
+            <span class="n">draw_pos</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">camera_offset</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">camera_offset</span><span class="o">.</span><span class="n">y</span><span class="p">))</span>
             <span class="n">img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;side&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">flip</span><span class="p">:</span>
                 <span class="n">img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">animations_flipped</span><span class="p">[</span><span class="s2">&quot;side&quot;</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">frame_index</span><span class="p">]</span>
@@ -548,7 +637,7 @@
 
             <span class="n">base_anchor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_melee_anchor</span><span class="p">()</span> <span class="o">+</span> <span class="n">attack_dir</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">melee_origin_offset</span>
             <span class="n">center</span> <span class="o">=</span> <span class="n">base_anchor</span> <span class="o">+</span> <span class="n">attack_dir</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">melee_slash_distance</span>
-            <span class="n">rotated_rect</span> <span class="o">=</span> <span class="n">rotated</span><span class="o">.</span><span class="n">get_rect</span><span class="p">(</span><span class="n">center</span><span class="o">=</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">center</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">center</span><span class="o">.</span><span class="n">y</span><span class="p">)))</span>
+            <span class="n">rotated_rect</span> <span class="o">=</span> <span class="n">rotated</span><span class="o">.</span><span class="n">get_rect</span><span class="p">(</span><span class="n">center</span><span class="o">=</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">center</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">camera_offset</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">center</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">camera_offset</span><span class="o">.</span><span class="n">y</span><span class="p">)))</span>
             <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">rotated</span><span class="p">,</span> <span class="n">rotated_rect</span><span class="o">.</span><span class="n">topleft</span><span class="p">)</span></div>
 </div>
 

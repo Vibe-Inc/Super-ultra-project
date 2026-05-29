@@ -126,7 +126,11 @@
 <a class="viewcode-back" href="../../src.html#src.app.App.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Initializing Application...&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">screen</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_mode</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span><span class="p">))</span>
+        <span class="c1"># Create the window at the exact configured resolution.</span>
+        <span class="c1"># DPI awareness is enabled in `main.py`, so we want 1:1 pixels here.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">windowed_size</span> <span class="o">=</span> <span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_fullscreen</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">screen</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_mode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">windowed_size</span><span class="p">,</span> <span class="n">pygame</span><span class="o">.</span><span class="n">RESIZABLE</span><span class="p">)</span>
         <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_caption</span><span class="p">(</span><span class="s2">&quot;super cooool project ;)&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">icon</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;assets/smug.png&quot;</span><span class="p">)</span>
         <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_icon</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">icon</span><span class="p">)</span>
@@ -145,7 +149,6 @@
 
         <span class="c1"># Audio / fullscreen / clock</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">audio</span> <span class="o">=</span> <span class="s2">&quot;on&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">is_fullscreen</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">clock</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">Clock</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_brightness_overlay</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">profiler</span> <span class="o">=</span> <span class="n">FrameProfiler</span><span class="p">()</span>
@@ -170,10 +173,11 @@
             <span class="n">cfg</span><span class="o">.</span><span class="n">LANGUAGE</span> <span class="o">=</span> <span class="n">lang_code</span>
             <span class="n">i18n</span><span class="o">.</span><span class="n">install_language</span><span class="p">(</span><span class="n">lang_code</span><span class="p">)</span>
 
-            <span class="n">cfg</span><span class="o">.</span><span class="n">myfont</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get_font</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span>
-            <span class="n">cfg</span><span class="o">.</span><span class="n">button_font</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get_font</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span>
-            <span class="n">cfg</span><span class="o">.</span><span class="n">tooltip_font_CREDITS</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get_font</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
-            <span class="n">cfg</span><span class="o">.</span><span class="n">INV_nums_font</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get_font</span><span class="p">(</span><span class="mi">15</span><span class="p">)</span>
+            <span class="c1"># Recompute scaled fonts for the new language and current screen size</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">update_scaled_fonts</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
             
             <span class="bp">self</span><span class="o">.</span><span class="n">create_logo</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">reinit_states</span><span class="p">()</span>
@@ -192,6 +196,60 @@
 <a class="viewcode-back" href="../../src.html#src.app.App.toggle_profiler">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">toggle_profiler</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">set_profiler_enabled</span><span class="p">(</span><span class="ow">not</span> <span class="n">cfg</span><span class="o">.</span><span class="n">PROFILER_ENABLED</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_fullscreen_size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">desktop_sizes</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">get_desktop_sizes</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">desktop_sizes</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">desktop_sizes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="n">info</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">Info</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">info</span><span class="o">.</span><span class="n">current_w</span> <span class="ow">or</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span><span class="p">,</span> <span class="n">info</span><span class="o">.</span><span class="n">current_h</span> <span class="ow">or</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_apply_display_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fullscreen</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">update_windowed_size</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">update_windowed_size</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_fullscreen</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">windowed_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">screen</span><span class="o">.</span><span class="n">get_size</span><span class="p">()</span>
+
+        <span class="n">target_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_fullscreen_size</span><span class="p">()</span> <span class="k">if</span> <span class="n">fullscreen</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">windowed_size</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">FULLSCREEN</span> <span class="k">if</span> <span class="n">fullscreen</span> <span class="k">else</span> <span class="n">pygame</span><span class="o">.</span><span class="n">RESIZABLE</span>
+
+        <span class="n">cfg</span><span class="o">.</span><span class="n">set_screen_size</span><span class="p">(</span><span class="o">*</span><span class="n">target_size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">screen</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_mode</span><span class="p">(</span><span class="n">target_size</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_icon</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">icon</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_fullscreen</span> <span class="o">=</span> <span class="n">fullscreen</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_logo</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_brightness_overlay</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">gameplay_state</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="p">,</span> <span class="s2">&quot;states&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gameplay&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;manager&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">gameplay_state</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">gameplay_state</span><span class="p">,</span> <span class="s2">&quot;reinit_ui&quot;</span><span class="p">):</span>
+            <span class="n">gameplay_state</span><span class="o">.</span><span class="n">reinit_ui</span><span class="p">()</span>
+
+<div class="viewcode-block" id="App.toggle_display_mode">
+<a class="viewcode-back" href="../../src.html#src.app.App.toggle_display_mode">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">toggle_display_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_apply_display_mode</span><span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_fullscreen</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="App.sync_display_size">
+<a class="viewcode-back" href="../../src.html#src.app.App.sync_display_size">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sync_display_size</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_fullscreen</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">windowed_size</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">width</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">height</span><span class="p">))</span>
+        <span class="n">cfg</span><span class="o">.</span><span class="n">set_screen_size</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">windowed_size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">screen</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_mode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">windowed_size</span><span class="p">,</span> <span class="n">pygame</span><span class="o">.</span><span class="n">RESIZABLE</span><span class="p">)</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_icon</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">icon</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_logo</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_brightness_overlay</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">gameplay_state</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="p">,</span> <span class="s2">&quot;states&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gameplay&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;manager&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">gameplay_state</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">gameplay_state</span><span class="p">,</span> <span class="s2">&quot;reinit_ui&quot;</span><span class="p">):</span>
+            <span class="n">gameplay_state</span><span class="o">.</span><span class="n">reinit_ui</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="App.music_play">
@@ -234,9 +292,6 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">enabled</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">screen</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="p">(</span><span class="mi">190</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span>
 
-            <span class="n">screen_width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">screen</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">fps_counter</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">screen</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="p">(</span><span class="n">screen_width</span> <span class="o">-</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">),</span> <span class="n">align_right</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
             <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">flip</span><span class="p">()</span>
 
             <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
@@ -244,8 +299,12 @@
                     <span class="n">running</span> <span class="o">=</span> <span class="kc">False</span>
                     <span class="n">pygame</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
                     <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">VIDEORESIZE</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">sync_display_size</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">w</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">h</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">KEYDOWN</span> <span class="ow">and</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_F3</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">toggle_profiler</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">KEYDOWN</span> <span class="ow">and</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_F11</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">toggle_display_mode</span><span class="p">()</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">end_frame</span><span class="p">()</span></div>

@@ -62,6 +62,9 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#module-src.config">src.config module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#src.config.get_font"><code class="docutils literal notranslate"><span class="pre">get_font()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.config.set_screen_size"><code class="docutils literal notranslate"><span class="pre">set_screen_size()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.config.ui_scale"><code class="docutils literal notranslate"><span class="pre">ui_scale()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.config.update_scaled_fonts"><code class="docutils literal notranslate"><span class="pre">update_scaled_fonts()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#module-src.i18n">src.i18n module</a><ul>
@@ -131,6 +134,7 @@
 <li class="toctree-l4"><a class="reference internal" href="src.core.html#src.core.game.Game.spawn_random_enemy"><code class="docutils literal notranslate"><span class="pre">Game.spawn_random_enemy()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.core.html#id3"><code class="docutils literal notranslate"><span class="pre">Game.toggle_player_inventory()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.core.html#src.core.game.Game.update"><code class="docutils literal notranslate"><span class="pre">Game.update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.core.html#src.core.game.Game.use_skill_slot"><code class="docutils literal notranslate"><span class="pre">Game.use_skill_slot()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -227,10 +231,13 @@
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.character.Character.get_forward_direction"><code class="docutils literal notranslate"><span class="pre">Character.get_forward_direction()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.character.Character.get_melee_anchor"><code class="docutils literal notranslate"><span class="pre">Character.get_melee_anchor()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#id2"><code class="docutils literal notranslate"><span class="pre">Character.get_rect()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.character.Character.get_skill_in_slot"><code class="docutils literal notranslate"><span class="pre">Character.get_skill_in_slot()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.character.Character.level_up"><code class="docutils literal notranslate"><span class="pre">Character.level_up()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.character.Character.start_attack"><code class="docutils literal notranslate"><span class="pre">Character.start_attack()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#id3"><code class="docutils literal notranslate"><span class="pre">Character.take_damage()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#id4"><code class="docutils literal notranslate"><span class="pre">Character.update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.character.Character.use_skill"><code class="docutils literal notranslate"><span class="pre">Character.use_skill()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.character.Character.use_skill_from_slot"><code class="docutils literal notranslate"><span class="pre">Character.use_skill_from_slot()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -339,23 +346,51 @@
 <li class="toctree-l4"><a class="reference internal" href="src.inventory.html#id8"><code class="docutils literal notranslate"><span class="pre">Inventory.inventory_interactions()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="src.inventory.html#src.inventory.system.Inventory_slider"><code class="docutils literal notranslate"><span class="pre">Inventory_slider</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.inventory.html#src.inventory.system.Inventory_slider"><code class="docutils literal notranslate"><span class="pre">Inventory_slider</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.Inventory_slider.max_qty"><code class="docutils literal notranslate"><span class="pre">Inventory_slider.max_qty</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.Inventory_slider.external_callback"><code class="docutils literal notranslate"><span class="pre">Inventory_slider.external_callback</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.Inventory_slider.__init__"><code class="docutils literal notranslate"><span class="pre">Inventory_slider.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.Inventory_slider._convert_to_int"><code class="docutils literal notranslate"><span class="pre">Inventory_slider._convert_to_int()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="src.inventory.html#src.inventory.system.MAIN_player_inventory"><code class="docutils literal notranslate"><span class="pre">MAIN_player_inventory</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.MAIN_player_inventory.draw"><code class="docutils literal notranslate"><span class="pre">MAIN_player_inventory.draw()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.inventory.html#id9"><code class="docutils literal notranslate"><span class="pre">MAIN_player_inventory.draw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.MAIN_player_inventory.inventory_interactions"><code class="docutils literal notranslate"><span class="pre">MAIN_player_inventory.inventory_interactions()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="src.inventory.html#src.inventory.system.MAIN_player_inventory_equipment"><code class="docutils literal notranslate"><span class="pre">MAIN_player_inventory_equipment</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="src.inventory.html#src.inventory.system.ShopInventory"><code class="docutils literal notranslate"><span class="pre">ShopInventory</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.ShopInventory.app"><code class="docutils literal notranslate"><span class="pre">ShopInventory.app</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.ShopInventory.__init__"><code class="docutils literal notranslate"><span class="pre">ShopInventory.__init__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.ShopInventory.draw"><code class="docutils literal notranslate"><span class="pre">ShopInventory.draw()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.ShopInventory.inventory_interactions"><code class="docutils literal notranslate"><span class="pre">ShopInventory.inventory_interactions()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#id10"><code class="docutils literal notranslate"><span class="pre">ShopInventory.draw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#id11"><code class="docutils literal notranslate"><span class="pre">ShopInventory.inventory_interactions()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="src.inventory.html#src.inventory.system.Split_popup"><code class="docutils literal notranslate"><span class="pre">Split_popup</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.Split_popup.confirm"><code class="docutils literal notranslate"><span class="pre">Split_popup.confirm()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.Split_popup.draw"><code class="docutils literal notranslate"><span class="pre">Split_popup.draw()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.Split_popup.handle_event"><code class="docutils literal notranslate"><span class="pre">Split_popup.handle_event()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.Split_popup.manager"><code class="docutils literal notranslate"><span class="pre">Split_popup.manager</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.Split_popup.slot_ref"><code class="docutils literal notranslate"><span class="pre">Split_popup.slot_ref</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.Split_popup.item_obj"><code class="docutils literal notranslate"><span class="pre">Split_popup.item_obj</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.Split_popup.total_count"><code class="docutils literal notranslate"><span class="pre">Split_popup.total_count</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.Split_popup.width"><code class="docutils literal notranslate"><span class="pre">Split_popup.width</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.Split_popup.height"><code class="docutils literal notranslate"><span class="pre">Split_popup.height</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.Split_popup.x"><code class="docutils literal notranslate"><span class="pre">Split_popup.x</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.Split_popup.y"><code class="docutils literal notranslate"><span class="pre">Split_popup.y</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.Split_popup.bg_rect"><code class="docutils literal notranslate"><span class="pre">Split_popup.bg_rect</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.Split_popup.split_amount"><code class="docutils literal notranslate"><span class="pre">Split_popup.split_amount</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.Split_popup.slider"><code class="docutils literal notranslate"><span class="pre">Split_popup.slider</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.Split_popup.confirm_btn"><code class="docutils literal notranslate"><span class="pre">Split_popup.confirm_btn</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.Split_popup.__init__"><code class="docutils literal notranslate"><span class="pre">Split_popup.__init__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.Split_popup.update_count"><code class="docutils literal notranslate"><span class="pre">Split_popup.update_count()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.Split_popup.confirm"><code class="docutils literal notranslate"><span class="pre">Split_popup.confirm()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.Split_popup.handle_event"><code class="docutils literal notranslate"><span class="pre">Split_popup.handle_event()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.Split_popup.draw"><code class="docutils literal notranslate"><span class="pre">Split_popup.draw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#id12"><code class="docutils literal notranslate"><span class="pre">Split_popup.confirm()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#id13"><code class="docutils literal notranslate"><span class="pre">Split_popup.draw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#id14"><code class="docutils literal notranslate"><span class="pre">Split_popup.handle_event()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#id15"><code class="docutils literal notranslate"><span class="pre">Split_popup.update_count()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -535,23 +570,17 @@
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.CreditsMenu.back_to_main"><code class="docutils literal notranslate"><span class="pre">CreditsMenu.back_to_main()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#id3"><code class="docutils literal notranslate"><span class="pre">CreditsMenu.back_to_main()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#id4"><code class="docutils literal notranslate"><span class="pre">CreditsMenu.draw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.CreditsMenu.layout"><code class="docutils literal notranslate"><span class="pre">CreditsMenu.layout()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="src.ui.html#src.ui.menus.MainMenu"><code class="docutils literal notranslate"><span class="pre">MainMenu</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.MainMenu.buttons"><code class="docutils literal notranslate"><span class="pre">MainMenu.buttons</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.MainMenu.beta_logo_img"><code class="docutils literal notranslate"><span class="pre">MainMenu.beta_logo_img</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.MainMenu.beta_logo_rect"><code class="docutils literal notranslate"><span class="pre">MainMenu.beta_logo_rect</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.MainMenu.tooltips"><code class="docutils literal notranslate"><span class="pre">MainMenu.tooltips</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.MainMenu.start_game"><code class="docutils literal notranslate"><span class="pre">MainMenu.start_game()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.MainMenu.exit_game"><code class="docutils literal notranslate"><span class="pre">MainMenu.exit_game()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.MainMenu.open_settings"><code class="docutils literal notranslate"><span class="pre">MainMenu.open_settings()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.MainMenu.open_credits"><code class="docutils literal notranslate"><span class="pre">MainMenu.open_credits()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.MainMenu.draw"><code class="docutils literal notranslate"><span class="pre">MainMenu.draw()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id5"><code class="docutils literal notranslate"><span class="pre">MainMenu.exit_game()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id6"><code class="docutils literal notranslate"><span class="pre">MainMenu.open_credits()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.MainMenu.exit_game"><code class="docutils literal notranslate"><span class="pre">MainMenu.exit_game()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.MainMenu.layout"><code class="docutils literal notranslate"><span class="pre">MainMenu.layout()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.MainMenu.open_credits"><code class="docutils literal notranslate"><span class="pre">MainMenu.open_credits()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.MainMenu.open_load_menu"><code class="docutils literal notranslate"><span class="pre">MainMenu.open_load_menu()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id7"><code class="docutils literal notranslate"><span class="pre">MainMenu.open_settings()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id8"><code class="docutils literal notranslate"><span class="pre">MainMenu.start_game()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.MainMenu.open_settings"><code class="docutils literal notranslate"><span class="pre">MainMenu.open_settings()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.MainMenu.start_game"><code class="docutils literal notranslate"><span class="pre">MainMenu.start_game()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="src.ui.html#src.ui.menus.Menu"><code class="docutils literal notranslate"><span class="pre">Menu</span></code></a><ul>
@@ -560,8 +589,9 @@
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.Menu.tooltips"><code class="docutils literal notranslate"><span class="pre">Menu.tooltips</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.Menu.draw"><code class="docutils literal notranslate"><span class="pre">Menu.draw()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.Menu.handle_event"><code class="docutils literal notranslate"><span class="pre">Menu.handle_event()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id9"><code class="docutils literal notranslate"><span class="pre">Menu.draw()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id10"><code class="docutils literal notranslate"><span class="pre">Menu.handle_event()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id5"><code class="docutils literal notranslate"><span class="pre">Menu.draw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id6"><code class="docutils literal notranslate"><span class="pre">Menu.handle_event()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.Menu.layout"><code class="docutils literal notranslate"><span class="pre">Menu.layout()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="src.ui.html#src.ui.menus.PauseMenu"><code class="docutils literal notranslate"><span class="pre">PauseMenu</span></code></a><ul>
@@ -571,18 +601,29 @@
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.PauseMenu.draw"><code class="docutils literal notranslate"><span class="pre">PauseMenu.draw()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.PauseMenu.resume_game"><code class="docutils literal notranslate"><span class="pre">PauseMenu.resume_game()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.PauseMenu.back_to_main"><code class="docutils literal notranslate"><span class="pre">PauseMenu.back_to_main()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id11"><code class="docutils literal notranslate"><span class="pre">PauseMenu.back_to_main()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id12"><code class="docutils literal notranslate"><span class="pre">PauseMenu.draw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id7"><code class="docutils literal notranslate"><span class="pre">PauseMenu.back_to_main()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id8"><code class="docutils literal notranslate"><span class="pre">PauseMenu.draw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.PauseMenu.layout"><code class="docutils literal notranslate"><span class="pre">PauseMenu.layout()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.PauseMenu.open_save_menu"><code class="docutils literal notranslate"><span class="pre">PauseMenu.open_save_menu()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id13"><code class="docutils literal notranslate"><span class="pre">PauseMenu.resume_game()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id9"><code class="docutils literal notranslate"><span class="pre">PauseMenu.resume_game()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="src.ui.html#src.ui.menus.SaveLoadMenu"><code class="docutils literal notranslate"><span class="pre">SaveLoadMenu</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.SaveLoadMenu.delete_slot"><code class="docutils literal notranslate"><span class="pre">SaveLoadMenu.delete_slot()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.SaveLoadMenu.draw"><code class="docutils literal notranslate"><span class="pre">SaveLoadMenu.draw()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.SaveLoadMenu.go_back"><code class="docutils literal notranslate"><span class="pre">SaveLoadMenu.go_back()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.SaveLoadMenu.on_slot_click"><code class="docutils literal notranslate"><span class="pre">SaveLoadMenu.on_slot_click()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.SaveLoadMenu.mode"><code class="docutils literal notranslate"><span class="pre">SaveLoadMenu.mode</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.SaveLoadMenu.slots"><code class="docutils literal notranslate"><span class="pre">SaveLoadMenu.slots</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.SaveLoadMenu.__init__"><code class="docutils literal notranslate"><span class="pre">SaveLoadMenu.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.SaveLoadMenu.layout"><code class="docutils literal notranslate"><span class="pre">SaveLoadMenu.layout()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.SaveLoadMenu.refresh_saves"><code class="docutils literal notranslate"><span class="pre">SaveLoadMenu.refresh_saves()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.SaveLoadMenu.on_slot_click"><code class="docutils literal notranslate"><span class="pre">SaveLoadMenu.on_slot_click()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.SaveLoadMenu.delete_slot"><code class="docutils literal notranslate"><span class="pre">SaveLoadMenu.delete_slot()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.SaveLoadMenu.go_back"><code class="docutils literal notranslate"><span class="pre">SaveLoadMenu.go_back()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.SaveLoadMenu.draw"><code class="docutils literal notranslate"><span class="pre">SaveLoadMenu.draw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id10"><code class="docutils literal notranslate"><span class="pre">SaveLoadMenu.delete_slot()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id11"><code class="docutils literal notranslate"><span class="pre">SaveLoadMenu.draw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id12"><code class="docutils literal notranslate"><span class="pre">SaveLoadMenu.go_back()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id13"><code class="docutils literal notranslate"><span class="pre">SaveLoadMenu.layout()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id14"><code class="docutils literal notranslate"><span class="pre">SaveLoadMenu.on_slot_click()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id15"><code class="docutils literal notranslate"><span class="pre">SaveLoadMenu.refresh_saves()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="src.ui.html#src.ui.menus.SettingsMenu"><code class="docutils literal notranslate"><span class="pre">SettingsMenu</span></code></a><ul>
@@ -599,11 +640,20 @@
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.SettingsMenu.handle_event"><code class="docutils literal notranslate"><span class="pre">SettingsMenu.handle_event()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.SettingsMenu.update"><code class="docutils literal notranslate"><span class="pre">SettingsMenu.update()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.SettingsMenu.draw"><code class="docutils literal notranslate"><span class="pre">SettingsMenu.draw()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id14"><code class="docutils literal notranslate"><span class="pre">SettingsMenu.back_to_main()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id15"><code class="docutils literal notranslate"><span class="pre">SettingsMenu.draw()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id16"><code class="docutils literal notranslate"><span class="pre">SettingsMenu.handle_event()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id17"><code class="docutils literal notranslate"><span class="pre">SettingsMenu.toggle_language()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id18"><code class="docutils literal notranslate"><span class="pre">SettingsMenu.update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id16"><code class="docutils literal notranslate"><span class="pre">SettingsMenu.back_to_main()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id17"><code class="docutils literal notranslate"><span class="pre">SettingsMenu.draw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id18"><code class="docutils literal notranslate"><span class="pre">SettingsMenu.handle_event()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.SettingsMenu.layout"><code class="docutils literal notranslate"><span class="pre">SettingsMenu.layout()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.SettingsMenu.toggle_display_mode"><code class="docutils literal notranslate"><span class="pre">SettingsMenu.toggle_display_mode()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id19"><code class="docutils literal notranslate"><span class="pre">SettingsMenu.toggle_language()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id20"><code class="docutils literal notranslate"><span class="pre">SettingsMenu.update()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="src.ui.html#src.ui.menus.SkillbarMenu"><code class="docutils literal notranslate"><span class="pre">SkillbarMenu</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.SkillbarMenu.draw"><code class="docutils literal notranslate"><span class="pre">SkillbarMenu.draw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.SkillbarMenu.exit_menu"><code class="docutils literal notranslate"><span class="pre">SkillbarMenu.exit_menu()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.SkillbarMenu.handle_event"><code class="docutils literal notranslate"><span class="pre">SkillbarMenu.handle_event()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.SkillbarMenu.layout"><code class="docutils literal notranslate"><span class="pre">SkillbarMenu.layout()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -621,7 +671,7 @@
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.widgets.Button.text_surf"><code class="docutils literal notranslate"><span class="pre">Button.text_surf</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.widgets.Button.text_rect"><code class="docutils literal notranslate"><span class="pre">Button.text_rect</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.widgets.Button.draw"><code class="docutils literal notranslate"><span class="pre">Button.draw()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id19"><code class="docutils literal notranslate"><span class="pre">Button.draw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id21"><code class="docutils literal notranslate"><span class="pre">Button.draw()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.widgets.Button.set_text"><code class="docutils literal notranslate"><span class="pre">Button.set_text()</span></code></a></li>
 </ul>
 </li>
@@ -643,8 +693,8 @@
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.widgets.Slider.knob_rect"><code class="docutils literal notranslate"><span class="pre">Slider.knob_rect</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.widgets.Slider.draw"><code class="docutils literal notranslate"><span class="pre">Slider.draw()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.widgets.Slider.handle_event"><code class="docutils literal notranslate"><span class="pre">Slider.handle_event()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id20"><code class="docutils literal notranslate"><span class="pre">Slider.draw()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id21"><code class="docutils literal notranslate"><span class="pre">Slider.handle_event()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id22"><code class="docutils literal notranslate"><span class="pre">Slider.draw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id23"><code class="docutils literal notranslate"><span class="pre">Slider.handle_event()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="src.ui.html#src.ui.widgets.Tooltip"><code class="docutils literal notranslate"><span class="pre">Tooltip</span></code></a><ul>
@@ -663,10 +713,10 @@
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.widgets.Tooltip.draw"><code class="docutils literal notranslate"><span class="pre">Tooltip.draw()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.widgets.Tooltip.draw_multiline_text"><code class="docutils literal notranslate"><span class="pre">Tooltip.draw_multiline_text()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.widgets.Tooltip.update_target"><code class="docutils literal notranslate"><span class="pre">Tooltip.update_target()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id22"><code class="docutils literal notranslate"><span class="pre">Tooltip.draw()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id23"><code class="docutils literal notranslate"><span class="pre">Tooltip.draw_multiline_text()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id24"><code class="docutils literal notranslate"><span class="pre">Tooltip.hover_update()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id25"><code class="docutils literal notranslate"><span class="pre">Tooltip.update_target()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id24"><code class="docutils literal notranslate"><span class="pre">Tooltip.draw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id25"><code class="docutils literal notranslate"><span class="pre">Tooltip.draw_multiline_text()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id26"><code class="docutils literal notranslate"><span class="pre">Tooltip.hover_update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#id27"><code class="docutils literal notranslate"><span class="pre">Tooltip.update_target()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -829,6 +879,16 @@
 <dd></dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="src.app.App.sync_display_size">
+<span class="sig-name descname"><span class="pre">sync_display_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/app.html#App.sync_display_size"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.app.App.sync_display_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.app.App.toggle_display_mode">
+<span class="sig-name descname"><span class="pre">toggle_display_mode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/app.html#App.toggle_display_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.app.App.toggle_display_mode" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="src.app.App.toggle_profiler">
 <span class="sig-name descname"><span class="pre">toggle_profiler</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/app.html#App.toggle_profiler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.app.App.toggle_profiler" title="Link to this definition"></a></dt>
 <dd></dd></dl>
@@ -861,6 +921,23 @@
 </dd>
 </dl>
 </dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.config.set_screen_size">
+<span class="sig-prename descclassname"><span class="pre">src.config.</span></span><span class="sig-name descname"><span class="pre">set_screen_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen_width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">screen_height</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/config.html#set_screen_size"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.config.set_screen_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.config.ui_scale">
+<span class="sig-prename descclassname"><span class="pre">src.config.</span></span><span class="sig-name descname"><span class="pre">ui_scale</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/src/config.html#ui_scale"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.config.ui_scale" title="Link to this definition"></a></dt>
+<dd><p>Return the UI scale relative to the BASE_SCREEN resolution.</p>
+<p>Uses the minimum of width and height scale so elements stay proportional.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.config.update_scaled_fonts">
+<span class="sig-prename descclassname"><span class="pre">src.config.</span></span><span class="sig-name descname"><span class="pre">update_scaled_fonts</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/config.html#update_scaled_fonts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.config.update_scaled_fonts" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 </section>
 <section id="module-src.i18n">

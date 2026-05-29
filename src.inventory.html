@@ -409,6 +409,41 @@
 <dt class="sig sig-object py" id="src.inventory.system.Inventory_slider">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.inventory.system.</span></span><span class="sig-name descname"><span class="pre">Inventory_slider</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_qty</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_callback</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Inventory_slider"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.Inventory_slider" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="src.ui.html#src.ui.widgets.Slider" title="src.ui.widgets.Slider"><code class="xref py py-class docutils literal notranslate"><span class="pre">Slider</span></code></a></p>
+<p>Slider widget that selects an inventory split amount.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.Inventory_slider.max_qty">
+<span class="sig-name descname"><span class="pre">max_qty</span></span><a class="headerlink" href="#src.inventory.system.Inventory_slider.max_qty" title="Link to this definition"></a></dt>
+<dd><p>Maximum quantity represented by the slider.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.Inventory_slider.external_callback">
+<span class="sig-name descname"><span class="pre">external_callback</span></span><a class="headerlink" href="#src.inventory.system.Inventory_slider.external_callback" title="Link to this definition"></a></dt>
+<dd><p>Callback invoked with the selected integer amount.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>callable | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.Inventory_slider.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_qty</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_callback</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Inventory_slider.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.Inventory_slider.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initialize the slider for item splitting.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.Inventory_slider._convert_to_int">
+<span class="sig-name descname"><span class="pre">_convert_to_int</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">float_value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Inventory_slider._convert_to_int"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.Inventory_slider._convert_to_int" title="Link to this definition"></a></dt>
+<dd><p>Convert the slider value to a quantity and forward it to the callback.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -430,6 +465,11 @@
 <span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_inventory.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.MAIN_player_inventory.inventory_interactions">
+<span class="sig-name descname"><span class="pre">inventory_interactions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_inventory.inventory_interactions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.MAIN_player_inventory.inventory_interactions" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -444,14 +484,44 @@ Inherits from Inventory.</p>
 <dt class="sig sig-object py" id="src.inventory.system.ShopInventory">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.inventory.system.</span></span><span class="sig-name descname"><span class="pre">ShopInventory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">items_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#ShopInventory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.ShopInventory" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#src.inventory.system.Inventory" title="src.inventory.system.Inventory"><code class="xref py py-class docutils literal notranslate"><span class="pre">Inventory</span></code></a></p>
+<p>Inventory view that presents shop items for buying and selling.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.ShopInventory.app">
+<span class="sig-name descname"><span class="pre">app</span></span><a class="headerlink" href="#src.inventory.system.ShopInventory.app" title="Link to this definition"></a></dt>
+<dd><p>Reference to the main application.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="src.html#src.app.App" title="src.app.App">App</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.ShopInventory.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">items_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#ShopInventory.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.ShopInventory.__init__" title="Link to this definition"></a></dt>
+<dd><p>Build a shop inventory from a flat list of items.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="src.inventory.system.ShopInventory.draw">
 <span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#ShopInventory.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.ShopInventory.draw" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Render the shop background, items, and item prices.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.inventory.system.ShopInventory.inventory_interactions">
 <span class="sig-name descname"><span class="pre">inventory_interactions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#ShopInventory.inventory_interactions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.ShopInventory.inventory_interactions" title="Link to this definition"></a></dt>
+<dd><p>Handle buying and selling interactions.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id10">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#ShopInventory.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id11">
+<span class="sig-name descname"><span class="pre">inventory_interactions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#ShopInventory.inventory_interactions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id11" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -460,24 +530,187 @@ Inherits from Inventory.</p>
 <dt class="sig sig-object py" id="src.inventory.system.Split_popup">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.inventory.system.</span></span><span class="sig-name descname"><span class="pre">Split_popup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slot_ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rect_pos</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Split_popup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.Split_popup" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="src.inventory.system.Split_popup.confirm">
-<span class="sig-name descname"><span class="pre">confirm</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Split_popup.confirm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.Split_popup.confirm" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<p>Popup used to split a stack of items into two parts.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.Split_popup.manager">
+<span class="sig-name descname"><span class="pre">manager</span></span><a class="headerlink" href="#src.inventory.system.Split_popup.manager" title="Link to this definition"></a></dt>
+<dd><p>Inventory manager that owns the popup.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#src.inventory.system.INVENTORY_manager" title="src.inventory.system.INVENTORY_manager">INVENTORY_manager</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.Split_popup.slot_ref">
+<span class="sig-name descname"><span class="pre">slot_ref</span></span><a class="headerlink" href="#src.inventory.system.Split_popup.slot_ref" title="Link to this definition"></a></dt>
+<dd><p>Reference to the original inventory slot being split.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.Split_popup.item_obj">
+<span class="sig-name descname"><span class="pre">item_obj</span></span><a class="headerlink" href="#src.inventory.system.Split_popup.item_obj" title="Link to this definition"></a></dt>
+<dd><p>Item instance stored in the slot.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="src.items.html#src.items.items.Item" title="src.items.items.Item">Item</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.Split_popup.total_count">
+<span class="sig-name descname"><span class="pre">total_count</span></span><a class="headerlink" href="#src.inventory.system.Split_popup.total_count" title="Link to this definition"></a></dt>
+<dd><p>Total stack size at the time the popup was opened.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.Split_popup.width">
+<span class="sig-name descname"><span class="pre">width</span></span><a class="headerlink" href="#src.inventory.system.Split_popup.width" title="Link to this definition"></a></dt>
+<dd><p>Popup width in pixels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.Split_popup.height">
+<span class="sig-name descname"><span class="pre">height</span></span><a class="headerlink" href="#src.inventory.system.Split_popup.height" title="Link to this definition"></a></dt>
+<dd><p>Popup height in pixels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.Split_popup.x">
+<span class="sig-name descname"><span class="pre">x</span></span><a class="headerlink" href="#src.inventory.system.Split_popup.x" title="Link to this definition"></a></dt>
+<dd><p>Popup x-position.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.Split_popup.y">
+<span class="sig-name descname"><span class="pre">y</span></span><a class="headerlink" href="#src.inventory.system.Split_popup.y" title="Link to this definition"></a></dt>
+<dd><p>Popup y-position.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.Split_popup.bg_rect">
+<span class="sig-name descname"><span class="pre">bg_rect</span></span><a class="headerlink" href="#src.inventory.system.Split_popup.bg_rect" title="Link to this definition"></a></dt>
+<dd><p>Background rectangle for the popup.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.Rect</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.Split_popup.split_amount">
+<span class="sig-name descname"><span class="pre">split_amount</span></span><a class="headerlink" href="#src.inventory.system.Split_popup.split_amount" title="Link to this definition"></a></dt>
+<dd><p>Currently selected split amount.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.Split_popup.slider">
+<span class="sig-name descname"><span class="pre">slider</span></span><a class="headerlink" href="#src.inventory.system.Split_popup.slider" title="Link to this definition"></a></dt>
+<dd><p>Slider used to choose the split amount.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#src.inventory.system.Inventory_slider" title="src.inventory.system.Inventory_slider">Inventory_slider</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.Split_popup.confirm_btn">
+<span class="sig-name descname"><span class="pre">confirm_btn</span></span><a class="headerlink" href="#src.inventory.system.Split_popup.confirm_btn" title="Link to this definition"></a></dt>
+<dd><p>Button that confirms the split.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="src.ui.html#src.ui.widgets.Button" title="src.ui.widgets.Button">Button</a></p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.inventory.system.Split_popup.draw">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Split_popup.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.Split_popup.draw" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.inventory.system.Split_popup.handle_event">
-<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Split_popup.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.Split_popup.handle_event" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="src.inventory.system.Split_popup.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slot_ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rect_pos</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Split_popup.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.Split_popup.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initialize the split popup.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.inventory.system.Split_popup.update_count">
 <span class="sig-name descname"><span class="pre">update_count</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">int_val</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Split_popup.update_count"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.Split_popup.update_count" title="Link to this definition"></a></dt>
+<dd><p>Update the selected split amount.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.Split_popup.confirm">
+<span class="sig-name descname"><span class="pre">confirm</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Split_popup.confirm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.Split_popup.confirm" title="Link to this definition"></a></dt>
+<dd><p>Apply the split and close the popup.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.Split_popup.handle_event">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Split_popup.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.Split_popup.handle_event" title="Link to this definition"></a></dt>
+<dd><p>Forward input events to the popup controls.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.Split_popup.draw">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Split_popup.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.Split_popup.draw" title="Link to this definition"></a></dt>
+<dd><p>Render the popup and its controls.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id12">
+<span class="sig-name descname"><span class="pre">confirm</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Split_popup.confirm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id12" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id13">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Split_popup.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id13" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id14">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Split_popup.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id14" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id15">
+<span class="sig-name descname"><span class="pre">update_count</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">int_val</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Split_popup.update_count"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id15" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
