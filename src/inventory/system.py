@@ -175,6 +175,21 @@ class Inventory:
         return None
 
 class Inventory_slider(Slider):
+    """
+    Slider widget that selects an inventory split amount.
+
+    Attributes:
+        max_qty (int):
+            Maximum quantity represented by the slider.
+        external_callback (callable | None):
+            Callback invoked with the selected integer amount.
+
+    Methods:
+        __init__(x, y, width, max_qty, action_callback):
+            Initialize the slider for item splitting.
+        _convert_to_int(float_value):
+            Convert the slider value to a quantity and forward it to the callback.
+    """
     def __init__(self, x, y, width, max_qty, action_callback):
         self.max_qty = max_qty
         self.external_callback = action_callback
@@ -199,6 +214,47 @@ class Inventory_slider(Slider):
 
 
 class Split_popup:
+    """
+    Popup used to split a stack of items into two parts.
+
+    Attributes:
+        manager (INVENTORY_manager):
+            Inventory manager that owns the popup.
+        slot_ref (list):
+            Reference to the original inventory slot being split.
+        item_obj (Item):
+            Item instance stored in the slot.
+        total_count (int):
+            Total stack size at the time the popup was opened.
+        width (int):
+            Popup width in pixels.
+        height (int):
+            Popup height in pixels.
+        x (int):
+            Popup x-position.
+        y (int):
+            Popup y-position.
+        bg_rect (pygame.Rect):
+            Background rectangle for the popup.
+        split_amount (int):
+            Currently selected split amount.
+        slider (Inventory_slider):
+            Slider used to choose the split amount.
+        confirm_btn (Button):
+            Button that confirms the split.
+
+    Methods:
+        __init__(manager, slot_ref, rect_pos):
+            Initialize the split popup.
+        update_count(int_val):
+            Update the selected split amount.
+        confirm():
+            Apply the split and close the popup.
+        handle_event(event):
+            Forward input events to the popup controls.
+        draw(screen):
+            Render the popup and its controls.
+    """
     def __init__(self, manager, slot_ref, rect_pos):
         self.manager = manager
         self.slot_ref = slot_ref
@@ -272,6 +328,21 @@ class Split_popup:
 
 
 class ShopInventory(Inventory):
+    """
+    Inventory view that presents shop items for buying and selling.
+
+    Attributes:
+        app (App):
+            Reference to the main application.
+
+    Methods:
+        __init__(app, items_list):
+            Build a shop inventory from a flat list of items.
+        draw(screen):
+            Render the shop background, items, and item prices.
+        inventory_interactions(event, manager):
+            Handle buying and selling interactions.
+    """
     def __init__(self, app, items_list):
         self.app = app
         

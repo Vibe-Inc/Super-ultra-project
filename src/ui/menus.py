@@ -920,6 +920,31 @@ class PauseMenu(Menu):
 
 
 class SaveLoadMenu(Menu):
+    """
+    Save/load menu that manages save slots and deletion.
+
+    Attributes:
+        mode (str):
+            Current menu mode, either "save" or "load".
+        slots (list[str]):
+            List of slot identifiers displayed by the menu.
+
+    Methods:
+        __init__(app):
+            Initialize the save/load menu.
+        layout(screen):
+            Position the buttons and menu title for the current screen size.
+        refresh_saves():
+            Rebuild the button list from the available save files.
+        on_slot_click(slot_name):
+            Save to or load from a selected slot.
+        delete_slot(slot_name):
+            Delete a selected save slot.
+        go_back():
+            Return to the previous menu.
+        draw(screen):
+            Render the save/load UI.
+    """
     def __init__(self, app: "App"):
         super().__init__(app)
         self.mode = "save" # "save" or "load"

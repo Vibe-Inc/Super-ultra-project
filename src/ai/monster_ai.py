@@ -11,6 +11,22 @@ from src.ai.navigation import NavGrid
 
 @dataclass
 class AIContext:
+    """
+    Context object passed into monster AI updates.
+
+    Attributes:
+        dt (float):
+            Delta time in seconds for the current update.
+        nav_grid (NavGrid | None):
+            Navigation grid used for pathfinding and world clamping.
+        obstacles (list[pygame.Rect]):
+            Solid world obstacles used for line-of-sight checks.
+        player (object | None):
+            Current player entity or None when no player is available.
+
+    Methods:
+        None.
+    """
     dt: float
     nav_grid: NavGrid | None
     obstacles: list[pygame.Rect]
@@ -32,6 +48,47 @@ def has_line_of_sight(start: pygame.Vector2, end: pygame.Vector2, obstacles: lis
 
 
 class BaseBrain:
+    """
+    Base behavior controller for enemy AI.
+
+    Attributes:
+        config (dict):
+            Behavior tuning values for the brain.
+        path (list[pygame.Vector2]):
+            Cached path nodes toward the current target.
+        path_index (int):
+            Index of the next node in the cached path.
+        path_target_cell (tuple[int, int] | None):
+            Cell used to detect when the path target has changed.
+        repath_timer (float):
+            Countdown before the next path recomputation.
+        repath_interval (float):
+            Minimum delay between path recomputations.
+        path_node_radius (float):
+            Radius used to consider a node reached.
+        roam_target (pygame.Vector2 | None):
+            Current roaming target position.
+        roam_timer (float):
+            Countdown before choosing a new roaming target.
+
+    Methods:
+        __init__(config=None):
+            Initialize the brain with optional tuning values.
+        update(enemy, context):
+            Reset the enemy into an idle state.
+        _nav_offset(enemy):
+            Compute the offset from the enemy anchor to its center.
+        _set_direct_target(enemy, world_pos):
+            Set a direct movement target in world space.
+        _clear_path():
+            Clear any cached path data.
+        _move_to(enemy, context, world_pos, force_repath=False):
+            Move the enemy toward a world position using pathfinding.
+        _random_point_near(center, radius, nav_grid):
+            Pick a random nearby point that is walkable when possible.
+        _roam(enemy, context, center, radius, interval):
+            Move the enemy toward a wandering target.
+    """
     def __init__(self, config: dict | None = None):
         self.config = config or {}
         self.path: list[pygame.Vector2] = []
@@ -142,6 +199,27 @@ class BaseBrain:
 
 
 class StalkerBrain(BaseBrain):
+    """
+    AI brain that chases, searches, and patrols around the player.
+
+    Attributes:
+        memory_duration (float):
+            Time to remember the player's last seen position.
+        memory_timer (float):
+            Remaining memory time before the enemy returns to idle.
+        last_seen_pos (pygame.Vector2 | None):
+            Last player position the enemy saw.
+        patrol_wait (float):
+            Delay between patrol point transitions.
+        patrol_wait_timer (float):
+            Countdown before resuming patrol movement.
+
+    Methods:
+        __init__(config=None):
+            Initialize stalker-specific tuning values.
+        update(enemy, context):
+            Drive stalker chase, search, and patrol behavior.
+    """
     def __init__(self, config: dict | None = None):
         super().__init__(config)
         self.memory_duration = float(self.config.get("memory_duration", 2.5))
@@ -224,6 +302,25 @@ class StalkerBrain(BaseBrain):
 
 
 class SkirmisherBrain(BaseBrain):
+    """
+    AI brain that keeps distance and circles the player.
+
+    Attributes:
+        orbit_interval (float):
+            Interval for changing orbit direction.
+        orbit_timer (float):
+            Countdown until the orbit direction may change.
+        orbit_clockwise (bool):
+            Current orbit direction flag.
+        roam_interval (float):
+            Interval used while wandering outside detection range.
+
+    Methods:
+        __init__(config=None):
+            Initialize skirmisher-specific tuning values.
+        update(enemy, context):
+            Drive skirmisher orbit, retreat, chase, and roam behavior.
+    """
     def __init__(self, config: dict | None = None):
         super().__init__(config)
         self.orbit_interval = float(self.config.get("orbit_interval", 2.0))
@@ -300,6 +397,29 @@ class SkirmisherBrain(BaseBrain):
 
 
 class GuardianBrain(BaseBrain):
+    """
+    AI brain that guards a spawn area and returns to post after pursuit.
+
+    Attributes:
+        guard_radius (float):
+            Radius around the spawn point that the guardian protects.
+        leash_slack (float):
+            Extra distance allowed before the guardian disengages.
+        alerted (bool):
+            Whether the guardian is currently in an alerted state.
+        patrol_wait (float):
+            Delay between patrol point transitions.
+        patrol_wait_timer (float):
+            Countdown before the next patrol step.
+        roam_interval (float):
+            Interval used for idle roaming near the guard point.
+
+    Methods:
+        __init__(config=None):
+            Initialize guardian-specific tuning values.
+        update(enemy, context):
+            Drive guardian patrol, chase, retreat, and guard behavior.
+    """
     def __init__(self, config: dict | None = None):
         super().__init__(config)
         self.guard_radius = float(self.config.get("guard_radius", 300.0))
