@@ -407,8 +407,7 @@ class SkillbarMenu(Menu):
     def __init__(self, app: "App"):
         super().__init__(app)
         self.bar_slots_count = 6
-        self.storage_columns = 1
-        self.storage_rows = 1
+        self.storage_slots_count = 1
         self.panel_margin = max(18, int(24 * cfg.ui_scale()))
         self.grid_gap = max(6, int(8 * cfg.ui_scale()))
         self.sidebar_width = max(280, int(340 * cfg.ui_scale()))
@@ -417,7 +416,7 @@ class SkillbarMenu(Menu):
         self.sidebar_rect = pygame.Rect(0, 0, 0, 0)
         self.storage_grid_rect = pygame.Rect(0, 0, 0, 0)
         self.bar_rect = pygame.Rect(0, 0, 0, 0)
-        self.storage_slot_rects: list[list[pygame.Rect]] = []
+        self.storage_slot_rects: list[pygame.Rect] = []
         self.bar_slot_rects: list[pygame.Rect] = []
 
         self.title_font = cfg.get_font(max(10, int(32 * cfg.ui_scale())))
@@ -465,15 +464,22 @@ class SkillbarMenu(Menu):
             self._fallback_skillbar = [None for _ in range(self.bar_slots_count)]
         return self._fallback_skillbook, self._fallback_skillbar
 
+    def _storage_items(self, skillbook: list[dict], skillbar: list[dict | None]):
+        active_skill_ids = {
+            skill.get("skill_id")
+            for skill in skillbar
+            if skill is not None
+        }
+        return [skill for skill in skillbook if skill.get("skill_id") not in active_skill_ids]
+
     def _slot_at_position(self, position: tuple[int, int]):
         for index, slot_rect in enumerate(self.bar_slot_rects):
             if slot_rect.collidepoint(position):
                 return ("bar", 0, index)
 
-        for column_index, column_slots in enumerate(self.storage_slot_rects):
-            for row_index, slot_rect in enumerate(column_slots):
-                if slot_rect.collidepoint(position):
-                    return ("storage", column_index, row_index)
+        for index, slot_rect in enumerate(self.storage_slot_rects):
+            if slot_rect.collidepoint(position):
+                return ("storage", 0, index)
 
         return None
 
@@ -511,29 +517,37 @@ class SkillbarMenu(Menu):
         skillbook, skillbar = self._sync_state_to_character()
         if skillbook is None:
             skillbook, skillbar = self._skillbook()
+        storage_items = self._storage_items(skillbook, skillbar)
 
         source_area, source_index = source
         target_area, target_index = target
 
-        if target_area != "bar":
-            return
-
         if source_area == "bar":
-            if source_index == target_index:
-                return
-            skillbar[source_index], skillbar[target_index] = skillbar[target_index], skillbar[source_index]
+            if target_area == "bar":
+                if source_index == target_index:
+                    return
+                skillbar[source_index], skillbar[target_index] = skillbar[target_index], skillbar[source_index]
+            elif target_area == "storage":
+                skillbar[source_index] = None
             return
 
         if source_area == "storage":
-            if not skillbook:
+            if not storage_items or target_area != "bar":
                 return
-            skillbar[target_index] = skillbook[source_index]
+            source_skill = storage_items[source_index]
+            if skillbar[target_index] is source_skill:
+                return
+            skillbar[target_index] = source_skill
 
     def exit_menu(self):
         self.app.INV_manager.player_inventory_opened = False
         self.app.manager.set_state("gameplay")
 
     def layout(self, screen: pygame.Surface):
+        skillbook, skillbar = self._skillbook()
+        storage_items = self._storage_items(skillbook, skillbar)
+        self.storage_slots_count = max(1, len(storage_items))
+
         sw, sh = self._screen_size(screen)
         margin = self.panel_margin
         sidebar_width = min(self.sidebar_width, max(280, sw // 4))
@@ -544,13 +558,13 @@ class SkillbarMenu(Menu):
 
         storage_size = min(
             54,
-            max(34, (left_width - self.grid_gap * (self.storage_columns + 1)) // self.storage_columns),
-            max(34, int((sh * 0.34 - self.grid_gap * (self.storage_rows + 1)) // self.storage_rows)),
+            max(34, (left_width - self.grid_gap * (self.storage_slots_count + 1)) // self.storage_slots_count),
+            max(34, int((sh * 0.28 - self.grid_gap * 2))),
         )
         bar_size = min(72, max(42, storage_size + 4))
 
-        storage_total_w = storage_size * self.storage_columns + self.grid_gap * (self.storage_columns + 1)
-        storage_total_h = storage_size * self.storage_rows + self.grid_gap * (self.storage_rows + 1)
+        storage_total_w = storage_size * self.storage_slots_count + self.grid_gap * (self.storage_slots_count + 1)
+        storage_total_h = storage_size + self.grid_gap * 2
         storage_x = margin + max(0, (left_width - storage_total_w) // 2)
         storage_y = sh - margin - storage_total_h
         self.storage_grid_rect = pygame.Rect(storage_x - self.grid_gap, storage_y - self.grid_gap, storage_total_w, storage_total_h)
@@ -561,13 +575,10 @@ class SkillbarMenu(Menu):
         self.bar_rect = pygame.Rect(bar_x - self.grid_gap, bar_y - self.grid_gap, bar_total_w, bar_size + self.grid_gap * 2)
 
         self.storage_slot_rects = []
-        for column_index in range(self.storage_columns):
-            column_rects = []
-            for row_index in range(self.storage_rows):
-                slot_x = storage_x + self.grid_gap + column_index * (storage_size + self.grid_gap)
-                slot_y = storage_y + self.grid_gap + row_index * (storage_size + self.grid_gap)
-                column_rects.append(pygame.Rect(slot_x, slot_y, storage_size, storage_size))
-            self.storage_slot_rects.append(column_rects)
+        for index in range(self.storage_slots_count):
+            slot_x = storage_x + self.grid_gap + index * (storage_size + self.grid_gap)
+            slot_y = storage_y + self.grid_gap
+            self.storage_slot_rects.append(pygame.Rect(slot_x, slot_y, storage_size, storage_size))
 
         self.bar_slot_rects = []
         for index in range(self.bar_slots_count):
@@ -594,6 +605,7 @@ class SkillbarMenu(Menu):
         skillbook, skillbar = self._sync_state_to_character()
         if skillbook is None:
             skillbook, skillbar = self._skillbook()
+        storage_items = self._storage_items(skillbook, skillbar)
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             slot = self._slot_at_position(event.pos)
@@ -602,9 +614,8 @@ class SkillbarMenu(Menu):
 
             area, column_or_none, row_or_index = slot
             if area == "storage":
-                storage_index = row_or_index * self.storage_columns + column_or_none
-                self.drag_payload = {"source": ("storage", storage_index), "skill": skillbook[storage_index]}
-                self.drag_offset = (event.pos[0] - self.storage_slot_rects[column_or_none][row_or_index].x, event.pos[1] - self.storage_slot_rects[column_or_none][row_or_index].y)
+                self.drag_payload = {"source": ("storage", row_or_index), "skill": storage_items[row_or_index]}
+                self.drag_offset = (event.pos[0] - self.storage_slot_rects[row_or_index].x, event.pos[1] - self.storage_slot_rects[row_or_index].y)
                 return
 
             if skillbar[row_or_index] is not None:
@@ -618,19 +629,17 @@ class SkillbarMenu(Menu):
             target_slot = self._slot_at_position(event.pos)
             if target_slot is not None and target_slot[0] == "bar":
                 self._on_drop(self.drag_payload["source"], ("bar", target_slot[2]))
+            elif target_slot is not None and target_slot[0] == "storage":
+                self._on_drop(self.drag_payload["source"], ("storage", target_slot[2]))
 
             self.drag_payload = None
             self.drag_offset = (0, 0)
 
     def _draw_sidebar(self, surface: pygame.Surface):
-        skillbook, skillbar = self._sync_state_to_character()
-        if skillbook is None:
-            skillbook, skillbar = self._skillbook()
-
         title = self.title_font.render(_("Skillbar"), True, (255, 255, 255))
         surface.blit(title, (self.sidebar_rect.x + 18, self.sidebar_rect.y + 18))
 
-        hint = self.small_font.render(_("Drag Dash into one of the 6 active slots."), True, (225, 225, 230))
+        hint = self.small_font.render(_("Active skills go above. Unused skills stay in the storage row below."), True, (225, 225, 230))
         surface.blit(hint, (self.sidebar_rect.x + 18, self.sidebar_rect.y + 58))
 
         list_top = self.sidebar_rect.y + 110
@@ -638,18 +647,22 @@ class SkillbarMenu(Menu):
         pygame.draw.rect(surface, (30, 30, 38), list_rect, border_radius=12)
         pygame.draw.rect(surface, (85, 85, 98), list_rect, 1, border_radius=12)
 
-        label = self.section_font.render(_("Active bar"), True, (255, 255, 255))
+        label = self.section_font.render(_("Storage"), True, (255, 255, 255))
         surface.blit(label, (list_rect.x + 12, list_rect.y + 10))
 
-        active = [skill for skill in skillbar if skill is not None]
-        if not active:
-            empty = self.small_font.render(_("No active skills yet."), True, (205, 205, 215))
+        skillbook, skillbar = self._sync_state_to_character()
+        if skillbook is None:
+            skillbook, skillbar = self._skillbook()
+        storage_items = self._storage_items(skillbook, skillbar)
+
+        if not storage_items:
+            empty = self.small_font.render(_("No unused skills right now."), True, (205, 205, 215))
             surface.blit(empty, empty.get_rect(center=list_rect.center))
             return
 
         text_y = list_rect.y + 42
         max_rows = max(1, (list_rect.bottom - text_y - 10) // (self.small_font.get_height() + 8))
-        for index, skill in enumerate(active[:max_rows]):
+        for index, skill in enumerate(storage_items[:max_rows]):
             line = self.small_font.render(f"{index + 1}. {skill['name']}", True, (235, 235, 245))
             surface.blit(line, (list_rect.x + 12, text_y + index * (self.small_font.get_height() + 8)))
 
@@ -664,11 +677,12 @@ class SkillbarMenu(Menu):
         skillbook, skillbar = self._sync_state_to_character()
         if skillbook is None:
             skillbook, skillbar = self._skillbook()
+        storage_items = self._storage_items(skillbook, skillbar)
 
         bar_title = self.section_font.render(_("6 active slots"), True, (235, 235, 245))
         screen.blit(bar_title, (self.bar_rect.x, max(12, self.bar_rect.y - bar_title.get_height() - 8)))
 
-        storage_title = self.section_font.render(_("1 skill"), True, (235, 235, 245))
+        storage_title = self.section_font.render(_("Unused skills"), True, (235, 235, 245))
         screen.blit(storage_title, (self.storage_grid_rect.x, max(12, self.storage_grid_rect.y - storage_title.get_height() - 8)))
 
         pygame.draw.rect(screen, (24, 24, 30), self.bar_rect, border_radius=18)
@@ -681,11 +695,9 @@ class SkillbarMenu(Menu):
         for index, slot_rect in enumerate(self.bar_slot_rects):
             self._draw_card(screen, slot_rect, skillbar[index], empty_label=str(index + 1))
 
-        for column_index, column_slots in enumerate(self.storage_slot_rects):
-            for row_index, slot_rect in enumerate(column_slots):
-                skill_index = row_index * self.storage_columns + column_index
-                skill = skillbook[skill_index] if skill_index < len(skillbook) else None
-                self._draw_card(screen, slot_rect, skill, empty_label="+")
+        for index, slot_rect in enumerate(self.storage_slot_rects):
+            skill = storage_items[index] if index < len(storage_items) else None
+            self._draw_card(screen, slot_rect, skill, empty_label="+")
 
         self._draw_sidebar(screen)
         self.exit_button.draw(screen)
