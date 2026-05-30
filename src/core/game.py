@@ -641,13 +641,21 @@ class Game(State):
 
         self.app.profiler.start_section("game.draw")
         camera_offset = self._get_camera_offset()
+        viewport_rect = pygame.Rect(0, 0, screen.get_width(), screen.get_height())
+
+        def _is_visible(entity) -> bool:
+            rect = entity.get_rect()
+            rect.x -= int(camera_offset.x)
+            rect.y -= int(camera_offset.y)
+            return rect.colliderect(viewport_rect)
 
         self.map.draw(screen, camera_offset)
 
         self.character.draw(screen, camera_offset)
 
         for enemy in self.enemies:
-            enemy.draw(screen, camera_offset)
+            if _is_visible(enemy):
+                enemy.draw(screen, camera_offset)
 
         for projectile in self.projectiles:
             projectile.draw(screen, camera_offset)
