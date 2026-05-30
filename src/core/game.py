@@ -719,7 +719,10 @@ class Game(State):
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if not self.app.INV_manager.player_inventory_opened:
-                hud_click = self.hud.inv_button.rect.collidepoint(event.pos) or any(slot.collidepoint(event.pos) for slot in self.hud.skill_slot_rects)
+                # If a shop is open, skill slots should not be considered HUD clicks
+                hud_click = self.hud.inv_button.rect.collidepoint(event.pos) or (
+                    not getattr(self.app.INV_manager, 'current_shop_inv', None) and any(slot.collidepoint(event.pos) for slot in self.hud.skill_slot_rects)
+                )
                 if not hud_click:
                     mouse_world_pos = pygame.Vector2(event.pos) + self._get_camera_offset()
                     self._handle_player_attack(mouse_world_pos)

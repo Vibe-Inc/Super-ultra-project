@@ -563,28 +563,30 @@ class MAIN_player_inventory(Inventory):
         screen.blit(text_surf, (preview_x, self.pos_y - 20))
 
         # position the skillbar open button near the preview area and draw it
-        btn_x = preview_x
-        btn_y = self.pos_y - 60
-        self.open_skillbar_btn.rect = pygame.Rect(btn_x, btn_y, self.open_skillbar_btn.rect.width, self.open_skillbar_btn.rect.height)
-        try:
-            self.open_skillbar_btn._update_text_surface()
-        except Exception:
-            pass
-        self.open_skillbar_btn.draw(screen)
+        # Draw the skillbar open button only when no shop is active
+        if not getattr(self.app.INV_manager, 'current_shop_inv', None):
+            btn_x = preview_x
+            btn_y = self.pos_y - 60
+            self.open_skillbar_btn.rect = pygame.Rect(btn_x, btn_y, self.open_skillbar_btn.rect.width, self.open_skillbar_btn.rect.height)
+            try:
+                self.open_skillbar_btn._update_text_surface()
+            except Exception:
+                pass
+            self.open_skillbar_btn.draw(screen)
 
         return super().draw(screen)
 
     def inventory_interactions(self, event, manager):
-        # check skillbar button first
+        # Handle SKILLBAR button click (only when shop not open)
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if hasattr(self, 'open_skillbar_btn') and self.open_skillbar_btn.rect.collidepoint(pygame.mouse.get_pos()):
-                try:
-                    self.app.manager.set_state("skillbar")
-                except Exception:
-                    pass
-                return
+                if not getattr(self.app.INV_manager, 'current_shop_inv', None):
+                    try:
+                        self.app.manager.set_state("skillbar")
+                    except Exception:
+                        pass
+                    return
 
-        # fallback to normal inventory interactions
         return super().inventory_interactions(event, manager)
     
 
