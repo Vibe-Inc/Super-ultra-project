@@ -7,6 +7,7 @@ from src.core.state import State
 from src.core.save_manager import SaveManager
 import src.config as cfg
 import pygame
+from src.core.logger import logger
 
 if TYPE_CHECKING:
     from src.app import App
@@ -196,19 +197,24 @@ class MainMenu(Menu):
             tooltip.draw(screen)
 
     def start_game(self):
+        logger.info("Start game requested from MainMenu")
         self.app.manager.set_state("gameplay")
 
     def exit_game(self):
+        logger.info("Exit requested from MainMenu")
         pygame.quit()
         sys.exit()
 
     def open_settings(self):
+        logger.info("Open Settings from MainMenu")
         self.app.manager.set_state("settings")
 
     def open_credits(self):
+        logger.info("Open Credits from MainMenu")
         self.app.manager.set_state("credits")
 
     def open_load_menu(self):
+        logger.info("Open Load Menu from MainMenu")
         self.app.manager.states["save_load"].mode = "load"
         self.app.manager.states["save_load"].refresh_saves()
         self.app.manager.set_state("save_load")
@@ -540,7 +546,25 @@ class SkillbarMenu(Menu):
             skillbar[target_index] = source_skill
 
     def exit_menu(self):
-        self.app.INV_manager.player_inventory_opened = False
+        # Ensure any open player inventory windows are properly removed
+        try:
+            # mark as closed
+            self.app.INV_manager.player_inventory_opened = False
+
+            # If the gameplay state exists, remove its inventory panels from active list
+            gameplay = getattr(getattr(self.app, "manager", None), "states", {}).get("gameplay")
+            if gameplay:
+                try:
+                    self.app.INV_manager.remove_active_inventory(getattr(gameplay, "MAIN_player_inv", None))
+                except Exception:
+                    pass
+                try:
+                    self.app.INV_manager.remove_active_inventory(getattr(gameplay, "PLAYER_inventory_equipment", None))
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
         self.app.manager.set_state("gameplay")
 
     def layout(self, screen: pygame.Surface):

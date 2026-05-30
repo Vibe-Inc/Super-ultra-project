@@ -641,19 +641,29 @@ class Game(State):
 
         self.app.profiler.start_section("game.draw")
         camera_offset = self._get_camera_offset()
+        viewport_rect = pygame.Rect(0, 0, screen.get_width(), screen.get_height())
+
+        def _is_visible(entity) -> bool:
+            rect = entity.get_rect()
+            rect.x -= int(camera_offset.x)
+            rect.y -= int(camera_offset.y)
+            return rect.colliderect(viewport_rect)
 
         self.map.draw(screen, camera_offset)
 
         self.character.draw(screen, camera_offset)
 
         for enemy in self.enemies:
-            enemy.draw(screen, camera_offset)
+            if _is_visible(enemy):
+                enemy.draw(screen, camera_offset)
 
         for projectile in self.projectiles:
-            projectile.draw(screen, camera_offset)
+            if _is_visible(projectile):
+                projectile.draw(screen, camera_offset)
 
         for projectile in self.enemy_projectiles:
-            projectile.draw(screen, camera_offset)
+            if _is_visible(projectile):
+                projectile.draw(screen, camera_offset)
 
         self.npc.draw(screen, camera_offset)
 
@@ -695,9 +705,13 @@ class Game(State):
             if event.key == pygame.K_6:
                 self.use_skill_slot(5)
             
-            if event.key == pygame.K_e and self.app.INV_manager.player_inventory_opened == False:
+            if event.key == pygame.K_e:
+                # If NPC is interactable -> open/close trade regardless of inventory state
                 if self.npc.is_interactable:
                     self.app.INV_manager.toggle_trade(self.MAIN_player_inv, self.shop_inv)
+                else:
+                    # Otherwise toggle the player's inventory (open/close)
+                    self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
             
             # Test keys
             if event.key == pygame.K_F1:
@@ -715,7 +729,10 @@ class Game(State):
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if not self.app.INV_manager.player_inventory_opened:
-                hud_click = self.hud.inv_button.rect.collidepoint(event.pos) or any(slot.collidepoint(event.pos) for slot in self.hud.skill_slot_rects)
+                # If a shop is open, skill slots should not be considered HUD clicks
+                hud_click = self.hud.inv_button.rect.collidepoint(event.pos) or (
+                    not getattr(self.app.INV_manager, 'current_shop_inv', None) and any(slot.collidepoint(event.pos) for slot in self.hud.skill_slot_rects)
+                )
                 if not hud_click:
                     mouse_world_pos = pygame.Vector2(event.pos) + self._get_camera_offset()
                     self._handle_player_attack(mouse_world_pos)
