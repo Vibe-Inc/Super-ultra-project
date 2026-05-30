@@ -1,3 +1,4 @@
+import math
 import pygame
 from typing import TYPE_CHECKING
 from src.entities.character import Character
@@ -231,6 +232,30 @@ class HUD:
         hp_text = cfg.INV_nums_font.render(f"{self.character.hp}/{self.character.max_hp}", True, (255, 255, 255))
         screen.blit(hp_text, (bar_x + bar_width // 2 - hp_text.get_width() // 2, bar_y + 5))
 
+        # Draw time indicator
+        game_state = self.app.manager.states.get("gameplay")
+        time_string = "--:--"
+        is_day = True
+        if game_state and hasattr(game_state, "_format_game_time"):
+            time_string = game_state._format_game_time()
+            is_day = game_state.is_daytime()
+
+        icon_radius = max(6, int(14 * cfg.ui_scale()))
+        icon_center = (bar_x + bar_width + icon_radius + 20, bar_y + bar_height // 2)
+        if is_day:
+            pygame.draw.circle(screen, (255, 220, 110), icon_center, icon_radius)
+            for angle in (0, 90, 180, 270):
+                radians = math.radians(angle)
+                dx = int(math.cos(radians) * (icon_radius + 6))
+                dy = int(math.sin(radians) * (icon_radius + 6))
+                pygame.draw.line(screen, (255, 220, 110), icon_center, (icon_center[0] + dx, icon_center[1] + dy), 2)
+        else:
+            pygame.draw.circle(screen, (225, 225, 230), icon_center, icon_radius)
+            moon_offset = (int(icon_radius * 0.4), -int(icon_radius * 0.2))
+            pygame.draw.circle(screen, (30, 30, 50), (icon_center[0] + moon_offset[0], icon_center[1] + moon_offset[1]), int(icon_radius * 0.8))
+
+        time_text = self.font.render(time_string, True, (255, 255, 255))
+        screen.blit(time_text, (icon_center[0] + icon_radius + 8, icon_center[1] - time_text.get_height() // 2))
 
         lives_icon_x, lives_icon_y = self.life_icon_pos
 
