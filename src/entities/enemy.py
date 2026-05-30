@@ -167,6 +167,8 @@ class Enemy:
 
         self.rect = self.image.get_rect(topleft=(x, y))
         self.velocity = pygame.Vector2(0, 0)
+        self.hitbox_width = 46
+        self.hitbox_height = 34
 
         self.flip = False
         self.frame_index = 0
@@ -196,12 +198,12 @@ class Enemy:
         logger.info(f"Spawned enemy {getattr(self, 'ai_profile', 'unknown')} at ({x}, {y})")
 
     def get_rect(self):
-        hitbox_width = 40
-        hitbox_height = 20
-
         sprite_width = self.image.get_width()
         sprite_height = self.image.get_height()
         
+        hitbox_width = min(self.hitbox_width, sprite_width)
+        hitbox_height = min(self.hitbox_height, sprite_height)
+
         offset_x = (sprite_width - hitbox_width) // 2
         offset_y = sprite_height - hitbox_height
         
