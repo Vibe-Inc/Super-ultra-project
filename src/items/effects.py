@@ -1,4 +1,5 @@
 import pygame
+from src.core.logger import logger
 
 class Effect:
     """
