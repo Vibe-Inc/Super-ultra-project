@@ -105,6 +105,7 @@ class HUD:
         self.hp_bar_rect = pygame.Rect(0, 0, 0, 0)
         self.xp_bar_rect = pygame.Rect(0, 0, 0, 0)
         self.stamina_bar_rect = pygame.Rect(0, 0, 0, 0)
+        self._layout_size = None
 
         # slot rects (populated/updated per-frame or on-event)
         self.skill_slot_rects: list[pygame.Rect] = []
@@ -161,6 +162,12 @@ class HUD:
 
         # top skillbar removed from layout
 
+    def _ensure_layout(self, screen_width: int, screen_height: int):
+        size = (screen_width, screen_height)
+        if self._layout_size != size:
+            self._layout_size = size
+            self._recalc_layout(screen_width, screen_height)
+
     def toggle_inventory(self):
         if self.toggle_inventory_callback:
             self.toggle_inventory_callback()
@@ -169,13 +176,11 @@ class HUD:
         logger.info(f"Inventory toggled: open={self.app.INV_manager.player_inventory_opened}")
 
     def handle_event(self, event: pygame.event.Event):
-        # ensure layout matches current window before handling clicks
         try:
             sw, sh = self.app.screen.get_size()
-            self._recalc_layout(sw, sh)
+            self._ensure_layout(sw, sh)
         except Exception:
-            # fallback to config values
-            self._recalc_layout(cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT)
+            self._ensure_layout(cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT)
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             if self.inv_button.rect.collidepoint(event.pos):
@@ -198,12 +203,11 @@ class HUD:
                 self._drag_pos = (0, 0)
 
     def draw(self, screen: pygame.Surface):
-        # ensure layout matches current window before drawing
         try:
             sw, sh = screen.get_size()
-            self._recalc_layout(sw, sh)
+            self._ensure_layout(sw, sh)
         except Exception:
-            self._recalc_layout(cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT)
+            self._ensure_layout(cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT)
 
         icon_x, icon_y = self.hp_icon_pos
         screen.blit(self.hp_icon, (icon_x, icon_y))
