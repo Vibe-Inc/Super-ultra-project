@@ -658,10 +658,12 @@ class Game(State):
                 enemy.draw(screen, camera_offset)
 
         for projectile in self.projectiles:
-            projectile.draw(screen, camera_offset)
+            if _is_visible(projectile):
+                projectile.draw(screen, camera_offset)
 
         for projectile in self.enemy_projectiles:
-            projectile.draw(screen, camera_offset)
+            if _is_visible(projectile):
+                projectile.draw(screen, camera_offset)
 
         self.npc.draw(screen, camera_offset)
 
