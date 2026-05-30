@@ -695,9 +695,13 @@ class Game(State):
             if event.key == pygame.K_6:
                 self.use_skill_slot(5)
             
-            if event.key == pygame.K_e and self.app.INV_manager.player_inventory_opened == False:
+            if event.key == pygame.K_e:
+                # If NPC is interactable -> open/close trade regardless of inventory state
                 if self.npc.is_interactable:
                     self.app.INV_manager.toggle_trade(self.MAIN_player_inv, self.shop_inv)
+                else:
+                    # Otherwise toggle the player's inventory (open/close)
+                    self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
             
             # Test keys
             if event.key == pygame.K_F1:
