@@ -285,8 +285,13 @@ class Slider:
 
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if self.knob_rect.collidepoint(event.pos):
+            if self.knob_rect.collidepoint(event.pos) or pygame.Rect(self.x, self.y, self.track_length, self.height).collidepoint(event.pos):
                 self.dragging = True
+                mx, _ = event.pos
+                rel_x = max(0, min(mx - self.x, self.track_length))
+                self.value = round(rel_x / self.track_length, 2)
+                if self.action:
+                    self.action(self.value)
 
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             self.dragging = False

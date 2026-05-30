@@ -70,8 +70,6 @@ class App:
         
         self.money = 100
 
-        SCREEN_BRIGHTNESS = 1.0
-
         # Audio / fullscreen / clock
         self.audio = "on"
         self.clock = pygame.time.Clock()
@@ -178,17 +176,40 @@ class App:
                 self.screen.blit(self.text_logo, self.text_rect)
 
             self.profiler.start_section("state.draw")
-            self.manager.draw(self.screen)
+            if self.manager.get_state() == "gameplay":
+                gameplay_state = self.manager.states.get("gameplay")
+                if gameplay_state and hasattr(gameplay_state, "draw_scene"):
+                    scene_surface = pygame.Surface(self.screen.get_size())
+                    gameplay_state.draw_scene(scene_surface)
+                    self.screen.blit(scene_surface, (0, 0))
+                else:
+                    self.manager.draw(self.screen)
+            else:
+                self.manager.draw(self.screen)
             self.profiler.end_section("state.draw")
 
             self.profiler.start_section("postfx")
-            if cfg.SCREEN_BRIGHTNESS < 1:
+            effective_brightness = cfg.USER_SCREEN_BRIGHTNESS
+            night_tint = False
+            if self.manager.get_state() == "gameplay":
+                effective_brightness = cfg.USER_SCREEN_BRIGHTNESS * cfg.ENVIRONMENT_BRIGHTNESS
+                night_tint = cfg.ENVIRONMENT_BRIGHTNESS <= 0.55
+
+            if effective_brightness < 1:
                 if self._brightness_overlay is None or self._brightness_overlay.get_size() != (cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT):
                     self._brightness_overlay = pygame.Surface((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT))
-                self._brightness_overlay.set_alpha(int((1 - cfg.SCREEN_BRIGHTNESS) * 255))
-                self._brightness_overlay.fill((0, 0, 0))
+                self._brightness_overlay.set_alpha(int((1 - effective_brightness) * 255))
+                if night_tint:
+                    self._brightness_overlay.fill((10, 24, 80))
+                else:
+                    self._brightness_overlay.fill((0, 0, 0))
                 self.screen.blit(self._brightness_overlay, (0, 0))
             self.profiler.end_section("postfx")
+
+            if self.manager.get_state() == "gameplay":
+                gameplay_state = self.manager.states.get("gameplay")
+                if gameplay_state and hasattr(gameplay_state, "draw_ui"):
+                    gameplay_state.draw_ui(self.screen)
 
             if self.profiler.enabled:
                 self.profiler.draw(self.screen, position=(190, 100))

@@ -300,12 +300,16 @@ class SettingsMenu(Menu):
         knob_colour = (255, 255, 255)
         initial_volume = pygame.mixer.music.get_volume() if pygame.mixer.get_init() else 0.3
 
+        def set_brightness(v):
+            cfg.USER_SCREEN_BRIGHTNESS = max(0.3, v)
+            cfg.update_brightness()
+
         self.brightness_slider = Slider(
             int(600 * scale), int(550 * scale), max(8,int(40 * scale)), 5,
             (0, 0, 0), (255, 255, 255),
             max(6,int(20 * scale)), max(6,int(20 * scale)), max(20,int(300 * scale)),
-            value=cfg.SCREEN_BRIGHTNESS,
-            action=lambda v: setattr(cfg, 'SCREEN_BRIGHTNESS', max(0.3, v))
+            value=cfg.USER_SCREEN_BRIGHTNESS,
+            action=set_brightness
         )
 
         # use a single scaled font for labels

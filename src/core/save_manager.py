@@ -103,7 +103,8 @@ class SaveManager:
                 "map_path": game_state.current_map_path if hasattr(game_state, "current_map_path") else "maps/test-map-1.tmx",
             },
             "inventory": serialized_inv,
-            "equipment": serialized_equip
+            "equipment": serialized_equip,
+            "game_time_seconds": int(getattr(game_state, "game_time_seconds", 6 * 3600))
         }
         
         if hasattr(game_state, "current_map_path"):
@@ -162,6 +163,9 @@ class SaveManager:
         from src.map.map import LocalMap
         game_state.map = LocalMap("LoadedLevel", map_path)
         game_state.current_map_path = map_path # Store for next save
+        game_state.obstacles = game_state.map.get_obstacles()
+        if hasattr(game_state, "_rebuild_nav_grid"):
+            game_state._rebuild_nav_grid()
 
         # Restore Player
         game_state.character.pos.x = player_data.get("pos_x", 0)
@@ -184,7 +188,14 @@ class SaveManager:
                     equip_inv.items[col][row] = [item, count]
                 else:
                     equip_inv.items[col][row] = None
-        
+
+        # Restore game time and visual state
+        if "game_time_seconds" in data:
+            game_state.game_time_seconds = int(data["game_time_seconds"])
+        else:
+            game_state.game_time_seconds = getattr(game_state, "game_time_seconds", 6 * 3600)
+        game_state._update_game_time(0)
+
         logger.info(f"Game loaded from {file_path}")
         return True
 
