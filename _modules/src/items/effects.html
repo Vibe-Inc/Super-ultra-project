@@ -70,6 +70,7 @@
              
   <h1>Source code for src.items.effects</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
 
 <div class="viewcode-block" id="Effect">
 <a class="viewcode-back" href="../../../src.items.html#src.items.effects.Effect">[docs]</a>
@@ -97,6 +98,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">duration</span> <span class="o">=</span> <span class="n">duration</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">timer</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Effect created: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> duration=</span><span class="si">{</span><span class="n">duration</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Effect.update">
 <a class="viewcode-back" href="../../../src.items.html#src.items.effects.Effect.update">[docs]</a>
@@ -173,7 +175,8 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">heal</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span><span class="p">)</span>
             <span class="n">target</span><span class="o">.</span><span class="n">hp</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">max_hp</span><span class="p">,</span> <span class="n">target</span><span class="o">.</span><span class="n">hp</span> <span class="o">+</span> <span class="n">heal</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span> <span class="o">-=</span> <span class="n">heal</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span> <span class="o">-=</span> <span class="n">heal</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Regeneration applied </span><span class="si">{</span><span class="n">heal</span><span class="si">}</span><span class="s2"> HP to </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">target</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;id&#39;</span><span class="p">,</span><span class="w"> </span><span class="nb">type</span><span class="p">(</span><span class="n">target</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 </div>
 
 
@@ -208,6 +211,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">dmg</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span><span class="p">)</span>
             <span class="n">target</span><span class="o">.</span><span class="n">take_damage</span><span class="p">(</span><span class="n">dmg</span><span class="p">,</span> <span class="n">ignore_invulnerability</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Poison dealt </span><span class="si">{</span><span class="n">dmg</span><span class="si">}</span><span class="s2"> damage to </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">target</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;id&#39;</span><span class="p">,</span><span class="w"> </span><span class="nb">type</span><span class="p">(</span><span class="n">target</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span> <span class="o">-=</span> <span class="n">dmg</span></div>
 </div>
 
@@ -234,7 +238,8 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">dmg</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span><span class="p">)</span>
             <span class="n">target</span><span class="o">.</span><span class="n">take_damage</span><span class="p">(</span><span class="n">dmg</span><span class="p">,</span> <span class="n">ignore_invulnerability</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span> <span class="o">-=</span> <span class="n">dmg</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">accumulator</span> <span class="o">-=</span> <span class="n">dmg</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Burn dealt </span><span class="si">{</span><span class="n">dmg</span><span class="si">}</span><span class="s2"> damage to </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">target</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;id&#39;</span><span class="p">,</span><span class="w"> </span><span class="nb">type</span><span class="p">(</span><span class="n">target</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 </div>
 
 
@@ -276,7 +281,8 @@
 <span class="sd">        Args:</span>
 <span class="sd">            target (Character): The entity to restore.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">target</span><span class="o">.</span><span class="n">confused</span> <span class="o">=</span> <span class="kc">False</span></div>
+        <span class="n">target</span><span class="o">.</span><span class="n">confused</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ConfusionEffect ended on </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">target</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;id&#39;</span><span class="p">,</span><span class="w"> </span><span class="nb">type</span><span class="p">(</span><span class="n">target</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 </div>
 
 
@@ -318,7 +324,8 @@
 <span class="sd">        Args:</span>
 <span class="sd">            target (Character): The entity to restore.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">target</span><span class="o">.</span><span class="n">dizzy</span> <span class="o">=</span> <span class="kc">False</span></div>
+        <span class="n">target</span><span class="o">.</span><span class="n">dizzy</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DizzinessEffect ended on </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">target</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;id&#39;</span><span class="p">,</span><span class="w"> </span><span class="nb">type</span><span class="p">(</span><span class="n">target</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 </div>
 
 
@@ -348,7 +355,8 @@
 <div class="viewcode-block" id="SlowEffect.on_end">
 <a class="viewcode-back" href="../../../src.items.html#src.items.effects.SlowEffect.on_end">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">on_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="n">target</span><span class="o">.</span><span class="n">speed_multiplier</span> <span class="o">=</span> <span class="mf">1.0</span></div>
+        <span class="n">target</span><span class="o">.</span><span class="n">speed_multiplier</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SlowEffect ended on </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">target</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;id&#39;</span><span class="p">,</span><span class="w"> </span><span class="nb">type</span><span class="p">(</span><span class="n">target</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 </div>
 
 

@@ -160,6 +160,7 @@
 <a class="viewcode-back" href="../../../src.core.html#src.core.state_manager.StateManager.reinit_states">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">reinit_states</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">current_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Reinitializing UI states...&quot;</span><span class="p">)</span>
         
         <span class="n">gameplay_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="p">[</span><span class="s2">&quot;gameplay&quot;</span><span class="p">]</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">gameplay_state</span><span class="p">,</span> <span class="s2">&quot;reinit_ui&quot;</span><span class="p">):</span>
@@ -176,7 +177,8 @@
         <span class="p">}</span>
         
         <span class="k">if</span> <span class="n">current_name</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">current_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">current_name</span><span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">current_name</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Reinitialization of UI states complete.&quot;</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

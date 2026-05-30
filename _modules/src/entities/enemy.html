@@ -74,6 +74,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.ai.monster_ai</span><span class="w"> </span><span class="kn">import</span> <span class="n">AIContext</span><span class="p">,</span> <span class="n">build_brain</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.character</span><span class="w"> </span><span class="kn">import</span> <span class="n">Character</span>
@@ -239,6 +240,8 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_rect</span><span class="p">(</span><span class="n">topleft</span><span class="o">=</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hitbox_width</span> <span class="o">=</span> <span class="mi">46</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hitbox_height</span> <span class="o">=</span> <span class="mi">34</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">flip</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">frame_index</span> <span class="o">=</span> <span class="mi">0</span>
@@ -265,16 +268,17 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_flash_overlay</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="mi">255</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_animation_size</span> <span class="o">=</span> <span class="n">animation_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_lod_distance</span> <span class="o">=</span> <span class="mf">800.0</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Spawned enemy </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;ai_profile&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;unknown&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> at (</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Enemy.get_rect">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.enemy.Enemy.get_rect">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_rect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">hitbox_width</span> <span class="o">=</span> <span class="mi">40</span>
-        <span class="n">hitbox_height</span> <span class="o">=</span> <span class="mi">20</span>
-
         <span class="n">sprite_width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>
         <span class="n">sprite_height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
         
+        <span class="n">hitbox_width</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hitbox_width</span><span class="p">,</span> <span class="n">sprite_width</span><span class="p">)</span>
+        <span class="n">hitbox_height</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hitbox_height</span><span class="p">,</span> <span class="n">sprite_height</span><span class="p">)</span>
+
         <span class="n">offset_x</span> <span class="o">=</span> <span class="p">(</span><span class="n">sprite_width</span> <span class="o">-</span> <span class="n">hitbox_width</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
         <span class="n">offset_y</span> <span class="o">=</span> <span class="n">sprite_height</span> <span class="o">-</span> <span class="n">hitbox_height</span>
         
@@ -350,7 +354,11 @@
 <div class="viewcode-block" id="Enemy.take_damage">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.enemy.Enemy.take_damage">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">take_damage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="n">prev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hp</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hp</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hp</span> <span class="o">-</span> <span class="n">amount</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Enemy </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;ai_profile&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;unknown&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> took </span><span class="si">{</span><span class="n">amount</span><span class="si">}</span><span class="s2"> damage: </span><span class="si">{</span><span class="n">prev</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">hp</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hp</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Enemy </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;ai_profile&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;unknown&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> died&quot;</span><span class="p">)</span>
         <span class="c1"># disabled hit flash overlay on damage</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hp</span> <span class="o">&lt;=</span> <span class="mi">0</span></div>
 

@@ -297,7 +297,7 @@
 <div class="viewcode-block" id="LocalMap.switch_map">
 <a class="viewcode-back" href="../../../src.map.html#src.map.map.LocalMap.switch_map">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">switch_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_map_path</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Switching map to: </span><span class="si">{</span><span class="n">new_map_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Switching map from </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">new_map_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current_map</span> <span class="o">=</span> <span class="n">Map</span><span class="p">(</span><span class="n">new_map_path</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="o">=</span> <span class="n">new_map_path</span></div>
 </div>
