@@ -118,16 +118,20 @@ class Inventory:
                         if slot:
                             if slot[0].id == manager.selected_item[0].id:
                                 slot[1] += manager.selected_item[1]
+                                logger.debug(f"Merged stacks of {slot[0].id} new_count={slot[1]}")
                                 manager.selected_item = None
                             else:
                                 self.items[x][y], manager.selected_item = manager.selected_item, self.items[x][y]
+                                logger.debug(f"Swapped items into slot ({x},{y})")
                         else:
                             self.items[x][y] = manager.selected_item
+                            logger.debug(f"Placed item {getattr(manager.selected_item[0], 'id', None)} into slot ({x},{y})")
                             manager.selected_item = None
                     else:
                         if slot:
                             manager.selected_item = slot
                             self.items[x][y] = None
+                            logger.debug(f"Picked up item {getattr(slot[0], 'id', None)} from slot ({x},{y})")
 
                 elif event.button == 2:
                     if slot and not manager.selected_item and slot[1] > 1:
@@ -144,6 +148,7 @@ class Inventory:
                         if game_state:
                             if item.use(game_state.character):
                                 slot[1] -= 1
+                                logger.info(f"Used consumable {item.id} on character")
                                 if slot[1] <= 0:
                                     self.items[x][y] = None             
     def get_slot_under_mouse(self):
@@ -558,28 +563,30 @@ class MAIN_player_inventory(Inventory):
         screen.blit(text_surf, (preview_x, self.pos_y - 20))
 
         # position the skillbar open button near the preview area and draw it
-        btn_x = preview_x
-        btn_y = self.pos_y - 60
-        self.open_skillbar_btn.rect = pygame.Rect(btn_x, btn_y, self.open_skillbar_btn.rect.width, self.open_skillbar_btn.rect.height)
-        try:
-            self.open_skillbar_btn._update_text_surface()
-        except Exception:
-            pass
-        self.open_skillbar_btn.draw(screen)
+        # Draw the skillbar open button only when no shop is active
+        if not getattr(self.app.INV_manager, 'current_shop_inv', None):
+            btn_x = preview_x
+            btn_y = self.pos_y - 60
+            self.open_skillbar_btn.rect = pygame.Rect(btn_x, btn_y, self.open_skillbar_btn.rect.width, self.open_skillbar_btn.rect.height)
+            try:
+                self.open_skillbar_btn._update_text_surface()
+            except Exception:
+                pass
+            self.open_skillbar_btn.draw(screen)
 
         return super().draw(screen)
 
     def inventory_interactions(self, event, manager):
-        # check skillbar button first
+        # Handle SKILLBAR button click (only when shop not open)
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if hasattr(self, 'open_skillbar_btn') and self.open_skillbar_btn.rect.collidepoint(pygame.mouse.get_pos()):
-                try:
-                    self.app.manager.set_state("skillbar")
-                except Exception:
-                    pass
-                return
+                if not getattr(self.app.INV_manager, 'current_shop_inv', None):
+                    try:
+                        self.app.manager.set_state("skillbar")
+                    except Exception:
+                        pass
+                    return
 
-        # fallback to normal inventory interactions
         return super().inventory_interactions(event, manager)
     
 

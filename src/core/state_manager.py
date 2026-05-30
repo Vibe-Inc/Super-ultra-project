@@ -70,6 +70,7 @@ class StateManager:
 
     def reinit_states(self):
         current_name = self.get_state()
+        logger.info("Reinitializing UI states...")
         
         gameplay_state = self.states["gameplay"]
         if hasattr(gameplay_state, "reinit_ui"):
@@ -87,3 +88,4 @@ class StateManager:
         
         if current_name:
             self.current_state = self.states.get(current_name)
+        logger.info("Reinitialization of UI states complete.")

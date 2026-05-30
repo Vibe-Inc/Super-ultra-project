@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import logging
 import math
 import random
 
 import pygame
 
 from src.ai.navigation import NavGrid
+from src.core.logger import logger
 
 
 @dataclass
@@ -118,6 +120,8 @@ class BaseBrain:
         self.path = []
         self.path_index = 0
         self.path_target_cell = None
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("AI cleared path cache")
 
     def _move_to(self, enemy: object, context: AIContext, world_pos: pygame.Vector2, force_repath: bool = False):
         if context.nav_grid:
@@ -137,8 +141,12 @@ class BaseBrain:
             self.path_index = 0
             self.path_target_cell = target_cell
             self.repath_timer = self.repath_interval
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"AI repath for {getattr(enemy, 'id', type(enemy))}: target_cell={target_cell} path_len={len(self.path)}")
 
         if not self.path:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"AI using direct target for {getattr(enemy, 'id', type(enemy))}")
             self._set_direct_target(enemy, world_pos)
             return
 
@@ -245,14 +253,20 @@ class StalkerBrain(BaseBrain):
         if wants_melee:
             if distance_sq <= (enemy.attack_range * enemy.attack_range):
                 enemy.ai_state = "attack"
+                if logger.isEnabledFor(logging.INFO):
+                    logger.info(f"Enemy {getattr(enemy, 'id', type(enemy))} entering ATTACK (melee)")
                 self._move_to(enemy, context, player_pos)
                 return
             enemy.ai_state = "chase"
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"Enemy {getattr(enemy, 'id', type(enemy))} entering CHASE (melee)")
             self._move_to(enemy, context, player_pos)
             return
 
         if distance_sq <= (enemy.attack_range * enemy.attack_range):
             enemy.ai_state = "attack"
+            if logger.isEnabledFor(logging.INFO):
+                logger.info(f"Enemy {getattr(enemy, 'id', type(enemy))} entering ATTACK")
             if getattr(enemy, "contact_damage", True):
                 self._move_to(enemy, context, player_pos)
             else:
@@ -264,6 +278,8 @@ class StalkerBrain(BaseBrain):
             self.memory_timer = self.memory_duration
             self.last_seen_pos = pygame.Vector2(player_pos)
             enemy.ai_state = "chase"
+            if logger.isEnabledFor(logging.INFO):
+                logger.info(f"Enemy {getattr(enemy, 'id', type(enemy))} detected player at {player_pos}")
             if has_line_of_sight(enemy_pos, player_pos, context.obstacles):
                 self._clear_path()
                 self._set_direct_target(enemy, player_pos)
@@ -274,11 +290,15 @@ class StalkerBrain(BaseBrain):
         if self.memory_timer > 0 and self.last_seen_pos is not None:
             self.memory_timer -= context.dt
             enemy.ai_state = "search"
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"Enemy {getattr(enemy, 'id', type(enemy))} searching last seen pos {self.last_seen_pos}")
             self._move_to(enemy, context, self.last_seen_pos)
             return
 
         if enemy.patrol_points:
             enemy.ai_state = "patrol"
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"Enemy {getattr(enemy, 'id', type(enemy))} patrolling")
             if self.patrol_wait_timer > 0:
                 self.patrol_wait_timer -= context.dt
                 enemy.target = None
@@ -299,6 +319,8 @@ class StalkerBrain(BaseBrain):
         enemy.ai_state = "idle"
         enemy.target = None
         self._clear_path()
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Enemy {getattr(enemy, 'id', type(enemy))} idle")
 
 
 class SkirmisherBrain(BaseBrain):

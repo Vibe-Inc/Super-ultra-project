@@ -6,6 +6,7 @@ import random
 from typing import Iterable
 
 import pygame
+from src.core.logger import logger
 
 
 class NavGrid:
@@ -104,7 +105,9 @@ class NavGrid:
                 if not blocked:
                     walkable_cells.append((x, y))
 
-        return cls(cols, rows, tile_width, tile_height, walkable, walkable_cells)
+        grid = cls(cols, rows, tile_width, tile_height, walkable, walkable_cells)
+        logger.info(f"NavGrid built: cols={cols} rows={rows} walkable_cells={len(walkable_cells)}")
+        return grid
 
     def clamp_world(self, pos: pygame.Vector2) -> pygame.Vector2:
         x = min(max(pos.x, 0), self.world_width - 1)
@@ -149,8 +152,10 @@ class NavGrid:
         goal_cell = self.world_to_cell(goal_world)
 
         if start_cell == goal_cell:
+            logger.debug("find_path: start and goal in same cell, no path needed")
             return []
         if not self.is_walkable(start_cell) or not self.is_walkable(goal_cell):
+            logger.debug(f"find_path: start or goal not walkable: start={start_cell} goal={goal_cell}")
             return []
 
         open_heap: list[tuple[float, float, tuple[int, int]]] = []
@@ -175,6 +180,7 @@ class NavGrid:
                     heapq.heappush(open_heap, (f_score, tentative, neighbor))
 
         if goal_cell not in came_from:
+            logger.debug(f"find_path: no path found from {start_cell} to {goal_cell}")
             return []
 
         path: list[pygame.Vector2] = []
@@ -183,6 +189,7 @@ class NavGrid:
             path.append(self.cell_to_world(current))
             current = came_from[current]
         path.reverse()
+        logger.debug(f"find_path: path found length={len(path)} from {start_cell} to {goal_cell}")
         return path
 
     def _neighbors(self, cell: tuple[int, int]) -> Iterable[tuple[tuple[int, int], float]]:
