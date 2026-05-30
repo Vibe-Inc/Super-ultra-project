@@ -151,6 +151,16 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">equipped_weapon</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_dizzy_overlay</span> <span class="o">=</span> <span class="kc">None</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">game_time_seconds</span> <span class="o">=</span> <span class="mi">6</span> <span class="o">*</span> <span class="mi">3600</span>  <span class="c1"># Start at 06:00</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">GAME_DAY_SECONDS</span> <span class="o">=</span> <span class="mi">24</span> <span class="o">*</span> <span class="mi">3600</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">DAY_CYCLE_REAL_SECONDS</span> <span class="o">=</span> <span class="mi">12</span> <span class="o">*</span> <span class="mi">60</span>  <span class="c1"># 12 real-life minutes for full 24h cycle</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">GAME_SECONDS_PER_REAL_SECOND</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GAME_DAY_SECONDS</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">DAY_CYCLE_REAL_SECONDS</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">DAY_START</span> <span class="o">=</span> <span class="mi">6</span> <span class="o">*</span> <span class="mi">3600</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">DUSK_START</span> <span class="o">=</span> <span class="mi">16</span> <span class="o">*</span> <span class="mi">3600</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">NIGHT_START</span> <span class="o">=</span> <span class="mi">18</span> <span class="o">*</span> <span class="mi">3600</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">DAWN_START</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="mi">3600</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">NIGHT_BRIGHTNESS</span> <span class="o">=</span> <span class="mf">0.4</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">enemy_profiles</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;brute&quot;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s2">&quot;visual_style&quot;</span><span class="p">:</span> <span class="s2">&quot;brute&quot;</span><span class="p">,</span>
@@ -496,6 +506,33 @@
             <span class="k">return</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nav_grid</span> <span class="o">=</span> <span class="n">NavGrid</span><span class="o">.</span><span class="n">from_tmx</span><span class="p">(</span><span class="n">tmx_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">obstacles</span><span class="p">)</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_format_game_time</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">hours</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">game_time_seconds</span> <span class="o">//</span> <span class="mi">3600</span><span class="p">)</span> <span class="o">%</span> <span class="mi">24</span>
+        <span class="n">minutes</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">game_time_seconds</span> <span class="o">%</span> <span class="mi">3600</span><span class="p">)</span> <span class="o">//</span> <span class="mi">60</span><span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">hours</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">minutes</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">&quot;</span>
+
+<div class="viewcode-block" id="Game.is_daytime">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.is_daytime">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_daytime</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">DAY_START</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_time_seconds</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">NIGHT_START</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_update_game_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">game_time_seconds</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">game_time_seconds</span> <span class="o">+</span> <span class="n">dt</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">GAME_SECONDS_PER_REAL_SECOND</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">GAME_DAY_SECONDS</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">DUSK_START</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_time_seconds</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">NIGHT_START</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">game_time_seconds</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">DUSK_START</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">NIGHT_START</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">DUSK_START</span><span class="p">)</span>
+            <span class="n">cfg</span><span class="o">.</span><span class="n">ENVIRONMENT_BRIGHTNESS</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">t</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">NIGHT_BRIGHTNESS</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">NIGHT_START</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_time_seconds</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_time_seconds</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">DAWN_START</span><span class="p">:</span>
+            <span class="n">cfg</span><span class="o">.</span><span class="n">ENVIRONMENT_BRIGHTNESS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">NIGHT_BRIGHTNESS</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">DAWN_START</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_time_seconds</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">DAY_START</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">game_time_seconds</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">DAWN_START</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">DAY_START</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">DAWN_START</span><span class="p">)</span>
+            <span class="n">cfg</span><span class="o">.</span><span class="n">ENVIRONMENT_BRIGHTNESS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">NIGHT_BRIGHTNESS</span> <span class="o">+</span> <span class="n">t</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">NIGHT_BRIGHTNESS</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cfg</span><span class="o">.</span><span class="n">ENVIRONMENT_BRIGHTNESS</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">set_gauge</span><span class="p">(</span><span class="s2">&quot;game_time&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_format_game_time</span><span class="p">())</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_spawn_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">spawn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ENEMY_SPAWNS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">map_path</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">spawn</span><span class="p">:</span>
@@ -668,6 +705,8 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="o">-</span><span class="mi">5000</span><span class="p">)</span>
         
         <span class="c1"># Enemy Spawning Logic</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_game_time</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">enemy_spawn_timer</span> <span class="o">+=</span> <span class="n">dt</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemy_spawn_timer</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemy_spawn_interval</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">enemy_spawn_timer</span> <span class="o">=</span> <span class="mi">0</span>
@@ -724,9 +763,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">set_gauge</span><span class="p">(</span><span class="s2">&quot;enemy_projectiles&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">enemy_projectiles</span><span class="p">))</span></div>
 
 
-<div class="viewcode-block" id="Game.draw">
-<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.draw">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
+<div class="viewcode-block" id="Game.draw_scene">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.draw_scene">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw_scene</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
         <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">clock</span><span class="o">.</span><span class="n">get_time</span><span class="p">()</span> <span class="o">/</span> <span class="mi">1000</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">start_section</span><span class="p">(</span><span class="s2">&quot;game.update&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
@@ -766,18 +805,28 @@
 
         <span class="c1"># Dizziness effect (visual)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">dizzy</span><span class="p">:</span>
-            <span class="c1"># Simulate blur/dizziness with a semi-transparent overlay that changes alpha</span>
             <span class="n">alpha</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">100</span> <span class="o">+</span> <span class="mi">50</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span> <span class="o">*</span> <span class="mf">0.005</span><span class="p">))</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dizzy_overlay</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dizzy_overlay</span><span class="o">.</span><span class="n">get_size</span><span class="p">()</span> <span class="o">!=</span> <span class="n">screen</span><span class="o">.</span><span class="n">get_size</span><span class="p">():</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_dizzy_overlay</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">(</span><span class="n">screen</span><span class="o">.</span><span class="n">get_size</span><span class="p">(),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_dizzy_overlay</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="n">alpha</span><span class="p">))</span>
             <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dizzy_overlay</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">hud</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
-
-        <span class="k">if</span>  <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">player_inventory_opened</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">end_section</span><span class="p">(</span><span class="s2">&quot;game.draw&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Game.draw_ui">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.draw_ui">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw_ui</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hud</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">player_inventory_opened</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Game.draw">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.draw">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">draw_scene</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">draw_ui</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Game.handle_event">
