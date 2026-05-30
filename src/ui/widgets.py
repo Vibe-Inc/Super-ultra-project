@@ -3,6 +3,7 @@ import time
 from typing import Callable
 
 import src.config as cfg
+from src.core.logger import logger
 
 class Button:
     """
@@ -181,6 +182,7 @@ class Tooltip:
                     total_height + self.padding * 2 
                 )
                 self.active = True
+                logger.debug(f"Tooltip shown for target {getattr(self.target_rect, 'name', str(self.target_rect))}")
         else:
             self.hover_start = None
             self.active = False
@@ -287,6 +289,7 @@ class Slider:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if self.knob_rect.collidepoint(event.pos):
                 self.dragging = True
+                logger.debug("Slider drag started")
 
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             self.dragging = False
@@ -295,6 +298,7 @@ class Slider:
             mx, _ = event.pos
             rel_x = max(0, min(mx - self.x, self.track_length))
             self.value = round(rel_x / self.track_length, 2)
+            logger.debug(f"Slider value changed to {self.value}")
             if self.action:
                 self.action(self.value)
 

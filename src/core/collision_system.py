@@ -1,4 +1,5 @@
 import pygame
+from src.core.logger import logger
 
 class CollisionSystem:
     """
@@ -37,6 +38,7 @@ class CollisionSystem:
                         entity.pos.x = (wall.left - rect.width) - offset_x
                     else:
                         entity.pos.x = wall.right - offset_x
+                    logger.debug(f"Resolved X collision for {getattr(entity, 'id', type(entity))} against wall {wall}")
                     # update rect after resolving and stop checking other walls
                     rect = self.rect_of(entity)
                     break
@@ -53,6 +55,7 @@ class CollisionSystem:
                         entity.pos.y = (wall.top - rect.height) - offset_y
                     else:
                         entity.pos.y = wall.bottom - offset_y
+                    logger.debug(f"Resolved Y collision for {getattr(entity, 'id', type(entity))} against wall {wall}")
                     rect = self.rect_of(entity)
                     break
 
@@ -80,6 +83,7 @@ class CollisionSystem:
                 elif min_overlap == overlap_bottom:
                     entity.pos.y += overlap_bottom
 
+                logger.debug(f"Resolved static overlap for {getattr(entity, 'id', type(entity))}; applied correction {min_overlap}")
                 # Update rect after resolving and stop further checks
                 rect = self.rect_of(entity)
                 break
@@ -92,6 +96,7 @@ class CollisionSystem:
             item_rect = self.rect_of(item)
             if player_rect.colliderect(item_rect):
                 if hasattr(item, "on_pickup"):
+                    logger.info(f"Player picked up item {getattr(item, 'id', type(item))}")
                     item.on_pickup(player)
                     items.remove(item)
 
@@ -99,9 +104,11 @@ class CollisionSystem:
             enemy_rect = self.rect_of(enemy)
             if player_rect.colliderect(enemy_rect):
                 if getattr(enemy, "contact_damage", True) and hasattr(enemy, "damage") and hasattr(player, "take_damage"):
+                    logger.info(f"Player collided with enemy {getattr(enemy, 'id', type(enemy))}; applying {enemy.damage} damage")
                     player.take_damage(enemy.damage)
 
                 if hasattr(player, "on_collision"):
                     player.on_collision(enemy)
                 if hasattr(enemy, "on_collision"):
+                    logger.debug(f"Enemy {getattr(enemy, 'id', type(enemy))} on_collision with player")
                     enemy.on_collision(player)

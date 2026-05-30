@@ -118,16 +118,20 @@ class Inventory:
                         if slot:
                             if slot[0].id == manager.selected_item[0].id:
                                 slot[1] += manager.selected_item[1]
+                                logger.debug(f"Merged stacks of {slot[0].id} new_count={slot[1]}")
                                 manager.selected_item = None
                             else:
                                 self.items[x][y], manager.selected_item = manager.selected_item, self.items[x][y]
+                                logger.debug(f"Swapped items into slot ({x},{y})")
                         else:
                             self.items[x][y] = manager.selected_item
+                            logger.debug(f"Placed item {getattr(manager.selected_item[0], 'id', None)} into slot ({x},{y})")
                             manager.selected_item = None
                     else:
                         if slot:
                             manager.selected_item = slot
                             self.items[x][y] = None
+                            logger.debug(f"Picked up item {getattr(slot[0], 'id', None)} from slot ({x},{y})")
 
                 elif event.button == 2:
                     if slot and not manager.selected_item and slot[1] > 1:
@@ -144,6 +148,7 @@ class Inventory:
                         if game_state:
                             if item.use(game_state.character):
                                 slot[1] -= 1
+                                logger.info(f"Used consumable {item.id} on character")
                                 if slot[1] <= 0:
                                     self.items[x][y] = None             
     def get_slot_under_mouse(self):

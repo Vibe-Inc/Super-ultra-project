@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 import pygame
 
 from src.ai.monster_ai import AIContext, build_brain
+from src.core.logger import logger
 
 if TYPE_CHECKING:
     from src.entities.character import Character
@@ -192,6 +193,7 @@ class Enemy:
         self._flash_overlay.fill((255, 50, 50, 100))
         self._animation_size = animation_size
         self._lod_distance = 800.0
+        logger.info(f"Spawned enemy {getattr(self, 'ai_profile', 'unknown')} at ({x}, {y})")
 
     def get_rect(self):
         hitbox_width = 40
@@ -269,7 +271,11 @@ class Enemy:
             self.image = self.animations[self.direction][0]
 
     def take_damage(self, amount: int) -> bool:
+        prev = self.hp
         self.hp = max(0, self.hp - amount)
+        logger.debug(f"Enemy {getattr(self, 'ai_profile', 'unknown')} took {amount} damage: {prev} -> {self.hp}")
+        if self.hp <= 0:
+            logger.info(f"Enemy {getattr(self, 'ai_profile', 'unknown')} died")
         # disabled hit flash overlay on damage
         return self.hp <= 0
 

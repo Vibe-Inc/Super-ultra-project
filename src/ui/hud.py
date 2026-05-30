@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 from src.entities.character import Character
 from src.ui.widgets import Button
 import src.config as cfg
+from src.core.logger import logger
 
 if TYPE_CHECKING:
     from src.app import App
@@ -165,6 +166,7 @@ class HUD:
             self.toggle_inventory_callback()
         else:
             self.app.INV_manager.player_inventory_opened = not self.app.INV_manager.player_inventory_opened
+        logger.info(f"Inventory toggled: open={self.app.INV_manager.player_inventory_opened}")
 
     def handle_event(self, event: pygame.event.Event):
         # ensure layout matches current window before handling clicks
@@ -183,6 +185,7 @@ class HUD:
             for index, slot_rect in enumerate(self.skill_slot_rects):
                 if slot_rect.collidepoint(event.pos):
                     if self.use_skill_callback:
+                        logger.info(f"Skill slot used: {index}")
                         self.use_skill_callback(index)
                     break
         elif event.type == pygame.MOUSEBUTTONUP:

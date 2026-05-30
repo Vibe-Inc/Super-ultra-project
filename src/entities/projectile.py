@@ -1,6 +1,7 @@
 import pygame
 
 from src.items.effects import BurnEffect
+from src.core.logger import logger
 
 
 class Arrow:
@@ -75,16 +76,19 @@ class Arrow:
         rect = self.get_rect()
         for wall in obstacles:
             if rect.colliderect(wall):
+                logger.debug(f"Arrow collided with wall at {self.pos}")
                 self.alive = False
                 return
 
         for enemy in enemies:
             if rect.colliderect(enemy.get_rect()):
+                logger.info(f"Arrow hit enemy {getattr(enemy, 'ai_profile', type(enemy))} for {self.damage} damage")
                 enemy.take_damage(self.damage)
                 self.alive = False
                 return
 
         if self.traveled >= self.max_range:
+            logger.debug(f"Arrow exceeded max range at {self.pos}")
             self.alive = False
 
     def draw(self, screen, camera_offset=None):
@@ -192,10 +196,12 @@ class ArcaneBolt:
         rect = self.get_rect()
         for wall in obstacles:
             if rect.colliderect(wall):
+                logger.debug(f"ArcaneBolt collided with wall at {self.pos}")
                 self.alive = False
                 return
 
         if player and rect.colliderect(player.get_rect()):
+            logger.info(f"ArcaneBolt hit player for {self.damage} damage")
             if self.damage > 0:
                 player.take_damage(self.damage)
             if self.burn_dps > 0 and self.burn_duration > 0:
@@ -364,10 +370,12 @@ class Bomb:
         rect = self.get_rect()
         for wall in obstacles:
             if rect.colliderect(wall):
+                logger.debug(f"Bomb impacted wall at {self.pos}, triggering explosion")
                 self._trigger_explosion()
                 return
 
         if self.timer >= self.fuse_time or self.traveled >= self.max_range:
+            logger.debug(f"Bomb fuse expired or max range reached at {self.pos}, triggering explosion")
             self._trigger_explosion()
 
     def draw(self, screen, camera_offset=None):

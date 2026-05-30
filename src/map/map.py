@@ -192,6 +192,6 @@ class LocalMap:
         return new_map
 
     def switch_map(self, new_map_path):
-        print(f"Switching map to: {new_map_path}")
+        logger.info(f"Switching map from {self.current_map_path} to {new_map_path}")
         self.current_map = Map(new_map_path)
         self.current_map_path = new_map_path

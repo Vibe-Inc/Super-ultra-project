@@ -24,6 +24,7 @@ class Effect:
         self.duration = duration
         self.timer = 0
         self.is_finished = False
+        logger.debug(f"Effect created: {self.__class__.__name__} duration={duration}")
 
     def update(self, dt, target):
         """
@@ -87,6 +88,7 @@ class RegenerationEffect(Effect):
             heal = int(self.accumulator)
             target.hp = min(target.max_hp, target.hp + heal)
             self.accumulator -= heal
+            logger.debug(f"Regeneration applied {heal} HP to {getattr(target, 'id', type(target))}")
 
 class PoisonEffect(Effect):
     """
@@ -115,6 +117,7 @@ class PoisonEffect(Effect):
         if self.accumulator >= 1:
             dmg = int(self.accumulator)
             target.take_damage(dmg, ignore_invulnerability=True)
+            logger.debug(f"Poison dealt {dmg} damage to {getattr(target, 'id', type(target))}")
             self.accumulator -= dmg
 
 class BurnEffect(Effect):
@@ -136,6 +139,7 @@ class BurnEffect(Effect):
             dmg = int(self.accumulator)
             target.take_damage(dmg, ignore_invulnerability=True)
             self.accumulator -= dmg
+            logger.debug(f"Burn dealt {dmg} damage to {getattr(target, 'id', type(target))}")
 
 class ConfusionEffect(Effect):
     """
@@ -169,6 +173,7 @@ class ConfusionEffect(Effect):
             target (Character): The entity to restore.
         """
         target.confused = False
+        logger.debug(f"ConfusionEffect ended on {getattr(target, 'id', type(target))}")
 
 class DizzinessEffect(Effect):
     """
@@ -202,6 +207,7 @@ class DizzinessEffect(Effect):
             target (Character): The entity to restore.
         """
         target.dizzy = False
+        logger.debug(f"DizzinessEffect ended on {getattr(target, 'id', type(target))}")
 
 class SlowEffect(Effect):
     """
@@ -223,6 +229,7 @@ class SlowEffect(Effect):
 
     def on_end(self, target):
         target.speed_multiplier = 1.0
+        logger.debug(f"SlowEffect ended on {getattr(target, 'id', type(target))}")
 
 Effect_list = {
     "regeneration": RegenerationEffect,
