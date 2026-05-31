@@ -206,6 +206,98 @@ class Tooltip:
                 self.rect.y+self.padding
             )
 
+
+class Dialog:
+    """
+    Simple modal dialog with text lines and an OK button.
+    """
+    def __init__(self, app, lines, on_close=None, on_shop=None, show_shop=False):
+        self.app = app
+        self.lines = lines if isinstance(lines, (list, tuple)) else [str(lines)]
+        self.on_close = on_close
+        self.on_shop = on_shop
+        self.show_shop = bool(show_shop)
+        sw, sh = self.app.screen.get_size()
+        w = min(800, sw - 100)
+        h = min(300, sh - 200)
+        self.rect = pygame.Rect((sw - w) // 2, (sh - h) // 2, w, h)
+        self.font = cfg.get_font(max(8,int(20 * cfg.ui_scale())))
+        # Buttons: Close and optional Shop
+        btn_w = max(100, int(160 * cfg.ui_scale()))
+        btn_h = max(34, int(44 * cfg.ui_scale()))
+        gap = int(12 * cfg.ui_scale())
+        if self.show_shop:
+            total_w = btn_w * 2 + gap
+            btn_x = self.rect.x + (self.rect.width - total_w) // 2
+            self.shop_button = Button(pygame.Rect(btn_x, self.rect.y + self.rect.height - btn_h - 16, btn_w, btn_h), _('SHOP'), (100,110,70), (150,160,110), self.font, (255,255,255), 6, on_click=self._shop)
+            btn_x += btn_w + gap
+            self.ok_button = Button(pygame.Rect(btn_x, self.rect.y + self.rect.height - btn_h - 16, btn_w, btn_h), _('CLOSE'), (100,100,100), (150,150,150), self.font, (255,255,255), 6, on_click=self._close)
+        else:
+            btn_x = self.rect.x + (self.rect.width - btn_w) // 2
+            btn_y = self.rect.y + self.rect.height - btn_h - 16
+            self.ok_button = Button(pygame.Rect(btn_x, btn_y, btn_w, btn_h), _('CLOSE'), (100,100,100), (150,150,150), self.font, (255,255,255), 6, on_click=self._close)
+
+    def _close(self):
+        if callable(self.on_close):
+            try:
+                self.on_close()
+            except Exception:
+                pass
+        # clear current dialog in app
+        try:
+            self.app.current_dialog = None
+        except Exception:
+            pass
+
+    def handle_event(self, event: pygame.event.Event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if self.ok_button.rect.collidepoint(event.pos):
+                if self.ok_button.on_click:
+                    self.ok_button.on_click()
+            if self.show_shop and self.shop_button.rect.collidepoint(event.pos):
+                if self.shop_button.on_click:
+                    self.shop_button.on_click()
+        if event.type == pygame.KEYDOWN:
+            if event.key in (pygame.K_RETURN, pygame.K_ESCAPE):
+                self._close()
+
+    def _shop(self):
+        if callable(self.on_shop):
+            try:
+                self.on_shop()
+            except Exception:
+                pass
+        # close dialog after opening shop
+        self._close()
+
+    def draw(self, surface: pygame.Surface):
+        # dim background
+        overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+        overlay.fill((0,0,0,120))
+        surface.blit(overlay, (0,0))
+
+        # dialog background
+        pygame.draw.rect(surface, (40, 40, 40), self.rect, border_radius=8)
+        pygame.draw.rect(surface, (200, 200, 200), self.rect, 2, border_radius=8)
+
+        # draw lines
+        line_h = self.font.get_height()
+        total_h = line_h * len(self.lines)
+        start_y = self.rect.y + 20
+        for i, line in enumerate(self.lines):
+            txt = self.font.render(line, True, (230, 230, 230))
+            txt_x = self.rect.x + 20
+            txt_y = start_y + i * line_h
+            surface.blit(txt, (txt_x, txt_y))
+
+        # draw buttons
+        if self.show_shop:
+            try:
+                self.shop_button.draw(surface)
+            except Exception:
+                pass
+        self.ok_button.draw(surface)
+
 class Slider:
     """
     Horizontal slider UI component for controlling a value (e.g., audio volume).

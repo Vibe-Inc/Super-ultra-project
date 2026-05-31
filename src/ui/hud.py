@@ -47,11 +47,12 @@ class HUD:
                 screen (pygame.Surface): The surface to draw the HUD on.
     """
 
-    def __init__(self, character: Character, app: "App", toggle_inventory_callback=None, use_skill_callback=None):
+    def __init__(self, character: Character, app: "App", toggle_inventory_callback=None, use_skill_callback=None, open_shop_callback=None):
         self.character = character
         self.app = app
         self.toggle_inventory_callback = toggle_inventory_callback
         self.use_skill_callback = use_skill_callback
+        self.open_shop_callback = open_shop_callback
         self.font = cfg.get_font(max(8,int(40 * cfg.ui_scale())))
         self.stamina_font = pygame.font.Font(None, 24)
         self.stamina_label = self.stamina_font.render(_("STAMINA"), True, (255, 255, 255))
@@ -90,6 +91,7 @@ class HUD:
             max(2,int(10 * cfg.ui_scale())),
             on_click=self.toggle_inventory
         )
+
 
         # Skill/ability hotbar on the right (visual only for now)
         self.skill_slot_size = 64
@@ -138,6 +140,7 @@ class HUD:
             self.inv_button._update_text_surface()
         except Exception:
             pass
+        pass
 
         xp_bar_width = min(320, max(220, screen_width // 4))
         xp_bar_height = 15
@@ -188,6 +191,8 @@ class HUD:
                 if self.inv_button.on_click:
                     self.inv_button.on_click()
 
+            pass
+
             # Only handle skill slot clicks when shop is not open
             if not getattr(self.app.INV_manager, 'current_shop_inv', None):
                 for index, slot_rect in enumerate(self.skill_slot_rects):
@@ -202,6 +207,21 @@ class HUD:
                 self._dragging_placeholder = False
                 self._dragged_slot_index = None
                 self._drag_pos = (0, 0)
+
+    def _on_shop_clicked(self):
+        if self.open_shop_callback:
+            try:
+                self.open_shop_callback()
+            except Exception:
+                pass
+        else:
+            # fallback: try to open shop via gameplay state
+            try:
+                game_state = getattr(self.app.manager, 'states', {}).get('gameplay')
+                if game_state and hasattr(game_state, 'open_shop'):
+                    game_state.open_shop()
+            except Exception:
+                pass
 
     def draw(self, screen: pygame.Surface):
         try:
@@ -286,6 +306,7 @@ class HUD:
         screen.blit(level_text, level_text_rect)
 
         self.inv_button.draw(screen)
+        pass
 
         stamina_bar_x = self.stamina_bar_rect.x
         stamina_bar_y = self.stamina_bar_rect.y
