@@ -351,6 +351,22 @@ class LocalMap:
         x = player.pos.x
         player_rect = player.get_rect() if hasattr(player, "get_rect") else player.rect
 
+        # Prevent player from leaving map bounds: clamp position to map pixel dimensions
+        sprite_w = player.image.get_width()
+        sprite_h = player.image.get_height()
+        max_x = max(0, map_width - sprite_w)
+        max_y = max(0, tmx_data.height * tile_height - sprite_h)
+        if player.pos.x < 0:
+            player.pos.x = 0
+        elif player.pos.x > max_x:
+            player.pos.x = max_x
+        if player.pos.y < 0:
+            player.pos.y = 0
+        elif player.pos.y > max_y:
+            player.pos.y = max_y
+        # refresh player rect after clamping
+        player_rect = player.get_rect() if hasattr(player, "get_rect") else player.rect
+
         spawn_offset = self.transition_buffer + 30 
         new_map = None
 
