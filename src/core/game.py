@@ -456,14 +456,11 @@ class Game(State):
     def _get_camera_offset(self) -> pygame.Vector2:
         viewport_width, viewport_height = self.app.screen.get_size()
 
-        if self.app.is_fullscreen:
-            return pygame.Vector2(0, 0)
-
-        map_width = cfg.BASE_SCREEN_WIDTH
-        map_height = cfg.BASE_SCREEN_HEIGHT
+        map_width = viewport_width
+        map_height = viewport_height
         if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
-            map_width = min(self.map.current_map.pixel_width, cfg.BASE_SCREEN_WIDTH)
-            map_height = min(self.map.current_map.pixel_height, cfg.BASE_SCREEN_HEIGHT)
+            map_width = self.map.current_map.pixel_width
+            map_height = self.map.current_map.pixel_height
 
         camera_x = int(self.character.get_center().x - viewport_width / 2)
         camera_y = int(self.character.get_center().y - viewport_height / 2)
