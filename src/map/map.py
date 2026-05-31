@@ -187,15 +187,25 @@ class LocalMap:
 
         tmx_data = self.current_map.game_map
         map_width = tmx_data.width * tmx_data.tilewidth
+        tile_width = tmx_data.tilewidth
+        tile_height = tmx_data.tileheight
 
         if hasattr(player, 'rect'):
             w = player.rect.width
         else:
             w = player.image.get_width()
         x = player.pos.x
+        player_rect = player.get_rect() if hasattr(player, "get_rect") else player.rect
 
         spawn_offset = self.transition_buffer + 30 
         new_map = None
+
+        if self.current_map_path == "maps/test-map-1.tmx":
+            if self._player_overlaps_any_tile(player_rect, tile_width, tile_height, [(36, 16), (37, 16)]):
+                new_map = "maps/tavern.tmx"
+                self.switch_map(new_map)
+                self._teleport_player_to_tile(player, 14, 38, tile_width, tile_height)
+                return new_map
 
         if self.current_map_path == "maps/test-map-1.tmx":
             if x + w >= map_width - self.transition_buffer:
@@ -220,9 +230,32 @@ class LocalMap:
                 self.switch_map(new_map)
                 player.pos.x = map_width - w - spawn_offset
 
+        elif self.current_map_path == "maps/tavern.tmx":
+            tavern_exit_tiles = [(x, 39) for x in range(13, 17)]
+            if self._player_overlaps_any_tile(player_rect, tile_width, tile_height, tavern_exit_tiles):
+                new_map = "maps/test-map-1.tmx"
+                self.switch_map(new_map)
+                self._teleport_player_to_tile(player, 36, 17, tile_width, tile_height)
+                return new_map
+
         return new_map
 
     def switch_map(self, new_map_path):
         logger.info(f"Switching map from {self.current_map_path} to {new_map_path}")
         self.current_map = Map(new_map_path)
         self.current_map_path = new_map_path
+
+    def _player_overlaps_any_tile(self, player_rect, tile_width: int, tile_height: int, tile_positions: list[tuple[int, int]]) -> bool:
+        for tile_x, tile_y in tile_positions:
+            tile_rect = pygame.Rect(tile_x * tile_width, tile_y * tile_height, tile_width, tile_height)
+            if player_rect.colliderect(tile_rect):
+                return True
+        return False
+
+    def _teleport_player_to_tile(self, player, tile_x: int, tile_y: int, tile_width: int, tile_height: int):
+        player_rect = player.get_rect() if hasattr(player, "get_rect") else player.rect
+        offset_x = player_rect.x - player.pos.x
+        offset_y = player_rect.y - player.pos.y
+
+        player.pos.x = tile_x * tile_width - offset_x
+        player.pos.y = tile_y * tile_height - offset_y
