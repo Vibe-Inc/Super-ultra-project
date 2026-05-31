@@ -95,10 +95,18 @@
 <span class="sd">        draw(screen):</span>
 <span class="sd">            Draw the NPC and the interaction prompt if applicable.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sprite_set</span><span class="o">=</span><span class="s2">&quot;MenHuman1&quot;</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sprite_set</span><span class="o">=</span><span class="s2">&quot;MenHuman1&quot;</span><span class="p">,</span> <span class="n">dialog_lines</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_merchant</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">gender</span><span class="o">=</span><span class="s1">&#39;male&#39;</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">interaction_range</span> <span class="o">=</span> <span class="mf">100.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_interactable</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dialog_lines</span> <span class="o">=</span> <span class="n">dialog_lines</span> <span class="ow">or</span> <span class="p">[</span>
+            <span class="s2">&quot;Hey there — you look new around here.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;I sell useful gear and supplies for the road.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;If you&#39;re interested, I can open my shop for you.&quot;</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_merchant</span> <span class="o">=</span> <span class="n">is_merchant</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gender</span> <span class="o">=</span> <span class="n">gender</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">was_talked</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">image</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span>
@@ -123,7 +131,23 @@
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.npc.NPC.update">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">player_pos</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">):</span>
         <span class="n">diff</span> <span class="o">=</span> <span class="n">player_pos</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">is_interactable</span> <span class="o">=</span> <span class="n">diff</span><span class="o">.</span><span class="n">length_squared</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_range</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">interaction_range</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_interactable</span> <span class="o">=</span> <span class="n">diff</span><span class="o">.</span><span class="n">length_squared</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_range</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">interaction_range</span><span class="p">)</span>
+        <span class="c1"># Keep rect in sync with float position so callers using get_rect() work</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_width</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_height</span><span class="p">())</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="NPC.get_rect">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.npc.NPC.get_rect">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_rect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return an updated collision rect for the NPC (used by visibility checks).&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_width</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_height</span><span class="p">())</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">),</span> <span class="mi">85</span><span class="p">,</span> <span class="mi">85</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span></div>
 
 
 <div class="viewcode-block" id="NPC.draw">

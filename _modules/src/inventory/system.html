@@ -486,6 +486,20 @@
             <span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_border</span><span class="p">,</span> 
             <span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_slot_color</span><span class="p">,</span> 
             <span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_border_color</span>
+        <span class="p">)</span>
+        <span class="c1"># Close shop button</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">()</span>
+        <span class="n">btn_w</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">140</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
+        <span class="n">btn_h</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">28</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">38</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close_button</span> <span class="o">=</span> <span class="n">Button</span><span class="p">(</span>
+            <span class="n">rect</span><span class="o">=</span><span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">btn_w</span><span class="p">,</span> <span class="n">btn_h</span><span class="p">),</span>
+            <span class="n">text</span><span class="o">=</span><span class="n">_</span><span class="p">(</span><span class="s2">&quot;CLOSE SHOP&quot;</span><span class="p">),</span>
+            <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">120</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">60</span><span class="p">),</span>
+            <span class="n">hover_color</span><span class="o">=</span><span class="p">(</span><span class="mi">160</span><span class="p">,</span> <span class="mi">90</span><span class="p">,</span> <span class="mi">90</span><span class="p">),</span>
+            <span class="n">font</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">INV_nums_font</span><span class="p">,</span>
+            <span class="n">font_color</span><span class="o">=</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
+            <span class="n">corner_width</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">6</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)),</span>
+            <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_close_shop</span>
         <span class="p">)</span></div>
 
 
@@ -516,7 +530,20 @@
                     <span class="n">rect_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_x</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span>
                     <span class="n">rect_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_y</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="n">y</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span>
                     
-                    <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="p">(</span><span class="n">rect_x</span> <span class="o">+</span> <span class="mi">5</span><span class="p">,</span> <span class="n">rect_y</span> <span class="o">+</span> <span class="mi">50</span><span class="p">))</span></div>
+                    <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="p">(</span><span class="n">rect_x</span> <span class="o">+</span> <span class="mi">5</span><span class="p">,</span> <span class="n">rect_y</span> <span class="o">+</span> <span class="mi">50</span><span class="p">))</span>
+
+        <span class="c1"># Draw close shop button at bottom-right of shop window</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">bg_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_x</span> <span class="o">-</span> <span class="mi">15</span>
+            <span class="n">bg_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_y</span> <span class="o">-</span> <span class="mi">15</span>
+            <span class="n">bg_w</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span> <span class="o">+</span> <span class="mi">30</span>
+            <span class="n">bg_h</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rows</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span> <span class="o">+</span> <span class="mi">30</span>
+            <span class="c1"># position button inside bg rect at bottom-right</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">close_button</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">topleft</span> <span class="o">=</span> <span class="p">(</span><span class="n">bg_x</span> <span class="o">+</span> <span class="n">bg_w</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">close_button</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">width</span> <span class="o">-</span> <span class="mi">12</span><span class="p">,</span> <span class="n">bg_y</span> <span class="o">+</span> <span class="n">bg_h</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">close_button</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">height</span> <span class="o">-</span> <span class="mi">12</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">close_button</span><span class="o">.</span><span class="n">_update_text_surface</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">close_button</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span></div>
 
 
 <div class="viewcode-block" id="ShopInventory.inventory_interactions">
@@ -526,6 +553,14 @@
             <span class="k">return</span>
 
         <span class="n">mouse_x</span><span class="p">,</span> <span class="n">mouse_y</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mouse</span><span class="o">.</span><span class="n">get_pos</span><span class="p">()</span>
+        <span class="c1"># Check close button first</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;close_button&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">close_button</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">collidepoint</span><span class="p">((</span><span class="n">mouse_x</span><span class="p">,</span> <span class="n">mouse_y</span><span class="p">)):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">close_button</span><span class="o">.</span><span class="n">on_click</span><span class="p">()</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">pass</span>
+                <span class="k">return</span>
         
         <span class="c1"># Check if mouse is within inventory bounds</span>
         <span class="n">total_width</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span>
@@ -565,7 +600,24 @@
                             <span class="c1"># Do not remove from shop (infinite stock)</span>
                         <span class="k">else</span><span class="p">:</span>
                             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Not enough money to buy </span><span class="si">{</span><span class="n">shop_item</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">. Cost: $</span><span class="si">{</span><span class="n">buy_price</span><span class="si">}</span><span class="s2">, Balance: $</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
-</div>
+
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_close_shop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Attempt to close the currently open shop via inventory manager</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">game_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gameplay&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">game_state</span><span class="p">:</span>
+                <span class="n">pl_inv</span> <span class="o">=</span> <span class="n">game_state</span><span class="o">.</span><span class="n">MAIN_player_inv</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">toggle_trade</span><span class="p">(</span><span class="n">pl_inv</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># fallback: try to remove ourselves</span>
+                <span class="k">if</span> <span class="bp">self</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">active_inventories</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">remove_active_inventory</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">current_shop_inv</span> <span class="ow">is</span> <span class="bp">self</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">current_shop_inv</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span></div>
 
 
 

@@ -145,6 +145,10 @@
         
         <span class="bp">self</span><span class="o">.</span><span class="n">money</span> <span class="o">=</span> <span class="mi">100</span>
 
+        <span class="c1"># Dialog state: current active dialog UI and last NPC the player talked to</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_dialog</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_talked_npc</span> <span class="o">=</span> <span class="kc">None</span>
+
         <span class="c1"># Audio / fullscreen / clock</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">audio</span> <span class="o">=</span> <span class="s2">&quot;on&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">clock</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">Clock</span><span class="p">()</span>
