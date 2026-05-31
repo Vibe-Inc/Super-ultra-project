@@ -470,11 +470,21 @@ class Game(State):
         camera_x = int(self.character.get_center().x - viewport_width / 2)
         camera_y = int(self.character.get_center().y - viewport_height / 2)
 
-        max_x = max(0, map_width - viewport_width)
-        max_y = max(0, map_height - viewport_height)
+        # If the map is larger than the viewport, clamp camera within map bounds.
+        # If the map is smaller than the viewport on an axis, center the map on that axis.
+        if map_width >= viewport_width:
+            max_x = map_width - viewport_width
+            camera_x = max(0, min(camera_x, int(max_x)))
+        else:
+            # center map horizontally: negative camera offset will cause map to be drawn centered
+            camera_x = int((map_width - viewport_width) / 2)
 
-        camera_x = max(0, min(camera_x, max_x))
-        camera_y = max(0, min(camera_y, max_y))
+        if map_height >= viewport_height:
+            max_y = map_height - viewport_height
+            camera_y = max(0, min(camera_y, int(max_y)))
+        else:
+            # center map vertically
+            camera_y = int((map_height - viewport_height) / 2)
 
         return pygame.Vector2(camera_x, camera_y)
 
