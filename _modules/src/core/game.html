@@ -335,7 +335,12 @@
             <span class="s2">&quot;maps/test-map-1.tmx&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">400</span><span class="p">,</span> <span class="mi">400</span><span class="p">)</span>
         <span class="p">}</span>
 
+        <span class="c1"># Maps where enemy spawning (both default and random) is disabled</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">NO_ENEMY_SPAWN_MAPS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;maps/tavern.tmx&quot;</span><span class="p">,</span> <span class="s2">&quot;maps/test-map-1.tmx&quot;</span><span class="p">}</span>
+
         <span class="n">spawn_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_spawn_info</span><span class="p">(</span><span class="n">initial_map_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">initial_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">NO_ENEMY_SPAWN_MAPS</span><span class="p">:</span>
+            <span class="n">spawn_info</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">spawn_info</span><span class="p">:</span>
             <span class="n">start_x</span><span class="p">,</span> <span class="n">start_y</span> <span class="o">=</span> <span class="n">spawn_info</span><span class="p">[</span><span class="s2">&quot;pos&quot;</span><span class="p">]</span>
             <span class="n">default_profile</span> <span class="o">=</span> <span class="n">spawn_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;profile&quot;</span><span class="p">)</span>
@@ -553,11 +558,21 @@
         <span class="n">camera_x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">get_center</span><span class="p">()</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">viewport_width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
         <span class="n">camera_y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">get_center</span><span class="p">()</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">viewport_height</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
 
-        <span class="n">max_x</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">map_width</span> <span class="o">-</span> <span class="n">viewport_width</span><span class="p">)</span>
-        <span class="n">max_y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">map_height</span> <span class="o">-</span> <span class="n">viewport_height</span><span class="p">)</span>
+        <span class="c1"># If the map is larger than the viewport, clamp camera within map bounds.</span>
+        <span class="c1"># If the map is smaller than the viewport on an axis, center the map on that axis.</span>
+        <span class="k">if</span> <span class="n">map_width</span> <span class="o">&gt;=</span> <span class="n">viewport_width</span><span class="p">:</span>
+            <span class="n">max_x</span> <span class="o">=</span> <span class="n">map_width</span> <span class="o">-</span> <span class="n">viewport_width</span>
+            <span class="n">camera_x</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">camera_x</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">max_x</span><span class="p">)))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># center map horizontally: negative camera offset will cause map to be drawn centered</span>
+            <span class="n">camera_x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">map_width</span> <span class="o">-</span> <span class="n">viewport_width</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
 
-        <span class="n">camera_x</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">camera_x</span><span class="p">,</span> <span class="n">max_x</span><span class="p">))</span>
-        <span class="n">camera_y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">camera_y</span><span class="p">,</span> <span class="n">max_y</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">map_height</span> <span class="o">&gt;=</span> <span class="n">viewport_height</span><span class="p">:</span>
+            <span class="n">max_y</span> <span class="o">=</span> <span class="n">map_height</span> <span class="o">-</span> <span class="n">viewport_height</span>
+            <span class="n">camera_y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">camera_y</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">max_y</span><span class="p">)))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># center map vertically</span>
+            <span class="n">camera_y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">map_height</span> <span class="o">-</span> <span class="n">viewport_height</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">camera_x</span><span class="p">,</span> <span class="n">camera_y</span><span class="p">)</span>
 
@@ -689,7 +704,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span> <span class="o">=</span> <span class="p">[]</span>
             
             <span class="n">spawn_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_spawn_info</span><span class="p">(</span><span class="n">switched_map_path</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">spawn_info</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">switched_map_path</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">NO_ENEMY_SPAWN_MAPS</span> <span class="ow">and</span> <span class="n">spawn_info</span><span class="p">:</span>
                 <span class="n">new_x</span><span class="p">,</span> <span class="n">new_y</span> <span class="o">=</span> <span class="n">spawn_info</span><span class="p">[</span><span class="s2">&quot;pos&quot;</span><span class="p">]</span>
                 <span class="n">profile</span> <span class="o">=</span> <span class="n">spawn_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;profile&quot;</span><span class="p">)</span>
                 <span class="n">default_enemy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_enemy</span><span class="p">(</span><span class="n">new_x</span><span class="p">,</span> <span class="n">new_y</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="n">profile</span><span class="p">)</span>
@@ -707,7 +722,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">enemy_spawn_timer</span> <span class="o">+=</span> <span class="n">dt</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemy_spawn_timer</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemy_spawn_interval</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">enemy_spawn_timer</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">spawn_random_enemy</span><span class="p">()</span>
+            <span class="c1"># Skip periodic/random spawns on maps where spawning is disabled</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">NO_ENEMY_SPAWN_MAPS</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">spawn_random_enemy</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_sync_weapon_stats</span><span class="p">()</span>
 
@@ -795,6 +812,8 @@
                 <span class="n">projectile</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">draw_fringe_overlay</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">is_interactable</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="p">,</span> <span class="s1">&#39;current_shop_inv&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
