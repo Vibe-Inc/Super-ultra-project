@@ -22,10 +22,18 @@ class NPC:
         draw(screen):
             Draw the NPC and the interaction prompt if applicable.
     """
-    def __init__(self, x, y, sprite_set="MenHuman1"):
+    def __init__(self, x, y, sprite_set="MenHuman1", dialog_lines=None, is_merchant=False, gender='male'):
         self.pos = pygame.Vector2(x, y)
         self.interaction_range = 100.0
         self.is_interactable = False
+        self.dialog_lines = dialog_lines or [
+            "Hey there — you look new around here.",
+            "I sell useful gear and supplies for the road.",
+            "If you're interested, I can open my shop for you."
+        ]
+        self.is_merchant = is_merchant
+        self.gender = gender
+        self.was_talked = False
 
         try:
             self.image = pygame.transform.scale(

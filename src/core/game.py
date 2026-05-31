@@ -15,6 +15,7 @@ from src.entities.enemy import Enemy
 from src.entities.npc import NPC
 from src.entities.projectile import Arrow
 from src.ui.hud import HUD
+from src.ui.widgets import Dialog
 from src.core.collision_system import CollisionSystem
 from src.ai.navigation import NavGrid
 from src.entities.monster_visuals import build_monster_animations
@@ -273,7 +274,7 @@ class Game(State):
             start_x, start_y = -5000, -5000
             default_profile = None
 
-        self.hud = HUD(self.character, app, self.toggle_player_inventory, self.use_skill_slot)
+        self.hud = HUD(self.character, app, self.toggle_player_inventory, self.use_skill_slot, open_shop_callback=self.open_shop)
 
         self.enemy = self._create_enemy(start_x, start_y, profile=default_profile)
         
@@ -289,7 +290,13 @@ class Game(State):
         else:
             npc_x, npc_y = -5000, -5000
 
-        self.npc = NPC(x=npc_x, y=npc_y, sprite_set="MenHuman1")
+        # NPC: provide dialog and mark as merchant for this map
+        default_dialog = [
+            "Hey — good to see someone around.",
+            "I run a small stall: got some gear and supplies for travelers.",
+            "If you want, I can open the shop and you can take a look."
+        ]
+        self.npc = NPC(x=npc_x, y=npc_y, sprite_set="MenHuman1", dialog_lines=default_dialog, is_merchant=True, gender='male')
         
         shop_items = [
             create_item("dull_sword"),
@@ -306,7 +313,7 @@ class Game(State):
         self.shop_inv = ShopInventory(self.app, shop_items)
 
     def reinit_ui(self):
-        self.hud = HUD(self.character, self.app, self.toggle_player_inventory, self.use_skill_slot)
+        self.hud = HUD(self.character, self.app, self.toggle_player_inventory, self.use_skill_slot, open_shop_callback=self.open_shop)
 
         self.MAIN_player_inv.pos_x = cfg.MAIN_INV_pos_x
         self.MAIN_player_inv.pos_y = cfg.MAIN_INV_pos_y
@@ -320,6 +327,12 @@ class Game(State):
 
     def toggle_player_inventory(self):
         self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
+
+    def open_shop(self):
+        try:
+            self.app.INV_manager.toggle_trade(self.MAIN_player_inv, self.shop_inv)
+        except Exception:
+            pass
 
     def use_skill_slot(self, slot_index):
         return self.character.use_skill_from_slot(slot_index)
@@ -737,12 +750,26 @@ class Game(State):
         self.hud.draw(screen)
         if self.app.INV_manager.player_inventory_opened:
             self.app.INV_manager.draw(screen)
+        # draw active dialog if present
+        if getattr(self.app, 'current_dialog', None):
+            try:
+                self.app.current_dialog.draw(screen)
+            except Exception:
+                pass
 
     def draw(self, screen):
         self.draw_scene(screen)
         self.draw_ui(screen)
 
     def handle_event(self, event: pygame.event.Event):
+        # If a dialog is active, route events to it first
+        if getattr(self.app, 'current_dialog', None):
+            try:
+                self.app.current_dialog.handle_event(event)
+                return
+            except Exception:
+                pass
+
         self.hud.handle_event(event)
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
@@ -762,9 +789,17 @@ class Game(State):
                 self.use_skill_slot(5)
             
             if event.key == pygame.K_e:
-                # If NPC is interactable -> open/close trade regardless of inventory state
+                # If NPC is interactable -> start conversation (dialog).
                 if self.npc.is_interactable:
-                    self.app.INV_manager.toggle_trade(self.MAIN_player_inv, self.shop_inv)
+                    def on_close():
+                        try:
+                            self.app.last_talked_npc = self.npc
+                            self.npc.was_talked = True
+                        except Exception:
+                            pass
+
+                    # show shop button inside dialog only for merchant NPCs
+                    self.app.current_dialog = Dialog(self.app, self.npc.dialog_lines, on_close=on_close, on_shop=self.open_shop, show_shop=self.npc.is_merchant)
                 else:
                     # Otherwise toggle the player's inventory (open/close)
                     self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)

@@ -70,6 +70,10 @@ class App:
         
         self.money = 100
 
+        # Dialog state: current active dialog UI and last NPC the player talked to
+        self.current_dialog = None
+        self.last_talked_npc = None
+
         # Audio / fullscreen / clock
         self.audio = "on"
         self.clock = pygame.time.Clock()

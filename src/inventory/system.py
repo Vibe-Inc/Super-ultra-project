@@ -370,6 +370,20 @@ class ShopInventory(Inventory):
             cfg.BASE_INV_slot_color, 
             cfg.BASE_INV_border_color
         )
+        # Close shop button
+        scale = cfg.ui_scale()
+        btn_w = max(80, int(140 * scale))
+        btn_h = max(28, int(38 * scale))
+        self.close_button = Button(
+            rect=pygame.Rect(0, 0, btn_w, btn_h),
+            text=_("CLOSE SHOP"),
+            color=(120, 60, 60),
+            hover_color=(160, 90, 90),
+            font=cfg.INV_nums_font,
+            font_color=(255, 255, 255),
+            corner_width=max(2, int(6 * scale)),
+            on_click=self._close_shop
+        )
 
     def draw(self, screen):
         # Draw background for shop
@@ -398,11 +412,32 @@ class ShopInventory(Inventory):
                     
                     screen.blit(text, (rect_x + 5, rect_y + 50))
 
+        # Draw close shop button at bottom-right of shop window
+        try:
+            bg_x = self.pos_x - 15
+            bg_y = self.pos_y - 15
+            bg_w = (self.slot_size + self.border) * self.columns + self.border + 30
+            bg_h = (self.slot_size + self.border) * self.rows + self.border + 30
+            # position button inside bg rect at bottom-right
+            self.close_button.rect.topleft = (bg_x + bg_w - self.close_button.rect.width - 12, bg_y + bg_h - self.close_button.rect.height - 12)
+            self.close_button._update_text_surface()
+            self.close_button.draw(screen)
+        except Exception:
+            pass
+
     def inventory_interactions(self, event, manager):
         if event.type != pygame.MOUSEBUTTONDOWN:
             return
 
         mouse_x, mouse_y = pygame.mouse.get_pos()
+        # Check close button first
+        if event.button == 1 and getattr(self, 'close_button', None):
+            if self.close_button.rect.collidepoint((mouse_x, mouse_y)):
+                try:
+                    self.close_button.on_click()
+                except Exception:
+                    pass
+                return
         
         # Check if mouse is within inventory bounds
         total_width = (self.slot_size + self.border) * self.columns
@@ -442,6 +477,23 @@ class ShopInventory(Inventory):
                             # Do not remove from shop (infinite stock)
                         else:
                             logger.info(f"Not enough money to buy {shop_item.id}. Cost: ${buy_price}, Balance: ${self.app.money}")
+
+
+    def _close_shop(self):
+        # Attempt to close the currently open shop via inventory manager
+        try:
+            game_state = self.app.manager.states.get("gameplay")
+            if game_state:
+                pl_inv = game_state.MAIN_player_inv
+                self.app.INV_manager.toggle_trade(pl_inv, self)
+            else:
+                # fallback: try to remove ourselves
+                if self in self.app.INV_manager.active_inventories:
+                    self.app.INV_manager.remove_active_inventory(self)
+                    if self.app.INV_manager.current_shop_inv is self:
+                        self.app.INV_manager.current_shop_inv = None
+        except Exception:
+            pass
 
 
 class MAIN_player_inventory(Inventory):
