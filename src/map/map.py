@@ -104,7 +104,7 @@ class Map:
                     if not tile_properties:
                         continue
 
-                    if not tile_properties.get("collidible"):
+                    if not tile_properties.get("collidable"):
                         continue
 
                     tile_key = (x, y, layer.id)
