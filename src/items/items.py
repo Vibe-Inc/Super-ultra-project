@@ -1,58 +1,36 @@
 import pygame
 from src.core.logger import logger
-from src.items.item_database import Item_database
-from src.items.effects import create_effect
+from database.effects import create_effect
 
 class Item:
     """
-    Represents a generic inventory item.
-
-    This class provides basic item properties, image loading, and translation support for name and description.
+    Base class for all game items.
 
     Attributes:
-        id (str):
-            Unique identifier for the item.
-        name_key (str):
-            The original (untranslated) name string for translation lookup.
-        type (str):
-            The type/category of the item (e.g., 'weapon', 'food', 'armor').
-        max_stack (int):
-            Maximum number of items per inventory slot.
-        desc_key (str):
-            The original (untranslated) description string for translation lookup.
-        image (pygame.Surface):
-            The item's image surface.
-        _cached_image (pygame.Surface | None):
-            Cached resized image for performance.
-        _cached_size (int):
-            Size of the cached image.
-
-    Properties:
-        name (str):
-            The translated name of the item.
-        description (str):
-            The translated description of the item.
+        id (str): Unique identifier for the item.
+        name_key (str): Translation key for the item name.
+        type (str): Category of the item.
+        max_stack (int): Maximum stack size in the inventory.
+        price (int): Monetary value of the item.
+        desc_key (str): Translation key for the description.
+        image (pygame.Surface): The loaded item sprite.
 
     Methods:
-        resize(size):
-            Resize and cache the item's image.
-            Args:
-                size (int): The desired size in pixels.
-            Returns:
-                pygame.Surface: The resized image.
-        get_tooltip_text():
-            Get a tooltip string with the item's name and description.
-            Returns:
-                str: Tooltip text.
+        __init__(row: dict): Initialize item properties from a dictionary.
+        name(): Property returning the translated item name.
+        description(): Property returning the translated item description.
+        resize(size: int): Return a cached resized surface of the item.
+        get_tooltip_text(): Return formatted tooltip text.
+        use(target): Abstract method for item usage logic.
     """
-    def __init__(self, data: dict):
-        self.id = data["id"]
-        self.name_key = data["name"]
-        self.type = data["type"]
-        self.max_stack = data.get("max_stack", 64)
-        self.price = data.get("price", 0)
-        self.desc_key = data.get("description", "")
-        self.image = pygame.image.load(data["image_path"]).convert_alpha()
+    def __init__(self, row: dict):
+        self.id = row["id"]
+        self.name_key = row["name"]
+        self.type = row["type"]
+        self.max_stack = row["max_stack"]
+        self.price = row["price"]
+        self.desc_key = row["description"] if row["description"] is not None else ""
+        self.image = pygame.image.load(row["image_path"]).convert_alpha()
 
         self._cached_image = None
         self._cached_size = 0
@@ -75,86 +53,100 @@ class Item:
         return f"{self.name}\n{self.description}"
 
     def use(self, target):
-        """
-        Use the item on the target character.
-        """
         pass
+
 
 class Weapon(Item):
     """
-    Represents a weapon item with damage and durability.
+    Base class for weapon items, providing shared combat statistics.
 
     Attributes:
-        damage (int):
-            The amount of damage this weapon deals.
-        durability (int):
-            The remaining durability of the weapon.
-        range (float):
-            The attack range of the weapon.
-
-    Methods:
-        get_tooltip_text():
-            Get a tooltip string with weapon stats and description.
-            Returns:
-                str: Tooltip text.
+        damage (int): Base damage dealt by the weapon.
+        durability (int): Current weapon durability points.
+        cooldown (int): Attack cooldown in milliseconds.
+        weapon_class (str): Classification (e.g., melee, ranged).
     """
-    def __init__(self, data: dict):
-        super().__init__(data)
-        self.damage = data.get("damage", 1)
-        self.durability = data.get("durability", 100)
-        self.range = data.get("range", 65)
-        self.weapon_class = data.get("weapon_class", "melee")
-        self.cooldown = data.get("cooldown", 500)
-        self.projectile_speed = data.get("projectile_speed", 0)
-        self.cone_degrees = data.get("cone_degrees", 90.0)
-        self.spread_degrees = data.get("spread_degrees", 4.0)
+    def __init__(self, row: dict):
+        super().__init__(row)
+        self.damage = row["damage"]
+        self.durability = row["durability"]
+        self.cooldown = row["cooldown"]
+        self.weapon_class = row["weapon_class"]
 
-    def get_tooltip_text(self):
+    def _get_base_stats_text(self):
         weapon_label = f"{_('Weapon')} ({self.weapon_class.capitalize()})"
-        stats = (
+        return (
             f"{_('Type')}: {weapon_label}\n"
             f"{_('Damage')}: {self.damage}\n"
             f"{_('Durability')}: {self.durability}\n"
+        )
+
+
+class MeleeWeapon(Weapon):
+    """
+    Represents a melee combat weapon.
+    """
+    def __init__(self, row: dict):
+        super().__init__(row)
+        self.range = row["range"]
+
+    def get_tooltip_text(self):
+        base_stats = self._get_base_stats_text()
+        stats = (
+            f"{base_stats}"
             f"{_('Range')}: {self.range}\n"
             f"Price: ${self.price}"
         )
         return f"{self.name}\n{stats}\n{self.description}"    
 
+
+class RangedWeapon(Weapon):
+    """
+    Represents a ranged combat weapon.
+    """
+    def __init__(self, row: dict):
+        super().__init__(row)
+        self.range = row["range"]
+        self.projectile_speed = row["projectile_speed"]
+        self.cone_degrees = row["cone_degrees"]
+        self.spread_degrees = row["spread_degrees"]
+
+    def get_tooltip_text(self):
+        base_stats = self._get_base_stats_text()
+        stats = (
+            f"{base_stats}"
+            f"{_('Range')}: {self.range}\n"
+            f"{_('Proj. Speed')}: {self.projectile_speed}\n"
+            f"Price: ${self.price}"
+        )
+        return f"{self.name}\n{stats}\n{self.description}"
+
+
 class Consumable(Item):
     """
-    Represents a consumable item (e.g., food, potion).
+    Represents an item that can be used to restore health or apply effects.
 
     Attributes:
-        heal_amount (int):
-            The amount of HP restored by this item.
-        effects_data (list[dict]):
-            Configuration for effects to apply.
-
-    Methods:
-        get_tooltip_text():
-            Get a tooltip string with consumable stats and description.
-            Returns:
-                str: Tooltip text.
-        use(target):
-            Apply healing and effects to the target.
+        heal_amount (int): Points of HP restored or lost.
+        effects_list (list): Configuration for applying dynamic effects.
     """
-
-    def __init__(self, data: dict):
-        super().__init__(data)
-        self.heal_amount = data.get("heal_amount", 0)
-        self.effects_list = data.get("effects", [])
+    def __init__(self, row: dict):
+        super().__init__(row)
+        self.heal_amount = row.get("heal_amount", 0)
+        self.effects_list = row.get("effects", [])
         
     def get_tooltip_text(self):
         stats = f"{_('Type')}: {_('Consumable')}"
         if self.heal_amount > 0:
             stats += f"\n{_('Heal')}: +{self.heal_amount} {_('HP')}"
+        elif self.heal_amount < 0:
+            stats += f"\n{_('Damage')}: {self.heal_amount} {_('HP')}"
         
         if self.effects_list:
             stats += f"\n{_('Effects')}:"
             for effect_data in self.effects_list:
-                etype = effect_data.get("type")
-                dur = effect_data.get("duration")
-
+                etype = effect_data.get("type", "unknown")
+                dur = effect_data.get("duration", 0)
                 stats += f"\n - {etype.capitalize()} ({dur}s)"
         
         stats += f"\nPrice: ${self.price}"
@@ -162,12 +154,14 @@ class Consumable(Item):
 
     def use(self, target):
         used = False 
-        
+        if self.heal_amount != 0:
+            target.hp = min(target.max_hp, max(0, target.hp + self.heal_amount))
+            used = True
+
         if self.effects_list:
             used = True 
             for effect_data in self.effects_list:
                 effect_obj = create_effect(effect_data)
-                
                 if effect_obj:
                     target.add_effect(effect_obj)
         return used
@@ -175,35 +169,44 @@ class Consumable(Item):
 
 class Armor(Item):
     """
-    Represents an armor item. (Extend with armor-specific stats as needed.)
+    Represents an armor item.
     """
-    def __init__(self, data: dict):
-        super().__init__(data)
-        pass
+    def __init__(self, row: dict):
+        super().__init__(row)
+
 
 def create_item(item_id: str):
     """
-    Factory function to create an item instance by ID.
+    Factory function to instantiate the appropriate item class.
 
     Args:
-        item_id (str): The unique identifier of the item in the item database.
+        item_id (str): The identifier to look up in the database.
 
     Returns:
-        Item | Weapon | Consumable | Armor: The instantiated item object of the appropriate type.
+        Item | None: An instance of a specific item class or None.
     """
-    data = Item_database.get(item_id)
-    if not data:
-        logger.error(f"Item ID not found in database: {item_id}")
+    from database.GP_database import Gp_database 
+    
+    db = Gp_database()
+    row = db.get_item(item_id)
+    db.close()
+
+    if not row:
+        logger.error(f"Предмет '{item_id}' не знайдено в базі даних!")
         return None
 
-    item_type = data.get("type")
+    item_type = row.get("type")
     
     if item_type == "weapon":
-        return Weapon(data)
-    elif item_type == "food" or item_type == "potion":
-        return Consumable(data)
+        w_class = row.get("weapon_class")
+        if w_class == "ranged":
+            return RangedWeapon(row)
+        else:
+            return MeleeWeapon(row)
+    elif item_type in ("food", "potion"):
+        return Consumable(row)
     elif item_type == "armor":
-        return Armor(data)
+        return Armor(row)
     else:
-        logger.warning(f"Unknown item type '{item_type}' for item '{item_id}'. Defaulting to generic Item.")
-        return Item(data)
+        logger.warning(f"Unknown item type '{item_type}' for '{item_id}'. Defaulting to generic Item.")
+        return Item(row)

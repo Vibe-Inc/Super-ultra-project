@@ -10,7 +10,7 @@ from src.entities.character import Character
 from src.map.map import LocalMap
 from src.inventory.system import MAIN_player_inventory, MAIN_player_inventory_equipment, ShopInventory
 from src.items.items import create_item
-from src.items.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, DizzinessEffect
+from database.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, DizzinessEffect
 from src.entities.enemy import Enemy
 from src.entities.npc import NPC
 from src.entities.projectile import Arrow
@@ -573,7 +573,7 @@ class Game(State):
 
         aim_dir = self._get_mouse_aim_direction(mouse_pos)
 
-        if getattr(weapon, "weapon_class", "melee") == "bow":
+        if getattr(weapon, "weapon_class", "melee") == "ranged":
             if not self.character.can_attack():
                 return
             self.character.start_attack(show_slash=False)

@@ -1,36 +1,5 @@
 def _(x): return x
 
-Weapon_database = {
-    "dull_sword": {
-        "id": "dull_sword",
-        "type": "weapon",
-        "name": _("Dull Sword"),
-        "image_path": "assets/items/weapons/swords/dull_sword.png",
-        "damage": 20,
-        "durability": 50,
-        "cone_degrees": 120,
-        "price": 50,
-        "description": _("A worn-out sword with a dull blade. Thats about it.")
-    },
-    "wooden_bow": {
-        "id": "wooden_bow",
-        "type": "weapon",
-        "weapon_class": "bow",
-        "name": _("Wooden Bow"),
-        "image_path": "assets/items/weapons/bows/wooden_bow.png",
-        "damage": 14,
-        "durability": 40,
-        "range": 520,
-        "projectile_speed": 900,
-        "cooldown": 650,
-        "spread_degrees": 4,
-        "price": 75,
-        "description": _("A simple bow made of wood. Lightweight but reliable.")
-    }
-}
-
-
-
 Food_database = {
 "apple": {
         "id": "apple",
@@ -109,6 +78,5 @@ Consumable_database = {
 }
 
 Item_database = {
-    **Weapon_database,
     **Consumable_database
 }
