@@ -176,6 +176,37 @@
             <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">objects</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;Wall&quot;</span> <span class="ow">or</span> <span class="n">obj</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;Wall&quot;</span><span class="p">:</span> <span class="c1"># Check for object type or name</span>
                     <span class="n">obstacles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">height</span><span class="p">))</span>
+
+            <span class="n">seen_tile_cells</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+            <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">pytmx</span><span class="o">.</span><span class="n">TiledTileLayer</span><span class="p">):</span>
+                    <span class="k">continue</span>
+
+                <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">gid</span> <span class="ow">in</span> <span class="n">layer</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">gid</span><span class="p">:</span>
+                        <span class="k">continue</span>
+
+                    <span class="n">tile_properties</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">get_tile_properties_by_gid</span><span class="p">(</span><span class="n">gid</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">tile_properties</span><span class="p">:</span>
+                        <span class="k">continue</span>
+
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">tile_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;collidable&quot;</span><span class="p">):</span>
+                        <span class="k">continue</span>
+
+                    <span class="n">tile_key</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">layer</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">tile_key</span> <span class="ow">in</span> <span class="n">seen_tile_cells</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                    <span class="n">seen_tile_cells</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">tile_key</span><span class="p">)</span>
+
+                    <span class="n">obstacles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span>
+                            <span class="n">x</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">tilewidth</span><span class="p">,</span>
+                            <span class="n">y</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">tileheight</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">tilewidth</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">tileheight</span><span class="p">,</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
             
             <span class="c1"># Also check for object layers named &quot;Walls&quot; or &quot;Collisions&quot;</span>
             <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">visible_layers</span><span class="p">:</span>
@@ -258,15 +289,25 @@
 
         <span class="n">tmx_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">game_map</span>
         <span class="n">map_width</span> <span class="o">=</span> <span class="n">tmx_data</span><span class="o">.</span><span class="n">width</span> <span class="o">*</span> <span class="n">tmx_data</span><span class="o">.</span><span class="n">tilewidth</span>
+        <span class="n">tile_width</span> <span class="o">=</span> <span class="n">tmx_data</span><span class="o">.</span><span class="n">tilewidth</span>
+        <span class="n">tile_height</span> <span class="o">=</span> <span class="n">tmx_data</span><span class="o">.</span><span class="n">tileheight</span>
 
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">player</span><span class="p">,</span> <span class="s1">&#39;rect&#39;</span><span class="p">):</span>
             <span class="n">w</span> <span class="o">=</span> <span class="n">player</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">width</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">w</span> <span class="o">=</span> <span class="n">player</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span>
+        <span class="n">player_rect</span> <span class="o">=</span> <span class="n">player</span><span class="o">.</span><span class="n">get_rect</span><span class="p">()</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">player</span><span class="p">,</span> <span class="s2">&quot;get_rect&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="n">player</span><span class="o">.</span><span class="n">rect</span>
 
         <span class="n">spawn_offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_buffer</span> <span class="o">+</span> <span class="mi">30</span> 
         <span class="n">new_map</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="o">==</span> <span class="s2">&quot;maps/test-map-1.tmx&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_player_overlaps_any_tile</span><span class="p">(</span><span class="n">player_rect</span><span class="p">,</span> <span class="n">tile_width</span><span class="p">,</span> <span class="n">tile_height</span><span class="p">,</span> <span class="p">[(</span><span class="mi">36</span><span class="p">,</span> <span class="mi">16</span><span class="p">),</span> <span class="p">(</span><span class="mi">37</span><span class="p">,</span> <span class="mi">16</span><span class="p">)]):</span>
+                <span class="n">new_map</span> <span class="o">=</span> <span class="s2">&quot;maps/tavern.tmx&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_map</span><span class="p">(</span><span class="n">new_map</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_teleport_player_to_tile</span><span class="p">(</span><span class="n">player</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">38</span><span class="p">,</span> <span class="n">tile_width</span><span class="p">,</span> <span class="n">tile_height</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">new_map</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="o">==</span> <span class="s2">&quot;maps/test-map-1.tmx&quot;</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">x</span> <span class="o">+</span> <span class="n">w</span> <span class="o">&gt;=</span> <span class="n">map_width</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_buffer</span><span class="p">:</span>
@@ -291,6 +332,14 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">switch_map</span><span class="p">(</span><span class="n">new_map</span><span class="p">)</span>
                 <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">map_width</span> <span class="o">-</span> <span class="n">w</span> <span class="o">-</span> <span class="n">spawn_offset</span>
 
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="o">==</span> <span class="s2">&quot;maps/tavern.tmx&quot;</span><span class="p">:</span>
+            <span class="n">tavern_exit_tiles</span> <span class="o">=</span> <span class="p">[(</span><span class="n">x</span><span class="p">,</span> <span class="mi">39</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">13</span><span class="p">,</span> <span class="mi">17</span><span class="p">)]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_player_overlaps_any_tile</span><span class="p">(</span><span class="n">player_rect</span><span class="p">,</span> <span class="n">tile_width</span><span class="p">,</span> <span class="n">tile_height</span><span class="p">,</span> <span class="n">tavern_exit_tiles</span><span class="p">):</span>
+                <span class="n">new_map</span> <span class="o">=</span> <span class="s2">&quot;maps/test-map-1.tmx&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">switch_map</span><span class="p">(</span><span class="n">new_map</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_teleport_player_to_tile</span><span class="p">(</span><span class="n">player</span><span class="p">,</span> <span class="mi">36</span><span class="p">,</span> <span class="mi">17</span><span class="p">,</span> <span class="n">tile_width</span><span class="p">,</span> <span class="n">tile_height</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">new_map</span>
+
         <span class="k">return</span> <span class="n">new_map</span></div>
 
 
@@ -300,7 +349,22 @@
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Switching map from </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">new_map_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current_map</span> <span class="o">=</span> <span class="n">Map</span><span class="p">(</span><span class="n">new_map_path</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="o">=</span> <span class="n">new_map_path</span></div>
-</div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_player_overlaps_any_tile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">player_rect</span><span class="p">,</span> <span class="n">tile_width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">tile_height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">tile_positions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">tile_x</span><span class="p">,</span> <span class="n">tile_y</span> <span class="ow">in</span> <span class="n">tile_positions</span><span class="p">:</span>
+            <span class="n">tile_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">tile_x</span> <span class="o">*</span> <span class="n">tile_width</span><span class="p">,</span> <span class="n">tile_y</span> <span class="o">*</span> <span class="n">tile_height</span><span class="p">,</span> <span class="n">tile_width</span><span class="p">,</span> <span class="n">tile_height</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">player_rect</span><span class="o">.</span><span class="n">colliderect</span><span class="p">(</span><span class="n">tile_rect</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_teleport_player_to_tile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">player</span><span class="p">,</span> <span class="n">tile_x</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">tile_y</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">tile_width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">tile_height</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">player_rect</span> <span class="o">=</span> <span class="n">player</span><span class="o">.</span><span class="n">get_rect</span><span class="p">()</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">player</span><span class="p">,</span> <span class="s2">&quot;get_rect&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="n">player</span><span class="o">.</span><span class="n">rect</span>
+        <span class="n">offset_x</span> <span class="o">=</span> <span class="n">player_rect</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span>
+        <span class="n">offset_y</span> <span class="o">=</span> <span class="n">player_rect</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span>
+
+        <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">tile_x</span> <span class="o">*</span> <span class="n">tile_width</span> <span class="o">-</span> <span class="n">offset_x</span>
+        <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">tile_y</span> <span class="o">*</span> <span class="n">tile_height</span> <span class="o">-</span> <span class="n">offset_y</span></div>
 
 </pre></div>
 
