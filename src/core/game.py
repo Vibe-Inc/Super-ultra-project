@@ -257,8 +257,9 @@ class Game(State):
             "maps/test-map-3.tmx": {"pos": (300, 200), "profile": "skirmisher"},
         }
 
+        # NPC spawn positions (pixels). Tavern NPC coordinates corrected to fit map bounds
         self.NPC_SPAWNS = {
-            "maps/test-map-1.tmx": (400, 400)
+            "maps/tavern.tmx": (576, 256),
         }
 
         # Maps where enemy spawning (both default and random) is disabled
@@ -297,6 +298,19 @@ class Game(State):
             "If you want, I can open the shop and you can take a look."
         ]
         self.npc = NPC(x=npc_x, y=npc_y, sprite_set="MenHuman1", dialog_lines=default_dialog, is_merchant=True, gender='male')
+
+        # Clamp initial NPC position to current map bounds so NPC won't be placed off-map
+        try:
+            if initial_map_path in self.NPC_SPAWNS and self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                map_w = self.map.current_map.pixel_width
+                map_h = self.map.current_map.pixel_height
+                npc_w = self.npc.image.get_width()
+                npc_h = self.npc.image.get_height()
+                clamped_x = max(0, min(npc_x, map_w - npc_w))
+                clamped_y = max(0, min(npc_y, map_h - npc_h))
+                self.npc.pos = pygame.Vector2(clamped_x, clamped_y)
+        except Exception:
+            pass
         
         shop_items = [
             create_item("dull_sword"),
@@ -631,10 +645,23 @@ class Game(State):
                 self.enemies.append(default_enemy)
 
             if switched_map_path in self.NPC_SPAWNS:
-                npc_x, npc_y = self.NPC_SPAWNS[switched_map_path]
-                self.npc.pos = pygame.Vector2(npc_x, npc_y)
+                    npc_x, npc_y = self.NPC_SPAWNS[switched_map_path]
+                    # Clamp NPC to the new map bounds so it is visible
+                    try:
+                        if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                            map_w = self.map.current_map.pixel_width
+                            map_h = self.map.current_map.pixel_height
+                            npc_w = self.npc.image.get_width()
+                            npc_h = self.npc.image.get_height()
+                            npc_x = max(0, min(npc_x, map_w - npc_w))
+                            npc_y = max(0, min(npc_y, map_h - npc_h))
+                    except Exception:
+                        pass
+                    self.npc.pos = pygame.Vector2(npc_x, npc_y)
+                    logger.info(f"Placed NPC for map {switched_map_path} at ({npc_x},{npc_y})")
             else:
                 self.npc.pos = pygame.Vector2(-5000, -5000)
+                logger.info(f"No NPC spawn for map {switched_map_path}; hiding NPC")
         
         # Enemy Spawning Logic
         self._update_game_time(dt)
@@ -692,6 +719,15 @@ class Game(State):
 
         self.npc.update(self.character.pos)
 
+        # Safety: if current map defines an NPC spawn but NPC is far away (not placed), place it
+        try:
+            if self.current_map_path in self.NPC_SPAWNS and (self.npc.pos.x < -1000 or self.npc.pos.y < -1000):
+                nx, ny = self.NPC_SPAWNS[self.current_map_path]
+                self.npc.pos = pygame.Vector2(nx, ny)
+                logger.info(f"Safety placed NPC on {self.current_map_path} at ({nx},{ny})")
+        except Exception:
+            pass
+
         self.app.profiler.set_gauge("enemies", len(self.enemies))
         self.app.profiler.set_gauge("projectiles", len(self.projectiles))
         self.app.profiler.set_gauge("enemy_projectiles", len(self.enemy_projectiles))
@@ -714,8 +750,7 @@ class Game(State):
 
         self.map.draw(screen, camera_offset)
 
-        self.character.draw(screen, camera_offset)
-
+        # Draw enemies and projectiles
         for enemy in self.enemies:
             if _is_visible(enemy):
                 enemy.draw(screen, camera_offset)
@@ -728,7 +763,21 @@ class Game(State):
             if _is_visible(projectile):
                 projectile.draw(screen, camera_offset)
 
-        self.npc.draw(screen, camera_offset)
+        # Draw NPC and player with simple Y-ordering so they overlap naturally
+        try:
+            npc_vis = _is_visible(self.npc)
+        except Exception:
+            npc_vis = False
+
+        # If player is lower on screen (greater y) -> player is in front, so draw NPC first
+        if self.character.pos.y > self.npc.pos.y:
+            if npc_vis:
+                self.npc.draw(screen, camera_offset)
+            self.character.draw(screen, camera_offset)
+        else:
+            self.character.draw(screen, camera_offset)
+            if npc_vis:
+                self.npc.draw(screen, camera_offset)
 
         self.map.draw_fringe_overlay(screen, camera_offset, self.character)
 

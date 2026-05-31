@@ -57,6 +57,19 @@ class NPC:
     def update(self, player_pos: pygame.Vector2):
         diff = player_pos - self.pos
         self.is_interactable = diff.length_squared() <= (self.interaction_range * self.interaction_range)
+        # Keep rect in sync with float position so callers using get_rect() work
+        try:
+            self.rect = pygame.Rect(int(self.pos.x), int(self.pos.y), self.image.get_width(), self.image.get_height())
+        except Exception:
+            pass
+
+    def get_rect(self):
+        """Return an updated collision rect for the NPC (used by visibility checks)."""
+        try:
+            self.rect = pygame.Rect(int(self.pos.x), int(self.pos.y), self.image.get_width(), self.image.get_height())
+        except Exception:
+            self.rect = pygame.Rect(int(self.pos.x), int(self.pos.y), 85, 85)
+        return self.rect
 
     def draw(self, screen: pygame.Surface, camera_offset=None):
         if camera_offset is None:
