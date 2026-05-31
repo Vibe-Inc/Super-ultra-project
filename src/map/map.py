@@ -89,6 +89,37 @@ class Map:
             for obj in self.game_map.objects:
                 if obj.type == "Wall" or obj.name == "Wall": # Check for object type or name
                     obstacles.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
+
+            seen_tile_cells = set()
+
+            for layer in self.game_map.layers:
+                if not isinstance(layer, pytmx.TiledTileLayer):
+                    continue
+
+                for x, y, gid in layer:
+                    if not gid:
+                        continue
+
+                    tile_properties = self.game_map.get_tile_properties_by_gid(gid)
+                    if not tile_properties:
+                        continue
+
+                    if not tile_properties.get("collidible"):
+                        continue
+
+                    tile_key = (x, y, layer.id)
+                    if tile_key in seen_tile_cells:
+                        continue
+                    seen_tile_cells.add(tile_key)
+
+                    obstacles.append(
+                        pygame.Rect(
+                            x * self.game_map.tilewidth,
+                            y * self.game_map.tileheight,
+                            self.game_map.tilewidth,
+                            self.game_map.tileheight,
+                        )
+                    )
             
             # Also check for object layers named "Walls" or "Collisions"
             for layer in self.game_map.visible_layers:
