@@ -15,6 +15,7 @@ from src.entities.enemy import Enemy
 from src.entities.npc import NPC
 from src.entities.projectile import Arrow
 from src.ui.hud import HUD
+from src.ui.widgets import Dialog
 from src.core.collision_system import CollisionSystem
 from src.ai.navigation import NavGrid
 from src.entities.monster_visuals import build_monster_animations
@@ -256,8 +257,9 @@ class Game(State):
             "maps/test-map-3.tmx": {"pos": (300, 200), "profile": "skirmisher"},
         }
 
+        # NPC spawn positions (pixels). Tavern NPC coordinates corrected to fit map bounds
         self.NPC_SPAWNS = {
-            "maps/test-map-1.tmx": (400, 400)
+            "maps/tavern.tmx": (576, 256),
         }
 
         # Maps where enemy spawning (both default and random) is disabled
@@ -273,7 +275,7 @@ class Game(State):
             start_x, start_y = -5000, -5000
             default_profile = None
 
-        self.hud = HUD(self.character, app, self.toggle_player_inventory, self.use_skill_slot)
+        self.hud = HUD(self.character, app, self.toggle_player_inventory, self.use_skill_slot, open_shop_callback=self.open_shop)
 
         self.enemy = self._create_enemy(start_x, start_y, profile=default_profile)
         
@@ -289,7 +291,26 @@ class Game(State):
         else:
             npc_x, npc_y = -5000, -5000
 
-        self.npc = NPC(x=npc_x, y=npc_y, sprite_set="MenHuman1")
+        # NPC: provide dialog and mark as merchant for this map
+        default_dialog = [
+            "Hey — good to see someone around.",
+            "I run a small stall: got some gear and supplies for travelers.",
+            "If you want, I can open the shop and you can take a look."
+        ]
+        self.npc = NPC(x=npc_x, y=npc_y, sprite_set="MenHuman1", dialog_lines=default_dialog, is_merchant=True, gender='male')
+
+        # Clamp initial NPC position to current map bounds so NPC won't be placed off-map
+        try:
+            if initial_map_path in self.NPC_SPAWNS and self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                map_w = self.map.current_map.pixel_width
+                map_h = self.map.current_map.pixel_height
+                npc_w = self.npc.image.get_width()
+                npc_h = self.npc.image.get_height()
+                clamped_x = max(0, min(npc_x, map_w - npc_w))
+                clamped_y = max(0, min(npc_y, map_h - npc_h))
+                self.npc.pos = pygame.Vector2(clamped_x, clamped_y)
+        except Exception:
+            pass
         
         shop_items = [
             create_item("dull_sword"),
@@ -306,7 +327,7 @@ class Game(State):
         self.shop_inv = ShopInventory(self.app, shop_items)
 
     def reinit_ui(self):
-        self.hud = HUD(self.character, self.app, self.toggle_player_inventory, self.use_skill_slot)
+        self.hud = HUD(self.character, self.app, self.toggle_player_inventory, self.use_skill_slot, open_shop_callback=self.open_shop)
 
         self.MAIN_player_inv.pos_x = cfg.MAIN_INV_pos_x
         self.MAIN_player_inv.pos_y = cfg.MAIN_INV_pos_y
@@ -320,6 +341,12 @@ class Game(State):
 
     def toggle_player_inventory(self):
         self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
+
+    def open_shop(self):
+        try:
+            self.app.INV_manager.toggle_trade(self.MAIN_player_inv, self.shop_inv)
+        except Exception:
+            pass
 
     def use_skill_slot(self, slot_index):
         return self.character.use_skill_from_slot(slot_index)
@@ -618,10 +645,23 @@ class Game(State):
                 self.enemies.append(default_enemy)
 
             if switched_map_path in self.NPC_SPAWNS:
-                npc_x, npc_y = self.NPC_SPAWNS[switched_map_path]
-                self.npc.pos = pygame.Vector2(npc_x, npc_y)
+                    npc_x, npc_y = self.NPC_SPAWNS[switched_map_path]
+                    # Clamp NPC to the new map bounds so it is visible
+                    try:
+                        if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                            map_w = self.map.current_map.pixel_width
+                            map_h = self.map.current_map.pixel_height
+                            npc_w = self.npc.image.get_width()
+                            npc_h = self.npc.image.get_height()
+                            npc_x = max(0, min(npc_x, map_w - npc_w))
+                            npc_y = max(0, min(npc_y, map_h - npc_h))
+                    except Exception:
+                        pass
+                    self.npc.pos = pygame.Vector2(npc_x, npc_y)
+                    logger.info(f"Placed NPC for map {switched_map_path} at ({npc_x},{npc_y})")
             else:
                 self.npc.pos = pygame.Vector2(-5000, -5000)
+                logger.info(f"No NPC spawn for map {switched_map_path}; hiding NPC")
         
         # Enemy Spawning Logic
         self._update_game_time(dt)
@@ -679,6 +719,15 @@ class Game(State):
 
         self.npc.update(self.character.pos)
 
+        # Safety: if current map defines an NPC spawn but NPC is far away (not placed), place it
+        try:
+            if self.current_map_path in self.NPC_SPAWNS and (self.npc.pos.x < -1000 or self.npc.pos.y < -1000):
+                nx, ny = self.NPC_SPAWNS[self.current_map_path]
+                self.npc.pos = pygame.Vector2(nx, ny)
+                logger.info(f"Safety placed NPC on {self.current_map_path} at ({nx},{ny})")
+        except Exception:
+            pass
+
         self.app.profiler.set_gauge("enemies", len(self.enemies))
         self.app.profiler.set_gauge("projectiles", len(self.projectiles))
         self.app.profiler.set_gauge("enemy_projectiles", len(self.enemy_projectiles))
@@ -701,8 +750,7 @@ class Game(State):
 
         self.map.draw(screen, camera_offset)
 
-        self.character.draw(screen, camera_offset)
-
+        # Draw enemies and projectiles
         for enemy in self.enemies:
             if _is_visible(enemy):
                 enemy.draw(screen, camera_offset)
@@ -715,7 +763,21 @@ class Game(State):
             if _is_visible(projectile):
                 projectile.draw(screen, camera_offset)
 
-        self.npc.draw(screen, camera_offset)
+        # Draw NPC and player with simple Y-ordering so they overlap naturally
+        try:
+            npc_vis = _is_visible(self.npc)
+        except Exception:
+            npc_vis = False
+
+        # If player is lower on screen (greater y) -> player is in front, so draw NPC first
+        if self.character.pos.y > self.npc.pos.y:
+            if npc_vis:
+                self.npc.draw(screen, camera_offset)
+            self.character.draw(screen, camera_offset)
+        else:
+            self.character.draw(screen, camera_offset)
+            if npc_vis:
+                self.npc.draw(screen, camera_offset)
 
         self.map.draw_fringe_overlay(screen, camera_offset, self.character)
 
@@ -737,12 +799,26 @@ class Game(State):
         self.hud.draw(screen)
         if self.app.INV_manager.player_inventory_opened:
             self.app.INV_manager.draw(screen)
+        # draw active dialog if present
+        if getattr(self.app, 'current_dialog', None):
+            try:
+                self.app.current_dialog.draw(screen)
+            except Exception:
+                pass
 
     def draw(self, screen):
         self.draw_scene(screen)
         self.draw_ui(screen)
 
     def handle_event(self, event: pygame.event.Event):
+        # If a dialog is active, route events to it first
+        if getattr(self.app, 'current_dialog', None):
+            try:
+                self.app.current_dialog.handle_event(event)
+                return
+            except Exception:
+                pass
+
         self.hud.handle_event(event)
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
@@ -762,9 +838,17 @@ class Game(State):
                 self.use_skill_slot(5)
             
             if event.key == pygame.K_e:
-                # If NPC is interactable -> open/close trade regardless of inventory state
+                # If NPC is interactable -> start conversation (dialog).
                 if self.npc.is_interactable:
-                    self.app.INV_manager.toggle_trade(self.MAIN_player_inv, self.shop_inv)
+                    def on_close():
+                        try:
+                            self.app.last_talked_npc = self.npc
+                            self.npc.was_talked = True
+                        except Exception:
+                            pass
+
+                    # show shop button inside dialog only for merchant NPCs
+                    self.app.current_dialog = Dialog(self.app, self.npc.dialog_lines, on_close=on_close, on_shop=self.open_shop, show_shop=self.npc.is_merchant)
                 else:
                     # Otherwise toggle the player's inventory (open/close)
                     self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)

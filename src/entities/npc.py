@@ -22,10 +22,18 @@ class NPC:
         draw(screen):
             Draw the NPC and the interaction prompt if applicable.
     """
-    def __init__(self, x, y, sprite_set="MenHuman1"):
+    def __init__(self, x, y, sprite_set="MenHuman1", dialog_lines=None, is_merchant=False, gender='male'):
         self.pos = pygame.Vector2(x, y)
         self.interaction_range = 100.0
         self.is_interactable = False
+        self.dialog_lines = dialog_lines or [
+            "Hey there — you look new around here.",
+            "I sell useful gear and supplies for the road.",
+            "If you're interested, I can open my shop for you."
+        ]
+        self.is_merchant = is_merchant
+        self.gender = gender
+        self.was_talked = False
 
         try:
             self.image = pygame.transform.scale(
@@ -49,6 +57,19 @@ class NPC:
     def update(self, player_pos: pygame.Vector2):
         diff = player_pos - self.pos
         self.is_interactable = diff.length_squared() <= (self.interaction_range * self.interaction_range)
+        # Keep rect in sync with float position so callers using get_rect() work
+        try:
+            self.rect = pygame.Rect(int(self.pos.x), int(self.pos.y), self.image.get_width(), self.image.get_height())
+        except Exception:
+            pass
+
+    def get_rect(self):
+        """Return an updated collision rect for the NPC (used by visibility checks)."""
+        try:
+            self.rect = pygame.Rect(int(self.pos.x), int(self.pos.y), self.image.get_width(), self.image.get_height())
+        except Exception:
+            self.rect = pygame.Rect(int(self.pos.x), int(self.pos.y), 85, 85)
+        return self.rect
 
     def draw(self, screen: pygame.Surface, camera_offset=None):
         if camera_offset is None:
