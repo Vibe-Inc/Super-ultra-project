@@ -3,6 +3,9 @@ import pygame
 from src.core.logger import logger
 
 class Map:
+    FRINGE_LAYER_NAME = "details fringe layer"
+    FRINGE_LAYER_FADE_ALPHA = 110
+
     """
     Represents a tile-based game map loaded from a Tiled map file.
 
@@ -32,7 +35,8 @@ class Map:
         self.game_map = None
         self.pixel_width = 0
         self.pixel_height = 0
-        self._render_cache = None
+        self._base_render_cache = None
+        self._fringe_components = []
 
     def ensure_loaded(self) -> bool:
         if self.game_map is None:
@@ -49,19 +53,94 @@ class Map:
                 return False
         return True
 
+    def _is_fringe_layer(self, layer) -> bool:
+        return isinstance(layer, pytmx.TiledTileLayer) and layer.name.strip().lower() == self.FRINGE_LAYER_NAME
+
+    def _build_fringe_components(self, layer):
+        tile_width = self.game_map.tilewidth
+        tile_height = self.game_map.tileheight
+
+        occupied_tiles = {}
+        for x, y, gid in layer:
+            if gid:
+                occupied_tiles[(x, y)] = gid
+
+        components = []
+        visited = set()
+
+        for start_cell in occupied_tiles:
+            if start_cell in visited:
+                continue
+
+            stack = [start_cell]
+            visited.add(start_cell)
+            cells = []
+
+            while stack:
+                cell_x, cell_y = stack.pop()
+                cells.append((cell_x, cell_y))
+
+                for neighbor in ((cell_x - 1, cell_y), (cell_x + 1, cell_y), (cell_x, cell_y - 1), (cell_x, cell_y + 1)):
+                    if neighbor in occupied_tiles and neighbor not in visited:
+                        visited.add(neighbor)
+                        stack.append(neighbor)
+
+            min_x = min(x for x, _ in cells)
+            max_x = max(x for x, _ in cells)
+            min_y = min(y for _, y in cells)
+            max_y = max(y for _, y in cells)
+
+            surface_width = (max_x - min_x + 1) * tile_width
+            surface_height = (max_y - min_y + 1) * tile_height
+            surface = pygame.Surface((surface_width, surface_height), pygame.SRCALPHA)
+
+            tile_rects = []
+            for cell_x, cell_y in cells:
+                gid = occupied_tiles[(cell_x, cell_y)]
+                tile = self.game_map.get_tile_image_by_gid(gid)
+                if tile:
+                    surface.blit(
+                        tile,
+                        ((cell_x - min_x) * tile_width, (cell_y - min_y) * tile_height),
+                    )
+                tile_rects.append(
+                    pygame.Rect(
+                        cell_x * tile_width,
+                        cell_y * tile_height,
+                        tile_width,
+                        tile_height,
+                    )
+                )
+
+            components.append(
+                {
+                    "surface": surface,
+                    "origin": pygame.Vector2(min_x * tile_width, min_y * tile_height),
+                    "tile_rects": tile_rects,
+                }
+            )
+
+        return components
+
     def _build_render_cache(self):
         if self.game_map is None:
-            self._render_cache = None
+            self._base_render_cache = None
+            self._fringe_components = []
             return
 
         surface = pygame.Surface((self.pixel_width, self.pixel_height), pygame.SRCALPHA)
+        fringe_components = []
         for layer in self.game_map.visible_layers:
             if isinstance(layer, pytmx.TiledTileLayer):
+                if self._is_fringe_layer(layer):
+                    fringe_components.extend(self._build_fringe_components(layer))
+                    continue
                 for x, y, gid in layer:
                     tile = self.game_map.get_tile_image_by_gid(gid)
                     if tile:
                         surface.blit(tile, (x * self.game_map.tilewidth, y * self.game_map.tileheight))
-        self._render_cache = surface
+        self._base_render_cache = surface
+        self._fringe_components = fringe_components
 
     def get_tmx_data(self):
         if self.ensure_loaded():
@@ -72,13 +151,64 @@ class Map:
         if not self.ensure_loaded():
             return
 
-        if self._render_cache is None:
+        if self._base_render_cache is None:
             self._build_render_cache()
-        if self._render_cache is not None:
+        if self._base_render_cache is not None:
             if camera_offset is None:
-                screen.blit(self._render_cache, (0, 0))
+                screen.blit(self._base_render_cache, (0, 0))
             else:
-                screen.blit(self._render_cache, (-int(camera_offset.x), -int(camera_offset.y)))
+                screen.blit(self._base_render_cache, (-int(camera_offset.x), -int(camera_offset.y)))
+
+    def draw_fringe_overlay(self, screen, camera_offset=None, player=None):
+        if not self.ensure_loaded():
+            return
+
+        if self._base_render_cache is None:
+            self._build_render_cache()
+
+        if not self._fringe_components:
+            return
+
+        player_rect = None
+        if player is not None:
+            player_rect = pygame.Rect(int(player.pos.x), int(player.pos.y), player.image.get_width(), player.image.get_height())
+
+        for component in self._fringe_components:
+            surface = component["surface"]
+            alpha = 255
+            if player_rect is not None and self._should_fade_component(player_rect, component["tile_rects"]):
+                alpha = self.FRINGE_LAYER_FADE_ALPHA
+
+            surface.set_alpha(alpha)
+            origin_x = int(component["origin"].x)
+            origin_y = int(component["origin"].y)
+            if camera_offset is None:
+                screen.blit(surface, (origin_x, origin_y))
+            else:
+                screen.blit(
+                    surface,
+                    (
+                        origin_x - int(camera_offset.x),
+                        origin_y - int(camera_offset.y),
+                    ),
+                )
+            surface.set_alpha(None)
+
+    def _should_fade_component(self, player_rect: pygame.Rect, tile_rects: list[pygame.Rect]) -> bool:
+        if not tile_rects:
+            return False
+
+        tile_area = tile_rects[0].width * tile_rects[0].height
+        if tile_area <= 0:
+            return False
+
+        fade_threshold = tile_area * 0.5
+        for tile_rect in tile_rects:
+            overlap_rect = player_rect.clip(tile_rect)
+            if overlap_rect.width > 0 and overlap_rect.height > 0:
+                if overlap_rect.width * overlap_rect.height > fade_threshold:
+                    return True
+        return False
 
     def get_obstacles(self):
         if not self.ensure_loaded():
@@ -94,6 +224,9 @@ class Map:
 
             for layer in self.game_map.layers:
                 if not isinstance(layer, pytmx.TiledTileLayer):
+                    continue
+
+                if self._is_fringe_layer(layer):
                     continue
 
                 for x, y, gid in layer:
@@ -173,6 +306,9 @@ class LocalMap:
 
     def draw(self, screen, camera_offset=None):
         self.current_map.draw(screen, camera_offset)
+
+    def draw_fringe_overlay(self, screen, camera_offset=None, player=None):
+        self.current_map.draw_fringe_overlay(screen, camera_offset, player)
 
     def get_obstacles(self):
         return self.current_map.get_obstacles()
