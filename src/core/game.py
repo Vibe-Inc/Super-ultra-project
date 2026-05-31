@@ -260,7 +260,12 @@ class Game(State):
             "maps/test-map-1.tmx": (400, 400)
         }
 
+        # Maps where enemy spawning (both default and random) is disabled
+        self.NO_ENEMY_SPAWN_MAPS = {"maps/tavern.tmx", "maps/test-map-1.tmx"}
+
         spawn_info = self._get_spawn_info(initial_map_path)
+        if initial_map_path in self.NO_ENEMY_SPAWN_MAPS:
+            spawn_info = None
         if spawn_info:
             start_x, start_y = spawn_info["pos"]
             default_profile = spawn_info.get("profile")
@@ -465,11 +470,21 @@ class Game(State):
         camera_x = int(self.character.get_center().x - viewport_width / 2)
         camera_y = int(self.character.get_center().y - viewport_height / 2)
 
-        max_x = max(0, map_width - viewport_width)
-        max_y = max(0, map_height - viewport_height)
+        # If the map is larger than the viewport, clamp camera within map bounds.
+        # If the map is smaller than the viewport on an axis, center the map on that axis.
+        if map_width >= viewport_width:
+            max_x = map_width - viewport_width
+            camera_x = max(0, min(camera_x, int(max_x)))
+        else:
+            # center map horizontally: negative camera offset will cause map to be drawn centered
+            camera_x = int((map_width - viewport_width) / 2)
 
-        camera_x = max(0, min(camera_x, max_x))
-        camera_y = max(0, min(camera_y, max_y))
+        if map_height >= viewport_height:
+            max_y = map_height - viewport_height
+            camera_y = max(0, min(camera_y, int(max_y)))
+        else:
+            # center map vertically
+            camera_y = int((map_height - viewport_height) / 2)
 
         return pygame.Vector2(camera_x, camera_y)
 
@@ -596,7 +611,7 @@ class Game(State):
             self.enemies = []
             
             spawn_info = self._get_spawn_info(switched_map_path)
-            if spawn_info:
+            if switched_map_path not in self.NO_ENEMY_SPAWN_MAPS and spawn_info:
                 new_x, new_y = spawn_info["pos"]
                 profile = spawn_info.get("profile")
                 default_enemy = self._create_enemy(new_x, new_y, profile=profile)
@@ -614,7 +629,9 @@ class Game(State):
         self.enemy_spawn_timer += dt
         if self.enemy_spawn_timer >= self.enemy_spawn_interval:
             self.enemy_spawn_timer = 0
-            self.spawn_random_enemy()
+            # Skip periodic/random spawns on maps where spawning is disabled
+            if self.current_map_path not in self.NO_ENEMY_SPAWN_MAPS:
+                self.spawn_random_enemy()
 
         self._sync_weapon_stats()
 
@@ -699,6 +716,8 @@ class Game(State):
                 projectile.draw(screen, camera_offset)
 
         self.npc.draw(screen, camera_offset)
+
+        self.map.draw_fringe_overlay(screen, camera_offset, self.character)
 
         if not self.npc.is_interactable:
             if getattr(self.app.INV_manager, 'current_shop_inv', None) is not None:
