@@ -27,6 +27,8 @@ def _load_background(screen_width, screen_height):
 
 bg = _load_background(SCREEN_WIDTH, SCREEN_HEIGHT)
 
+USER_SCREEN_BRIGHTNESS = 1.0
+ENVIRONMENT_BRIGHTNESS = 1.0
 SCREEN_BRIGHTNESS = 1.0
 PROFILER_ENABLED = False
 
@@ -77,8 +79,14 @@ def update_scaled_fonts():
     INV_nums_font = get_font(max(8, int(15 * scale)))
 
 
+def update_brightness():
+    global SCREEN_BRIGHTNESS
+    SCREEN_BRIGHTNESS = max(0.0, min(1.0, USER_SCREEN_BRIGHTNESS))
+
+
 # initialize scaled fonts
 update_scaled_fonts()
+update_brightness()
 
 button_color_START = (83, 112, 44)
 button_hover_color_START = (123, 123, 34)

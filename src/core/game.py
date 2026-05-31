@@ -76,6 +76,16 @@ class Game(State):
         self.equipped_weapon = None
         self._dizzy_overlay = None
 
+        self.game_time_seconds = 6 * 3600  # Start at 06:00
+        self.GAME_DAY_SECONDS = 24 * 3600
+        self.DAY_CYCLE_REAL_SECONDS = 12 * 60  # 12 real-life minutes for full 24h cycle
+        self.GAME_SECONDS_PER_REAL_SECOND = self.GAME_DAY_SECONDS / self.DAY_CYCLE_REAL_SECONDS
+        self.DAY_START = 6 * 3600
+        self.DUSK_START = 16 * 3600
+        self.NIGHT_START = 18 * 3600
+        self.DAWN_START = 4 * 3600
+        self.NIGHT_BRIGHTNESS = 0.4
+
         self.enemy_profiles = {
             "brute": {
                 "visual_style": "brute",
@@ -411,6 +421,30 @@ class Game(State):
             return
         self.nav_grid = NavGrid.from_tmx(tmx_data, self.obstacles)
 
+    def _format_game_time(self) -> str:
+        hours = int(self.game_time_seconds // 3600) % 24
+        minutes = int((self.game_time_seconds % 3600) // 60)
+        return f"{hours:02d}:{minutes:02d}"
+
+    def is_daytime(self) -> bool:
+        return self.DAY_START <= self.game_time_seconds < self.NIGHT_START
+
+    def _update_game_time(self, dt: float):
+        self.game_time_seconds = (self.game_time_seconds + dt * self.GAME_SECONDS_PER_REAL_SECOND) % self.GAME_DAY_SECONDS
+
+        if self.DUSK_START <= self.game_time_seconds < self.NIGHT_START:
+            t = (self.game_time_seconds - self.DUSK_START) / (self.NIGHT_START - self.DUSK_START)
+            cfg.ENVIRONMENT_BRIGHTNESS = 1.0 - t * (1.0 - self.NIGHT_BRIGHTNESS)
+        elif self.NIGHT_START <= self.game_time_seconds or self.game_time_seconds < self.DAWN_START:
+            cfg.ENVIRONMENT_BRIGHTNESS = self.NIGHT_BRIGHTNESS
+        elif self.DAWN_START <= self.game_time_seconds < self.DAY_START:
+            t = (self.game_time_seconds - self.DAWN_START) / (self.DAY_START - self.DAWN_START)
+            cfg.ENVIRONMENT_BRIGHTNESS = self.NIGHT_BRIGHTNESS + t * (1.0 - self.NIGHT_BRIGHTNESS)
+        else:
+            cfg.ENVIRONMENT_BRIGHTNESS = 1.0
+
+        self.app.profiler.set_gauge("game_time", self._format_game_time())
+
     def _get_spawn_info(self, map_path: str) -> dict | None:
         spawn = self.ENEMY_SPAWNS.get(map_path)
         if not spawn:
@@ -575,6 +609,8 @@ class Game(State):
                 self.npc.pos = pygame.Vector2(-5000, -5000)
         
         # Enemy Spawning Logic
+        self._update_game_time(dt)
+
         self.enemy_spawn_timer += dt
         if self.enemy_spawn_timer >= self.enemy_spawn_interval:
             self.enemy_spawn_timer = 0
@@ -630,7 +666,7 @@ class Game(State):
         self.app.profiler.set_gauge("projectiles", len(self.projectiles))
         self.app.profiler.set_gauge("enemy_projectiles", len(self.enemy_projectiles))
 
-    def draw(self, screen):
+    def draw_scene(self, screen):
         dt = self.app.clock.get_time() / 1000
         self.app.profiler.start_section("game.update")
         self.update(dt)
@@ -670,18 +706,22 @@ class Game(State):
 
         # Dizziness effect (visual)
         if self.character.dizzy:
-            # Simulate blur/dizziness with a semi-transparent overlay that changes alpha
             alpha = int(100 + 50 * math.sin(pygame.time.get_ticks() * 0.005))
             if self._dizzy_overlay is None or self._dizzy_overlay.get_size() != screen.get_size():
                 self._dizzy_overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
             self._dizzy_overlay.fill((255, 255, 255, alpha))
             screen.blit(self._dizzy_overlay, (0, 0))
 
-        self.hud.draw(screen)
-
-        if  self.app.INV_manager.player_inventory_opened:
-            self.app.INV_manager.draw(screen)
         self.app.profiler.end_section("game.draw")
+
+    def draw_ui(self, screen):
+        self.hud.draw(screen)
+        if self.app.INV_manager.player_inventory_opened:
+            self.app.INV_manager.draw(screen)
+
+    def draw(self, screen):
+        self.draw_scene(screen)
+        self.draw_ui(screen)
 
     def handle_event(self, event: pygame.event.Event):
         self.hud.handle_event(event)
