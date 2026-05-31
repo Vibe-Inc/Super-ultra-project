@@ -1,6 +1,6 @@
 import pygame
 
-from src.items.effects import BurnEffect
+from database.effects import BurnEffect
 from src.core.logger import logger
 
 

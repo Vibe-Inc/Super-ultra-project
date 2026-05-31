@@ -6,7 +6,7 @@ import random
 import pygame
 
 from src.entities.projectile import ArcaneBolt, Bomb
-from src.items.effects import ConfusionEffect, DizzinessEffect, PoisonEffect, SlowEffect
+from database.effects import ConfusionEffect, DizzinessEffect, PoisonEffect, SlowEffect
 
 
 @dataclass
