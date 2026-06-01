@@ -153,7 +153,6 @@ class PlayerCombatController:
             else:
                 char.direction = "down" if aim_dir.y > 0 else "up"
             
-            # Оновлюємо поточний кадр
             char.frame_index = 0
             char.image = char.animations[char.direction][0]
 
