@@ -447,6 +447,101 @@
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="src.inventory.system.MAIN_player_hotbar">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.inventory.system.</span></span><span class="sig-name descname"><span class="pre">MAIN_player_hotbar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_hotbar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.MAIN_player_hotbar" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.inventory.system.Inventory" title="src.inventory.system.Inventory"><code class="xref py py-class docutils literal notranslate"><span class="pre">Inventory</span></code></a></p>
+<p>Represents the player’s hotbar for quick access to consumable items or skills.</p>
+<p>This class extends the base Inventory to provide a permanently visible, bottom-aligned grid.
+It supports mouse wheel scrolling, hotkey activation (1-9, 0), and active slot highlighting.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.MAIN_player_hotbar.app">
+<span class="sig-name descname"><span class="pre">app</span></span><a class="headerlink" href="#src.inventory.system.MAIN_player_hotbar.app" title="Link to this definition"></a></dt>
+<dd><p>Reference to the main application instance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="src.html#src.app.App" title="src.app.App">App</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.MAIN_player_hotbar.active_slot_index">
+<span class="sig-name descname"><span class="pre">active_slot_index</span></span><a class="headerlink" href="#src.inventory.system.MAIN_player_hotbar.active_slot_index" title="Link to this definition"></a></dt>
+<dd><p>The index of the currently highlighted and active slot (from 0 to columns - 1).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.MAIN_player_hotbar.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_hotbar.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.MAIN_player_hotbar.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initialize the hotbar object, calculating its layout and dimensions.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.MAIN_player_hotbar.scroll_active_slot">
+<span class="sig-name descname"><span class="pre">scroll_active_slot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_direction</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_hotbar.scroll_active_slot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.MAIN_player_hotbar.scroll_active_slot" title="Link to this definition"></a></dt>
+<dd><p>Update the active slot index based on mouse wheel movement.
+:param y_direction: The scroll direction (-1 or 1).
+:type y_direction: int</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.MAIN_player_hotbar.use_active_slot">
+<span class="sig-name descname"><span class="pre">use_active_slot</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_hotbar.use_active_slot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.MAIN_player_hotbar.use_active_slot" title="Link to this definition"></a></dt>
+<dd><p>Consume or activate the item in the currently highlighted slot.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.MAIN_player_hotbar.handle_hotkeys">
+<span class="sig-name descname"><span class="pre">handle_hotkeys</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_hotbar.handle_hotkeys"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.MAIN_player_hotbar.handle_hotkeys" title="Link to this definition"></a></dt>
+<dd><p>Process keyboard events to map number keys to specific slots.
+:param event: The Pygame event to process.
+:type event: pygame.event.Event</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.MAIN_player_hotbar._use_hotbar_item">
+<span class="sig-name descname"><span class="pre">_use_hotbar_item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_hotbar._use_hotbar_item"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.MAIN_player_hotbar._use_hotbar_item" title="Link to this definition"></a></dt>
+<dd><p>Execute the logic for using a consumable item from a specific slot.
+:param col: The column index of the slot to use.
+:type col: int</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.MAIN_player_hotbar.draw">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_hotbar.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.MAIN_player_hotbar.draw" title="Link to this definition"></a></dt>
+<dd><p>Render the hotbar background, slots, keybind numbers, and the active slot highlight.
+:param screen: The surface to draw the hotbar on.
+:type screen: pygame.Surface</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id9">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_hotbar.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id10">
+<span class="sig-name descname"><span class="pre">handle_hotkeys</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_hotbar.handle_hotkeys"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id11">
+<span class="sig-name descname"><span class="pre">scroll_active_slot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_direction</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_hotbar.scroll_active_slot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id11" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id12">
+<span class="sig-name descname"><span class="pre">use_active_slot</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_hotbar.use_active_slot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id12" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="src.inventory.system.MAIN_player_inventory">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.inventory.system.</span></span><span class="sig-name descname"><span class="pre">MAIN_player_inventory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_inventory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.MAIN_player_inventory" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#src.inventory.system.Inventory" title="src.inventory.system.Inventory"><code class="xref py py-class docutils literal notranslate"><span class="pre">Inventory</span></code></a></p>
@@ -461,8 +556,8 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id9">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_inventory.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id13">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_inventory.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id13" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -515,13 +610,13 @@ Inherits from Inventory.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id10">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#ShopInventory.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id14">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#ShopInventory.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id14" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id11">
-<span class="sig-name descname"><span class="pre">inventory_interactions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#ShopInventory.inventory_interactions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id11" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id15">
+<span class="sig-name descname"><span class="pre">inventory_interactions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#ShopInventory.inventory_interactions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id15" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -694,23 +789,23 @@ Inherits from Inventory.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id12">
-<span class="sig-name descname"><span class="pre">confirm</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Split_popup.confirm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id12" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id16">
+<span class="sig-name descname"><span class="pre">confirm</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Split_popup.confirm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id16" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id13">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Split_popup.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id13" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id17">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Split_popup.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id17" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id14">
-<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Split_popup.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id14" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id18">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Split_popup.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id18" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id15">
-<span class="sig-name descname"><span class="pre">update_count</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">int_val</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Split_popup.update_count"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id15" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id19">
+<span class="sig-name descname"><span class="pre">update_count</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">int_val</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Split_popup.update_count"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id19" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>

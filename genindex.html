@@ -113,6 +113,8 @@
 </li>
         <li><a href="src.inventory.html#src.inventory.system.Inventory_slider.__init__">(src.inventory.system.Inventory_slider method)</a>
 </li>
+        <li><a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.__init__">(src.inventory.system.MAIN_player_hotbar method)</a>
+</li>
         <li><a href="src.inventory.html#src.inventory.system.ShopInventory.__init__">(src.inventory.system.ShopInventory method)</a>
 </li>
         <li><a href="src.inventory.html#src.inventory.system.Split_popup.__init__">(src.inventory.system.Split_popup method)</a>
@@ -132,6 +134,8 @@
 </li>
       <li><a href="src.entities.html#src.entities.character.Character._set_velocity">_set_velocity() (src.entities.character.Character method)</a>
 </li>
+      <li><a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar._use_hotbar_item">_use_hotbar_item() (src.inventory.system.MAIN_player_hotbar method)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -143,6 +147,8 @@
       <li><a href="src.ui.html#src.ui.widgets.Tooltip.active">active (src.ui.widgets.Tooltip attribute)</a>
 </li>
       <li><a href="src.inventory.html#src.inventory.system.INVENTORY_manager.active_inventories">active_inventories (src.inventory.system.INVENTORY_manager attribute)</a>
+</li>
+      <li><a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.active_slot_index">active_slot_index (src.inventory.system.MAIN_player_hotbar attribute)</a>
 </li>
       <li><a href="src.inventory.html#id1">add_active_inventory() (src.inventory.system.INVENTORY_manager method)</a>, <a href="src.inventory.html#src.inventory.system.INVENTORY_manager.add_active_inventory">[1]</a>
 </li>
@@ -172,6 +178,8 @@
 
       <ul>
         <li><a href="src.core.html#src.core.state.State.app">(src.core.state.State attribute)</a>
+</li>
+        <li><a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.app">(src.inventory.system.MAIN_player_hotbar attribute)</a>
 </li>
         <li><a href="src.inventory.html#src.inventory.system.ShopInventory.app">(src.inventory.system.ShopInventory attribute)</a>
 </li>
@@ -270,7 +278,7 @@
       </ul></li>
       <li><a href="src.inventory.html#src.inventory.system.Inventory.columns">columns (src.inventory.system.Inventory attribute)</a>
 </li>
-      <li><a href="src.inventory.html#id12">confirm() (src.inventory.system.Split_popup method)</a>, <a href="src.inventory.html#src.inventory.system.Split_popup.confirm">[1]</a>
+      <li><a href="src.inventory.html#id16">confirm() (src.inventory.system.Split_popup method)</a>, <a href="src.inventory.html#src.inventory.system.Split_popup.confirm">[1]</a>
 </li>
       <li><a href="src.inventory.html#src.inventory.system.Split_popup.confirm_btn">confirm_btn (src.inventory.system.Split_popup attribute)</a>
 </li>
@@ -363,11 +371,13 @@
 </li>
         <li><a href="src.inventory.html#id2">(src.inventory.system.INVENTORY_manager method)</a>, <a href="src.inventory.html#src.inventory.system.INVENTORY_manager.draw">[1]</a>
 </li>
-        <li><a href="src.inventory.html#id9">(src.inventory.system.MAIN_player_inventory method)</a>, <a href="src.inventory.html#src.inventory.system.MAIN_player_inventory.draw">[1]</a>
+        <li><a href="src.inventory.html#id9">(src.inventory.system.MAIN_player_hotbar method)</a>, <a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.draw">[1]</a>
 </li>
-        <li><a href="src.inventory.html#id10">(src.inventory.system.ShopInventory method)</a>, <a href="src.inventory.html#src.inventory.system.ShopInventory.draw">[1]</a>
+        <li><a href="src.inventory.html#id13">(src.inventory.system.MAIN_player_inventory method)</a>, <a href="src.inventory.html#src.inventory.system.MAIN_player_inventory.draw">[1]</a>
 </li>
-        <li><a href="src.inventory.html#id13">(src.inventory.system.Split_popup method)</a>, <a href="src.inventory.html#src.inventory.system.Split_popup.draw">[1]</a>
+        <li><a href="src.inventory.html#id14">(src.inventory.system.ShopInventory method)</a>, <a href="src.inventory.html#src.inventory.system.ShopInventory.draw">[1]</a>
+</li>
+        <li><a href="src.inventory.html#id17">(src.inventory.system.Split_popup method)</a>, <a href="src.inventory.html#src.inventory.system.Split_popup.draw">[1]</a>
 </li>
         <li><a href="src.map.html#id0">(src.map.map.LocalMap method)</a>, <a href="src.map.html#src.map.map.LocalMap.draw">[1]</a>
 </li>
@@ -565,7 +575,7 @@
 </li>
         <li><a href="src.inventory.html#id3">(src.inventory.system.INVENTORY_manager method)</a>, <a href="src.inventory.html#src.inventory.system.INVENTORY_manager.handle_event">[1]</a>
 </li>
-        <li><a href="src.inventory.html#id14">(src.inventory.system.Split_popup method)</a>, <a href="src.inventory.html#src.inventory.system.Split_popup.handle_event">[1]</a>
+        <li><a href="src.inventory.html#id18">(src.inventory.system.Split_popup method)</a>, <a href="src.inventory.html#src.inventory.system.Split_popup.handle_event">[1]</a>
 </li>
         <li><a href="src.ui.html#id1">(src.ui.hud.HUD method)</a>, <a href="src.ui.html#src.ui.hud.HUD.handle_event">[1]</a>
 </li>
@@ -582,6 +592,8 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="src.inventory.html#id10">handle_hotkeys() (src.inventory.system.MAIN_player_hotbar method)</a>, <a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.handle_hotkeys">[1]</a>
+</li>
       <li><a href="src.items.html#src.items.items.Consumable.heal_amount">heal_amount (src.items.items.Consumable attribute)</a>
 </li>
       <li><a href="src.inventory.html#src.inventory.system.Split_popup.height">height (src.inventory.system.Split_popup attribute)</a>
@@ -643,7 +655,7 @@
       <ul>
         <li><a href="src.inventory.html#src.inventory.system.MAIN_player_inventory.inventory_interactions">(src.inventory.system.MAIN_player_inventory method)</a>
 </li>
-        <li><a href="src.inventory.html#id11">(src.inventory.system.ShopInventory method)</a>, <a href="src.inventory.html#src.inventory.system.ShopInventory.inventory_interactions">[1]</a>
+        <li><a href="src.inventory.html#id15">(src.inventory.system.ShopInventory method)</a>, <a href="src.inventory.html#src.inventory.system.ShopInventory.inventory_interactions">[1]</a>
 </li>
       </ul></li>
   </ul></td>
@@ -731,6 +743,8 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.html#src.app.App.MAIN_INV_items">MAIN_INV_items (src.app.App attribute)</a>
+</li>
+      <li><a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar">MAIN_player_hotbar (class in src.inventory.system)</a>
 </li>
       <li><a href="src.core.html#src.core.game.Game.MAIN_player_inv">MAIN_player_inv (src.core.game.Game attribute)</a>
 </li>
@@ -975,6 +989,8 @@
 </li>
       <li><a href="src.html#src.app.App.screen">screen (src.app.App attribute)</a>
 </li>
+      <li><a href="src.inventory.html#id11">scroll_active_slot() (src.inventory.system.MAIN_player_hotbar method)</a>, <a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.scroll_active_slot">[1]</a>
+</li>
       <li><a href="src.inventory.html#src.inventory.system.Inventory.selected_item">selected_item (src.inventory.system.Inventory attribute)</a>
 
       <ul>
@@ -1073,6 +1089,8 @@
         <li><a href="src.core.html#module-src.core.logger">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     src.core.save_manager
 
@@ -1080,8 +1098,6 @@
         <li><a href="src.core.html#module-src.core.save_manager">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     src.core.state
 
@@ -1330,7 +1346,7 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="src.inventory.html#id15">update_count() (src.inventory.system.Split_popup method)</a>, <a href="src.inventory.html#src.inventory.system.Split_popup.update_count">[1]</a>
+      <li><a href="src.inventory.html#id19">update_count() (src.inventory.system.Split_popup method)</a>, <a href="src.inventory.html#src.inventory.system.Split_popup.update_count">[1]</a>
 </li>
       <li><a href="src.html#id3">update_language() (src.app.App method)</a>, <a href="src.html#src.app.App.update_language">[1]</a>
 </li>
@@ -1344,6 +1360,8 @@
         <li><a href="src.items.html#id3">(src.items.items.Item method)</a>, <a href="src.items.html#src.items.items.Item.use">[1]</a>
 </li>
       </ul></li>
+      <li><a href="src.inventory.html#id12">use_active_slot() (src.inventory.system.MAIN_player_hotbar method)</a>, <a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.use_active_slot">[1]</a>
+</li>
       <li><a href="src.entities.html#src.entities.character.Character.use_skill">use_skill() (src.entities.character.Character method)</a>
 </li>
       <li><a href="src.entities.html#src.entities.character.Character.use_skill_from_slot">use_skill_from_slot() (src.entities.character.Character method)</a>

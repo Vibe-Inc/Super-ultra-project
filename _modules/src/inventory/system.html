@@ -797,7 +797,159 @@
         <span class="p">)</span>
     <span class="k">pass</span></div>
 
-    
+
+<div class="viewcode-block" id="MAIN_player_hotbar">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.MAIN_player_hotbar">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MAIN_player_hotbar</span><span class="p">(</span><span class="n">Inventory</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents the player&#39;s hotbar for quick access to consumable items or skills.</span>
+
+<span class="sd">    This class extends the base Inventory to provide a permanently visible, bottom-aligned grid.</span>
+<span class="sd">    It supports mouse wheel scrolling, hotkey activation (1-9, 0), and active slot highlighting.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        app (App):</span>
+<span class="sd">            Reference to the main application instance.</span>
+<span class="sd">        active_slot_index (int):</span>
+<span class="sd">            The index of the currently highlighted and active slot (from 0 to columns - 1).</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(app):</span>
+<span class="sd">            Initialize the hotbar object, calculating its layout and dimensions.</span>
+<span class="sd">        scroll_active_slot(y_direction):</span>
+<span class="sd">            Update the active slot index based on mouse wheel movement.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                y_direction (int): The scroll direction (-1 or 1).</span>
+<span class="sd">        use_active_slot():</span>
+<span class="sd">            Consume or activate the item in the currently highlighted slot.</span>
+<span class="sd">        handle_hotkeys(event):</span>
+<span class="sd">            Process keyboard events to map number keys to specific slots.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                event (pygame.event.Event): The Pygame event to process.</span>
+<span class="sd">        _use_hotbar_item(col):</span>
+<span class="sd">            Execute the logic for using a consumable item from a specific slot.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                col (int): The column index of the slot to use.</span>
+<span class="sd">        draw(screen):</span>
+<span class="sd">            Render the hotbar background, slots, keybind numbers, and the active slot highlight.</span>
+<span class="sd">            Args:</span>
+<span class="sd">                screen (pygame.Surface): The surface to draw the hotbar on.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="MAIN_player_hotbar.__init__">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.MAIN_player_hotbar.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="s2">&quot;App&quot;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="o">=</span> <span class="n">app</span>
+        
+        <span class="n">columns</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="s1">&#39;HOTBAR_columns&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="mi">1</span>
+        
+        <span class="n">scale</span> <span class="o">=</span> <span class="mf">0.8</span>
+        <span class="n">slot_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_slot_size</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="n">border</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_border</span>
+        <span class="n">total_width</span> <span class="o">=</span> <span class="p">(</span><span class="n">slot_size</span> <span class="o">+</span> <span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="n">columns</span> <span class="o">+</span> <span class="n">border</span>
+        
+        <span class="n">pos_x</span> <span class="o">=</span> <span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">-</span> <span class="n">total_width</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">pos_y</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span> <span class="o">-</span> <span class="n">slot_size</span> <span class="o">-</span> <span class="mi">17</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s1">&#39;MAIN_HOTBAR_items&#39;</span><span class="p">):</span>
+            <span class="n">app</span><span class="o">.</span><span class="n">MAIN_HOTBAR_items</span> <span class="o">=</span> <span class="p">[[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rows</span><span class="p">)]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">columns</span><span class="p">)]</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">columns</span><span class="p">,</span>
+            <span class="n">rows</span><span class="p">,</span>
+            <span class="n">app</span><span class="o">.</span><span class="n">MAIN_HOTBAR_items</span><span class="p">,</span>
+            <span class="n">slot_size</span><span class="p">,</span>
+            <span class="n">pos_x</span><span class="p">,</span>
+            <span class="n">pos_y</span><span class="p">,</span>
+            <span class="n">border</span><span class="p">,</span>
+            <span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_slot_color</span><span class="p">,</span>
+            <span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_border_color</span>
+        <span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">active_slot_index</span> <span class="o">=</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="MAIN_player_hotbar.scroll_active_slot">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.MAIN_player_hotbar.scroll_active_slot">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">scroll_active_slot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y_direction</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active_slot_index</span> <span class="o">-=</span> <span class="n">y_direction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active_slot_index</span> <span class="o">%=</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span></div>
+
+
+<div class="viewcode-block" id="MAIN_player_hotbar.use_active_slot">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.MAIN_player_hotbar.use_active_slot">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">use_active_slot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_use_hotbar_item</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">active_slot_index</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MAIN_player_hotbar.handle_hotkeys">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.MAIN_player_hotbar.handle_hotkeys">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">handle_hotkeys</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">!=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">KEYDOWN</span><span class="p">:</span>
+            <span class="k">return</span>
+            
+        <span class="n">key_map</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">K_1</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_2</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_3</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">K_4</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_5</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_6</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">K_7</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_8</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_9</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">K_0</span><span class="p">:</span> <span class="mi">9</span>
+        <span class="p">}</span>
+        
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="ow">in</span> <span class="n">key_map</span><span class="p">:</span>
+            <span class="n">col</span> <span class="o">=</span> <span class="n">key_map</span><span class="p">[</span><span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">col</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">active_slot_index</span> <span class="o">=</span> <span class="n">col</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_use_hotbar_item</span><span class="p">(</span><span class="n">col</span><span class="p">)</span></div>
+
+                
+<div class="viewcode-block" id="MAIN_player_hotbar._use_hotbar_item">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.MAIN_player_hotbar._use_hotbar_item">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_use_hotbar_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col</span><span class="p">):</span>
+        <span class="n">slot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">slot</span><span class="p">:</span>
+            <span class="n">item</span><span class="p">,</span> <span class="n">count</span> <span class="o">=</span> <span class="n">slot</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">Consumable</span><span class="p">):</span>
+                <span class="n">game_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gameplay&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">game_state</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="n">game_state</span><span class="o">.</span><span class="n">character</span><span class="p">):</span>
+                        <span class="n">slot</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Used consumable </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> from hotbar&quot;</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">slot</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="MAIN_player_hotbar.draw">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.MAIN_player_hotbar.draw">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span>
+            <span class="n">screen</span><span class="p">,</span>
+            <span class="n">cfg</span><span class="o">.</span><span class="n">MAIN_INV_BACKGROUND</span><span class="p">,</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos_x</span> <span class="o">-</span> <span class="mi">10</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_y</span> <span class="o">-</span> <span class="mi">25</span><span class="p">,</span>
+             <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span> <span class="o">+</span> <span class="mi">20</span><span class="p">,</span>
+             <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rows</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span> <span class="o">+</span> <span class="mi">35</span><span class="p">),</span>
+            <span class="mi">0</span><span class="p">,</span> <span class="mi">10</span>
+        <span class="p">)</span>
+        
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
+            <span class="n">key_text</span> <span class="o">=</span> <span class="nb">str</span><span class="p">((</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">10</span><span class="p">)</span>
+            <span class="n">text_surf</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">INV_nums_font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">key_text</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">200</span><span class="p">))</span>
+            <span class="n">rect_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_x</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span>
+            <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">text_surf</span><span class="p">,</span> <span class="p">(</span><span class="n">rect_x</span> <span class="o">+</span> <span class="mi">5</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_y</span> <span class="o">-</span> <span class="mi">18</span><span class="p">))</span>
+
+        <span class="n">active_rect_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_x</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_slot_index</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span>
+        <span class="n">active_rect_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_y</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span>
+        
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span>
+            <span class="n">screen</span><span class="p">,</span> 
+            <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">215</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> 
+            <span class="p">(</span><span class="n">active_rect_x</span><span class="p">,</span> <span class="n">active_rect_y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span><span class="p">),</span> 
+            <span class="mi">3</span><span class="p">,</span>
+            <span class="n">border_radius</span><span class="o">=</span><span class="mi">2</span>
+        <span class="p">)</span></div>
+</div>
+
 
 <div class="viewcode-block" id="INVENTORY_manager">
 <a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.INVENTORY_manager">[docs]</a>
@@ -848,12 +1000,13 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="o">=</span> <span class="n">app</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">selected_item</span><span class="p">:</span><span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">selected_item</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">active_split_popup</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">active_inventories</span><span class="p">:</span><span class="nb">list</span><span class="p">[</span><span class="n">Inventory</span><span class="o">|</span><span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">player_inventory_opened</span><span class="p">:</span><span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_shop_inv</span><span class="p">:</span><span class="n">Inventory</span><span class="o">|</span><span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">active_inventories</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Inventory</span><span class="o">|</span><span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">player_inventory_opened</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_shop_inv</span><span class="p">:</span> <span class="n">Inventory</span><span class="o">|</span><span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">hotbar</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">inventory_tooltip</span> <span class="o">=</span> <span class="n">Tooltip</span><span class="p">(</span>
             <span class="n">cfg</span><span class="o">.</span><span class="n">inventory_tooltip_rect</span><span class="p">,</span>
             <span class="s2">&quot;&quot;</span><span class="p">,</span>
@@ -915,6 +1068,10 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_split_popup</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">active_split_popup</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
             <span class="k">return</span> 
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hotbar</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hotbar</span><span class="o">.</span><span class="n">handle_hotkeys</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+
         <span class="k">for</span> <span class="n">inv</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_inventories</span><span class="p">:</span>
             <span class="n">inv</span><span class="o">.</span><span class="n">inventory_interactions</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span></div>
 
