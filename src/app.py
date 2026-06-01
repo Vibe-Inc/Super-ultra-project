@@ -67,6 +67,7 @@ class App:
         self.MAIN_INV_items = [[None for _ in range(cfg.MAIN_INV_rows)] for _ in range(cfg.MAIN_INV_columns)]
         self.MAIN_INV_items[0][0] = [create_item("dull_sword"), 1]
         self.MAIN_INV_items[1][0] = [create_item("apple"), 5]
+        self.MAIN_INV_items[2][0] = [create_item("wooden_bow"), 1] #test purposes nshit
         
         self.money = 100
 
