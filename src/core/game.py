@@ -806,7 +806,7 @@ class Game(State):
                         mouse_world_pos = pygame.Vector2(event.pos) + self._get_camera_offset()
                         self.player_combat.handle_player_attack(mouse_world_pos)
             
-            elif event.button == 2:
+            elif event.button == 3:
                 if getattr(self.app.INV_manager, 'hotbar', None):
                     self.app.INV_manager.hotbar.use_active_slot()
 
