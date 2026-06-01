@@ -666,7 +666,8 @@ class MAIN_player_hotbar(Inventory):
     Represents the player's hotbar for quick access to consumable items or skills.
 
     This class extends the base Inventory to provide a permanently visible, bottom-aligned grid.
-    It supports mouse wheel scrolling, hotkey activation (1-9, 0), and active slot highlighting.
+    It supports mouse wheel scrolling, hotkey activation (1-9, 0), active slot highlighting,
+    and dynamic repositioning based on screen size.
 
     Attributes:
         app (App):
@@ -677,6 +678,12 @@ class MAIN_player_hotbar(Inventory):
     Methods:
         __init__(app):
             Initialize the hotbar object, calculating its layout and dimensions.
+        update_position():
+            Dynamically calculate and update the X and Y coordinates based on current screen size.
+        get_slot_under_mouse():
+            Update position and retrieve the slot under the cursor.
+        inventory_interactions(event, manager):
+            Update position and handle mouse interactions.
         scroll_active_slot(y_direction):
             Update the active slot index based on mouse wheel movement.
             Args:
@@ -705,10 +712,6 @@ class MAIN_player_hotbar(Inventory):
         scale = 0.8
         slot_size = int(cfg.BASE_INV_slot_size * scale)
         border = cfg.BASE_INV_border
-        total_width = (slot_size + border) * columns + border
-        
-        pos_x = ((cfg.SCREEN_WIDTH - total_width) // 2)
-        pos_y = cfg.SCREEN_HEIGHT - slot_size - 17
         
         if not hasattr(app, 'MAIN_HOTBAR_items'):
             app.MAIN_HOTBAR_items = [[None for _ in range(rows)] for _ in range(columns)]
@@ -718,14 +721,28 @@ class MAIN_player_hotbar(Inventory):
             rows,
             app.MAIN_HOTBAR_items,
             slot_size,
-            pos_x,
-            pos_y,
+            0,
+            0,
             border,
             cfg.BASE_INV_slot_color,
             cfg.BASE_INV_border_color
         )
         
         self.active_slot_index = 0
+        self.update_position()
+
+    def update_position(self):
+        total_width = (self.slot_size + self.border) * self.columns + self.border
+        self.pos_x = (cfg.SCREEN_WIDTH - total_width) // 2
+        self.pos_y = cfg.SCREEN_HEIGHT - self.slot_size - 17
+
+    def get_slot_under_mouse(self):
+        self.update_position()
+        return super().get_slot_under_mouse()
+
+    def inventory_interactions(self, event, manager):
+        self.update_position()
+        super().inventory_interactions(event, manager)
 
     def scroll_active_slot(self, y_direction):
         self.active_slot_index -= y_direction
@@ -765,6 +782,8 @@ class MAIN_player_hotbar(Inventory):
                             self.items[col][0] = None
 
     def draw(self, screen):
+        self.update_position()
+        
         pygame.draw.rect(
             screen,
             cfg.MAIN_INV_BACKGROUND,
@@ -776,11 +795,28 @@ class MAIN_player_hotbar(Inventory):
         
         super().draw(screen)
 
-        for i in range(self.columns):
-            key_text = str((i + 1) % 10)
-            text_surf = cfg.INV_nums_font.render(key_text, True, (200, 200, 200))
-            rect_x = self.pos_x + (self.slot_size + self.border) * i + self.border
-            screen.blit(text_surf, (rect_x + 5, self.pos_y - 18))
+        active_rect_x = self.pos_x + (self.slot_size + self.border) * self.active_slot_index + self.border
+        active_rect_y = self.pos_y + self.border
+        
+        pygame.draw.rect(
+            screen, 
+            (255, 215, 0), 
+            (active_rect_x, active_rect_y, self.slot_size, self.slot_size), 
+            3,
+            border_radius=2
+        )
+
+    def draw(self, screen):
+        pygame.draw.rect(
+            screen,
+            cfg.MAIN_INV_BACKGROUND,
+            (self.pos_x - 10, self.pos_y - 10,
+             (self.slot_size + self.border) * self.columns + self.border + 20,
+             (self.slot_size + self.border) * self.rows + self.border + 35),
+            0, 10
+        )
+        
+        super().draw(screen)
 
         active_rect_x = self.pos_x + (self.slot_size + self.border) * self.active_slot_index + self.border
         active_rect_y = self.pos_y + self.border

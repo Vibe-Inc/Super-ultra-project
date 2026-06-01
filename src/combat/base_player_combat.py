@@ -145,17 +145,7 @@ class PlayerCombatController:
             return
 
         char = self.game.character
-
-        if char.velocity.length_squared() == 0:
-            if abs(aim_dir.x) > abs(aim_dir.y):
-                char.direction = "side"
-                char.flip = aim_dir.x < 0
-            else:
-                char.direction = "down" if aim_dir.y > 0 else "up"
-            
-            char.frame_index = 0
-            char.image = char.animations[char.direction][0]
-
+        
         forward_dir = self.get_attack_direction()
         if forward_dir.length_squared() > 0:
             forward_dir = forward_dir.normalize()
