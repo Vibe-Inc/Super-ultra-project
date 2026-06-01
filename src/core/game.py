@@ -408,15 +408,34 @@ class Game(State):
 
     def open_blackjack(self):
         """Launch the blackjack minigame overlay."""
-        def on_close(outcome):
+        def on_close(outcome, net_change):
             self.blackjack_game = None
-            # Show post-game thank-you dialog
+            # Apply money change from blackjack
+            self.app.money += net_change
+            if self.app.money < 0:
+                self.app.money = 0
+            logger.info(f"Blackjack closed: outcome={outcome}, net_change={net_change}, money now={self.app.money}")
+            # Build post-game dialog mentioning the result
+            if net_change > 0:
+                post_lines = [
+                    "Thanks for playing! That was a fine round.",
+                    f"You walked away {net_change} gold richer!",
+                    "Come back anytime — the deck's always shuffled."
+                ]
+            elif net_change < 0:
+                post_lines = [
+                    "Thanks for playing! That was a fine round.",
+                    f"Tough luck — you lost {abs(net_change)} gold.",
+                    "Come back anytime — the deck's always shuffled."
+                ]
+            else:
+                post_lines = self.card_npc_post_game_dialog
             self.app.current_dialog = Dialog(
                 self.app,
-                self.card_npc_post_game_dialog,
+                post_lines,
                 on_close=lambda: setattr(self.card_npc, 'was_talked', True),
             )
-        self.blackjack_game = BlackjackGame(self.app, on_close=on_close, bet_amount=10)
+        self.blackjack_game = BlackjackGame(self.app, on_close=on_close, player_money=self.app.money)
 
     def _get_card_npc_dialog(self):
         """Return the appropriate dialog lines for the card NPC."""
