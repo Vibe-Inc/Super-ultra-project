@@ -112,10 +112,6 @@ class HUD:
 
         # slot rects (populated/updated per-frame or on-event)
         self.skill_slot_rects: list[pygame.Rect] = []
-        # placeholder dragging state (kept for compatibility)
-        self._dragging_placeholder = False
-        self._dragged_slot_index = None
-        self._drag_pos = (0, 0)
 
     def _recalc_layout(self, screen_width: int, screen_height: int):
         """Recalculate HUD positions based on the current screen size."""
@@ -191,8 +187,6 @@ class HUD:
                 if self.inv_button.on_click:
                     self.inv_button.on_click()
 
-            pass
-
             # Only handle skill slot clicks when shop is not open
             if not getattr(self.app.INV_manager, 'current_shop_inv', None):
                 for index, slot_rect in enumerate(self.skill_slot_rects):
@@ -201,12 +195,6 @@ class HUD:
                             logger.info(f"Skill slot used: {index}")
                             self.use_skill_callback(index)
                         break
-        elif event.type == pygame.MOUSEBUTTONUP:
-            # stop placeholder dragging on mouse release
-            if self._dragging_placeholder:
-                self._dragging_placeholder = False
-                self._dragged_slot_index = None
-                self._drag_pos = (0, 0)
 
     def _on_shop_clicked(self):
         if self.open_shop_callback:
@@ -330,7 +318,6 @@ class HUD:
         label_rect = self.stamina_label.get_rect(center=(stamina_bar_x + stamina_bar_width // 2, stamina_bar_y - 15))
         screen.blit(self.stamina_label, label_rect)
 
-        # Draw vertical skill hotbar (right side)
         # Draw vertical skill hotbar (right side) if no shop is open
         if not getattr(self.app.INV_manager, 'current_shop_inv', None):
             panel_rect = pygame.Rect(self.skill_panel_x, self.skill_panel_y, self.skill_panel_width, self.skill_total_slots_height)

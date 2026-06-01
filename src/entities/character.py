@@ -1,6 +1,7 @@
 import math
 import pygame
 from src.core.logger import logger
+from src.entities.projectile import Fireball
 
 class Character:
     """
@@ -113,6 +114,10 @@ class Character:
         self.level = 1
         self.xp_to_next_level = 100
 
+        # Skill tree
+        self.skill_tree_points = 0
+        self.skill_tree_unlocked = {"core"}
+
         # Stamina system
         self.max_stamina = 100
         self.stamina = self.max_stamina
@@ -140,6 +145,14 @@ class Character:
         self.melee_slash_distance = 50.0
         self.skillbook = self._build_skillbook()
         self.skillbar = [None for _ in range(6)]
+        self.fireball_speed = 420.0
+        self.fireball_range = 520.0
+        self.fireball_damage = 28
+        self.fireball_blast_radius = 110.0
+        self.fireball_fuse_time = 0.9
+        self.fireball_cooldown = 1300
+        self.fireball_knockback = 18.0
+        self.game_state = None
         self.dash_speed_multiplier = 3.0
         self.dash_duration = 0.14
         self.dash_cooldown = 900
@@ -155,21 +168,35 @@ class Character:
                 "description": "Quick burst of movement",
                 "color": (86, 132, 186),
                 "accent": (220, 235, 255),
-            }
+            },
         ]
+
+    def learn_fireball(self):
+        """Add the fireball skill to the skillbook if not already present."""
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "fireball":
+                return  # already learned
+        self.skillbook.append({
+            "skill_id": "fireball",
+            "name": "Fireball",
+            "description": "Випускає вибуховий вогняний шар, що завдає 28 пошкоджень, має радіус вибуху 110 і відкидає ворогів.",
+            "color": (188, 82, 35),
+            "accent": (255, 214, 120),
+        })
+        logger.info("Player learned Fireball!")
 
     def get_skill_in_slot(self, slot_index):
         if 0 <= slot_index < len(self.skillbar):
             return self.skillbar[slot_index]
         return None
 
-    def use_skill_from_slot(self, slot_index):
+    def use_skill_from_slot(self, slot_index, aim_direction=None):
         skill = self.get_skill_in_slot(slot_index)
         if skill is None:
             return False
-        return self.use_skill(skill)
+        return self.use_skill(skill, aim_direction=aim_direction)
 
-    def use_skill(self, skill):
+    def use_skill(self, skill, aim_direction=None):
         if skill is None:
             return False
 
@@ -190,6 +217,45 @@ class Character:
             self.dash_active_time = self.dash_duration
             self.dash_last_used = current_time
             logger.info("Player used Dash.")
+            return True
+
+        if skill_id == "fireball":
+            if current_time - getattr(self, "fireball_last_used", -self.fireball_cooldown) < self.fireball_cooldown:
+                return False
+
+            # Use aim_direction (cursor direction) if provided, otherwise fall back to velocity/facing
+            if aim_direction is not None:
+                direction = pygame.Vector2(aim_direction)
+            else:
+                direction = pygame.Vector2(self.velocity)
+            
+            if direction.length_squared() == 0:
+                direction = self.get_forward_direction()
+            if direction.length_squared() == 0:
+                direction = pygame.Vector2(1, 0)
+            else:
+                direction = direction.normalize()
+
+            game_state = getattr(self, "game_state", None)
+            if game_state is None:
+                logger.warning("Fireball skill used without an attached game state.")
+                return False
+
+            spawn_pos = self.get_melee_anchor() + direction * 18
+            game_state.projectiles.append(
+                Fireball(
+                    spawn_pos,
+                    direction,
+                    self.fireball_speed,
+                    self.fireball_range,
+                    self.fireball_damage,
+                    self.fireball_blast_radius,
+                    self.fireball_fuse_time,
+                    knockback_force=self.fireball_knockback,
+                )
+            )
+            self.fireball_last_used = current_time
+            logger.info("Player used Fireball.")
             return True
 
         return False
@@ -213,9 +279,10 @@ class Character:
         self.level += 1
         self.xp_to_next_level = int(self.xp_to_next_level * 1.5)
         self.max_hp += 20
-        self.hp = self.max_hp 
-        logger.info(f"Level Up! Level: {self.level}, Max HP: {self.max_hp}")
-        print(f"Level Up! Level: {self.level}, Max HP: {self.max_hp}")
+        self.hp = self.max_hp
+        self.skill_tree_points += 1
+        logger.info(f"Level Up! Level: {self.level}, Max HP: {self.max_hp}, Skill points: {self.skill_tree_points}")
+        print(f"Level Up! Level: {self.level}, Max HP: {self.max_hp}, Skill points: {self.skill_tree_points}")
 
     def can_attack(self, current_time=None):
         if current_time is None:
