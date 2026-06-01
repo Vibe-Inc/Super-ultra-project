@@ -832,6 +832,11 @@ class SkillTreeMenu(Menu):
         self.particles = []
         self._init_particles()
         
+        # Unlock animation effects
+        self.unlock_effects = []  # list of active unlock animations
+        self.screen_flash_alpha = 0  # for screen flash effect
+        self.screen_flash_timer = 0
+        
         self.nodes, self.links = self._build_tree()
         self.nodes_by_id = {node["id"]: node for node in self.nodes}
         self.selected_node_id = "core"
@@ -1364,6 +1369,9 @@ class SkillTreeMenu(Menu):
         # If the Fireball Mastery node was unlocked, teach the fireball skill
         if node_id == "major_1" and hasattr(character, "learn_fireball"):
             character.learn_fireball()
+        
+        # Trigger unlock animation
+        self._spawn_unlock_effect(node_id)
 
     def layout(self, screen: pygame.Surface):
         sw, sh = self._screen_size(screen)
@@ -1442,6 +1450,105 @@ class SkillTreeMenu(Menu):
             self.zoom = 1.0
             self.pan_offset = pygame.Vector2(0, 0)
 
+    def _spawn_unlock_effect(self, node_id):
+        """Spawn a dramatic unlock animation at the given node position."""
+        node = self.nodes_by_id.get(node_id)
+        if node is None:
+            return
+        
+        branch = node.get("branch", "arcane")
+        theme = self.BRANCH_THEMES.get(branch, self.BRANCH_THEMES["arcane"])
+        glow_color = theme["glow"]
+        primary_color = theme["primary"]
+        secondary_color = theme["secondary"]
+        accent_color = theme["accent"]
+        
+        # Get screen position of the node
+        screen_pos = self._node_screen_pos(node)
+        node_size = max(4, int(node["size"] * self.zoom))
+        
+        # ─── 1. Particle burst (50+ particles flying outward) ───
+        burst_particles = []
+        for _ in range(80):
+            angle = random.uniform(0, math.pi * 2)
+            speed = random.uniform(60, 250) * self.zoom
+            lifetime = random.uniform(0.4, 1.2)
+            # Choose a color from the branch palette
+            color_choice = random.choice([glow_color, primary_color, secondary_color, accent_color, (255, 255, 255)])
+            burst_particles.append({
+                "type": "burst",
+                "x": screen_pos.x,
+                "y": screen_pos.y,
+                "vx": math.cos(angle) * speed,
+                "vy": math.sin(angle) * speed,
+                "size": random.uniform(2, 6) * self.zoom,
+                "life": lifetime,
+                "max_life": lifetime,
+                "color": color_choice,
+                "alpha": 1.0,
+            })
+        
+        # ─── 2. Shockwave ring data ───
+        shockwave = {
+            "type": "shockwave",
+            "x": screen_pos.x,
+            "y": screen_pos.y,
+            "radius": node_size,
+            "max_radius": node_size + 150 * self.zoom,
+            "speed": 300 * self.zoom,
+            "life": 0.6,
+            "max_life": 0.6,
+            "color": glow_color,
+            "alpha": 0.9,
+            "width": 3,
+        }
+        
+        # ─── 3. Cascading light on connected links ───
+        link_lights = []
+        adjacent = self._get_adjacent_nodes(node_id)
+        unlocked = self._get_unlocked_nodes()
+        for adj_id in adjacent:
+            if adj_id in unlocked:
+                adj_node = self.nodes_by_id.get(adj_id)
+                if adj_node:
+                    adj_pos = self._node_screen_pos(adj_node)
+                    # Traveling light from unlocked adjacent to new node
+                    link_lights.append({
+                        "type": "link_light",
+                        "x1": adj_pos.x,
+                        "y1": adj_pos.y,
+                        "x2": screen_pos.x,
+                        "y2": screen_pos.y,
+                        "progress": 0.0,
+                        "speed": random.uniform(0.8, 1.5),
+                        "color": secondary_color,
+                        "size": max(3, int(6 * self.zoom)),
+                        "alpha": 1.0,
+                    })
+        
+        # ─── 4. Floating text effect ───
+        float_text = {
+            "type": "float_text",
+            "x": screen_pos.x,
+            "y": screen_pos.y - node_size - 20,
+            "text": "✦ UNLOCKED ✦",
+            "color": accent_color,
+            "life": 1.5,
+            "max_life": 1.5,
+            "speed_y": -40 * self.zoom,
+            "size": max(16, int(22 * self.zoom)),
+        }
+        
+        # Add all effects to the queue
+        self.unlock_effects.extend(burst_particles)
+        self.unlock_effects.append(shockwave)
+        self.unlock_effects.extend(link_lights)
+        self.unlock_effects.append(float_text)
+        
+        # ─── 5. Trigger screen flash ───
+        self.screen_flash_alpha = 0.35
+        self.screen_flash_timer = 0.4
+    
     def _update_particles(self, dt):
         """Update floating particle positions for ambient effect."""
         for p in self.particles:
@@ -1455,6 +1562,151 @@ class SkillTreeMenu(Menu):
                 p["x"] = 750
             elif p["x"] > 750:
                 p["x"] = -750
+        
+        # Update unlock effects
+        self._update_unlock_effects(dt)
+    
+    def _update_unlock_effects(self, dt):
+        """Update all active unlock animation effects."""
+        to_remove = []
+        
+        # Update screen flash
+        if self.screen_flash_timer > 0:
+            self.screen_flash_timer -= dt
+            self.screen_flash_alpha *= 0.92  # exponential fade
+            if self.screen_flash_timer <= 0:
+                self.screen_flash_alpha = 0
+                self.screen_flash_timer = 0
+        
+        for effect in self.unlock_effects:
+            effect_type = effect.get("type")
+            
+            if effect_type == "burst":
+                # Move particle
+                effect["x"] += effect["vx"] * dt
+                effect["y"] += effect["vy"] * dt
+                # Apply drag
+                effect["vx"] *= 0.97
+                effect["vy"] *= 0.97
+                # Add gravity for sparkle effect
+                effect["vy"] += 20 * dt * self.zoom
+                # Decrease life
+                effect["life"] -= dt
+                effect["alpha"] = effect["life"] / effect["max_life"]
+                if effect["life"] <= 0:
+                    to_remove.append(effect)
+            
+            elif effect_type == "shockwave":
+                # Expand ring
+                effect["radius"] += effect["speed"] * dt
+                effect["life"] -= dt
+                progress = 1.0 - (effect["life"] / effect["max_life"])
+                effect["alpha"] = 0.9 * (1.0 - progress)
+                effect["width"] = max(1, int(3 * (1.0 - progress * 0.7)))
+                if effect["life"] <= 0:
+                    to_remove.append(effect)
+            
+            elif effect_type == "link_light":
+                # Traveling light along the link
+                effect["progress"] += dt * effect["speed"]
+                effect["alpha"] = 1.0 - effect["progress"]
+                if effect["progress"] >= 1.0:
+                    to_remove.append(effect)
+            
+            elif effect_type == "float_text":
+                # Float upward
+                effect["y"] += effect["speed_y"] * dt
+                effect["life"] -= dt
+                progress = 1.0 - (effect["life"] / effect["max_life"])
+                effect["alpha"] = 1.0 - progress  # fade out
+                # Scale up slightly
+                effect["size"] += 2 * dt
+                if effect["life"] <= 0:
+                    to_remove.append(effect)
+        
+        # Remove expired effects
+        for effect in to_remove:
+            if effect in self.unlock_effects:
+                self.unlock_effects.remove(effect)
+    
+    def _draw_unlock_effects(self, surface):
+        """Draw all active unlock animation effects."""
+        for effect in self.unlock_effects:
+            effect_type = effect.get("type")
+            
+            if effect_type == "burst":
+                alpha = int(255 * effect["alpha"])
+                if alpha <= 0:
+                    continue
+                color = effect["color"]
+                r, g, b = color[:3]
+                # Fade to white as it fades
+                fade = alpha / 255
+                dr = int(r * fade + 255 * (1 - fade))
+                dg = int(g * fade + 255 * (1 - fade))
+                db = int(b * fade + 255 * (1 - fade))
+                clr = (dr, dg, db, alpha)
+                size = max(1, effect["size"] * effect["alpha"])
+                pos = (int(effect["x"]), int(effect["y"]))
+                if self.tree_rect.collidepoint(pos):
+                    pygame.draw.circle(surface, clr[:3], pos, int(size))
+            
+            elif effect_type == "shockwave":
+                alpha = int(255 * effect["alpha"])
+                if alpha <= 0:
+                    continue
+                color = effect["color"]
+                r, g, b = color[:3]
+                clr = (r, g, b)
+                pos = (int(effect["x"]), int(effect["y"]))
+                radius = int(effect["radius"])
+                # Draw multiple rings for a glow effect
+                for w in range(effect["width"], 0, -1):
+                    ring_alpha = alpha // (effect["width"] - w + 1) if w > 0 else alpha
+                    offset = w * 3
+                    adj_alpha = max(0, ring_alpha - offset * 10)
+                    if adj_alpha > 0:
+                        t_clr = tuple(max(0, min(255, (c + adj_alpha) if i == 0 else c)) for i, c in enumerate(color))
+                        pygame.draw.circle(surface, color, pos, radius + offset, max(1, w))
+            
+            elif effect_type == "link_light":
+                alpha = int(255 * effect["alpha"])
+                if alpha <= 0:
+                    continue
+                progress = effect["progress"]
+                x = effect["x1"] + (effect["x2"] - effect["x1"]) * progress
+                y = effect["y1"] + (effect["y2"] - effect["y1"]) * progress
+                color = effect["color"]
+                size = int(effect["size"] * (0.5 + 0.5 * math.sin(progress * math.pi)))
+                # Draw glow ball
+                glow_size = size * 3
+                for i in range(3):
+                    glow_alpha = alpha // (2 ** i + 1)
+                    glow_r = max(1, glow_size - i * 4)
+                    gc = tuple(max(0, min(255, c)) for c in color)
+                    pygame.draw.circle(surface, gc, (int(x), int(y)), glow_r)
+                pygame.draw.circle(surface, (255, 255, 255), (int(x), int(y)), size)
+            
+            elif effect_type == "float_text":
+                alpha = int(255 * effect["alpha"])
+                if alpha <= 0:
+                    continue
+                font = cfg.get_font(max(12, int(effect["size"])))
+                text_surf = font.render(effect["text"], True, effect["color"])
+                text_surf.set_alpha(alpha)
+                pos = (int(effect["x"] - text_surf.get_width() // 2), int(effect["y"]))
+                # Draw shadow for readability
+                shadow = font.render(effect["text"], True, (0, 0, 0))
+                shadow.set_alpha(alpha // 2)
+                surface.blit(shadow, (pos[0] + 2, pos[1] + 2))
+                surface.blit(text_surf, pos)
+        
+        # Draw screen flash (light overlay)
+        if self.screen_flash_alpha > 0.01:
+            flash = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+            alpha_val = int(255 * self.screen_flash_alpha)
+            flash.fill((255, 255, 255, alpha_val))
+            surface.blit(flash, (0, 0))
 
     def _draw_tree_background(self, surface):
         """Draw enhanced background with concentric rings, twinkling stars, and particles."""
@@ -1760,6 +2012,10 @@ class SkillTreeMenu(Menu):
         mouse_pos = pygame.mouse.get_pos()
         self.hovered_node_id = self._hit_test_node(mouse_pos)
         self._draw_nodes(screen, unlocked)
+        
+        # Draw unlock animation effects on top of everything
+        self._draw_unlock_effects(screen)
+        
         screen.set_clip(old_clip)
 
         # Draw node count info in bottom-left of tree area
