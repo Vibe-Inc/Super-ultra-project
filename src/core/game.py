@@ -21,6 +21,7 @@ from src.ai.navigation import NavGrid
 from src.entities.monster_visuals import build_monster_animations
 from src.entities.monster_attacks import build_attack_controller, AttackContext
 from src.combat.base_player_combat import PlayerCombatController
+from src.minigames.blackjack import BlackjackGame
 
 if TYPE_CHECKING:
     from src.app import App
@@ -269,6 +270,11 @@ class Game(State):
             "maps/tavern.tmx": (576, 256),
         }
 
+        # Card-game NPC spawn positions (pixels) — separate from the merchant NPC
+        self.CARD_NPC_SPAWNS = {
+            "maps/tavern.tmx": (320, 320),
+        }
+
         # Maps where enemy spawning (both default and random) is disabled
         self.NO_ENEMY_SPAWN_MAPS = {"maps/tavern.tmx", "maps/test-map-1.tmx"}
 
@@ -333,6 +339,51 @@ class Game(State):
 
         self.shop_inv = ShopInventory(self.app, shop_items)
 
+        # ---- Card-game NPC (tavern gambler) ----
+        if initial_map_path in self.CARD_NPC_SPAWNS:
+            cn_x, cn_y = self.CARD_NPC_SPAWNS[initial_map_path]
+        else:
+            cn_x, cn_y = -5000, -5000
+
+        self.card_npc_first_dialog = [
+            "Well, well — a fresh face in the tavern!",
+            "Name's Ren. I pass the time with a bit of cards.",
+            "Care for a round of Blackjack? I promise I don't cheat... much."
+        ]
+        self.card_npc_repeat_dialog = [
+            "Back again? I knew you'd come around.",
+            "The cards have been waiting for you.",
+            "How about another round of Blackjack?"
+        ]
+        self.card_npc_post_game_dialog = [
+            "Thanks for playing! That was a fine round.",
+            "Come back anytime — the deck's always shuffled."
+        ]
+
+        self.card_npc = NPC(
+            x=cn_x, y=cn_y,
+            sprite_set="MenHuman1(Recolor)",
+            dialog_lines=self.card_npc_first_dialog,
+            is_merchant=False,
+            gender='male',
+        )
+
+        # Clamp card NPC to map bounds
+        try:
+            if initial_map_path in self.CARD_NPC_SPAWNS and self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                map_w = self.map.current_map.pixel_width
+                map_h = self.map.current_map.pixel_height
+                cn_w = self.card_npc.image.get_width()
+                cn_h = self.card_npc.image.get_height()
+                cn_x = max(0, min(cn_x, map_w - cn_w))
+                cn_y = max(0, min(cn_y, map_h - cn_h))
+                self.card_npc.pos = pygame.Vector2(cn_x, cn_y)
+        except Exception:
+            pass
+
+        # Blackjack game state (None when not playing)
+        self.blackjack_game = None
+
     def reinit_ui(self):
         self.hud = HUD(self.character, self.app, self.toggle_player_inventory, self.use_skill_slot, open_shop_callback=self.open_shop)
 
@@ -354,6 +405,24 @@ class Game(State):
             self.app.INV_manager.toggle_trade(self.MAIN_player_inv, self.shop_inv)
         except Exception:
             pass
+
+    def open_blackjack(self):
+        """Launch the blackjack minigame overlay."""
+        def on_close(outcome):
+            self.blackjack_game = None
+            # Show post-game thank-you dialog
+            self.app.current_dialog = Dialog(
+                self.app,
+                self.card_npc_post_game_dialog,
+                on_close=lambda: setattr(self.card_npc, 'was_talked', True),
+            )
+        self.blackjack_game = BlackjackGame(self.app, on_close=on_close, bet_amount=10)
+
+    def _get_card_npc_dialog(self):
+        """Return the appropriate dialog lines for the card NPC."""
+        if not self.card_npc.was_talked:
+            return self.card_npc_first_dialog
+        return self.card_npc_repeat_dialog
 
     def use_skill_slot(self, slot_index):
         # Calculate aim direction from player to cursor (in world coordinates)
@@ -579,7 +648,26 @@ class Game(State):
             else:
                 self.npc.pos = pygame.Vector2(-5000, -5000)
                 logger.info(f"No NPC spawn for map {switched_map_path}; hiding NPC")
-        
+
+            # Place card-game NPC on the new map (or hide if not present)
+            if switched_map_path in self.CARD_NPC_SPAWNS:
+                cn_x, cn_y = self.CARD_NPC_SPAWNS[switched_map_path]
+                try:
+                    if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                        map_w = self.map.current_map.pixel_width
+                        map_h = self.map.current_map.pixel_height
+                        cn_w = self.card_npc.image.get_width()
+                        cn_h = self.card_npc.image.get_height()
+                        cn_x = max(0, min(cn_x, map_w - cn_w))
+                        cn_y = max(0, min(cn_y, map_h - cn_h))
+                except Exception:
+                    pass
+                self.card_npc.pos = pygame.Vector2(cn_x, cn_y)
+                logger.info(f"Placed card NPC for map {switched_map_path} at ({cn_x},{cn_y})")
+            else:
+                self.card_npc.pos = pygame.Vector2(-5000, -5000)
+                logger.info(f"No card NPC spawn for map {switched_map_path}; hiding card NPC")
+
         # Enemy Spawning Logic
         self._update_game_time(dt)
 
@@ -650,6 +738,7 @@ class Game(State):
                 self.enemies.remove(enemy)
 
         self.npc.update(self.character.pos)
+        self.card_npc.update(self.character.pos)
 
         # Safety: if current map defines an NPC spawn but NPC is far away (not placed), place it
         try:
@@ -657,6 +746,15 @@ class Game(State):
                 nx, ny = self.NPC_SPAWNS[self.current_map_path]
                 self.npc.pos = pygame.Vector2(nx, ny)
                 logger.info(f"Safety placed NPC on {self.current_map_path} at ({nx},{ny})")
+        except Exception:
+            pass
+
+        # Safety: place card NPC if it should be on this map but is far away
+        try:
+            if self.current_map_path in self.CARD_NPC_SPAWNS and (self.card_npc.pos.x < -1000 or self.card_npc.pos.y < -1000):
+                cnx, cny = self.CARD_NPC_SPAWNS[self.current_map_path]
+                self.card_npc.pos = pygame.Vector2(cnx, cny)
+                logger.info(f"Safety placed card NPC on {self.current_map_path} at ({cnx},{cny})")
         except Exception:
             pass
 
@@ -695,21 +793,34 @@ class Game(State):
             if _is_visible(projectile):
                 projectile.draw(screen, camera_offset)
 
-        # Draw NPC and player with simple Y-ordering so they overlap naturally
+        # Draw NPCs and player with simple Y-ordering so they overlap naturally
         try:
             npc_vis = _is_visible(self.npc)
         except Exception:
             npc_vis = False
+        try:
+            card_npc_vis = _is_visible(self.card_npc)
+        except Exception:
+            card_npc_vis = False
 
-        # If player is lower on screen (greater y) -> player is in front, so draw NPC first
-        if self.character.pos.y > self.npc.pos.y:
-            if npc_vis:
+        # Collect all visible entities with their y-position for sorting
+        draw_entities = []
+        if npc_vis:
+            draw_entities.append((self.npc.pos.y, 'npc'))
+        if card_npc_vis:
+            draw_entities.append((self.card_npc.pos.y, 'card_npc'))
+        draw_entities.append((self.character.pos.y, 'player'))
+
+        # Sort by y-position (lower y drawn first = further back)
+        draw_entities.sort(key=lambda e: e[0])
+
+        for _, kind in draw_entities:
+            if kind == 'npc':
                 self.npc.draw(screen, camera_offset)
-            self.character.draw(screen, camera_offset)
-        else:
-            self.character.draw(screen, camera_offset)
-            if npc_vis:
-                self.npc.draw(screen, camera_offset)
+            elif kind == 'card_npc':
+                self.card_npc.draw(screen, camera_offset)
+            elif kind == 'player':
+                self.character.draw(screen, camera_offset)
 
         self.map.draw_fringe_overlay(screen, camera_offset, self.character)
 
@@ -735,12 +846,26 @@ class Game(State):
                 self.app.current_dialog.draw(screen)
             except Exception:
                 pass
+        # Draw blackjack overlay on top of everything
+        if self.blackjack_game:
+            try:
+                self.blackjack_game.draw(screen)
+            except Exception:
+                pass
 
     def draw(self, screen):
         self.draw_scene(screen)
         self.draw_ui(screen)
 
     def handle_event(self, event: pygame.event.Event):
+        # If blackjack game is active, route all events to it
+        if self.blackjack_game:
+            try:
+                self.blackjack_game.handle_event(event)
+                return
+            except Exception:
+                pass
+
         if getattr(self.app, 'current_dialog', None):
             try:
                 self.app.current_dialog.handle_event(event)
@@ -776,8 +901,24 @@ class Game(State):
                 self.use_skill_slot(5)
             
             if event.key == pygame.K_e:
-                # If NPC is interactable -> start conversation (dialog).
-                if self.npc.is_interactable:
+                # Card NPC interaction takes priority if both are nearby
+                if self.card_npc.is_interactable:
+                    dialog_lines = self._get_card_npc_dialog()
+
+                    def on_card_close():
+                        try:
+                            self.card_npc.was_talked = True
+                        except Exception:
+                            pass
+
+                    self.app.current_dialog = Dialog(
+                        self.app,
+                        dialog_lines,
+                        on_close=on_card_close,
+                        on_play_cards=self.open_blackjack,
+                        show_play_cards=True,
+                    )
+                elif self.npc.is_interactable:
                     def on_close():
                         try:
                             self.app.last_talked_npc = self.npc

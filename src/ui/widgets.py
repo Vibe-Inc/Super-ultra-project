@@ -241,32 +241,50 @@ class Tooltip:
 class Dialog:
     """
     Simple modal dialog with text lines and an OK button.
+    Supports optional Shop and Play Cards action buttons.
     """
-    def __init__(self, app, lines, on_close=None, on_shop=None, show_shop=False):
+    def __init__(self, app, lines, on_close=None, on_shop=None, show_shop=False,
+                 on_play_cards=None, show_play_cards=False):
         self.app = app
         self.lines = lines if isinstance(lines, (list, tuple)) else [str(lines)]
         self.on_close = on_close
         self.on_shop = on_shop
         self.show_shop = bool(show_shop)
+        self.on_play_cards = on_play_cards
+        self.show_play_cards = bool(show_play_cards)
         sw, sh = self.app.screen.get_size()
         w = min(800, sw - 100)
         h = min(300, sh - 200)
         self.rect = pygame.Rect((sw - w) // 2, (sh - h) // 2, w, h)
         self.font = cfg.get_font(max(8,int(20 * cfg.ui_scale())))
-        # Buttons: Close and optional Shop
+        # Buttons: Close and optional Shop / Play Cards
         btn_w = max(100, int(160 * cfg.ui_scale()))
         btn_h = max(34, int(44 * cfg.ui_scale()))
         gap = int(12 * cfg.ui_scale())
+
+        # Count how many action buttons we need
+        action_buttons = []
         if self.show_shop:
-            total_w = btn_w * 2 + gap
-            btn_x = self.rect.x + (self.rect.width - total_w) // 2
-            self.shop_button = Button(pygame.Rect(btn_x, self.rect.y + self.rect.height - btn_h - 16, btn_w, btn_h), _('SHOP'), (100,110,70), (150,160,110), self.font, (255,255,255), 6, on_click=self._shop)
+            action_buttons.append(('shop', _('SHOP'), (100,110,70), (150,160,110)))
+        if self.show_play_cards:
+            action_buttons.append(('cards', _('PLAY CARDS'), (70,100,70), (110,150,110)))
+
+        num_buttons = 1 + len(action_buttons)  # +1 for CLOSE
+        total_w = btn_w * num_buttons + gap * (num_buttons - 1)
+        btn_x = self.rect.x + (self.rect.width - total_w) // 2
+        btn_y = self.rect.y + self.rect.height - btn_h - 16
+
+        self.shop_button = None
+        self.play_cards_button = None
+
+        for kind, label, color, hover in action_buttons:
+            if kind == 'shop':
+                self.shop_button = Button(pygame.Rect(btn_x, btn_y, btn_w, btn_h), label, color, hover, self.font, (255,255,255), 6, on_click=self._shop)
+            elif kind == 'cards':
+                self.play_cards_button = Button(pygame.Rect(btn_x, btn_y, btn_w, btn_h), label, color, hover, self.font, (255,255,255), 6, on_click=self._play_cards_action)
             btn_x += btn_w + gap
-            self.ok_button = Button(pygame.Rect(btn_x, self.rect.y + self.rect.height - btn_h - 16, btn_w, btn_h), _('CLOSE'), (100,100,100), (150,150,150), self.font, (255,255,255), 6, on_click=self._close)
-        else:
-            btn_x = self.rect.x + (self.rect.width - btn_w) // 2
-            btn_y = self.rect.y + self.rect.height - btn_h - 16
-            self.ok_button = Button(pygame.Rect(btn_x, btn_y, btn_w, btn_h), _('CLOSE'), (100,100,100), (150,150,150), self.font, (255,255,255), 6, on_click=self._close)
+
+        self.ok_button = Button(pygame.Rect(btn_x, btn_y, btn_w, btn_h), _('CLOSE'), (100,100,100), (150,150,150), self.font, (255,255,255), 6, on_click=self._close)
 
     def _close(self):
         if callable(self.on_close):
@@ -285,9 +303,12 @@ class Dialog:
             if self.ok_button.rect.collidepoint(event.pos):
                 if self.ok_button.on_click:
                     self.ok_button.on_click()
-            if self.show_shop and self.shop_button.rect.collidepoint(event.pos):
+            if self.show_shop and self.shop_button and self.shop_button.rect.collidepoint(event.pos):
                 if self.shop_button.on_click:
                     self.shop_button.on_click()
+            if self.show_play_cards and self.play_cards_button and self.play_cards_button.rect.collidepoint(event.pos):
+                if self.play_cards_button.on_click:
+                    self.play_cards_button.on_click()
         if event.type == pygame.KEYDOWN:
             if event.key in (pygame.K_RETURN, pygame.K_ESCAPE):
                 self._close()
@@ -299,6 +320,15 @@ class Dialog:
             except Exception:
                 pass
         # close dialog after opening shop
+        self._close()
+
+    def _play_cards_action(self):
+        if callable(self.on_play_cards):
+            try:
+                self.on_play_cards()
+            except Exception:
+                pass
+        # close dialog after starting card game
         self._close()
 
     def draw(self, surface: pygame.Surface):
@@ -322,9 +352,14 @@ class Dialog:
             surface.blit(txt, (txt_x, txt_y))
 
         # draw buttons
-        if self.show_shop:
+        if self.show_shop and self.shop_button:
             try:
                 self.shop_button.draw(surface)
+            except Exception:
+                pass
+        if self.show_play_cards and self.play_cards_button:
+            try:
+                self.play_cards_button.draw(surface)
             except Exception:
                 pass
         self.ok_button.draw(surface)
