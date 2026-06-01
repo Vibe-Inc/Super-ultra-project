@@ -478,18 +478,28 @@ class BlackjackGame:
         surface.blit(title, (tr.centerx - title.get_width() // 2, tr.y + 16))
 
         # ---- Money display (top-right) ----
+        # Use dynamic spacing based on actual font heights to avoid overlap on larger displays
+        right_margin = 20
+        top_margin = 16
+        line_spacing = 6
+
         current_money = self._current_money()
         money_text = self.font_medium.render(f"Gold: {current_money}", True, GOLD)
-        surface.blit(money_text, (tr.right - money_text.get_width() - 20, tr.y + 16))
+        money_y = tr.y + top_margin
+        surface.blit(money_text, (tr.right - money_text.get_width() - right_margin, money_y))
 
-        # Net change indicator
+        # Net change indicator (positioned below money with dynamic spacing)
         if self.net_change > 0:
             nc_text = self.font_small.render(f"(+{self.net_change})", True, GREEN_TEXT)
         elif self.net_change < 0:
             nc_text = self.font_small.render(f"({self.net_change})", True, RED)
         else:
             nc_text = self.font_small.render("(+/- 0)", True, WHITE)
-        surface.blit(nc_text, (tr.right - nc_text.get_width() - 20, tr.y + 16 + money_text.get_height() + 4))
+        nc_y = money_y + money_text.get_height() + line_spacing
+        surface.blit(nc_text, (tr.right - nc_text.get_width() - right_margin, nc_y))
+
+        # Store the bottom of the money area for other elements to reference
+        self._money_area_bottom = nc_y + nc_text.get_height() + line_spacing
 
         # ---- Betting phase ----
         if self.phase == self.PHASE_BETTING:
@@ -563,8 +573,10 @@ class BlackjackGame:
             surface.blit(result_surf, (tr.centerx - result_surf.get_width() // 2, ry))
 
         # ---- Bet info (during play) ----
+        # Position bet info below the money area to avoid overlap
         bet_text = self.font_small.render(f"Bet: {self.bet_amount} gold", True, GOLD)
-        surface.blit(bet_text, (tr.right - bet_text.get_width() - 20, tr.y + 60))
+        bet_y = getattr(self, '_money_area_bottom', tr.y + 80)
+        surface.blit(bet_text, (tr.right - bet_text.get_width() - right_margin, bet_y))
 
         # ---- Hint ----
         hint = self.font_small.render("ESC to cash out", True, (180, 180, 180))
