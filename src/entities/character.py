@@ -190,13 +190,13 @@ class Character:
             return self.skillbar[slot_index]
         return None
 
-    def use_skill_from_slot(self, slot_index):
+    def use_skill_from_slot(self, slot_index, aim_direction=None):
         skill = self.get_skill_in_slot(slot_index)
         if skill is None:
             return False
-        return self.use_skill(skill)
+        return self.use_skill(skill, aim_direction=aim_direction)
 
-    def use_skill(self, skill):
+    def use_skill(self, skill, aim_direction=None):
         if skill is None:
             return False
 
@@ -223,18 +223,25 @@ class Character:
             if current_time - getattr(self, "fireball_last_used", -self.fireball_cooldown) < self.fireball_cooldown:
                 return False
 
-            direction = pygame.Vector2(self.velocity)
+            # Use aim_direction (cursor direction) if provided, otherwise fall back to velocity/facing
+            if aim_direction is not None:
+                direction = pygame.Vector2(aim_direction)
+            else:
+                direction = pygame.Vector2(self.velocity)
+            
             if direction.length_squared() == 0:
                 direction = self.get_forward_direction()
             if direction.length_squared() == 0:
                 direction = pygame.Vector2(1, 0)
+            else:
+                direction = direction.normalize()
 
             game_state = getattr(self, "game_state", None)
             if game_state is None:
                 logger.warning("Fireball skill used without an attached game state.")
                 return False
 
-            spawn_pos = self.get_melee_anchor() + direction.normalize() * 18
+            spawn_pos = self.get_melee_anchor() + direction * 18
             game_state.projectiles.append(
                 Fireball(
                     spawn_pos,

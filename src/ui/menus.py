@@ -660,10 +660,20 @@ class SkillbarMenu(Menu):
                 return
 
             target_slot = self._slot_at_position(event.pos)
+            source_area = self.drag_payload["source"][0]
+            
             if target_slot is not None and target_slot[0] == "bar":
                 self._on_drop(self.drag_payload["source"], ("bar", target_slot[2]))
             elif target_slot is not None and target_slot[0] == "storage":
                 self._on_drop(self.drag_payload["source"], ("storage", target_slot[2]))
+            elif source_area == "bar" and not self.bar_rect.collidepoint(event.pos):
+                # Dropped outside the bar area - remove skill from bar
+                source_index = self.drag_payload["source"][1]
+                skillbar = self._skillbook()[1]
+                if 0 <= source_index < len(skillbar):
+                    removed_skill = skillbar[source_index]
+                    skillbar[source_index] = None
+                    logger.info(f"Removed skill '{removed_skill.get('name', 'unknown')}' from bar slot {source_index} by dragging outside")
 
             self.drag_payload = None
             self.drag_offset = (0, 0)
@@ -741,6 +751,21 @@ class SkillbarMenu(Menu):
             ghost_size = self.bar_slot_rects[0].width if self.bar_slot_rects else 56
             ghost = pygame.Surface((ghost_size, ghost_size), pygame.SRCALPHA)
             self._draw_card(ghost, ghost.get_rect(), skill, empty_label="+")
+            
+            # Check if dragging outside bar area (for removal indicator)
+            source_area = self.drag_payload["source"][0]
+            is_outside_bar = source_area == "bar" and not self.bar_rect.collidepoint((mouse_x, mouse_y))
+            
+            if is_outside_bar:
+                # Show red tint when outside bar (removal indicator)
+                red_overlay = pygame.Surface((ghost_size, ghost_size), pygame.SRCALPHA)
+                red_overlay.fill((200, 50, 50, 100))
+                ghost.blit(red_overlay, (0, 0))
+                # Draw red X
+                x_margin = ghost_size // 4
+                pygame.draw.line(ghost, (255, 80, 80), (x_margin, x_margin), (ghost_size - x_margin, ghost_size - x_margin), 3)
+                pygame.draw.line(ghost, (255, 80, 80), (ghost_size - x_margin, x_margin), (x_margin, ghost_size - x_margin), 3)
+            
             ghost.set_alpha(210)
             screen.blit(ghost, (mouse_x - self.drag_offset[0], mouse_y - self.drag_offset[1]))
 

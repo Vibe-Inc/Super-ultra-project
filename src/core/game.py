@@ -356,7 +356,15 @@ class Game(State):
             pass
 
     def use_skill_slot(self, slot_index):
-        return self.character.use_skill_from_slot(slot_index)
+        # Calculate aim direction from player to cursor (in world coordinates)
+        mouse_screen_pos = pygame.mouse.get_pos()
+        camera_offset = self._get_camera_offset()
+        mouse_world_pos = pygame.Vector2(mouse_screen_pos) + camera_offset
+        player_center = self.character.get_center()
+        aim_direction = mouse_world_pos - player_center
+        if aim_direction.length_squared() == 0:
+            aim_direction = self.character.get_forward_direction()
+        return self.character.use_skill_from_slot(slot_index, aim_direction=aim_direction)
 
 
     def _update_projectiles(self, dt):
