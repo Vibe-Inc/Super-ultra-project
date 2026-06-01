@@ -67,11 +67,42 @@ class Button:
         self.text = text
         self._update_text_surface()
 
+    def _adjust_color_brightness(self, color, factor):
+        """Adjust color brightness by a factor."""
+        return tuple(min(255, max(0, int(c * factor))) for c in color)
+
     def draw(self, screen):
         mouse_pos = pygame.mouse.get_pos()
-        curr_color = self.hover_color if self.rect.collidepoint(mouse_pos) else self.color
-        pygame.draw.rect(screen, curr_color, self.rect, border_radius=self.corner_width)
-        screen.blit(self.text_surf, self.text_rect)      
+        is_hovered = self.rect.collidepoint(mouse_pos)
+        base_color = self.hover_color if is_hovered else self.color
+        
+        # Draw subtle shadow (small offset, less opacity for flat design)
+        shadow_offset = 2
+        shadow_rect = pygame.Rect(
+            self.rect.x + shadow_offset,
+            self.rect.y + shadow_offset,
+            self.rect.width,
+            self.rect.height
+        )
+        shadow_surf = pygame.Surface((shadow_rect.width, shadow_rect.height), pygame.SRCALPHA)
+        shadow_surf.fill((0, 0, 0, 50))  # Lighter shadow
+        # Create rounded shadow
+        shadow_mask = pygame.Surface((shadow_rect.width, shadow_rect.height), pygame.SRCALPHA)
+        pygame.draw.rect(shadow_mask, (255, 255, 255, 255), 
+                        (0, 0, shadow_rect.width, shadow_rect.height), 
+                        border_radius=self.corner_width)
+        shadow_surf.blit(shadow_mask, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
+        screen.blit(shadow_surf, shadow_rect.topleft)
+        
+        # Draw flat button background with rounded corners
+        pygame.draw.rect(screen, base_color, self.rect, border_radius=self.corner_width)
+        
+        # Draw subtle border (slightly darker than base color)
+        border_color = self._adjust_color_brightness(base_color, 0.7)
+        pygame.draw.rect(screen, border_color, self.rect, width=1, border_radius=self.corner_width)
+        
+        # Draw main text (no shadow to avoid overlapping/duplicated look)
+        screen.blit(self.text_surf, self.text_rect)
 
 
 class Tooltip:

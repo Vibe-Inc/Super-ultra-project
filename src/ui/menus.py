@@ -881,7 +881,7 @@ class SkillTreeMenu(Menu):
         # Node name/effect data for themed notable nodes
         notable_data = {
             "fire": [
-                (_("Inferno Blast"), _("Unlocks a devastating fire blast dealing 45 damage in a wide area.")),
+                (_("Fireball Mastery"), _("Unlocks the Fireball skill — launch an explosive fireball dealing 28 damage with area effect and knockback.")),
                 (_("Flame Shield"), _("Surrounds you with flames, dealing 8 damage/sec to nearby enemies.")),
                 (_("Pyromancer's Fury"), _("Fire skills deal 25% more damage and have 15% larger area.")),
             ],
