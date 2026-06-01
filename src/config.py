@@ -115,35 +115,52 @@ tooltip_border_CREDITS = (54, 105, 121)
 
 MAIN_INV_columns = 8
 MAIN_INV_rows = 4
-          
+
+MAIN_INV_equipment_columns = 2
+MAIN_INV_equipment_rows = 4
+
 BASE_INV_slot_size = 70
 BASE_INV_border = 3
 BASE_INV_slot_color = (216, 223, 203)
 BASE_INV_border_color = (33, 41, 48)
 
 MAIN_INV_BACKGROUND=(109, 125, 123)
-MAIN_INV_pos_x = (SCREEN_WIDTH//2- (BASE_INV_slot_size + BASE_INV_border) * MAIN_INV_rows + BASE_INV_border)-5
-MAIN_INV_pos_y = (SCREEN_HEIGHT//2)-30
 
-MAIN_INV_equipment_columns = 2
-MAIN_INV_equipment_rows = 4
-MAIN_INV_equipment_pos_x = MAIN_INV_pos_x + (BASE_INV_slot_size + BASE_INV_border) * 3 + BASE_INV_border
-MAIN_INV_equipment_pos_y =MAIN_INV_pos_y-310
+MAIN_INV_pos_x = 0
+MAIN_INV_pos_y = 0
+MAIN_INV_equipment_pos_x = 0
+MAIN_INV_equipment_pos_y = 0
 
+def recalculate_inventory_positions():
+    global MAIN_INV_pos_x, MAIN_INV_pos_y, MAIN_INV_equipment_pos_x, MAIN_INV_equipment_pos_y
+    
+    MAIN_INV_pos_x = SCREEN_WIDTH // 2 - (BASE_INV_slot_size + BASE_INV_border) * MAIN_INV_rows + BASE_INV_border
+    
+    grid_height = (BASE_INV_slot_size + BASE_INV_border) * MAIN_INV_rows + BASE_INV_border
+    
+    total_window_height = grid_height + 350
+    
+    hotbar_height = int(BASE_INV_slot_size * 0.8) + 40
+    
+    available_height = SCREEN_HEIGHT - hotbar_height
+    
+    window_top = (available_height - total_window_height) // 2
+    
+    MAIN_INV_pos_y = window_top + 335
+
+    MAIN_INV_equipment_pos_x = MAIN_INV_pos_x + (BASE_INV_slot_size + BASE_INV_border) * 3 + BASE_INV_border
+    MAIN_INV_equipment_pos_y = MAIN_INV_pos_y - 310
+
+recalculate_inventory_positions()
 
 def set_screen_size(screen_width, screen_height):
     global SCREEN_WIDTH, SCREEN_HEIGHT, bg
-    global MAIN_INV_pos_x, MAIN_INV_pos_y, MAIN_INV_equipment_pos_x, MAIN_INV_equipment_pos_y
-
     SCREEN_WIDTH = int(screen_width)
     SCREEN_HEIGHT = int(screen_height)
     bg = _load_background(SCREEN_WIDTH, SCREEN_HEIGHT)
 
-    MAIN_INV_pos_x = SCREEN_WIDTH // 2 - (BASE_INV_slot_size + BASE_INV_border) * MAIN_INV_rows + BASE_INV_border
-    MAIN_INV_pos_y = SCREEN_HEIGHT // 2
-    MAIN_INV_equipment_pos_x = MAIN_INV_pos_x + (BASE_INV_slot_size + BASE_INV_border) * 3 + BASE_INV_border
-    MAIN_INV_equipment_pos_y = MAIN_INV_pos_y - 310
-    # update scaled fonts when the screen size changes
+    recalculate_inventory_positions()
+    
     try:
         update_scaled_fonts()
     except Exception:

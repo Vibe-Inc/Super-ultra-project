@@ -594,6 +594,21 @@ class Game(State):
 
         self.character.update(dt, self.collision_handler, self.obstacles)
 
+        mouse_pos = pygame.mouse.get_pos()
+        camera_offset = self._get_camera_offset()
+        mouse_world_pos = pygame.Vector2(mouse_pos) + camera_offset
+        
+        aim_dir = mouse_world_pos - self.character.get_center()
+        
+        if aim_dir.length_squared() > 0:
+            if abs(aim_dir.x) > abs(aim_dir.y):
+                self.character.direction = "side"
+                self.character.flip = aim_dir.x < 0
+            else:
+                self.character.direction = "down" if aim_dir.y > 0 else "up"
+            
+            self.character.image = self.character.animations[self.character.direction][self.character.frame_index]
+            
         now_ms = pygame.time.get_ticks()
         attack_context = AttackContext(
             dt=dt,
@@ -803,7 +818,7 @@ class Game(State):
                         mouse_world_pos = pygame.Vector2(event.pos) + self._get_camera_offset()
                         self.player_combat.handle_player_attack(mouse_world_pos)
             
-            elif event.button == 2:
+            elif event.button == 3:
                 if getattr(self.app.INV_manager, 'hotbar', None):
                     self.app.INV_manager.hotbar.use_active_slot()
 
