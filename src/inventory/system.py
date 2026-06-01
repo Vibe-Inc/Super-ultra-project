@@ -536,6 +536,16 @@ class MAIN_player_inventory(Inventory):
             corner_width=max(2, int(8 * scale)),
             on_click=None
         )
+        self.open_skilltree_btn = Button(
+            rect=pygame.Rect(0, 0, btn_w, btn_h),
+            text=_("SKILL TREE"),
+            color=(90, 120, 90),
+            hover_color=(130, 160, 130),
+            font=cfg.tooltip_font_CREDITS,
+            font_color=(255, 255, 255),
+            corner_width=max(2, int(8 * scale)),
+            on_click=None
+        )
 
     def _load_portrait_surface(self, character):
         sprite_set = getattr(character, "sprite_set", None)
@@ -614,25 +624,47 @@ class MAIN_player_inventory(Inventory):
         text_surf = cfg.tooltip_font_CREDITS.render(money_text, True, (255, 255, 255))
         screen.blit(text_surf, (preview_x, self.pos_y - 20))
 
-        # position the skillbar open button near the preview area and draw it
-        # Draw the skillbar open button only when no shop is active
+        # position the skillbar/skill tree buttons near the preview area and draw them
+        # Draw the buttons only when no shop is active
         if not getattr(self.app.INV_manager, 'current_shop_inv', None):
+            scale = cfg.ui_scale()
+            gap = max(4, int(8 * scale))
+            stack_height = self.open_skillbar_btn.rect.height + self.open_skilltree_btn.rect.height + gap
             btn_x = preview_x
-            btn_y = self.pos_y - 60
+            btn_y = self.pos_y - stack_height - max(6, int(10 * scale))
+
             self.open_skillbar_btn.rect = pygame.Rect(btn_x, btn_y, self.open_skillbar_btn.rect.width, self.open_skillbar_btn.rect.height)
+            self.open_skilltree_btn.rect = pygame.Rect(
+                btn_x,
+                btn_y + self.open_skillbar_btn.rect.height + gap,
+                self.open_skilltree_btn.rect.width,
+                self.open_skilltree_btn.rect.height,
+            )
             try:
                 self.open_skillbar_btn._update_text_surface()
             except Exception:
                 pass
+            try:
+                self.open_skilltree_btn._update_text_surface()
+            except Exception:
+                pass
             self.open_skillbar_btn.draw(screen)
+            self.open_skilltree_btn.draw(screen)
 
         return super().draw(screen)
 
     def inventory_interactions(self, event, manager):
         # Handle SKILLBAR button click (only when shop not open)
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if hasattr(self, 'open_skillbar_btn') and self.open_skillbar_btn.rect.collidepoint(pygame.mouse.get_pos()):
-                if not getattr(self.app.INV_manager, 'current_shop_inv', None):
+            if not getattr(self.app.INV_manager, 'current_shop_inv', None):
+                mouse_pos = event.pos
+                if hasattr(self, 'open_skilltree_btn') and self.open_skilltree_btn.rect.collidepoint(mouse_pos):
+                    try:
+                        self.app.manager.set_state("skill_tree")
+                    except Exception:
+                        pass
+                    return
+                if hasattr(self, 'open_skillbar_btn') and self.open_skillbar_btn.rect.collidepoint(mouse_pos):
                     try:
                         self.app.manager.set_state("skillbar")
                     except Exception:

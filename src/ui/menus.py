@@ -1,3 +1,5 @@
+import math
+import random
 import pygame
 import sys
 from typing import TYPE_CHECKING
@@ -6,7 +8,6 @@ from src.ui.widgets import Button, Tooltip, Slider
 from src.core.state import State
 from src.core.save_manager import SaveManager
 import src.config as cfg
-import pygame
 from src.core.logger import logger
 
 if TYPE_CHECKING:
@@ -742,6 +743,427 @@ class SkillbarMenu(Menu):
             self._draw_card(ghost, ghost.get_rect(), skill, empty_label="+")
             ghost.set_alpha(210)
             screen.blit(ghost, (mouse_x - self.drag_offset[0], mouse_y - self.drag_offset[1]))
+
+
+class SkillTreeMenu(Menu):
+    """
+    Placeholder skill tree screen inspired by Path of Exile.
+    """
+    def __init__(self, app: "App"):
+        super().__init__(app)
+        scale = cfg.ui_scale()
+        self.title_font = cfg.get_font(max(12, int(36 * scale)))
+        self.section_font = cfg.get_font(max(10, int(22 * scale)))
+        self.small_font = cfg.get_font(max(8, int(16 * scale)))
+
+        exit_width = max(120, int(200 * scale))
+        exit_height = max(44, int(52 * scale))
+        self.exit_button = Button(
+            pygame.Rect(0, 0, exit_width, exit_height),
+            _("BACK"),
+            (110, 70, 70),
+            (150, 95, 95),
+            cfg.button_font,
+            cfg.text_color,
+            cfg.corner_radius,
+            on_click=self.exit_menu,
+        )
+        self.buttons = [self.exit_button]
+
+        self.zoom = 1.0
+        self.min_zoom = 0.6
+        self.max_zoom = 1.6
+        self.pan_offset = pygame.Vector2(0, 0)
+        self.dragging_view = False
+        self.drag_origin = pygame.Vector2(0, 0)
+        self.drag_start_offset = pygame.Vector2(0, 0)
+
+        self.nodes, self.links = self._build_tree()
+        self.nodes_by_id = {node["id"]: node for node in self.nodes}
+        self.selected_node_id = "core"
+        self.hovered_node_id = None
+        self.background_points = self._build_background_points()
+
+        self.tree_rect = pygame.Rect(0, 0, 0, 0)
+        self.sidebar_rect = pygame.Rect(0, 0, 0, 0)
+        self._layout_size = None
+
+    def _character(self):
+        gameplay_state = getattr(getattr(self.app, "manager", None), "states", {}).get("gameplay")
+        return getattr(gameplay_state, "character", None)
+
+    def _get_unlocked_nodes(self):
+        character = self._character()
+        unlocked = getattr(character, "skill_tree_unlocked", None) if character else None
+        if unlocked is None:
+            return {"core"}
+        if isinstance(unlocked, list):
+            return set(unlocked)
+        return set(unlocked)
+
+    def _build_tree(self):
+        nodes = []
+        links = []
+        link_set = set()
+
+        def add_node(node_id, name, effect, pos, size, kind, color, accent):
+            nodes.append({
+                "id": node_id,
+                "name": name,
+                "effect": effect,
+                "pos": pygame.Vector2(pos),
+                "size": size,
+                "kind": kind,
+                "color": color,
+                "accent": accent,
+            })
+
+        def add_link(a, b):
+            if a == b:
+                return
+            key = (a, b) if a < b else (b, a)
+            if key in link_set:
+                return
+            link_set.add(key)
+            links.append((a, b))
+
+        add_node(
+            "core",
+            _("Core"),
+            _("Placeholder: unlocks nearby nodes."),
+            (0, 0),
+            22,
+            "core",
+            (80, 120, 170),
+            (220, 235, 250),
+        )
+
+        ring1_count = 8
+        ring1_radius = 180
+        for i in range(ring1_count):
+            angle = math.radians(i * (360 / ring1_count))
+            pos = (math.cos(angle) * ring1_radius, math.sin(angle) * ring1_radius)
+            node_id = f"minor_{i + 1}"
+            add_node(
+                node_id,
+                _("Minor Node"),
+                _("Placeholder: small stat bonus."),
+                pos,
+                10,
+                "minor",
+                (46, 52, 64),
+                (140, 148, 160),
+            )
+            add_link("core", node_id)
+
+        for i in range(ring1_count):
+            add_link(f"minor_{i + 1}", f"minor_{(i + 1) % ring1_count + 1}")
+
+        ring2_count = 6
+        ring2_radius = 320
+        for i in range(ring2_count):
+            angle = math.radians(i * (360 / ring2_count) + 30)
+            pos = (math.cos(angle) * ring2_radius, math.sin(angle) * ring2_radius)
+            node_id = f"major_{i + 1}"
+            add_node(
+                node_id,
+                _("Notable Node"),
+                _("Placeholder: notable bonus."),
+                pos,
+                16,
+                "major",
+                (84, 118, 78),
+                (210, 232, 210),
+            )
+            link_target = f"minor_{1 + int(i * ring1_count / ring2_count)}"
+            add_link(node_id, link_target)
+
+            cluster_radius = 62
+            for j in range(3):
+                offset = math.radians(j * 120 + 20)
+                cluster_pos = (
+                    pos[0] + math.cos(offset) * cluster_radius,
+                    pos[1] + math.sin(offset) * cluster_radius,
+                )
+                cluster_id = f"cluster_{i + 1}_{j + 1}"
+                add_node(
+                    cluster_id,
+                    _("Minor Node"),
+                    _("Placeholder: small stat bonus."),
+                    cluster_pos,
+                    9,
+                    "minor",
+                    (50, 56, 68),
+                    (140, 148, 160),
+                )
+                add_link(node_id, cluster_id)
+
+        ring3_count = 4
+        ring3_radius = 470
+        for i in range(ring3_count):
+            angle = math.radians(i * (360 / ring3_count) + 45)
+            pos = (math.cos(angle) * ring3_radius, math.sin(angle) * ring3_radius)
+            node_id = f"keystone_{i + 1}"
+            add_node(
+                node_id,
+                _("Keystone Node"),
+                _("Placeholder: large tradeoff."),
+                pos,
+                22,
+                "keystone",
+                (140, 74, 74),
+                (240, 210, 210),
+            )
+            add_link(node_id, f"major_{(i % ring2_count) + 1}")
+
+        return nodes, links
+
+    def _build_background_points(self):
+        rng = random.Random(23)
+        points = []
+        for _ in range(220):
+            points.append(
+                (
+                    rng.uniform(-620, 620),
+                    rng.uniform(-520, 520),
+                    rng.randint(1, 2),
+                )
+            )
+        return points
+
+    def _node_screen_pos(self, node):
+        origin = pygame.Vector2(self.tree_rect.center) + self.pan_offset
+        return origin + node["pos"] * self.zoom
+
+    def _hit_test_node(self, pos):
+        if not self.tree_rect.collidepoint(pos):
+            return None
+        mx, my = pos
+        best_id = None
+        best_dist = None
+        for node in self.nodes:
+            node_pos = self._node_screen_pos(node)
+            radius = node["size"] * self.zoom + 4
+            dist = (node_pos.x - mx) ** 2 + (node_pos.y - my) ** 2
+            if dist <= radius ** 2 and (best_dist is None or dist < best_dist):
+                best_dist = dist
+                best_id = node["id"]
+        return best_id
+
+    def _wrap_text(self, text, font, max_width):
+        words = text.split()
+        lines = []
+        current = ""
+        for word in words:
+            test_line = f"{current} {word}".strip()
+            if font.size(test_line)[0] <= max_width or not current:
+                current = test_line
+            else:
+                lines.append(current)
+                current = word
+        if current:
+            lines.append(current)
+        return lines
+
+    def exit_menu(self):
+        try:
+            self.app.INV_manager.player_inventory_opened = False
+            gameplay = getattr(getattr(self.app, "manager", None), "states", {}).get("gameplay")
+            if gameplay:
+                try:
+                    self.app.INV_manager.remove_active_inventory(getattr(gameplay, "MAIN_player_inv", None))
+                except Exception:
+                    pass
+                try:
+                    self.app.INV_manager.remove_active_inventory(getattr(gameplay, "PLAYER_inventory_equipment", None))
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        self.app.manager.set_state("gameplay")
+
+    def layout(self, screen: pygame.Surface):
+        sw, sh = self._screen_size(screen)
+        scale = cfg.ui_scale()
+        margin = max(12, int(24 * scale))
+        sidebar_width = min(max(240, int(360 * scale)), max(240, sw // 3))
+        tree_width = max(240, sw - sidebar_width - margin * 3)
+        self.sidebar_rect = pygame.Rect(sw - sidebar_width - margin, margin, sidebar_width, sh - margin * 2)
+        self.tree_rect = pygame.Rect(margin, margin, tree_width, sh - margin * 2)
+
+        exit_width = max(120, int(self.sidebar_rect.width * 0.6))
+        exit_height = max(44, int(52 * scale))
+        self.exit_button.rect = pygame.Rect(
+            self.sidebar_rect.centerx - exit_width // 2,
+            self.sidebar_rect.bottom - exit_height - margin,
+            exit_width,
+            exit_height,
+        )
+        try:
+            self.exit_button._update_text_surface()
+        except Exception:
+            pass
+
+        size = (sw, sh)
+        if self._layout_size != size:
+            self._layout_size = size
+            self.pan_offset = pygame.Vector2(0, 0)
+
+    def handle_event(self, event: pygame.event.Event):
+        super().handle_event(event)
+
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:
+                node_id = self._hit_test_node(event.pos)
+                if node_id:
+                    self.selected_node_id = node_id
+            if event.button == 3 and self.tree_rect.collidepoint(event.pos):
+                self.dragging_view = True
+                self.drag_origin = pygame.Vector2(event.pos)
+                self.drag_start_offset = pygame.Vector2(self.pan_offset)
+
+        elif event.type == pygame.MOUSEBUTTONUP:
+            if event.button == 3:
+                self.dragging_view = False
+
+        elif event.type == pygame.MOUSEMOTION and self.dragging_view:
+            delta = pygame.Vector2(event.pos) - self.drag_origin
+            self.pan_offset = self.drag_start_offset + delta
+
+        elif event.type == pygame.MOUSEWHEEL:
+            if self.tree_rect.collidepoint(pygame.mouse.get_pos()):
+                self.zoom = max(self.min_zoom, min(self.max_zoom, self.zoom + event.y * 0.08))
+
+        elif event.type == pygame.KEYDOWN and event.key == pygame.K_r:
+            self.zoom = 1.0
+            self.pan_offset = pygame.Vector2(0, 0)
+
+    def _draw_tree_background(self, surface):
+        origin = pygame.Vector2(self.tree_rect.center) + self.pan_offset
+        for radius in (180, 320, 470):
+            pygame.draw.circle(surface, (32, 32, 42), origin, int(radius * self.zoom), 1)
+
+        for x, y, size in self.background_points:
+            pos = origin + pygame.Vector2(x, y) * self.zoom
+            if self.tree_rect.collidepoint(pos):
+                pygame.draw.circle(surface, (36, 36, 46), (int(pos.x), int(pos.y)), size)
+
+    def _draw_links(self, surface, unlocked):
+        for a, b in self.links:
+            node_a = self.nodes_by_id.get(a)
+            node_b = self.nodes_by_id.get(b)
+            if node_a is None or node_b is None:
+                continue
+            pos_a = self._node_screen_pos(node_a)
+            pos_b = self._node_screen_pos(node_b)
+            active = a in unlocked and b in unlocked
+            color = (120, 140, 160) if active else (68, 68, 78)
+            pygame.draw.line(surface, color, pos_a, pos_b, 2)
+
+    def _draw_nodes(self, surface, unlocked):
+        for node in self.nodes:
+            node_id = node["id"]
+            pos = self._node_screen_pos(node)
+            radius = max(4, int(node["size"] * self.zoom))
+            is_unlocked = node_id in unlocked
+            fill = node["color"] if is_unlocked else (46, 46, 54)
+            accent = node["accent"] if is_unlocked else (90, 95, 110)
+            pygame.draw.circle(surface, fill, (int(pos.x), int(pos.y)), radius)
+            pygame.draw.circle(surface, accent, (int(pos.x), int(pos.y)), radius, 2)
+
+            if node_id == self.selected_node_id:
+                pygame.draw.circle(surface, (235, 235, 255), (int(pos.x), int(pos.y)), radius + 5, 2)
+            elif node_id == self.hovered_node_id:
+                pygame.draw.circle(surface, (200, 200, 220), (int(pos.x), int(pos.y)), radius + 3, 1)
+
+            if node["kind"] in ("core", "major", "keystone"):
+                label = self.small_font.render(node["name"], True, (220, 220, 230))
+                label_rect = label.get_rect(center=(pos.x, pos.y - radius - 12))
+                surface.blit(label, label_rect)
+
+    def _draw_sidebar(self, screen, selected_node):
+        pygame.draw.rect(screen, (24, 24, 30), self.sidebar_rect, border_radius=18)
+        pygame.draw.rect(screen, (82, 82, 96), self.sidebar_rect, 2, border_radius=18)
+
+        title = self.title_font.render(_("Skill Tree"), True, (235, 235, 245))
+        screen.blit(title, (self.sidebar_rect.x + 18, self.sidebar_rect.y + 18))
+
+        hint_text = _("Wheel: zoom. Right mouse: pan. Left click: inspect.")
+        hint_lines = self._wrap_text(hint_text, self.small_font, self.sidebar_rect.width - 36)
+        y = self.sidebar_rect.y + 70
+        for line in hint_lines:
+            hint = self.small_font.render(line, True, (190, 190, 200))
+            screen.blit(hint, (self.sidebar_rect.x + 18, y))
+            y += hint.get_height() + 4
+
+        character = self._character()
+        points = getattr(character, "skill_tree_points", 0) if character else 0
+        points_text = self.section_font.render(f"{_('Points')}: {points}", True, (235, 235, 245))
+        screen.blit(points_text, (self.sidebar_rect.x + 18, y + 10))
+        y += points_text.get_height() + 18
+
+        if selected_node is None:
+            return
+
+        name = self.section_font.render(selected_node["name"], True, (235, 235, 245))
+        screen.blit(name, (self.sidebar_rect.x + 18, y))
+        y += name.get_height() + 8
+
+        kind_map = {
+            "core": _("Core"),
+            "minor": _("Minor"),
+            "major": _("Notable"),
+            "keystone": _("Keystone"),
+        }
+        kind = kind_map.get(selected_node.get("kind"), _("Unknown"))
+        kind_text = self.small_font.render(f"{_('Type')}: {kind}", True, (210, 210, 220))
+        screen.blit(kind_text, (self.sidebar_rect.x + 18, y))
+        y += kind_text.get_height() + 6
+
+        unlocked = self._get_unlocked_nodes()
+        status_label = _("Unlocked") if selected_node["id"] in unlocked else _("Locked")
+        status_text = self.small_font.render(f"{_('Status')}: {status_label}", True, (210, 210, 220))
+        screen.blit(status_text, (self.sidebar_rect.x + 18, y))
+        y += status_text.get_height() + 8
+
+        effect_label = f"{_('Effect')}: {selected_node['effect']}"
+        effect_lines = self._wrap_text(effect_label, self.small_font, self.sidebar_rect.width - 36)
+        for line in effect_lines:
+            line_surf = self.small_font.render(line, True, (210, 210, 220))
+            screen.blit(line_surf, (self.sidebar_rect.x + 18, y))
+            y += line_surf.get_height() + 4
+
+        note_text = _("Effects are placeholders and do not apply yet.")
+        note_lines = self._wrap_text(note_text, self.small_font, self.sidebar_rect.width - 36)
+        y += 6
+        for line in note_lines:
+            line_surf = self.small_font.render(line, True, (180, 180, 190))
+            screen.blit(line_surf, (self.sidebar_rect.x + 18, y))
+            y += line_surf.get_height() + 4
+
+    def draw(self, screen: pygame.Surface):
+        self.layout(screen)
+
+        screen.fill((16, 16, 22))
+        pygame.draw.rect(screen, (20, 20, 26), self.tree_rect, border_radius=18)
+        pygame.draw.rect(screen, (70, 70, 88), self.tree_rect, 2, border_radius=18)
+
+        old_clip = screen.get_clip()
+        screen.set_clip(self.tree_rect)
+        self._draw_tree_background(screen)
+
+        unlocked = self._get_unlocked_nodes()
+        self._draw_links(screen, unlocked)
+
+        mouse_pos = pygame.mouse.get_pos()
+        self.hovered_node_id = self._hit_test_node(mouse_pos)
+        self._draw_nodes(screen, unlocked)
+        screen.set_clip(old_clip)
+
+        selected_node = self.nodes_by_id.get(self.selected_node_id)
+        self._draw_sidebar(screen, selected_node)
+        self.exit_button.draw(screen)
 
 class CreditsMenu(Menu):
     """
