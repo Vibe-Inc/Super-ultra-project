@@ -805,7 +805,8 @@
 <span class="sd">    Represents the player&#39;s hotbar for quick access to consumable items or skills.</span>
 
 <span class="sd">    This class extends the base Inventory to provide a permanently visible, bottom-aligned grid.</span>
-<span class="sd">    It supports mouse wheel scrolling, hotkey activation (1-9, 0), and active slot highlighting.</span>
+<span class="sd">    It supports mouse wheel scrolling, hotkey activation (1-9, 0), active slot highlighting,</span>
+<span class="sd">    and dynamic repositioning based on screen size.</span>
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        app (App):</span>
@@ -816,6 +817,12 @@
 <span class="sd">    Methods:</span>
 <span class="sd">        __init__(app):</span>
 <span class="sd">            Initialize the hotbar object, calculating its layout and dimensions.</span>
+<span class="sd">        update_position():</span>
+<span class="sd">            Dynamically calculate and update the X and Y coordinates based on current screen size.</span>
+<span class="sd">        get_slot_under_mouse():</span>
+<span class="sd">            Update position and retrieve the slot under the cursor.</span>
+<span class="sd">        inventory_interactions(event, manager):</span>
+<span class="sd">            Update position and handle mouse interactions.</span>
 <span class="sd">        scroll_active_slot(y_direction):</span>
 <span class="sd">            Update the active slot index based on mouse wheel movement.</span>
 <span class="sd">            Args:</span>
@@ -846,10 +853,6 @@
         <span class="n">scale</span> <span class="o">=</span> <span class="mf">0.8</span>
         <span class="n">slot_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_slot_size</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
         <span class="n">border</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_border</span>
-        <span class="n">total_width</span> <span class="o">=</span> <span class="p">(</span><span class="n">slot_size</span> <span class="o">+</span> <span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="n">columns</span> <span class="o">+</span> <span class="n">border</span>
-        
-        <span class="n">pos_x</span> <span class="o">=</span> <span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">-</span> <span class="n">total_width</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="n">pos_y</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span> <span class="o">-</span> <span class="n">slot_size</span> <span class="o">-</span> <span class="mi">17</span>
         
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s1">&#39;MAIN_HOTBAR_items&#39;</span><span class="p">):</span>
             <span class="n">app</span><span class="o">.</span><span class="n">MAIN_HOTBAR_items</span> <span class="o">=</span> <span class="p">[[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rows</span><span class="p">)]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">columns</span><span class="p">)]</span>
@@ -859,14 +862,37 @@
             <span class="n">rows</span><span class="p">,</span>
             <span class="n">app</span><span class="o">.</span><span class="n">MAIN_HOTBAR_items</span><span class="p">,</span>
             <span class="n">slot_size</span><span class="p">,</span>
-            <span class="n">pos_x</span><span class="p">,</span>
-            <span class="n">pos_y</span><span class="p">,</span>
+            <span class="mi">0</span><span class="p">,</span>
+            <span class="mi">0</span><span class="p">,</span>
             <span class="n">border</span><span class="p">,</span>
             <span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_slot_color</span><span class="p">,</span>
             <span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_border_color</span>
         <span class="p">)</span>
         
-        <span class="bp">self</span><span class="o">.</span><span class="n">active_slot_index</span> <span class="o">=</span> <span class="mi">0</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active_slot_index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_position</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="MAIN_player_hotbar.update_position">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.MAIN_player_hotbar.update_position">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_position</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">total_width</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pos_x</span> <span class="o">=</span> <span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">-</span> <span class="n">total_width</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pos_y</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">-</span> <span class="mi">17</span></div>
+
+
+<div class="viewcode-block" id="MAIN_player_hotbar.get_slot_under_mouse">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.MAIN_player_hotbar.get_slot_under_mouse">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_slot_under_mouse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_position</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_slot_under_mouse</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="MAIN_player_hotbar.inventory_interactions">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.MAIN_player_hotbar.inventory_interactions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">inventory_interactions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">manager</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_position</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">inventory_interactions</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">manager</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MAIN_player_hotbar.scroll_active_slot">
@@ -918,9 +944,9 @@
                             <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
-<div class="viewcode-block" id="MAIN_player_hotbar.draw">
-<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.MAIN_player_hotbar.draw">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_position</span><span class="p">()</span>
+        
         <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span>
             <span class="n">screen</span><span class="p">,</span>
             <span class="n">cfg</span><span class="o">.</span><span class="n">MAIN_INV_BACKGROUND</span><span class="p">,</span>
@@ -932,11 +958,30 @@
         
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
 
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
-            <span class="n">key_text</span> <span class="o">=</span> <span class="nb">str</span><span class="p">((</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">10</span><span class="p">)</span>
-            <span class="n">text_surf</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">INV_nums_font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">key_text</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">200</span><span class="p">))</span>
-            <span class="n">rect_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_x</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span>
-            <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">text_surf</span><span class="p">,</span> <span class="p">(</span><span class="n">rect_x</span> <span class="o">+</span> <span class="mi">5</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_y</span> <span class="o">-</span> <span class="mi">18</span><span class="p">))</span>
+        <span class="n">active_rect_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_x</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_slot_index</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span>
+        <span class="n">active_rect_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_y</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span>
+        
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span>
+            <span class="n">screen</span><span class="p">,</span> 
+            <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">215</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> 
+            <span class="p">(</span><span class="n">active_rect_x</span><span class="p">,</span> <span class="n">active_rect_y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span><span class="p">),</span> 
+            <span class="mi">3</span><span class="p">,</span>
+            <span class="n">border_radius</span><span class="o">=</span><span class="mi">2</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="MAIN_player_hotbar.draw">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.MAIN_player_hotbar.draw">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span>
+            <span class="n">screen</span><span class="p">,</span>
+            <span class="n">cfg</span><span class="o">.</span><span class="n">MAIN_INV_BACKGROUND</span><span class="p">,</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos_x</span> <span class="o">-</span> <span class="mi">10</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_y</span> <span class="o">-</span> <span class="mi">10</span><span class="p">,</span>
+             <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span> <span class="o">+</span> <span class="mi">20</span><span class="p">,</span>
+             <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rows</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span> <span class="o">+</span> <span class="mi">35</span><span class="p">),</span>
+            <span class="mi">0</span><span class="p">,</span> <span class="mi">10</span>
+        <span class="p">)</span>
+        
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
 
         <span class="n">active_rect_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_x</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_slot_index</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span>
         <span class="n">active_rect_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_y</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span>

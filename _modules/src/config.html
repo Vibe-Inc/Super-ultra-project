@@ -198,37 +198,57 @@
 
 <span class="n">MAIN_INV_columns</span> <span class="o">=</span> <span class="mi">8</span>
 <span class="n">MAIN_INV_rows</span> <span class="o">=</span> <span class="mi">4</span>
-          
+
+<span class="n">MAIN_INV_equipment_columns</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">MAIN_INV_equipment_rows</span> <span class="o">=</span> <span class="mi">4</span>
+
 <span class="n">BASE_INV_slot_size</span> <span class="o">=</span> <span class="mi">70</span>
 <span class="n">BASE_INV_border</span> <span class="o">=</span> <span class="mi">3</span>
 <span class="n">BASE_INV_slot_color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">216</span><span class="p">,</span> <span class="mi">223</span><span class="p">,</span> <span class="mi">203</span><span class="p">)</span>
 <span class="n">BASE_INV_border_color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">33</span><span class="p">,</span> <span class="mi">41</span><span class="p">,</span> <span class="mi">48</span><span class="p">)</span>
 
 <span class="n">MAIN_INV_BACKGROUND</span><span class="o">=</span><span class="p">(</span><span class="mi">109</span><span class="p">,</span> <span class="mi">125</span><span class="p">,</span> <span class="mi">123</span><span class="p">)</span>
-<span class="n">MAIN_INV_pos_x</span> <span class="o">=</span> <span class="p">(</span><span class="n">SCREEN_WIDTH</span><span class="o">//</span><span class="mi">2</span><span class="o">-</span> <span class="p">(</span><span class="n">BASE_INV_slot_size</span> <span class="o">+</span> <span class="n">BASE_INV_border</span><span class="p">)</span> <span class="o">*</span> <span class="n">MAIN_INV_rows</span> <span class="o">+</span> <span class="n">BASE_INV_border</span><span class="p">)</span><span class="o">-</span><span class="mi">5</span>
-<span class="n">MAIN_INV_pos_y</span> <span class="o">=</span> <span class="p">(</span><span class="n">SCREEN_HEIGHT</span><span class="o">//</span><span class="mi">2</span><span class="p">)</span><span class="o">-</span><span class="mi">30</span>
 
-<span class="n">MAIN_INV_equipment_columns</span> <span class="o">=</span> <span class="mi">2</span>
-<span class="n">MAIN_INV_equipment_rows</span> <span class="o">=</span> <span class="mi">4</span>
-<span class="n">MAIN_INV_equipment_pos_x</span> <span class="o">=</span> <span class="n">MAIN_INV_pos_x</span> <span class="o">+</span> <span class="p">(</span><span class="n">BASE_INV_slot_size</span> <span class="o">+</span> <span class="n">BASE_INV_border</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="n">BASE_INV_border</span>
-<span class="n">MAIN_INV_equipment_pos_y</span> <span class="o">=</span><span class="n">MAIN_INV_pos_y</span><span class="o">-</span><span class="mi">310</span>
+<span class="n">MAIN_INV_pos_x</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">MAIN_INV_pos_y</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">MAIN_INV_equipment_pos_x</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">MAIN_INV_equipment_pos_y</span> <span class="o">=</span> <span class="mi">0</span>
 
+<div class="viewcode-block" id="recalculate_inventory_positions">
+<a class="viewcode-back" href="../../src.html#src.config.recalculate_inventory_positions">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">recalculate_inventory_positions</span><span class="p">():</span>
+    <span class="k">global</span> <span class="n">MAIN_INV_pos_x</span><span class="p">,</span> <span class="n">MAIN_INV_pos_y</span><span class="p">,</span> <span class="n">MAIN_INV_equipment_pos_x</span><span class="p">,</span> <span class="n">MAIN_INV_equipment_pos_y</span>
+    
+    <span class="n">MAIN_INV_pos_x</span> <span class="o">=</span> <span class="n">SCREEN_WIDTH</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="p">(</span><span class="n">BASE_INV_slot_size</span> <span class="o">+</span> <span class="n">BASE_INV_border</span><span class="p">)</span> <span class="o">*</span> <span class="n">MAIN_INV_rows</span> <span class="o">+</span> <span class="n">BASE_INV_border</span>
+    
+    <span class="n">grid_height</span> <span class="o">=</span> <span class="p">(</span><span class="n">BASE_INV_slot_size</span> <span class="o">+</span> <span class="n">BASE_INV_border</span><span class="p">)</span> <span class="o">*</span> <span class="n">MAIN_INV_rows</span> <span class="o">+</span> <span class="n">BASE_INV_border</span>
+    
+    <span class="n">total_window_height</span> <span class="o">=</span> <span class="n">grid_height</span> <span class="o">+</span> <span class="mi">350</span>
+    
+    <span class="n">hotbar_height</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">BASE_INV_slot_size</span> <span class="o">*</span> <span class="mf">0.8</span><span class="p">)</span> <span class="o">+</span> <span class="mi">40</span>
+    
+    <span class="n">available_height</span> <span class="o">=</span> <span class="n">SCREEN_HEIGHT</span> <span class="o">-</span> <span class="n">hotbar_height</span>
+    
+    <span class="n">window_top</span> <span class="o">=</span> <span class="p">(</span><span class="n">available_height</span> <span class="o">-</span> <span class="n">total_window_height</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+    
+    <span class="n">MAIN_INV_pos_y</span> <span class="o">=</span> <span class="n">window_top</span> <span class="o">+</span> <span class="mi">335</span>
+
+    <span class="n">MAIN_INV_equipment_pos_x</span> <span class="o">=</span> <span class="n">MAIN_INV_pos_x</span> <span class="o">+</span> <span class="p">(</span><span class="n">BASE_INV_slot_size</span> <span class="o">+</span> <span class="n">BASE_INV_border</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="n">BASE_INV_border</span>
+    <span class="n">MAIN_INV_equipment_pos_y</span> <span class="o">=</span> <span class="n">MAIN_INV_pos_y</span> <span class="o">-</span> <span class="mi">310</span></div>
+
+
+<span class="n">recalculate_inventory_positions</span><span class="p">()</span>
 
 <div class="viewcode-block" id="set_screen_size">
 <a class="viewcode-back" href="../../src.html#src.config.set_screen_size">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_screen_size</span><span class="p">(</span><span class="n">screen_width</span><span class="p">,</span> <span class="n">screen_height</span><span class="p">):</span>
     <span class="k">global</span> <span class="n">SCREEN_WIDTH</span><span class="p">,</span> <span class="n">SCREEN_HEIGHT</span><span class="p">,</span> <span class="n">bg</span>
-    <span class="k">global</span> <span class="n">MAIN_INV_pos_x</span><span class="p">,</span> <span class="n">MAIN_INV_pos_y</span><span class="p">,</span> <span class="n">MAIN_INV_equipment_pos_x</span><span class="p">,</span> <span class="n">MAIN_INV_equipment_pos_y</span>
-
     <span class="n">SCREEN_WIDTH</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">screen_width</span><span class="p">)</span>
     <span class="n">SCREEN_HEIGHT</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">screen_height</span><span class="p">)</span>
     <span class="n">bg</span> <span class="o">=</span> <span class="n">_load_background</span><span class="p">(</span><span class="n">SCREEN_WIDTH</span><span class="p">,</span> <span class="n">SCREEN_HEIGHT</span><span class="p">)</span>
 
-    <span class="n">MAIN_INV_pos_x</span> <span class="o">=</span> <span class="n">SCREEN_WIDTH</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="p">(</span><span class="n">BASE_INV_slot_size</span> <span class="o">+</span> <span class="n">BASE_INV_border</span><span class="p">)</span> <span class="o">*</span> <span class="n">MAIN_INV_rows</span> <span class="o">+</span> <span class="n">BASE_INV_border</span>
-    <span class="n">MAIN_INV_pos_y</span> <span class="o">=</span> <span class="n">SCREEN_HEIGHT</span> <span class="o">//</span> <span class="mi">2</span>
-    <span class="n">MAIN_INV_equipment_pos_x</span> <span class="o">=</span> <span class="n">MAIN_INV_pos_x</span> <span class="o">+</span> <span class="p">(</span><span class="n">BASE_INV_slot_size</span> <span class="o">+</span> <span class="n">BASE_INV_border</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="n">BASE_INV_border</span>
-    <span class="n">MAIN_INV_equipment_pos_y</span> <span class="o">=</span> <span class="n">MAIN_INV_pos_y</span> <span class="o">-</span> <span class="mi">310</span>
-    <span class="c1"># update scaled fonts when the screen size changes</span>
+    <span class="n">recalculate_inventory_positions</span><span class="p">()</span>
+    
     <span class="k">try</span><span class="p">:</span>
         <span class="n">update_scaled_fonts</span><span class="p">()</span>
     <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
