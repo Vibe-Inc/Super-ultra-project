@@ -642,6 +642,10 @@ class SkillbarMenu(Menu):
 
             area, column_or_none, row_or_index = slot
             if area == "storage":
+                # When there are no unused skills we still render one '+' slot.
+                # Guard index access so clicking that placeholder does nothing.
+                if row_or_index < 0 or row_or_index >= len(storage_items):
+                    return
                 self.drag_payload = {"source": ("storage", row_or_index), "skill": storage_items[row_or_index]}
                 self.drag_offset = (event.pos[0] - self.storage_slot_rects[row_or_index].x, event.pos[1] - self.storage_slot_rects[row_or_index].y)
                 return
