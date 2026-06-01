@@ -781,6 +781,9 @@ class Game(State):
                 self.character.take_damage(10)
             if event.key == pygame.K_F6:
                 self.character.gain_xp(50)
+            if event.key == pygame.K_F9:
+                self.character.skill_tree_points += 1
+                logger.info(f"[DEBUG] F9: +1 skill tree point. Total: {self.character.skill_tree_points}")
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:

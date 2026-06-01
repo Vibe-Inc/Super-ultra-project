@@ -768,7 +768,18 @@ class SkillTreeMenu(Menu):
             cfg.corner_radius,
             on_click=self.exit_menu,
         )
-        self.buttons = [self.exit_button]
+        # Unlock button placed above the exit button in the sidebar
+        self.unlock_button = Button(
+            pygame.Rect(0, 0, exit_width, exit_height),
+            "",
+            (70, 110, 70),
+            (95, 150, 95),
+            cfg.button_font,
+            cfg.text_color,
+            cfg.corner_radius,
+            on_click=self._unlock_selected,
+        )
+        self.buttons = [self.exit_button, self.unlock_button]
 
         self.zoom = 1.0
         self.min_zoom = 0.6
@@ -865,10 +876,16 @@ class SkillTreeMenu(Menu):
             angle = math.radians(i * (360 / ring2_count) + 30)
             pos = (math.cos(angle) * ring2_radius, math.sin(angle) * ring2_radius)
             node_id = f"major_{i + 1}"
+            if i == 0:
+                node_name = _("Fireball Mastery")
+                node_effect = _("Unlocks the Fireball skill — launch an explosive fireball that deals 28 damage, has a blast radius of 110, and knocks back enemies.")
+            else:
+                node_name = _("Notable Node")
+                node_effect = _("Placeholder: notable bonus.")
             add_node(
                 node_id,
-                _("Notable Node"),
-                _("Placeholder: notable bonus."),
+                node_name,
+                node_effect,
                 pos,
                 16,
                 "major",
@@ -983,6 +1000,55 @@ class SkillTreeMenu(Menu):
 
         self.app.manager.set_state("gameplay")
 
+    def _unlock_selected(self):
+        selected = self.nodes_by_id.get(self.selected_node_id)
+        if selected is None:
+            return
+
+        character = self._character()
+        if character is None:
+            return
+
+        unlocked = self._get_unlocked_nodes()
+        node_id = selected["id"]
+        if node_id in unlocked:
+            return
+
+        kind = selected.get("kind")
+        cost_map = {"minor": 1, "major": 2, "keystone": 3, "core": 0}
+        cost = cost_map.get(kind, 1)
+
+        points = getattr(character, "skill_tree_points", 0)
+        if points < cost:
+            # show dialog: not enough points
+            from src.ui.widgets import Dialog
+            self.app.current_dialog = Dialog(self.app, [_('Not enough points to unlock this node.')])
+            return
+
+        # Deduct points and mark unlocked
+        try:
+            character.skill_tree_points = points - cost
+        except Exception:
+            try:
+                setattr(character, "skill_tree_points", points - cost)
+            except Exception:
+                pass
+
+        # ensure unlocked is mutable set on character
+        cur = getattr(character, "skill_tree_unlocked", None)
+        if cur is None:
+            character.skill_tree_unlocked = {"core"}
+            cur = character.skill_tree_unlocked
+        if isinstance(cur, list):
+            cur = set(cur)
+        cur.add(node_id)
+        character.skill_tree_unlocked = cur
+        logger.info(f"Unlocked node {node_id}; cost {cost} points. Remaining: {getattr(character, 'skill_tree_points', 0)}")
+
+        # If the Fireball Mastery node was unlocked, teach the fireball skill
+        if node_id == "major_1" and hasattr(character, "learn_fireball"):
+            character.learn_fireball()
+
     def layout(self, screen: pygame.Surface):
         sw, sh = self._screen_size(screen)
         scale = cfg.ui_scale()
@@ -1002,6 +1068,19 @@ class SkillTreeMenu(Menu):
         )
         try:
             self.exit_button._update_text_surface()
+        except Exception:
+            pass
+
+        # position unlock button above exit button
+        try:
+            unlock_y = self.exit_button.rect.y - exit_height - int(8 * scale)
+            self.unlock_button.rect = pygame.Rect(
+                self.sidebar_rect.centerx - exit_width // 2,
+                unlock_y,
+                exit_width,
+                exit_height,
+            )
+            self.unlock_button._update_text_surface()
         except Exception:
             pass
 
@@ -1142,6 +1221,19 @@ class SkillTreeMenu(Menu):
             screen.blit(line_surf, (self.sidebar_rect.x + 18, y))
             y += line_surf.get_height() + 4
 
+        # Update unlock button state and text
+        if selected_node is None:
+            self.unlock_button.set_text("")
+        else:
+            kind = selected_node.get("kind")
+            # cost mapping: minor(normal)=1, major(notable)=2, keystone(best)=3
+            cost_map = {"minor": 1, "major": 2, "keystone": 3, "core": 0}
+            cost = cost_map.get(kind, 1)
+            if selected_node["id"] in unlocked or cost == 0:
+                self.unlock_button.set_text(_("Unlocked"))
+            else:
+                self.unlock_button.set_text(f"{_('Unlock')} ({cost})")
+
     def draw(self, screen: pygame.Surface):
         self.layout(screen)
 
@@ -1163,6 +1255,11 @@ class SkillTreeMenu(Menu):
 
         selected_node = self.nodes_by_id.get(self.selected_node_id)
         self._draw_sidebar(screen, selected_node)
+        # draw sidebar buttons
+        try:
+            self.unlock_button.draw(screen)
+        except Exception:
+            pass
         self.exit_button.draw(screen)
 
 class CreditsMenu(Menu):

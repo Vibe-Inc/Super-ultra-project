@@ -114,6 +114,10 @@ class Character:
         self.level = 1
         self.xp_to_next_level = 100
 
+        # Skill tree
+        self.skill_tree_points = 0
+        self.skill_tree_unlocked = {"core"}
+
         # Stamina system
         self.max_stamina = 100
         self.stamina = self.max_stamina
@@ -165,14 +169,21 @@ class Character:
                 "color": (86, 132, 186),
                 "accent": (220, 235, 255),
             },
-            {
-                "skill_id": "fireball",
-                "name": "Fireball",
-                "description": "Випускає вибуховий вогняний шар, що завдає 28 пошкоджень, має радіус вибуху 110 і відкидає ворогів.",
-                "color": (188, 82, 35),
-                "accent": (255, 214, 120),
-            }
         ]
+
+    def learn_fireball(self):
+        """Add the fireball skill to the skillbook if not already present."""
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "fireball":
+                return  # already learned
+        self.skillbook.append({
+            "skill_id": "fireball",
+            "name": "Fireball",
+            "description": "Випускає вибуховий вогняний шар, що завдає 28 пошкоджень, має радіус вибуху 110 і відкидає ворогів.",
+            "color": (188, 82, 35),
+            "accent": (255, 214, 120),
+        })
+        logger.info("Player learned Fireball!")
 
     def get_skill_in_slot(self, slot_index):
         if 0 <= slot_index < len(self.skillbar):
@@ -261,9 +272,10 @@ class Character:
         self.level += 1
         self.xp_to_next_level = int(self.xp_to_next_level * 1.5)
         self.max_hp += 20
-        self.hp = self.max_hp 
-        logger.info(f"Level Up! Level: {self.level}, Max HP: {self.max_hp}")
-        print(f"Level Up! Level: {self.level}, Max HP: {self.max_hp}")
+        self.hp = self.max_hp
+        self.skill_tree_points += 1
+        logger.info(f"Level Up! Level: {self.level}, Max HP: {self.max_hp}, Skill points: {self.skill_tree_points}")
+        print(f"Level Up! Level: {self.level}, Max HP: {self.max_hp}, Skill points: {self.skill_tree_points}")
 
     def can_attack(self, current_time=None):
         if current_time is None:
