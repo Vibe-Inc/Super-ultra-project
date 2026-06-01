@@ -660,7 +660,138 @@ class MAIN_player_inventory_equipment(Inventory):
             cfg.BASE_INV_border_color
         )
     pass
-    
+
+class MAIN_player_hotbar(Inventory):
+    """
+    Represents the player's hotbar for quick access to consumable items or skills.
+
+    This class extends the base Inventory to provide a permanently visible, bottom-aligned grid.
+    It supports mouse wheel scrolling, hotkey activation (1-9, 0), and active slot highlighting.
+
+    Attributes:
+        app (App):
+            Reference to the main application instance.
+        active_slot_index (int):
+            The index of the currently highlighted and active slot (from 0 to columns - 1).
+
+    Methods:
+        __init__(app):
+            Initialize the hotbar object, calculating its layout and dimensions.
+        scroll_active_slot(y_direction):
+            Update the active slot index based on mouse wheel movement.
+            Args:
+                y_direction (int): The scroll direction (-1 or 1).
+        use_active_slot():
+            Consume or activate the item in the currently highlighted slot.
+        handle_hotkeys(event):
+            Process keyboard events to map number keys to specific slots.
+            Args:
+                event (pygame.event.Event): The Pygame event to process.
+        _use_hotbar_item(col):
+            Execute the logic for using a consumable item from a specific slot.
+            Args:
+                col (int): The column index of the slot to use.
+        draw(screen):
+            Render the hotbar background, slots, keybind numbers, and the active slot highlight.
+            Args:
+                screen (pygame.Surface): The surface to draw the hotbar on.
+    """
+    def __init__(self, app: "App"):
+        self.app = app
+        
+        columns = getattr(cfg, 'HOTBAR_columns', 10)
+        rows = 1
+        
+        scale = 0.8
+        slot_size = int(cfg.BASE_INV_slot_size * scale)
+        border = cfg.BASE_INV_border
+        total_width = (slot_size + border) * columns + border
+        
+        pos_x = ((cfg.SCREEN_WIDTH - total_width) // 2)
+        pos_y = cfg.SCREEN_HEIGHT - slot_size - 17
+        
+        if not hasattr(app, 'MAIN_HOTBAR_items'):
+            app.MAIN_HOTBAR_items = [[None for _ in range(rows)] for _ in range(columns)]
+
+        super().__init__(
+            columns,
+            rows,
+            app.MAIN_HOTBAR_items,
+            slot_size,
+            pos_x,
+            pos_y,
+            border,
+            cfg.BASE_INV_slot_color,
+            cfg.BASE_INV_border_color
+        )
+        
+        self.active_slot_index = 0
+
+    def scroll_active_slot(self, y_direction):
+        self.active_slot_index -= y_direction
+        self.active_slot_index %= self.columns
+
+    def use_active_slot(self):
+        self._use_hotbar_item(self.active_slot_index)
+
+    def handle_hotkeys(self, event):
+        if event.type != pygame.KEYDOWN:
+            return
+            
+        key_map = {
+            pygame.K_1: 0, pygame.K_2: 1, pygame.K_3: 2,
+            pygame.K_4: 3, pygame.K_5: 4, pygame.K_6: 5,
+            pygame.K_7: 6, pygame.K_8: 7, pygame.K_9: 8,
+            pygame.K_0: 9
+        }
+        
+        if event.key in key_map:
+            col = key_map[event.key]
+            if col < self.columns:
+                self.active_slot_index = col
+                self._use_hotbar_item(col)
+                
+    def _use_hotbar_item(self, col):
+        slot = self.items[col][0]
+        if slot:
+            item, count = slot
+            if isinstance(item, Consumable):
+                game_state = self.app.manager.states.get("gameplay")
+                if game_state:
+                    if item.use(game_state.character):
+                        slot[1] -= 1
+                        logger.info(f"Used consumable {item.id} from hotbar")
+                        if slot[1] <= 0:
+                            self.items[col][0] = None
+
+    def draw(self, screen):
+        pygame.draw.rect(
+            screen,
+            cfg.MAIN_INV_BACKGROUND,
+            (self.pos_x - 10, self.pos_y - 25,
+             (self.slot_size + self.border) * self.columns + self.border + 20,
+             (self.slot_size + self.border) * self.rows + self.border + 35),
+            0, 10
+        )
+        
+        super().draw(screen)
+
+        for i in range(self.columns):
+            key_text = str((i + 1) % 10)
+            text_surf = cfg.INV_nums_font.render(key_text, True, (200, 200, 200))
+            rect_x = self.pos_x + (self.slot_size + self.border) * i + self.border
+            screen.blit(text_surf, (rect_x + 5, self.pos_y - 18))
+
+        active_rect_x = self.pos_x + (self.slot_size + self.border) * self.active_slot_index + self.border
+        active_rect_y = self.pos_y + self.border
+        
+        pygame.draw.rect(
+            screen, 
+            (255, 215, 0), 
+            (active_rect_x, active_rect_y, self.slot_size, self.slot_size), 
+            3,
+            border_radius=2
+        )
 
 class INVENTORY_manager:
     """
@@ -709,12 +840,13 @@ class INVENTORY_manager:
     """
     def __init__(self, app):
         self.app = app
-        self.selected_item:bool = False
+        self.selected_item = None
         self.active_split_popup = None
-        self.active_inventories:list[Inventory|None] = []
-        self.player_inventory_opened:bool = False
-        self.current_shop_inv:Inventory|None = None
-
+        self.active_inventories: list[Inventory|None] = []
+        self.player_inventory_opened: bool = False
+        self.current_shop_inv: Inventory|None = None
+        
+        self.hotbar = None
         self.inventory_tooltip = Tooltip(
             cfg.inventory_tooltip_rect,
             "",
@@ -765,6 +897,10 @@ class INVENTORY_manager:
         if self.active_split_popup:
             self.active_split_popup.handle_event(event)
             return 
+
+        if self.hotbar:
+            self.hotbar.handle_hotkeys(event)
+
         for inv in self.active_inventories:
             inv.inventory_interactions(event, self)
 

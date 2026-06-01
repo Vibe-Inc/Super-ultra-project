@@ -8,7 +8,7 @@ import src.config as cfg
 from src.core.state import State
 from src.entities.character import Character
 from src.map.map import LocalMap
-from src.inventory.system import MAIN_player_inventory, MAIN_player_inventory_equipment, ShopInventory
+from src.inventory.system import MAIN_player_inventory, MAIN_player_inventory_equipment, ShopInventory, MAIN_player_hotbar
 from src.items.items import create_item
 from database.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, DizzinessEffect
 from src.entities.enemy import Enemy
@@ -72,6 +72,9 @@ class Game(State):
 
         self.MAIN_player_inv = MAIN_player_inventory(app)
         self.PLAYER_inventory_equipment = MAIN_player_inventory_equipment(app)
+        self.hotbar = MAIN_player_hotbar(app)
+        self.app.INV_manager.hotbar = self.hotbar
+        self.app.INV_manager.add_active_inventory(self.hotbar)
         self.projectiles = []
         self.enemy_projectiles = []
         self.equipped_weapon = None
@@ -359,7 +362,15 @@ class Game(State):
                     yield item
 
     def _get_equipped_weapon(self):
-        for item in self._iter_equipment_items():
+        if not getattr(self, 'hotbar', None):
+            return None
+            
+        active_index = self.hotbar.active_slot_index
+        
+        slot = self.hotbar.items[active_index][0]
+        
+        if slot:
+            item, count = slot
             if getattr(item, "type", None) == "weapon":
                 return item
         return None
@@ -797,9 +808,7 @@ class Game(State):
 
     def draw_ui(self, screen):
         self.hud.draw(screen)
-        if self.app.INV_manager.player_inventory_opened:
-            self.app.INV_manager.draw(screen)
-        # draw active dialog if present
+        self.app.INV_manager.draw(screen)
         if getattr(self.app, 'current_dialog', None):
             try:
                 self.app.current_dialog.draw(screen)
@@ -811,7 +820,6 @@ class Game(State):
         self.draw_ui(screen)
 
     def handle_event(self, event: pygame.event.Event):
-        # If a dialog is active, route events to it first
         if getattr(self.app, 'current_dialog', None):
             try:
                 self.app.current_dialog.handle_event(event)
@@ -820,9 +828,18 @@ class Game(State):
                 pass
 
         self.hud.handle_event(event)
+
+        if event.type == pygame.MOUSEWHEEL:
+            if getattr(self.app.INV_manager, 'hotbar', None):
+                self.app.INV_manager.hotbar.scroll_active_slot(event.y)
+
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.app.manager.set_state("pause")
+                
+            if event.key == pygame.K_q:
+                if getattr(self.app.INV_manager, 'hotbar', None):
+                    self.app.INV_manager.hotbar.use_active_slot()
 
             if event.key == pygame.K_1:
                 self.use_skill_slot(0)
@@ -852,7 +869,7 @@ class Game(State):
                 else:
                     # Otherwise toggle the player's inventory (open/close)
                     self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
-            
+
             # Test keys
             if event.key == pygame.K_F1:
                 self.character.add_effect(RegenerationEffect(5, 5)) # 5 sec, 5 hp/sec
@@ -867,15 +884,18 @@ class Game(State):
             if event.key == pygame.K_F6:
                 self.character.gain_xp(50)
 
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if not self.app.INV_manager.player_inventory_opened:
-                # If a shop is open, skill slots should not be considered HUD clicks
-                hud_click = self.hud.inv_button.rect.collidepoint(event.pos) or (
-                    not getattr(self.app.INV_manager, 'current_shop_inv', None) and any(slot.collidepoint(event.pos) for slot in self.hud.skill_slot_rects)
-                )
-                if not hud_click:
-                    mouse_world_pos = pygame.Vector2(event.pos) + self._get_camera_offset()
-                    self._handle_player_attack(mouse_world_pos)
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:
+                if not self.app.INV_manager.player_inventory_opened:
+                    hud_click = self.hud.inv_button.rect.collidepoint(event.pos) or (
+                        not getattr(self.app.INV_manager, 'current_shop_inv', None) and any(slot.collidepoint(event.pos) for slot in self.hud.skill_slot_rects)
+                    )
+                    if not hud_click:
+                        mouse_world_pos = pygame.Vector2(event.pos) + self._get_camera_offset()
+                        self._handle_player_attack(mouse_world_pos)
+            
+            elif event.button == 2:
+                if getattr(self.app.INV_manager, 'hotbar', None):
+                    self.app.INV_manager.hotbar.use_active_slot()
 
         self.app.INV_manager.PLAYER_inventory_open(event, self.MAIN_player_inv, self.PLAYER_inventory_equipment)
-
