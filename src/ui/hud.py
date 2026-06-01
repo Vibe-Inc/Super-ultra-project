@@ -151,7 +151,7 @@ class HUD:
         stamina_bar_width = min(600, max(280, screen_width // 2))
         stamina_bar_height = 25
         stamina_bar_x = (screen_width - stamina_bar_width) // 2
-        stamina_bar_y = screen_height - stamina_bar_height - bottom_margin
+        stamina_bar_y = (screen_height - stamina_bar_height - bottom_margin)-80
         self.stamina_bar_rect = pygame.Rect(stamina_bar_x, stamina_bar_y, stamina_bar_width, stamina_bar_height)
 
         self.skill_panel_x = screen_width - self.skill_panel_width - right_margin

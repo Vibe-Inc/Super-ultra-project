@@ -702,12 +702,13 @@ class MAIN_player_hotbar(Inventory):
         columns = getattr(cfg, 'HOTBAR_columns', 10)
         rows = 1
         
-        slot_size = cfg.BASE_INV_slot_size
+        scale = 0.8
+        slot_size = int(cfg.BASE_INV_slot_size * scale)
         border = cfg.BASE_INV_border
         total_width = (slot_size + border) * columns + border
         
-        pos_x = (cfg.SCREEN_WIDTH - total_width) // 2
-        pos_y = cfg.SCREEN_HEIGHT - slot_size - 40
+        pos_x = ((cfg.SCREEN_WIDTH - total_width) // 2)
+        pos_y = cfg.SCREEN_HEIGHT - slot_size - 17
         
         if not hasattr(app, 'MAIN_HOTBAR_items'):
             app.MAIN_HOTBAR_items = [[None for _ in range(rows)] for _ in range(columns)]
@@ -779,7 +780,7 @@ class MAIN_player_hotbar(Inventory):
             key_text = str((i + 1) % 10)
             text_surf = cfg.INV_nums_font.render(key_text, True, (200, 200, 200))
             rect_x = self.pos_x + (self.slot_size + self.border) * i + self.border
-            screen.blit(text_surf, (rect_x + 5, self.pos_y - 20))
+            screen.blit(text_surf, (rect_x + 5, self.pos_y - 18))
 
         active_rect_x = self.pos_x + (self.slot_size + self.border) * self.active_slot_index + self.border
         active_rect_y = self.pos_y + self.border

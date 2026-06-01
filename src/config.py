@@ -122,8 +122,8 @@ BASE_INV_slot_color = (216, 223, 203)
 BASE_INV_border_color = (33, 41, 48)
 
 MAIN_INV_BACKGROUND=(109, 125, 123)
-MAIN_INV_pos_x = SCREEN_WIDTH//2- (BASE_INV_slot_size + BASE_INV_border) * MAIN_INV_rows + BASE_INV_border
-MAIN_INV_pos_y = SCREEN_HEIGHT//2
+MAIN_INV_pos_x = (SCREEN_WIDTH//2- (BASE_INV_slot_size + BASE_INV_border) * MAIN_INV_rows + BASE_INV_border)-5
+MAIN_INV_pos_y = (SCREEN_HEIGHT//2)-30
 
 MAIN_INV_equipment_columns = 2
 MAIN_INV_equipment_rows = 4

@@ -362,7 +362,15 @@ class Game(State):
                     yield item
 
     def _get_equipped_weapon(self):
-        for item in self._iter_equipment_items():
+        if not getattr(self, 'hotbar', None):
+            return None
+            
+        active_index = self.hotbar.active_slot_index
+        
+        slot = self.hotbar.items[active_index][0]
+        
+        if slot:
+            item, count = slot
             if getattr(item, "type", None) == "weapon":
                 return item
         return None
