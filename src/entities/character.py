@@ -1,6 +1,7 @@
 import math
 import pygame
 from src.core.logger import logger
+from src.entities.projectile import Fireball
 
 class Character:
     """
@@ -140,6 +141,14 @@ class Character:
         self.melee_slash_distance = 50.0
         self.skillbook = self._build_skillbook()
         self.skillbar = [None for _ in range(6)]
+        self.fireball_speed = 420.0
+        self.fireball_range = 520.0
+        self.fireball_damage = 28
+        self.fireball_blast_radius = 110.0
+        self.fireball_fuse_time = 0.9
+        self.fireball_cooldown = 1300
+        self.fireball_knockback = 18.0
+        self.game_state = None
         self.dash_speed_multiplier = 3.0
         self.dash_duration = 0.14
         self.dash_cooldown = 900
@@ -155,6 +164,13 @@ class Character:
                 "description": "Quick burst of movement",
                 "color": (86, 132, 186),
                 "accent": (220, 235, 255),
+            },
+            {
+                "skill_id": "fireball",
+                "name": "Fireball",
+                "description": "Випускає вибуховий вогняний шар, що завдає 28 пошкоджень, має радіус вибуху 110 і відкидає ворогів.",
+                "color": (188, 82, 35),
+                "accent": (255, 214, 120),
             }
         ]
 
@@ -190,6 +206,38 @@ class Character:
             self.dash_active_time = self.dash_duration
             self.dash_last_used = current_time
             logger.info("Player used Dash.")
+            return True
+
+        if skill_id == "fireball":
+            if current_time - getattr(self, "fireball_last_used", -self.fireball_cooldown) < self.fireball_cooldown:
+                return False
+
+            direction = pygame.Vector2(self.velocity)
+            if direction.length_squared() == 0:
+                direction = self.get_forward_direction()
+            if direction.length_squared() == 0:
+                direction = pygame.Vector2(1, 0)
+
+            game_state = getattr(self, "game_state", None)
+            if game_state is None:
+                logger.warning("Fireball skill used without an attached game state.")
+                return False
+
+            spawn_pos = self.get_melee_anchor() + direction.normalize() * 18
+            game_state.projectiles.append(
+                Fireball(
+                    spawn_pos,
+                    direction,
+                    self.fireball_speed,
+                    self.fireball_range,
+                    self.fireball_damage,
+                    self.fireball_blast_radius,
+                    self.fireball_fuse_time,
+                    knockback_force=self.fireball_knockback,
+                )
+            )
+            self.fireball_last_used = current_time
+            logger.info("Player used Fireball.")
             return True
 
         return False

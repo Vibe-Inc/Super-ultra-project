@@ -58,6 +58,7 @@ class Game(State):
         super().__init__(app)
         logger.info("Initializing Game State...")
         self.character = Character()
+        self.character.game_state = self
 
         initial_map_path = "maps/test-map-1.tmx"
         self.current_map_path = initial_map_path

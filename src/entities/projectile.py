@@ -397,3 +397,131 @@ class Bomb:
         surface = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
         pygame.draw.circle(surface, (255, 180, 90, 140), (radius, radius), radius)
         screen.blit(surface, (self.pos.x - radius - camera_offset.x, self.pos.y - radius - camera_offset.y))
+
+
+class Fireball:
+    """
+    Player fireball projectile that explodes on impact or after a short fuse.
+
+    The explosion damages enemies in an area and can optionally knock them back.
+    """
+    def __init__(
+        self,
+        pos,
+        direction,
+        speed,
+        max_range,
+        damage,
+        blast_radius,
+        fuse_time,
+        knockback_force=0.0,
+        explosion_duration=0.35,
+        color=(255, 120, 40),
+    ):
+        self.pos = pygame.Vector2(pos)
+        self.direction = pygame.Vector2(direction)
+        if self.direction.length_squared() == 0:
+            self.direction = pygame.Vector2(1, 0)
+        else:
+            self.direction = self.direction.normalize()
+
+        self.speed = speed
+        self.max_range = max_range
+        self.damage = damage
+        self.blast_radius = blast_radius
+        self.fuse_time = fuse_time
+        self.knockback_force = knockback_force
+        self.explosion_duration = explosion_duration
+        self.traveled = 0.0
+        self.timer = 0.0
+        self.color = color
+        self.alive = True
+        self.exploding = False
+        self.explosion_timer = 0.0
+        self.damage_applied = False
+
+    def _size(self):
+        return 14, 14
+
+    def get_rect(self):
+        width, height = self._size()
+        rect = pygame.Rect(0, 0, width, height)
+        rect.center = (int(self.pos.x), int(self.pos.y))
+        return rect
+
+    def _trigger_explosion(self):
+        if self.exploding:
+            return
+        self.exploding = True
+        self.explosion_timer = 0.0
+        self.damage_applied = False
+
+    def _entity_center(self, entity):
+        if entity is None:
+            return None
+        if hasattr(entity, "get_rect"):
+            rect = entity.get_rect()
+            return pygame.Vector2(rect.centerx, rect.centery)
+        return pygame.Vector2(getattr(entity, "pos", (0, 0)))
+
+    def update(self, dt, obstacles, enemies):
+        if not self.alive:
+            return
+
+        if self.exploding:
+            self.explosion_timer += dt
+            if not self.damage_applied:
+                for enemy in enemies:
+                    enemy_center = self._entity_center(enemy)
+                    if enemy_center is None:
+                        continue
+                    if (enemy_center - self.pos).length_squared() <= self.blast_radius * self.blast_radius:
+                        if self.damage > 0:
+                            enemy.take_damage(self.damage)
+                        if self.knockback_force > 0 and hasattr(enemy, "pos"):
+                            direction = enemy_center - self.pos
+                            if direction.length_squared() == 0:
+                                direction = pygame.Vector2(1, 0)
+                            enemy.pos += direction.normalize() * self.knockback_force
+                self.damage_applied = True
+
+            if self.explosion_timer >= self.explosion_duration:
+                self.alive = False
+            return
+
+        movement = self.direction * self.speed * dt
+        self.pos += movement
+        self.traveled += movement.length()
+        self.timer += dt
+
+        rect = self.get_rect()
+        for wall in obstacles:
+            if rect.colliderect(wall):
+                logger.debug(f"Fireball impacted wall at {self.pos}, triggering explosion")
+                self._trigger_explosion()
+                return
+
+        if self.timer >= self.fuse_time or self.traveled >= self.max_range:
+            logger.debug(f"Fireball fuse expired or max range reached at {self.pos}, triggering explosion")
+            self._trigger_explosion()
+
+    def draw(self, screen, camera_offset=None):
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+
+        if not self.exploding:
+            rect = self.get_rect()
+            rect.x -= int(camera_offset.x)
+            rect.y -= int(camera_offset.y)
+            pygame.draw.circle(screen, self.color, rect.center, rect.width // 2)
+            pygame.draw.circle(screen, (255, 220, 120), rect.center, max(2, rect.width // 4), 1)
+            return
+
+        progress = min(1.0, self.explosion_timer / self.explosion_duration)
+        radius = int(self.blast_radius * progress)
+        if radius <= 0:
+            return
+        surface = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+        pygame.draw.circle(surface, (255, 140, 60, 150), (radius, radius), radius)
+        pygame.draw.circle(surface, (255, 220, 120, 90), (radius, radius), max(1, radius // 2))
+        screen.blit(surface, (self.pos.x - radius - camera_offset.x, self.pos.y - radius - camera_offset.y))
