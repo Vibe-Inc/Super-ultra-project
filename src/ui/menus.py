@@ -1301,12 +1301,34 @@ class SkillTreeMenu(Menu):
         self.screen_flash_alpha = 0  # for screen flash effect
         self.screen_flash_timer = 0
         
-        # Entrance animation (tree assembling on open)
-        self.entrance_active = False  # will be set to True when entering this state
-        self.entrance_progress = 1.0  # 0.0 = nothing visible, 1.0 = fully assembled
-        self.entrance_sparks = []     # converging spark particles
+        # Entrance animation (tree assembling on open) — multi-phase cinematic
+        self.entrance_active = False
+        self.entrance_progress = 0.0      # 0.0 = start, 1.0 = fully assembled
+        self.entrance_sparks = []          # converging spark particles
         self.entrance_glow = 0
-        self._entrance_triggered = False  # prevent re-triggering
+        self._entrance_triggered = False   # prevent re-triggering
+        
+        # Phase system: 0=void, 1=starfield, 2=convergence, 3=core_ignition, 4=branch_growth, 5=settled
+        self.entrance_phase = 0
+        self.entrance_phase_time = 0.0     # time spent in current phase
+        self.entrance_total_time = 0.0     # total elapsed time
+        
+        # Core ignition effect
+        self.core_ignition_flash = 0.0
+        self.core_ignition_rings = []      # expanding energy rings from core
+        self.core_ignition_particles = []  # particles bursting from core
+        
+        # Branch growth: track which nodes/links have been "reached" by the growing energy
+        self.entrance_revealed_nodes = set()   # node IDs that have lit up
+        self.entrance_revealed_links = set()   # (a,b) link tuples that have lit up
+        self.entrance_growth_frontier = []     # list of (node_id, arrival_time) for BFS growth
+        self.entrance_link_travels = []        # visual energy traveling along links
+        
+        # Background star fade-in
+        self.entrance_star_alpha = 0.0
+        
+        # Swirling convergence vortex particles
+        self.entrance_vortex = []
         
         self.nodes, self.links = self._build_tree()
         self.nodes_by_id = {node["id"]: node for node in self.nodes}
@@ -1339,31 +1361,72 @@ class SkillTreeMenu(Menu):
             })
 
     def trigger_entrance_animation(self):
-        """Start the entrance animation when the skill tree opens."""
+        """Start the multi-phase cinematic entrance animation when the skill tree opens."""
         if self._entrance_triggered:
             return
         self._entrance_triggered = True
         self.entrance_active = True
-        self.entrance_progress = 0.001  # start from nearly invisible
+        self.entrance_progress = 0.0
+        self.entrance_phase = 0
+        self.entrance_phase_time = 0.0
+        self.entrance_total_time = 0.0
+        
+        # Reset all entrance state
+        self.entrance_revealed_nodes = set()
+        self.entrance_revealed_links = set()
+        self.entrance_growth_frontier = []
+        self.entrance_link_travels = []
+        self.entrance_star_alpha = 0.0
+        self.core_ignition_flash = 0.0
+        self.core_ignition_rings = []
+        self.core_ignition_particles = []
+        self.entrance_vortex = []
+        self.entrance_sparks = []
+        self.entrance_glow = 1.0
         
         rng = random.Random(42)
-        # Create sparks at random positions around the edges that will converge to node positions
-        self.entrance_sparks = []
+        
+        # Pre-generate vortex particles that will spiral into the center
+        self.entrance_vortex = []
+        for _ in range(120):
+            angle = rng.uniform(0, math.pi * 2)
+            dist = rng.uniform(300, 700)
+            speed = rng.uniform(0.6, 1.8)
+            orbit_speed = rng.uniform(1.5, 4.0) * rng.choice([-1, 1])
+            size = rng.uniform(1.5, 5.0)
+            brightness = rng.uniform(0.5, 1.0)
+            # Color from a random branch
+            branch = rng.choice(list(self.BRANCH_THEMES.keys()))
+            theme = self.BRANCH_THEMES[branch]
+            color = rng.choice([theme["glow"], theme["primary"], theme["secondary"], theme["accent"]])
+            self.entrance_vortex.append({
+                "angle": angle,
+                "dist": dist,
+                "initial_dist": dist,
+                "speed": speed,           # radial inward speed
+                "orbit_speed": orbit_speed,  # angular speed (radians/sec)
+                "size": size,
+                "brightness": brightness,
+                "color": color,
+                "alpha": 0.0,
+                "trail": [],
+            })
+        
+        # Pre-generate the sparks that converge from edges (kept for extra flair)
         for node in self.nodes:
-            # Multiple sparks per node coming from different directions
-            for _ in range(3 + (node["size"] // 5)):
-                # Random start position outside the tree but on screen
+            count = 2 + (node["size"] // 6)
+            for _ in range(count):
                 side = rng.randint(0, 3)
-                if side == 0:  # top
+                if side == 0:
                     sx = rng.uniform(-750, 750)
                     sy = rng.uniform(-700, -600)
-                elif side == 1:  # bottom
+                elif side == 1:
                     sx = rng.uniform(-750, 750)
                     sy = rng.uniform(600, 700)
-                elif side == 2:  # left
+                elif side == 2:
                     sx = rng.uniform(-800, -700)
                     sy = rng.uniform(-650, 650)
-                else:  # right
+                else:
                     sx = rng.uniform(700, 800)
                     sy = rng.uniform(-650, 650)
                 
@@ -1371,9 +1434,7 @@ class SkillTreeMenu(Menu):
                 branch = node.get("branch", "arcane")
                 theme = self.BRANCH_THEMES.get(branch, self.BRANCH_THEMES["arcane"])
                 color = rng.choice([theme["glow"], theme["primary"], theme["secondary"], theme["accent"], (255, 255, 255)])
-                
-                # Varying travel speeds for a staggered effect
-                travel_time = rng.uniform(0.4, 1.6)
+                travel_time = rng.uniform(0.5, 1.8)
                 
                 self.entrance_sparks.append({
                     "x": sx,
@@ -1384,40 +1445,245 @@ class SkillTreeMenu(Menu):
                     "target_y": target_pos.y,
                     "progress": 0.0,
                     "speed": 1.0 / travel_time,
-                    "size": rng.uniform(1.5, 4.5),
+                    "size": rng.uniform(1.0, 3.5),
                     "color": color,
                     "alpha": 1.0,
                     "arrived": False,
-                    "delay": rng.uniform(0, 0.3),
+                    "delay": rng.uniform(0.0, 0.5),
+                    "node_id": node["id"],
                 })
-        
-        # Shuffle for visual randomness
         rng.shuffle(self.entrance_sparks)
-        self.entrance_glow = 1.0
 
     def _update_entrance(self, dt):
-        """Update the entrance animation: converging sparks + progressive reveal."""
+        """Update the multi-phase cinematic entrance animation."""
         if not self.entrance_active:
             return
         
-        # Advance progress (logarithmic ease-in for smooth start)
-        self.entrance_progress += dt * 1.2
-        if self.entrance_progress > 1.0:
-            self.entrance_progress = 1.0
+        self.entrance_phase_time += dt
+        self.entrance_total_time += dt
         
-        # Update individual sparks
-        all_arrived = True
+        # ─── Phase transitions ───
+        if self.entrance_phase == 0:
+            # Phase 0: Void — brief darkness (0.4s)
+            if self.entrance_phase_time >= 0.4:
+                self.entrance_phase = 1
+                self.entrance_phase_time = 0.0
+        
+        elif self.entrance_phase == 1:
+            # Phase 1: Starfield — background stars fade in (0.8s)
+            self.entrance_star_alpha = min(1.0, self.entrance_phase_time / 0.8)
+            if self.entrance_phase_time >= 0.8:
+                self.entrance_phase = 2
+                self.entrance_phase_time = 0.0
+        
+        elif self.entrance_phase == 2:
+            # Phase 2: Convergence — vortex particles spiral inward (1.8s)
+            # Also start moving sparks toward their targets
+            progress = min(1.0, self.entrance_phase_time / 1.8)
+            self.entrance_progress = progress * 0.3  # map to 0..0.3 range
+            
+            # Update vortex particles: spiral inward
+            for vp in self.entrance_vortex:
+                # Fade in
+                vp["alpha"] = min(vp["brightness"], vp["alpha"] + dt * 2.0)
+                # Spiral inward
+                vp["dist"] = max(0, vp["dist"] - vp["speed"] * 180 * dt)
+                vp["angle"] += vp["orbit_speed"] * dt
+                # Update position
+                vp["x"] = math.cos(vp["angle"]) * vp["dist"]
+                vp["y"] = math.sin(vp["angle"]) * vp["dist"]
+                # Store trail point
+                vp["trail"].append((vp["x"], vp["y"], vp["alpha"]))
+                if len(vp["trail"]) > 12:
+                    vp["trail"].pop(0)
+            
+            # Also update sparks (they start moving during convergence)
+            self._update_entrance_sparks(dt)
+            
+            if self.entrance_phase_time >= 1.8:
+                self.entrance_phase = 3
+                self.entrance_phase_time = 0.0
+                # Trigger core ignition!
+                self.core_ignition_flash = 1.0
+                # Spawn expanding energy rings from core
+                for i in range(5):
+                    self.core_ignition_rings.append({
+                        "radius": 0,
+                        "max_radius": 200 + i * 80,
+                        "speed": 250 + i * 40,
+                        "alpha": 0.9 - i * 0.1,
+                        "width": 4 - i * 0.5,
+                        "delay": i * 0.12,
+                        "started": False,
+                    })
+                # Spawn burst particles from core
+                for _ in range(60):
+                    angle = random.uniform(0, math.pi * 2)
+                    speed = random.uniform(80, 300)
+                    life = random.uniform(0.5, 1.5)
+                    branch = random.choice(list(self.BRANCH_THEMES.keys()))
+                    theme = self.BRANCH_THEMES[branch]
+                    color = random.choice([theme["glow"], theme["accent"], (255, 255, 255)])
+                    self.core_ignition_particles.append({
+                        "x": 0, "y": 0,
+                        "vx": math.cos(angle) * speed,
+                        "vy": math.sin(angle) * speed,
+                        "size": random.uniform(2, 6),
+                        "life": life,
+                        "max_life": life,
+                        "color": color,
+                        "alpha": 1.0,
+                    })
+                # Start BFS growth from core
+                self.entrance_revealed_nodes.add("core")
+                # Add all nodes linked to core to the frontier
+                for a, b in self.links:
+                    if a == "core":
+                        self.entrance_growth_frontier.append((b, 0.0))
+                    elif b == "core":
+                        self.entrance_growth_frontier.append((a, 0.0))
+        
+        elif self.entrance_phase == 3:
+            # Phase 3: Core ignition flash + rings expanding (1.2s)
+            self.core_ignition_flash = max(0, self.core_ignition_flash - dt * 2.5)
+            
+            # Update ignition rings
+            for ring in self.core_ignition_rings:
+                if ring["delay"] > 0:
+                    ring["delay"] -= dt
+                    continue
+                ring["started"] = True
+                ring["radius"] += ring["speed"] * dt
+                ring["alpha"] = max(0, ring["alpha"] - dt * 0.8)
+                ring["width"] = max(0.5, ring["width"] - dt * 1.5)
+            
+            # Update ignition particles
+            for p in self.core_ignition_particles:
+                p["x"] += p["vx"] * dt
+                p["y"] += p["vy"] * dt
+                p["vx"] *= 0.97
+                p["vy"] *= 0.97
+                p["life"] -= dt
+                p["alpha"] = max(0, p["life"] / p["max_life"])
+            
+            # Continue updating vortex (they're settling now)
+            for vp in self.entrance_vortex:
+                vp["dist"] = max(0, vp["dist"] - vp["speed"] * 60 * dt)
+                vp["angle"] += vp["orbit_speed"] * 0.5 * dt
+                vp["x"] = math.cos(vp["angle"]) * vp["dist"]
+                vp["y"] = math.sin(vp["angle"]) * vp["dist"]
+                vp["alpha"] = max(0, vp["alpha"] - dt * 0.5)
+                vp["trail"].append((vp["x"], vp["y"], vp["alpha"]))
+                if len(vp["trail"]) > 8:
+                    vp["trail"].pop(0)
+            
+            # Continue sparks
+            self._update_entrance_sparks(dt)
+            
+            self.entrance_progress = 0.3 + min(0.15, self.entrance_phase_time / 1.2 * 0.15)
+            
+            if self.entrance_phase_time >= 1.2:
+                self.entrance_phase = 4
+                self.entrance_phase_time = 0.0
+        
+        elif self.entrance_phase == 4:
+            # Phase 4: Branch growth — energy spreads from core outward through links
+            # BFS-style reveal with timed delays
+            growth_speed = 220  # nodes per second conceptually
+            max_phase_duration = 8.0  # fallback timeout
+            
+            # Process frontier: reveal nodes and spawn link travels
+            new_frontier = []
+            for node_id, arrival_time in self.entrance_growth_frontier:
+                if node_id in self.entrance_revealed_nodes:
+                    continue
+                if self.entrance_phase_time >= arrival_time:
+                    self.entrance_revealed_nodes.add(node_id)
+                    # Find links from this node to unrevealed neighbors
+                    for a, b in self.links:
+                        neighbor = None
+                        if a == node_id and b not in self.entrance_revealed_nodes:
+                            neighbor = b
+                        elif b == node_id and a not in self.entrance_revealed_nodes:
+                            neighbor = a
+                        if neighbor is not None:
+                            # Calculate distance for travel time
+                            node_a = self.nodes_by_id.get(a)
+                            node_b = self.nodes_by_id.get(b)
+                            if node_a and node_b:
+                                dist = math.sqrt((node_a["pos"].x - node_b["pos"].x)**2 + 
+                                                (node_a["pos"].y - node_b["pos"].y)**2)
+                                travel_time = dist / growth_speed
+                                link_key = (min(a, b), max(a, b))
+                                if link_key not in self.entrance_revealed_links:
+                                    self.entrance_revealed_links.add(link_key)
+                                    self.entrance_link_travels.append({
+                                        "from_id": node_id,
+                                        "to_id": neighbor,
+                                        "progress": 0.0,
+                                        "speed": 1.0 / max(0.15, travel_time),
+                                        "alpha": 1.0,
+                                    })
+                                # Only add if not already in new_frontier
+                                if not any(nid == neighbor for nid, _ in new_frontier):
+                                    new_frontier.append((neighbor, self.entrance_phase_time + travel_time))
+                else:
+                    # Node hasn't reached arrival time yet — keep it in the frontier!
+                    if not any(nid == node_id for nid, _ in new_frontier):
+                        new_frontier.append((node_id, arrival_time))
+            
+            self.entrance_growth_frontier = new_frontier
+            
+            # Update link travel visuals
+            for travel in self.entrance_link_travels:
+                travel["progress"] = min(1.0, travel["progress"] + dt * travel["speed"])
+                if travel["progress"] >= 1.0:
+                    travel["alpha"] = max(0, travel["alpha"] - dt * 3.0)
+            
+            # Clean up finished travels
+            self.entrance_link_travels = [t for t in self.entrance_link_travels if t["alpha"] > 0.01]
+            
+            # Update remaining sparks
+            self._update_entrance_sparks(dt)
+            
+            # Progress: 0.45 to 0.9
+            self.entrance_progress = 0.45 + min(0.45, self.entrance_phase_time / max_phase_duration * 0.45)
+            
+            # Check if all nodes are revealed and travels done, OR timeout reached
+            all_revealed = len(self.entrance_revealed_nodes) >= len(self.nodes)
+            all_travels_done = len(self.entrance_link_travels) == 0
+            timeout_reached = self.entrance_phase_time >= max_phase_duration
+            if (all_revealed and all_travels_done) or timeout_reached:
+                self.entrance_phase = 5
+                self.entrance_phase_time = 0.0
+        
+        elif self.entrance_phase == 5:
+            # Phase 5: Settlement — everything is revealed, gentle fade to normal
+            self.entrance_progress = min(1.0, self.entrance_progress + dt * 2.0)
+            
+            # Fade out remaining vortex
+            for vp in self.entrance_vortex:
+                vp["alpha"] = max(0, vp["alpha"] - dt * 2.0)
+            
+            # Clean up ignition effects
+            self.core_ignition_particles = [p for p in self.core_ignition_particles if p["life"] > 0]
+            
+            if self.entrance_progress >= 1.0:
+                self.entrance_active = False
+                self.entrance_phase = 6  # done
+                # Final celebratory flash
+                self.screen_flash_alpha = 0.15
+                self.screen_flash_timer = 0.25
+    
+    def _update_entrance_sparks(self, dt):
+        """Update the converging spark particles during entrance."""
         for spark in self.entrance_sparks:
             if spark["arrived"]:
                 continue
-            
-            # Apply delay
             if spark["delay"] > 0:
                 spark["delay"] -= dt
-                all_arrived = False
                 continue
             
-            # Move toward target
             spark["progress"] += dt * spark["speed"]
             if spark["progress"] >= 1.0:
                 spark["progress"] = 1.0
@@ -1425,74 +1691,224 @@ class SkillTreeMenu(Menu):
                 spark["y"] = spark["target_y"]
                 spark["arrived"] = True
             else:
-                # Ease-in-out interpolation for a more organic look
                 t = spark["progress"]
-                ease = t * t * (3 - 2 * t)  # smoothstep
+                ease = t * t * (3 - 2 * t)
                 spark["x"] = spark["start_x"] + (spark["target_x"] - spark["start_x"]) * ease
                 spark["y"] = spark["start_y"] + (spark["target_y"] - spark["start_y"]) * ease
-                # Fade alpha slightly then back up near target for a flash effect
-                mid = 0.5
-                if ease < mid:
-                    spark["alpha"] = 0.7 + 0.3 * (ease / mid)
+                if ease < 0.5:
+                    spark["alpha"] = 0.6 + 0.4 * (ease / 0.5)
                 else:
-                    spark["alpha"] = 0.7 + 0.3 * ((1.0 - ease) / (1.0 - mid))
-                all_arrived = False
-        
-        # Entrance glow fades as tree appears
-        self.entrance_glow = max(0, 1.0 - self.entrance_progress * 1.5)
-        
-        # When everything arrives, flash and complete
-        if all_arrived and self.entrance_progress >= 1.0:
-            self.entrance_active = False
-            self.screen_flash_alpha = 0.25
-            self.screen_flash_timer = 0.3
+                    spark["alpha"] = 0.6 + 0.4 * ((1.0 - ease) / 0.5)
 
     def _draw_entrance_sparks(self, surface):
-        """Draw the converging entrance spark particles."""
-        if not self.entrance_active and not self.entrance_sparks:
+        """Draw all entrance animation effects: vortex, sparks, core ignition, branch growth."""
+        if self.entrance_phase == 0:
+            # Phase 0: void — draw nothing extra
             return
         
         origin = pygame.Vector2(self.tree_rect.center) + self.pan_offset
         
+        # ─── Phase 1+: Background star fade-in overlay ───
+        # (Stars are drawn in _draw_tree_background, controlled by entrance_star_alpha)
+        
+        # ─── Phase 2+: Swirling vortex particles ───
+        if self.entrance_phase >= 2 and self.entrance_vortex:
+            for vp in self.entrance_vortex:
+                if vp["alpha"] <= 0.01:
+                    continue
+                sx = origin.x + vp.get("x", 0) * self.zoom
+                sy = origin.y + vp.get("y", 0) * self.zoom
+                
+                if not self.tree_rect.collidepoint((int(sx), int(sy))):
+                    continue
+                
+                alpha = vp["alpha"]
+                color = vp["color"]
+                size = max(1, vp["size"] * self.zoom)
+                
+                # Draw trail — apply alpha to color so trails fade out properly
+                if alpha > 0.02:
+                    trail = vp.get("trail", [])
+                    if len(trail) >= 2:
+                        for i in range(len(trail) - 1):
+                            tx, ty, ta = trail[i]
+                            tx2, ty2, ta2 = trail[i + 1]
+                            trail_sx = origin.x + tx * self.zoom
+                            trail_sy = origin.y + ty * self.zoom
+                            trail_sx2 = origin.x + tx2 * self.zoom
+                            trail_sy2 = origin.y + ty2 * self.zoom
+                            trail_brightness = ta * alpha * (i / max(1, len(trail) - 1))
+                            if trail_brightness > 0.03:
+                                trail_color = tuple(max(0, min(255, int(c * trail_brightness))) for c in color)
+                                pygame.draw.line(surface, trail_color,
+                                               (int(trail_sx), int(trail_sy)),
+                                               (int(trail_sx2), int(trail_sy2)),
+                                               max(1, int(size * 0.6)))
+                
+                # Draw glow
+                glow_r = max(2, int(size * 3))
+                glow_surf = pygame.Surface((glow_r * 2, glow_r * 2), pygame.SRCALPHA)
+                glow_a = int(60 * alpha)
+                pygame.draw.circle(glow_surf, (color[0], color[1], color[2], glow_a), (glow_r, glow_r), glow_r)
+                surface.blit(glow_surf, (int(sx) - glow_r, int(sy) - glow_r))
+                
+                # Draw core
+                core_a = int(255 * alpha)
+                core_color = tuple(min(255, c + 40) for c in color)
+                pygame.draw.circle(surface, core_color, (int(sx), int(sy)), max(1, int(size)))
+        
+        # ─── Phase 2+: Converging sparks ───
         for spark in self.entrance_sparks:
-            if spark["arrived"] and self.entrance_progress >= 1.0:
+            if spark["arrived"] and self.entrance_phase >= 4:
                 continue
             
-            # Convert world coords to screen
             screen_x = origin.x + spark["x"] * self.zoom
             screen_y = origin.y + spark["y"] * self.zoom
             
-            if not self.tree_rect.collidepoint((screen_x, screen_y)):
+            if not self.tree_rect.collidepoint((int(screen_x), int(screen_y))):
                 continue
             
-            alpha = int(255 * spark["alpha"] * min(1.0, self.entrance_progress * 4))
+            phase_factor = min(1.0, max(0.0, (self.entrance_total_time - 0.8) / 0.5))
+            alpha = int(255 * spark["alpha"] * phase_factor)
             if alpha <= 5:
                 continue
             
             color = spark["color"]
             size = max(0.5, spark["size"] * self.zoom * (0.8 + 0.4 * (1.0 - spark["progress"])))
             
-            # Draw glow
-            glow_r = max(1, int(size * 3))
-            for g in range(3):
-                gc = tuple(int(c * (0.3 - g * 0.08)) for c in color)
+            # Glow
+            glow_r = max(1, int(size * 2.5))
+            for g in range(2):
+                gc = tuple(int(c * (0.25 - g * 0.08)) for c in color)
                 pygame.draw.circle(surface, gc, (int(screen_x), int(screen_y)), glow_r - g * 2)
             
-            # Draw bright core
-            core_color = tuple(min(255, int(c + 60)) for c in color)
+            # Core
+            core_color = tuple(min(255, int(c + 50)) for c in color)
             pygame.draw.circle(surface, core_color, (int(screen_x), int(screen_y)), max(1, int(size)))
             
-            # Draw trail (short line behind the spark)
+            # Trail
             if spark["progress"] > 0.05 and not spark["arrived"]:
                 t = spark["progress"]
                 ease = t * t * (3 - 2 * t)
-                trail_factor = max(0.05, ease - 0.03)
+                trail_factor = max(0.05, ease - 0.04)
                 trail_ease = trail_factor * trail_factor * (3 - 2 * trail_factor)
                 trail_x = origin.x + (spark["start_x"] + (spark["target_x"] - spark["start_x"]) * trail_ease) * self.zoom
                 trail_y = origin.y + (spark["start_y"] + (spark["target_y"] - spark["start_y"]) * trail_ease) * self.zoom
-                trail_alpha = alpha // 3
-                pygame.draw.line(surface, (color[0], color[1], color[2], trail_alpha),
-                                 (int(trail_x), int(trail_y)), (int(screen_x), int(screen_y)), max(1, int(size * 0.5)))
+                pygame.draw.line(surface, color,
+                                 (int(trail_x), int(trail_y)), (int(screen_x), int(screen_y)),
+                                 max(1, int(size * 0.4)))
+        
+        # ─── Phase 3: Core ignition flash ───
+        if self.core_ignition_flash > 0.01:
+            core_node = self.nodes_by_id.get("core")
+            if core_node:
+                cx = origin.x + core_node["pos"].x * self.zoom
+                cy = origin.y + core_node["pos"].y * self.zoom
+                
+                # Bright flash
+                flash_r = int(120 * self.core_ignition_flash * self.zoom)
+                flash_surf = pygame.Surface((flash_r * 2, flash_r * 2), pygame.SRCALPHA)
+                flash_a = int(200 * self.core_ignition_flash)
+                pygame.draw.circle(flash_surf, (200, 220, 255, flash_a), (flash_r, flash_r), flash_r)
+                inner_r = int(flash_r * 0.4)
+                pygame.draw.circle(flash_surf, (255, 255, 255, min(255, flash_a + 50)), (flash_r, flash_r), inner_r)
+                surface.blit(flash_surf, (int(cx) - flash_r, int(cy) - flash_r))
+        
+        # ─── Phase 3: Core ignition expanding rings ───
+        for ring in self.core_ignition_rings:
+            if not ring["started"] or ring["alpha"] <= 0.01:
+                continue
+            core_node = self.nodes_by_id.get("core")
+            if core_node:
+                cx = origin.x + core_node["pos"].x * self.zoom
+                cy = origin.y + core_node["pos"].y * self.zoom
+                r = int(ring["radius"] * self.zoom)
+                if r > 0:
+                    a = int(255 * ring["alpha"])
+                    color = (140, 180, 255)
+                    pygame.draw.circle(surface, color, (int(cx), int(cy)), r, max(1, int(ring["width"] * self.zoom)))
+                    # Inner glow ring
+                    if r > 4:
+                        ga = a // 3
+                        pygame.draw.circle(surface, (200, 220, 255), (int(cx), int(cy)), r - 2, max(1, int(ring["width"] * self.zoom * 0.5)))
+        
+        # ─── Phase 3: Core ignition burst particles ───
+        for p in self.core_ignition_particles:
+            if p["life"] <= 0:
+                continue
+            px = origin.x + p["x"] * self.zoom
+            py = origin.y + p["y"] * self.zoom
+            if not self.tree_rect.collidepoint((int(px), int(py))):
+                continue
+            a = int(255 * p["alpha"])
+            if a <= 5:
+                continue
+            color = p["color"]
+            sz = max(1, int(p["size"] * p["alpha"] * self.zoom))
+            # Glow
+            glow_r = sz * 3
+            glow_surf = pygame.Surface((glow_r * 2, glow_r * 2), pygame.SRCALPHA)
+            pygame.draw.circle(glow_surf, (color[0], color[1], color[2], a // 3), (glow_r, glow_r), glow_r)
+            surface.blit(glow_surf, (int(px) - glow_r, int(py) - glow_r))
+            # Core
+            bright = tuple(min(255, c + 60) for c in color)
+            pygame.draw.circle(surface, bright, (int(px), int(py)), sz)
+        
+        # ─── Phase 4: Branch growth — link travel visuals ───
+        for travel in self.entrance_link_travels:
+            from_node = self.nodes_by_id.get(travel["from_id"])
+            to_node = self.nodes_by_id.get(travel["to_id"])
+            if from_node is None or to_node is None:
+                continue
+            
+            from_pos = self._node_screen_pos(from_node)
+            to_pos = self._node_screen_pos(to_node)
+            
+            progress = travel["progress"]
+            # Position along the link
+            cx = from_pos.x + (to_pos.x - from_pos.x) * progress
+            cy = from_pos.y + (to_pos.y - from_pos.y) * progress
+            
+            alpha = travel["alpha"]
+            if alpha <= 0.01:
+                continue
+            
+            # Determine color from branch
+            branch = from_node.get("branch") or to_node.get("branch") or "arcane"
+            theme = self.BRANCH_THEMES.get(branch, self.BRANCH_THEMES["arcane"])
+            color = theme["glow"]
+            
+            # Draw glowing traveling orb
+            orb_size = max(3, int(8 * self.zoom))
+            
+            # Trail line (already revealed portion) — apply alpha to color so it fades out
+            if alpha > 0.05:
+                trail_end_x = from_pos.x + (to_pos.x - from_pos.x) * max(0, progress - 0.15)
+                trail_end_y = from_pos.y + (to_pos.y - from_pos.y) * max(0, progress - 0.15)
+                trail_color = tuple(max(0, min(255, int(c * alpha))) for c in color)
+                pygame.draw.line(surface, trail_color,
+                               (int(trail_end_x), int(trail_end_y)), (int(cx), int(cy)),
+                               max(2, int(3 * self.zoom)))
+            
+            # Bright orb at the front
+            glow_r = orb_size * 3
+            glow_surf = pygame.Surface((glow_r * 2, glow_r * 2), pygame.SRCALPHA)
+            glow_a = int(100 * alpha)
+            pygame.draw.circle(glow_surf, (color[0], color[1], color[2], glow_a), (glow_r, glow_r), glow_r)
+            surface.blit(glow_surf, (int(cx) - glow_r, int(cy) - glow_r))
+            
+            if alpha > 0.1:
+                pygame.draw.circle(surface, (255, 255, 255), (int(cx), int(cy)), max(2, orb_size // 2))
+            
+            # Sparkle particles around the orb — apply alpha to color so they fade out
+            if alpha > 0.1:
+                for _ in range(3):
+                    sx = cx + random.uniform(-orb_size, orb_size)
+                    sy = cy + random.uniform(-orb_size, orb_size)
+                    spark_brightness = alpha * random.uniform(0.3, 1.0)
+                    spark_color = tuple(max(0, min(255, int(c * spark_brightness))) for c in color)
+                    spark_sz = max(1, int(2 * self.zoom))
+                    pygame.draw.circle(surface, spark_color, (int(sx), int(sy)), spark_sz)
 
     def _character(self):
         gameplay_state = getattr(getattr(self.app, "manager", None), "states", {}).get("gameplay")
@@ -2347,10 +2763,16 @@ class SkillTreeMenu(Menu):
         """Draw enhanced background with concentric rings, twinkling stars, and particles."""
         origin = pygame.Vector2(self.tree_rect.center) + self.pan_offset
         t = self.animation_time
+        
+        # During entrance, star visibility is controlled by entrance_star_alpha
+        star_alpha_mult = self.entrance_star_alpha if self.entrance_active else 1.0
 
         # Draw subtle radial gradient background using concentric circles
         for r in range(700, 0, -8):
             brightness = max(12, 22 - r // 50)
+            # During entrance, dim the background until stars fade in
+            if self.entrance_active and self.entrance_phase < 2:
+                brightness = int(brightness * star_alpha_mult)
             pygame.draw.circle(surface, (brightness, brightness, brightness + 4), origin, int(r * self.zoom), 0)
 
         # Draw concentric guide rings with subtle pulse
@@ -2358,24 +2780,26 @@ class SkillTreeMenu(Menu):
         for idx, radius in enumerate(ring_radii):
             pulse = math.sin(t * 0.5 + idx * 0.8) * 0.15 + 0.85
             c = int(28 * pulse)
+            if self.entrance_active and self.entrance_phase < 2:
+                c = int(c * star_alpha_mult)
             pygame.draw.circle(surface, (c, c, c + 8), origin, int(radius * self.zoom), 1)
 
-        # Draw twinkling stars
+        # Draw twinkling stars (fade in during entrance phase 1+)
         for star_data in self.background_points:
             x, y, size, phase, speed = star_data
             pos = origin + pygame.Vector2(x, y) * self.zoom
             if self.tree_rect.collidepoint(pos):
                 twinkle = (math.sin(t * speed + phase) + 1.0) * 0.5
-                brightness = int(25 + 35 * twinkle)
+                brightness = int((25 + 35 * twinkle) * star_alpha_mult)
                 star_color = (brightness, brightness, brightness + 12)
                 pygame.draw.circle(surface, star_color, (int(pos.x), int(pos.y)), size)
 
-        # Draw floating particles
+        # Draw floating particles (fade in during entrance)
         for p in self.particles:
             pos = origin + pygame.Vector2(p["x"], p["y"]) * self.zoom
             if self.tree_rect.collidepoint(pos):
                 pulse = (math.sin(t * p["pulse_speed"]) + 1.0) * 0.5
-                alpha = p["alpha"] * (0.4 + 0.6 * pulse)
+                alpha = p["alpha"] * (0.4 + 0.6 * pulse) * star_alpha_mult
                 r, g, b = p["color"]
                 pcolor = (int(r * alpha), int(g * alpha), int(b * alpha))
                 sz = max(1, int(p["size"] * self.zoom * (0.8 + 0.4 * pulse)))
@@ -2629,26 +3053,55 @@ class SkillTreeMenu(Menu):
 
         # Dark background fill
         screen.fill((10, 10, 16))
-
+        
+        # During entrance phase 0 (void), draw almost nothing — just a dark screen
+        # The tree area border fades in during phase 1
+        entrance_border_alpha = 1.0
+        if self.entrance_active and self.entrance_phase <= 1:
+            if self.entrance_phase == 0:
+                entrance_border_alpha = 0.0
+            elif self.entrance_phase == 1:
+                entrance_border_alpha = min(1.0, self.entrance_phase_time / 0.8)
+        
         # Draw tree area background with subtle gradient border
-        pygame.draw.rect(screen, (18, 18, 24), self.tree_rect, border_radius=18)
-        # Decorative double border
-        pygame.draw.rect(screen, (55, 55, 72), self.tree_rect, 2, border_radius=18)
-        inner_rect = self.tree_rect.inflate(-4, -4)
-        pygame.draw.rect(screen, (35, 35, 48), inner_rect, 1, border_radius=16)
+        border_color = (18, 18, 24)
+        if entrance_border_alpha < 1.0:
+            border_color = tuple(int(c * entrance_border_alpha) for c in border_color)
+        pygame.draw.rect(screen, border_color, self.tree_rect, border_radius=18)
+        
+        # Decorative double border (fades in)
+        if entrance_border_alpha > 0.1:
+            outer_border = tuple(int(c * entrance_border_alpha) for c in (55, 55, 72))
+            pygame.draw.rect(screen, outer_border, self.tree_rect, 2, border_radius=18)
+            inner_border = tuple(int(c * entrance_border_alpha) for c in (35, 35, 48))
+            inner_rect = self.tree_rect.inflate(-4, -4)
+            pygame.draw.rect(screen, inner_border, inner_rect, 1, border_radius=16)
 
         old_clip = screen.get_clip()
         screen.set_clip(self.tree_rect)
+        
+        # Draw background — during entrance, star alpha is controlled by the animation
         self._draw_tree_background(screen)
 
+        # During entrance, only draw links/nodes that have been revealed
         unlocked = self._get_unlocked_nodes()
-        self._draw_links(screen, unlocked)
-
-        mouse_pos = pygame.mouse.get_pos()
-        self.hovered_node_id = self._hit_test_node(mouse_pos)
-        self._draw_nodes(screen, unlocked)
         
-        # Draw entrance sparks (behind unlock effects but on top of nodes)
+        # Determine if we should hide normal tree rendering during early entrance phases
+        hide_tree = self.entrance_active and self.entrance_phase < 3
+        
+        if not hide_tree:
+            # Normal link and node drawing (after core ignition, nodes are revealed by entrance)
+            self._draw_links(screen, unlocked)
+
+            mouse_pos = pygame.mouse.get_pos()
+            self.hovered_node_id = self._hit_test_node(mouse_pos)
+            self._draw_nodes(screen, unlocked)
+        else:
+            # During early entrance, still allow hover detection but don't draw normal nodes
+            mouse_pos = pygame.mouse.get_pos()
+            self.hovered_node_id = None  # No hover during entrance
+        
+        # Draw entrance animation effects (vortex, sparks, core ignition, branch growth)
         self._draw_entrance_sparks(screen)
         
         # Draw unlock animation effects on top of everything
@@ -2656,13 +3109,14 @@ class SkillTreeMenu(Menu):
         
         screen.set_clip(old_clip)
 
-        # Draw node count info in bottom-left of tree area
-        total_nodes = len(self.nodes)
-        unlocked_count = len(unlocked)
-        info_text = self.small_font.render(
-            f"{unlocked_count}/{total_nodes} nodes", True, (100, 100, 120)
-        )
-        screen.blit(info_text, (self.tree_rect.x + 12, self.tree_rect.bottom - info_text.get_height() - 8))
+        # Draw node count info in bottom-left of tree area (fade in after entrance)
+        if not self.entrance_active or self.entrance_phase >= 5:
+            total_nodes = len(self.nodes)
+            unlocked_count = len(unlocked)
+            info_text = self.small_font.render(
+                f"{unlocked_count}/{total_nodes} nodes", True, (100, 100, 120)
+            )
+            screen.blit(info_text, (self.tree_rect.x + 12, self.tree_rect.bottom - info_text.get_height() - 8))
 
         selected_node = self.nodes_by_id.get(self.selected_node_id)
         self._draw_sidebar(screen, selected_node)
