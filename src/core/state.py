@@ -28,6 +28,10 @@ class State:
     def __init__(self, app: "App"):
         self.app = app
 
+    def on_enter(self):
+        """Called when this state becomes the active state."""
+        pass
+
     def handle_event(self, event: pygame.event.Event):
         """Handles input events specific to the state."""
         pass

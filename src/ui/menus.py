@@ -837,6 +837,13 @@ class SkillTreeMenu(Menu):
         self.screen_flash_alpha = 0  # for screen flash effect
         self.screen_flash_timer = 0
         
+        # Entrance animation (tree assembling on open)
+        self.entrance_active = False  # will be set to True when entering this state
+        self.entrance_progress = 1.0  # 0.0 = nothing visible, 1.0 = fully assembled
+        self.entrance_sparks = []     # converging spark particles
+        self.entrance_glow = 0
+        self._entrance_triggered = False  # prevent re-triggering
+        
         self.nodes, self.links = self._build_tree()
         self.nodes_by_id = {node["id"]: node for node in self.nodes}
         self.selected_node_id = "core"
@@ -847,6 +854,11 @@ class SkillTreeMenu(Menu):
         self.sidebar_rect = pygame.Rect(0, 0, 0, 0)
         self._layout_size = None
         
+    def on_enter(self):
+        """Called when this state becomes active. Resets and triggers the entrance animation."""
+        self._entrance_triggered = False
+        self.trigger_entrance_animation()
+
     def _init_particles(self):
         """Initialize floating particles for ambient background effect."""
         self.particles = []
@@ -861,6 +873,162 @@ class SkillTreeMenu(Menu):
                 "pulse_speed": random.uniform(0.5, 2.0),
                 "color": random.choice([(100, 140, 200), (140, 100, 180), (180, 140, 100), (100, 180, 140)]),
             })
+
+    def trigger_entrance_animation(self):
+        """Start the entrance animation when the skill tree opens."""
+        if self._entrance_triggered:
+            return
+        self._entrance_triggered = True
+        self.entrance_active = True
+        self.entrance_progress = 0.001  # start from nearly invisible
+        
+        rng = random.Random(42)
+        # Create sparks at random positions around the edges that will converge to node positions
+        self.entrance_sparks = []
+        for node in self.nodes:
+            # Multiple sparks per node coming from different directions
+            for _ in range(3 + (node["size"] // 5)):
+                # Random start position outside the tree but on screen
+                side = rng.randint(0, 3)
+                if side == 0:  # top
+                    sx = rng.uniform(-750, 750)
+                    sy = rng.uniform(-700, -600)
+                elif side == 1:  # bottom
+                    sx = rng.uniform(-750, 750)
+                    sy = rng.uniform(600, 700)
+                elif side == 2:  # left
+                    sx = rng.uniform(-800, -700)
+                    sy = rng.uniform(-650, 650)
+                else:  # right
+                    sx = rng.uniform(700, 800)
+                    sy = rng.uniform(-650, 650)
+                
+                target_pos = node["pos"]
+                branch = node.get("branch", "arcane")
+                theme = self.BRANCH_THEMES.get(branch, self.BRANCH_THEMES["arcane"])
+                color = rng.choice([theme["glow"], theme["primary"], theme["secondary"], theme["accent"], (255, 255, 255)])
+                
+                # Varying travel speeds for a staggered effect
+                travel_time = rng.uniform(0.4, 1.6)
+                
+                self.entrance_sparks.append({
+                    "x": sx,
+                    "y": sy,
+                    "start_x": sx,
+                    "start_y": sy,
+                    "target_x": target_pos.x,
+                    "target_y": target_pos.y,
+                    "progress": 0.0,
+                    "speed": 1.0 / travel_time,
+                    "size": rng.uniform(1.5, 4.5),
+                    "color": color,
+                    "alpha": 1.0,
+                    "arrived": False,
+                    "delay": rng.uniform(0, 0.3),
+                })
+        
+        # Shuffle for visual randomness
+        rng.shuffle(self.entrance_sparks)
+        self.entrance_glow = 1.0
+
+    def _update_entrance(self, dt):
+        """Update the entrance animation: converging sparks + progressive reveal."""
+        if not self.entrance_active:
+            return
+        
+        # Advance progress (logarithmic ease-in for smooth start)
+        self.entrance_progress += dt * 1.2
+        if self.entrance_progress > 1.0:
+            self.entrance_progress = 1.0
+        
+        # Update individual sparks
+        all_arrived = True
+        for spark in self.entrance_sparks:
+            if spark["arrived"]:
+                continue
+            
+            # Apply delay
+            if spark["delay"] > 0:
+                spark["delay"] -= dt
+                all_arrived = False
+                continue
+            
+            # Move toward target
+            spark["progress"] += dt * spark["speed"]
+            if spark["progress"] >= 1.0:
+                spark["progress"] = 1.0
+                spark["x"] = spark["target_x"]
+                spark["y"] = spark["target_y"]
+                spark["arrived"] = True
+            else:
+                # Ease-in-out interpolation for a more organic look
+                t = spark["progress"]
+                ease = t * t * (3 - 2 * t)  # smoothstep
+                spark["x"] = spark["start_x"] + (spark["target_x"] - spark["start_x"]) * ease
+                spark["y"] = spark["start_y"] + (spark["target_y"] - spark["start_y"]) * ease
+                # Fade alpha slightly then back up near target for a flash effect
+                mid = 0.5
+                if ease < mid:
+                    spark["alpha"] = 0.7 + 0.3 * (ease / mid)
+                else:
+                    spark["alpha"] = 0.7 + 0.3 * ((1.0 - ease) / (1.0 - mid))
+                all_arrived = False
+        
+        # Entrance glow fades as tree appears
+        self.entrance_glow = max(0, 1.0 - self.entrance_progress * 1.5)
+        
+        # When everything arrives, flash and complete
+        if all_arrived and self.entrance_progress >= 1.0:
+            self.entrance_active = False
+            self.screen_flash_alpha = 0.25
+            self.screen_flash_timer = 0.3
+
+    def _draw_entrance_sparks(self, surface):
+        """Draw the converging entrance spark particles."""
+        if not self.entrance_active and not self.entrance_sparks:
+            return
+        
+        origin = pygame.Vector2(self.tree_rect.center) + self.pan_offset
+        
+        for spark in self.entrance_sparks:
+            if spark["arrived"] and self.entrance_progress >= 1.0:
+                continue
+            
+            # Convert world coords to screen
+            screen_x = origin.x + spark["x"] * self.zoom
+            screen_y = origin.y + spark["y"] * self.zoom
+            
+            if not self.tree_rect.collidepoint((screen_x, screen_y)):
+                continue
+            
+            alpha = int(255 * spark["alpha"] * min(1.0, self.entrance_progress * 4))
+            if alpha <= 5:
+                continue
+            
+            color = spark["color"]
+            size = max(0.5, spark["size"] * self.zoom * (0.8 + 0.4 * (1.0 - spark["progress"])))
+            
+            # Draw glow
+            glow_r = max(1, int(size * 3))
+            for g in range(3):
+                gc = tuple(int(c * (0.3 - g * 0.08)) for c in color)
+                pygame.draw.circle(surface, gc, (int(screen_x), int(screen_y)), glow_r - g * 2)
+            
+            # Draw bright core
+            core_color = tuple(min(255, int(c + 60)) for c in color)
+            pygame.draw.circle(surface, core_color, (int(screen_x), int(screen_y)), max(1, int(size)))
+            
+            # Draw trail (short line behind the spark)
+            if spark["progress"] > 0.05 and not spark["arrived"]:
+                t = spark["progress"]
+                ease = t * t * (3 - 2 * t)
+                trail_factor = max(0.05, ease - 0.03)
+                trail_ease = trail_factor * trail_factor * (3 - 2 * trail_factor)
+                trail_x = origin.x + (spark["start_x"] + (spark["target_x"] - spark["start_x"]) * trail_ease) * self.zoom
+                trail_y = origin.y + (spark["start_y"] + (spark["target_y"] - spark["start_y"]) * trail_ease) * self.zoom
+                trail_alpha = alpha // 3
+                pygame.draw.line(surface, (color[0], color[1], color[2], trail_alpha),
+                                 (int(trail_x), int(trail_y)), (int(screen_x), int(screen_y)), max(1, int(size * 0.5)))
 
     def _character(self):
         gameplay_state = getattr(getattr(self.app, "manager", None), "states", {}).get("gameplay")
@@ -1565,6 +1733,9 @@ class SkillTreeMenu(Menu):
         
         # Update unlock effects
         self._update_unlock_effects(dt)
+        
+        # Update entrance animation
+        self._update_entrance(dt)
     
     def _update_unlock_effects(self, dt):
         """Update all active unlock animation effects."""
@@ -2012,6 +2183,9 @@ class SkillTreeMenu(Menu):
         mouse_pos = pygame.mouse.get_pos()
         self.hovered_node_id = self._hit_test_node(mouse_pos)
         self._draw_nodes(screen, unlocked)
+        
+        # Draw entrance sparks (behind unlock effects but on top of nodes)
+        self._draw_entrance_sparks(screen)
         
         # Draw unlock animation effects on top of everything
         self._draw_unlock_effects(screen)
