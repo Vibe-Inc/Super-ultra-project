@@ -20,6 +20,7 @@ from src.core.collision_system import CollisionSystem
 from src.ai.navigation import NavGrid
 from src.entities.monster_visuals import build_monster_animations
 from src.entities.monster_attacks import build_attack_controller, AttackContext
+from src.combat.base_player_combat import PlayerCombatController
 
 if TYPE_CHECKING:
     from src.app import App
@@ -75,6 +76,8 @@ class Game(State):
         self.hotbar = MAIN_player_hotbar(app)
         self.app.INV_manager.hotbar = self.hotbar
         self.app.INV_manager.add_active_inventory(self.hotbar)
+        self.player_combat = PlayerCombatController(self)
+
         self.projectiles = []
         self.enemy_projectiles = []
         self.equipped_weapon = None
@@ -354,90 +357,6 @@ class Game(State):
     def use_skill_slot(self, slot_index):
         return self.character.use_skill_from_slot(slot_index)
 
-    def _iter_equipment_items(self):
-        for col in self.PLAYER_inventory_equipment.items:
-            for slot in col:
-                if slot:
-                    item, _ = slot
-                    yield item
-
-    def _get_equipped_weapon(self):
-        if not getattr(self, 'hotbar', None):
-            return None
-            
-        active_index = self.hotbar.active_slot_index
-        
-        slot = self.hotbar.items[active_index][0]
-        
-        if slot:
-            item, count = slot
-            if getattr(item, "type", None) == "weapon":
-                return item
-        return None
-
-    def _sync_weapon_stats(self):
-        weapon = self._get_equipped_weapon()
-        self.equipped_weapon = weapon
-
-        if weapon:
-            self.character.attack_damage = weapon.damage
-            self.character.attack_cooldown = getattr(weapon, "cooldown", self.character.base_attack_cooldown)
-            if getattr(weapon, "weapon_class", "melee") != "bow":
-                self.character.attack_range = getattr(weapon, "range", self.character.base_attack_range)
-            else:
-                self.character.attack_range = self.character.base_attack_range
-        else:
-            self.character.attack_damage = self.character.base_attack_damage
-            self.character.attack_range = self.character.base_attack_range
-            self.character.attack_cooldown = self.character.base_attack_cooldown
-
-    def _get_attack_direction(self):
-        return self.character.get_forward_direction()
-
-    def _get_attack_origin(self):
-        return self.character.get_center()
-
-    def _get_mouse_aim_direction(self, mouse_pos):
-        origin = self._get_attack_origin()
-        direction = pygame.Vector2(mouse_pos) - origin
-        if direction.length_squared() == 0:
-            return self._get_attack_direction()
-        return direction.normalize()
-
-    def _clamp_direction_to_cone(self, aim_dir, forward_dir, half_angle_deg):
-        if half_angle_deg <= 0:
-            return pygame.Vector2(forward_dir)
-
-        if forward_dir.length_squared() == 0:
-            forward_dir = pygame.Vector2(1, 0)
-        else:
-            forward_dir = forward_dir.normalize()
-
-        if aim_dir.length_squared() == 0:
-            return pygame.Vector2(forward_dir)
-
-        aim_dir = aim_dir.normalize()
-        cross = forward_dir.x * aim_dir.y - forward_dir.y * aim_dir.x
-        dot = forward_dir.dot(aim_dir)
-        angle = math.degrees(math.atan2(cross, dot))
-
-        if abs(angle) <= half_angle_deg:
-            return aim_dir
-
-        return forward_dir.rotate(half_angle_deg if angle > 0 else -half_angle_deg)
-
-    def _spawn_arrow(self, weapon, direction):
-        direction = pygame.Vector2(direction)
-        if direction.length_squared() == 0:
-            direction = pygame.Vector2(1, 0)
-        else:
-            direction = direction.normalize()
-
-        spawn_pos = self._get_attack_origin() + direction * 40
-        speed = getattr(weapon, "projectile_speed", 800) or 800
-        max_range = getattr(weapon, "range", 500)
-        damage = getattr(weapon, "damage", self.character.attack_damage)
-        self.projectiles.append(Arrow(spawn_pos, direction, speed, max_range, damage))
 
     def _update_projectiles(self, dt):
         if not self.projectiles:
@@ -577,28 +496,6 @@ class Game(State):
         enemy.target_entity = self.character
         return enemy
 
-    def _handle_player_attack(self, mouse_pos):
-        weapon = self.equipped_weapon or self._get_equipped_weapon()
-        if not weapon:
-            return
-
-        aim_dir = self._get_mouse_aim_direction(mouse_pos)
-
-        if getattr(weapon, "weapon_class", "melee") == "ranged":
-            if not self.character.can_attack():
-                return
-            self.character.start_attack(show_slash=False)
-            spread = float(getattr(weapon, "spread_degrees", 4.0))
-            if spread:
-                aim_dir = aim_dir.rotate(random.uniform(-spread, spread))
-            self._spawn_arrow(weapon, aim_dir)
-            return
-
-        cone_degrees = float(getattr(weapon, "cone_degrees", 90.0))
-        forward_dir = self._get_attack_direction()
-        clamped_dir = self._clamp_direction_to_cone(aim_dir, forward_dir, cone_degrees * 0.5)
-        self.character.attack(self.enemies, aim_direction=clamped_dir, cone_degrees=cone_degrees)
-
     def spawn_random_enemy(self):
         if not self.map.current_map or self.map.current_map.pixel_width == 0:
             return
@@ -684,7 +581,7 @@ class Game(State):
             if self.current_map_path not in self.NO_ENEMY_SPAWN_MAPS:
                 self.spawn_random_enemy()
 
-        self._sync_weapon_stats()
+        self.player_combat.sync_weapon_stats()
 
         self.character.update(dt, self.collision_handler, self.obstacles)
 
@@ -892,7 +789,7 @@ class Game(State):
                     )
                     if not hud_click:
                         mouse_world_pos = pygame.Vector2(event.pos) + self._get_camera_offset()
-                        self._handle_player_attack(mouse_world_pos)
+                        self.player_combat.handle_player_attack(mouse_world_pos)
             
             elif event.button == 2:
                 if getattr(self.app.INV_manager, 'hotbar', None):
