@@ -1025,6 +1025,27 @@ class SkillTreeMenu(Menu):
 
         self.app.manager.set_state("gameplay")
 
+    def _get_adjacent_nodes(self, node_id):
+        """Get all node IDs that are directly connected to the given node."""
+        adjacent = set()
+        for a, b in self.links:
+            if a == node_id:
+                adjacent.add(b)
+            elif b == node_id:
+                adjacent.add(a)
+        return adjacent
+
+    def _can_unlock_node(self, node_id, unlocked):
+        """Check if a node can be unlocked (must be adjacent to an unlocked node)."""
+        if node_id in unlocked:
+            return False
+        # Core node is always unlocked by default
+        if node_id == "core":
+            return False
+        # Check if any adjacent node is unlocked
+        adjacent = self._get_adjacent_nodes(node_id)
+        return bool(adjacent & unlocked)
+
     def _unlock_selected(self):
         selected = self.nodes_by_id.get(self.selected_node_id)
         if selected is None:
@@ -1037,6 +1058,12 @@ class SkillTreeMenu(Menu):
         unlocked = self._get_unlocked_nodes()
         node_id = selected["id"]
         if node_id in unlocked:
+            return
+
+        # Check sequential unlock requirement - must be connected to an unlocked node
+        if not self._can_unlock_node(node_id, unlocked):
+            from src.ui.widgets import Dialog
+            self.app.current_dialog = Dialog(self.app, [_('You must unlock an adjacent node first.')])
             return
 
         kind = selected.get("kind")
