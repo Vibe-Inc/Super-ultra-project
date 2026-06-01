@@ -152,7 +152,24 @@ class PlayerCombatController:
             self.spawn_arrow(weapon, aim_dir)
             return
 
+        if not self.game.character.can_attack():
+            return
+
         cone_degrees = float(getattr(weapon, "cone_degrees", 90.0))
+        
         forward_dir = self.get_attack_direction()
-        clamped_dir = self.clamp_direction_to_cone(aim_dir, forward_dir, cone_degrees * 0.5)
-        self.game.character.attack(self.game.enemies, aim_direction=clamped_dir, cone_degrees=cone_degrees)
+        if forward_dir.length_squared() > 0:
+            forward_dir = forward_dir.normalize()
+        else:
+            forward_dir = pygame.Vector2(1, 0)
+            
+        cross = forward_dir.x * aim_dir.y - forward_dir.y * aim_dir.x
+        dot = forward_dir.dot(aim_dir)
+        angle = math.degrees(math.atan2(cross, dot))
+        
+        allowed_angle = 120.0 
+        
+        if abs(angle) > allowed_angle:
+            return
+
+        self.game.character.attack(self.game.enemies, aim_direction=aim_dir, cone_degrees=cone_degrees)
