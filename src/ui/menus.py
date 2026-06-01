@@ -1668,6 +1668,9 @@ class SkillTreeMenu(Menu):
             # Clean up ignition effects
             self.core_ignition_particles = [p for p in self.core_ignition_particles if p["life"] > 0]
             
+            # Clear any remaining link travels to prevent lights staying on
+            self.entrance_link_travels = []
+            
             if self.entrance_progress >= 1.0:
                 self.entrance_active = False
                 self.entrance_phase = 6  # done
@@ -2805,14 +2808,22 @@ class SkillTreeMenu(Menu):
                 sz = max(1, int(p["size"] * self.zoom * (0.8 + 0.4 * pulse)))
                 pygame.draw.circle(surface, pcolor, (int(pos.x), int(pos.y)), sz)
 
-    def _draw_links(self, surface, unlocked):
-        """Draw links with glow effect for active (unlocked) connections."""
+    def _draw_links(self, surface, unlocked, revealed_filter=None):
+        """Draw links with glow effect for active (unlocked) connections.
+        
+        Args:
+            revealed_filter: If provided, only draw links where both nodes are in this set.
+        """
         t = self.animation_time
         for a, b in self.links:
             node_a = self.nodes_by_id.get(a)
             node_b = self.nodes_by_id.get(b)
             if node_a is None or node_b is None:
                 continue
+            # During entrance animation, only draw links where both nodes have been revealed
+            if revealed_filter is not None:
+                if a not in revealed_filter or b not in revealed_filter:
+                    continue
             pos_a = self._node_screen_pos(node_a)
             pos_b = self._node_screen_pos(node_b)
             active = a in unlocked and b in unlocked
@@ -2844,11 +2855,18 @@ class SkillTreeMenu(Menu):
                 # Inactive links — dim
                 pygame.draw.line(surface, (48, 48, 58), pos_a, pos_b, max(1, int(1.5 * self.zoom)))
 
-    def _draw_nodes(self, surface, unlocked):
-        """Draw nodes with glow halos, pulsing effects, and inner highlights."""
+    def _draw_nodes(self, surface, unlocked, revealed_filter=None):
+        """Draw nodes with glow halos, pulsing effects, and inner highlights.
+        
+        Args:
+            revealed_filter: If provided, only draw nodes that are in this set.
+        """
         t = self.animation_time
         for node in self.nodes:
             node_id = node["id"]
+            # During entrance animation, only draw nodes that have been revealed
+            if revealed_filter is not None and node_id not in revealed_filter:
+                continue
             pos = self._node_screen_pos(node)
             radius = max(4, int(node["size"] * self.zoom))
             is_unlocked = node_id in unlocked
@@ -3089,13 +3107,20 @@ class SkillTreeMenu(Menu):
         # Determine if we should hide normal tree rendering during early entrance phases
         hide_tree = self.entrance_active and self.entrance_phase < 3
         
+        # During entrance animation (phase 3+), use entrance_revealed_nodes to filter
+        # which nodes/links are drawn, making the tree appear gradually during BFS
+        use_entrance_filter = self.entrance_active and self.entrance_phase >= 3 and self.entrance_phase < 6
+        
         if not hide_tree:
+            # Determine the revealed filter for entrance animation
+            revealed_filter = self.entrance_revealed_nodes if use_entrance_filter else None
+            
             # Normal link and node drawing (after core ignition, nodes are revealed by entrance)
-            self._draw_links(screen, unlocked)
+            self._draw_links(screen, unlocked, revealed_filter=revealed_filter)
 
             mouse_pos = pygame.mouse.get_pos()
             self.hovered_node_id = self._hit_test_node(mouse_pos)
-            self._draw_nodes(screen, unlocked)
+            self._draw_nodes(screen, unlocked, revealed_filter=revealed_filter)
         else:
             # During early entrance, still allow hover detection but don't draw normal nodes
             mouse_pos = pygame.mouse.get_pos()
