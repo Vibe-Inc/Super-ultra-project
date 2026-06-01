@@ -1142,6 +1142,14 @@ class SkillTreeMenu(Menu):
             self.pan_offset = pygame.Vector2(0, 0)
 
     def handle_event(self, event: pygame.event.Event):
+        # Route events to dialog first if one is active
+        if getattr(self.app, 'current_dialog', None):
+            try:
+                self.app.current_dialog.handle_event(event)
+                return
+            except Exception:
+                pass
+
         super().handle_event(event)
 
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -1313,6 +1321,13 @@ class SkillTreeMenu(Menu):
         except Exception:
             pass
         self.exit_button.draw(screen)
+
+        # Draw dialog on top if one is active
+        if getattr(self.app, 'current_dialog', None):
+            try:
+                self.app.current_dialog.draw(screen)
+            except Exception:
+                pass
 
 class CreditsMenu(Menu):
     """
