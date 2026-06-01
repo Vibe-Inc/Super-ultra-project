@@ -72,6 +72,7 @@
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.projectile</span><span class="w"> </span><span class="kn">import</span> <span class="n">Fireball</span>
 
 <div class="viewcode-block" id="Character">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character">[docs]</a>
@@ -186,6 +187,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">xp_to_next_level</span> <span class="o">=</span> <span class="mi">100</span>
 
+        <span class="c1"># Skill tree</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skill_tree_points</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skill_tree_unlocked</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;core&quot;</span><span class="p">}</span>
+
         <span class="c1"># Stamina system</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_stamina</span> <span class="o">=</span> <span class="mi">100</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">stamina</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_stamina</span>
@@ -213,6 +218,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">melee_slash_distance</span> <span class="o">=</span> <span class="mf">50.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">skillbook</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_skillbook</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">skillbar</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fireball_speed</span> <span class="o">=</span> <span class="mf">420.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fireball_range</span> <span class="o">=</span> <span class="mf">520.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fireball_damage</span> <span class="o">=</span> <span class="mi">28</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fireball_blast_radius</span> <span class="o">=</span> <span class="mf">110.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fireball_fuse_time</span> <span class="o">=</span> <span class="mf">0.9</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fireball_cooldown</span> <span class="o">=</span> <span class="mi">1300</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fireball_knockback</span> <span class="o">=</span> <span class="mf">18.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">game_state</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dash_speed_multiplier</span> <span class="o">=</span> <span class="mf">3.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dash_duration</span> <span class="o">=</span> <span class="mf">0.14</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dash_cooldown</span> <span class="o">=</span> <span class="mi">900</span>
@@ -228,8 +241,25 @@
                 <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Quick burst of movement&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">86</span><span class="p">,</span> <span class="mi">132</span><span class="p">,</span> <span class="mi">186</span><span class="p">),</span>
                 <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">220</span><span class="p">,</span> <span class="mi">235</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
-            <span class="p">}</span>
+            <span class="p">},</span>
         <span class="p">]</span>
+
+<div class="viewcode-block" id="Character.learn_fireball">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.learn_fireball">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">learn_fireball</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add the fireball skill to the skillbook if not already present.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">skill</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">skillbook</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">skill</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;skill_id&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;fireball&quot;</span><span class="p">:</span>
+                <span class="k">return</span>  <span class="c1"># already learned</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skillbook</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;skill_id&quot;</span><span class="p">:</span> <span class="s2">&quot;fireball&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Fireball&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Випускає вибуховий вогняний шар, що завдає 28 пошкоджень, має радіус вибуху 110 і відкидає ворогів.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">188</span><span class="p">,</span> <span class="mi">82</span><span class="p">,</span> <span class="mi">35</span><span class="p">),</span>
+            <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">214</span><span class="p">,</span> <span class="mi">120</span><span class="p">),</span>
+        <span class="p">})</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Fireball!&quot;</span><span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="Character.get_skill_in_slot">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.get_skill_in_slot">[docs]</a>
@@ -241,16 +271,16 @@
 
 <div class="viewcode-block" id="Character.use_skill_from_slot">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.use_skill_from_slot">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">use_skill_from_slot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot_index</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">use_skill_from_slot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot_index</span><span class="p">,</span> <span class="n">aim_direction</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="n">skill</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_skill_in_slot</span><span class="p">(</span><span class="n">slot_index</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">skill</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_skill</span><span class="p">(</span><span class="n">skill</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_skill</span><span class="p">(</span><span class="n">skill</span><span class="p">,</span> <span class="n">aim_direction</span><span class="o">=</span><span class="n">aim_direction</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Character.use_skill">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.use_skill">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">use_skill</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skill</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">use_skill</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skill</span><span class="p">,</span> <span class="n">aim_direction</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">skill</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
 
@@ -271,6 +301,45 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">dash_active_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dash_duration</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">dash_last_used</span> <span class="o">=</span> <span class="n">current_time</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player used Dash.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="n">skill_id</span> <span class="o">==</span> <span class="s2">&quot;fireball&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">current_time</span> <span class="o">-</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;fireball_last_used&quot;</span><span class="p">,</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">fireball_cooldown</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">fireball_cooldown</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
+            <span class="c1"># Use aim_direction (cursor direction) if provided, otherwise fall back to velocity/facing</span>
+            <span class="k">if</span> <span class="n">aim_direction</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">direction</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">aim_direction</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">direction</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">direction</span><span class="o">.</span><span class="n">length_squared</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">direction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_forward_direction</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">direction</span><span class="o">.</span><span class="n">length_squared</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">direction</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">direction</span> <span class="o">=</span> <span class="n">direction</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span>
+
+            <span class="n">game_state</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;game_state&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">game_state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Fireball skill used without an attached game state.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
+            <span class="n">spawn_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_melee_anchor</span><span class="p">()</span> <span class="o">+</span> <span class="n">direction</span> <span class="o">*</span> <span class="mi">18</span>
+            <span class="n">game_state</span><span class="o">.</span><span class="n">projectiles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">Fireball</span><span class="p">(</span>
+                    <span class="n">spawn_pos</span><span class="p">,</span>
+                    <span class="n">direction</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">fireball_speed</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">fireball_range</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">fireball_damage</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">fireball_blast_radius</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">fireball_fuse_time</span><span class="p">,</span>
+                    <span class="n">knockback_force</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fireball_knockback</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fireball_last_used</span> <span class="o">=</span> <span class="n">current_time</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player used Fireball.&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">True</span>
 
         <span class="k">return</span> <span class="kc">False</span></div>
@@ -303,9 +372,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">xp_to_next_level</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xp_to_next_level</span> <span class="o">*</span> <span class="mf">1.5</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span> <span class="o">+=</span> <span class="mi">20</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">hp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span> 
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Level Up! Level: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">level</span><span class="si">}</span><span class="s2">, Max HP: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Level Up! Level: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">level</span><span class="si">}</span><span class="s2">, Max HP: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skill_tree_points</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Level Up! Level: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">level</span><span class="si">}</span><span class="s2">, Max HP: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span><span class="si">}</span><span class="s2">, Skill points: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">skill_tree_points</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Level Up! Level: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">level</span><span class="si">}</span><span class="s2">, Max HP: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span><span class="si">}</span><span class="s2">, Skill points: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">skill_tree_points</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Character.can_attack">
