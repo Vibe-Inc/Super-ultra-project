@@ -141,22 +141,22 @@ class PlayerCombatController:
             return
 
         aim_dir = self.get_mouse_aim_direction(mouse_pos)
-
-        if getattr(weapon, "weapon_class", "melee") == "ranged":
-            if not self.game.character.can_attack():
-                return
-            self.game.character.start_attack(show_slash=False)
-            spread = float(getattr(weapon, "spread_degrees", 4.0))
-            if spread:
-                aim_dir = aim_dir.rotate(random.uniform(-spread, spread))
-            self.spawn_arrow(weapon, aim_dir)
+        if aim_dir.length_squared() == 0:
             return
 
-        if not self.game.character.can_attack():
-            return
+        char = self.game.character
 
-        cone_degrees = float(getattr(weapon, "cone_degrees", 90.0))
-        
+        if char.velocity.length_squared() == 0:
+            if abs(aim_dir.x) > abs(aim_dir.y):
+                char.direction = "side"
+                char.flip = aim_dir.x < 0
+            else:
+                char.direction = "down" if aim_dir.y > 0 else "up"
+            
+            # Оновлюємо поточний кадр
+            char.frame_index = 0
+            char.image = char.animations[char.direction][0]
+
         forward_dir = self.get_attack_direction()
         if forward_dir.length_squared() > 0:
             forward_dir = forward_dir.normalize()
@@ -168,8 +168,21 @@ class PlayerCombatController:
         angle = math.degrees(math.atan2(cross, dot))
         
         allowed_angle = 120.0 
-        
         if abs(angle) > allowed_angle:
             return
 
-        self.game.character.attack(self.game.enemies, aim_direction=aim_dir, cone_degrees=cone_degrees)
+        if getattr(weapon, "weapon_class", "melee") == "ranged":
+            if not char.can_attack():
+                return
+            char.start_attack(show_slash=False)
+            spread = float(getattr(weapon, "spread_degrees", 4.0))
+            if spread:
+                aim_dir = aim_dir.rotate(random.uniform(-spread, spread))
+            self.spawn_arrow(weapon, aim_dir)
+            return
+
+        if not char.can_attack():
+            return
+
+        cone_degrees = float(getattr(weapon, "cone_degrees", 90.0))
+        char.attack(self.game.enemies, aim_direction=aim_dir, cone_degrees=cone_degrees)
