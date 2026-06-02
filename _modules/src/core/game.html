@@ -87,6 +87,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.projectile</span><span class="w"> </span><span class="kn">import</span> <span class="n">Arrow</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.hud</span><span class="w"> </span><span class="kn">import</span> <span class="n">HUD</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.widgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dialog</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.debug_menu</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpawnMenu</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.collision_system</span><span class="w"> </span><span class="kn">import</span> <span class="n">CollisionSystem</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.ai.navigation</span><span class="w"> </span><span class="kn">import</span> <span class="n">NavGrid</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.monster_visuals</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_monster_animations</span>
@@ -457,7 +458,14 @@
             <span class="k">pass</span>
 
         <span class="c1"># Blackjack game state (None when not playing)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">blackjack_game</span> <span class="o">=</span> <span class="kc">None</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blackjack_game</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Debug menu for spawning mobs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spawn_menu</span> <span class="o">=</span> <span class="n">SpawnMenu</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">enemy_profile_names</span><span class="p">,</span>
+            <span class="n">on_spawn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_debug_spawn_enemy</span><span class="p">,</span>
+            <span class="n">on_close</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">None</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Game.reinit_ui">
@@ -727,6 +735,15 @@
                 <span class="k">break</span></div>
 
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_debug_spawn_enemy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">profile_name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Spawn an enemy near the player using the debug menu.&quot;&quot;&quot;</span>
+        <span class="n">offset_x</span> <span class="o">=</span> <span class="mi">100</span>
+        <span class="n">spawn_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">offset_x</span>
+        <span class="n">spawn_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span>
+        <span class="n">new_enemy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_enemy</span><span class="p">(</span><span class="n">spawn_x</span><span class="p">,</span> <span class="n">spawn_y</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="n">profile_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_enemy</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[DEBUG] Spawned </span><span class="si">{</span><span class="n">profile_name</span><span class="si">}</span><span class="s2"> at (</span><span class="si">{</span><span class="n">spawn_x</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">spawn_y</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
 <div class="viewcode-block" id="Game.update">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.update">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
@@ -975,7 +992,9 @@
             <span class="k">try</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">blackjack_game</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-                <span class="k">pass</span></div>
+                <span class="k">pass</span>
+        <span class="c1"># Draw debug spawn menu</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spawn_menu</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Game.draw">
@@ -988,6 +1007,11 @@
 <div class="viewcode-block" id="Game.handle_event">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.handle_event">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">handle_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">Event</span><span class="p">):</span>
+        <span class="c1"># Debug menu priority</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">spawn_menu</span><span class="o">.</span><span class="n">visible</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">spawn_menu</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+            <span class="k">return</span>
+
         <span class="c1"># If blackjack game is active, route all events to it</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">blackjack_game</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
@@ -1063,14 +1087,6 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">toggle_inventory</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">MAIN_player_inv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PLAYER_inventory_equipment</span><span class="p">)</span>
 
             <span class="c1"># Test keys</span>
-            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_F1</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">add_effect</span><span class="p">(</span><span class="n">RegenerationEffect</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span> <span class="c1"># 5 sec, 5 hp/sec</span>
-            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_F2</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">add_effect</span><span class="p">(</span><span class="n">PoisonEffect</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span> <span class="c1"># 5 sec, 5 dmg/sec</span>
-            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_F3</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">add_effect</span><span class="p">(</span><span class="n">ConfusionEffect</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span> <span class="c1"># 5 sec</span>
-            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_F4</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">add_effect</span><span class="p">(</span><span class="n">DizzinessEffect</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span> <span class="c1"># 5 sec</span>
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_F5</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">take_damage</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_F6</span><span class="p">:</span>
@@ -1078,6 +1094,8 @@
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_F9</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">skill_tree_points</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[DEBUG] F9: +1 skill tree point. Total: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">skill_tree_points</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_F10</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">spawn_menu</span><span class="o">.</span><span class="n">toggle</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">MOUSEBUTTONDOWN</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
