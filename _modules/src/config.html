@@ -239,6 +239,120 @@
 
 <span class="n">recalculate_inventory_positions</span><span class="p">()</span>
 
+<span class="c1"># ============== INVENTORY SLOT COLORS AND STYLES ==============</span>
+<span class="n">INV_SLOT_BG_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">22</span><span class="p">,</span> <span class="mi">26</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+<span class="n">INV_SLOT_INNER_SHADOW</span> <span class="o">=</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+<span class="n">INV_SLOT_BORDER_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">55</span><span class="p">,</span> <span class="mi">65</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+<span class="n">INV_SLOT_HOVER_BORDER</span> <span class="o">=</span> <span class="p">(</span><span class="mi">230</span><span class="p">,</span> <span class="mi">185</span><span class="p">,</span> <span class="mi">60</span><span class="p">)</span>
+<span class="n">INV_SLOT_HOVER_FILL</span> <span class="o">=</span> <span class="p">(</span><span class="mi">230</span><span class="p">,</span> <span class="mi">185</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">25</span><span class="p">)</span>
+<span class="n">INV_SLOT_BORDER_RADIUS</span> <span class="o">=</span> <span class="mi">6</span>
+<span class="n">INV_SLOT_INNER_BORDER_RADIUS</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">INV_SLOT_PADDING</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">INV_ITEM_SHADOW_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">120</span><span class="p">)</span>
+<span class="n">INV_ITEM_TEXT_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">245</span><span class="p">,</span> <span class="mi">245</span><span class="p">,</span> <span class="mi">250</span><span class="p">)</span>
+
+<span class="c1"># ============== SHOP INVENTORY COLORS AND STYLING ==============</span>
+<span class="n">INV_SHOP_BG_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">35</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">245</span><span class="p">)</span>
+<span class="n">INV_SHOP_BORDER_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">70</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+<span class="n">INV_SHOP_BORDER_WIDTH</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">INV_SHOP_BORDER_RADIUS</span> <span class="o">=</span> <span class="mi">16</span>
+<span class="n">INV_SHOP_SHADOW_OFFSET</span> <span class="o">=</span> <span class="mi">12</span>
+<span class="n">INV_SHOP_TITLE_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">230</span><span class="p">,</span> <span class="mi">185</span><span class="p">,</span> <span class="mi">60</span><span class="p">)</span>
+<span class="n">INV_SHOP_PRICE_TEXT_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">220</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
+<span class="n">INV_SHOP_PRICE_SHADOW_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">INV_SHOP_PRICE_BG_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">150</span><span class="p">)</span>
+<span class="n">INV_SHOP_PRICE_BG_BORDER_RADIUS</span> <span class="o">=</span> <span class="mi">4</span>
+
+<span class="c1"># ============== PLAYER INVENTORY COLORS AND POSITIONING ==============</span>
+<span class="n">INV_PLAYER_BG_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">18</span><span class="p">,</span> <span class="mi">22</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="mi">245</span><span class="p">)</span>
+<span class="n">INV_PLAYER_BORDER_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">70</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">95</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+<span class="n">INV_PLAYER_BORDER_WIDTH</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">INV_PLAYER_BORDER_RADIUS</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">INV_PLAYER_SHADOW_OFFSET</span> <span class="o">=</span> <span class="mi">15</span>
+<span class="n">INV_PLAYER_PREVIEW_OFFSET_X</span> <span class="o">=</span> <span class="mi">389</span>
+<span class="n">INV_PLAYER_PREVIEW_WIDTH</span> <span class="o">=</span> <span class="mi">190</span>
+<span class="n">INV_PLAYER_PREVIEW_HEIGHT</span> <span class="o">=</span> <span class="mi">275</span>
+<span class="n">INV_PLAYER_PREVIEW_Y_OFFSET</span> <span class="o">=</span> <span class="o">-</span><span class="mi">310</span>
+<span class="n">INV_PLAYER_PORTRAIT_BORDER_RADIUS</span> <span class="o">=</span> <span class="mi">12</span>
+<span class="n">INV_PLAYER_PORTRAIT_BORDER_COLOR_1</span> <span class="o">=</span> <span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">90</span><span class="p">,</span> <span class="mi">60</span><span class="p">)</span>
+<span class="n">INV_PLAYER_PORTRAIT_BORDER_COLOR_2</span> <span class="o">=</span> <span class="p">(</span><span class="mi">230</span><span class="p">,</span> <span class="mi">185</span><span class="p">,</span> <span class="mi">60</span><span class="p">)</span>
+<span class="n">INV_PLAYER_MONEY_PANEL_BG_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">25</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">35</span><span class="p">)</span>
+<span class="n">INV_PLAYER_MONEY_PANEL_BORDER_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">55</span><span class="p">,</span> <span class="mi">65</span><span class="p">,</span> <span class="mi">75</span><span class="p">)</span>
+<span class="n">INV_PLAYER_MONEY_PANEL_WIDTH</span> <span class="o">=</span> <span class="mi">190</span>
+<span class="n">INV_PLAYER_MONEY_PANEL_HEIGHT</span> <span class="o">=</span> <span class="mi">36</span>
+<span class="n">INV_PLAYER_MONEY_PANEL_BORDER_RADIUS</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">INV_PLAYER_MONEY_TEXT_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">215</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">INV_PLAYER_MONEY_PANEL_Y_OFFSET</span> <span class="o">=</span> <span class="o">-</span><span class="mi">25</span>
+
+<span class="c1"># ============== PLAYER INVENTORY BUTTON POSITIONING ==============</span>
+<span class="n">INV_PLAYER_BTN_GAP_MIN</span> <span class="o">=</span> <span class="mi">6</span>
+<span class="n">INV_PLAYER_BTN_GAP_SCALE</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">INV_PLAYER_BTN_SPACING_MIN</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">INV_PLAYER_BTN_SPACING_SCALE</span> <span class="o">=</span> <span class="mi">12</span>
+<span class="n">INV_PLAYER_BTN_TOP_OFFSET</span> <span class="o">=</span> <span class="mi">25</span>
+
+<span class="c1"># ============== HOTBAR COLORS AND STYLING ==============</span>
+<span class="n">INV_HOTBAR_BG_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">230</span><span class="p">)</span>
+<span class="n">INV_HOTBAR_BORDER_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="mi">70</span><span class="p">,</span> <span class="mi">85</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+<span class="n">INV_HOTBAR_BORDER_WIDTH</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">INV_HOTBAR_BORDER_RADIUS</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">INV_HOTBAR_SHADOW_OFFSET</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">INV_HOTBAR_SCALE</span> <span class="o">=</span> <span class="mf">0.85</span>
+<span class="n">INV_HOTBAR_ROWS</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">INV_HOTBAR_COLUMNS</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">INV_HOTBAR_GLOW_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">230</span><span class="p">,</span> <span class="mi">185</span><span class="p">,</span> <span class="mi">60</span><span class="p">)</span>
+<span class="n">INV_HOTBAR_ACTIVE_SLOT_BORDER_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">215</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">INV_HOTBAR_ACTIVE_SLOT_BORDER_WIDTH</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">INV_HOTBAR_ACTIVE_SLOT_BORDER_RADIUS</span> <span class="o">=</span> <span class="mi">6</span>
+<span class="n">INV_HOTBAR_Y_OFFSET</span> <span class="o">=</span> <span class="o">-</span><span class="mi">25</span>
+
+<span class="c1"># ============== SPLIT POPUP COLORS AND STYLING ==============</span>
+<span class="n">INV_SPLIT_POPUP_BG_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">25</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">38</span><span class="p">,</span> <span class="mi">245</span><span class="p">)</span>
+<span class="n">INV_SPLIT_POPUP_BORDER_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">70</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">95</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+<span class="n">INV_SPLIT_POPUP_BORDER_WIDTH</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">INV_SPLIT_POPUP_BORDER_RADIUS</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">INV_SPLIT_POPUP_SHADOW_OFFSET</span> <span class="o">=</span> <span class="mi">6</span>
+<span class="n">INV_SPLIT_POPUP_BTN_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">40</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+<span class="n">INV_SPLIT_POPUP_BTN_HOVER_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="mi">110</span><span class="p">,</span> <span class="mi">70</span><span class="p">)</span>
+<span class="n">INV_SPLIT_POPUP_BTN_FONT_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">230</span><span class="p">,</span> <span class="mi">240</span><span class="p">,</span> <span class="mi">230</span><span class="p">)</span>
+<span class="n">INV_SPLIT_POPUP_BTN_CORNER_WIDTH_SCALE</span> <span class="o">=</span> <span class="mi">6</span>
+<span class="n">INV_SPLIT_POPUP_TEXT_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">240</span><span class="p">,</span> <span class="mi">240</span><span class="p">,</span> <span class="mi">245</span><span class="p">)</span>
+
+<span class="c1"># ============== SLIDER COLORS ==============</span>
+<span class="n">INV_SLIDER_TRACK_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">35</span><span class="p">,</span> <span class="mi">45</span><span class="p">)</span>
+<span class="n">INV_SLIDER_KNOB_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">230</span><span class="p">,</span> <span class="mi">185</span><span class="p">,</span> <span class="mi">60</span><span class="p">)</span>
+<span class="n">INV_SLIDER_TRACK_HEIGHT</span> <span class="o">=</span> <span class="mi">18</span>
+<span class="n">INV_SLIDER_TRACK_THICKNESS</span> <span class="o">=</span> <span class="mi">6</span>
+<span class="n">INV_SLIDER_KNOB_WIDTH</span> <span class="o">=</span> <span class="mi">14</span>
+<span class="n">INV_SLIDER_KNOB_HEIGHT</span> <span class="o">=</span> <span class="mi">18</span>
+
+<span class="c1"># ============== SHOP BUTTONS ==============</span>
+<span class="n">INV_SHOP_CLOSE_BTN_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">140</span><span class="p">,</span> <span class="mi">45</span><span class="p">,</span> <span class="mi">45</span><span class="p">)</span>
+<span class="n">INV_SHOP_CLOSE_BTN_HOVER_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">180</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">60</span><span class="p">)</span>
+<span class="n">INV_SHOP_CLOSE_BTN_FONT_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">240</span><span class="p">,</span> <span class="mi">240</span><span class="p">)</span>
+
+<span class="c1"># ============== PLAYER INVENTORY BUTTONS ==============</span>
+<span class="n">INV_SKILLBAR_BTN_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">45</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
+<span class="n">INV_SKILLBAR_BTN_HOVER_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">65</span><span class="p">,</span> <span class="mi">85</span><span class="p">,</span> <span class="mi">110</span><span class="p">)</span>
+<span class="n">INV_SKILLBAR_BTN_FONT_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">230</span><span class="p">,</span> <span class="mi">240</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+<span class="n">INV_SKILLTREE_BTN_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">55</span><span class="p">,</span> <span class="mi">45</span><span class="p">,</span> <span class="mi">75</span><span class="p">)</span>
+<span class="n">INV_SKILLTREE_BTN_HOVER_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="mi">65</span><span class="p">,</span> <span class="mi">105</span><span class="p">)</span>
+<span class="n">INV_SKILLTREE_BTN_FONT_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">240</span><span class="p">,</span> <span class="mi">230</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+
+<span class="c1"># ============== INVENTORY OVERLAY AND SELECTED ITEM ==============</span>
+<span class="n">INV_OVERLAY_ALPHA</span> <span class="o">=</span> <span class="mi">160</span>
+<span class="n">INV_OVERLAY_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span>
+<span class="n">INV_OVERLAY_ALPHA_LERP</span> <span class="o">=</span> <span class="mf">0.15</span>
+<span class="n">INV_SELECTED_ITEM_SHADOW_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">140</span><span class="p">)</span>
+<span class="n">INV_SELECTED_ITEM_SCALE_OFFSET</span> <span class="o">=</span> <span class="mf">0.08</span>
+<span class="n">INV_SELECTED_ITEM_SCALE_BASE</span> <span class="o">=</span> <span class="mf">1.05</span>
+<span class="n">INV_SELECTED_ITEM_SHADOW_TEXT_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">INV_SELECTED_ITEM_TEXT_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+<span class="n">INV_SELECTED_ITEM_SHADOW_OFFSET_X</span> <span class="o">=</span> <span class="mi">12</span>
+<span class="n">INV_SELECTED_ITEM_SHADOW_OFFSET_Y</span> <span class="o">=</span> <span class="mi">18</span>
+<span class="n">INV_SELECTED_ITEM_TEXT_OFFSET_X</span> <span class="o">=</span> <span class="mi">12</span>
+<span class="n">INV_SELECTED_ITEM_TEXT_OFFSET_Y</span> <span class="o">=</span> <span class="mi">10</span>
+
 <div class="viewcode-block" id="set_screen_size">
 <a class="viewcode-back" href="../../src.html#src.config.set_screen_size">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_screen_size</span><span class="p">(</span><span class="n">screen_width</span><span class="p">,</span> <span class="n">screen_height</span><span class="p">):</span>

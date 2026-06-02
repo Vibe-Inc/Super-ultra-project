@@ -115,9 +115,11 @@
 </li>
         <li><a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.__init__">(src.inventory.system.MAIN_player_hotbar method)</a>
 </li>
-        <li><a href="src.inventory.html#src.inventory.system.ShopInventory.__init__">(src.inventory.system.ShopInventory method)</a>
+        <li><a href="src.inventory.html#src.inventory.system.MAIN_player_inventory.__init__">(src.inventory.system.MAIN_player_inventory method)</a>
 </li>
-        <li><a href="src.inventory.html#src.inventory.system.Split_popup.__init__">(src.inventory.system.Split_popup method)</a>
+        <li><a href="src.inventory.html#src.inventory.system.MAIN_player_inventory_equipment.__init__">(src.inventory.system.MAIN_player_inventory_equipment method)</a>
+</li>
+        <li><a href="src.inventory.html#src.inventory.system.ShopInventory.__init__">(src.inventory.system.ShopInventory method)</a>
 </li>
         <li><a href="src.map.html#src.map.map.LocalMap.__init__">(src.map.map.LocalMap method)</a>
 </li>
@@ -130,6 +132,8 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="src.inventory.html#src.inventory.system.ShopInventory._close_shop">_close_shop() (src.inventory.system.ShopInventory method)</a>
+</li>
       <li><a href="src.inventory.html#src.inventory.system.Inventory_slider._convert_to_int">_convert_to_int() (src.inventory.system.Inventory_slider method)</a>
 </li>
       <li><a href="src.entities.html#src.entities.character.Character._set_velocity">_set_velocity() (src.entities.character.Character method)</a>
@@ -146,11 +150,7 @@
 </li>
       <li><a href="src.ui.html#src.ui.widgets.Tooltip.active">active (src.ui.widgets.Tooltip attribute)</a>
 </li>
-      <li><a href="src.inventory.html#src.inventory.system.INVENTORY_manager.active_inventories">active_inventories (src.inventory.system.INVENTORY_manager attribute)</a>
-</li>
       <li><a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.active_slot_index">active_slot_index (src.inventory.system.MAIN_player_hotbar attribute)</a>
-</li>
-      <li><a href="src.inventory.html#id1">add_active_inventory() (src.inventory.system.INVENTORY_manager method)</a>, <a href="src.inventory.html#src.inventory.system.INVENTORY_manager.add_active_inventory">[1]</a>
 </li>
       <li><a href="src.entities.html#src.entities.character.Character.add_effect">add_effect() (src.entities.character.Character method)</a>
 </li>
@@ -172,14 +172,14 @@
       </ul></li>
       <li><a href="src.html#src.app.App">App (class in src.app)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.core.html#src.core.game.Game.app">app (src.core.game.Game attribute)</a>
 
       <ul>
         <li><a href="src.core.html#src.core.state.State.app">(src.core.state.State attribute)</a>
 </li>
         <li><a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.app">(src.inventory.system.MAIN_player_hotbar attribute)</a>
+</li>
+        <li><a href="src.inventory.html#src.inventory.system.MAIN_player_inventory.app">(src.inventory.system.MAIN_player_inventory attribute)</a>
 </li>
         <li><a href="src.inventory.html#src.inventory.system.ShopInventory.app">(src.inventory.system.ShopInventory attribute)</a>
 </li>
@@ -190,6 +190,8 @@
         <li><a href="src.ui.html#src.ui.menus.PauseMenu.app">(src.ui.menus.PauseMenu attribute)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.items.html#src.items.items.Armor">Armor (class in src.items.items)</a>
 </li>
       <li><a href="src.entities.html#src.entities.character.Character.attack">attack() (src.entities.character.Character method)</a>
@@ -217,8 +219,6 @@
 </li>
       </ul></li>
       <li><a href="src.entities.html#src.entities.enemy.Enemy.base_speed">base_speed (src.entities.enemy.Enemy attribute)</a>
-</li>
-      <li><a href="src.inventory.html#src.inventory.system.Split_popup.bg_rect">bg_rect (src.inventory.system.Split_popup attribute)</a>
 </li>
       <li><a href="src.inventory.html#src.inventory.system.Inventory.border">border (src.inventory.system.Inventory attribute)</a>
 </li>
@@ -272,6 +272,8 @@
       </ul></li>
       <li><a href="src.html#src.app.App.clock">clock (src.app.App attribute)</a>
 </li>
+      <li><a href="src.inventory.html#src.inventory.system.ShopInventory.close_button">close_button (src.inventory.system.ShopInventory attribute)</a>
+</li>
       <li><a href="src.ui.html#src.ui.widgets.Button.color">color (src.ui.widgets.Button attribute)</a>
 
       <ul>
@@ -279,10 +281,6 @@
 </li>
       </ul></li>
       <li><a href="src.inventory.html#src.inventory.system.Inventory.columns">columns (src.inventory.system.Inventory attribute)</a>
-</li>
-      <li><a href="src.inventory.html#id19">confirm() (src.inventory.system.Split_popup method)</a>, <a href="src.inventory.html#src.inventory.system.Split_popup.confirm">[1]</a>
-</li>
-      <li><a href="src.inventory.html#src.inventory.system.Split_popup.confirm_btn">confirm_btn (src.inventory.system.Split_popup attribute)</a>
 </li>
       <li><a href="src.items.html#src.items.items.Consumable">Consumable (class in src.items.items)</a>
 </li>
@@ -368,18 +366,6 @@
         <li><a href="src.entities.html#id5">(src.entities.enemy.Enemy method)</a>, <a href="src.entities.html#src.entities.enemy.Enemy.draw">[1]</a>
 </li>
         <li><a href="src.entities.html#id10">(src.entities.npc.NPC method)</a>, <a href="src.entities.html#src.entities.npc.NPC.draw">[1]</a>
-</li>
-        <li><a href="src.inventory.html#id6">(src.inventory.system.Inventory method)</a>, <a href="src.inventory.html#src.inventory.system.Inventory.draw">[1]</a>
-</li>
-        <li><a href="src.inventory.html#id2">(src.inventory.system.INVENTORY_manager method)</a>, <a href="src.inventory.html#src.inventory.system.INVENTORY_manager.draw">[1]</a>
-</li>
-        <li><a href="src.inventory.html#id9">(src.inventory.system.MAIN_player_hotbar method)</a>, <a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.draw">[1]</a>
-</li>
-        <li><a href="src.inventory.html#id16">(src.inventory.system.MAIN_player_inventory method)</a>, <a href="src.inventory.html#src.inventory.system.MAIN_player_inventory.draw">[1]</a>
-</li>
-        <li><a href="src.inventory.html#id17">(src.inventory.system.ShopInventory method)</a>, <a href="src.inventory.html#src.inventory.system.ShopInventory.draw">[1]</a>
-</li>
-        <li><a href="src.inventory.html#id20">(src.inventory.system.Split_popup method)</a>, <a href="src.inventory.html#src.inventory.system.Split_popup.draw">[1]</a>
 </li>
         <li><a href="src.map.html#id0">(src.map.map.LocalMap method)</a>, <a href="src.map.html#src.map.map.LocalMap.draw">[1]</a>
 </li>
@@ -550,10 +536,10 @@
       </ul></li>
       <li><a href="src.entities.html#src.entities.character.Character.get_skill_in_slot">get_skill_in_slot() (src.entities.character.Character method)</a>
 </li>
-      <li><a href="src.inventory.html#id7">get_slot_under_mouse() (src.inventory.system.Inventory method)</a>, <a href="src.inventory.html#src.inventory.system.Inventory.get_slot_under_mouse">[1]</a>
+      <li><a href="src.inventory.html#id0">get_slot_under_mouse() (src.inventory.system.Inventory method)</a>, <a href="src.inventory.html#src.inventory.system.Inventory.get_slot_under_mouse">[1]</a>
 
       <ul>
-        <li><a href="src.inventory.html#id10">(src.inventory.system.MAIN_player_hotbar method)</a>, <a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.get_slot_under_mouse">[1]</a>
+        <li><a href="src.inventory.html#id2">(src.inventory.system.MAIN_player_hotbar method)</a>, <a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.get_slot_under_mouse">[1]</a>
 </li>
       </ul></li>
       <li><a href="src.core.html#id13">get_state() (src.core.state_manager.StateManager method)</a>, <a href="src.core.html#src.core.state_manager.StateManager.get_state">[1]</a>
@@ -585,10 +571,6 @@
 </li>
         <li><a href="src.core.html#id14">(src.core.state_manager.StateManager method)</a>, <a href="src.core.html#src.core.state_manager.StateManager.handle_event">[1]</a>
 </li>
-        <li><a href="src.inventory.html#id3">(src.inventory.system.INVENTORY_manager method)</a>, <a href="src.inventory.html#src.inventory.system.INVENTORY_manager.handle_event">[1]</a>
-</li>
-        <li><a href="src.inventory.html#id21">(src.inventory.system.Split_popup method)</a>, <a href="src.inventory.html#src.inventory.system.Split_popup.handle_event">[1]</a>
-</li>
         <li><a href="src.ui.html#id1">(src.ui.hud.HUD method)</a>, <a href="src.ui.html#src.ui.hud.HUD.handle_event">[1]</a>
 </li>
         <li><a href="src.ui.html#id6">(src.ui.menus.Menu method)</a>, <a href="src.ui.html#src.ui.menus.Menu.handle_event">[1]</a>
@@ -606,16 +588,12 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="src.inventory.html#id11">handle_hotkeys() (src.inventory.system.MAIN_player_hotbar method)</a>, <a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.handle_hotkeys">[1]</a>
+      <li><a href="src.inventory.html#id3">handle_hotkeys() (src.inventory.system.MAIN_player_hotbar method)</a>, <a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.handle_hotkeys">[1]</a>
 </li>
       <li><a href="src.items.html#src.items.items.Consumable.heal_amount">heal_amount (src.items.items.Consumable attribute)</a>
 </li>
-      <li><a href="src.inventory.html#src.inventory.system.Split_popup.height">height (src.inventory.system.Split_popup attribute)</a>
-
-      <ul>
-        <li><a href="src.ui.html#src.ui.widgets.Slider.height">(src.ui.widgets.Slider attribute)</a>
+      <li><a href="src.ui.html#src.ui.widgets.Slider.height">height (src.ui.widgets.Slider attribute)</a>
 </li>
-      </ul></li>
       <li><a href="src.ui.html#src.ui.widgets.Button.hover_color">hover_color (src.ui.widgets.Button attribute)</a>
 </li>
       <li><a href="src.ui.html#src.ui.widgets.Tooltip.hover_start">hover_start (src.ui.widgets.Tooltip attribute)</a>
@@ -664,39 +642,35 @@
 </li>
       <li><a href="src.inventory.html#src.inventory.system.Inventory">Inventory (class in src.inventory.system)</a>
 </li>
-      <li><a href="src.inventory.html#id8">inventory_interactions() (src.inventory.system.Inventory method)</a>, <a href="src.inventory.html#src.inventory.system.Inventory.inventory_interactions">[1]</a>
+      <li><a href="src.inventory.html#id1">inventory_interactions() (src.inventory.system.Inventory method)</a>, <a href="src.inventory.html#src.inventory.system.Inventory.inventory_interactions">[1]</a>
 
       <ul>
-        <li><a href="src.inventory.html#id12">(src.inventory.system.MAIN_player_hotbar method)</a>, <a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.inventory_interactions">[1]</a>
+        <li><a href="src.inventory.html#id4">(src.inventory.system.MAIN_player_hotbar method)</a>, <a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.inventory_interactions">[1]</a>
 </li>
-        <li><a href="src.inventory.html#src.inventory.system.MAIN_player_inventory.inventory_interactions">(src.inventory.system.MAIN_player_inventory method)</a>
+        <li><a href="src.inventory.html#id8">(src.inventory.system.MAIN_player_inventory method)</a>, <a href="src.inventory.html#src.inventory.system.MAIN_player_inventory.inventory_interactions">[1]</a>
 </li>
-        <li><a href="src.inventory.html#id18">(src.inventory.system.ShopInventory method)</a>, <a href="src.inventory.html#src.inventory.system.ShopInventory.inventory_interactions">[1]</a>
+        <li><a href="src.inventory.html#id9">(src.inventory.system.ShopInventory method)</a>, <a href="src.inventory.html#src.inventory.system.ShopInventory.inventory_interactions">[1]</a>
 </li>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="src.inventory.html#src.inventory.system.INVENTORY_manager">INVENTORY_manager (class in src.inventory.system)</a>
-</li>
       <li><a href="src.inventory.html#src.inventory.system.Inventory_slider">Inventory_slider (class in src.inventory.system)</a>
 
       <ul>
         <li><a href="src.ui.html#src.ui.widgets.Inventory_slider">(class in src.ui.widgets)</a>
 </li>
       </ul></li>
-      <li><a href="src.inventory.html#src.inventory.system.INVENTORY_manager.inventory_tooltip">inventory_tooltip (src.inventory.system.INVENTORY_manager attribute)</a>
-</li>
       <li><a href="src.core.html#src.core.game.Game.is_daytime">is_daytime() (src.core.game.Game method)</a>
 </li>
       <li><a href="src.entities.html#id7">is_dead() (src.entities.enemy.Enemy method)</a>, <a href="src.entities.html#src.entities.enemy.Enemy.is_dead">[1]</a>
 </li>
       <li><a href="src.html#src.app.App.is_fullscreen">is_fullscreen (src.app.App attribute)</a>
 </li>
+      <li><a href="src.inventory.html#src.inventory.system.Inventory.is_hidden">is_hidden (src.inventory.system.Inventory attribute)</a>
+</li>
       <li><a href="src.entities.html#src.entities.npc.NPC.is_interactable">is_interactable (src.entities.npc.NPC attribute)</a>
 </li>
       <li><a href="src.items.html#src.items.items.Item">Item (class in src.items.items)</a>
-</li>
-      <li><a href="src.inventory.html#src.inventory.system.Split_popup.item_obj">item_obj (src.inventory.system.Split_popup attribute)</a>
 </li>
       <li><a href="src.inventory.html#src.inventory.system.Inventory.items">items (src.inventory.system.Inventory attribute)</a>
 </li>
@@ -775,11 +749,7 @@
       <li><a href="src.ui.html#src.ui.menus.MainMenu">MainMenu (class in src.ui.menus)</a>
 </li>
       <li><a href="src.html#src.app.App.manager">manager (src.app.App attribute)</a>
-
-      <ul>
-        <li><a href="src.inventory.html#src.inventory.system.Split_popup.manager">(src.inventory.system.Split_popup attribute)</a>
 </li>
-      </ul></li>
       <li><a href="src.map.html#src.map.map.Map">Map (class in src.map.map)</a>
 </li>
       <li><a href="src.core.html#src.core.game.Game.map">map (src.core.game.Game attribute)</a>
@@ -901,10 +871,10 @@
 </li>
       <li><a href="src.core.html#src.core.game.Game.open_blackjack">open_blackjack() (src.core.game.Game method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.ui.html#src.ui.menus.MainMenu.open_credits">open_credits() (src.ui.menus.MainMenu method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.ui.html#src.ui.menus.MainMenu.open_load_menu">open_load_menu() (src.ui.menus.MainMenu method)</a>
 </li>
       <li><a href="src.ui.html#src.ui.menus.PauseMenu.open_save_menu">open_save_menu() (src.ui.menus.PauseMenu method)</a>
@@ -912,6 +882,10 @@
       <li><a href="src.ui.html#src.ui.menus.MainMenu.open_settings">open_settings() (src.ui.menus.MainMenu method)</a>
 </li>
       <li><a href="src.core.html#src.core.game.Game.open_shop">open_shop() (src.core.game.Game method)</a>
+</li>
+      <li><a href="src.inventory.html#src.inventory.system.MAIN_player_inventory.open_skillbar_btn">open_skillbar_btn (src.inventory.system.MAIN_player_inventory attribute)</a>
+</li>
+      <li><a href="src.inventory.html#src.inventory.system.MAIN_player_inventory.open_skilltree_btn">open_skilltree_btn (src.inventory.system.MAIN_player_inventory attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -937,18 +911,12 @@
 </li>
       <li><a href="src.map.html#src.map.map.Map.pixel_width">pixel_width (src.map.map.Map attribute)</a>
 </li>
-      <li><a href="src.core.html#src.core.game.Game.PLAYER_inventory_equipment">PLAYER_inventory_equipment (src.core.game.Game attribute)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="src.inventory.html#id0">PLAYER_inventory_open() (src.inventory.system.INVENTORY_manager method)</a>, <a href="src.inventory.html#src.inventory.system.INVENTORY_manager.PLAYER_inventory_open">[1]</a>
+      <li><a href="src.core.html#src.core.game.Game.PLAYER_inventory_equipment">PLAYER_inventory_equipment (src.core.game.Game attribute)</a>
 </li>
       <li><a href="src.core.html#src.core.game.Game.player_inventory_opened">player_inventory_opened (src.core.game.Game attribute)</a>
-
-      <ul>
-        <li><a href="src.inventory.html#src.inventory.system.INVENTORY_manager.player_inventory_opened">(src.inventory.system.INVENTORY_manager attribute)</a>
 </li>
-      </ul></li>
       <li><a href="src.entities.html#src.entities.character.Character.pos">pos (src.entities.character.Character attribute)</a>
 
       <ul>
@@ -983,15 +951,13 @@
         <li><a href="src.ui.html#src.ui.widgets.Tooltip.rect">(src.ui.widgets.Tooltip attribute)</a>
 </li>
       </ul></li>
-      <li><a href="src.ui.html#id15">refresh_saves() (src.ui.menus.SaveLoadMenu method)</a>, <a href="src.ui.html#src.ui.menus.SaveLoadMenu.refresh_saves">[1]</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="src.ui.html#id15">refresh_saves() (src.ui.menus.SaveLoadMenu method)</a>, <a href="src.ui.html#src.ui.menus.SaveLoadMenu.refresh_saves">[1]</a>
+</li>
       <li><a href="src.core.html#id15">reinit_states() (src.core.state_manager.StateManager method)</a>, <a href="src.core.html#src.core.state_manager.StateManager.reinit_states">[1]</a>
 </li>
       <li><a href="src.core.html#id2">reinit_ui() (src.core.game.Game method)</a>, <a href="src.core.html#src.core.game.Game.reinit_ui">[1]</a>
-</li>
-      <li><a href="src.inventory.html#id4">remove_active_inventory() (src.inventory.system.INVENTORY_manager method)</a>, <a href="src.inventory.html#src.inventory.system.INVENTORY_manager.remove_active_inventory">[1]</a>
 </li>
       <li><a href="src.items.html#src.items.items.Item.resize">resize() (src.items.items.Item method)</a>
 </li>
@@ -1019,14 +985,8 @@
 </li>
       <li><a href="src.html#src.app.App.screen">screen (src.app.App attribute)</a>
 </li>
-      <li><a href="src.inventory.html#id13">scroll_active_slot() (src.inventory.system.MAIN_player_hotbar method)</a>, <a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.scroll_active_slot">[1]</a>
+      <li><a href="src.inventory.html#id5">scroll_active_slot() (src.inventory.system.MAIN_player_hotbar method)</a>, <a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.scroll_active_slot">[1]</a>
 </li>
-      <li><a href="src.inventory.html#src.inventory.system.Inventory.selected_item">selected_item (src.inventory.system.Inventory attribute)</a>
-
-      <ul>
-        <li><a href="src.inventory.html#src.inventory.system.INVENTORY_manager.selected_item">(src.inventory.system.INVENTORY_manager attribute)</a>
-</li>
-      </ul></li>
       <li><a href="src.html#src.app.App.set_profiler_enabled">set_profiler_enabled() (src.app.App method)</a>
 </li>
       <li><a href="src.html#src.config.set_screen_size">set_screen_size() (in module src.config)</a>
@@ -1047,14 +1007,6 @@
 </li>
       <li><a href="src.ui.html#src.ui.widgets.Slider">Slider (class in src.ui.widgets)</a>
 </li>
-      <li><a href="src.inventory.html#src.inventory.system.Split_popup.slider">slider (src.inventory.system.Split_popup attribute)</a>
-</li>
-      <li><a href="src.inventory.html#src.inventory.system.Inventory.slot_border_color">slot_border_color (src.inventory.system.Inventory attribute)</a>
-</li>
-      <li><a href="src.inventory.html#src.inventory.system.Inventory.slot_color">slot_color (src.inventory.system.Inventory attribute)</a>
-</li>
-      <li><a href="src.inventory.html#src.inventory.system.Split_popup.slot_ref">slot_ref (src.inventory.system.Split_popup attribute)</a>
-</li>
       <li><a href="src.inventory.html#src.inventory.system.Inventory.slot_size">slot_size (src.inventory.system.Inventory attribute)</a>
 </li>
       <li><a href="src.ui.html#src.ui.menus.SaveLoadMenu.slots">slots (src.ui.menus.SaveLoadMenu attribute)</a>
@@ -1074,10 +1026,6 @@
 </li>
       </ul></li>
       <li><a href="src.entities.html#src.entities.enemy.Enemy.speed_multiplier">speed_multiplier (src.entities.enemy.Enemy attribute)</a>
-</li>
-      <li><a href="src.inventory.html#src.inventory.system.Split_popup.split_amount">split_amount (src.inventory.system.Split_popup attribute)</a>
-</li>
-      <li><a href="src.inventory.html#src.inventory.system.Split_popup">Split_popup (class in src.inventory.system)</a>
 </li>
       <li>
     src
@@ -1121,8 +1069,6 @@
         <li><a href="src.core.html#module-src.core.logger">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     src.core.save_manager
 
@@ -1137,6 +1083,8 @@
         <li><a href="src.core.html#module-src.core.state">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     src.core.state_manager
 
@@ -1311,12 +1259,8 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="src.inventory.html#id5">toggle_inventory() (src.inventory.system.INVENTORY_manager method)</a>, <a href="src.inventory.html#src.inventory.system.INVENTORY_manager.toggle_inventory">[1]</a>
-
-      <ul>
-        <li><a href="src.ui.html#id2">(src.ui.hud.HUD method)</a>, <a href="src.ui.html#src.ui.hud.HUD.toggle_inventory">[1]</a>
+      <li><a href="src.ui.html#id2">toggle_inventory() (src.ui.hud.HUD method)</a>, <a href="src.ui.html#src.ui.hud.HUD.toggle_inventory">[1]</a>
 </li>
-      </ul></li>
       <li><a href="src.ui.html#src.ui.hud.HUD.toggle_inventory_callback">toggle_inventory_callback (src.ui.hud.HUD attribute)</a>
 </li>
       <li><a href="src.ui.html#id19">toggle_language() (src.ui.menus.SettingsMenu method)</a>, <a href="src.ui.html#src.ui.menus.SettingsMenu.toggle_language">[1]</a>
@@ -1325,13 +1269,9 @@
 </li>
       <li><a href="src.html#src.app.App.toggle_profiler">toggle_profiler() (src.app.App method)</a>
 </li>
-      <li><a href="src.inventory.html#src.inventory.system.INVENTORY_manager.toggle_trade">toggle_trade() (src.inventory.system.INVENTORY_manager method)</a>
-</li>
       <li><a href="src.ui.html#src.ui.widgets.Tooltip">Tooltip (class in src.ui.widgets)</a>
 </li>
       <li><a href="src.ui.html#src.ui.menus.Menu.tooltips">tooltips (src.ui.menus.Menu attribute)</a>
-</li>
-      <li><a href="src.inventory.html#src.inventory.system.Split_popup.total_count">total_count (src.inventory.system.Split_popup attribute)</a>
 </li>
       <li><a href="src.ui.html#src.ui.widgets.Slider.track_colour">track_colour (src.ui.widgets.Slider attribute)</a>
 </li>
@@ -1371,13 +1311,11 @@
       </ul></li>
       <li><a href="src.html#src.config.update_brightness">update_brightness() (in module src.config)</a>
 </li>
-      <li><a href="src.inventory.html#id22">update_count() (src.inventory.system.Split_popup method)</a>, <a href="src.inventory.html#src.inventory.system.Split_popup.update_count">[1]</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.html#id3">update_language() (src.app.App method)</a>, <a href="src.html#src.app.App.update_language">[1]</a>
 </li>
-      <li><a href="src.inventory.html#id14">update_position() (src.inventory.system.MAIN_player_hotbar method)</a>, <a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.update_position">[1]</a>
+      <li><a href="src.inventory.html#id6">update_position() (src.inventory.system.MAIN_player_hotbar method)</a>, <a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.update_position">[1]</a>
 </li>
       <li><a href="src.html#src.config.update_scaled_fonts">update_scaled_fonts() (in module src.config)</a>
 </li>
@@ -1389,7 +1327,7 @@
         <li><a href="src.items.html#id3">(src.items.items.Item method)</a>, <a href="src.items.html#src.items.items.Item.use">[1]</a>
 </li>
       </ul></li>
-      <li><a href="src.inventory.html#id15">use_active_slot() (src.inventory.system.MAIN_player_hotbar method)</a>, <a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.use_active_slot">[1]</a>
+      <li><a href="src.inventory.html#id7">use_active_slot() (src.inventory.system.MAIN_player_hotbar method)</a>, <a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.use_active_slot">[1]</a>
 </li>
       <li><a href="src.entities.html#src.entities.character.Character.use_skill">use_skill() (src.entities.character.Character method)</a>
 </li>
@@ -1425,32 +1363,22 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.items.html#src.items.items.Weapon.weapon_class">weapon_class (src.items.items.Weapon attribute)</a>
 </li>
-      <li><a href="src.inventory.html#src.inventory.system.Split_popup.width">width (src.inventory.system.Split_popup attribute)</a>
-</li>
   </ul></td>
 </tr></table>
 
 <h2 id="X">X</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="src.inventory.html#src.inventory.system.Split_popup.x">x (src.inventory.system.Split_popup attribute)</a>
-
-      <ul>
-        <li><a href="src.ui.html#src.ui.widgets.Slider.x">(src.ui.widgets.Slider attribute)</a>
+      <li><a href="src.ui.html#src.ui.widgets.Slider.x">x (src.ui.widgets.Slider attribute)</a>
 </li>
-      </ul></li>
   </ul></td>
 </tr></table>
 
 <h2 id="Y">Y</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="src.inventory.html#src.inventory.system.Split_popup.y">y (src.inventory.system.Split_popup attribute)</a>
-
-      <ul>
-        <li><a href="src.ui.html#src.ui.widgets.Slider.y">(src.ui.widgets.Slider attribute)</a>
+      <li><a href="src.ui.html#src.ui.widgets.Slider.y">y (src.ui.widgets.Slider attribute)</a>
 </li>
-      </ul></li>
   </ul></td>
 </tr></table>
 
