@@ -316,12 +316,13 @@ class InventoryRenderer:
         
         grid_size = (crafting.slot_size + crafting.border) * 3
         arrow_center_x = crafting.pos_x + (grid_size // 2)
-        arrow_start_y = crafting.pos_y + grid_size + int(8 * scale)
         
-        shaft_w = int(12 * scale)
-        shaft_h = int(15 * scale)
-        head_w = int(30 * scale)
-        head_h = int(14 * scale)
+        arrow_start_y = crafting.pos_y + grid_size + int(2 * scale)
+        
+        shaft_w = int(10 * scale)
+        shaft_h = int(4 * scale)
+        head_w = int(24 * scale)
+        head_h = int(8 * scale)
         
         pygame.draw.polygon(screen, (200, 200, 200), [
             (arrow_center_x - shaft_w//2, arrow_start_y),                   

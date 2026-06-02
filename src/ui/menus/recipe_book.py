@@ -5,6 +5,30 @@ import src.config as cfg
 from database.GP_database import Gp_database
 
 class RecipeBookMenu(Menu):
+    """
+    Displays a comprehensive list of all available recipes.
+
+    Inherits from the base Menu class and provides a dedicated interface for
+    browsing and viewing crafting recipes with their ingredients and results.
+
+    Attributes:
+        app (App):
+            The main application reference.
+        recipes (list):
+            All recipes loaded from the database, containing ingredients and results.
+        buttons (list):
+            UI button widgets, including the "BACK TO GAME" button.
+
+    Methods:
+        __init__(app):
+            Initialize the recipe book menu and load recipes from the database.
+        close_menu():
+            Return to the gameplay state and close the recipe book.
+        handle_event(event):
+            Process keyboard input and button interactions.
+        draw(screen):
+            Render the recipe list and UI elements to the screen.
+    """
 
     def __init__(self, app):
         super().__init__(app)

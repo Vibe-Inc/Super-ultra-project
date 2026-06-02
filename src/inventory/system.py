@@ -405,6 +405,44 @@ class Inventory_slider(Slider):
             self.external_callback(result)
 
 class CraftingGrid(Inventory):
+    """
+    Manages the 3x3 crafting grid interface.
+
+    Handles recipe matching, ingredient validation, and item crafting mechanics.
+    Displays available recipes via a recipe book and processes crafting transactions.
+
+    Attributes:
+        app (App):
+            The main application reference.
+        output_slot (list):
+            The crafted item and count displayed in the output slot, or None if empty.
+        all_recipes (list):
+            All available recipes loaded from the database.
+        book_button (Button):
+            Button widget to open the recipe book menu.
+        pos_x (int):
+            The x-coordinate position of the crafting grid on screen.
+        pos_y (int):
+            The y-coordinate position of the crafting grid on screen.
+        output_pos_x (int):
+            The x-coordinate position of the output slot.
+        output_pos_y (int):
+            The y-coordinate position of the output slot.
+
+    Methods:
+        __init__(app):
+            Initialize the crafting grid, database connection, and recipe book button.
+        open_recipe_menu():
+            Transition to the recipe book menu state.
+        update_positions(base_x, base_y):
+            Recalculate grid and output slot positions based on anchor coordinates.
+        inventory_interactions(event, manager):
+            Handle recipe book button clicks, output slot interactions, and crafting.
+        check_recipes():
+            Scan the crafting matrix for matching recipes and update the output slot.
+        _matrix_match(m1, m2):
+            Compare two 3x3 matrices for equality.
+    """
     def __init__(self, app):
         super().__init__(3, 3, None, cfg.BASE_INV_slot_size, 0, 0, cfg.BASE_INV_border)
         self.app = app
@@ -420,18 +458,21 @@ class CraftingGrid(Inventory):
         db.close()
         
         scale = cfg.ui_scale()
+        btn_size = int(self.slot_size * 0.95)
         self.book_button = Button(
-            rect=pygame.Rect(0, 0, max(80, int(100 * scale)), max(24, int(28 * scale))),
-            text="RECIPES", color=(40, 40, 40), hover_color=(70, 70, 70),
+            rect=pygame.Rect(0, 0, btn_size, btn_size),
+            text="REC",
+            color=(40, 40, 40), hover_color=(70, 70, 70),
             font=cfg.INV_nums_font, font_color=(255, 255, 255),
-            corner_width=2, 
+            corner_width=max(2, int(cfg.INV_SLOT_BORDER_RADIUS * 0.75)),
             on_click=self.open_recipe_menu
         )
+        
+
     def open_recipe_menu(self):
         self.app.manager.set_state("recipe_book")
 
     def update_positions(self, base_x, base_y):
-        """Динамічно оновлює координати крафту відносно головного інвентарю екіпірування"""
         scale = cfg.ui_scale()
         self.pos_x = base_x
         self.pos_y = base_y
@@ -439,9 +480,12 @@ class CraftingGrid(Inventory):
         grid_size = (self.slot_size + self.border) * 3
         
         self.output_pos_x = self.pos_x + (grid_size // 2) - (self.slot_size // 2)
-        self.output_pos_y = self.pos_y + grid_size + int(45 * scale)
+        self.output_pos_y = self.pos_y + grid_size + int(15 * scale)
+        btn_y = self.output_pos_y + (self.slot_size - self.book_button.rect.height) // 2
         
-        self.book_button.rect.topleft = (self.pos_x - int(40 * scale), self.pos_y)
+        btn_x = self.output_pos_x - self.book_button.rect.width - int(10 * scale)
+        
+        self.book_button.rect.topleft = (btn_x, btn_y)
 
     def inventory_interactions(self, event, manager):
         if event.type != pygame.MOUSEBUTTONDOWN: return
@@ -489,7 +533,6 @@ class CraftingGrid(Inventory):
             self.output_slot = None
 
     def _matrix_match(self, m1, m2):
-        """Порівнює дві матриці 3х3"""
         for c in range(3):
             for r in range(3):
                 if m1[c][r] != m2[c][r]:
@@ -497,6 +540,20 @@ class CraftingGrid(Inventory):
         return True
 
 class CraftingLogic:
+    """
+    Utility class for crafting validation and ingredient management.
+
+    Provides static methods to validate crafting requirements, consume ingredients,
+    and add crafted items to the player inventory.
+
+    Methods:
+        can_craft(player_inv, ingredients):
+            Check if the player has sufficient items to craft a recipe.
+        consume_ingredients(player_inv, ingredients):
+            Remove required ingredients from the player inventory.
+        add_crafted_item(player_inv, result_item, amount):
+            Add the crafted item to available inventory slots or create new slots.
+    """
     @staticmethod
     def can_craft(player_inv: MAIN_player_inventory, ingredients: dict) -> bool:
         available = {}

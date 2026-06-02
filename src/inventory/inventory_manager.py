@@ -195,7 +195,23 @@ class INVENTORY_manager:
                 self.renderer.draw_shop(screen, inv)
             elif isinstance(inv, MAIN_player_inventory):
                 self.renderer.draw_player_inventory(screen, inv)
-                self.crafting_system.update_positions(inv.pos_x + 350, inv.pos_y - 120)
+                
+                from src.inventory.system import MAIN_player_inventory_equipment
+                equip_inv = None
+                for active_inv in self.active_inventories:
+                    if isinstance(active_inv, MAIN_player_inventory_equipment):
+                        equip_inv = active_inv
+                        break
+                
+                if equip_inv:
+                    scale = cfg.ui_scale()
+                    craft_width = (self.crafting_system.slot_size + self.crafting_system.border) * 3
+                    
+                    craft_x = equip_inv.pos_x - craft_width - int(15 * scale)
+                    craft_y = equip_inv.pos_y
+                    
+                    self.crafting_system.update_positions(craft_x, craft_y)
+                    self.renderer.draw_crafting_system(screen, self.crafting_system)
                 
                 self.renderer.draw_crafting_system(screen, self.crafting_system)
             elif isinstance(inv, MAIN_player_hotbar):
