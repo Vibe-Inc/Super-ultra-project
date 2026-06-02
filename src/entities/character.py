@@ -281,6 +281,9 @@ class Character:
         self.mystic_barrier_reflect_pct = 0.3
         self.mystic_barrier_particles = []
 
+        # Eternal Fortress keystone (passive)
+        self.eternal_fortress = False
+
         # Berserker's Rage keystone
         self.berserkers_rage_active = False
         self.berserkers_rage_duration = 8.0
@@ -552,6 +555,16 @@ class Character:
             "accent": (255, 160, 60),
         })
         logger.info("Player learned Berserker's Rage!")
+
+    def learn_eternal_fortress(self):
+        if self.eternal_fortress:
+            return
+        self.eternal_fortress = True
+        self.max_hp += 40
+        self.hp += 40
+        self.speed_multiplier *= 0.85
+        self.speed = self.base_speed * self.speed_multiplier
+        logger.info("Player learned Eternal Fortress (passive)! (+40 HP, +80% defense, -15% speed)")
 
     def learn_chrono_shift(self):
         for skill in self.skillbook:
@@ -1314,6 +1327,12 @@ class Character:
         # Berserker's Rage: take 20% more damage
         if self.berserkers_rage_active and amount > 0:
             amount = int(amount * 1.2)
+
+        # Eternal Fortress: 80% defense = 20% damage reduction
+        if self.eternal_fortress and amount > 0:
+            amount = int(amount * 0.8)
+            if amount < 1:
+                amount = 1
 
         # Mystic Barrier: reflect 30% of damage to all nearby enemies
         if self.mystic_barrier_active and amount > 0:
