@@ -3,7 +3,8 @@ import random
 
 import pygame
 from src.core.logger import logger
-from src.entities.projectile import Fireball, GlacialCascade, FrostNova, ChainLightning, Thunderstrike
+from src.entities.projectile import Fireball, GlacialCascade, FrostNova, ChainLightning, Thunderstrike, EntanglingRoots, NatureBolt
+from src.entities.nature_spirit import NatureSpirit
 
 class Character:
     """
@@ -216,6 +217,26 @@ class Character:
         self.static_field_proc_chance = 0.12
         self.static_field_damage = 20
 
+        # Entangling Roots skill
+        self.entangling_roots_speed = 380.0
+        self.entangling_roots_range = 500.0
+        self.entangling_roots_radius = 140.0
+        self.entangling_roots_root_duration = 4.0
+        self.entangling_roots_damage = 0
+        self.entangling_roots_cooldown = 7000
+        self.entangling_roots_last_used = -self.entangling_roots_cooldown
+
+        # Summon Spirit skill
+        self.summon_spirit_damage = 15
+        self.summon_spirit_duration = 10.0
+        self.summon_spirit_cooldown = 12000
+        self.summon_spirit_last_used = -self.summon_spirit_cooldown
+
+        # Passive: Regeneration
+        self.regeneration = False
+        self.regeneration_hp_per_sec = 3.0
+        self.regeneration_acc = 0.0
+
         # Passive: Pyromancer's Fury
         self.pyromancers_fury = False
         self.pyromancers_fury_damage_mult = 1.25   # +25% fire damage
@@ -342,6 +363,36 @@ class Character:
             "accent": (255, 230, 255),
         })
         logger.info("Player learned Thunderstrike!")
+
+    def learn_entangling_roots(self):
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "entangling_roots":
+                return
+        self.skillbook.append({
+            "skill_id": "entangling_roots",
+            "name": "Entangling Roots",
+            "description": "Unleash roots that immobilize enemies for 4 seconds.",
+            "color": (60, 180, 60),
+            "accent": (160, 255, 140),
+        })
+        logger.info("Player learned Entangling Roots!")
+
+    def learn_regeneration(self):
+        self.regeneration = True
+        logger.info("Player unlocked Regeneration (passive)!")
+
+    def learn_summon_spirit(self):
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "summon_spirit":
+                return
+        self.skillbook.append({
+            "skill_id": "summon_spirit",
+            "name": "Summon Spirit",
+            "description": "Summon a nature spirit that attacks for 15 damage.",
+            "color": (100, 220, 120),
+            "accent": (200, 255, 200),
+        })
+        logger.info("Player learned Summon Spirit!")
 
     def get_skill_in_slot(self, slot_index):
         if 0 <= slot_index < len(self.skillbar):
@@ -568,6 +619,66 @@ class Character:
             )
             self.thunderstrike_last_used = current_time
             logger.info("Player used Thunderstrike.")
+            return True
+
+        if skill_id == "entangling_roots":
+            if current_time - getattr(self, "entangling_roots_last_used", -self.entangling_roots_cooldown) < self.entangling_roots_cooldown:
+                return False
+
+            if aim_direction is not None:
+                direction = pygame.Vector2(aim_direction)
+            else:
+                direction = pygame.Vector2(self.velocity)
+
+            if direction.length_squared() == 0:
+                direction = self.get_forward_direction()
+            if direction.length_squared() == 0:
+                direction = pygame.Vector2(1, 0)
+            else:
+                direction = direction.normalize()
+
+            game_state = getattr(self, "game_state", None)
+            if game_state is None:
+                logger.warning("Entangling Roots skill used without an attached game state.")
+                return False
+
+            spawn_pos = self.get_melee_anchor() + direction * 18
+            game_state.projectiles.append(
+                EntanglingRoots(
+                    spawn_pos,
+                    direction,
+                    self.entangling_roots_speed,
+                    self.entangling_roots_range,
+                    self.entangling_roots_radius,
+                    self.entangling_roots_root_duration,
+                    self.entangling_roots_damage,
+                )
+            )
+            self.entangling_roots_last_used = current_time
+            logger.info("Player used Entangling Roots.")
+            return True
+
+        if skill_id == "summon_spirit":
+            if current_time - getattr(self, "summon_spirit_last_used", -self.summon_spirit_cooldown) < self.summon_spirit_cooldown:
+                return False
+
+            game_state = getattr(self, "game_state", None)
+            if game_state is None:
+                logger.warning("Summon Spirit skill used without an attached game state.")
+                return False
+
+            spawn_pos = self.get_melee_anchor()
+            spirit = NatureSpirit(
+                spawn_pos,
+                self,
+                damage=self.summon_spirit_damage,
+                duration=self.summon_spirit_duration,
+            )
+            if not hasattr(game_state, "spirits"):
+                game_state.spirits = []
+            game_state.spirits.append(spirit)
+            self.summon_spirit_last_used = current_time
+            logger.info("Player used Summon Spirit.")
             return True
 
         return False

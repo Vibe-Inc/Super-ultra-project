@@ -83,6 +83,7 @@ class Game(State):
 
         self.projectiles = []
         self.enemy_projectiles = []
+        self.spirits = []
         self.equipped_weapon = None
         self._dizzy_overlay = None
 
@@ -761,6 +762,13 @@ class Game(State):
         if self.character.ice_armor_active:
             self._apply_ice_armor_slow(dt)
 
+        # Regeneration passive
+        if self.character.regeneration:
+            self._apply_regeneration(dt)
+
+        # Update summoned spirits
+        self._update_spirits(dt)
+
         self.collision_handler.check_interactions(
             self.character, self.enemies, self.items
         )
@@ -805,6 +813,7 @@ class Game(State):
         self.app.profiler.set_gauge("enemies", len(self.enemies))
         self.app.profiler.set_gauge("projectiles", len(self.projectiles))
         self.app.profiler.set_gauge("enemy_projectiles", len(self.enemy_projectiles))
+        self.app.profiler.set_gauge("spirits", len(self.spirits))
 
     def _apply_ice_armor_slow(self, dt):
         """Slow enemies near the player while Ice Armor is active."""
@@ -855,6 +864,23 @@ class Game(State):
                     push_dir = (enemy_center - center).normalize()
                     enemy.pos += push_dir * 8 * dt
 
+    def _apply_regeneration(self, dt):
+        acc = getattr(self.character, "regeneration_acc", 0.0)
+        acc += self.character.regeneration_hp_per_sec * dt
+        heal = int(acc)
+        if heal >= 1:
+            old_hp = self.character.hp
+            self.character.hp = min(self.character.max_hp, self.character.hp + heal)
+            acc -= heal
+            if self.character.hp > old_hp:
+                logger.debug(f"Regeneration healed {heal} HP.")
+        self.character.regeneration_acc = acc
+
+    def _update_spirits(self, dt):
+        for spirit in self.spirits[:]:
+            spirit.update(dt, self.enemies)
+        self.spirits = [s for s in self.spirits if s.alive]
+
     def draw_scene(self, screen):
         dt = self.app.clock.get_time() / 1000
         self.app.profiler.start_section("game.update")
@@ -885,6 +911,10 @@ class Game(State):
         for projectile in self.enemy_projectiles:
             if _is_visible(projectile):
                 projectile.draw(screen, camera_offset)
+
+        for spirit in self.spirits:
+            if _is_visible(spirit):
+                spirit.draw(screen, camera_offset)
 
         # Draw NPCs and player with simple Y-ordering so they overlap naturally
         try:

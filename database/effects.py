@@ -253,6 +253,27 @@ class FreezeEffect(Effect):
         self.frozen = False
         logger.debug(f"FreezeEffect ended on {getattr(target, 'id', type(target))}")
 
+class RootEffect(Effect):
+    """
+    Immobilizes the target with roots for a duration.
+
+    Attributes:
+        rooted (bool): Whether the root has been applied.
+    """
+    def __init__(self, duration):
+        super().__init__(duration)
+        self.rooted = False
+
+    def apply(self, dt, target):
+        if not self.rooted:
+            target.speed_multiplier = 0.0
+            self.rooted = True
+
+    def on_end(self, target):
+        target.speed_multiplier = 1.0
+        self.rooted = False
+        logger.debug(f"RootEffect ended on {getattr(target, 'id', type(target))}")
+
 Effect_list = {
     "regeneration": RegenerationEffect,
     "poison": PoisonEffect,
@@ -261,6 +282,7 @@ Effect_list = {
     "dizziness": DizzinessEffect,
     "slow": SlowEffect,
     "freeze": FreezeEffect,
+    "root": RootEffect,
 }
 
 def create_effect(effect_data: dict):

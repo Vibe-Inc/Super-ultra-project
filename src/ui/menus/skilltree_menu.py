@@ -1255,6 +1255,16 @@ class SkillTreeMenu(Menu):
         if node_id == "cluster_3_2" and hasattr(character, "learn_thunderstrike"):
             character.learn_thunderstrike()
 
+        # Nature: major_4 = Entangling Roots, cluster_4_1 = Regeneration, cluster_4_2 = Summon Spirit
+        if node_id == "major_4" and hasattr(character, "learn_entangling_roots"):
+            character.learn_entangling_roots()
+
+        if node_id == "cluster_4_1" and hasattr(character, "learn_regeneration"):
+            character.learn_regeneration()
+
+        if node_id == "cluster_4_2" and hasattr(character, "learn_summon_spirit"):
+            character.learn_summon_spirit()
+
         # Trigger unlock animation
         self._spawn_unlock_effect(node_id)
 

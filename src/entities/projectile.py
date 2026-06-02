@@ -1,6 +1,6 @@
 import math
 import pygame
-from database.effects import BurnEffect, FreezeEffect, SlowEffect
+from database.effects import BurnEffect, FreezeEffect, SlowEffect, RootEffect
 from src.core.logger import logger
 
 
@@ -1285,3 +1285,295 @@ class Thunderstrike:
                 spark_alpha = int(200 * (1 - field_progress))
                 pygame.draw.line(spark_surf, (255, 255, 200, spark_alpha), (sx, sy), (ex, ey), 1)
             screen.blit(spark_surf, (s_ox, s_oy))
+
+
+class EntanglingRoots:
+    """
+    Missile that flies forward and bursts into roots that immobilize enemies.
+
+    Two phases:
+      1. Flying phase — a seed/sprout projectile travels in a direction.
+      2. Burst phase — on impact or max range, roots explode outward.
+    """
+    def __init__(self, pos, direction, speed, max_range, radius, root_duration, damage=0,
+                 expansion_duration=0.5):
+        self.pos = pygame.Vector2(pos)
+        self.direction = pygame.Vector2(direction)
+        if self.direction.length_squared() == 0:
+            self.direction = pygame.Vector2(1, 0)
+        else:
+            self.direction = self.direction.normalize()
+        self.speed = speed
+        self.max_range = max_range
+        self.radius = radius
+        self.root_duration = root_duration
+        self.damage = damage
+        self.alive = True
+        self.traveled = 0.0
+        self.timer = 0.0
+        self.expansion_duration = expansion_duration
+        self.damage_applied = False
+        self.animation_time = 0.0
+        self.vine_points = []
+        self.bursting = False
+        self.trail = []
+        self.trail_length = 8
+
+    def get_rect(self):
+        if self.bursting:
+            size = int(self.radius * 2)
+            rect = pygame.Rect(0, 0, size, size)
+            rect.center = (int(self.pos.x), int(self.pos.y))
+            return rect
+        return pygame.Rect(int(self.pos.x) - 8, int(self.pos.y) - 8, 16, 16)
+
+    def _trigger_burst(self):
+        if self.bursting:
+            return
+        self.bursting = True
+        self.timer = 0.0
+        self.damage_applied = False
+
+    def update(self, dt, obstacles, enemies):
+        if not self.alive:
+            return
+        self.animation_time += dt
+
+        if self.bursting:
+            self.timer += dt
+            progress = min(1.0, self.timer / self.expansion_duration)
+
+            if not self.damage_applied and progress >= 0.2:
+                for enemy in enemies:
+                    if enemy.is_dead():
+                        continue
+                    enemy_rect = enemy.get_rect()
+                    enemy_center = pygame.Vector2(enemy_rect.centerx, enemy_rect.centery)
+                    if (enemy_center - self.pos).length_squared() <= self.radius * self.radius:
+                        if self.damage > 0:
+                            enemy.take_damage(self.damage)
+                        enemy.add_effect(RootEffect(self.root_duration))
+                self.damage_applied = True
+
+            if self.timer >= self.expansion_duration:
+                self.alive = False
+
+            # Vine points
+            import random as _rnd
+            for _ in range(2):
+                angle = _rnd.uniform(0, math.pi * 2)
+                dist = _rnd.uniform(0, self.radius * progress)
+                self.vine_points.append((angle, dist, self.animation_time))
+            if len(self.vine_points) > 40:
+                self.vine_points = self.vine_points[-40:]
+            return
+
+        # Flying phase
+        movement = self.direction * self.speed * dt
+        self.pos += movement
+        self.traveled += movement.length()
+        self.trail.append(pygame.Vector2(self.pos))
+        if len(self.trail) > self.trail_length:
+            self.trail.pop(0)
+
+        rect = self.get_rect()
+        for wall in obstacles:
+            if rect.colliderect(wall):
+                self._trigger_burst()
+                return
+
+        for enemy in enemies:
+            if enemy.is_dead():
+                continue
+            if rect.colliderect(enemy.get_rect()):
+                self._trigger_burst()
+                return
+
+        if self.traveled >= self.max_range:
+            self._trigger_burst()
+
+    def draw(self, screen, camera_offset=None):
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+
+        if not self.bursting:
+            # Draw flying seed/sprout
+            cx = int(self.pos.x - camera_offset.x)
+            cy = int(self.pos.y - camera_offset.y)
+
+            # Trail
+            for i, pos in enumerate(self.trail):
+                alpha = int(100 * (i / len(self.trail)))
+                radius = int(2 + 3 * (i / len(self.trail)))
+                t_surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+                pygame.draw.circle(t_surf, (60, 200, 60, alpha), (radius, radius), radius)
+                screen.blit(t_surf, (pos.x - radius - camera_offset.x, pos.y - radius - camera_offset.y))
+
+            pulse = (math.sin(self.animation_time * 10) + 1.0) * 0.5
+
+            # Glow
+            glow_size = 12 + int(4 * pulse)
+            glow_surf = pygame.Surface((glow_size * 2, glow_size * 2), pygame.SRCALPHA)
+            pygame.draw.circle(glow_surf, (80, 255, 80, 50), (glow_size, glow_size), glow_size)
+            screen.blit(glow_surf, (cx - glow_size, cy - glow_size))
+
+            # Seed body — small green orb with leaf-like shape
+            pygame.draw.circle(screen, (60, 180, 60), (cx, cy), 7)
+            pygame.draw.circle(screen, (120, 220, 100), (cx, cy), 5)
+            pygame.draw.circle(screen, (200, 255, 180), (cx - 1, cy - 1), 2)
+
+            # Tiny leaf wings
+            leaf_w = 4 + 2 * pulse
+            for side in (-1, 1):
+                lx = cx + side * 6
+                ly = cy - 2 + 2 * math.sin(self.animation_time * 8)
+                pygame.draw.ellipse(screen, (80, 200, 60),
+                                    (lx - leaf_w, ly - 2, leaf_w * 2, 4))
+            return
+
+        # Burst phase
+        cx = int(self.pos.x - camera_offset.x)
+        cy = int(self.pos.y - camera_offset.y)
+        progress = min(1.0, self.timer / self.expansion_duration)
+        current_radius = int(self.radius * progress)
+
+        if current_radius <= 0:
+            return
+
+        import random as rnd
+
+        # Outer green ring shockwave
+        ring_alpha = int(180 * (1 - progress))
+        pygame.draw.circle(screen, (60, 180, 60, ring_alpha), (cx, cy), current_radius, max(2, int(3 * (1 - progress) + 1)))
+
+        # Main nature burst
+        burst_surf = pygame.Surface((current_radius * 2, current_radius * 2), pygame.SRCALPHA)
+        outer_alpha = int(100 * (1 - progress * 0.5))
+        pygame.draw.circle(burst_surf, (40, 160, 40, outer_alpha), (current_radius, current_radius), current_radius)
+        mid_r = max(1, int(current_radius * 0.65))
+        mid_alpha = int(140 * (1 - progress * 0.3))
+        pygame.draw.circle(burst_surf, (80, 200, 80, mid_alpha), (current_radius, current_radius), mid_r)
+        inner_r = max(1, int(current_radius * 0.3))
+        inner_alpha = int(180 * (1 - progress * 0.2))
+        pygame.draw.circle(burst_surf, (180, 255, 160, inner_alpha), (current_radius, current_radius), inner_r)
+        screen.blit(burst_surf, (cx - current_radius, cy - current_radius))
+
+        # Rising leaf particles
+        for _ in range(int(5 * (1 - progress) + 2)):
+            lx = cx + rnd.uniform(-current_radius, current_radius)
+            ly = cy - current_radius + progress * current_radius * 2 + rnd.uniform(-10, 10)
+            l_size = rnd.randint(2, 4)
+            l_color = rnd.choice([(60, 200, 60), (100, 220, 80), (160, 255, 120), (200, 255, 180)])
+            leaf_surf = pygame.Surface((l_size * 2, l_size * 2), pygame.SRCALPHA)
+            alpha = int(200 * (1 - progress))
+            pygame.draw.circle(leaf_surf, (*l_color, alpha), (l_size, l_size), l_size)
+            screen.blit(leaf_surf, (int(lx) - l_size, int(ly) - l_size))
+
+        # Vine tendrils on the ground
+        for angle, dist, t in self.vine_points:
+            vx = cx + math.cos(angle + t * 0.5) * dist
+            vy = cy + math.sin(angle + t * 0.5) * dist
+            tendril_len = 8 + 4 * math.sin(angle * 3 + t * 2)
+            ex = vx + math.cos(angle + 0.5) * tendril_len
+            ey = vy + math.sin(angle + 0.5) * tendril_len
+            vine_alpha = int(160 * (1 - dist / self.radius))
+            pygame.draw.line(screen, (60, 140, 40, vine_alpha), (vx, vy), (ex, ey), 2)
+
+        # Inner flash (early burst)
+        if progress < 0.3:
+            flash_alpha = int(160 * (1 - progress / 0.3))
+            flash_r = int(current_radius * 0.5)
+            flash_surf = pygame.Surface((flash_r * 2, flash_r * 2), pygame.SRCALPHA)
+            pygame.draw.circle(flash_surf, (220, 255, 200, flash_alpha), (flash_r, flash_r), flash_r)
+            screen.blit(flash_surf, (cx - flash_r, cy - flash_r))
+
+
+class NatureBolt:
+    """
+    A nature bolt projectile fired by the Nature Spirit.
+
+    Flies toward a target position with green visuals.
+    """
+    def __init__(self, pos, direction, speed, max_range, damage, target_pos=None, color=(80, 220, 80)):
+        self.pos = pygame.Vector2(pos)
+        self.direction = pygame.Vector2(direction)
+        if self.direction.length_squared() == 0:
+            self.direction = pygame.Vector2(1, 0)
+        else:
+            self.direction = self.direction.normalize()
+
+        self.speed = speed
+        self.max_range = max_range
+        self.damage = damage
+        self.color = color
+        self.alive = True
+        self.traveled = 0.0
+        self.animation_time = 0.0
+        self.trail = []
+        self.trail_length = 6
+        self.target_pos = pygame.Vector2(target_pos) if target_pos else None
+
+    def _size(self):
+        return 10, 10
+
+    def get_rect(self):
+        width, height = self._size()
+        rect = pygame.Rect(0, 0, width, height)
+        rect.center = (int(self.pos.x), int(self.pos.y))
+        return rect
+
+    def update(self, dt, obstacles, enemies):
+        if not self.alive:
+            return
+
+        self.animation_time += dt
+        movement = self.direction * self.speed * dt
+        self.pos += movement
+        self.traveled += movement.length()
+
+        self.trail.append(pygame.Vector2(self.pos))
+        if len(self.trail) > self.trail_length:
+            self.trail.pop(0)
+
+        rect = self.get_rect()
+        for wall in obstacles:
+            if rect.colliderect(wall):
+                self.alive = False
+                return
+
+        if self.traveled >= self.max_range:
+            self.alive = False
+
+        # Hit if close to target position (visual-only projectile)
+        if self.target_pos and self.pos.distance_to(self.target_pos) < 15:
+            self.alive = False
+
+    def draw(self, screen, camera_offset=None):
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+
+        # Trail
+        for i, pos in enumerate(self.trail):
+            alpha = int(100 * (i / len(self.trail)))
+            radius = int(2 + 3 * (i / len(self.trail)))
+            t_surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+            pygame.draw.circle(t_surf, (*self.color[:3], alpha), (radius, radius), radius)
+            screen.blit(t_surf, (pos.x - radius - camera_offset.x, pos.y - radius - camera_offset.y))
+
+        rect = self.get_rect()
+        rect.x -= int(camera_offset.x)
+        rect.y -= int(camera_offset.y)
+
+        pulse = (math.sin(self.animation_time * 12) + 1.0) * 0.5
+
+        # Glow
+        glow_size = int(rect.width * (1.5 + 0.3 * pulse))
+        glow_surf = pygame.Surface((glow_size * 2, glow_size * 2), pygame.SRCALPHA)
+        pygame.draw.circle(glow_surf, (*self.color, 60), (glow_size, glow_size), glow_size)
+        screen.blit(glow_surf, (rect.centerx - glow_size, rect.centery - glow_size))
+
+        # Body
+        pygame.draw.circle(screen, (180, 255, 160), rect.center, rect.width // 2)
+        pygame.draw.circle(screen, self.color, rect.center, rect.width // 2 - 1)
+        # Core
+        pygame.draw.circle(screen, (220, 255, 220), rect.center, max(2, rect.width // 4))
