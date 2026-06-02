@@ -100,6 +100,201 @@
 <section id="module-src.inventory.system">
 <span id="src-inventory-system-module"></span><h2>src.inventory.system module<a class="headerlink" href="#module-src.inventory.system" title="Link to this heading"></a></h2>
 <dl class="py class">
+<dt class="sig sig-object py" id="src.inventory.system.CraftingGrid">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.inventory.system.</span></span><span class="sig-name descname"><span class="pre">CraftingGrid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#CraftingGrid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.CraftingGrid" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.inventory.system.Inventory" title="src.inventory.system.Inventory"><code class="xref py py-class docutils literal notranslate"><span class="pre">Inventory</span></code></a></p>
+<p>Manages the 3x3 crafting grid interface.</p>
+<p>Handles recipe matching, ingredient validation, and item crafting mechanics.
+Displays available recipes via a recipe book and processes crafting transactions.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.CraftingGrid.app">
+<span class="sig-name descname"><span class="pre">app</span></span><a class="headerlink" href="#src.inventory.system.CraftingGrid.app" title="Link to this definition"></a></dt>
+<dd><p>The main application reference.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="src.html#src.app.App" title="src.app.App">App</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.CraftingGrid.output_slot">
+<span class="sig-name descname"><span class="pre">output_slot</span></span><a class="headerlink" href="#src.inventory.system.CraftingGrid.output_slot" title="Link to this definition"></a></dt>
+<dd><p>The crafted item and count displayed in the output slot, or None if empty.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.CraftingGrid.all_recipes">
+<span class="sig-name descname"><span class="pre">all_recipes</span></span><a class="headerlink" href="#src.inventory.system.CraftingGrid.all_recipes" title="Link to this definition"></a></dt>
+<dd><p>All available recipes loaded from the database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.CraftingGrid.book_button">
+<span class="sig-name descname"><span class="pre">book_button</span></span><a class="headerlink" href="#src.inventory.system.CraftingGrid.book_button" title="Link to this definition"></a></dt>
+<dd><p>Button widget to open the recipe book menu.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="src.ui.html#src.ui.widgets.Button" title="src.ui.widgets.Button">Button</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.CraftingGrid.pos_x">
+<span class="sig-name descname"><span class="pre">pos_x</span></span><a class="headerlink" href="#src.inventory.system.CraftingGrid.pos_x" title="Link to this definition"></a></dt>
+<dd><p>The x-coordinate position of the crafting grid on screen.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.CraftingGrid.pos_y">
+<span class="sig-name descname"><span class="pre">pos_y</span></span><a class="headerlink" href="#src.inventory.system.CraftingGrid.pos_y" title="Link to this definition"></a></dt>
+<dd><p>The y-coordinate position of the crafting grid on screen.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.CraftingGrid.output_pos_x">
+<span class="sig-name descname"><span class="pre">output_pos_x</span></span><a class="headerlink" href="#src.inventory.system.CraftingGrid.output_pos_x" title="Link to this definition"></a></dt>
+<dd><p>The x-coordinate position of the output slot.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.CraftingGrid.output_pos_y">
+<span class="sig-name descname"><span class="pre">output_pos_y</span></span><a class="headerlink" href="#src.inventory.system.CraftingGrid.output_pos_y" title="Link to this definition"></a></dt>
+<dd><p>The y-coordinate position of the output slot.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.CraftingGrid.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#CraftingGrid.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.CraftingGrid.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initialize the crafting grid, database connection, and recipe book button.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.CraftingGrid.open_recipe_menu">
+<span class="sig-name descname"><span class="pre">open_recipe_menu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#CraftingGrid.open_recipe_menu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.CraftingGrid.open_recipe_menu" title="Link to this definition"></a></dt>
+<dd><p>Transition to the recipe book menu state.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.CraftingGrid.update_positions">
+<span class="sig-name descname"><span class="pre">update_positions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#CraftingGrid.update_positions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.CraftingGrid.update_positions" title="Link to this definition"></a></dt>
+<dd><p>Recalculate grid and output slot positions based on anchor coordinates.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.CraftingGrid.inventory_interactions">
+<span class="sig-name descname"><span class="pre">inventory_interactions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#CraftingGrid.inventory_interactions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.CraftingGrid.inventory_interactions" title="Link to this definition"></a></dt>
+<dd><p>Handle recipe book button clicks, output slot interactions, and crafting.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.CraftingGrid.check_recipes">
+<span class="sig-name descname"><span class="pre">check_recipes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#CraftingGrid.check_recipes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.CraftingGrid.check_recipes" title="Link to this definition"></a></dt>
+<dd><p>Scan the crafting matrix for matching recipes and update the output slot.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.CraftingGrid._matrix_match">
+<span class="sig-name descname"><span class="pre">_matrix_match</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#CraftingGrid._matrix_match"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.CraftingGrid._matrix_match" title="Link to this definition"></a></dt>
+<dd><p>Compare two 3x3 matrices for equality.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">check_recipes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#CraftingGrid.check_recipes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">inventory_interactions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#CraftingGrid.inventory_interactions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">open_recipe_menu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#CraftingGrid.open_recipe_menu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">update_positions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#CraftingGrid.update_positions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.inventory.system.CraftingLogic">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.inventory.system.</span></span><span class="sig-name descname"><span class="pre">CraftingLogic</span></span><a class="reference internal" href="_modules/src/inventory/system.html#CraftingLogic"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.CraftingLogic" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Utility class for crafting validation and ingredient management.</p>
+<p>Provides static methods to validate crafting requirements, consume ingredients,
+and add crafted items to the player inventory.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.CraftingLogic.can_craft">
+<span class="sig-name descname"><span class="pre">can_craft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">player_inv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ingredients</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#CraftingLogic.can_craft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.CraftingLogic.can_craft" title="Link to this definition"></a></dt>
+<dd><p>Check if the player has sufficient items to craft a recipe.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.CraftingLogic.consume_ingredients">
+<span class="sig-name descname"><span class="pre">consume_ingredients</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">player_inv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ingredients</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#CraftingLogic.consume_ingredients"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.CraftingLogic.consume_ingredients" title="Link to this definition"></a></dt>
+<dd><p>Remove required ingredients from the player inventory.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.CraftingLogic.add_crafted_item">
+<span class="sig-name descname"><span class="pre">add_crafted_item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">player_inv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">result_item</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amount</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#CraftingLogic.add_crafted_item"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.CraftingLogic.add_crafted_item" title="Link to this definition"></a></dt>
+<dd><p>Add the crafted item to available inventory slots or create new slots.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id4">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">add_crafted_item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">player_inv</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.inventory.system.MAIN_player_inventory" title="src.inventory.system.MAIN_player_inventory"><span class="pre">MAIN_player_inventory</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">result_item</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amount</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/src/inventory/system.html#CraftingLogic.add_crafted_item"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id5">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">can_craft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">player_inv</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.inventory.system.MAIN_player_inventory" title="src.inventory.system.MAIN_player_inventory"><span class="pre">MAIN_player_inventory</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ingredients</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/src/inventory/system.html#CraftingLogic.can_craft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id6">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">consume_ingredients</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">player_inv</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.inventory.system.MAIN_player_inventory" title="src.inventory.system.MAIN_player_inventory"><span class="pre">MAIN_player_inventory</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ingredients</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#CraftingLogic.consume_ingredients"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="src.inventory.system.Inventory">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.inventory.system.</span></span><span class="sig-name descname"><span class="pre">Inventory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">columns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rows</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">items</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slot_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos_x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos_y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slot_border</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Inventory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.Inventory" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
@@ -214,13 +409,13 @@ from the slots.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id0">
-<span class="sig-name descname"><span class="pre">get_slot_under_mouse</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Inventory.get_slot_under_mouse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id7">
+<span class="sig-name descname"><span class="pre">get_slot_under_mouse</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Inventory.get_slot_under_mouse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id1">
-<span class="sig-name descname"><span class="pre">inventory_interactions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Inventory.inventory_interactions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id8">
+<span class="sig-name descname"><span class="pre">inventory_interactions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#Inventory.inventory_interactions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -346,33 +541,33 @@ Supports visual active-slot highlights and fast consumption during gameplay.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id2">
-<span class="sig-name descname"><span class="pre">get_slot_under_mouse</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_hotbar.get_slot_under_mouse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id9">
+<span class="sig-name descname"><span class="pre">get_slot_under_mouse</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_hotbar.get_slot_under_mouse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id3">
-<span class="sig-name descname"><span class="pre">handle_hotkeys</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_hotbar.handle_hotkeys"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id10">
+<span class="sig-name descname"><span class="pre">handle_hotkeys</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_hotbar.handle_hotkeys"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id4">
-<span class="sig-name descname"><span class="pre">inventory_interactions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_hotbar.inventory_interactions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id11">
+<span class="sig-name descname"><span class="pre">inventory_interactions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_hotbar.inventory_interactions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id11" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id5">
-<span class="sig-name descname"><span class="pre">scroll_active_slot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_direction</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_hotbar.scroll_active_slot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id12">
+<span class="sig-name descname"><span class="pre">scroll_active_slot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_direction</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_hotbar.scroll_active_slot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id12" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id6">
-<span class="sig-name descname"><span class="pre">update_position</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_hotbar.update_position"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id13">
+<span class="sig-name descname"><span class="pre">update_position</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_hotbar.update_position"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id13" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id7">
-<span class="sig-name descname"><span class="pre">use_active_slot</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_hotbar.use_active_slot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id14">
+<span class="sig-name descname"><span class="pre">use_active_slot</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_hotbar.use_active_slot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id14" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -430,8 +625,8 @@ navigation buttons to switch to the skill or talent tree menus.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id8">
-<span class="sig-name descname"><span class="pre">inventory_interactions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_inventory.inventory_interactions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id15">
+<span class="sig-name descname"><span class="pre">inventory_interactions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_inventory.inventory_interactions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id15" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -499,8 +694,8 @@ automatic money deductions, and a dedicated UI button for closing the shop.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id9">
-<span class="sig-name descname"><span class="pre">inventory_interactions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#ShopInventory.inventory_interactions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id16">
+<span class="sig-name descname"><span class="pre">inventory_interactions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#ShopInventory.inventory_interactions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id16" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>

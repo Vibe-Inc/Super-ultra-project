@@ -1,0 +1,757 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.ui.menus.recipe_book &mdash; Super-ultra-project  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Super-ultra-project
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">src</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Super-ultra-project</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">src.ui.menus.recipe_book</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.ui.menus.recipe_book</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.menus.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">Menu</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.widgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">Button</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">src.config</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cfg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">database.GP_database</span><span class="w"> </span><span class="kn">import</span> <span class="n">Gp_database</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.items.items</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_item</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Particle</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simple particle for visual effects.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">vx</span><span class="p">,</span> <span class="n">vy</span><span class="p">,</span> <span class="n">lifetime</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">y</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vx</span> <span class="o">=</span> <span class="n">vx</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vy</span> <span class="o">=</span> <span class="n">vy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lifetime</span> <span class="o">=</span> <span class="n">lifetime</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_lifetime</span> <span class="o">=</span> <span class="n">lifetime</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">color</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">size</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vx</span> <span class="o">*</span> <span class="n">dt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vy</span> <span class="o">*</span> <span class="n">dt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lifetime</span> <span class="o">-=</span> <span class="n">dt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vy</span> <span class="o">+=</span> <span class="mi">150</span> <span class="o">*</span> <span class="n">dt</span>  <span class="c1"># gravity</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">surf</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lifetime</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">alpha</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">255</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lifetime</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_lifetime</span><span class="p">))</span>
+            <span class="n">progress</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lifetime</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_lifetime</span><span class="p">)</span>
+            <span class="n">size</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">progress</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)))</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">c</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lifetime</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_lifetime</span><span class="p">))</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">color</span><span class="p">)</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">circle</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">offset</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">offset</span><span class="p">[</span><span class="mi">1</span><span class="p">])),</span> <span class="n">size</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">ease_out_cubic</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Easing function for smooth animations.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">t</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">ease_in_out_quad</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Easing function.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">t</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">t</span> <span class="o">*</span> <span class="n">t</span>
+    <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">t</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+
+
+<div class="viewcode-block" id="RecipeBookMenu">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.RecipeBookMenu">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RecipeBookMenu</span><span class="p">(</span><span class="n">Menu</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Manages the recipe book UI.</span>
+
+<span class="sd">    Displays a comprehensive list of all available crafting recipes in a paginated book format.</span>
+<span class="sd">    Handles page-flipping animations, item image caching, and user navigation.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        app (App):</span>
+<span class="sd">            The main application reference.</span>
+<span class="sd">        book_magnifier (float):</span>
+<span class="sd">            Multiplier for scaling the recipe book UI elements.</span>
+<span class="sd">        recipes (list):</span>
+<span class="sd">            All available recipes loaded from the database.</span>
+<span class="sd">        item_images (dict):</span>
+<span class="sd">            Cached dictionary mapping item IDs to their respective image surfaces.</span>
+<span class="sd">        recipes_per_spread (int):</span>
+<span class="sd">            Number of recipes displayed per two-page spread.</span>
+<span class="sd">        current_spread (int):</span>
+<span class="sd">            The currently displayed spread index.</span>
+<span class="sd">        max_spreads (int):</span>
+<span class="sd">            The total number of available spreads based on recipe count.</span>
+<span class="sd">        anim_start_time (int):</span>
+<span class="sd">            Timestamp for the start of the opening animation.</span>
+<span class="sd">        anim_duration (int):</span>
+<span class="sd">            Duration of the opening animation in milliseconds.</span>
+<span class="sd">        is_opening (bool):</span>
+<span class="sd">            Flag indicating if the opening animation is currently active.</span>
+<span class="sd">        flip_start_time (int):</span>
+<span class="sd">            Timestamp for the start of the page-flipping animation.</span>
+<span class="sd">        flip_duration (int):</span>
+<span class="sd">            Duration of the page-flipping animation in milliseconds.</span>
+<span class="sd">        is_flipping (bool):</span>
+<span class="sd">            Flag indicating if the page-flipping animation is currently active.</span>
+<span class="sd">        buttons (list):</span>
+<span class="sd">            UI button widgets for navigation and closing the menu.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(app):</span>
+<span class="sd">            Initialize the recipe book, cache item images, and set up animations.</span>
+<span class="sd">        _render_text(font, text, color):</span>
+<span class="sd">            Render and scale text based on the book magnifier.</span>
+<span class="sd">        _setup_buttons():</span>
+<span class="sd">            Configure and position the navigation buttons.</span>
+<span class="sd">        prev_page():</span>
+<span class="sd">            Trigger the logic to turn to the previous page spread.</span>
+<span class="sd">        next_page():</span>
+<span class="sd">            Trigger the logic to turn to the next page spread.</span>
+<span class="sd">        _start_flip_anim():</span>
+<span class="sd">            Initiate the page-flipping animation variables.</span>
+<span class="sd">        close_menu():</span>
+<span class="sd">            Transition back to the gameplay state.</span>
+<span class="sd">        handle_event(event):</span>
+<span class="sd">            Process user input, including button clicks and keyboard navigation.</span>
+<span class="sd">        draw(screen):</span>
+<span class="sd">            Render the recipe book background, animations, pages, and UI elements.</span>
+<span class="sd">        _draw_book_background(surf, w, h, scale):</span>
+<span class="sd">            Render the static visual base of the book including the cover and pages.</span>
+<span class="sd">        _draw_recipes_for_current_spread(surf, w, h, scale, alpha):</span>
+<span class="sd">            Render the current spread&#39;s recipes onto the book surface.</span>
+<span class="sd">        _draw_recipe_card(surf, x, y, w, h, recipe, scale):</span>
+<span class="sd">            Render an individual recipe card containing the crafting grid and result.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="RecipeBookMenu.__init__">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.RecipeBookMenu.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">book_magnifier</span> <span class="o">=</span> <span class="mf">1.35</span> 
+
+        <span class="n">db</span> <span class="o">=</span> <span class="n">Gp_database</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">recipes</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">get_all_recipes</span><span class="p">()</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_images</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">recipe</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">recipes</span><span class="p">:</span>
+            <span class="n">res_id</span> <span class="o">=</span> <span class="n">recipe</span><span class="p">[</span><span class="s1">&#39;result_id&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">res_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">item_images</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">item_images</span><span class="p">[</span><span class="n">res_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">create_item</span><span class="p">(</span><span class="n">res_id</span><span class="p">)</span><span class="o">.</span><span class="n">image</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span> <span class="k">pass</span>
+            
+            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                    <span class="n">ing_id</span> <span class="o">=</span> <span class="n">recipe</span><span class="p">[</span><span class="s2">&quot;matrix&quot;</span><span class="p">][</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">ing_id</span> <span class="ow">and</span> <span class="n">ing_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">item_images</span><span class="p">:</span>
+                        <span class="k">try</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">item_images</span><span class="p">[</span><span class="n">ing_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">create_item</span><span class="p">(</span><span class="n">ing_id</span><span class="p">)</span><span class="o">.</span><span class="n">image</span>
+                        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span> <span class="k">pass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">recipes_per_spread</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_spread</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_spreads</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">recipes</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">recipes_per_spread</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">anim_start_time</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">anim_duration</span> <span class="o">=</span> <span class="mi">500</span>  
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_opening</span> <span class="o">=</span> <span class="kc">True</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">flip_start_time</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flip_duration</span> <span class="o">=</span> <span class="mi">300</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_flipping</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># New animation properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">card_entry_start_time</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">card_entry_duration</span> <span class="o">=</span> <span class="mi">600</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hovered_card_index</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">card_hover_animations</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">particles</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">page_particles</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_buttons</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="RecipeBookMenu._render_text">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.RecipeBookMenu._render_text">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_render_text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">font</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">color</span><span class="p">):</span>
+        <span class="n">surf</span> <span class="o">=</span> <span class="n">font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">color</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_magnifier</span> <span class="o">!=</span> <span class="mf">1.0</span><span class="p">:</span>
+            <span class="n">w</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="n">surf</span><span class="o">.</span><span class="n">get_size</span><span class="p">()</span>
+            <span class="n">surf</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">smoothscale</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">w</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_magnifier</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">h</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_magnifier</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="n">surf</span></div>
+
+
+<div class="viewcode-block" id="RecipeBookMenu._setup_buttons">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.RecipeBookMenu._setup_buttons">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_setup_buttons</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">()</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_magnifier</span>
+        
+        <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="n">book_w</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">860</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="n">book_h</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">600</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        
+        <span class="n">btn_w</span><span class="p">,</span> <span class="n">btn_h</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">140</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">40</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        
+        <span class="n">back_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">cx</span> <span class="o">-</span> <span class="n">btn_w</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">cy</span> <span class="o">+</span> <span class="n">book_h</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="mi">50</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span> <span class="n">btn_w</span><span class="p">,</span> <span class="n">btn_h</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Button</span><span class="p">(</span>
+            <span class="n">back_rect</span><span class="p">,</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;CLOSE BOOK&quot;</span><span class="p">),</span> <span class="n">cfg</span><span class="o">.</span><span class="n">button_color_EXIT</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">button_hover_color_EXIT</span><span class="p">,</span>
+            <span class="n">cfg</span><span class="o">.</span><span class="n">button_font</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">text_color</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">corner_radius</span><span class="p">,</span> <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">close_menu</span>
+        <span class="p">))</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_spread</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">prev_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">cx</span> <span class="o">-</span> <span class="n">book_w</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">40</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span> <span class="n">cy</span> <span class="o">+</span> <span class="n">book_h</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="mi">50</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span> <span class="n">btn_w</span><span class="p">,</span> <span class="n">btn_h</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Button</span><span class="p">(</span>
+                <span class="n">prev_rect</span><span class="p">,</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;&lt;- PREV&quot;</span><span class="p">),</span> <span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">60</span><span class="p">),</span> <span class="p">(</span><span class="mi">130</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">80</span><span class="p">),</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_font</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">text_color</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">corner_radius</span><span class="p">,</span> <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">prev_page</span>
+            <span class="p">))</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_spread</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_spreads</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">next_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">cx</span> <span class="o">+</span> <span class="n">book_w</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">btn_w</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="mi">40</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span> <span class="n">cy</span> <span class="o">+</span> <span class="n">book_h</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="mi">50</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span> <span class="n">btn_w</span><span class="p">,</span> <span class="n">btn_h</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Button</span><span class="p">(</span>
+                <span class="n">next_rect</span><span class="p">,</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;NEXT -&gt;&quot;</span><span class="p">),</span> <span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">60</span><span class="p">),</span> <span class="p">(</span><span class="mi">130</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">80</span><span class="p">),</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">button_font</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">text_color</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">corner_radius</span><span class="p">,</span> <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">next_page</span>
+            <span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="RecipeBookMenu.prev_page">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.RecipeBookMenu.prev_page">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">prev_page</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_spread</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_flipping</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_spread</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_start_flip_anim</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="RecipeBookMenu.next_page">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.RecipeBookMenu.next_page">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">next_page</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_spread</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_spreads</span> <span class="o">-</span> <span class="mi">1</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_flipping</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_spread</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_start_flip_anim</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="RecipeBookMenu._start_flip_anim">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.RecipeBookMenu._start_flip_anim">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_start_flip_anim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_flipping</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flip_start_time</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">card_entry_start_time</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_buttons</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_emit_page_particles</span><span class="p">()</span></div>
+
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_emit_page_particles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create particles for page flip effect.&quot;&quot;&quot;</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">()</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_magnifier</span>
+        <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="n">book_w</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">860</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="n">book_h</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">600</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">20</span><span class="p">):</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">cx</span> <span class="o">+</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="o">-</span><span class="n">book_w</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">book_w</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">cy</span> <span class="o">+</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="o">-</span><span class="n">book_h</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">book_h</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">vx</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">200</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+            <span class="n">vy</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">300</span><span class="p">,</span> <span class="o">-</span><span class="mi">50</span><span class="p">)</span>
+            <span class="n">lifetime</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">)</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">245</span><span class="p">,</span> <span class="mi">235</span><span class="p">,</span> <span class="mi">210</span><span class="p">)</span> <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">0.5</span> <span class="k">else</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="mi">150</span><span class="p">)</span>
+            <span class="n">size</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">page_particles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Particle</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">vx</span><span class="p">,</span> <span class="n">vy</span><span class="p">,</span> <span class="n">lifetime</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">size</span><span class="p">))</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_emit_card_particles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create particles at card position for hover effects.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+            <span class="n">angle</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+            <span class="n">speed</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">150</span><span class="p">)</span>
+            <span class="n">vx</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="o">*</span> <span class="n">speed</span>
+            <span class="n">vy</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="o">*</span> <span class="n">speed</span>
+            <span class="n">lifetime</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">150</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+            <span class="n">size</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Particle</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">vx</span><span class="p">,</span> <span class="n">vy</span><span class="p">,</span> <span class="n">lifetime</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">size</span><span class="p">))</span>
+
+<div class="viewcode-block" id="RecipeBookMenu.close_menu">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.RecipeBookMenu.close_menu">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">close_menu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;gameplay&quot;</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="RecipeBookMenu.update">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.RecipeBookMenu.update">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="mi">1</span><span class="o">/</span><span class="mi">60</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update animations and particles each frame.&quot;&quot;&quot;</span>
+        <span class="c1"># Update particles</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">particles</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">lifetime</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">page_particles</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">page_particles</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">lifetime</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+        
+        <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">page_particles</span><span class="p">:</span>
+            <span class="n">particle</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+        
+        <span class="c1"># Update hover animations</span>
+        <span class="k">for</span> <span class="n">card_idx</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card_hover_animations</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="k">if</span> <span class="n">card_idx</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">hovered_card_index</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">card_hover_animations</span><span class="p">[</span><span class="n">card_idx</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_hover_animations</span><span class="p">[</span><span class="n">card_idx</span><span class="p">]</span> <span class="o">+</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">dt</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">card_hover_animations</span><span class="p">[</span><span class="n">card_idx</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">dt</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_hover_animations</span><span class="p">[</span><span class="n">card_idx</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_hover_animations</span><span class="p">[</span><span class="n">card_idx</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="RecipeBookMenu.handle_event">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.RecipeBookMenu.handle_event">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">handle_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_opening</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_flipping</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">KEYDOWN</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_ESCAPE</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">close_menu</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_LEFT</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">prev_page</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_RIGHT</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">next_page</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">MOUSEMOTION</span><span class="p">:</span>
+            <span class="c1"># Update hovered card based on mouse position</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_hovered_card</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span></div>
+
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_update_hovered_card</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mouse_pos</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check which recipe card is under the mouse.&quot;&quot;&quot;</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">()</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_magnifier</span>
+        <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="n">book_w</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">860</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="n">book_h</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">600</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="n">book_x</span> <span class="o">=</span> <span class="n">cx</span> <span class="o">-</span> <span class="n">book_w</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="n">book_y</span> <span class="o">=</span> <span class="n">cy</span> <span class="o">-</span> <span class="n">book_h</span> <span class="o">//</span> <span class="mi">2</span>
+        
+        <span class="n">card_w</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">340</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="n">card_h</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">190</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="n">start_y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">90</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="n">gap_y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">20</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        
+        <span class="n">start_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_spread</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">recipes_per_spread</span>
+        <span class="n">end_idx</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">start_idx</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">recipes_per_spread</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">recipes</span><span class="p">))</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">hovered_card_index</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start_idx</span><span class="p">,</span> <span class="n">end_idx</span><span class="p">):</span>
+            <span class="n">local_idx</span> <span class="o">=</span> <span class="n">i</span> <span class="o">-</span> <span class="n">start_idx</span>
+            <span class="n">is_right_page</span> <span class="o">=</span> <span class="n">local_idx</span> <span class="o">&gt;=</span> <span class="mi">2</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_right_page</span><span class="p">:</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">book_x</span> <span class="o">+</span> <span class="p">(</span><span class="n">book_w</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">card_w</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">book_x</span> <span class="o">+</span> <span class="n">book_w</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">book_w</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">card_w</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+            
+            <span class="n">row</span> <span class="o">=</span> <span class="n">local_idx</span> <span class="o">%</span> <span class="mi">2</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">book_y</span> <span class="o">+</span> <span class="n">start_y</span> <span class="o">+</span> <span class="n">row</span> <span class="o">*</span> <span class="p">(</span><span class="n">card_h</span> <span class="o">+</span> <span class="n">gap_y</span><span class="p">)</span>
+            
+            <span class="n">card_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">card_w</span><span class="p">,</span> <span class="n">card_h</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">card_rect</span><span class="o">.</span><span class="n">collidepoint</span><span class="p">(</span><span class="n">mouse_pos</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">hovered_card_index</span> <span class="o">=</span> <span class="n">i</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_hover_animations</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">card_hover_animations</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">break</span>
+
+<div class="viewcode-block" id="RecipeBookMenu.draw">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.RecipeBookMenu.draw">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>  <span class="c1"># Update animations each frame</span>
+        
+        <span class="n">current_time</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span>
+        
+        <span class="n">open_progress</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_opening</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="p">(</span><span class="n">current_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">anim_start_time</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">anim_duration</span>
+            <span class="k">if</span> <span class="n">t</span> <span class="o">&gt;=</span> <span class="mf">1.0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">is_opening</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="n">open_progress</span> <span class="o">=</span> <span class="mf">1.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">open_progress</span> <span class="o">=</span> <span class="n">ease_out_cubic</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+        <span class="n">content_alpha</span> <span class="o">=</span> <span class="mi">255</span>
+        <span class="n">page_rotation</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_flipping</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="p">(</span><span class="n">current_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">flip_start_time</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">flip_duration</span>
+            <span class="k">if</span> <span class="n">t</span> <span class="o">&gt;=</span> <span class="mf">1.0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">is_flipping</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="n">content_alpha</span> <span class="o">=</span> <span class="mi">255</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">page_rotation</span> <span class="o">=</span> <span class="n">t</span> <span class="o">*</span> <span class="mi">180</span>  <span class="c1"># Rotate through 180 degrees</span>
+                <span class="k">if</span> <span class="n">t</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">:</span>
+                    <span class="n">content_alpha</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">255</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">t</span> <span class="o">*</span> <span class="mi">2</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">content_alpha</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">255</span> <span class="o">*</span> <span class="p">((</span><span class="n">t</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">))</span>
+
+        <span class="n">overlay</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">(</span><span class="n">screen</span><span class="o">.</span><span class="n">get_size</span><span class="p">(),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+        <span class="n">overlay</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">180</span> <span class="o">*</span> <span class="n">open_progress</span><span class="p">)))</span>
+        <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">()</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_magnifier</span>
+        <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="n">book_w</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">860</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="n">book_h</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">600</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+
+        <span class="n">y_offset</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">open_progress</span><span class="p">)</span> <span class="o">*</span> <span class="mi">150</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        
+        <span class="n">book_surf</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">book_w</span><span class="p">,</span> <span class="n">book_h</span><span class="p">),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_draw_book_background</span><span class="p">(</span><span class="n">book_surf</span><span class="p">,</span> <span class="n">book_w</span><span class="p">,</span> <span class="n">book_h</span><span class="p">,</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_draw_recipes_for_current_spread</span><span class="p">(</span><span class="n">book_surf</span><span class="p">,</span> <span class="n">book_w</span><span class="p">,</span> <span class="n">book_h</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="n">content_alpha</span><span class="p">)</span>
+
+        <span class="n">book_rect</span> <span class="o">=</span> <span class="n">book_surf</span><span class="o">.</span><span class="n">get_rect</span><span class="p">(</span><span class="n">center</span><span class="o">=</span><span class="p">(</span><span class="n">cx</span><span class="p">,</span> <span class="n">cy</span> <span class="o">+</span> <span class="n">y_offset</span><span class="p">))</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_opening</span><span class="p">:</span>
+            <span class="n">book_surf</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mi">255</span> <span class="o">*</span> <span class="n">open_progress</span><span class="p">))</span>
+            
+        <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">book_surf</span><span class="p">,</span> <span class="n">book_rect</span><span class="o">.</span><span class="n">topleft</span><span class="p">)</span>
+        
+        <span class="c1"># Draw page particles</span>
+        <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">page_particles</span><span class="p">:</span>
+            <span class="n">particle</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="n">cx</span> <span class="o">+</span> <span class="n">book_rect</span><span class="o">.</span><span class="n">centerx</span><span class="p">,</span> <span class="o">-</span><span class="n">cy</span> <span class="o">+</span> <span class="n">book_rect</span><span class="o">.</span><span class="n">centery</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_opening</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_flipping</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">button</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span><span class="p">:</span>
+                <span class="n">button</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RecipeBookMenu._draw_book_background">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.RecipeBookMenu._draw_book_background">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_draw_book_background</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">surf</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">scale</span><span class="p">):</span>
+        <span class="c1"># Draw book cover with enhanced design</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="p">(</span><span class="mi">70</span><span class="p">,</span> <span class="mi">35</span><span class="p">,</span> <span class="mi">15</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">),</span> <span class="n">border_radius</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mi">20</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
+        
+        <span class="c1"># Add depth with multiple borders</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">45</span> <span class="o">-</span> <span class="n">i</span><span class="o">*</span><span class="mi">5</span><span class="p">,</span> <span class="mi">20</span> <span class="o">-</span> <span class="n">i</span><span class="o">*</span><span class="mi">2</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">w</span> <span class="o">-</span> <span class="n">i</span><span class="o">*</span><span class="mi">2</span><span class="p">,</span> <span class="n">h</span> <span class="o">-</span> <span class="n">i</span><span class="o">*</span><span class="mi">2</span><span class="p">),</span> <span class="n">width</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">border_radius</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mi">20</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
+        
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="p">(</span><span class="mi">45</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">),</span> <span class="n">width</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)),</span> <span class="n">border_radius</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mi">20</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
+
+        <span class="c1"># Page areas with enhanced design</span>
+        <span class="n">page_color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">245</span><span class="p">,</span> <span class="mi">235</span><span class="p">,</span> <span class="mi">210</span><span class="p">)</span>
+        <span class="n">margin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">15</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        
+        <span class="c1"># Left page with subtle gradient</span>
+        <span class="n">left_page</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">margin</span><span class="p">,</span> <span class="n">margin</span><span class="p">,</span> <span class="n">w</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">margin</span><span class="p">,</span> <span class="n">h</span> <span class="o">-</span> <span class="n">margin</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">page_color</span><span class="p">,</span> <span class="n">left_page</span><span class="p">,</span> <span class="n">border_top_left_radius</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mi">10</span><span class="o">*</span><span class="n">scale</span><span class="p">),</span> <span class="n">border_bottom_left_radius</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mi">10</span><span class="o">*</span><span class="n">scale</span><span class="p">))</span>
+        
+        <span class="c1"># Add subtle left page shadow gradient</span>
+        <span class="n">gradient_surf</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">left_page</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="n">left_page</span><span class="o">.</span><span class="n">height</span><span class="p">),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">left_page</span><span class="o">.</span><span class="n">width</span><span class="p">):</span>
+            <span class="n">alpha</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">15</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span> <span class="o">/</span> <span class="n">left_page</span><span class="o">.</span><span class="n">width</span><span class="p">))</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">gradient_surf</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">alpha</span><span class="p">),</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">left_page</span><span class="o">.</span><span class="n">height</span><span class="p">))</span>
+        <span class="n">surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">gradient_surf</span><span class="p">,</span> <span class="p">(</span><span class="n">left_page</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">left_page</span><span class="o">.</span><span class="n">y</span><span class="p">))</span>
+
+        <span class="c1"># Right page with subtle gradient</span>
+        <span class="n">right_page</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">w</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">margin</span><span class="p">,</span> <span class="n">w</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">margin</span><span class="p">,</span> <span class="n">h</span> <span class="o">-</span> <span class="n">margin</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">page_color</span><span class="p">,</span> <span class="n">right_page</span><span class="p">,</span> <span class="n">border_top_right_radius</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mi">10</span><span class="o">*</span><span class="n">scale</span><span class="p">),</span> <span class="n">border_bottom_right_radius</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mi">10</span><span class="o">*</span><span class="n">scale</span><span class="p">))</span>
+        
+        <span class="c1"># Add subtle right page shadow gradient (reverse)</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">right_page</span><span class="o">.</span><span class="n">width</span><span class="p">):</span>
+            <span class="n">alpha</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">15</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">x</span> <span class="o">/</span> <span class="n">right_page</span><span class="o">.</span><span class="n">width</span><span class="p">))</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">gradient_surf</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">alpha</span><span class="p">),</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">right_page</span><span class="o">.</span><span class="n">height</span><span class="p">))</span>
+        <span class="n">surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">gradient_surf</span><span class="p">,</span> <span class="p">(</span><span class="n">right_page</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">right_page</span><span class="o">.</span><span class="n">y</span><span class="p">))</span>
+
+        <span class="c1"># Spine with enhanced shadow</span>
+        <span class="n">spine_w</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">40</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="n">spine_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">w</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">spine_w</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">margin</span><span class="p">,</span> <span class="n">spine_w</span><span class="p">,</span> <span class="n">h</span> <span class="o">-</span> <span class="n">margin</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+        
+        <span class="n">spine_shadow</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">spine_w</span><span class="p">,</span> <span class="n">h</span> <span class="o">-</span> <span class="n">margin</span> <span class="o">*</span> <span class="mi">2</span><span class="p">),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">spine_w</span> <span class="o">//</span> <span class="mi">2</span><span class="p">):</span>
+            <span class="n">alpha</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="p">(</span><span class="n">i</span> <span class="o">/</span> <span class="p">(</span><span class="n">spine_w</span> <span class="o">//</span> <span class="mi">2</span><span class="p">))))</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">spine_shadow</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">alpha</span><span class="p">),</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">h</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">spine_shadow</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">alpha</span><span class="p">),</span> <span class="p">(</span><span class="n">spine_w</span> <span class="o">-</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="n">spine_w</span> <span class="o">-</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">h</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">spine_shadow</span><span class="p">,</span> <span class="n">spine_rect</span><span class="o">.</span><span class="n">topleft</span><span class="p">)</span>
+        
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="p">(</span><span class="mi">150</span><span class="p">,</span> <span class="mi">130</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span> <span class="p">(</span><span class="n">w</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">margin</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">10</span><span class="o">*</span><span class="n">scale</span><span class="p">)),</span> <span class="p">(</span><span class="n">w</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">h</span> <span class="o">-</span> <span class="n">margin</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="mi">10</span><span class="o">*</span><span class="n">scale</span><span class="p">)),</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">scale</span><span class="p">)))</span>
+        
+        <span class="c1"># Decorative corner ornaments</span>
+        <span class="n">corner_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">30</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="n">corners</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="n">margin</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">5</span><span class="o">*</span><span class="n">scale</span><span class="p">),</span> <span class="n">margin</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">5</span><span class="o">*</span><span class="n">scale</span><span class="p">)),</span>
+            <span class="p">(</span><span class="n">w</span> <span class="o">-</span> <span class="n">margin</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="mi">5</span><span class="o">*</span><span class="n">scale</span><span class="p">)</span> <span class="o">-</span> <span class="n">corner_size</span><span class="p">,</span> <span class="n">margin</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">5</span><span class="o">*</span><span class="n">scale</span><span class="p">)),</span>
+            <span class="p">(</span><span class="n">margin</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">5</span><span class="o">*</span><span class="n">scale</span><span class="p">),</span> <span class="n">h</span> <span class="o">-</span> <span class="n">margin</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="mi">5</span><span class="o">*</span><span class="n">scale</span><span class="p">)</span> <span class="o">-</span> <span class="n">corner_size</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">w</span> <span class="o">-</span> <span class="n">margin</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="mi">5</span><span class="o">*</span><span class="n">scale</span><span class="p">)</span> <span class="o">-</span> <span class="n">corner_size</span><span class="p">,</span> <span class="n">h</span> <span class="o">-</span> <span class="n">margin</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="mi">5</span><span class="o">*</span><span class="n">scale</span><span class="p">)</span> <span class="o">-</span> <span class="n">corner_size</span><span class="p">),</span>
+        <span class="p">]</span>
+        
+        <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">corners</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_draw_corner_ornament</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">corner_size</span><span class="p">,</span> <span class="n">scale</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_draw_corner_ornament</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">surf</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">scale</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Draw decorative corner ornament.&quot;&quot;&quot;</span>
+        <span class="n">color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">120</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">70</span><span class="p">)</span>
+        <span class="c1"># Simple curved corner design</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">circle</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">size</span> <span class="o">*</span> <span class="mf">0.2</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="n">size</span> <span class="o">*</span> <span class="mf">0.2</span><span class="p">)),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">circle</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">size</span> <span class="o">*</span> <span class="mf">0.8</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="n">size</span> <span class="o">*</span> <span class="mf">0.2</span><span class="p">)),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">circle</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">size</span> <span class="o">*</span> <span class="mf">0.2</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="n">size</span> <span class="o">*</span> <span class="mf">0.8</span><span class="p">)),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">circle</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">size</span> <span class="o">*</span> <span class="mf">0.8</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="n">size</span> <span class="o">*</span> <span class="mf">0.8</span><span class="p">)),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">circle</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">size</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="n">size</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
+
+<div class="viewcode-block" id="RecipeBookMenu._draw_recipes_for_current_spread">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.RecipeBookMenu._draw_recipes_for_current_spread">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_draw_recipes_for_current_spread</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">surf</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="n">alpha</span><span class="p">):</span>
+        <span class="n">content_surf</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_spread</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">title</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_render_text</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">button_font</span><span class="p">,</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;RECIPE BOOK&quot;</span><span class="p">),</span> <span class="p">(</span><span class="mi">90</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">30</span><span class="p">))</span>
+            <span class="n">content_surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="p">(</span><span class="n">w</span> <span class="o">//</span> <span class="mi">4</span> <span class="o">-</span> <span class="n">title</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">30</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)))</span>
+
+        <span class="n">left_num</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_render_text</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">INV_nums_font</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_spread</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">150</span><span class="p">,</span> <span class="mi">130</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span>
+        <span class="n">right_num</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_render_text</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">INV_nums_font</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_spread</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">150</span><span class="p">,</span> <span class="mi">130</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span>
+        <span class="n">content_surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">left_num</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mi">30</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span> <span class="n">h</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="mi">35</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)))</span>
+        <span class="n">content_surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">right_num</span><span class="p">,</span> <span class="p">(</span><span class="n">w</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="mi">40</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span> <span class="n">h</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="mi">35</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)))</span>
+
+        <span class="n">start_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_spread</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">recipes_per_spread</span>
+        <span class="n">end_idx</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">start_idx</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">recipes_per_spread</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">recipes</span><span class="p">))</span>
+        
+        <span class="n">card_w</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">340</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="n">card_h</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">190</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="n">start_y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">90</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="n">gap_y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">20</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start_idx</span><span class="p">,</span> <span class="n">end_idx</span><span class="p">):</span>
+            <span class="n">local_idx</span> <span class="o">=</span> <span class="n">i</span> <span class="o">-</span> <span class="n">start_idx</span>
+            <span class="n">recipe</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">recipes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            
+            <span class="n">is_right_page</span> <span class="o">=</span> <span class="n">local_idx</span> <span class="o">&gt;=</span> <span class="mi">2</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_right_page</span><span class="p">:</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">w</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">card_w</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">w</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">w</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">card_w</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+                
+            <span class="n">row</span> <span class="o">=</span> <span class="n">local_idx</span> <span class="o">%</span> <span class="mi">2</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">start_y</span> <span class="o">+</span> <span class="n">row</span> <span class="o">*</span> <span class="p">(</span><span class="n">card_h</span> <span class="o">+</span> <span class="n">gap_y</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_draw_recipe_card</span><span class="p">(</span><span class="n">content_surf</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">card_w</span><span class="p">,</span> <span class="n">card_h</span><span class="p">,</span> <span class="n">recipe</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+
+        <span class="n">content_surf</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="n">surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">content_surf</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="RecipeBookMenu._draw_recipe_card">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.RecipeBookMenu._draw_recipe_card">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_draw_recipe_card</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">surf</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">recipe</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="n">recipe_idx</span><span class="p">):</span>
+        <span class="n">card_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+        
+        <span class="c1"># Get hover animation state</span>
+        <span class="n">hover_amount</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_hover_animations</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">recipe_idx</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        
+        <span class="c1"># Get card entry animation</span>
+        <span class="n">card_entry_progress</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="n">current_time</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_flipping</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="p">(</span><span class="n">current_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">flip_start_time</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">flip_duration</span>
+            <span class="k">if</span> <span class="n">t</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">:</span>
+                <span class="n">card_entry_progress</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">card_entry_progress</span> <span class="o">=</span> <span class="n">ease_in_out_quad</span><span class="p">((</span><span class="n">t</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+        
+        <span class="c1"># Apply hover scale</span>
+        <span class="n">scale_amount</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">+</span> <span class="n">hover_amount</span> <span class="o">*</span> <span class="mf">0.08</span>
+        <span class="n">offset_y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">hover_amount</span> <span class="o">*</span> <span class="o">-</span><span class="mi">8</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        
+        <span class="n">scaled_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span>
+            <span class="nb">int</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="p">(</span><span class="n">w</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">scale_amount</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span>
+            <span class="nb">int</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="n">offset_y</span><span class="p">),</span>
+            <span class="nb">int</span><span class="p">(</span><span class="n">w</span> <span class="o">*</span> <span class="n">scale_amount</span><span class="p">),</span>
+            <span class="nb">int</span><span class="p">(</span><span class="n">h</span> <span class="o">*</span> <span class="n">scale_amount</span><span class="p">)</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># Draw shadow when hovering</span>
+        <span class="k">if</span> <span class="n">hover_amount</span> <span class="o">&gt;</span> <span class="mf">0.1</span><span class="p">:</span>
+            <span class="n">shadow_surf</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="nb">int</span><span class="p">(</span><span class="n">w</span> <span class="o">*</span> <span class="n">scale_amount</span><span class="p">)</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">h</span> <span class="o">*</span> <span class="n">scale_amount</span><span class="p">)</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+            <span class="n">shadow_rect</span> <span class="o">=</span> <span class="n">shadow_surf</span><span class="o">.</span><span class="n">get_rect</span><span class="p">()</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">shadow_surf</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">80</span> <span class="o">*</span> <span class="n">hover_amount</span><span class="p">)),</span> <span class="n">shadow_rect</span><span class="p">,</span> <span class="n">border_radius</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
+            <span class="n">surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">shadow_surf</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">scaled_rect</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="mi">5</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">scaled_rect</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="mi">5</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)))</span>
+        
+        <span class="c1"># Card background with gradient-like effect</span>
+        <span class="n">card_color</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mi">225</span> <span class="o">-</span> <span class="n">hover_amount</span> <span class="o">*</span> <span class="mi">10</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">210</span> <span class="o">-</span> <span class="n">hover_amount</span> <span class="o">*</span> <span class="mi">5</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">180</span> <span class="o">-</span> <span class="n">hover_amount</span> <span class="o">*</span> <span class="mi">10</span><span class="p">))</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">card_color</span><span class="p">,</span> <span class="n">scaled_rect</span><span class="p">,</span> <span class="n">border_radius</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mi">8</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
+        
+        <span class="c1"># Border with glow on hover</span>
+        <span class="n">border_color</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mi">180</span> <span class="o">-</span> <span class="n">hover_amount</span> <span class="o">*</span> <span class="mi">30</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">160</span> <span class="o">-</span> <span class="n">hover_amount</span> <span class="o">*</span> <span class="mi">30</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">130</span> <span class="o">-</span> <span class="n">hover_amount</span> <span class="o">*</span> <span class="mi">30</span><span class="p">))</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">border_color</span><span class="p">,</span> <span class="n">scaled_rect</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">scale</span><span class="p">)),</span> <span class="n">border_radius</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mi">8</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
+        
+        <span class="c1"># Add glow effect on hover</span>
+        <span class="k">if</span> <span class="n">hover_amount</span> <span class="o">&gt;</span> <span class="mf">0.2</span><span class="p">:</span>
+            <span class="n">glow_color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">150</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">glow_color</span><span class="p">,</span> <span class="n">scaled_rect</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="o">*</span><span class="n">scale</span><span class="p">)),</span> <span class="n">border_radius</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mi">8</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
+        
+        <span class="c1"># Use scaled_rect origin for content positioning</span>
+        <span class="n">content_x</span> <span class="o">=</span> <span class="n">scaled_rect</span><span class="o">.</span><span class="n">x</span>
+        <span class="n">content_y</span> <span class="o">=</span> <span class="n">scaled_rect</span><span class="o">.</span><span class="n">y</span>
+        
+        <span class="n">formatted_name</span> <span class="o">=</span> <span class="n">recipe</span><span class="p">[</span><span class="s1">&#39;result_id&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">title</span><span class="p">()</span>
+        <span class="n">title_text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_render_text</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">INV_nums_font</span><span class="p">,</span> <span class="n">formatted_name</span><span class="p">,</span> <span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">20</span><span class="p">))</span>
+        <span class="n">surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">title_text</span><span class="p">,</span> <span class="p">(</span><span class="n">content_x</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">15</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span> <span class="n">content_y</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)))</span>
+
+        <span class="n">grid_slot_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">32</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="n">grid_padding</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="n">grid_start_x</span> <span class="o">=</span> <span class="n">content_x</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">20</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="n">grid_start_y</span> <span class="o">=</span> <span class="n">content_y</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">45</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+
+        <span class="n">matrix</span> <span class="o">=</span> <span class="n">recipe</span><span class="p">[</span><span class="s2">&quot;matrix&quot;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                <span class="n">slot_x</span> <span class="o">=</span> <span class="n">grid_start_x</span> <span class="o">+</span> <span class="n">col</span> <span class="o">*</span> <span class="p">(</span><span class="n">grid_slot_size</span> <span class="o">+</span> <span class="n">grid_padding</span><span class="p">)</span>
+                <span class="n">slot_y</span> <span class="o">=</span> <span class="n">grid_start_y</span> <span class="o">+</span> <span class="n">row</span> <span class="o">*</span> <span class="p">(</span><span class="n">grid_slot_size</span> <span class="o">+</span> <span class="n">grid_padding</span><span class="p">)</span>
+                <span class="n">slot_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">slot_x</span><span class="p">,</span> <span class="n">slot_y</span><span class="p">,</span> <span class="n">grid_slot_size</span><span class="p">,</span> <span class="n">grid_slot_size</span><span class="p">)</span>
+
+                <span class="c1"># Slot background with subtle gradient effect</span>
+                <span class="n">slot_bg_color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">210</span><span class="p">,</span> <span class="mi">195</span><span class="p">,</span> <span class="mi">165</span><span class="p">)</span> <span class="k">if</span> <span class="n">hover_amount</span> <span class="o">&lt;</span> <span class="mf">0.3</span> <span class="k">else</span> <span class="p">(</span><span class="mi">220</span><span class="p">,</span> <span class="mi">205</span><span class="p">,</span> <span class="mi">175</span><span class="p">)</span>
+                <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">slot_bg_color</span><span class="p">,</span> <span class="n">slot_rect</span><span class="p">,</span> <span class="n">border_radius</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="n">scale</span><span class="p">))</span>
+                <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="p">(</span><span class="mi">150</span><span class="p">,</span> <span class="mi">130</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span> <span class="n">slot_rect</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">border_radius</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="n">scale</span><span class="p">))</span>
+
+                <span class="n">ingredient</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">ingredient</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">ingredient</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">item_images</span><span class="p">:</span>
+                        <span class="n">img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">item_images</span><span class="p">[</span><span class="n">ingredient</span><span class="p">]</span>
+                        <span class="n">icon_size</span> <span class="o">=</span> <span class="n">grid_slot_size</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="mi">6</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+                        <span class="n">scaled_img</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="p">(</span><span class="n">icon_size</span><span class="p">,</span> <span class="n">icon_size</span><span class="p">))</span>
+                        <span class="n">img_rect</span> <span class="o">=</span> <span class="n">scaled_img</span><span class="o">.</span><span class="n">get_rect</span><span class="p">(</span><span class="n">center</span><span class="o">=</span><span class="n">slot_rect</span><span class="o">.</span><span class="n">center</span><span class="p">)</span>
+                        <span class="n">surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">scaled_img</span><span class="p">,</span> <span class="n">img_rect</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">ing_text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_render_text</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">INV_nums_font</span><span class="p">,</span> <span class="n">ingredient</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">capitalize</span><span class="p">(),</span> <span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">40</span><span class="p">))</span>
+                        <span class="n">tx</span> <span class="o">=</span> <span class="n">slot_x</span> <span class="o">+</span> <span class="p">(</span><span class="n">grid_slot_size</span> <span class="o">-</span> <span class="n">ing_text</span><span class="o">.</span><span class="n">get_width</span><span class="p">())</span> <span class="o">//</span> <span class="mi">2</span>
+                        <span class="n">ty</span> <span class="o">=</span> <span class="n">slot_y</span> <span class="o">+</span> <span class="p">(</span><span class="n">grid_slot_size</span> <span class="o">-</span> <span class="n">ing_text</span><span class="o">.</span><span class="n">get_height</span><span class="p">())</span> <span class="o">//</span> <span class="mi">2</span>
+                        <span class="n">surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">ing_text</span><span class="p">,</span> <span class="p">(</span><span class="n">tx</span><span class="p">,</span> <span class="n">ty</span><span class="p">))</span>
+
+        <span class="n">arrow_x</span> <span class="o">=</span> <span class="n">grid_start_x</span> <span class="o">+</span> <span class="mi">3</span> <span class="o">*</span> <span class="p">(</span><span class="n">grid_slot_size</span> <span class="o">+</span> <span class="n">grid_padding</span><span class="p">)</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">15</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="n">arrow_y</span> <span class="o">=</span> <span class="n">grid_start_y</span> <span class="o">+</span> <span class="n">grid_slot_size</span> <span class="o">+</span> <span class="p">(</span><span class="n">grid_padding</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="mi">5</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        
+        <span class="c1"># Animated arrow</span>
+        <span class="n">arrow_color</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mi">100</span> <span class="o">+</span> <span class="n">hover_amount</span> <span class="o">*</span> <span class="mi">30</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">70</span> <span class="o">+</span> <span class="n">hover_amount</span> <span class="o">*</span> <span class="mi">20</span><span class="p">),</span> <span class="mi">50</span><span class="p">)</span>
+        <span class="n">line_w</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">arrow_color</span><span class="p">,</span> <span class="p">(</span><span class="n">arrow_x</span><span class="p">,</span> <span class="n">arrow_y</span><span class="p">),</span> <span class="p">(</span><span class="n">arrow_x</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">30</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span> <span class="n">arrow_y</span><span class="p">),</span> <span class="n">line_w</span><span class="p">)</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">arrow_color</span><span class="p">,</span> <span class="p">(</span><span class="n">arrow_x</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">20</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span> <span class="n">arrow_y</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="mi">8</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)),</span> <span class="p">(</span><span class="n">arrow_x</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">30</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span> <span class="n">arrow_y</span><span class="p">),</span> <span class="n">line_w</span><span class="p">)</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">arrow_color</span><span class="p">,</span> <span class="p">(</span><span class="n">arrow_x</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">20</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span> <span class="n">arrow_y</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">8</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)),</span> <span class="p">(</span><span class="n">arrow_x</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">30</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span> <span class="n">arrow_y</span><span class="p">),</span> <span class="n">line_w</span><span class="p">)</span>
+
+        <span class="n">out_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">54</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="n">out_x</span> <span class="o">=</span> <span class="n">arrow_x</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">45</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="n">out_y</span> <span class="o">=</span> <span class="n">arrow_y</span> <span class="o">-</span> <span class="n">out_size</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="n">out_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">out_x</span><span class="p">,</span> <span class="n">out_y</span><span class="p">,</span> <span class="n">out_size</span><span class="p">,</span> <span class="n">out_size</span><span class="p">)</span>
+
+        <span class="c1"># Result box with glow on hover</span>
+        <span class="n">result_bg</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mi">200</span> <span class="o">-</span> <span class="n">hover_amount</span> <span class="o">*</span> <span class="mi">10</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">185</span> <span class="o">-</span> <span class="n">hover_amount</span> <span class="o">*</span> <span class="mi">5</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">150</span> <span class="o">-</span> <span class="n">hover_amount</span> <span class="o">*</span> <span class="mi">10</span><span class="p">))</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">result_bg</span><span class="p">,</span> <span class="n">out_rect</span><span class="p">,</span> <span class="n">border_radius</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mi">6</span><span class="o">*</span><span class="n">scale</span><span class="p">))</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="p">(</span><span class="mi">120</span><span class="p">,</span> <span class="mi">90</span><span class="p">,</span> <span class="mi">60</span><span class="p">),</span> <span class="n">out_rect</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">scale</span><span class="p">)),</span> <span class="n">border_radius</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mi">6</span><span class="o">*</span><span class="n">scale</span><span class="p">))</span>
+        
+        <span class="c1"># Add inner glow</span>
+        <span class="k">if</span> <span class="n">hover_amount</span> <span class="o">&gt;</span> <span class="mf">0.2</span><span class="p">:</span>
+            <span class="n">inner_glow</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">out_size</span><span class="p">,</span> <span class="n">out_size</span><span class="p">),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">inner_glow</span><span class="p">,</span> <span class="p">(</span><span class="mi">220</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="mi">120</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">50</span> <span class="o">*</span> <span class="n">hover_amount</span><span class="p">)),</span> <span class="n">inner_glow</span><span class="o">.</span><span class="n">get_rect</span><span class="p">(),</span> <span class="n">border_radius</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mi">5</span><span class="o">*</span><span class="n">scale</span><span class="p">))</span>
+            <span class="n">surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">inner_glow</span><span class="p">,</span> <span class="p">(</span><span class="n">out_x</span><span class="p">,</span> <span class="n">out_y</span><span class="p">))</span>
+
+        <span class="n">res_id</span> <span class="o">=</span> <span class="n">recipe</span><span class="p">[</span><span class="s1">&#39;result_id&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">res_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">item_images</span><span class="p">:</span>
+            <span class="n">img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">item_images</span><span class="p">[</span><span class="n">res_id</span><span class="p">]</span>
+            <span class="n">res_icon_size</span> <span class="o">=</span> <span class="n">out_size</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+            <span class="n">scaled_img</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="p">(</span><span class="n">res_icon_size</span><span class="p">,</span> <span class="n">res_icon_size</span><span class="p">))</span>
+            <span class="n">img_rect</span> <span class="o">=</span> <span class="n">scaled_img</span><span class="o">.</span><span class="n">get_rect</span><span class="p">(</span><span class="n">center</span><span class="o">=</span><span class="n">out_rect</span><span class="o">.</span><span class="n">center</span><span class="p">)</span>
+            <span class="n">surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">scaled_img</span><span class="p">,</span> <span class="n">img_rect</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">res_short</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_render_text</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">INV_nums_font</span><span class="p">,</span> <span class="n">res_id</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">capitalize</span><span class="p">(),</span> <span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="mi">120</span><span class="p">,</span> <span class="mi">60</span><span class="p">))</span>
+            <span class="n">rx</span> <span class="o">=</span> <span class="n">out_x</span> <span class="o">+</span> <span class="p">(</span><span class="n">out_size</span> <span class="o">-</span> <span class="n">res_short</span><span class="o">.</span><span class="n">get_width</span><span class="p">())</span> <span class="o">//</span> <span class="mi">2</span>
+            <span class="n">ry</span> <span class="o">=</span> <span class="n">out_y</span> <span class="o">+</span> <span class="p">(</span><span class="n">out_size</span> <span class="o">-</span> <span class="n">res_short</span><span class="o">.</span><span class="n">get_height</span><span class="p">())</span> <span class="o">//</span> <span class="mi">2</span>
+            <span class="n">surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">res_short</span><span class="p">,</span> <span class="p">(</span><span class="n">rx</span><span class="p">,</span> <span class="n">ry</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">recipe</span><span class="p">[</span><span class="s1">&#39;amount&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">out_amt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_render_text</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">INV_nums_font</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;x</span><span class="si">{</span><span class="n">recipe</span><span class="p">[</span><span class="s1">&#39;amount&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>
+            <span class="n">surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">out_amt</span><span class="p">,</span> <span class="p">(</span><span class="n">out_x</span> <span class="o">+</span> <span class="n">out_size</span> <span class="o">-</span> <span class="n">out_amt</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="n">out_y</span> <span class="o">+</span> <span class="n">out_size</span> <span class="o">-</span> <span class="n">out_amt</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span> <span class="o">-</span> <span class="mi">2</span><span class="p">))</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Vibe-inc.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

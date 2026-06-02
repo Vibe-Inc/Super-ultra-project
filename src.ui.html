@@ -571,6 +571,272 @@ for better organization and maintainability.</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="src.ui.menus.RecipeBookMenu">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.menus.</span></span><span class="sig-name descname"><span class="pre">RecipeBookMenu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/recipe_book.html#RecipeBookMenu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.RecipeBookMenu" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.ui.menus.Menu" title="src.ui.menus.base.Menu"><code class="xref py py-class docutils literal notranslate"><span class="pre">Menu</span></code></a></p>
+<p>Manages the recipe book UI.</p>
+<p>Displays a comprehensive list of all available crafting recipes in a paginated book format.
+Handles page-flipping animations, item image caching, and user navigation.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.RecipeBookMenu.app">
+<span class="sig-name descname"><span class="pre">app</span></span><a class="headerlink" href="#src.ui.menus.RecipeBookMenu.app" title="Link to this definition"></a></dt>
+<dd><p>The main application reference.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="src.html#src.app.App" title="src.app.App">App</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.RecipeBookMenu.book_magnifier">
+<span class="sig-name descname"><span class="pre">book_magnifier</span></span><a class="headerlink" href="#src.ui.menus.RecipeBookMenu.book_magnifier" title="Link to this definition"></a></dt>
+<dd><p>Multiplier for scaling the recipe book UI elements.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.RecipeBookMenu.recipes">
+<span class="sig-name descname"><span class="pre">recipes</span></span><a class="headerlink" href="#src.ui.menus.RecipeBookMenu.recipes" title="Link to this definition"></a></dt>
+<dd><p>All available recipes loaded from the database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.RecipeBookMenu.item_images">
+<span class="sig-name descname"><span class="pre">item_images</span></span><a class="headerlink" href="#src.ui.menus.RecipeBookMenu.item_images" title="Link to this definition"></a></dt>
+<dd><p>Cached dictionary mapping item IDs to their respective image surfaces.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.RecipeBookMenu.recipes_per_spread">
+<span class="sig-name descname"><span class="pre">recipes_per_spread</span></span><a class="headerlink" href="#src.ui.menus.RecipeBookMenu.recipes_per_spread" title="Link to this definition"></a></dt>
+<dd><p>Number of recipes displayed per two-page spread.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.RecipeBookMenu.current_spread">
+<span class="sig-name descname"><span class="pre">current_spread</span></span><a class="headerlink" href="#src.ui.menus.RecipeBookMenu.current_spread" title="Link to this definition"></a></dt>
+<dd><p>The currently displayed spread index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.RecipeBookMenu.max_spreads">
+<span class="sig-name descname"><span class="pre">max_spreads</span></span><a class="headerlink" href="#src.ui.menus.RecipeBookMenu.max_spreads" title="Link to this definition"></a></dt>
+<dd><p>The total number of available spreads based on recipe count.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.RecipeBookMenu.anim_start_time">
+<span class="sig-name descname"><span class="pre">anim_start_time</span></span><a class="headerlink" href="#src.ui.menus.RecipeBookMenu.anim_start_time" title="Link to this definition"></a></dt>
+<dd><p>Timestamp for the start of the opening animation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.RecipeBookMenu.anim_duration">
+<span class="sig-name descname"><span class="pre">anim_duration</span></span><a class="headerlink" href="#src.ui.menus.RecipeBookMenu.anim_duration" title="Link to this definition"></a></dt>
+<dd><p>Duration of the opening animation in milliseconds.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.RecipeBookMenu.is_opening">
+<span class="sig-name descname"><span class="pre">is_opening</span></span><a class="headerlink" href="#src.ui.menus.RecipeBookMenu.is_opening" title="Link to this definition"></a></dt>
+<dd><p>Flag indicating if the opening animation is currently active.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.RecipeBookMenu.flip_start_time">
+<span class="sig-name descname"><span class="pre">flip_start_time</span></span><a class="headerlink" href="#src.ui.menus.RecipeBookMenu.flip_start_time" title="Link to this definition"></a></dt>
+<dd><p>Timestamp for the start of the page-flipping animation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.RecipeBookMenu.flip_duration">
+<span class="sig-name descname"><span class="pre">flip_duration</span></span><a class="headerlink" href="#src.ui.menus.RecipeBookMenu.flip_duration" title="Link to this definition"></a></dt>
+<dd><p>Duration of the page-flipping animation in milliseconds.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.RecipeBookMenu.is_flipping">
+<span class="sig-name descname"><span class="pre">is_flipping</span></span><a class="headerlink" href="#src.ui.menus.RecipeBookMenu.is_flipping" title="Link to this definition"></a></dt>
+<dd><p>Flag indicating if the page-flipping animation is currently active.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.RecipeBookMenu.buttons">
+<span class="sig-name descname"><span class="pre">buttons</span></span><a class="headerlink" href="#src.ui.menus.RecipeBookMenu.buttons" title="Link to this definition"></a></dt>
+<dd><p>UI button widgets for navigation and closing the menu.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.RecipeBookMenu.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/recipe_book.html#RecipeBookMenu.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.RecipeBookMenu.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initialize the recipe book, cache item images, and set up animations.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.RecipeBookMenu._render_text">
+<span class="sig-name descname"><span class="pre">_render_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">font</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/recipe_book.html#RecipeBookMenu._render_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.RecipeBookMenu._render_text" title="Link to this definition"></a></dt>
+<dd><p>Render and scale text based on the book magnifier.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.RecipeBookMenu._setup_buttons">
+<span class="sig-name descname"><span class="pre">_setup_buttons</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/recipe_book.html#RecipeBookMenu._setup_buttons"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.RecipeBookMenu._setup_buttons" title="Link to this definition"></a></dt>
+<dd><p>Configure and position the navigation buttons.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.RecipeBookMenu.prev_page">
+<span class="sig-name descname"><span class="pre">prev_page</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/recipe_book.html#RecipeBookMenu.prev_page"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.RecipeBookMenu.prev_page" title="Link to this definition"></a></dt>
+<dd><p>Trigger the logic to turn to the previous page spread.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.RecipeBookMenu.next_page">
+<span class="sig-name descname"><span class="pre">next_page</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/recipe_book.html#RecipeBookMenu.next_page"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.RecipeBookMenu.next_page" title="Link to this definition"></a></dt>
+<dd><p>Trigger the logic to turn to the next page spread.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.RecipeBookMenu._start_flip_anim">
+<span class="sig-name descname"><span class="pre">_start_flip_anim</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/recipe_book.html#RecipeBookMenu._start_flip_anim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.RecipeBookMenu._start_flip_anim" title="Link to this definition"></a></dt>
+<dd><p>Initiate the page-flipping animation variables.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.RecipeBookMenu.close_menu">
+<span class="sig-name descname"><span class="pre">close_menu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/recipe_book.html#RecipeBookMenu.close_menu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.RecipeBookMenu.close_menu" title="Link to this definition"></a></dt>
+<dd><p>Transition back to the gameplay state.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.RecipeBookMenu.handle_event">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/recipe_book.html#RecipeBookMenu.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.RecipeBookMenu.handle_event" title="Link to this definition"></a></dt>
+<dd><p>Process user input, including button clicks and keyboard navigation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.RecipeBookMenu.draw">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/recipe_book.html#RecipeBookMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.RecipeBookMenu.draw" title="Link to this definition"></a></dt>
+<dd><p>Render the recipe book background, animations, pages, and UI elements.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.RecipeBookMenu._draw_book_background">
+<span class="sig-name descname"><span class="pre">_draw_book_background</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/recipe_book.html#RecipeBookMenu._draw_book_background"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.RecipeBookMenu._draw_book_background" title="Link to this definition"></a></dt>
+<dd><p>Render the static visual base of the book including the cover and pages.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.RecipeBookMenu._draw_recipes_for_current_spread">
+<span class="sig-name descname"><span class="pre">_draw_recipes_for_current_spread</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/recipe_book.html#RecipeBookMenu._draw_recipes_for_current_spread"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.RecipeBookMenu._draw_recipes_for_current_spread" title="Link to this definition"></a></dt>
+<dd><p>Render the current spread’s recipes onto the book surface.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.RecipeBookMenu._draw_recipe_card">
+<span class="sig-name descname"><span class="pre">_draw_recipe_card</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recipe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/recipe_book.html#RecipeBookMenu._draw_recipe_card"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.RecipeBookMenu._draw_recipe_card" title="Link to this definition"></a></dt>
+<dd><p>Render an individual recipe card containing the crafting grid and result.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id10">
+<span class="sig-name descname"><span class="pre">close_menu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/recipe_book.html#RecipeBookMenu.close_menu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id11">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/recipe_book.html#RecipeBookMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id11" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id12">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/recipe_book.html#RecipeBookMenu.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id12" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id13">
+<span class="sig-name descname"><span class="pre">next_page</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/recipe_book.html#RecipeBookMenu.next_page"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id13" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id14">
+<span class="sig-name descname"><span class="pre">prev_page</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/recipe_book.html#RecipeBookMenu.prev_page"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id14" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.RecipeBookMenu.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.016666666666666666</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/recipe_book.html#RecipeBookMenu.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.RecipeBookMenu.update" title="Link to this definition"></a></dt>
+<dd><p>Update animations and particles each frame.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="src.ui.menus.SaveLoadMenu">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.menus.</span></span><span class="sig-name descname"><span class="pre">SaveLoadMenu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/save_load_menu.html#SaveLoadMenu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SaveLoadMenu" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#src.ui.menus.Menu" title="src.ui.menus.base.Menu"><code class="xref py py-class docutils literal notranslate"><span class="pre">Menu</span></code></a></p>
@@ -640,33 +906,33 @@ for better organization and maintainability.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id10">
-<span class="sig-name descname"><span class="pre">delete_slot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slot_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/save_load_menu.html#SaveLoadMenu.delete_slot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id11">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/save_load_menu.html#SaveLoadMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id11" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id12">
-<span class="sig-name descname"><span class="pre">go_back</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/save_load_menu.html#SaveLoadMenu.go_back"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id12" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id13">
-<span class="sig-name descname"><span class="pre">layout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/save_load_menu.html#SaveLoadMenu.layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id13" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id14">
-<span class="sig-name descname"><span class="pre">on_slot_click</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slot_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/save_load_menu.html#SaveLoadMenu.on_slot_click"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id14" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="id15">
-<span class="sig-name descname"><span class="pre">refresh_saves</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/save_load_menu.html#SaveLoadMenu.refresh_saves"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id15" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">delete_slot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slot_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/save_load_menu.html#SaveLoadMenu.delete_slot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id15" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id16">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/save_load_menu.html#SaveLoadMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id16" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id17">
+<span class="sig-name descname"><span class="pre">go_back</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/save_load_menu.html#SaveLoadMenu.go_back"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id17" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id18">
+<span class="sig-name descname"><span class="pre">layout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/save_load_menu.html#SaveLoadMenu.layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id18" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id19">
+<span class="sig-name descname"><span class="pre">on_slot_click</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slot_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/save_load_menu.html#SaveLoadMenu.on_slot_click"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id19" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id20">
+<span class="sig-name descname"><span class="pre">refresh_saves</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/save_load_menu.html#SaveLoadMenu.refresh_saves"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id20" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -800,18 +1066,18 @@ for better organization and maintainability.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id16">
-<span class="sig-name descname"><span class="pre">back_to_main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/settings_menu.html#SettingsMenu.back_to_main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id16" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id21">
+<span class="sig-name descname"><span class="pre">back_to_main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/settings_menu.html#SettingsMenu.back_to_main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id21" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id17">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/settings_menu.html#SettingsMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id17" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id22">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/settings_menu.html#SettingsMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id22" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id18">
-<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/settings_menu.html#SettingsMenu.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id18" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id23">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/settings_menu.html#SettingsMenu.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id23" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -825,13 +1091,13 @@ for better organization and maintainability.</p>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id19">
-<span class="sig-name descname"><span class="pre">toggle_language</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/settings_menu.html#SettingsMenu.toggle_language"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id19" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id24">
+<span class="sig-name descname"><span class="pre">toggle_language</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/settings_menu.html#SettingsMenu.toggle_language"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id24" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id20">
-<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/settings_menu.html#SettingsMenu.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id20" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id25">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/settings_menu.html#SettingsMenu.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id25" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -1043,8 +1309,8 @@ smooth hover animations, gradient cards, and pulsing active slots.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id21">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Button.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id21" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id26">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Button.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id26" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1255,13 +1521,13 @@ Supports optional Shop and Play Cards action buttons.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id22">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Slider.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id22" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id27">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Slider.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id27" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id23">
-<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Slider.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id23" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id28">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Slider.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id28" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -1431,23 +1697,23 @@ Supports optional Shop and Play Cards action buttons.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id24">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Tooltip.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id24" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id29">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Tooltip.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id29" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id25">
-<span class="sig-name descname"><span class="pre">draw_multiline_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surface</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Tooltip.draw_multiline_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id25" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id30">
+<span class="sig-name descname"><span class="pre">draw_multiline_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surface</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Tooltip.draw_multiline_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id30" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id26">
-<span class="sig-name descname"><span class="pre">hover_update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mouse_pos</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Tooltip.hover_update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id26" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id31">
+<span class="sig-name descname"><span class="pre">hover_update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mouse_pos</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Tooltip.hover_update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id31" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id27">
-<span class="sig-name descname"><span class="pre">update_target</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_rect</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Tooltip.update_target"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id27" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id32">
+<span class="sig-name descname"><span class="pre">update_target</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_rect</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Tooltip.update_target"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id32" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>

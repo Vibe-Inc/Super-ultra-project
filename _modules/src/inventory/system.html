@@ -76,6 +76,8 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">src.config</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cfg</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.widgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">Slider</span><span class="p">,</span> <span class="n">Button</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.items.items</span><span class="w"> </span><span class="kn">import</span> <span class="n">Consumable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">database.GP_database</span><span class="w"> </span><span class="kn">import</span> <span class="n">Gp_database</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.items.items</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_item</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">src.app</span><span class="w"> </span><span class="kn">import</span> <span class="n">App</span>
@@ -296,7 +298,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_close_shop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">game_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gameplay&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">game_state</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">toggle_trade</span><span class="p">(</span><span class="n">game_state</span><span class="o">.</span><span class="n">MAIN_player_inv</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">game_state</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">toggle_trade</span><span class="p">(</span><span class="n">game_state</span><span class="o">.</span><span class="n">MAIN_player_inv</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">game_state</span><span class="o">.</span><span class="n">PLAYER_inventory_equipment</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">if</span> <span class="bp">self</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">active_inventories</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">remove_active_inventory</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
@@ -545,6 +547,242 @@
         <span class="n">result</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_qty</span> <span class="o">&lt;=</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">float_value</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_qty</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">external_callback</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">external_callback</span><span class="p">(</span><span class="n">result</span><span class="p">)</span></div>
+</div>
+
+
+<div class="viewcode-block" id="CraftingGrid">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.CraftingGrid">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CraftingGrid</span><span class="p">(</span><span class="n">Inventory</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Manages the 3x3 crafting grid interface.</span>
+
+<span class="sd">    Handles recipe matching, ingredient validation, and item crafting mechanics.</span>
+<span class="sd">    Displays available recipes via a recipe book and processes crafting transactions.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        app (App):</span>
+<span class="sd">            The main application reference.</span>
+<span class="sd">        output_slot (list):</span>
+<span class="sd">            The crafted item and count displayed in the output slot, or None if empty.</span>
+<span class="sd">        all_recipes (list):</span>
+<span class="sd">            All available recipes loaded from the database.</span>
+<span class="sd">        book_button (Button):</span>
+<span class="sd">            Button widget to open the recipe book menu.</span>
+<span class="sd">        pos_x (int):</span>
+<span class="sd">            The x-coordinate position of the crafting grid on screen.</span>
+<span class="sd">        pos_y (int):</span>
+<span class="sd">            The y-coordinate position of the crafting grid on screen.</span>
+<span class="sd">        output_pos_x (int):</span>
+<span class="sd">            The x-coordinate position of the output slot.</span>
+<span class="sd">        output_pos_y (int):</span>
+<span class="sd">            The y-coordinate position of the output slot.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(app):</span>
+<span class="sd">            Initialize the crafting grid, database connection, and recipe book button.</span>
+<span class="sd">        open_recipe_menu():</span>
+<span class="sd">            Transition to the recipe book menu state.</span>
+<span class="sd">        update_positions(base_x, base_y):</span>
+<span class="sd">            Recalculate grid and output slot positions based on anchor coordinates.</span>
+<span class="sd">        inventory_interactions(event, manager):</span>
+<span class="sd">            Handle recipe book button clicks, output slot interactions, and crafting.</span>
+<span class="sd">        check_recipes():</span>
+<span class="sd">            Scan the crafting matrix for matching recipes and update the output slot.</span>
+<span class="sd">        _matrix_match(m1, m2):</span>
+<span class="sd">            Compare two 3x3 matrices for equality.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="CraftingGrid.__init__">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.CraftingGrid.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_slot_size</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_border</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="o">=</span> <span class="n">app</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_slot</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">pos_x</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pos_y</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_pos_x</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_pos_y</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="n">db</span> <span class="o">=</span> <span class="n">Gp_database</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">all_recipes</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">get_all_recipes</span><span class="p">()</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">()</span>
+        <span class="n">btn_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">*</span> <span class="mf">0.95</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">book_button</span> <span class="o">=</span> <span class="n">Button</span><span class="p">(</span>
+            <span class="n">rect</span><span class="o">=</span><span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">btn_size</span><span class="p">,</span> <span class="n">btn_size</span><span class="p">),</span>
+            <span class="n">text</span><span class="o">=</span><span class="s2">&quot;REC&quot;</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">40</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">40</span><span class="p">),</span> <span class="n">hover_color</span><span class="o">=</span><span class="p">(</span><span class="mi">70</span><span class="p">,</span> <span class="mi">70</span><span class="p">,</span> <span class="mi">70</span><span class="p">),</span>
+            <span class="n">font</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">INV_nums_font</span><span class="p">,</span> <span class="n">font_color</span><span class="o">=</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
+            <span class="n">corner_width</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">INV_SLOT_BORDER_RADIUS</span> <span class="o">*</span> <span class="mf">0.75</span><span class="p">)),</span>
+            <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">open_recipe_menu</span>
+        <span class="p">)</span></div>
+
+        
+
+<div class="viewcode-block" id="CraftingGrid.open_recipe_menu">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.CraftingGrid.open_recipe_menu">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">open_recipe_menu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;recipe_book&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CraftingGrid.update_positions">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.CraftingGrid.update_positions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_positions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_x</span><span class="p">,</span> <span class="n">base_y</span><span class="p">):</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pos_x</span> <span class="o">=</span> <span class="n">base_x</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pos_y</span> <span class="o">=</span> <span class="n">base_y</span>
+        
+        <span class="n">grid_size</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_pos_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_x</span> <span class="o">+</span> <span class="p">(</span><span class="n">grid_size</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_pos_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_y</span> <span class="o">+</span> <span class="n">grid_size</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">15</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="n">btn_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_pos_y</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_button</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">height</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+        
+        <span class="n">btn_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_pos_x</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_button</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">width</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">book_button</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">topleft</span> <span class="o">=</span> <span class="p">(</span><span class="n">btn_x</span><span class="p">,</span> <span class="n">btn_y</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CraftingGrid.inventory_interactions">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.CraftingGrid.inventory_interactions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">inventory_interactions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">manager</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">!=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">MOUSEBUTTONDOWN</span><span class="p">:</span> <span class="k">return</span>
+        <span class="n">mouse_x</span><span class="p">,</span> <span class="n">mouse_y</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mouse</span><span class="o">.</span><span class="n">get_pos</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">book_button</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">collidepoint</span><span class="p">((</span><span class="n">mouse_x</span><span class="p">,</span> <span class="n">mouse_y</span><span class="p">))</span> <span class="ow">and</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">book_button</span><span class="o">.</span><span class="n">on_click</span><span class="p">()</span>
+            <span class="k">return</span>
+
+        <span class="n">output_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_pos_x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_pos_y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">output_rect</span><span class="o">.</span><span class="n">collidepoint</span><span class="p">(</span><span class="n">mouse_x</span><span class="p">,</span> <span class="n">mouse_y</span><span class="p">)</span> <span class="ow">and</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_slot</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">manager</span><span class="o">.</span><span class="n">selected_item</span><span class="p">:</span>
+                <span class="n">manager</span><span class="o">.</span><span class="n">selected_item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_slot</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">output_slot</span> <span class="o">=</span> <span class="kc">None</span>
+                
+                <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+                            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">check_recipes</span><span class="p">()</span>
+            <span class="k">return</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">inventory_interactions</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">manager</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_recipes</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="CraftingGrid.check_recipes">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.CraftingGrid.check_recipes">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_recipes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">current_matrix</span> <span class="o">=</span> <span class="p">[[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)]</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]:</span>
+                    <span class="n">current_matrix</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">id</span>
+
+        <span class="n">matched_recipe</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">recipe</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_recipes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matrix_match</span><span class="p">(</span><span class="n">current_matrix</span><span class="p">,</span> <span class="n">recipe</span><span class="p">[</span><span class="s2">&quot;matrix&quot;</span><span class="p">]):</span>
+                <span class="n">matched_recipe</span> <span class="o">=</span> <span class="n">recipe</span>
+                <span class="k">break</span>
+
+        <span class="k">if</span> <span class="n">matched_recipe</span><span class="p">:</span>
+            <span class="n">new_item</span> <span class="o">=</span> <span class="n">create_item</span><span class="p">(</span><span class="n">matched_recipe</span><span class="p">[</span><span class="s2">&quot;result_id&quot;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_slot</span> <span class="o">=</span> <span class="p">[</span><span class="n">new_item</span><span class="p">,</span> <span class="n">matched_recipe</span><span class="p">[</span><span class="s2">&quot;amount&quot;</span><span class="p">]]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_slot</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="CraftingGrid._matrix_match">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.CraftingGrid._matrix_match">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_matrix_match</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">m1</span><span class="p">[</span><span class="n">c</span><span class="p">][</span><span class="n">r</span><span class="p">]</span> <span class="o">!=</span> <span class="n">m2</span><span class="p">[</span><span class="n">c</span><span class="p">][</span><span class="n">r</span><span class="p">]:</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+</div>
+
+
+<div class="viewcode-block" id="CraftingLogic">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.CraftingLogic">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CraftingLogic</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Utility class for crafting validation and ingredient management.</span>
+
+<span class="sd">    Provides static methods to validate crafting requirements, consume ingredients,</span>
+<span class="sd">    and add crafted items to the player inventory.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        can_craft(player_inv, ingredients):</span>
+<span class="sd">            Check if the player has sufficient items to craft a recipe.</span>
+<span class="sd">        consume_ingredients(player_inv, ingredients):</span>
+<span class="sd">            Remove required ingredients from the player inventory.</span>
+<span class="sd">        add_crafted_item(player_inv, result_item, amount):</span>
+<span class="sd">            Add the crafted item to available inventory slots or create new slots.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="CraftingLogic.can_craft">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.CraftingLogic.can_craft">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">can_craft</span><span class="p">(</span><span class="n">player_inv</span><span class="p">:</span> <span class="n">MAIN_player_inventory</span><span class="p">,</span> <span class="n">ingredients</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="n">available</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">player_inv</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">player_inv</span><span class="o">.</span><span class="n">rows</span><span class="p">):</span>
+                <span class="n">slot</span> <span class="o">=</span> <span class="n">player_inv</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">slot</span><span class="p">:</span>
+                    <span class="n">item_id</span> <span class="o">=</span> <span class="n">slot</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">id</span>
+                    <span class="n">count</span> <span class="o">=</span> <span class="n">slot</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">available</span><span class="p">[</span><span class="n">item_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">available</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">item_id</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">count</span>
+
+        <span class="k">for</span> <span class="n">req_id</span><span class="p">,</span> <span class="n">req_amount</span> <span class="ow">in</span> <span class="n">ingredients</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">available</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">req_id</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">req_amount</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="CraftingLogic.consume_ingredients">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.CraftingLogic.consume_ingredients">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">consume_ingredients</span><span class="p">(</span><span class="n">player_inv</span><span class="p">:</span> <span class="n">MAIN_player_inventory</span><span class="p">,</span> <span class="n">ingredients</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">req_id</span><span class="p">,</span> <span class="n">req_amount</span> <span class="ow">in</span> <span class="n">ingredients</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">amount_to_remove</span> <span class="o">=</span> <span class="n">req_amount</span>
+            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">player_inv</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">player_inv</span><span class="o">.</span><span class="n">rows</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">amount_to_remove</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">break</span>
+                    
+                    <span class="n">slot</span> <span class="o">=</span> <span class="n">player_inv</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">slot</span> <span class="ow">and</span> <span class="n">slot</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">req_id</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">slot</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">amount_to_remove</span><span class="p">:</span>
+                            <span class="n">slot</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-=</span> <span class="n">amount_to_remove</span>
+                            <span class="n">amount_to_remove</span> <span class="o">=</span> <span class="mi">0</span>
+                            <span class="k">if</span> <span class="n">slot</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                                <span class="n">player_inv</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">amount_to_remove</span> <span class="o">-=</span> <span class="n">slot</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                            <span class="n">player_inv</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="CraftingLogic.add_crafted_item">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.CraftingLogic.add_crafted_item">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_crafted_item</span><span class="p">(</span><span class="n">player_inv</span><span class="p">:</span> <span class="n">MAIN_player_inventory</span><span class="p">,</span> <span class="n">result_item</span><span class="p">,</span> <span class="n">amount</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">player_inv</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">player_inv</span><span class="o">.</span><span class="n">rows</span><span class="p">):</span>
+                <span class="n">slot</span> <span class="o">=</span> <span class="n">player_inv</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">slot</span> <span class="ow">and</span> <span class="n">slot</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">result_item</span><span class="o">.</span><span class="n">id</span><span class="p">:</span>
+                    <span class="n">slot</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">amount</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+                    
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">player_inv</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">player_inv</span><span class="o">.</span><span class="n">rows</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">player_inv</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+                    <span class="n">player_inv</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">result_item</span><span class="p">),</span> <span class="n">amount</span><span class="p">]</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
 </div>
 
 </pre></div>
