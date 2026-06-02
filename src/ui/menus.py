@@ -2514,7 +2514,14 @@ class SkillTreeMenu(Menu):
             self.pan_offset = pygame.Vector2(0, 0)
 
     def _spawn_unlock_effect(self, node_id):
-        """Spawn a dramatic unlock animation at the given node position."""
+        """Spawn a dramatic unlock animation at the given node position.
+        
+        Different node kinds get different animation intensities:
+        - minor: Basic particle burst and shockwave
+        - major: Larger burst, spiral particles, double shockwave
+        - keystone: Massive burst, rotating light beams, pulsing rings, star pattern
+        - core: Ultimate explosion with rainbow particles, multiple rings, screen-filling effects
+        """
         node = self.nodes_by_id.get(node_id)
         if node is None:
             return
@@ -2529,13 +2536,44 @@ class SkillTreeMenu(Menu):
         # Get screen position of the node
         screen_pos = self._node_screen_pos(node)
         node_size = max(4, int(node["size"] * self.zoom))
+        kind = node.get("kind", "minor")
         
-        # ─── 1. Particle burst (50+ particles flying outward) ───
+        # Scale effects based on node kind
+        if kind == "core":
+            burst_count = 200
+            shockwave_count = 5
+            particle_speed_mult = 2.0
+            shockwave_max_radius = 400
+            screen_flash_intensity = 0.6
+            text_size_mult = 2.0
+        elif kind == "keystone":
+            burst_count = 150
+            shockwave_count = 3
+            particle_speed_mult = 1.6
+            shockwave_max_radius = 300
+            screen_flash_intensity = 0.5
+            text_size_mult = 1.6
+        elif kind == "major":
+            burst_count = 100
+            shockwave_count = 2
+            particle_speed_mult = 1.3
+            shockwave_max_radius = 220
+            screen_flash_intensity = 0.4
+            text_size_mult = 1.3
+        else:  # minor
+            burst_count = 60
+            shockwave_count = 1
+            particle_speed_mult = 1.0
+            shockwave_max_radius = 150
+            screen_flash_intensity = 0.25
+            text_size_mult = 1.0
+        
+        # ─── 1. Particle burst (scaled by node kind) ───
         burst_particles = []
-        for _ in range(80):
+        for _ in range(burst_count):
             angle = random.uniform(0, math.pi * 2)
-            speed = random.uniform(60, 250) * self.zoom
-            lifetime = random.uniform(0.4, 1.2)
+            speed = random.uniform(60, 250) * self.zoom * particle_speed_mult
+            lifetime = random.uniform(0.5, 1.5)
             # Choose a color from the branch palette
             color_choice = random.choice([glow_color, primary_color, secondary_color, accent_color, (255, 255, 255)])
             burst_particles.append({
@@ -2544,27 +2582,31 @@ class SkillTreeMenu(Menu):
                 "y": screen_pos.y,
                 "vx": math.cos(angle) * speed,
                 "vy": math.sin(angle) * speed,
-                "size": random.uniform(2, 6) * self.zoom,
+                "size": random.uniform(2, 8) * self.zoom,
                 "life": lifetime,
                 "max_life": lifetime,
                 "color": color_choice,
                 "alpha": 1.0,
             })
         
-        # ─── 2. Shockwave ring data ───
-        shockwave = {
-            "type": "shockwave",
-            "x": screen_pos.x,
-            "y": screen_pos.y,
-            "radius": node_size,
-            "max_radius": node_size + 150 * self.zoom,
-            "speed": 300 * self.zoom,
-            "life": 0.6,
-            "max_life": 0.6,
-            "color": glow_color,
-            "alpha": 0.9,
-            "width": 3,
-        }
+        # ─── 2. Multiple shockwave rings (scaled by node kind) ───
+        shockwaves = []
+        for i in range(shockwave_count):
+            delay = i * 0.15  # Stagger the shockwaves
+            shockwaves.append({
+                "type": "shockwave",
+                "x": screen_pos.x,
+                "y": screen_pos.y,
+                "radius": node_size,
+                "max_radius": node_size + shockwave_max_radius * self.zoom,
+                "speed": (300 + i * 50) * self.zoom,
+                "life": 0.8 + i * 0.1,
+                "max_life": 0.8 + i * 0.1,
+                "color": glow_color if i % 2 == 0 else accent_color,
+                "alpha": 0.9 - i * 0.1,
+                "width": 4 - i * 0.5,
+                "delay": delay,
+            })
         
         # ─── 3. Cascading light on connected links ───
         link_lights = []
@@ -2589,28 +2631,121 @@ class SkillTreeMenu(Menu):
                         "alpha": 1.0,
                     })
         
-        # ─── 4. Floating text effect ───
+        # ─── 4. Floating text effect (scaled by node kind) ───
         float_text = {
             "type": "float_text",
             "x": screen_pos.x,
             "y": screen_pos.y - node_size - 20,
-            "text": "✦ UNLOCKED ✦",
+            "text": "✦ UNLOCKED ✦" if kind == "minor" else "★ UNLOCKED ★" if kind == "major" else "✧ UNLOCKED ✧" if kind == "keystone" else "⚜ UNLOCKED ⚜",
             "color": accent_color,
-            "life": 1.5,
-            "max_life": 1.5,
-            "speed_y": -40 * self.zoom,
-            "size": max(16, int(22 * self.zoom)),
+            "life": 2.0,
+            "max_life": 2.0,
+            "speed_y": -50 * self.zoom,
+            "size": max(16, int(22 * self.zoom * text_size_mult)),
         }
         
         # Add all effects to the queue
         self.unlock_effects.extend(burst_particles)
-        self.unlock_effects.append(shockwave)
+        self.unlock_effects.extend(shockwaves)
         self.unlock_effects.extend(link_lights)
         self.unlock_effects.append(float_text)
         
-        # ─── 5. Trigger screen flash ───
-        self.screen_flash_alpha = 0.35
-        self.screen_flash_timer = 0.4
+        # ─── 5. Additional effects for major+ nodes ───
+        if kind in ("major", "keystone", "core"):
+            # Spiral particles that orbit outward
+            spiral_count = 20 if kind == "major" else 40 if kind == "keystone" else 60
+            for i in range(spiral_count):
+                angle = (i / spiral_count) * math.pi * 2
+                speed = random.uniform(80, 180) * self.zoom * particle_speed_mult
+                lifetime = random.uniform(0.8, 1.8)
+                # Alternate colors for spiral effect
+                color = glow_color if i % 2 == 0 else accent_color
+                self.unlock_effects.append({
+                    "type": "spiral_particle",
+                    "x": screen_pos.x,
+                    "y": screen_pos.y,
+                    "angle": angle,
+                    "radius": 0,
+                    "speed": speed,
+                    "angular_speed": random.uniform(2, 5) * (1 if i % 2 == 0 else -1),
+                    "life": lifetime,
+                    "max_life": lifetime,
+                    "color": color,
+                    "size": random.uniform(3, 7) * self.zoom,
+                    "alpha": 1.0,
+                })
+        
+        if kind in ("keystone", "core"):
+            # Rotating light beams (only for keystone and core)
+            beam_count = 6 if kind == "keystone" else 12
+            for i in range(beam_count):
+                angle = (i / beam_count) * math.pi * 2
+                self.unlock_effects.append({
+                    "type": "light_beam",
+                    "x": screen_pos.x,
+                    "y": screen_pos.y,
+                    "angle": angle,
+                    "length": node_size * 3,
+                    "max_length": (150 if kind == "keystone" else 250) * self.zoom,
+                    "speed": 200 * self.zoom,
+                    "life": 1.0,
+                    "max_life": 1.0,
+                    "color": glow_color,
+                    "width": 3 * self.zoom,
+                    "alpha": 0.8,
+                })
+            
+            # Pulsing concentric rings
+            ring_count = 3 if kind == "keystone" else 5
+            for i in range(ring_count):
+                self.unlock_effects.append({
+                    "type": "pulse_ring",
+                    "x": screen_pos.x,
+                    "y": screen_pos.y,
+                    "radius": node_size + i * 20 * self.zoom,
+                    "max_radius": node_size + (100 + i * 30) * self.zoom,
+                    "pulse_speed": 100 * self.zoom,
+                    "life": 1.5,
+                    "max_life": 1.5,
+                    "color": accent_color if i % 2 == 0 else glow_color,
+                    "width": 2 * self.zoom,
+                    "alpha": 0.6,
+                    "phase": i * 0.3,
+                })
+        
+        if kind == "core":
+            # Star burst pattern - particles in a star shape
+            star_points = 8
+            for i in range(star_points):
+                angle = (i / star_points) * math.pi * 2
+                for j in range(15):
+                    speed = (100 + j * 20) * self.zoom
+                    lifetime = random.uniform(0.6, 1.4)
+                    # Rainbow colors for core unlock
+                    hue = (i * 45 + j * 10) % 360
+                    color = self._hsv_to_rgb(hue, 0.8, 1.0)
+                    self.unlock_effects.append({
+                        "type": "burst",
+                        "x": screen_pos.x,
+                        "y": screen_pos.y,
+                        "vx": math.cos(angle) * speed,
+                        "vy": math.sin(angle) * speed,
+                        "size": random.uniform(4, 10) * self.zoom,
+                        "life": lifetime,
+                        "max_life": lifetime,
+                        "color": color,
+                        "alpha": 1.0,
+                    })
+        
+        # ─── 6. Trigger screen flash (scaled by node kind) ───
+        self.screen_flash_alpha = screen_flash_intensity
+        self.screen_flash_timer = 0.5 if kind in ("keystone", "core") else 0.4
+    
+    def _hsv_to_rgb(self, h, s, v):
+        """Convert HSV color to RGB tuple."""
+        import colorsys
+        r, g, b = colorsys.hsv_to_rgb(h / 360.0, s, v)
+        return (int(r * 255), int(g * 255), int(b * 255))
     
     def _update_particles(self, dt):
         """Update floating particle positions for ambient effect."""
@@ -2687,6 +2822,37 @@ class SkillTreeMenu(Menu):
                 effect["alpha"] = 1.0 - progress  # fade out
                 # Scale up slightly
                 effect["size"] += 2 * dt
+                if effect["life"] <= 0:
+                    to_remove.append(effect)
+            
+            elif effect_type == "spiral_particle":
+                # Spiral outward from center
+                effect["radius"] += effect["speed"] * dt
+                effect["angle"] += effect["angular_speed"] * dt
+                effect["life"] -= dt
+                progress = 1.0 - (effect["life"] / effect["max_life"])
+                effect["alpha"] = 1.0 - progress
+                # Update position based on spiral
+                effect["x"] = effect.get("start_x", effect["x"]) + math.cos(effect["angle"]) * effect["radius"]
+                effect["y"] = effect.get("start_y", effect["y"]) + math.sin(effect["angle"]) * effect["radius"]
+                if effect["life"] <= 0:
+                    to_remove.append(effect)
+            
+            elif effect_type == "light_beam":
+                # Extend beam outward
+                effect["length"] = min(effect["max_length"], effect["length"] + effect["speed"] * dt)
+                effect["life"] -= dt
+                progress = 1.0 - (effect["life"] / effect["max_life"])
+                effect["alpha"] = 0.8 * (1.0 - progress)
+                if effect["life"] <= 0:
+                    to_remove.append(effect)
+            
+            elif effect_type == "pulse_ring":
+                # Expand ring with pulse
+                effect["radius"] = min(effect["max_radius"], effect["radius"] + effect["pulse_speed"] * dt)
+                effect["life"] -= dt
+                progress = 1.0 - (effect["life"] / effect["max_life"])
+                effect["alpha"] = 0.6 * (1.0 - progress)
                 if effect["life"] <= 0:
                     to_remove.append(effect)
         
@@ -2766,6 +2932,51 @@ class SkillTreeMenu(Menu):
                 shadow.set_alpha(alpha // 2)
                 surface.blit(shadow, (pos[0] + 2, pos[1] + 2))
                 surface.blit(text_surf, pos)
+            
+            elif effect_type == "spiral_particle":
+                alpha = int(255 * effect["alpha"])
+                if alpha <= 0:
+                    continue
+                color = effect["color"]
+                size = max(1, int(effect["size"] * effect["alpha"]))
+                pos = (int(effect["x"]), int(effect["y"]))
+                # Draw glow
+                glow_r = size * 3
+                glow_surf = pygame.Surface((glow_r * 2, glow_r * 2), pygame.SRCALPHA)
+                glow_a = alpha // 3
+                pygame.draw.circle(glow_surf, (*color, glow_a), (glow_r, glow_r), glow_r)
+                surface.blit(glow_surf, (pos[0] - glow_r, pos[1] - glow_r))
+                # Draw core
+                bright = tuple(min(255, c + 60) for c in color)
+                pygame.draw.circle(surface, bright, pos, size)
+            
+            elif effect_type == "light_beam":
+                alpha = int(255 * effect["alpha"])
+                if alpha <= 0:
+                    continue
+                color = effect["color"]
+                # Draw beam as a line from center outward
+                end_x = effect["x"] + math.cos(effect["angle"]) * effect["length"]
+                end_y = effect["y"] + math.sin(effect["angle"]) * effect["length"]
+                # Draw glow layer
+                glow_color = tuple(max(0, min(255, c)) for c in color)
+                pygame.draw.line(surface, glow_color, (int(effect["x"]), int(effect["y"])), (int(end_x), int(end_y)), max(1, int(effect["width"] * 2)))
+                # Draw bright core
+                bright = tuple(min(255, c + 80) for c in color)
+                pygame.draw.line(surface, bright, (int(effect["x"]), int(effect["y"])), (int(end_x), int(end_y)), max(1, int(effect["width"])))
+            
+            elif effect_type == "pulse_ring":
+                alpha = int(255 * effect["alpha"])
+                if alpha <= 0:
+                    continue
+                color = effect["color"]
+                radius = int(effect["radius"])
+                if radius > 0:
+                    # Draw multiple rings for glow effect
+                    for w in range(3):
+                        ring_alpha = alpha // (w + 1)
+                        ring_color = tuple(max(0, min(255, c)) for c in color)
+                        pygame.draw.circle(surface, ring_color, (int(effect["x"]), int(effect["y"])), radius + w * 2, max(1, int(effect["width"])))
         
         # Draw screen flash (light overlay)
         if self.screen_flash_alpha > 0.01:
