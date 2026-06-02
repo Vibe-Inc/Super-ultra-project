@@ -456,7 +456,7 @@ class CraftingGrid(Inventory):
         db = Gp_database()
         self.all_recipes = db.get_all_recipes()
         db.close()
-        
+
         scale = cfg.ui_scale()
         btn_size = int(self.slot_size * 0.95)
         self.book_button = Button(
