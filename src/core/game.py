@@ -778,6 +778,12 @@ class Game(State):
             if enemy.is_dead():
                 logger.info("Enemy defeated!")
                 
+                # Soul Harvest: restore HP and add damage stack
+                character = self.character
+                if getattr(character, "soul_harvest", False):
+                    character.hp = min(character.max_hp, character.hp + character.soul_harvest_hp_per_kill)
+                    character.soul_harvest_stacks.append(character.soul_harvest_duration)
+                
                 # Random XP [30, 60]
                 xp_gain = random.randint(30, 60)
                 self.character.gain_xp(xp_gain)

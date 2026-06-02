@@ -284,6 +284,13 @@ class Character:
         # Eternal Fortress keystone (passive)
         self.eternal_fortress = False
 
+        # Soul Harvest keystone (passive)
+        self.soul_harvest = False
+        self.soul_harvest_stacks = []
+        self.soul_harvest_duration = 8.0
+        self.soul_harvest_hp_per_kill = 5
+        self.soul_harvest_damage_per_stack = 0.02
+
         # Berserker's Rage keystone
         self.berserkers_rage_active = False
         self.berserkers_rage_duration = 8.0
@@ -322,10 +329,20 @@ class Character:
                 rage = object.__getattribute__(self, "berserkers_rage_active")
             except AttributeError:
                 rage = False
-            if rage:
+            try:
+                soul_harvest = object.__getattribute__(self, "soul_harvest")
+            except AttributeError:
+                soul_harvest = False
+            if rage or soul_harvest:
                 actual = object.__getattribute__(self, name)
                 if actual is not None and isinstance(actual, (int, float)):
-                    return int(actual * 1.5)
+                    mult = 1.0
+                    if rage:
+                        mult *= 1.5
+                    if soul_harvest:
+                        stacks = object.__getattribute__(self, "soul_harvest_stacks")
+                        mult *= 1.0 + len(stacks) * 0.02
+                    return int(actual * mult)
         if name == "attack_cooldown":
             try:
                 chrono = object.__getattribute__(self, "chrono_shift_active")
@@ -565,6 +582,12 @@ class Character:
         self.speed_multiplier *= 0.85
         self.speed = self.base_speed * self.speed_multiplier
         logger.info("Player learned Eternal Fortress (passive)! (+40 HP, +80% defense, -15% speed)")
+
+    def learn_soul_harvest(self):
+        if self.soul_harvest:
+            return
+        self.soul_harvest = True
+        logger.info("Player learned Soul Harvest (passive)! (5 HP/kill, +2% damage stack)")
 
     def learn_chrono_shift(self):
         for skill in self.skillbook:
@@ -1261,6 +1284,10 @@ class Character:
                 logger.info("Chrono Shift ended.")
             else:
                 self._update_chrono_shift_particles(dt)
+
+        # Update Soul Harvest stacks
+        if self.soul_harvest and self.soul_harvest_stacks:
+            self.soul_harvest_stacks = [t - dt for t in self.soul_harvest_stacks if t - dt > 0]
 
         # Update invulnerability
         if self.invulnerable:
