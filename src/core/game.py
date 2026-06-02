@@ -762,14 +762,20 @@ class Game(State):
             if enemy.is_dead():
                 logger.info("Enemy defeated!")
                 
-                # Random XP [30, 60]
-                xp_gain = random.randint(30, 60)
+                # Reward scaling based on enemy difficulty (using max_hp as proxy)
+                # Base reward ranges
+                _base_xp_min, _base_xp_max = 30, 60
+                _base_gold_min, _base_gold_max = 5, 20
+
+                # Scaling factor: enemy's max HP relative to 100 (average)
+                _scale = enemy.max_hp / 100.0
+
+                xp_gain = int(random.randint(_base_xp_min, _base_xp_max) * _scale)
                 self.character.gain_xp(xp_gain)
-                
-                # Random Money [5, 20]
-                money_gain = random.randint(5, 20)
-                self.app.money += money_gain
-                logger.info(f"Gained {money_gain} money. Total: {self.app.money}")
+
+                gold_gain = int(random.randint(_base_gold_min, _base_gold_max) * _scale)
+                self.app.money += gold_gain
+                logger.info(f"Gained {gold_gain} gold. Total: {self.app.money}")
                 
                 self.enemies.remove(enemy)
 
