@@ -10,6 +10,15 @@ if TYPE_CHECKING:
     from src.app import App
 
 class HUD:
+    NEON_THEMES = {
+        "fire": {"primary": (255, 80, 40), "glow": (255, 120, 60), "accent": (255, 200, 100)},
+        "ice": {"primary": (60, 140, 255), "glow": (100, 180, 255), "accent": (180, 220, 255)},
+        "lightning": {"primary": (255, 220, 50), "glow": (255, 240, 100), "accent": (255, 255, 180)},
+        "nature": {"primary": (80, 200, 100), "glow": (120, 240, 140), "accent": (180, 255, 180)},
+        "shadow": {"primary": (160, 80, 220), "glow": (200, 120, 255), "accent": (220, 180, 255)},
+        "arcane": {"primary": (220, 80, 180), "glow": (255, 120, 220), "accent": (255, 180, 240)},
+        "default": {"primary": (100, 140, 200), "glow": (140, 180, 240), "accent": (200, 220, 255)},
+    }
 
     """
     Head-Up Display (HUD) for player status and UI controls.
@@ -102,6 +111,7 @@ class HUD:
         self.skill_total_slots_height = (self.skill_slot_size * self.skill_slots_count) + (self.skill_slot_padding * (self.skill_slots_count + 1))
         self.skill_panel_x = 0
         self.skill_panel_y = 0
+        self.animation_time = 0.0
 
         self.hp_icon_pos = (0, 0)
         self.life_icon_pos = (0, 0)
@@ -211,6 +221,73 @@ class HUD:
                             self.use_skill_callback(index)
                         break
 
+    def _get_skill_theme(self, skill):
+        if skill is None:
+            return self.NEON_THEMES["default"]
+        skill_id = skill.get("skill_id", "").lower()
+        name = skill.get("name", "").lower()
+        color = skill.get("color", (100, 140, 200))
+        
+        for theme_name, theme in self.NEON_THEMES.items():
+            if theme_name in skill_id or theme_name in name:
+                return theme
+        
+        best_match = "default"
+        best_score = 0
+        for theme_name, theme in self.NEON_THEMES.items():
+            primary = theme["primary"]
+            score = sum(abs(a - b) for a, b in zip(color, primary))
+            if score < best_score or best_score == 0:
+                best_score = score
+                best_match = theme_name
+        return self.NEON_THEMES.get(best_match, self.NEON_THEMES["default"])
+
+    def _draw_hud_skill_slot(self, surface, rect, skill, idx):
+        t = self.animation_time
+        theme = self._get_skill_theme(skill)
+        
+        # Panel background with glow
+        pulse = (math.sin(t * 2.5 + idx * 0.5) + 1.0) * 0.5
+        if skill:
+            bg_color = skill.get("color", theme["primary"])
+            border_color = skill.get("accent", theme["accent"])
+            glow_color = theme["glow"]
+        else:
+            bg_color = cfg.INV_SLOT_BG_COLOR
+            border_color = cfg.INV_SLOT_BORDER_COLOR
+            glow_color = (40, 40, 50)
+
+        # Glow layers for active skills
+        if skill:
+            for offset in range(3, 0, -1):
+                glow_rect = rect.inflate(offset * 2, offset * 2)
+                alpha = int(40 + 30 * pulse) // (offset + 1)
+                glow_surf = pygame.Surface(glow_rect.size, pygame.SRCALPHA)
+                gc = (*glow_color, alpha)
+                pygame.draw.rect(glow_surf, gc, glow_surf.get_rect(), border_radius=14 + offset)
+                surface.blit(glow_surf, glow_rect.topleft)
+
+        # Slot background
+        pygame.draw.rect(surface, bg_color, rect, border_radius=cfg.INV_SLOT_BORDER_RADIUS)
+        
+        # Inner shadow for depth
+        inner_rect = rect.inflate(-4, -4)
+        pygame.draw.rect(surface, cfg.INV_SLOT_INNER_SHADOW, inner_rect, border_radius=cfg.INV_SLOT_INNER_BORDER_RADIUS)
+
+        # Border
+        final_border = border_color
+        if skill:
+            final_border = tuple(min(255, int(c * 1.2)) for c in border_color)
+        pygame.draw.rect(surface, final_border, rect, 2, border_radius=cfg.INV_SLOT_BORDER_RADIUS)
+
+        if skill:
+            small_font = cfg.get_font(max(8, int(16 * cfg.ui_scale())))
+            name = small_font.render(skill.get("name", ""), True, cfg.INV_ITEM_TEXT_COLOR)
+            surface.blit(name, name.get_rect(center=(rect.centerx, rect.centery - 4)))
+            
+            ident = small_font.render(str(idx + 1), True, cfg.INV_ITEM_TEXT_COLOR)
+            surface.blit(ident, ident.get_rect(bottomright=(rect.right - 6, rect.bottom - 6)))
+
     def _on_shop_clicked(self):
         if self.open_shop_callback:
             try:
@@ -227,6 +304,13 @@ class HUD:
                 pass
 
     def draw(self, screen: pygame.Surface):
+        # Update animation time using the game clock for smooth animations
+        try:
+            dt = self.app.clock.get_time() / 1000.0
+        except Exception:
+            dt = 0.016
+        self.animation_time += dt
+
         try:
             sw, sh = screen.get_size()
             self._ensure_layout(sw, sh)
@@ -344,27 +428,19 @@ class HUD:
         # Draw vertical skill hotbar (right side) if no shop is open
         if not getattr(self.app.INV_manager, 'current_shop_inv', None):
             panel_rect = pygame.Rect(self.skill_panel_x, self.skill_panel_y, self.skill_panel_width, self.skill_total_slots_height)
-            # panel background
-            pygame.draw.rect(screen, (30, 30, 30), panel_rect)
-            pygame.draw.rect(screen, (200, 200, 200), panel_rect, 2)
+            
+            # Shadow
+            shadow = pygame.Surface(panel_rect.size, pygame.SRCALPHA)
+            pygame.draw.rect(shadow, (0, 0, 0, 120), shadow.get_rect(), border_radius=cfg.INV_PLAYER_BORDER_RADIUS)
+            screen.blit(shadow, (panel_rect.x + 8, panel_rect.y + 8))
+            
+            # Panel background
+            pygame.draw.rect(screen, cfg.INV_PLAYER_BG_COLOR, panel_rect, border_radius=cfg.INV_PLAYER_BORDER_RADIUS)
+            pygame.draw.rect(screen, cfg.INV_PLAYER_BORDER_COLOR, panel_rect, cfg.INV_PLAYER_BORDER_WIDTH, border_radius=cfg.INV_PLAYER_BORDER_RADIUS)
 
-            small_font = cfg.get_font(max(8,int(20 * cfg.ui_scale())))
             skillbar = getattr(self.character, "skillbar", [])
-            for idx, slot in enumerate(self.skill_slot_rects, start=1):
-                skill = skillbar[idx - 1] if idx - 1 < len(skillbar) else None
-                fill = skill.get("color", (60, 60, 60)) if skill else (60, 60, 60)
-                border = skill.get("accent", (180, 180, 180)) if skill else (180, 180, 180)
-                pygame.draw.rect(screen, fill, slot)
-                pygame.draw.rect(screen, border, slot, 2)
-
-                if skill:
-                    label = small_font.render(skill.get("name", ""), True, (255, 255, 255))
-                    label_rect = label.get_rect(center=(slot.centerx, slot.centery - 4))
-                    screen.blit(label, label_rect)
-
-                # placeholder: draw a small number showing the hotkey
-                num_surf = small_font.render(str(idx if idx <= 9 else idx % 10), True, (220, 220, 220))
-                num_rect = num_surf.get_rect(bottomright=(slot.right - 6, slot.bottom - 6))
-                screen.blit(num_surf, num_rect)
+            for idx, slot in enumerate(self.skill_slot_rects):
+                skill = skillbar[idx] if idx < len(skillbar) else None
+                self._draw_hud_skill_slot(screen, slot, skill, idx)
 
         # top skillbar removed
