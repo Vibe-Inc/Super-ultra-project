@@ -1577,3 +1577,104 @@ class NatureBolt:
         pygame.draw.circle(screen, self.color, rect.center, rect.width // 2 - 1)
         # Core
         pygame.draw.circle(screen, (220, 255, 220), rect.center, max(2, rect.width // 4))
+
+
+class DarkPact:
+    """
+    Shadow burst that deals damage to all nearby enemies from the caster's position.
+
+    Attributes:
+        pos (pygame.Vector2): Center position of the burst.
+        damage (int): Damage dealt to each enemy.
+        radius (float): Maximum expansion radius.
+        alive (bool): Whether the effect is still active.
+        expansion_time (float): Current expansion time.
+        expansion_duration (float): How long the visual expansion lasts.
+        current_radius (float): Current visual radius.
+    """
+    def __init__(self, pos, damage, radius=150.0, expansion_duration=0.5):
+        self.pos = pygame.Vector2(pos)
+        self.damage = damage
+        self.radius = radius
+        self.alive = True
+        self.expansion_time = 0.0
+        self.expansion_duration = expansion_duration
+        self.current_radius = 0.0
+        self.damage_applied = False
+        self.animation_time = 0.0
+
+    def get_rect(self):
+        size = int(self.radius * 2)
+        rect = pygame.Rect(0, 0, size, size)
+        rect.center = (int(self.pos.x), int(self.pos.y))
+        return rect
+
+    def update(self, dt, obstacles, enemies):
+        if not self.alive:
+            return
+
+        self.animation_time += dt
+        self.expansion_time += dt
+        progress = min(1.0, self.expansion_time / self.expansion_duration)
+        self.current_radius = self.radius * progress
+
+        if not self.damage_applied and progress >= 0.3:
+            for enemy in enemies:
+                if enemy.is_dead():
+                    continue
+                enemy_rect = enemy.get_rect()
+                enemy_center = pygame.Vector2(enemy_rect.centerx, enemy_rect.centery)
+                if (enemy_center - self.pos).length_squared() <= self.radius * self.radius:
+                    enemy.take_damage(self.damage)
+            self.damage_applied = True
+
+        if self.expansion_time >= self.expansion_duration:
+            self.alive = False
+
+    def draw(self, screen, camera_offset=None):
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+
+        cx = int(self.pos.x - camera_offset.x)
+        cy = int(self.pos.y - camera_offset.y)
+        progress = min(1.0, self.expansion_time / self.expansion_duration)
+        radius = int(self.current_radius)
+
+        if radius <= 0:
+            return
+
+        # ── Outer shadow ring ──
+        ring_alpha = int(180 * (1 - progress))
+        pygame.draw.circle(screen, (80, 40, 120, ring_alpha), (cx, cy), radius, max(2, int(3 * (1 - progress) + 1)))
+
+        # ── Main dark burst ──
+        surface = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+        outer_alpha = int(100 * (1 - progress * 0.5))
+        pygame.draw.circle(surface, (60, 20, 100, outer_alpha), (radius, radius), radius)
+        mid_r = max(1, int(radius * 0.6))
+        mid_alpha = int(140 * (1 - progress * 0.3))
+        pygame.draw.circle(surface, (100, 40, 160, mid_alpha), (radius, radius), mid_r)
+        inner_r = max(1, int(radius * 0.3))
+        inner_alpha = int(180 * (1 - progress * 0.2))
+        pygame.draw.circle(surface, (160, 80, 220, inner_alpha), (radius, radius), inner_r)
+
+        screen.blit(surface, (cx - radius, cy - radius))
+
+        # ── Shadow wisps ──
+        import random
+        for _ in range(int(8 * (1 - progress) + 2)):
+            w_angle = random.uniform(0, math.pi * 2)
+            w_dist = random.uniform(0, radius)
+            w_x = cx + math.cos(w_angle) * w_dist
+            w_y = cy + math.sin(w_angle) * w_dist
+            w_size = random.randint(1, 4)
+            w_color = random.choice([(140, 80, 200), (180, 120, 240), (100, 60, 160)])
+            pygame.draw.circle(screen, w_color, (int(w_x), int(w_y)), w_size)
+
+        # ── Inner flash (early burst) ──
+        if progress < 0.3:
+            flash_alpha = int(160 * (1 - progress / 0.3))
+            flash_r = int(radius * 0.5)
+            flash_surf = pygame.Surface((flash_r * 2, flash_r * 2), pygame.SRCALPHA)
+            pygame.draw.circle(flash_surf, (200, 140, 255, flash_alpha), (flash_r, flash_r), flash_r)
+            screen.blit(flash_surf, (cx - flash_r, cy - flash_r))

@@ -2,8 +2,9 @@ import math
 import random
 
 import pygame
+from database.effects import PoisonEffect
 from src.core.logger import logger
-from src.entities.projectile import Fireball, GlacialCascade, FrostNova, ChainLightning, Thunderstrike, EntanglingRoots, NatureBolt
+from src.entities.projectile import Fireball, GlacialCascade, FrostNova, ChainLightning, Thunderstrike, EntanglingRoots, NatureBolt, DarkPact
 from src.entities.nature_spirit import NatureSpirit
 
 class Character:
@@ -241,6 +242,25 @@ class Character:
         self.pyromancers_fury = False
         self.pyromancers_fury_damage_mult = 1.25   # +25% fire damage
         self.pyromancers_fury_area_mult = 1.15     # +15% fire area
+
+        # Shadow Step skill
+        self.shadow_step_range = 300.0
+        self.shadow_step_cooldown = 6000
+        self.shadow_step_last_used = -self.shadow_step_cooldown
+        self.shadow_step_invuln_duration = 0.5
+
+        # Passive: Poison Blade
+        self.poison_blade = False
+        self.poison_blade_damage_per_sec = 6.0
+        self.poison_blade_duration = 5.0
+
+        # Dark Pact skill
+        self.dark_pact_hp_cost_percent = 0.1
+        self.dark_pact_damage = 60
+        self.dark_pact_radius = 150.0
+        self.dark_pact_cooldown = 8000
+        self.dark_pact_last_used = -self.dark_pact_cooldown
+
         self.dash_speed_multiplier = 3.0
         self.dash_duration = 0.14
         self.dash_cooldown = 900
@@ -393,6 +413,36 @@ class Character:
             "accent": (200, 255, 200),
         })
         logger.info("Player learned Summon Spirit!")
+
+    def learn_shadow_step(self):
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "shadow_step":
+                return
+        self.skillbook.append({
+            "skill_id": "shadow_step",
+            "name": "Shadow Step",
+            "description": "Teleport through shadows, becoming invulnerable briefly.",
+            "color": (100, 50, 140),
+            "accent": (200, 160, 255),
+        })
+        logger.info("Player learned Shadow Step!")
+
+    def learn_poison_blade(self):
+        self.poison_blade = True
+        logger.info("Player unlocked Poison Blade (passive)!")
+
+    def learn_dark_pact(self):
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "dark_pact":
+                return
+        self.skillbook.append({
+            "skill_id": "dark_pact",
+            "name": "Dark Pact",
+            "description": "Sacrifice 10% HP to deal 60 shadow damage to all nearby enemies.",
+            "color": (140, 60, 180),
+            "accent": (220, 160, 255),
+        })
+        logger.info("Player learned Dark Pact!")
 
     def get_skill_in_slot(self, slot_index):
         if 0 <= slot_index < len(self.skillbar):
@@ -624,6 +674,45 @@ class Character:
             logger.info("Player used Thunderstrike.")
             return True
 
+        if skill_id == "shadow_step":
+            if current_time - getattr(self, "shadow_step_last_used", -self.shadow_step_cooldown) < self.shadow_step_cooldown:
+                return False
+
+            direction = pygame.Vector2(aim_direction) if aim_direction is not None else pygame.Vector2(self.velocity)
+            if direction.length_squared() == 0:
+                direction = self.get_forward_direction()
+            if direction.length_squared() == 0:
+                direction = pygame.Vector2(1, 0)
+
+            teleport_offset = direction.normalize() * self.shadow_step_range
+            self.pos += teleport_offset
+            self.invulnerable = True
+            self.invulnerability_timer = self.shadow_step_invuln_duration
+            self.shadow_step_last_used = current_time
+            logger.info("Player used Shadow Step.")
+            return True
+
+        if skill_id == "dark_pact":
+            if current_time - getattr(self, "dark_pact_last_used", -self.dark_pact_cooldown) < self.dark_pact_cooldown:
+                return False
+
+            hp_cost = int(self.max_hp * self.dark_pact_hp_cost_percent)
+            self.hp = max(0, self.hp - hp_cost)
+
+            game_state = getattr(self, "game_state", None)
+            if game_state is not None:
+                center = self.get_center()
+                game_state.projectiles.append(
+                    DarkPact(
+                        center,
+                        self.dark_pact_damage,
+                        self.dark_pact_radius,
+                    )
+                )
+            self.dark_pact_last_used = current_time
+            logger.info("Player used Dark Pact.")
+            return True
+
         if skill_id == "entangling_roots":
             if current_time - getattr(self, "entangling_roots_last_used", -self.entangling_roots_cooldown) < self.entangling_roots_cooldown:
                 return False
@@ -790,6 +879,9 @@ class Character:
 
             logger.info(f"Hit enemy for {self.attack_damage} damage!")
             enemy.take_damage(self.attack_damage)
+
+            if self.poison_blade:
+                enemy.add_effect(PoisonEffect(self.poison_blade_duration, self.poison_blade_damage_per_sec))
 
             knockback_force = 20
             enemy.pos += knock_dir * knockback_force

@@ -292,7 +292,7 @@ class Enemy:
             self.frame_index = 0
             self.image = self.animations[self.direction][0]
 
-    def take_damage(self, amount: int) -> bool:
+    def take_damage(self, amount: int, ignore_invulnerability=False) -> bool:
         prev = self.hp
         self.hp = max(0, self.hp - amount)
         logger.debug(f"Enemy {getattr(self, 'ai_profile', 'unknown')} took {amount} damage: {prev} -> {self.hp}")

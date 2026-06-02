@@ -1265,6 +1265,16 @@ class SkillTreeMenu(Menu):
         if node_id == "cluster_4_2" and hasattr(character, "learn_summon_spirit"):
             character.learn_summon_spirit()
 
+        # Shadow: major_5 = Shadow Step, cluster_5_1 = Poison Blade, cluster_5_2 = Dark Pact
+        if node_id == "major_5" and hasattr(character, "learn_shadow_step"):
+            character.learn_shadow_step()
+
+        if node_id == "cluster_5_1" and hasattr(character, "learn_poison_blade"):
+            character.learn_poison_blade()
+
+        if node_id == "cluster_5_2" and hasattr(character, "learn_dark_pact"):
+            character.learn_dark_pact()
+
         # Trigger unlock animation
         self._spawn_unlock_effect(node_id)
 
