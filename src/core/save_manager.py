@@ -7,6 +7,26 @@ import src.config as cfg
 
 SAVES_DIR = "saves"
 
+def _skill_dicts_to_json(items):
+    """Convert tuple RGB values to lists for JSON serialization."""
+    result = []
+    for item in items:
+        if item is None:
+            result.append(None)
+            continue
+        result.append({k: list(v) if isinstance(v, tuple) else v for k, v in item.items()})
+    return result
+
+def _skill_dicts_from_json(items):
+    """Convert list RGB values back to tuples."""
+    result = []
+    for item in items:
+        if item is None:
+            result.append(None)
+            continue
+        result.append({k: tuple(v) if isinstance(v, list) else v for k, v in item.items()})
+    return result
+
 # All character fields to persist (excluding transient/computed/resource attributes)
 CHARACTER_SCALAR_FIELDS = [
     "death_count",
@@ -164,6 +184,19 @@ class SaveManager:
                     col_data.append(None)
             serialized_equip.append(col_data)
 
+        # Serialize Items Hotbar (10×1 grid of [item, count] or None)
+        serialized_hotbar = []
+        for col in range(len(app.MAIN_HOTBAR_items)):
+            col_data = []
+            for row in range(len(app.MAIN_HOTBAR_items[col])):
+                slot = app.MAIN_HOTBAR_items[col][row]
+                if slot:
+                    item, count = slot
+                    col_data.append({"id": item.id, "count": count})
+                else:
+                    col_data.append(None)
+            serialized_hotbar.append(col_data)
+
         char = game_state.character
 
         # Build character state dict (raw __dict__ values to bypass __getattribute__ overrides)
@@ -176,8 +209,8 @@ class SaveManager:
             except KeyError:
                 pass
         char_state["skill_tree_unlocked"] = list(char.__dict__.get("skill_tree_unlocked", {"core"}))
-        char_state["skillbook"] = char.__dict__.get("skillbook", [])
-        char_state["skillbar"] = char.__dict__.get("skillbar", [])
+        char_state["skillbook"] = _skill_dicts_to_json(char.__dict__.get("skillbook", []))
+        char_state["skillbar"] = _skill_dicts_to_json(char.__dict__.get("skillbar", []))
         char_state["soul_harvest_stacks"] = char.__dict__.get("soul_harvest_stacks", [])
         char_state["last_elemental_skill"] = char.__dict__.get("last_elemental_skill", None)
         char_state["spawn_point_x"] = char.__dict__.get("spawn_point", char.pos).x if hasattr(char.__dict__.get("spawn_point", char.pos), "x") else char.pos.x
@@ -198,6 +231,8 @@ class SaveManager:
                 "character_state": char_state,
             },
             "inventory": serialized_inv,
+            "hotbar": serialized_hotbar,
+            "hotbar_active_slot": getattr(game_state, "hotbar", None).active_slot_index if hasattr(game_state, "hotbar") and game_state.hotbar else 0,
             "equipment": serialized_equip,
             "game_time_seconds": int(getattr(game_state, "game_time_seconds", 6 * 3600))
         }
@@ -283,9 +318,9 @@ class SaveManager:
             if "skill_tree_unlocked" in char_state:
                 char.skill_tree_unlocked = set(char_state["skill_tree_unlocked"])
             if "skillbook" in char_state:
-                char.skillbook = list(char_state["skillbook"])
+                char.skillbook = _skill_dicts_from_json(char_state["skillbook"])
             if "skillbar" in char_state:
-                char.skillbar = list(char_state["skillbar"])
+                char.skillbar = _skill_dicts_from_json(char_state["skillbar"])
             if "soul_harvest_stacks" in char_state:
                 char.soul_harvest_stacks = list(char_state["soul_harvest_stacks"])
             if "last_elemental_skill" in char_state:
@@ -301,6 +336,21 @@ class SaveManager:
             if char.max_hp < char.hp:
                 char.hp = char.max_hp
         
+        # Restore Items Hotbar
+        hotbar_data = data.get("hotbar", [])
+        if hotbar_data and hasattr(game_state, "hotbar") and game_state.hotbar:
+            active_slot = data.get("hotbar_active_slot", 0)
+            game_state.hotbar.active_slot_index = active_slot
+            for col in range(min(len(hotbar_data), len(app.MAIN_HOTBAR_items))):
+                for row in range(min(len(hotbar_data[col]), len(app.MAIN_HOTBAR_items[col]))):
+                    slot_data = hotbar_data[col][row]
+                    if slot_data:
+                        item = create_item(slot_data["id"])
+                        count = slot_data["count"]
+                        app.MAIN_HOTBAR_items[col][row] = [item, count]
+                    else:
+                        app.MAIN_HOTBAR_items[col][row] = None
+
         # Restore Equipment
         equip_data = data.get("equipment", [])
         equip_inv = game_state.PLAYER_inventory_equipment
