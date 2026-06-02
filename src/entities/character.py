@@ -1,7 +1,7 @@
 import math
 import pygame
 from src.core.logger import logger
-from src.entities.projectile import Fireball
+from src.entities.projectile import Fireball, GlacialCascade, FrostNova
 
 class Character:
     """
@@ -163,6 +163,35 @@ class Character:
         self.flame_shield_damage_per_sec = 8.0
         self.flame_shield_radius = 110.0        # pixels
         self.flame_shield_particles = []        # visual particles
+        self.flame_shield_damage_acc = 0.0      # fractional damage accumulator
+
+        # Frost Nova skill
+        self.frost_nova_radius = 150.0
+        self.frost_nova_freeze_duration = 3.0
+        self.frost_nova_damage = 0
+        self.frost_nova_cooldown = 8000
+        self.frost_nova_last_used = -self.frost_nova_cooldown
+
+        # Ice Armor skill
+        self.ice_armor_duration = 8.0
+        self.ice_armor_cooldown = 16000
+        self.ice_armor_last_used = -self.ice_armor_cooldown
+        self.ice_armor_active = False
+        self.ice_armor_active_time = 0.0
+        self.ice_armor_remaining_absorption = 30.0
+        self.ice_armor_max_absorption = 30.0
+        self.ice_armor_slow_radius = 80.0
+        self.ice_armor_slow_factor = 0.5
+        self.ice_armor_particles = []
+
+        # Glacial Cascade skill
+        self.glacial_cascade_speed = 400.0
+        self.glacial_cascade_range = 500.0
+        self.glacial_cascade_damage = 35
+        self.glacial_cascade_freeze_duration = 2.0
+        self.glacial_cascade_cooldown = 3000
+        self.glacial_cascade_last_used = -self.glacial_cascade_cooldown
+        self.glacial_cascade_width = 80.0
 
         # Passive: Pyromancer's Fury
         self.pyromancers_fury = False
@@ -218,6 +247,48 @@ class Character:
         """Activate the Pyromancer's Fury passive: fire skills deal 25% more damage and have 15% larger area."""
         self.pyromancers_fury = True
         logger.info("Player unlocked Pyromancer's Fury (passive)!")
+
+    def learn_frost_nova(self):
+        """Add the Frost Nova skill to the skillbook if not already present."""
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "frost_nova":
+                return
+        self.skillbook.append({
+            "skill_id": "frost_nova",
+            "name": "Frost Nova",
+            "description": "Freeze all enemies within radius for 3 seconds.",
+            "color": (60, 140, 255),
+            "accent": (180, 220, 255),
+        })
+        logger.info("Player learned Frost Nova!")
+
+    def learn_ice_armor(self):
+        """Add the Ice Armor skill to the skillbook if not already present."""
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "ice_armor":
+                return
+        self.skillbook.append({
+            "skill_id": "ice_armor",
+            "name": "Ice Armor",
+            "description": "Grants a shield of ice absorbing 30 damage and slowing attackers.",
+            "color": (40, 100, 220),
+            "accent": (140, 200, 255),
+        })
+        logger.info("Player learned Ice Armor!")
+
+    def learn_glacial_cascade(self):
+        """Add the Glacial Cascade skill to the skillbook if not already present."""
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "glacial_cascade":
+                return
+        self.skillbook.append({
+            "skill_id": "glacial_cascade",
+            "name": "Glacial Cascade",
+            "description": "Ice shards cascade outward dealing 35 damage and freezing enemies.",
+            "color": (80, 160, 240),
+            "accent": (200, 230, 255),
+        })
+        logger.info("Player learned Glacial Cascade!")
 
     def get_skill_in_slot(self, slot_index):
         if 0 <= slot_index < len(self.skillbar):
@@ -308,6 +379,79 @@ class Character:
             self.flame_shield_active_time = self.flame_shield_duration
             self.flame_shield_last_used = current_time
             logger.info("Player activated Flame Shield.")
+            return True
+
+        if skill_id == "frost_nova":
+            if current_time - getattr(self, "frost_nova_last_used", -self.frost_nova_cooldown) < self.frost_nova_cooldown:
+                return False
+
+            game_state = getattr(self, "game_state", None)
+            if game_state is None:
+                logger.warning("Frost Nova skill used without an attached game state.")
+                return False
+
+            from src.entities.projectile import FrostNova
+            center = self.get_center()
+            game_state.projectiles.append(
+                FrostNova(
+                    center,
+                    self.frost_nova_radius,
+                    self.frost_nova_freeze_duration,
+                    self.frost_nova_damage,
+                )
+            )
+            self.frost_nova_last_used = current_time
+            logger.info("Player used Frost Nova.")
+            return True
+
+        if skill_id == "ice_armor":
+            if self.ice_armor_active:
+                return False
+            if current_time - self.ice_armor_last_used < self.ice_armor_cooldown:
+                return False
+
+            self.ice_armor_active = True
+            self.ice_armor_active_time = self.ice_armor_duration
+            self.ice_armor_remaining_absorption = self.ice_armor_max_absorption
+            self.ice_armor_last_used = current_time
+            logger.info("Player activated Ice Armor.")
+            return True
+
+        if skill_id == "glacial_cascade":
+            if current_time - getattr(self, "glacial_cascade_last_used", -self.glacial_cascade_cooldown) < self.glacial_cascade_cooldown:
+                return False
+
+            if aim_direction is not None:
+                direction = pygame.Vector2(aim_direction)
+            else:
+                direction = pygame.Vector2(self.velocity)
+
+            if direction.length_squared() == 0:
+                direction = self.get_forward_direction()
+            if direction.length_squared() == 0:
+                direction = pygame.Vector2(1, 0)
+            else:
+                direction = direction.normalize()
+
+            game_state = getattr(self, "game_state", None)
+            if game_state is None:
+                logger.warning("Glacial Cascade skill used without an attached game state.")
+                return False
+
+            spawn_pos = self.get_melee_anchor() + direction * 22
+            game_state.projectiles.append(
+                GlacialCascade(
+                    spawn_pos,
+                    direction,
+                    self.glacial_cascade_speed,
+                    self.glacial_cascade_range,
+                    self.glacial_cascade_damage,
+                    self.glacial_cascade_freeze_duration,
+                    cascade_width=self.glacial_cascade_width,
+                )
+            )
+            self.glacial_cascade_last_used = current_time
+            logger.info("Player used Glacial Cascade.")
             return True
 
         return False
@@ -526,6 +670,21 @@ class Character:
         # Update Flame Shield particles
         self._update_flame_shield_particles(dt)
 
+        # Update Ice Armor active timer
+        if self.ice_armor_active:
+            self.ice_armor_active_time -= dt
+            if self.ice_armor_active_time <= 0 or self.ice_armor_remaining_absorption <= 0:
+                self.ice_armor_active = False
+                self.ice_armor_active_time = 0.0
+                self.ice_armor_particles.clear()
+                if self.ice_armor_remaining_absorption <= 0:
+                    logger.info("Ice Armor shattered!")
+                else:
+                    logger.info("Ice Armor expired.")
+
+        # Update Ice Armor particles
+        self._update_ice_armor_particles(dt)
+
         # Update invulnerability
         if self.invulnerable:
             self.invulnerability_timer -= dt
@@ -578,7 +737,16 @@ class Character:
     def take_damage(self, amount, ignore_invulnerability=False):
         if self.invulnerable and not ignore_invulnerability:
             return
-            
+
+        # Ice Armor absorbs damage
+        if self.ice_armor_active and self.ice_armor_remaining_absorption > 0 and amount > 0:
+            absorbed = min(self.ice_armor_remaining_absorption, float(amount))
+            self.ice_armor_remaining_absorption -= absorbed
+            amount -= int(absorbed)
+            logger.info(f"Ice Armor absorbed {int(absorbed)} damage. Remaining: {int(self.ice_armor_remaining_absorption)}")
+            if amount <= 0:
+                return
+
         self.hp -= amount
         
         if not ignore_invulnerability:
@@ -648,6 +816,10 @@ class Character:
         # Draw Flame Shield visual effect
         if self.flame_shield_active:
             self._draw_flame_shield(screen, camera_offset)
+
+        # Draw Ice Armor visual effect
+        if self.ice_armor_active:
+            self._draw_ice_armor(screen, camera_offset)
 
     # ─── Flame Shield helpers ───────────────────────────────────────────
 
@@ -767,3 +939,141 @@ class Character:
                 em_size = random.randint(1, 3)
                 em_color = random.choice([(255, 220, 100), (255, 180, 60), (255, 255, 140)])
                 pygame.draw.circle(screen, em_color, (int(em_x), int(em_y)), em_size)
+
+    # ─── Ice Armor helpers ───────────────────────────────────────────
+
+    def _update_ice_armor_particles(self, dt):
+        """Spawn, move, and cull ice particles around the character."""
+        import random
+
+        if self.ice_armor_active:
+            spawn_count = max(1, int(15 * dt))
+            for _ in range(spawn_count):
+                angle = random.uniform(0, math.pi * 2)
+                dist = random.uniform(self.ice_armor_slow_radius * 0.3, self.ice_armor_slow_radius)
+                speed = random.uniform(20, 50)
+                self.ice_armor_particles.append({
+                    "angle": angle,
+                    "dist": dist,
+                    "life": random.uniform(0.4, 0.8),
+                    "max_life": random.uniform(0.4, 0.8),
+                    "size": random.uniform(2.0, 5.0),
+                    "drift": random.uniform(-10, 10),
+                    "vertical_speed": -speed,
+                    "color": random.choice([
+                        (180, 220, 255),
+                        (200, 235, 255),
+                        (160, 200, 255),
+                        (220, 240, 255),
+                        (140, 190, 255),
+                    ]),
+                })
+
+        for p in self.ice_armor_particles[:]:
+            p["life"] -= dt
+            if p["life"] <= 0:
+                self.ice_armor_particles.remove(p)
+                continue
+            p["angle"] += p["drift"] * dt
+            p["dist"] = max(0, p["dist"] - 6 * dt)
+            p["vertical_speed"] -= 80 * dt
+
+    def _draw_ice_armor(self, screen, camera_offset):
+        """Draw the ice armor aura and particles."""
+        import random
+        center = self.get_center()
+        cx = center.x - camera_offset.x
+        cy = center.y - camera_offset.y
+        t = pygame.time.get_ticks() / 1000.0
+
+        visual_radius = self.ice_armor_slow_radius
+
+        # ── Inner frost glow ring ──
+        pulse = 0.5 + 0.5 * math.sin(t * 4.0)
+        glow_radius = visual_radius * (0.8 + 0.2 * pulse)
+        glow_surf = pygame.Surface((int(glow_radius * 2) + 4, int(glow_radius * 2) + 4), pygame.SRCALPHA)
+        glow_a = int(30 + 20 * pulse)
+        pygame.draw.circle(glow_surf, (60, 140, 255, glow_a),
+                           (int(glow_radius) + 2, int(glow_radius) + 2),
+                           int(glow_radius))
+        inner_r = int(glow_radius * 0.5)
+        inner_a = int(20 + 15 * pulse)
+        pygame.draw.circle(glow_surf, (140, 200, 255, inner_a),
+                           (int(glow_radius) + 2, int(glow_radius) + 2),
+                           inner_r)
+        screen.blit(glow_surf, (int(cx - glow_radius - 2), int(cy - glow_radius - 2)))
+
+        # ── Outer frost ring ──
+        ring_r = visual_radius
+        ring_a = int(60 + 40 * math.sin(t * 7.0))
+        ring_surf = pygame.Surface((int(ring_r * 2) + 4, int(ring_r * 2) + 4), pygame.SRCALPHA)
+        pygame.draw.circle(ring_surf, (100, 180, 255, ring_a),
+                           (int(ring_r) + 2, int(ring_r) + 2),
+                           int(ring_r), max(1, int(2 * pulse)))
+        screen.blit(ring_surf, (int(cx - ring_r - 2), int(cy - ring_r - 2)))
+
+        # ── Ice crystal shield overlay ──
+        shard_count = 8
+        for i in range(shard_count):
+            shard_angle = t * 0.5 + i * (math.pi * 2 / shard_count)
+            shard_dist = visual_radius * 0.7 + 10 * math.sin(t * 3.0 + i)
+            sx = cx + math.cos(shard_angle) * shard_dist
+            sy = cy + math.sin(shard_angle) * shard_dist
+            shard_size = max(2, int(4 + 2 * math.sin(t * 2.0 + i * 1.5)))
+            shard_alpha = int(100 + 80 * math.sin(t * 5.0 + i * 2.0))
+            shard_color = (180, 220, 255, shard_alpha)
+            # Draw shard as small diamond
+            pts = [
+                (sx, sy - shard_size),
+                (sx + shard_size * 0.6, sy),
+                (sx, sy + shard_size),
+                (sx - shard_size * 0.6, sy),
+            ]
+            pygame.draw.polygon(screen, shard_color[:3], pts)
+            pygame.draw.polygon(screen, (220, 240, 255), pts, 1)
+
+        # ── Ice particles ──
+        for p in self.ice_armor_particles:
+            life_ratio = p["life"] / p["max_life"] if p["max_life"] > 0 else 0
+            if life_ratio <= 0:
+                continue
+
+            px = cx + math.cos(p["angle"]) * p["dist"]
+            py = cy + math.sin(p["angle"]) * p["dist"] + p["vertical_speed"] * (1 - life_ratio) * 0.3
+
+            alpha = int(200 * life_ratio)
+            size = max(1, int(p["size"] * life_ratio))
+            r, g, b = p["color"]
+
+            glow_sz = size * 3
+            glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+            pygame.draw.circle(glow, (r, g, b, alpha // 3),
+                               (glow_sz, glow_sz), glow_sz)
+            screen.blit(glow, (int(px - glow_sz), int(py - glow_sz)))
+
+            if alpha > 20:
+                pygame.draw.circle(screen, (min(255, r + 40), min(255, g + 30), min(255, b + 10)),
+                                   (int(px), int(py)), size)
+
+        # ── Shield health indicator (frost cracks at edges) ──
+        absorb_ratio = self.ice_armor_remaining_absorption / self.ice_armor_max_absorption
+        if absorb_ratio < 0.5:
+            crack_alpha = int(150 * (1.0 - absorb_ratio * 2))
+            for _ in range(3):
+                crack_angle = random.uniform(0, math.pi * 2)
+                crack_dist = visual_radius
+                cpx = cx + math.cos(crack_angle) * crack_dist
+                cpy = cy + math.sin(crack_angle) * crack_dist
+                pygame.draw.line(screen, (200, 220, 255, crack_alpha),
+                                 (cpx - 3, cpy - 3), (cpx + 3, cpy + 3), 2)
+
+        # ── Frost sparkles ──
+        if self.ice_armor_active:
+            for _ in range(2):
+                sp_angle = random.uniform(0, math.pi * 2)
+                sp_dist = random.uniform(0, visual_radius * 0.4)
+                sp_x = cx + math.cos(sp_angle) * sp_dist
+                sp_y = cy + random.uniform(-15, 15)
+                sp_size = random.randint(1, 2)
+                sp_color = random.choice([(200, 240, 255), (160, 210, 255), (220, 250, 255)])
+                pygame.draw.circle(screen, sp_color, (int(sp_x), int(sp_y)), sp_size)

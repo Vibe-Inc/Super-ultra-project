@@ -1234,6 +1234,16 @@ class SkillTreeMenu(Menu):
         # Pyromancer's Fury (passive): cluster_1_2
         if node_id == "cluster_1_2" and hasattr(character, "learn_pyromancers_fury"):
             character.learn_pyromancers_fury()
+
+        # Ice: major_2 = Frost Nova, cluster_2_1 = Ice Armor, cluster_2_2 = Glacial Cascade
+        if node_id == "major_2" and hasattr(character, "learn_frost_nova"):
+            character.learn_frost_nova()
+
+        if node_id == "cluster_2_1" and hasattr(character, "learn_ice_armor"):
+            character.learn_ice_armor()
+
+        if node_id == "cluster_2_2" and hasattr(character, "learn_glacial_cascade"):
+            character.learn_glacial_cascade()
         
         # Trigger unlock animation
         self._spawn_unlock_effect(node_id)

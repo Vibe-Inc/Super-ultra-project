@@ -10,7 +10,7 @@ from src.entities.character import Character
 from src.map.map import LocalMap
 from src.inventory.system import MAIN_player_inventory, MAIN_player_inventory_equipment, ShopInventory, MAIN_player_hotbar
 from src.items.items import create_item
-from database.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, DizzinessEffect
+from database.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, DizzinessEffect, SlowEffect
 from src.entities.enemy import Enemy
 from src.entities.npc import NPC
 from src.entities.projectile import Arrow
@@ -757,6 +757,10 @@ class Game(State):
         if self.character.flame_shield_active:
             self._apply_flame_shield_damage(dt)
 
+        # Ice Armor: slow nearby enemies
+        if self.character.ice_armor_active:
+            self._apply_ice_armor_slow(dt)
+
         self.collision_handler.check_interactions(
             self.character, self.enemies, self.items
         )
@@ -802,15 +806,12 @@ class Game(State):
         self.app.profiler.set_gauge("projectiles", len(self.projectiles))
         self.app.profiler.set_gauge("enemy_projectiles", len(self.enemy_projectiles))
 
-    def _apply_flame_shield_damage(self, dt):
-        """Deal flame shield damage to enemies within the flame shield radius."""
+    def _apply_ice_armor_slow(self, dt):
+        """Slow enemies near the player while Ice Armor is active."""
         center = self.character.get_center()
-        radius = self.character.flame_shield_radius
-        damage = self.character.flame_shield_damage_per_sec * dt
-        # Apply Pyromancer's Fury passive buff to flame shield (+25% damage, +15% area)
-        if getattr(self.character, "pyromancers_fury", False):
-            damage *= self.character.pyromancers_fury_damage_mult
-            radius *= self.character.pyromancers_fury_area_mult
+        radius = self.character.ice_armor_slow_radius
+        slow_factor = self.character.ice_armor_slow_factor
+        slow_duration = 1.0
         radius_sq = radius * radius
         for enemy in self.enemies:
             if enemy.is_dead():
@@ -819,7 +820,36 @@ class Game(State):
             enemy_center = pygame.Vector2(enemy_rect.centerx, enemy_rect.centery)
             dist_sq = (enemy_center - center).length_squared()
             if dist_sq <= radius_sq:
-                enemy.take_damage(int(damage) if damage >= 1 else 0)
+                enemy.add_effect(SlowEffect(slow_duration, slow_factor))
+
+    def _apply_flame_shield_damage(self, dt):
+        """Deal flame shield damage to enemies within the flame shield radius."""
+        center = self.character.get_center()
+        radius = self.character.flame_shield_radius
+        dmg_per_sec = self.character.flame_shield_damage_per_sec
+        # Apply Pyromancer's Fury passive buff to flame shield (+25% damage, +15% area)
+        if getattr(self.character, "pyromancers_fury", False):
+            dmg_per_sec *= self.character.pyromancers_fury_damage_mult
+            radius *= self.character.pyromancers_fury_area_mult
+        radius_sq = radius * radius
+
+        # Accumulate fractional damage
+        acc = getattr(self.character, "flame_shield_damage_acc", 0.0)
+        acc += dmg_per_sec * dt
+        damage = int(acc)
+        if damage < 1:
+            self.character.flame_shield_damage_acc = acc
+            return
+        self.character.flame_shield_damage_acc = acc - damage
+
+        for enemy in self.enemies:
+            if enemy.is_dead():
+                continue
+            enemy_rect = enemy.get_rect()
+            enemy_center = pygame.Vector2(enemy_rect.centerx, enemy_rect.centery)
+            dist_sq = (enemy_center - center).length_squared()
+            if dist_sq <= radius_sq:
+                enemy.take_damage(damage)
                 # Apply slight knockback pushing enemy away from player
                 if dist_sq > 0:
                     push_dir = (enemy_center - center).normalize()

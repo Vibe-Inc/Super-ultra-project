@@ -232,6 +232,27 @@ class SlowEffect(Effect):
         target.speed_multiplier = 1.0
         logger.debug(f"SlowEffect ended on {getattr(target, 'id', type(target))}")
 
+class FreezeEffect(Effect):
+    """
+    Completely immobilizes the target for a duration.
+
+    Attributes:
+        frozen (bool): Whether the freeze has been applied.
+    """
+    def __init__(self, duration):
+        super().__init__(duration)
+        self.frozen = False
+
+    def apply(self, dt, target):
+        if not self.frozen:
+            target.speed_multiplier = 0.0
+            self.frozen = True
+
+    def on_end(self, target):
+        target.speed_multiplier = 1.0
+        self.frozen = False
+        logger.debug(f"FreezeEffect ended on {getattr(target, 'id', type(target))}")
+
 Effect_list = {
     "regeneration": RegenerationEffect,
     "poison": PoisonEffect,
@@ -239,6 +260,7 @@ Effect_list = {
     "confusion": ConfusionEffect,
     "dizziness": DizzinessEffect,
     "slow": SlowEffect,
+    "freeze": FreezeEffect,
 }
 
 def create_effect(effect_data: dict):
