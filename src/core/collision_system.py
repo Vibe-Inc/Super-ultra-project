@@ -139,9 +139,10 @@ class CollisionSystem:
             item_rect = self.rect_of(item)
             if player_rect.colliderect(item_rect):
                 if hasattr(item, "on_pickup"):
-                    logger.info(f"Player picked up item {getattr(item, 'id', type(item))}")
-                    item.on_pickup(player)
-                    items.remove(item)
+                    logger.info(f"Player attempted to pick up item {getattr(item, 'id', type(item))}")
+                    picked_up = item.on_pickup(player)
+                    if picked_up is not False:
+                        items.remove(item)
 
         for enemy in enemies:
             enemy_rect = self.rect_of(enemy)
