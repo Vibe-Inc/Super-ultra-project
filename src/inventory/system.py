@@ -205,7 +205,7 @@ class ShopInventory(Inventory):
     def _close_shop(self):
         try:
             game_state = self.app.manager.states.get("gameplay")
-            if game_state: self.app.INV_manager.toggle_trade(game_state.MAIN_player_inv, self)
+            if game_state: self.app.INV_manager.toggle_trade(game_state.MAIN_player_inv, self, game_state.PLAYER_inventory_equipment)
             else:
                 if self in self.app.INV_manager.active_inventories:
                     self.app.INV_manager.remove_active_inventory(self)
