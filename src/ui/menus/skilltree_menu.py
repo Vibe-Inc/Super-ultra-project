@@ -111,7 +111,7 @@ class SkillTreeMenu(Menu):
         
         self.nodes, self.links = self._build_tree()
         self.nodes_by_id = {node["id"]: node for node in self.nodes}
-        self.selected_node_id = "core"
+        self.selected_node_id = None
         self.hovered_node_id = None
         self.background_points = self._build_background_points()
 
@@ -119,9 +119,19 @@ class SkillTreeMenu(Menu):
         self.sidebar_rect = pygame.Rect(0, 0, 0, 0)
         self._layout_size = None
         
+        self.rotation_angle = 0.0
+        self.target_zoom = 1.0
+        self.target_pan_offset = pygame.Vector2(0, 0)
+        
     def on_enter(self):
         """Called when this state becomes active. Resets and triggers the entrance animation (only first time)."""
         self._entrance_triggered = False
+        self.selected_node_id = None
+        self.rotation_angle = 0.0
+        self.target_zoom = 1.0
+        self.target_pan_offset = pygame.Vector2(0, 0)
+        self.zoom = 1.0
+        self.pan_offset = pygame.Vector2(0, 0)
         # Only play the entrance animation the first time the skill tree is opened
         if not self._entrance_animation_played:
             self.trigger_entrance_animation()
@@ -1085,7 +1095,13 @@ class SkillTreeMenu(Menu):
 
     def _node_screen_pos(self, node):
         origin = pygame.Vector2(self.tree_rect.center) + self.pan_offset
-        return origin + node["pos"] * self.zoom
+        # Apply rotation around the core node (0, 0)
+        angle = self.rotation_angle
+        cos_a = math.cos(angle)
+        sin_a = math.sin(angle)
+        rx = node["pos"].x * cos_a - node["pos"].y * sin_a
+        ry = node["pos"].x * sin_a + node["pos"].y * cos_a
+        return origin + pygame.Vector2(rx, ry) * self.zoom
 
     def _hit_test_node(self, pos):
         if not self.tree_rect.collidepoint(pos):
@@ -1252,6 +1268,11 @@ class SkillTreeMenu(Menu):
         size = (sw, sh)
         if self._layout_size != size:
             self._layout_size = size
+            self.selected_node_id = None
+            self.rotation_angle = 0.0
+            self.target_zoom = 1.0
+            self.target_pan_offset = pygame.Vector2(0, 0)
+            self.zoom = 1.0
             self.pan_offset = pygame.Vector2(0, 0)
 
     def handle_event(self, event: pygame.event.Event):
@@ -1267,25 +1288,49 @@ class SkillTreeMenu(Menu):
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
-                node_id = self._hit_test_node(event.pos)
-                if node_id:
-                    self.selected_node_id = node_id
-            if event.button == 3 and self.tree_rect.collidepoint(event.pos):
-                self.dragging_view = True
-                self.drag_origin = pygame.Vector2(event.pos)
-                self.drag_start_offset = pygame.Vector2(self.pan_offset)
+                if self.tree_rect.collidepoint(event.pos):
+                    node_id = self._hit_test_node(event.pos)
+                    if node_id:
+                        self.selected_node_id = node_id
+                        self.target_zoom = 1.4
+                        node = self.nodes_by_id[node_id]
+                        angle = self.rotation_angle
+                        cos_a = math.cos(angle)
+                        sin_a = math.sin(angle)
+                        rx = node["pos"].x * cos_a - node["pos"].y * sin_a
+                        ry = node["pos"].x * sin_a + node["pos"].y * cos_a
+                        self.target_pan_offset = pygame.Vector2(-rx * self.target_zoom, -ry * self.target_zoom)
+                    else:
+                        # Deselect by clicking on an area that isn't a node
+                        self.selected_node_id = None
+                        self.target_zoom = 1.0
+                        self.target_pan_offset = pygame.Vector2(0, 0)
+            elif event.button == 3:
+                if self.selected_node_id is not None:
+                    # Deselect on right-click if a node is currently selected
+                    self.selected_node_id = None
+                    self.target_zoom = 1.0
+                    self.target_pan_offset = pygame.Vector2(0, 0)
+                elif self.tree_rect.collidepoint(event.pos):
+                    self.dragging_view = True
+                    self.drag_origin = pygame.Vector2(event.pos)
+                    self.drag_start_offset = pygame.Vector2(self.pan_offset)
 
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 3:
                 self.dragging_view = False
 
         elif event.type == pygame.MOUSEMOTION and self.dragging_view:
-            delta = pygame.Vector2(event.pos) - self.drag_origin
-            self.pan_offset = self.drag_start_offset + delta
+            if self.selected_node_id is None:
+                delta = pygame.Vector2(event.pos) - self.drag_origin
+                self.pan_offset = self.drag_start_offset + delta
+                self.target_pan_offset = pygame.Vector2(self.pan_offset)
 
         elif event.type == pygame.MOUSEWHEEL:
             if self.tree_rect.collidepoint(pygame.mouse.get_pos()):
-                self.zoom = max(self.min_zoom, min(self.max_zoom, self.zoom + event.y * 0.08))
+                # Only allow manual zooming when no node is selected to maintain centering
+                if self.selected_node_id is None:
+                    self.target_zoom = max(self.min_zoom, min(self.max_zoom, self.target_zoom + event.y * 0.08))
 
         elif event.type == pygame.KEYDOWN and event.key == pygame.K_r:
             self.zoom = 1.0
@@ -2067,6 +2112,17 @@ class SkillTreeMenu(Menu):
             dt = self.app.clock.get_time() / 1000.0 if hasattr(self.app, 'clock') else 0.016
         except Exception:
             pass
+        
+        # Update rotation only if no node is selected and entrance animation is not active
+        if self.selected_node_id is None and not self.entrance_active:
+            self.rotation_angle += dt * 0.15  # Slow rotation (~8.6 degrees per second)
+        
+        # Smoothly interpolate zoom and pan towards targets
+        lerp_speed = 6.0 * dt
+        self.zoom += (self.target_zoom - self.zoom) * lerp_speed
+        self.pan_offset.x += (self.target_pan_offset.x - self.pan_offset.x) * lerp_speed
+        self.pan_offset.y += (self.target_pan_offset.y - self.pan_offset.y) * lerp_speed
+        
         self.animation_time += dt
         self._update_particles(dt)
 
