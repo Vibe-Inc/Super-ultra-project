@@ -300,6 +300,17 @@ class Character:
         # Floating text popups
         self.floating_texts = []
 
+        # Elemental Mastery keystone (passive)
+        self.elemental_mastery = False
+        self.elemental_damage_mult = 1.35
+        self.last_elemental_skill = None
+        self.last_elemental_time = 0.0
+        self.combo_window = 3.0
+        self.elemental_damage_attrs = frozenset({
+            "fireball_damage", "frost_nova_damage", "glacial_cascade_damage",
+            "chain_lightning_damage", "thunderstrike_damage", "static_field_damage",
+        })
+
         # Berserker's Rage keystone
         self.berserkers_rage_active = False
         self.berserkers_rage_duration = 8.0
@@ -342,7 +353,11 @@ class Character:
                 soul_harvest = object.__getattribute__(self, "soul_harvest")
             except AttributeError:
                 soul_harvest = False
-            if rage or soul_harvest:
+            try:
+                elem = object.__getattribute__(self, "elemental_mastery")
+            except AttributeError:
+                elem = False
+            if rage or soul_harvest or elem:
                 actual = object.__getattribute__(self, name)
                 if actual is not None and isinstance(actual, (int, float)):
                     mult = 1.0
@@ -351,6 +366,13 @@ class Character:
                     if soul_harvest:
                         stacks = object.__getattribute__(self, "soul_harvest_stacks")
                         mult *= 1.0 + len(stacks) * 0.02
+                    if elem:
+                        try:
+                            elem_attrs = object.__getattribute__(self, "elemental_damage_attrs")
+                            if name in elem_attrs:
+                                mult *= object.__getattribute__(self, "elemental_damage_mult")
+                        except AttributeError:
+                            pass
                     return int(actual * mult)
         if name == "attack_cooldown":
             try:
@@ -604,6 +626,12 @@ class Character:
         self.void_walker = True
         logger.info("Player learned Void Walker (passive)! (30% dodge, teleport, afterimage)")
 
+    def learn_elemental_mastery(self):
+        if self.elemental_mastery:
+            return
+        self.elemental_mastery = True
+        logger.info("Player learned Elemental Mastery (passive)! (+35% elemental damage, dual-element combos)")
+
     def learn_chrono_shift(self):
         for skill in self.skillbook:
             if skill.get("skill_id") == "chrono_shift":
@@ -634,6 +662,30 @@ class Character:
 
         skill_id = skill.get("skill_id", "")
         current_time = pygame.time.get_ticks()
+
+        # Elemental Mastery: dual-element combo tracking
+        if self.elemental_mastery:
+            element_map = {
+                "fireball": "fire", "frost_nova": "ice", "glacial_cascade": "ice",
+                "chain_lightning": "lightning", "thunderstrike": "lightning",
+            }
+            elem = element_map.get(skill_id)
+            if elem is not None:
+                last_elem = getattr(self, "last_elemental_skill", None)
+                last_time = getattr(self, "last_elemental_time", 0.0)
+                combo_window_ms = int(self.combo_window * 1000)
+                if (last_elem is not None and last_elem != elem
+                        and current_time - last_time < combo_window_ms):
+                    game_state = getattr(self, "game_state", None)
+                    if game_state is not None and hasattr(game_state, "projectiles"):
+                        from src.entities.projectile import ElementalBurst
+                        combo_damage = int(self.elemental_damage_mult * 30)
+                        game_state.projectiles.append(
+                            ElementalBurst(self.get_center(), combo_damage)
+                        )
+                    self.add_floating_text("Elemental Combo!", self.pos.x, self.pos.y - 40, (255, 200, 100), 1.5, 22)
+                self.last_elemental_skill = elem
+                self.last_elemental_time = current_time
 
         if skill_id == "dash":
             if current_time - self.dash_last_used < self.dash_cooldown:

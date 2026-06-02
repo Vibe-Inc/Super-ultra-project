@@ -1916,3 +1916,138 @@ class Afterimage:
             sp_alpha = int(alpha * 0.8)
             sp_color = random.choice([(180, 255, 180), (140, 230, 140), (220, 255, 200)])
             pygame.draw.circle(screen, sp_color, (int(sp_x), int(sp_y)), sp_size)
+
+
+class ElementalBurst:
+    """
+    Burst of elemental energy triggered by a dual-element combo.
+    Deals damage in an area with a colorful elemental visual.
+    """
+    def __init__(self, pos, damage, radius=120.0, duration=0.6):
+        self.pos = pygame.Vector2(pos)
+        self.damage = damage
+        self.radius = radius
+        self.alive = True
+        self.life = 0.0
+        self.max_life = duration
+        self.damage_applied = False
+
+    def get_rect(self):
+        size = int(self.radius * 2)
+        rect = pygame.Rect(0, 0, size, size)
+        rect.center = (int(self.pos.x), int(self.pos.y))
+        return rect
+
+    def update(self, dt, obstacles, enemies):
+        if not self.alive:
+            return
+        self.life += dt
+        if not self.damage_applied and self.life >= 0.1:
+            for enemy in enemies:
+                if enemy.is_dead():
+                    continue
+                enemy_rect = enemy.get_rect()
+                enemy_center = pygame.Vector2(enemy_rect.centerx, enemy_rect.centery)
+                if (enemy_center - self.pos).length_squared() <= self.radius * self.radius:
+                    enemy.take_damage(self.damage)
+            self.damage_applied = True
+        if self.life >= self.max_life:
+            self.alive = False
+
+    def draw(self, screen, camera_offset=None):
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+        cx = int(self.pos.x - camera_offset.x)
+        cy = int(self.pos.y - camera_offset.y)
+        t = self.life
+        progress = self.life / self.max_life if self.max_life > 0 else 0
+        alpha = int(200 * (1 - progress))
+        radius = int(self.radius * (0.2 + 0.8 * progress))
+
+        # ── Outer vortex glow ──
+        glow_r = radius + 20
+        glow_surf = pygame.Surface((glow_r * 2, glow_r * 2), pygame.SRCALPHA)
+        glow_a = int(40 * (1 - progress))
+        for gr in range(glow_r, 0, -4):
+            fade = 1 - gr / glow_r
+            c = (
+                int(200 * fade + 60 * (1 - fade)),
+                int(100 * fade + 180 * (1 - fade)),
+                int(50 * fade + 200 * (1 - fade)),
+                int(glow_a * fade),
+            )
+            pygame.draw.circle(glow_surf, c, (glow_r, glow_r), gr)
+        screen.blit(glow_surf, (cx - glow_r, cy - glow_r))
+
+        # ── Spiral vortex arms ──
+        arm_count = 3
+        arm_colors = [
+            (255, 80, 30),    # fire
+            (80, 180, 255),   # ice
+            (220, 220, 60),   # lightning
+        ]
+        for arm in range(arm_count):
+            base_angle = t * 2.5 + arm * (math.pi * 2 / arm_count)
+            steps = 20
+            for i in range(steps):
+                frac = i / steps
+                a = base_angle + frac * math.pi * 1.5
+                dist = radius * frac
+                if dist < 4:
+                    continue
+                px = cx + math.cos(a) * dist
+                py = cy + math.sin(a) * dist
+                size = max(1, int(4 * (1 - frac) * (1 - progress * 0.3)))
+                arm_alpha = int(alpha * (1 - frac) * 0.8)
+                blend = (arm / arm_count)
+                r = int(arm_colors[arm][0] * (1 - blend * 0.4) + arm_colors[(arm + 1) % arm_count][0] * (blend * 0.4))
+                g = int(arm_colors[arm][1] * (1 - blend * 0.4) + arm_colors[(arm + 1) % arm_count][1] * (blend * 0.4))
+                b = int(arm_colors[arm][2] * (1 - blend * 0.4) + arm_colors[(arm + 1) % arm_count][2] * (blend * 0.4))
+                color = (min(255, r), min(255, g), min(255, b), arm_alpha)
+                glow_size = size * 3
+                gsurf = pygame.Surface((glow_size * 2, glow_size * 2), pygame.SRCALPHA)
+                pygame.draw.circle(gsurf, (r, g, b, arm_alpha // 3), (glow_size, glow_size), glow_size)
+                screen.blit(gsurf, (int(px - glow_size), int(py - glow_size)))
+                pygame.draw.circle(screen, color, (int(px), int(py)), size)
+
+        # ── Trailing particles pulled into vortex ──
+        import random
+        for _ in range(int(15 * (1 - progress))):
+            trail_angle = random.uniform(0, math.pi * 2)
+            trail_dist = random.uniform(radius * 0.3, radius * 0.95)
+            spiral_offset = t * 3.0 + trail_angle * 0.5
+            px = cx + math.cos(trail_angle + spiral_offset) * trail_dist
+            py = cy + math.sin(trail_angle + spiral_offset) * trail_dist
+            trail_size = random.randint(1, 3)
+            trail_alpha = int(alpha * 0.5 * (1 - trail_dist / radius))
+            trail_color = random.choice([
+                (255, 180, 80, trail_alpha), (150, 210, 255, trail_alpha),
+                (230, 230, 140, trail_alpha), (255, 220, 180, trail_alpha),
+            ])
+            pygame.draw.circle(screen, trail_color, (int(px), int(py)), trail_size)
+
+        # ── Bright pulsing core ──
+        core_pulse = 0.7 + 0.3 * math.sin(t * 15.0)
+        core_r = max(1, int(radius * 0.15 * core_pulse))
+        core_surf = pygame.Surface((core_r * 2, core_r * 2), pygame.SRCALPHA)
+        core_a = int(alpha * 0.9)
+        pygame.draw.circle(core_surf, (255, 230, 180, core_a), (core_r, core_r), core_r)
+        inner_r = max(1, int(core_r * 0.5))
+        pygame.draw.circle(core_surf, (255, 255, 230, core_a), (core_r, core_r), inner_r)
+        screen.blit(core_surf, (cx - core_r, cy - core_r))
+
+        # ── Energy wisps arcing outward ──
+        wisp_count = int(6 * (1 - progress))
+        for i in range(wisp_count):
+            w_angle = t * 4.0 + i * (math.pi * 2 / wisp_count)
+            w_dist = radius * (0.3 + 0.7 * math.sin(t * 3.0 + i * 1.5))
+            if w_dist < 5:
+                continue
+            wx = cx + math.cos(w_angle) * w_dist
+            wy = cy + math.sin(w_angle) * w_dist
+            w_alpha = int(alpha * 0.4 * (1 - w_dist / radius))
+            w_color = random.choice([
+                (255, 200, 120, w_alpha), (180, 230, 255, w_alpha),
+                (240, 240, 180, w_alpha),
+            ])
+            pygame.draw.line(screen, w_color, (cx, cy), (int(wx), int(wy)), max(1, int(2 * (1 - progress))))

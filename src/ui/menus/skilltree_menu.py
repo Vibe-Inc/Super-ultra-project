@@ -832,8 +832,8 @@ class SkillTreeMenu(Menu):
                 _("Precision I"), _("Resilience I"), _("Power I"), _("Speed I"),
             ]
             stat_effects = [
-                _("+5 Max HP"), _("+3 Melee Damage"), _("+2% Dodge Chance"), _("+4 Max Mana"),
-                _("+2 Armor"), _("+3% Crit Chance"), _("+2% Attack Speed"), _("+3 Block Chance"),
+                _("+5 Max HP"), _("+3 Melee Damage"), _("+2% Move Speed"), _("+4 Max Stamina"),
+                _("+2 Armor"), _("+3% Crit Chance"), _("+2% Attack Speed"), _("+3 Dodge Chance"),
                 _("+2 Accuracy"), _("+2% Damage Reduction"), _("+3 Spell Damage"), _("+2% Move Speed"),
             ]
             add_node(
@@ -1285,7 +1285,7 @@ class SkillTreeMenu(Menu):
         if node_id == "cluster_6_2" and hasattr(character, "learn_mystic_barrier"):
             character.learn_mystic_barrier()
 
-        # Keystones: keystone_1 = Berserker's Rage, keystone_2 = Eternal Fortress, keystone_3 = Soul Harvest, keystone_4 = Void Walker, keystone_6 = Chrono Shift
+        # Keystones: keystone_1 = Berserker's Rage, keystone_2 = Eternal Fortress, keystone_3 = Soul Harvest, keystone_4 = Void Walker, keystone_5 = Elemental Mastery, keystone_6 = Chrono Shift
         if node_id == "keystone_1" and hasattr(character, "learn_berserkers_rage"):
             character.learn_berserkers_rage()
 
@@ -1297,6 +1297,9 @@ class SkillTreeMenu(Menu):
 
         if node_id == "keystone_4" and hasattr(character, "learn_void_walker"):
             character.learn_void_walker()
+
+        if node_id == "keystone_5" and hasattr(character, "learn_elemental_mastery"):
+            character.learn_elemental_mastery()
 
         if node_id == "keystone_6" and hasattr(character, "learn_chrono_shift"):
             character.learn_chrono_shift()
