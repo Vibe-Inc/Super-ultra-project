@@ -153,6 +153,21 @@ class Character:
         self.fireball_cooldown = 1300
         self.fireball_knockback = 18.0
         self.game_state = None
+
+        # Flame Shield skill
+        self.flame_shield_duration = 6.0       # seconds active
+        self.flame_shield_cooldown = 14000      # ms cooldown
+        self.flame_shield_last_used = -14000    # ms timestamp
+        self.flame_shield_active = False
+        self.flame_shield_active_time = 0.0     # remaining active time
+        self.flame_shield_damage_per_sec = 8.0
+        self.flame_shield_radius = 110.0        # pixels
+        self.flame_shield_particles = []        # visual particles
+
+        # Passive: Pyromancer's Fury
+        self.pyromancers_fury = False
+        self.pyromancers_fury_damage_mult = 1.25   # +25% fire damage
+        self.pyromancers_fury_area_mult = 1.15     # +15% fire area
         self.dash_speed_multiplier = 3.0
         self.dash_duration = 0.14
         self.dash_cooldown = 900
@@ -179,11 +194,30 @@ class Character:
         self.skillbook.append({
             "skill_id": "fireball",
             "name": "Fireball",
-            "description": "Випускає вибуховий вогняний шар, що завдає 28 пошкоджень, має радіус вибуху 110 і відкидає ворогів.",
+            "description": "Launch an explosive fireball dealing 28 damage with area effect and knockback.",
             "color": (188, 82, 35),
             "accent": (255, 214, 120),
         })
         logger.info("Player learned Fireball!")
+
+    def learn_flame_shield(self):
+        """Add the Flame Shield skill to the skillbook if not already present."""
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "flame_shield":
+                return  # already learned
+        self.skillbook.append({
+            "skill_id": "flame_shield",
+            "name": "Flame Shield",
+            "description": "Surrounds you with flames, dealing 8 damage/sec to nearby enemies.",
+            "color": (220, 80, 20),
+            "accent": (255, 180, 60),
+        })
+        logger.info("Player learned Flame Shield!")
+
+    def learn_pyromancers_fury(self):
+        """Activate the Pyromancer's Fury passive: fire skills deal 25% more damage and have 15% larger area."""
+        self.pyromancers_fury = True
+        logger.info("Player unlocked Pyromancer's Fury (passive)!")
 
     def get_skill_in_slot(self, slot_index):
         if 0 <= slot_index < len(self.skillbar):
@@ -242,20 +276,38 @@ class Character:
                 return False
 
             spawn_pos = self.get_melee_anchor() + direction * 18
+            # Apply Pyromancer's Fury passive: +25% fire damage, +15% area
+            fb_damage = self.fireball_damage
+            fb_radius = self.fireball_blast_radius
+            if self.pyromancers_fury:
+                fb_damage = int(fb_damage * self.pyromancers_fury_damage_mult)
+                fb_radius = fb_radius * self.pyromancers_fury_area_mult
             game_state.projectiles.append(
                 Fireball(
                     spawn_pos,
                     direction,
                     self.fireball_speed,
                     self.fireball_range,
-                    self.fireball_damage,
-                    self.fireball_blast_radius,
+                    fb_damage,
+                    fb_radius,
                     self.fireball_fuse_time,
                     knockback_force=self.fireball_knockback,
                 )
             )
             self.fireball_last_used = current_time
             logger.info("Player used Fireball.")
+            return True
+
+        if skill_id == "flame_shield":
+            if self.flame_shield_active:
+                return False  # already active
+            if current_time - self.flame_shield_last_used < self.flame_shield_cooldown:
+                return False  # on cooldown
+
+            self.flame_shield_active = True
+            self.flame_shield_active_time = self.flame_shield_duration
+            self.flame_shield_last_used = current_time
+            logger.info("Player activated Flame Shield.")
             return True
 
         return False
@@ -462,6 +514,18 @@ class Character:
         if self.is_attacking and pygame.time.get_ticks() - self.last_attack_time > 200:
             self.is_attacking = False
 
+        # Update Flame Shield active timer
+        if self.flame_shield_active:
+            self.flame_shield_active_time -= dt
+            if self.flame_shield_active_time <= 0:
+                self.flame_shield_active = False
+                self.flame_shield_active_time = 0.0
+                self.flame_shield_particles.clear()
+                logger.info("Flame Shield expired.")
+
+        # Update Flame Shield particles
+        self._update_flame_shield_particles(dt)
+
         # Update invulnerability
         if self.invulnerable:
             self.invulnerability_timer -= dt
@@ -580,3 +644,126 @@ class Character:
             center = base_anchor + attack_dir * self.melee_slash_distance
             rotated_rect = rotated.get_rect(center=(int(center.x - camera_offset.x), int(center.y - camera_offset.y)))
             screen.blit(rotated, rotated_rect.topleft)
+
+        # Draw Flame Shield visual effect
+        if self.flame_shield_active:
+            self._draw_flame_shield(screen, camera_offset)
+
+    # ─── Flame Shield helpers ───────────────────────────────────────────
+
+    def _update_flame_shield_particles(self, dt):
+        """Spawn, move, and cull flame particles around the character."""
+        import random
+
+        # Spawn new particles while active
+        if self.flame_shield_active:
+            spawn_count = max(1, int(18 * dt))  # particles per frame
+            for _ in range(spawn_count):
+                effective_radius = self.flame_shield_radius
+                if self.pyromancers_fury:
+                    effective_radius *= self.pyromancers_fury_area_mult
+                angle = random.uniform(0, math.pi * 2)
+                dist = random.uniform(effective_radius * 0.45, effective_radius)
+                speed = random.uniform(25, 70)  # upward drift speed
+                self.flame_shield_particles.append({
+                    "angle": angle,
+                    "dist": dist,
+                    "life": random.uniform(0.3, 0.7),
+                    "max_life": random.uniform(0.3, 0.7),
+                    "size": random.uniform(2.5, 6.0),
+                    "drift": random.uniform(-15, 15),
+                    "vertical_speed": -speed,
+                    "color": random.choice([
+                        (255, 120, 20),   # orange
+                        (255, 80, 10),    # deep orange
+                        (255, 180, 40),   # bright yellow
+                        (255, 60, 10),    # red-orange
+                        (255, 200, 80),   # bright yellow
+                    ]),
+                })
+
+        # Update existing particles
+        for p in self.flame_shield_particles[:]:
+            p["life"] -= dt
+            if p["life"] <= 0:
+                self.flame_shield_particles.remove(p)
+                continue
+            # Slowly spiral inward and drift upward
+            p["angle"] += p["drift"] * dt
+            p["dist"] = max(0, p["dist"] - 8 * dt)
+            p["vertical_speed"] -= 120 * dt  # accelerate upward (negative)
+
+    def _draw_flame_shield(self, screen, camera_offset):
+        """Draw the flame shield aura and particles."""
+        center = self.get_center()
+        cx = center.x - camera_offset.x
+        cy = center.y - camera_offset.y
+        t = pygame.time.get_ticks() / 1000.0
+
+        # Apply Pyromancer's Fury area buff to visual radius
+        visual_radius = self.flame_shield_radius
+        if self.pyromancers_fury:
+            visual_radius *= self.pyromancers_fury_area_mult
+
+        # ── Inner pulsing glow ring ──
+        pulse = 0.6 + 0.4 * math.sin(t * 6.0)
+        glow_radius = visual_radius * (0.85 + 0.15 * pulse)
+        glow_surf = pygame.Surface((int(glow_radius * 2) + 4, int(glow_radius * 2) + 4), pygame.SRCALPHA)
+        glow_a = int(35 + 25 * pulse)
+        pygame.draw.circle(glow_surf, (255, 100, 20, glow_a),
+                           (int(glow_radius) + 2, int(glow_radius) + 2),
+                           int(glow_radius))
+        # brighter inner core
+        inner_r = int(glow_radius * 0.55)
+        inner_a = int(25 + 20 * pulse)
+        pygame.draw.circle(glow_surf, (255, 160, 40, inner_a),
+                           (int(glow_radius) + 2, int(glow_radius) + 2),
+                           inner_r)
+        screen.blit(glow_surf, (int(cx - glow_radius - 2), int(cy - glow_radius - 2)))
+
+        # ── Outer flickering ring ──
+        ring_r = visual_radius
+        ring_a = int(70 + 40 * math.sin(t * 9.0))
+        ring_surf = pygame.Surface((int(ring_r * 2) + 4, int(ring_r * 2) + 4), pygame.SRCALPHA)
+        pygame.draw.circle(ring_surf, (255, 90, 10, ring_a),
+                           (int(ring_r) + 2, int(ring_r) + 2),
+                           int(ring_r), max(1, int(3 * pulse)))
+        screen.blit(ring_surf, (int(cx - ring_r - 2), int(cy - ring_r - 2)))
+
+        # ── Flame particles ──
+        for p in self.flame_shield_particles:
+            life_ratio = p["life"] / p["max_life"] if p["max_life"] > 0 else 0
+            if life_ratio <= 0:
+                continue
+
+            # World position from polar around center
+            px = cx + math.cos(p["angle"]) * p["dist"]
+            py = cy + math.sin(p["angle"]) * p["dist"] + p["vertical_speed"] * (1 - life_ratio) * 0.3
+
+            alpha = int(255 * life_ratio)
+            size = max(1, int(p["size"] * life_ratio))
+            r, g, b = p["color"]
+
+            # Glow layer
+            glow_sz = size * 3
+            glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+            pygame.draw.circle(glow, (r, g, b, alpha // 3),
+                               (glow_sz, glow_sz), glow_sz)
+            screen.blit(glow, (int(px - glow_sz), int(py - glow_sz)))
+
+            # Core
+            if alpha > 20:
+                pygame.draw.circle(screen, (min(255, r + 40), min(255, g + 30), b),
+                                   (int(px), int(py)), size)
+
+        # ── Rising ember sparkles ──
+        if self.flame_shield_active:
+            import random
+            for _ in range(2):
+                em_angle = random.uniform(0, math.pi * 2)
+                em_dist = random.uniform(0, visual_radius * 0.3)
+                em_x = cx + math.cos(em_angle) * em_dist
+                em_y = cy + random.uniform(-20, 20)
+                em_size = random.randint(1, 3)
+                em_color = random.choice([(255, 220, 100), (255, 180, 60), (255, 255, 140)])
+                pygame.draw.circle(screen, em_color, (int(em_x), int(em_y)), em_size)

@@ -1226,6 +1226,14 @@ class SkillTreeMenu(Menu):
         # If the Fireball Mastery node was unlocked, teach the fireball skill
         if node_id == "major_1" and hasattr(character, "learn_fireball"):
             character.learn_fireball()
+
+        # Flame Shield: cluster_1_1
+        if node_id == "cluster_1_1" and hasattr(character, "learn_flame_shield"):
+            character.learn_flame_shield()
+
+        # Pyromancer's Fury (passive): cluster_1_2
+        if node_id == "cluster_1_2" and hasattr(character, "learn_pyromancers_fury"):
+            character.learn_pyromancers_fury()
         
         # Trigger unlock animation
         self._spawn_unlock_effect(node_id)

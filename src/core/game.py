@@ -753,6 +753,10 @@ class Game(State):
         self._update_projectiles(dt)
         self._update_enemy_projectiles(dt)
 
+        # Flame Shield: deal damage to nearby enemies
+        if self.character.flame_shield_active:
+            self._apply_flame_shield_damage(dt)
+
         self.collision_handler.check_interactions(
             self.character, self.enemies, self.items
         )
@@ -797,6 +801,29 @@ class Game(State):
         self.app.profiler.set_gauge("enemies", len(self.enemies))
         self.app.profiler.set_gauge("projectiles", len(self.projectiles))
         self.app.profiler.set_gauge("enemy_projectiles", len(self.enemy_projectiles))
+
+    def _apply_flame_shield_damage(self, dt):
+        """Deal flame shield damage to enemies within the flame shield radius."""
+        center = self.character.get_center()
+        radius = self.character.flame_shield_radius
+        damage = self.character.flame_shield_damage_per_sec * dt
+        # Apply Pyromancer's Fury passive buff to flame shield (+25% damage, +15% area)
+        if getattr(self.character, "pyromancers_fury", False):
+            damage *= self.character.pyromancers_fury_damage_mult
+            radius *= self.character.pyromancers_fury_area_mult
+        radius_sq = radius * radius
+        for enemy in self.enemies:
+            if enemy.is_dead():
+                continue
+            enemy_rect = enemy.get_rect()
+            enemy_center = pygame.Vector2(enemy_rect.centerx, enemy_rect.centery)
+            dist_sq = (enemy_center - center).length_squared()
+            if dist_sq <= radius_sq:
+                enemy.take_damage(int(damage) if damage >= 1 else 0)
+                # Apply slight knockback pushing enemy away from player
+                if dist_sq > 0:
+                    push_dir = (enemy_center - center).normalize()
+                    enemy.pos += push_dir * 8 * dt
 
     def draw_scene(self, screen):
         dt = self.app.clock.get_time() / 1000
