@@ -1307,6 +1307,7 @@ class SkillTreeMenu(Menu):
         self.entrance_sparks = []          # converging spark particles
         self.entrance_glow = 0
         self._entrance_triggered = False   # prevent re-triggering
+        self._entrance_animation_played = False  # only play animation once
         
         # Phase system: 0=void, 1=starfield, 2=convergence, 3=core_ignition, 4=branch_growth, 5=settled
         self.entrance_phase = 0
@@ -1341,9 +1342,19 @@ class SkillTreeMenu(Menu):
         self._layout_size = None
         
     def on_enter(self):
-        """Called when this state becomes active. Resets and triggers the entrance animation."""
+        """Called when this state becomes active. Resets and triggers the entrance animation (only first time)."""
         self._entrance_triggered = False
-        self.trigger_entrance_animation()
+        # Only play the entrance animation the first time the skill tree is opened
+        if not self._entrance_animation_played:
+            self.trigger_entrance_animation()
+        else:
+            # Skip animation - set everything to fully revealed state
+            self.entrance_active = False
+            self.entrance_phase = 6
+            self.entrance_progress = 1.0
+            self.entrance_star_alpha = 1.0
+            # Reveal all nodes immediately
+            self.entrance_revealed_nodes = {node["id"] for node in self.nodes}
 
     def _init_particles(self):
         """Initialize floating particles for ambient background effect."""
@@ -1674,6 +1685,7 @@ class SkillTreeMenu(Menu):
             if self.entrance_progress >= 1.0:
                 self.entrance_active = False
                 self.entrance_phase = 6  # done
+                self._entrance_animation_played = True  # don't play animation again
                 # Final celebratory flash
                 self.screen_flash_alpha = 0.15
                 self.screen_flash_timer = 0.25
