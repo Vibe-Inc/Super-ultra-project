@@ -1,5 +1,5 @@
+import math
 import pygame
-
 from database.effects import BurnEffect
 from src.core.logger import logger
 
@@ -439,9 +439,14 @@ class Fireball:
         self.exploding = False
         self.explosion_timer = 0.0
         self.damage_applied = False
+        
+        # Visuals
+        self.animation_time = 0.0
+        self.trail = []
+        self.trail_length = 8
 
     def _size(self):
-        return 14, 14
+        return 16, 16
 
     def get_rect(self):
         width, height = self._size()
@@ -468,6 +473,8 @@ class Fireball:
         if not self.alive:
             return
 
+        self.animation_time += dt
+
         if self.exploding:
             self.explosion_timer += dt
             if not self.damage_applied:
@@ -493,6 +500,11 @@ class Fireball:
         self.pos += movement
         self.traveled += movement.length()
         self.timer += dt
+        
+        # Update trail
+        self.trail.append(pygame.Vector2(self.pos))
+        if len(self.trail) > self.trail_length:
+            self.trail.pop(0)
 
         rect = self.get_rect()
         for wall in obstacles:
@@ -510,18 +522,48 @@ class Fireball:
             camera_offset = pygame.Vector2(0, 0)
 
         if not self.exploding:
+            # Draw trail
+            for i, pos in enumerate(self.trail):
+                alpha = int(100 * (i / len(self.trail)))
+                radius = int(4 + 4 * (i / len(self.trail)))
+                t_surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+                pygame.draw.circle(t_surf, (*self.color[:3], alpha), (radius, radius), radius)
+                screen.blit(t_surf, (pos.x - radius - camera_offset.x, pos.y - radius - camera_offset.y))
+
+            # Draw main fireball
             rect = self.get_rect()
             rect.x -= int(camera_offset.x)
             rect.y -= int(camera_offset.y)
+            
+            # Outer glow
+            pulse = (math.sin(self.animation_time * 10) + 1.0) * 0.5
+            glow_size = int(rect.width * (1.2 + 0.2 * pulse))
+            glow_surf = pygame.Surface((glow_size * 2, glow_size * 2), pygame.SRCALPHA)
+            pygame.draw.circle(glow_surf, (*self.color, 60), (glow_size, glow_size), glow_size)
+            screen.blit(glow_surf, (rect.centerx - glow_size, rect.centery - glow_size))
+            
+            # Core
+            pygame.draw.circle(screen, (255, 240, 200), rect.center, rect.width // 2 - 2)
             pygame.draw.circle(screen, self.color, rect.center, rect.width // 2)
-            pygame.draw.circle(screen, (255, 220, 120), rect.center, max(2, rect.width // 4), 1)
+            
+            # Inner bright spot
+            pygame.draw.circle(screen, (255, 255, 255), rect.center, max(2, rect.width // 4), 1)
             return
 
+        # Explosion visuals
         progress = min(1.0, self.explosion_timer / self.explosion_duration)
         radius = int(self.blast_radius * progress)
         if radius <= 0:
             return
+            
+        # Shockwave ring
+        ring_alpha = int(255 * (1 - progress))
+        pygame.draw.circle(screen, (255, 200, 100), (int(self.pos.x - camera_offset.x), int(self.pos.y - camera_offset.y)), radius, 3)
+        
+        # Inner fire
         surface = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
-        pygame.draw.circle(surface, (255, 140, 60, 150), (radius, radius), radius)
-        pygame.draw.circle(surface, (255, 220, 120, 90), (radius, radius), max(1, radius // 2))
+        inner_alpha = int(180 * (1 - progress))
+        pygame.draw.circle(surface, (255, 100, 20, inner_alpha), (radius, radius), radius)
+        pygame.draw.circle(surface, (255, 240, 100, int(inner_alpha * 0.6)), (radius, radius), max(1, radius // 2))
+        
         screen.blit(surface, (self.pos.x - radius - camera_offset.x, self.pos.y - radius - camera_offset.y))
