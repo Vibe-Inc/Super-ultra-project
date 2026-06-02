@@ -196,6 +196,49 @@ class Character:
             return False
         return self.use_skill(skill, aim_direction=aim_direction)
 
+    def get_skill_cooldown_percent(self, skill):
+        """
+        Get the cooldown progress for a skill (0.0 = ready, 1.0 = just used).
+        
+        Args:
+            skill (dict): The skill dictionary with skill_id.
+            
+        Returns:
+            float: Cooldown percentage (0.0 to 1.0), where 0.0 means ready.
+        """
+        if skill is None:
+            return 0.0
+        
+        skill_id = skill.get("skill_id", "")
+        current_time = pygame.time.get_ticks()
+        
+        if skill_id == "dash":
+            elapsed = current_time - self.dash_last_used
+            if elapsed >= self.dash_cooldown:
+                return 0.0
+            return 1.0 - (elapsed / self.dash_cooldown)
+        
+        if skill_id == "fireball":
+            last_used = getattr(self, "fireball_last_used", -self.fireball_cooldown)
+            elapsed = current_time - last_used
+            if elapsed >= self.fireball_cooldown:
+                return 0.0
+            return 1.0 - (elapsed / self.fireball_cooldown)
+        
+        return 0.0
+
+    def is_skill_ready(self, skill):
+        """
+        Check if a skill is ready to use (cooldown expired).
+        
+        Args:
+            skill (dict): The skill dictionary with skill_id.
+            
+        Returns:
+            bool: True if skill is ready, False if on cooldown.
+        """
+        return self.get_skill_cooldown_percent(skill) == 0.0
+
     def use_skill(self, skill, aim_direction=None):
         if skill is None:
             return False
