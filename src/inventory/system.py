@@ -254,3 +254,150 @@ class MAIN_player_inventory(Inventory):
             font=cfg.tooltip_font_CREDITS, font_color=cfg.INV_SKILLTREE_BTN_FONT_COLOR,
             corner_width=max(2, int(8 * scale)), on_click=None
         )
+
+    def inventory_interactions(self, event, manager):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if not getattr(self.app.INV_manager, 'current_shop_inv', None):
+                mouse_pos = event.pos
+                if hasattr(self, 'open_skilltree_btn') and self.open_skilltree_btn.rect.collidepoint(mouse_pos):
+                    try: self.app.manager.set_state("skill_tree")
+                    except Exception: pass
+                    return
+                if hasattr(self, 'open_skillbar_btn') and self.open_skillbar_btn.rect.collidepoint(mouse_pos):
+                    try: self.app.manager.set_state("skillbar")
+                    except Exception: pass
+                    return
+        return super().inventory_interactions(event, manager)
+
+class MAIN_player_inventory_equipment(Inventory):
+    """
+    Manages the player's equipment loadout slots.
+
+    A specialized grid intended strictly for equippable items such as armor, 
+    weapons, and accessories that alter character stats.
+
+    Methods:
+        __init__(app):
+            Initialize the equipment inventory grid based on config dimensions.
+    """
+    def __init__(self, app: "App"):
+        super().__init__(
+            cfg.MAIN_INV_equipment_columns, cfg.MAIN_INV_equipment_rows, None,
+            cfg.BASE_INV_slot_size, cfg.MAIN_INV_equipment_pos_x, cfg.MAIN_INV_equipment_pos_y, cfg.BASE_INV_border
+        )
+
+class MAIN_player_hotbar(Inventory):
+    """
+    Handles the player's quick-access action bar.
+
+    Manages a single-row horizontal grid of items bound to keyboard shortcuts (1-0). 
+    Supports visual active-slot highlights and fast consumption during gameplay.
+
+    Attributes:
+        app (App): 
+            The main application reference.
+        active_slot_index (int): 
+            The current column index of the highlighted hotbar slot.
+
+    Methods:
+        __init__(app):
+            Initialize the hotbar slots and dimensions.
+        update_position():
+            Dynamically recalculate position to keep the hotbar centered on the screen.
+        get_slot_under_mouse():
+            Wrapper to update position before checking mouse hover logic.
+        inventory_interactions(event, manager):
+            Wrapper to update position before processing clicks.
+        scroll_active_slot(y_direction):
+            Rotate the active highlighted slot via mouse wheel input.
+        use_active_slot():
+            Consume or interact with the item in the currently active slot.
+        handle_hotkeys(event):
+            Parse keyboard input (1 through 0) to swap active slots and use items.
+        _use_hotbar_item(col):
+            Internal logic for triggering the item's use method in gameplay.
+    """
+    def __init__(self, app: "App"):
+        self.app = app
+        columns = getattr(cfg, 'INV_HOTBAR_COLUMNS', 10)
+        rows = cfg.INV_HOTBAR_ROWS
+        scale = cfg.INV_HOTBAR_SCALE
+        slot_size = int(cfg.BASE_INV_slot_size * scale)
+        
+        if not hasattr(app, 'MAIN_HOTBAR_items'):
+            app.MAIN_HOTBAR_items = [[None for _ in range(rows)] for _ in range(columns)]
+
+        super().__init__(columns, rows, app.MAIN_HOTBAR_items, slot_size, 0, 0, cfg.BASE_INV_border)
+        self.active_slot_index = 0
+        self.update_position()
+
+    def update_position(self):
+        total_width = (self.slot_size + self.border) * self.columns + self.border
+        self.pos_x = (cfg.SCREEN_WIDTH - total_width) // 2
+        self.pos_y = cfg.SCREEN_HEIGHT + cfg.INV_HOTBAR_Y_OFFSET - self.slot_size
+
+    def get_slot_under_mouse(self):
+        self.update_position()
+        return super().get_slot_under_mouse()
+
+    def inventory_interactions(self, event, manager):
+        self.update_position()
+        super().inventory_interactions(event, manager)
+
+    def scroll_active_slot(self, y_direction):
+        self.active_slot_index = (self.active_slot_index - y_direction) % self.columns
+
+    def use_active_slot(self):
+        self._use_hotbar_item(self.active_slot_index)
+
+    def handle_hotkeys(self, event):
+        if event.type != pygame.KEYDOWN: return
+        key_map = {
+            pygame.K_1: 0, pygame.K_2: 1, pygame.K_3: 2, pygame.K_4: 3, pygame.K_5: 4, 
+            pygame.K_6: 5, pygame.K_7: 6, pygame.K_8: 7, pygame.K_9: 8, pygame.K_0: 9
+        }
+        if event.key in key_map and key_map[event.key] < self.columns:
+            self.active_slot_index = key_map[event.key]
+            self._use_hotbar_item(self.active_slot_index)
+                
+    def _use_hotbar_item(self, col):
+        slot = self.items[col][0]
+        if slot and isinstance(slot[0], Consumable):
+            game_state = self.app.manager.states.get("gameplay")
+            if game_state and slot[0].use(game_state.character):
+                slot[1] -= 1
+                if slot[1] <= 0: self.items[col][0] = None
+
+class Inventory_slider(Slider):
+    """
+    A specialized slider widget for selecting item split quantities.
+
+    Maps a continuous float output from the base Slider interface into 
+    discrete integer amounts based on the maximum stack count of an item.
+
+    Attributes:
+        max_qty (int): 
+            The maximum available item stack quantity to restrict the slider range.
+        external_callback (callable): 
+            The function to fire when the user adjusts the slider value.
+
+    Methods:
+        __init__(x, y, width, max_qty, action_callback):
+            Initialize the slider geometry, colors, and maximum quantity limits.
+        _convert_to_int(float_value):
+            Translate the slider's native 0.0-1.0 float position into a valid integer split amount.
+    """
+    def __init__(self, x, y, width, max_qty, action_callback):
+        self.max_qty = max_qty
+        self.external_callback = action_callback
+        super().__init__(
+            x=x, y=y, height=cfg.INV_SLIDER_TRACK_HEIGHT, track_thickness=cfg.INV_SLIDER_TRACK_THICKNESS, 
+            track_colour=cfg.INV_SLIDER_TRACK_COLOR, knob_colour=cfg.INV_SLIDER_KNOB_COLOR,
+            knob_width=cfg.INV_SLIDER_KNOB_WIDTH, knob_height=cfg.INV_SLIDER_KNOB_HEIGHT, 
+            track_length=width, value=0.0, action=self._convert_to_int
+        )
+
+    def _convert_to_int(self, float_value):
+        result = 1 if self.max_qty <= 1 else 1 + int(float_value * (self.max_qty - 1))
+        if self.external_callback:
+            self.external_callback(result)
