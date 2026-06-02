@@ -1923,7 +1923,7 @@ class ElementalBurst:
     Burst of elemental energy triggered by a dual-element combo.
     Deals damage in an area with a colorful elemental visual.
     """
-    def __init__(self, pos, damage, radius=120.0, duration=0.6):
+    def __init__(self, pos, damage, radius=180.0, duration=0.8):
         self.pos = pygame.Vector2(pos)
         self.damage = damage
         self.radius = radius
