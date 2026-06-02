@@ -1275,6 +1275,16 @@ class SkillTreeMenu(Menu):
         if node_id == "cluster_5_2" and hasattr(character, "learn_dark_pact"):
             character.learn_dark_pact()
 
+        # Arcane: major_6 = Arcane Missiles, cluster_6_1 = Mana Flow, cluster_6_2 = Mystic Barrier
+        if node_id == "major_6" and hasattr(character, "learn_arcane_missiles"):
+            character.learn_arcane_missiles()
+
+        if node_id == "cluster_6_1" and hasattr(character, "learn_mana_flow"):
+            character.learn_mana_flow()
+
+        if node_id == "cluster_6_2" and hasattr(character, "learn_mystic_barrier"):
+            character.learn_mystic_barrier()
+
         # Trigger unlock animation
         self._spawn_unlock_effect(node_id)
 

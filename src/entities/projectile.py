@@ -1579,6 +1579,145 @@ class NatureBolt:
         pygame.draw.circle(screen, (220, 255, 220), rect.center, max(2, rect.width // 4))
 
 
+class ArcaneMissile:
+    """
+    Homing arcane missile that seeks the nearest enemy.
+
+    Attributes:
+        pos (pygame.Vector2): Current position.
+        direction (pygame.Vector2): Initial direction.
+        speed (float): Travel speed in pixels per second.
+        max_range (float): Maximum travel distance.
+        damage (int): Damage on hit.
+        alive (bool): Whether the missile is active.
+        traveled (float): Distance traveled so far.
+        target (Enemy | None): Current homing target.
+        homing_strength (float): How aggressively it tracks (0-1).
+    """
+    def __init__(self, pos, direction, speed, max_range, damage, homing_strength=0.15):
+        self.pos = pygame.Vector2(pos)
+        self.direction = pygame.Vector2(direction)
+        if self.direction.length_squared() == 0:
+            self.direction = pygame.Vector2(1, 0)
+        else:
+            self.direction = self.direction.normalize()
+        self.speed = speed
+        self.max_range = max_range
+        self.damage = damage
+        self.homing_strength = homing_strength
+        self.alive = True
+        self.traveled = 0.0
+        self.animation_time = 0.0
+        self.target = None
+        self.trail = []
+        self.trail_length = 8
+
+    def _size(self):
+        return 12, 12
+
+    def get_rect(self):
+        w, h = self._size()
+        rect = pygame.Rect(0, 0, w, h)
+        rect.center = (int(self.pos.x), int(self.pos.y))
+        return rect
+
+    def _acquire_target(self, enemies):
+        closest_dist = float("inf")
+        closest = None
+        for enemy in enemies:
+            if enemy.is_dead():
+                continue
+            enemy_center = pygame.Vector2(enemy.get_rect().center)
+            d = self.pos.distance_squared_to(enemy_center)
+            if d < closest_dist:
+                closest_dist = d
+                closest = enemy
+        return closest
+
+    def update(self, dt, obstacles, enemies):
+        if not self.alive:
+            return
+
+        self.animation_time += dt
+
+        # Acquire or refresh target
+        if self.target is None or self.target.is_dead():
+            self.target = self._acquire_target(enemies)
+
+        # Homing toward target
+        if self.target is not None and not self.target.is_dead():
+            target_center = pygame.Vector2(self.target.get_rect().center)
+            target_vec = target_center - self.pos
+            if target_vec.length_squared() > 0:
+                target_dir = target_vec.normalize()
+                self.direction = self.direction.lerp(target_dir, self.homing_strength)
+                if self.direction.length_squared() > 0:
+                    self.direction = self.direction.normalize()
+
+        movement = self.direction * self.speed * dt
+        self.pos += movement
+        self.traveled += movement.length()
+
+        self.trail.append(pygame.Vector2(self.pos))
+        if len(self.trail) > self.trail_length:
+            self.trail.pop(0)
+
+        rect = self.get_rect()
+        for wall in obstacles:
+            if rect.colliderect(wall):
+                self.alive = False
+                return
+
+        if self.traveled >= self.max_range:
+            self.alive = False
+            return
+
+        # Hit detection against enemies
+        for enemy in enemies:
+            if enemy.is_dead():
+                continue
+            enemy_rect = enemy.get_rect()
+            if rect.colliderect(enemy_rect):
+                enemy.take_damage(self.damage)
+                self.alive = False
+                return
+
+    def draw(self, screen, camera_offset=None):
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+
+        # Trail
+        for i, pos in enumerate(self.trail):
+            alpha = int(120 * (i / len(self.trail)))
+            radius = int(2 + 3 * (i / len(self.trail)))
+            t_surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+            pygame.draw.circle(t_surf, (180, 100, 220, alpha), (radius, radius), radius)
+            screen.blit(t_surf, (pos.x - radius - camera_offset.x, pos.y - radius - camera_offset.y))
+
+        rect = self.get_rect()
+        rect.x -= int(camera_offset.x)
+        rect.y -= int(camera_offset.y)
+
+        pulse = (math.sin(self.animation_time * 15) + 1.0) * 0.5
+
+        # Outer glow
+        glow_size = int(rect.width * (2.0 + 0.4 * pulse))
+        glow_surf = pygame.Surface((glow_size * 2, glow_size * 2), pygame.SRCALPHA)
+        pygame.draw.circle(glow_surf, (200, 120, 255, 50), (glow_size, glow_size), glow_size)
+        screen.blit(glow_surf, (rect.centerx - glow_size, rect.centery - glow_size))
+
+        # Missile body - outer
+        pygame.draw.circle(screen, (160, 80, 200), rect.center, rect.width // 2)
+        # Missile body - inner
+        pygame.draw.circle(screen, (200, 140, 240), rect.center, rect.width // 2 - 1)
+        # Core
+        core_r = max(2, rect.width // 4)
+        core_pulse = 0.7 + 0.3 * pulse
+        pygame.draw.circle(screen, (255, 220, 255), rect.center, int(core_r * core_pulse))
+        # Inner spark
+        pygame.draw.circle(screen, (255, 255, 255), rect.center, max(1, core_r // 2))
+
+
 class DarkPact:
     """
     Shadow burst that deals damage to all nearby enemies from the caster's position.

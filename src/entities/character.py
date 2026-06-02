@@ -4,7 +4,7 @@ import random
 import pygame
 from database.effects import PoisonEffect
 from src.core.logger import logger
-from src.entities.projectile import Fireball, GlacialCascade, FrostNova, ChainLightning, Thunderstrike, EntanglingRoots, NatureBolt, DarkPact
+from src.entities.projectile import Fireball, GlacialCascade, FrostNova, ChainLightning, Thunderstrike, EntanglingRoots, NatureBolt, DarkPact, ArcaneMissile
 from src.entities.nature_spirit import NatureSpirit
 
 class Character:
@@ -261,12 +261,44 @@ class Character:
         self.dark_pact_cooldown = 8000
         self.dark_pact_last_used = -self.dark_pact_cooldown
 
+        # Arcane Missiles skill
+        self.arcane_missiles_speed = 420.0
+        self.arcane_missiles_range = 500.0
+        self.arcane_missiles_damage = 14
+        self.arcane_missiles_count = 5
+        self.arcane_missiles_cooldown = 4000
+        self.arcane_missiles_last_used = -self.arcane_missiles_cooldown
+
+        # Passive: Mana Flow
+        self.mana_flow = False
+
+        # Mystic Barrier skill
+        self.mystic_barrier_duration = 5.0
+        self.mystic_barrier_cooldown = 12000
+        self.mystic_barrier_last_used = -self.mystic_barrier_cooldown
+        self.mystic_barrier_active = False
+        self.mystic_barrier_active_time = 0.0
+        self.mystic_barrier_reflect_pct = 0.3
+        self.mystic_barrier_particles = []
+
         self.dash_speed_multiplier = 3.0
         self.dash_duration = 0.14
         self.dash_cooldown = 900
         self.dash_active_time = 0.0
         self.dash_last_used = -self.dash_cooldown
         self.dash_direction = pygame.Vector2(1, 0)
+
+    def __getattribute__(self, name):
+        if name.endswith("_cooldown") and name not in ("attack_cooldown", "base_attack_cooldown"):
+            try:
+                mana_flow = object.__getattribute__(self, "mana_flow")
+            except AttributeError:
+                mana_flow = False
+            if mana_flow:
+                actual = object.__getattribute__(self, name)
+                if actual is not None:
+                    return int(actual * 0.8)
+        return object.__getattribute__(self, name)
 
     def _build_skillbook(self):
         return [
@@ -443,6 +475,36 @@ class Character:
             "accent": (220, 160, 255),
         })
         logger.info("Player learned Dark Pact!")
+
+    def learn_arcane_missiles(self):
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "arcane_missiles":
+                return
+        self.skillbook.append({
+            "skill_id": "arcane_missiles",
+            "name": "Arcane Missiles",
+            "description": "Fire homing arcane missiles dealing 22 damage each.",
+            "color": (140, 60, 120),
+            "accent": (255, 180, 240),
+        })
+        logger.info("Player learned Arcane Missiles!")
+
+    def learn_mana_flow(self):
+        self.mana_flow = True
+        logger.info("Player unlocked Mana Flow (passive)!")
+
+    def learn_mystic_barrier(self):
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "mystic_barrier":
+                return
+        self.skillbook.append({
+            "skill_id": "mystic_barrier",
+            "name": "Mystic Barrier",
+            "description": "Creates a barrier that reflects 30% of incoming damage.",
+            "color": (180, 80, 160),
+            "accent": (255, 200, 240),
+        })
+        logger.info("Player learned Mystic Barrier!")
 
     def get_skill_in_slot(self, slot_index):
         if 0 <= slot_index < len(self.skillbar):
@@ -773,6 +835,64 @@ class Character:
             logger.info("Player used Summon Spirit.")
             return True
 
+        if skill_id == "arcane_missiles":
+            if current_time - getattr(self, "arcane_missiles_last_used", -self.arcane_missiles_cooldown) < self.arcane_missiles_cooldown:
+                return False
+
+            if aim_direction is not None:
+                direction = pygame.Vector2(aim_direction)
+            else:
+                direction = pygame.Vector2(self.velocity)
+
+            if direction.length_squared() == 0:
+                direction = self.get_forward_direction()
+            if direction.length_squared() == 0:
+                direction = pygame.Vector2(1, 0)
+            else:
+                direction = direction.normalize()
+
+            game_state = getattr(self, "game_state", None)
+            if game_state is None:
+                logger.warning("Arcane Missiles skill used without an attached game state.")
+                return False
+
+            spawn_pos = self.get_melee_anchor() + direction * 18
+            missile_spread = 0.3
+            for i in range(self.arcane_missiles_count):
+                spread_angle = (i - (self.arcane_missiles_count - 1) / 2) * missile_spread
+                spread_dir = pygame.Vector2(direction)
+                if spread_angle != 0:
+                    cos_a = math.cos(spread_angle)
+                    sin_a = math.sin(spread_angle)
+                    spread_dir = pygame.Vector2(
+                        direction.x * cos_a - direction.y * sin_a,
+                        direction.x * sin_a + direction.y * cos_a,
+                    )
+                game_state.projectiles.append(
+                    ArcaneMissile(
+                        pygame.Vector2(spawn_pos),
+                        spread_dir,
+                        self.arcane_missiles_speed,
+                        self.arcane_missiles_range,
+                        self.arcane_missiles_damage,
+                    )
+                )
+            self.arcane_missiles_last_used = current_time
+            logger.info("Player used Arcane Missiles.")
+            return True
+
+        if skill_id == "mystic_barrier":
+            if self.mystic_barrier_active:
+                return False
+            if current_time - getattr(self, "mystic_barrier_last_used", -self.mystic_barrier_cooldown) < self.mystic_barrier_cooldown:
+                return False
+
+            self.mystic_barrier_active = True
+            self.mystic_barrier_active_time = self.mystic_barrier_duration
+            self.mystic_barrier_last_used = current_time
+            logger.info("Player activated Mystic Barrier.")
+            return True
+
         return False
 
     def add_effect(self, effect):
@@ -1007,6 +1127,17 @@ class Character:
         # Update Ice Armor particles
         self._update_ice_armor_particles(dt)
 
+        # Update Mystic Barrier active timer
+        if self.mystic_barrier_active:
+            self.mystic_barrier_active_time -= dt
+            if self.mystic_barrier_active_time <= 0:
+                self.mystic_barrier_active = False
+                self.mystic_barrier_active_time = 0.0
+                self.mystic_barrier_particles.clear()
+                logger.info("Mystic Barrier expired.")
+            else:
+                self._update_mystic_barrier_particles(dt)
+
         # Update invulnerability
         if self.invulnerable:
             self.invulnerability_timer -= dt
@@ -1068,6 +1199,20 @@ class Character:
             logger.info(f"Ice Armor absorbed {int(absorbed)} damage. Remaining: {int(self.ice_armor_remaining_absorption)}")
             if amount <= 0:
                 return
+
+        # Mystic Barrier: reflect 30% of damage to all nearby enemies
+        if self.mystic_barrier_active and amount > 0:
+            reflect_damage = int(amount * self.mystic_barrier_reflect_pct)
+            if reflect_damage > 0:
+                game_state = getattr(self, "game_state", None)
+                if game_state is not None and hasattr(game_state, "enemies"):
+                    player_center = self.get_center()
+                    reflect_radius = 200.0
+                    for enemy in list(game_state.enemies):
+                        enemy_center = enemy.get_center()
+                        if player_center.distance_to(enemy_center) < reflect_radius:
+                            enemy.take_damage(reflect_damage)
+                            logger.info(f"Mystic Barrier reflected {reflect_damage} damage to {enemy.__class__.__name__}!")
 
         self.hp -= amount
 
@@ -1155,6 +1300,10 @@ class Character:
         # Draw Ice Armor visual effect
         if self.ice_armor_active:
             self._draw_ice_armor(screen, camera_offset)
+
+        # Draw Mystic Barrier visual effect
+        if self.mystic_barrier_active:
+            self._draw_mystic_barrier(screen, camera_offset)
 
     # ─── Flame Shield helpers ───────────────────────────────────────────
 
@@ -1411,4 +1560,121 @@ class Character:
                 sp_y = cy + random.uniform(-15, 15)
                 sp_size = random.randint(1, 2)
                 sp_color = random.choice([(200, 240, 255), (160, 210, 255), (220, 250, 255)])
+                pygame.draw.circle(screen, sp_color, (int(sp_x), int(sp_y)), sp_size)
+
+    # ─── Mystic Barrier helpers ──────────────────────────────────────
+
+    def _update_mystic_barrier_particles(self, dt):
+        import random
+
+        if self.mystic_barrier_active:
+            spawn_count = max(1, int(12 * dt))
+            for _ in range(spawn_count):
+                angle = random.uniform(0, math.pi * 2)
+                dist = random.uniform(30, 100)
+                self.mystic_barrier_particles.append({
+                    "angle": angle,
+                    "dist": dist,
+                    "life": random.uniform(0.3, 0.7),
+                    "max_life": random.uniform(0.3, 0.7),
+                    "size": random.uniform(2.0, 4.0),
+                    "drift": random.uniform(-20, 20),
+                    "color": random.choice([
+                        (200, 140, 255),
+                        (160, 80, 220),
+                        (220, 180, 255),
+                        (180, 100, 240),
+                        (240, 200, 255),
+                    ]),
+                })
+
+        for p in self.mystic_barrier_particles[:]:
+            p["life"] -= dt
+            if p["life"] <= 0:
+                self.mystic_barrier_particles.remove(p)
+                continue
+            p["angle"] += p["drift"] * dt
+            pulse = 1.0 + 0.3 * math.sin(p["life"] * 8.0)
+            p["dist"] *= pulse
+
+    def _draw_mystic_barrier(self, screen, camera_offset):
+        import random
+        center = self.get_center()
+        cx = center.x - camera_offset.x
+        cy = center.y - camera_offset.y
+        t = pygame.time.get_ticks() / 1000.0
+
+        radius = 85.0
+
+        # ── Outer magenta barrier ring ──
+        pulse = 0.6 + 0.4 * math.sin(t * 3.5)
+        glow_radius = radius * (0.9 + 0.1 * pulse)
+        glow_surf = pygame.Surface((int(glow_radius * 2) + 4, int(glow_radius * 2) + 4), pygame.SRCALPHA)
+        glow_a = int(40 + 25 * pulse)
+        pygame.draw.circle(glow_surf, (140, 60, 180, glow_a),
+                           (int(glow_radius) + 2, int(glow_radius) + 2),
+                           int(glow_radius))
+        inner_r = int(glow_radius * 0.55)
+        inner_a = int(25 + 20 * pulse)
+        pygame.draw.circle(glow_surf, (200, 120, 240, inner_a),
+                           (int(glow_radius) + 2, int(glow_radius) + 2),
+                           inner_r)
+        screen.blit(glow_surf, (int(cx - glow_radius - 2), int(cy - glow_radius - 2)))
+
+        # ── Arcane rune ring ──
+        ring_r = radius
+        ring_a = int(80 + 60 * math.sin(t * 6.0))
+        ring_surf = pygame.Surface((int(ring_r * 2) + 4, int(ring_r * 2) + 4), pygame.SRCALPHA)
+        pygame.draw.circle(ring_surf, (200, 140, 255, ring_a),
+                           (int(ring_r) + 2, int(ring_r) + 2),
+                           int(ring_r), max(1, int(2 * (0.5 + 0.5 * pulse))))
+        screen.blit(ring_surf, (int(cx - ring_r - 2), int(cy - ring_r - 2)))
+
+        # ── Rotating energy sigils ──
+        sigil_count = 4
+        for i in range(sigil_count):
+            sigil_angle = t * 0.8 + i * (math.pi * 2 / sigil_count)
+            sigil_dist = radius * 0.75 + 8 * math.sin(t * 4.0 + i * 1.2)
+            sx = cx + math.cos(sigil_angle) * sigil_dist
+            sy = cy + math.sin(sigil_angle) * sigil_dist
+            sigil_size = max(2, int(5 + 3 * math.sin(t * 3.0 + i * 1.7)))
+            sigil_alpha = int(120 + 80 * math.sin(t * 5.0 + i * 2.3))
+            sigil_color = (220, 160, 255, sigil_alpha)
+            pts = [
+                (sx, sy - sigil_size),
+                (sx + sigil_size * 0.7, sy),
+                (sx, sy + sigil_size),
+                (sx - sigil_size * 0.7, sy),
+            ]
+            pygame.draw.polygon(screen, sigil_color[:3], pts)
+            pygame.draw.polygon(screen, (240, 210, 255), pts, 1)
+
+        # ── Barrier particles ──
+        for p in self.mystic_barrier_particles:
+            life_ratio = p["life"] / p["max_life"] if p["max_life"] > 0 else 0
+            if life_ratio <= 0:
+                continue
+            px = cx + math.cos(p["angle"]) * p["dist"]
+            py = cy + math.sin(p["angle"]) * p["dist"]
+            alpha = int(200 * life_ratio)
+            size = max(1, int(p["size"] * life_ratio))
+            r, g, b = p["color"]
+            glow_sz = size * 3
+            glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+            pygame.draw.circle(glow, (r, g, b, alpha // 3),
+                               (glow_sz, glow_sz), glow_sz)
+            screen.blit(glow, (int(px - glow_sz), int(py - glow_sz)))
+            if alpha > 20:
+                pygame.draw.circle(screen, (min(255, r + 40), min(255, g + 30), min(255, b + 10)),
+                                   (int(px), int(py)), size)
+
+        # ── Arcane sparkles ──
+        if self.mystic_barrier_active:
+            for _ in range(3):
+                sp_angle = random.uniform(0, math.pi * 2)
+                sp_dist = random.uniform(0, radius * 0.5)
+                sp_x = cx + math.cos(sp_angle) * sp_dist
+                sp_y = cy + random.uniform(-10, 10)
+                sp_size = random.randint(1, 2)
+                sp_color = random.choice([(220, 180, 255), (180, 120, 240), (255, 220, 255)])
                 pygame.draw.circle(screen, sp_color, (int(sp_x), int(sp_y)), sp_size)
