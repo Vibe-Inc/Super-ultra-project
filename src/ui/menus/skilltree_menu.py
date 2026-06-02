@@ -827,14 +827,15 @@ class SkillTreeMenu(Menu):
             ba = get_branch_color(branch, "accent")
             node_id = f"inner_{i + 1}"
             stat_names = [
-                _("Vitality I"), _("Strength I"), _("Agility I"), _("Wisdom I"),
-                _("Endurance I"), _("Focus I"), _("Reflexes I"), _("Fortitude I"),
-                _("Precision I"), _("Resilience I"), _("Power I"), _("Speed I"),
+                _("Vitality I"), _("Stamina I"), _("Might I"), _("Recovery I"),
+                _("Swiftness I"), _("Power I"), _("Agility I"), _("Alacrity I"),
+                _("Reach I"), _("Endurance I"), _("Wisdom I"), _("Mastery I"),
             ]
             stat_effects = [
-                _("+5 Max HP"), _("+3 Melee Damage"), _("+2% Move Speed"), _("+4 Max Stamina"),
-                _("+2 Armor"), _("+3% Crit Chance"), _("+2% Attack Speed"), _("+3 Dodge Chance"),
-                _("+2 Accuracy"), _("+2% Damage Reduction"), _("+3 Spell Damage"), _("+2% Move Speed"),
+                _("+10 Max HP"), _("+8 Max Stamina"), _("+3 Attack Damage"), _("+1.0 HP/s"),
+                _("+2% Move Speed"), _("+3 Fireball Damage"), _("+2% Move Speed"),
+                _("+5 Attack Range"), _("+3% Attack Speed"), _("+5 Max HP"),
+                _("+3 Frost Nova Damage"), _("+3 Chain Lightning Damage"),
             ]
             add_node(
                 node_id,
@@ -1303,6 +1304,41 @@ class SkillTreeMenu(Menu):
 
         if node_id == "keystone_6" and hasattr(character, "learn_chrono_shift"):
             character.learn_chrono_shift()
+
+        # ─── RING 1 minor node effects ───
+        if node_id == "inner_1":
+            character.max_hp += 10
+            character.hp += 10
+        elif node_id == "inner_2":
+            character.max_stamina += 8
+            character.stamina = min(character.stamina + 8, character.max_stamina)
+        elif node_id == "inner_3":
+            character.base_attack_damage += 3
+            character.attack_damage += 3
+        elif node_id == "inner_4":
+            if not character.regeneration:
+                character.regeneration = True
+            character.regeneration_hp_per_sec += 1.0
+        elif node_id == "inner_5":
+            character.speed_multiplier *= 1.02
+            character.speed = character.base_speed * character.speed_multiplier
+        elif node_id == "inner_6":
+            character.fireball_damage += 3
+        elif node_id == "inner_7":
+            character.speed_multiplier *= 1.02
+            character.speed = character.base_speed * character.speed_multiplier
+        elif node_id == "inner_8":
+            character.attack_range += 5
+        elif node_id == "inner_9":
+            reduction = getattr(character, "attack_cooldown_mult", 1.0)
+            character.attack_cooldown_mult = reduction * 0.97
+        elif node_id == "inner_10":
+            character.max_hp += 5
+            character.hp += 5
+        elif node_id == "inner_11":
+            character.frost_nova_damage += 3
+        elif node_id == "inner_12":
+            character.chain_lightning_damage += 3
 
         # Trigger unlock animation
         self._spawn_unlock_effect(node_id)

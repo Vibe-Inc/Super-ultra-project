@@ -142,6 +142,7 @@ class Character:
         self.attack_damage = self.base_attack_damage
         self.attack_range = self.base_attack_range
         self.attack_cooldown = self.base_attack_cooldown
+        self.attack_cooldown_mult = 1.0
         self.last_attack_time = 0
         self.is_attacking = False
         self.last_attack_dir = pygame.Vector2(1, 0)
@@ -383,6 +384,14 @@ class Character:
                 base = object.__getattribute__(self, "base_attack_cooldown")
                 if base is not None:
                     return int(base * 0.75)
+            try:
+                cd_mult = object.__getattribute__(self, "attack_cooldown_mult")
+            except AttributeError:
+                cd_mult = 1.0
+            if cd_mult != 1.0:
+                base = object.__getattribute__(self, "base_attack_cooldown")
+                if base is not None:
+                    return int(base * cd_mult)
         return object.__getattribute__(self, name)
 
     def _build_skillbook(self):
