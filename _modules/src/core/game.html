@@ -92,6 +92,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.monster_visuals</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_monster_animations</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.monster_attacks</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_attack_controller</span><span class="p">,</span> <span class="n">AttackContext</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.combat.base_player_combat</span><span class="w"> </span><span class="kn">import</span> <span class="n">PlayerCombatController</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.blackjack</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlackjackGame</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">src.app</span><span class="w"> </span><span class="kn">import</span> <span class="n">App</span>
@@ -344,6 +345,11 @@
             <span class="s2">&quot;maps/tavern.tmx&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">576</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
         <span class="p">}</span>
 
+        <span class="c1"># Card-game NPC spawn positions (pixels) — separate from the merchant NPC</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">CARD_NPC_SPAWNS</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;maps/tavern.tmx&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">320</span><span class="p">,</span> <span class="mi">320</span><span class="p">),</span>
+        <span class="p">}</span>
+
         <span class="c1"># Maps where enemy spawning (both default and random) is disabled</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">NO_ENEMY_SPAWN_MAPS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;maps/tavern.tmx&quot;</span><span class="p">,</span> <span class="s2">&quot;maps/test-map-1.tmx&quot;</span><span class="p">}</span>
 
@@ -406,7 +412,52 @@
             <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;moldy_bread&quot;</span><span class="p">)</span>
             <span class="p">]</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">shop_inv</span> <span class="o">=</span> <span class="n">ShopInventory</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="n">shop_items</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shop_inv</span> <span class="o">=</span> <span class="n">ShopInventory</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="n">shop_items</span><span class="p">)</span>
+
+        <span class="c1"># ---- Card-game NPC (tavern gambler) ----</span>
+        <span class="k">if</span> <span class="n">initial_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">CARD_NPC_SPAWNS</span><span class="p">:</span>
+            <span class="n">cn_x</span><span class="p">,</span> <span class="n">cn_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">CARD_NPC_SPAWNS</span><span class="p">[</span><span class="n">initial_map_path</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cn_x</span><span class="p">,</span> <span class="n">cn_y</span> <span class="o">=</span> <span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="o">-</span><span class="mi">5000</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">card_npc_first_dialog</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;Well, well — a fresh face in the tavern!&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Name&#39;s Ren. I pass the time with a bit of cards.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Care for a round of Blackjack? I promise I don&#39;t cheat... much.&quot;</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">card_npc_repeat_dialog</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;Back again? I knew you&#39;d come around.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;The cards have been waiting for you.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;How about another round of Blackjack?&quot;</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">card_npc_post_game_dialog</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;Thanks for playing! That was a fine round.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Come back anytime — the deck&#39;s always shuffled.&quot;</span>
+        <span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span> <span class="o">=</span> <span class="n">NPC</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">cn_x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">cn_y</span><span class="p">,</span>
+            <span class="n">sprite_set</span><span class="o">=</span><span class="s2">&quot;MenHuman1(Recolor)&quot;</span><span class="p">,</span>
+            <span class="n">dialog_lines</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">card_npc_first_dialog</span><span class="p">,</span>
+            <span class="n">is_merchant</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">gender</span><span class="o">=</span><span class="s1">&#39;male&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Clamp card NPC to map bounds</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">initial_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">CARD_NPC_SPAWNS</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_width</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_height</span><span class="p">:</span>
+                <span class="n">map_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_width</span>
+                <span class="n">map_h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_height</span>
+                <span class="n">cn_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>
+                <span class="n">cn_h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
+                <span class="n">cn_x</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">cn_x</span><span class="p">,</span> <span class="n">map_w</span> <span class="o">-</span> <span class="n">cn_w</span><span class="p">))</span>
+                <span class="n">cn_y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">cn_y</span><span class="p">,</span> <span class="n">map_h</span> <span class="o">-</span> <span class="n">cn_h</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">cn_x</span><span class="p">,</span> <span class="n">cn_y</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="c1"># Blackjack game state (None when not playing)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blackjack_game</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 <div class="viewcode-block" id="Game.reinit_ui">
@@ -439,6 +490,46 @@
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">pass</span></div>
 
+
+<div class="viewcode-block" id="Game.open_blackjack">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.open_blackjack">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">open_blackjack</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Launch the blackjack minigame overlay.&quot;&quot;&quot;</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">on_close</span><span class="p">(</span><span class="n">outcome</span><span class="p">,</span> <span class="n">net_change</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">blackjack_game</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="c1"># Apply money change from blackjack</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span> <span class="o">+=</span> <span class="n">net_change</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Blackjack closed: outcome=</span><span class="si">{</span><span class="n">outcome</span><span class="si">}</span><span class="s2">, net_change=</span><span class="si">{</span><span class="n">net_change</span><span class="si">}</span><span class="s2">, money now=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="c1"># Build post-game dialog mentioning the result</span>
+            <span class="k">if</span> <span class="n">net_change</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">post_lines</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="s2">&quot;Thanks for playing! That was a fine round.&quot;</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s2">&quot;You walked away </span><span class="si">{</span><span class="n">net_change</span><span class="si">}</span><span class="s2"> gold richer!&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;Come back anytime — the deck&#39;s always shuffled.&quot;</span>
+                <span class="p">]</span>
+            <span class="k">elif</span> <span class="n">net_change</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">post_lines</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="s2">&quot;Thanks for playing! That was a fine round.&quot;</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s2">&quot;Tough luck — you lost </span><span class="si">{</span><span class="nb">abs</span><span class="p">(</span><span class="n">net_change</span><span class="p">)</span><span class="si">}</span><span class="s2"> gold.&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;Come back anytime — the deck&#39;s always shuffled.&quot;</span>
+                <span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">post_lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_npc_post_game_dialog</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">current_dialog</span> <span class="o">=</span> <span class="n">Dialog</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span>
+                <span class="n">post_lines</span><span class="p">,</span>
+                <span class="n">on_close</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="p">,</span> <span class="s1">&#39;was_talked&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blackjack_game</span> <span class="o">=</span> <span class="n">BlackjackGame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="n">on_close</span><span class="o">=</span><span class="n">on_close</span><span class="p">,</span> <span class="n">player_money</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_card_npc_dialog</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the appropriate dialog lines for the card NPC.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">was_talked</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_npc_first_dialog</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_npc_repeat_dialog</span>
 
 <div class="viewcode-block" id="Game.use_skill_slot">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.use_skill_slot">[docs]</a>
@@ -675,7 +766,26 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="o">-</span><span class="mi">5000</span><span class="p">)</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No NPC spawn for map </span><span class="si">{</span><span class="n">switched_map_path</span><span class="si">}</span><span class="s2">; hiding NPC&quot;</span><span class="p">)</span>
-        
+
+            <span class="c1"># Place card-game NPC on the new map (or hide if not present)</span>
+            <span class="k">if</span> <span class="n">switched_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">CARD_NPC_SPAWNS</span><span class="p">:</span>
+                <span class="n">cn_x</span><span class="p">,</span> <span class="n">cn_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">CARD_NPC_SPAWNS</span><span class="p">[</span><span class="n">switched_map_path</span><span class="p">]</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_width</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_height</span><span class="p">:</span>
+                        <span class="n">map_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_width</span>
+                        <span class="n">map_h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_height</span>
+                        <span class="n">cn_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>
+                        <span class="n">cn_h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
+                        <span class="n">cn_x</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">cn_x</span><span class="p">,</span> <span class="n">map_w</span> <span class="o">-</span> <span class="n">cn_w</span><span class="p">))</span>
+                        <span class="n">cn_y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">cn_y</span><span class="p">,</span> <span class="n">map_h</span> <span class="o">-</span> <span class="n">cn_h</span><span class="p">))</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">pass</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">cn_x</span><span class="p">,</span> <span class="n">cn_y</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Placed card NPC for map </span><span class="si">{</span><span class="n">switched_map_path</span><span class="si">}</span><span class="s2"> at (</span><span class="si">{</span><span class="n">cn_x</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">cn_y</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="o">-</span><span class="mi">5000</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No card NPC spawn for map </span><span class="si">{</span><span class="n">switched_map_path</span><span class="si">}</span><span class="s2">; hiding card NPC&quot;</span><span class="p">)</span>
+
         <span class="c1"># Enemy Spawning Logic</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_game_time</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
 
@@ -746,6 +856,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">enemy</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
 
         <span class="c1"># Safety: if current map defines an NPC spawn but NPC is far away (not placed), place it</span>
         <span class="k">try</span><span class="p">:</span>
@@ -753,6 +864,15 @@
                 <span class="n">nx</span><span class="p">,</span> <span class="n">ny</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">NPC_SPAWNS</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">)</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Safety placed NPC on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="si">}</span><span class="s2"> at (</span><span class="si">{</span><span class="n">nx</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">ny</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="c1"># Safety: place card NPC if it should be on this map but is far away</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">CARD_NPC_SPAWNS</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">1000</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">1000</span><span class="p">):</span>
+                <span class="n">cnx</span><span class="p">,</span> <span class="n">cny</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">CARD_NPC_SPAWNS</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">cnx</span><span class="p">,</span> <span class="n">cny</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Safety placed card NPC on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="si">}</span><span class="s2"> at (</span><span class="si">{</span><span class="n">cnx</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">cny</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">pass</span>
 
@@ -794,21 +914,34 @@
             <span class="k">if</span> <span class="n">_is_visible</span><span class="p">(</span><span class="n">projectile</span><span class="p">):</span>
                 <span class="n">projectile</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
 
-        <span class="c1"># Draw NPC and player with simple Y-ordering so they overlap naturally</span>
+        <span class="c1"># Draw NPCs and player with simple Y-ordering so they overlap naturally</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">npc_vis</span> <span class="o">=</span> <span class="n">_is_visible</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="n">npc_vis</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">card_npc_vis</span> <span class="o">=</span> <span class="n">_is_visible</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">card_npc_vis</span> <span class="o">=</span> <span class="kc">False</span>
 
-        <span class="c1"># If player is lower on screen (greater y) -&gt; player is in front, so draw NPC first</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">npc_vis</span><span class="p">:</span>
+        <span class="c1"># Collect all visible entities with their y-position for sorting</span>
+        <span class="n">draw_entities</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">npc_vis</span><span class="p">:</span>
+            <span class="n">draw_entities</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="s1">&#39;npc&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">card_npc_vis</span><span class="p">:</span>
+            <span class="n">draw_entities</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="s1">&#39;card_npc&#39;</span><span class="p">))</span>
+        <span class="n">draw_entities</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="s1">&#39;player&#39;</span><span class="p">))</span>
+
+        <span class="c1"># Sort by y-position (lower y drawn first = further back)</span>
+        <span class="n">draw_entities</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">e</span><span class="p">:</span> <span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">draw_entities</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;npc&#39;</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">npc_vis</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;card_npc&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;player&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">draw_fringe_overlay</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">)</span>
 
@@ -836,6 +969,12 @@
             <span class="k">try</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">current_dialog</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="c1"># Draw blackjack overlay on top of everything</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">blackjack_game</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">blackjack_game</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="k">pass</span></div>
 
 
@@ -849,6 +988,14 @@
 <div class="viewcode-block" id="Game.handle_event">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.handle_event">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">handle_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">Event</span><span class="p">):</span>
+        <span class="c1"># If blackjack game is active, route all events to it</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">blackjack_game</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">blackjack_game</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+
         <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="s1">&#39;current_dialog&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">current_dialog</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
@@ -884,8 +1031,24 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">use_skill_slot</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
             
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_e</span><span class="p">:</span>
-                <span class="c1"># If NPC is interactable -&gt; start conversation (dialog).</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">is_interactable</span><span class="p">:</span>
+                <span class="c1"># Card NPC interaction takes priority if both are nearby</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">is_interactable</span><span class="p">:</span>
+                    <span class="n">dialog_lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_card_npc_dialog</span><span class="p">()</span>
+
+                    <span class="k">def</span><span class="w"> </span><span class="nf">on_card_close</span><span class="p">():</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">was_talked</span> <span class="o">=</span> <span class="kc">True</span>
+                        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                            <span class="k">pass</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">current_dialog</span> <span class="o">=</span> <span class="n">Dialog</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span>
+                        <span class="n">dialog_lines</span><span class="p">,</span>
+                        <span class="n">on_close</span><span class="o">=</span><span class="n">on_card_close</span><span class="p">,</span>
+                        <span class="n">on_play_cards</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">open_blackjack</span><span class="p">,</span>
+                        <span class="n">show_play_cards</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">is_interactable</span><span class="p">:</span>
                     <span class="k">def</span><span class="w"> </span><span class="nf">on_close</span><span class="p">():</span>
                         <span class="k">try</span><span class="p">:</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">last_talked_npc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">npc</span>

@@ -229,10 +229,13 @@
 </section>
 <section id="module-src.ui.menus">
 <span id="src-ui-menus-module"></span><h2>src.ui.menus module<a class="headerlink" href="#module-src.ui.menus" title="Link to this heading"></a></h2>
+<p>Menus package for the game UI.</p>
+<p>This package contains all menu classes used in the game, split into separate modules
+for better organization and maintainability.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="src.ui.menus.CreditsMenu">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.menus.</span></span><span class="sig-name descname"><span class="pre">CreditsMenu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#CreditsMenu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.CreditsMenu" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#src.ui.menus.Menu" title="src.ui.menus.Menu"><code class="xref py py-class docutils literal notranslate"><span class="pre">Menu</span></code></a></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.menus.</span></span><span class="sig-name descname"><span class="pre">CreditsMenu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/credits_menu.html#CreditsMenu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.CreditsMenu" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.ui.menus.Menu" title="src.ui.menus.base.Menu"><code class="xref py py-class docutils literal notranslate"><span class="pre">Menu</span></code></a></p>
 <p>Credits screen with styled box, multi-line text, and a BACK button.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="src.ui.menus.CreditsMenu.buttons">
@@ -335,7 +338,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.CreditsMenu.draw">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#CreditsMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.CreditsMenu.draw" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/credits_menu.html#CreditsMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.CreditsMenu.draw" title="Link to this definition"></a></dt>
 <dd><p>Draw the credits box, text, and BACK button.
 :param screen: The surface to draw the credits on.
 :type screen: pygame.Surface</p>
@@ -343,75 +346,73 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.CreditsMenu.back_to_main">
-<span class="sig-name descname"><span class="pre">back_to_main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#CreditsMenu.back_to_main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.CreditsMenu.back_to_main" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">back_to_main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/credits_menu.html#CreditsMenu.back_to_main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.CreditsMenu.back_to_main" title="Link to this definition"></a></dt>
 <dd><p>Return to the main menu.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id3">
-<span class="sig-name descname"><span class="pre">back_to_main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#CreditsMenu.back_to_main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">back_to_main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/credits_menu.html#CreditsMenu.back_to_main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id4">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#CreditsMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
-<dd><p>Renders the state to the provided screen surface.</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/credits_menu.html#CreditsMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.CreditsMenu.layout">
-<span class="sig-name descname"><span class="pre">layout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#CreditsMenu.layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.CreditsMenu.layout" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">layout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/credits_menu.html#CreditsMenu.layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.CreditsMenu.layout" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="src.ui.menus.MainMenu">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.menus.</span></span><span class="sig-name descname"><span class="pre">MainMenu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#MainMenu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.MainMenu" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#src.ui.menus.Menu" title="src.ui.menus.Menu"><code class="xref py py-class docutils literal notranslate"><span class="pre">Menu</span></code></a></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.menus.</span></span><span class="sig-name descname"><span class="pre">MainMenu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/main_menu.html#MainMenu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.MainMenu" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.ui.menus.Menu" title="src.ui.menus.base.Menu"><code class="xref py py-class docutils literal notranslate"><span class="pre">Menu</span></code></a></p>
 <p>Main menu screen.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.MainMenu.draw">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#MainMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.MainMenu.draw" title="Link to this definition"></a></dt>
-<dd><p>Renders the state to the provided screen surface.</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/main_menu.html#MainMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.MainMenu.draw" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.MainMenu.exit_game">
-<span class="sig-name descname"><span class="pre">exit_game</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#MainMenu.exit_game"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.MainMenu.exit_game" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">exit_game</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/main_menu.html#MainMenu.exit_game"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.MainMenu.exit_game" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.MainMenu.layout">
-<span class="sig-name descname"><span class="pre">layout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#MainMenu.layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.MainMenu.layout" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">layout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/main_menu.html#MainMenu.layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.MainMenu.layout" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.MainMenu.open_credits">
-<span class="sig-name descname"><span class="pre">open_credits</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#MainMenu.open_credits"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.MainMenu.open_credits" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">open_credits</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/main_menu.html#MainMenu.open_credits"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.MainMenu.open_credits" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.MainMenu.open_load_menu">
-<span class="sig-name descname"><span class="pre">open_load_menu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#MainMenu.open_load_menu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.MainMenu.open_load_menu" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">open_load_menu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/main_menu.html#MainMenu.open_load_menu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.MainMenu.open_load_menu" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.MainMenu.open_settings">
-<span class="sig-name descname"><span class="pre">open_settings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#MainMenu.open_settings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.MainMenu.open_settings" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">open_settings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/main_menu.html#MainMenu.open_settings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.MainMenu.open_settings" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.MainMenu.start_game">
-<span class="sig-name descname"><span class="pre">start_game</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#MainMenu.start_game"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.MainMenu.start_game" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">start_game</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/main_menu.html#MainMenu.start_game"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.MainMenu.start_game" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="src.ui.menus.Menu">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.menus.</span></span><span class="sig-name descname"><span class="pre">Menu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#Menu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.Menu" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="src.core.html#src.core.state.State" title="src.core.state.State"><code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code></a></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.menus.</span></span><span class="sig-name descname"><span class="pre">Menu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/base.html#Menu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.Menu" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Base class for menu interfaces containing interactive buttons and tooltips.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="src.ui.menus.Menu.app">
@@ -448,7 +449,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.Menu.draw">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#Menu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.Menu.draw" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/base.html#Menu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.Menu.draw" title="Link to this definition"></a></dt>
 <dd><p>Draw all buttons and tooltips onto the provided screen surface.
 :param screen: The surface to draw the menu on.
 :type screen: pygame.Surface</p>
@@ -456,7 +457,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.Menu.handle_event">
-<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#Menu.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.Menu.handle_event" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/base.html#Menu.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.Menu.handle_event" title="Link to this definition"></a></dt>
 <dd><p>Handle Pygame events, triggering button actions when clicked.
 :param event: The Pygame event to process.
 :type event: pygame.event.Event</p>
@@ -464,27 +465,25 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id5">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#Menu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
-<dd><p>Renders the state to the provided screen surface.</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/base.html#Menu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id6">
-<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#Menu.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
-<dd><p>Handles input events specific to the state.</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/base.html#Menu.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.Menu.layout">
-<span class="sig-name descname"><span class="pre">layout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#Menu.layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.Menu.layout" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">layout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/base.html#Menu.layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.Menu.layout" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="src.ui.menus.PauseMenu">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.menus.</span></span><span class="sig-name descname"><span class="pre">PauseMenu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#PauseMenu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.PauseMenu" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#src.ui.menus.Menu" title="src.ui.menus.Menu"><code class="xref py py-class docutils literal notranslate"><span class="pre">Menu</span></code></a></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.menus.</span></span><span class="sig-name descname"><span class="pre">PauseMenu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/pause_menu.html#PauseMenu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.PauseMenu" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.ui.menus.Menu" title="src.ui.menus.base.Menu"><code class="xref py py-class docutils literal notranslate"><span class="pre">Menu</span></code></a></p>
 <p>Pause menu for the game, providing options to resume gameplay or return to the main menu.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="src.ui.menus.PauseMenu.app">
@@ -521,7 +520,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.PauseMenu.draw">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#PauseMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.PauseMenu.draw" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/pause_menu.html#PauseMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.PauseMenu.draw" title="Link to this definition"></a></dt>
 <dd><p>Draw the pause menu overlay and its buttons.
 :param screen: The surface to draw the pause menu on.
 :type screen: pygame.Surface</p>
@@ -529,48 +528,47 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.PauseMenu.resume_game">
-<span class="sig-name descname"><span class="pre">resume_game</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#PauseMenu.resume_game"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.PauseMenu.resume_game" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">resume_game</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/pause_menu.html#PauseMenu.resume_game"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.PauseMenu.resume_game" title="Link to this definition"></a></dt>
 <dd><p>Resume gameplay by setting the application state to “gameplay”.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.PauseMenu.back_to_main">
-<span class="sig-name descname"><span class="pre">back_to_main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#PauseMenu.back_to_main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.PauseMenu.back_to_main" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">back_to_main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/pause_menu.html#PauseMenu.back_to_main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.PauseMenu.back_to_main" title="Link to this definition"></a></dt>
 <dd><p>Return to the main menu by setting the application state to “main”.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id7">
-<span class="sig-name descname"><span class="pre">back_to_main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#PauseMenu.back_to_main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">back_to_main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/pause_menu.html#PauseMenu.back_to_main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id8">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#PauseMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
-<dd><p>Renders the state to the provided screen surface.</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/pause_menu.html#PauseMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.PauseMenu.layout">
-<span class="sig-name descname"><span class="pre">layout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#PauseMenu.layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.PauseMenu.layout" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">layout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/pause_menu.html#PauseMenu.layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.PauseMenu.layout" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.PauseMenu.open_save_menu">
-<span class="sig-name descname"><span class="pre">open_save_menu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#PauseMenu.open_save_menu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.PauseMenu.open_save_menu" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">open_save_menu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/pause_menu.html#PauseMenu.open_save_menu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.PauseMenu.open_save_menu" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id9">
-<span class="sig-name descname"><span class="pre">resume_game</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#PauseMenu.resume_game"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">resume_game</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/pause_menu.html#PauseMenu.resume_game"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="src.ui.menus.SaveLoadMenu">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.menus.</span></span><span class="sig-name descname"><span class="pre">SaveLoadMenu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SaveLoadMenu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SaveLoadMenu" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#src.ui.menus.Menu" title="src.ui.menus.Menu"><code class="xref py py-class docutils literal notranslate"><span class="pre">Menu</span></code></a></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.menus.</span></span><span class="sig-name descname"><span class="pre">SaveLoadMenu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/save_load_menu.html#SaveLoadMenu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SaveLoadMenu" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.ui.menus.Menu" title="src.ui.menus.base.Menu"><code class="xref py py-class docutils literal notranslate"><span class="pre">Menu</span></code></a></p>
 <p>Save/load menu that manages save slots and deletion.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="src.ui.menus.SaveLoadMenu.mode">
@@ -596,83 +594,82 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.SaveLoadMenu.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SaveLoadMenu.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SaveLoadMenu.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/save_load_menu.html#SaveLoadMenu.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SaveLoadMenu.__init__" title="Link to this definition"></a></dt>
 <dd><p>Initialize the save/load menu.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.SaveLoadMenu.layout">
-<span class="sig-name descname"><span class="pre">layout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SaveLoadMenu.layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SaveLoadMenu.layout" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">layout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/save_load_menu.html#SaveLoadMenu.layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SaveLoadMenu.layout" title="Link to this definition"></a></dt>
 <dd><p>Position the buttons and menu title for the current screen size.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.SaveLoadMenu.refresh_saves">
-<span class="sig-name descname"><span class="pre">refresh_saves</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SaveLoadMenu.refresh_saves"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SaveLoadMenu.refresh_saves" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">refresh_saves</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/save_load_menu.html#SaveLoadMenu.refresh_saves"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SaveLoadMenu.refresh_saves" title="Link to this definition"></a></dt>
 <dd><p>Rebuild the button list from the available save files.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.SaveLoadMenu.on_slot_click">
-<span class="sig-name descname"><span class="pre">on_slot_click</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slot_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SaveLoadMenu.on_slot_click"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SaveLoadMenu.on_slot_click" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_slot_click</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slot_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/save_load_menu.html#SaveLoadMenu.on_slot_click"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SaveLoadMenu.on_slot_click" title="Link to this definition"></a></dt>
 <dd><p>Save to or load from a selected slot.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.SaveLoadMenu.delete_slot">
-<span class="sig-name descname"><span class="pre">delete_slot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slot_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SaveLoadMenu.delete_slot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SaveLoadMenu.delete_slot" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">delete_slot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slot_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/save_load_menu.html#SaveLoadMenu.delete_slot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SaveLoadMenu.delete_slot" title="Link to this definition"></a></dt>
 <dd><p>Delete a selected save slot.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.SaveLoadMenu.go_back">
-<span class="sig-name descname"><span class="pre">go_back</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SaveLoadMenu.go_back"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SaveLoadMenu.go_back" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">go_back</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/save_load_menu.html#SaveLoadMenu.go_back"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SaveLoadMenu.go_back" title="Link to this definition"></a></dt>
 <dd><p>Return to the previous menu.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.SaveLoadMenu.draw">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SaveLoadMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SaveLoadMenu.draw" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/save_load_menu.html#SaveLoadMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SaveLoadMenu.draw" title="Link to this definition"></a></dt>
 <dd><p>Render the save/load UI.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id10">
-<span class="sig-name descname"><span class="pre">delete_slot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slot_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SaveLoadMenu.delete_slot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">delete_slot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slot_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/save_load_menu.html#SaveLoadMenu.delete_slot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id11">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SaveLoadMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id11" title="Link to this definition"></a></dt>
-<dd><p>Renders the state to the provided screen surface.</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/save_load_menu.html#SaveLoadMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id11" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id12">
-<span class="sig-name descname"><span class="pre">go_back</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SaveLoadMenu.go_back"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id12" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">go_back</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/save_load_menu.html#SaveLoadMenu.go_back"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id12" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id13">
-<span class="sig-name descname"><span class="pre">layout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SaveLoadMenu.layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id13" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">layout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/save_load_menu.html#SaveLoadMenu.layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id13" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id14">
-<span class="sig-name descname"><span class="pre">on_slot_click</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slot_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SaveLoadMenu.on_slot_click"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id14" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_slot_click</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slot_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/save_load_menu.html#SaveLoadMenu.on_slot_click"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id14" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id15">
-<span class="sig-name descname"><span class="pre">refresh_saves</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SaveLoadMenu.refresh_saves"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id15" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">refresh_saves</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/save_load_menu.html#SaveLoadMenu.refresh_saves"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id15" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="src.ui.menus.SettingsMenu">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.menus.</span></span><span class="sig-name descname"><span class="pre">SettingsMenu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SettingsMenu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SettingsMenu" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#src.ui.menus.Menu" title="src.ui.menus.Menu"><code class="xref py py-class docutils literal notranslate"><span class="pre">Menu</span></code></a></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.menus.</span></span><span class="sig-name descname"><span class="pre">SettingsMenu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/settings_menu.html#SettingsMenu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SettingsMenu" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.ui.menus.Menu" title="src.ui.menus.base.Menu"><code class="xref py py-class docutils literal notranslate"><span class="pre">Menu</span></code></a></p>
 <p>Settings menu interface for the application.</p>
 <p>Inherits from Menu and provides sliders and buttons for adjusting audio, brightness, display mode, language, and returning to the main menu.</p>
 <dl class="py attribute">
@@ -765,19 +762,19 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.SettingsMenu.back_to_main">
-<span class="sig-name descname"><span class="pre">back_to_main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SettingsMenu.back_to_main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SettingsMenu.back_to_main" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">back_to_main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/settings_menu.html#SettingsMenu.back_to_main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SettingsMenu.back_to_main" title="Link to this definition"></a></dt>
 <dd><p>Return to the main menu.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.SettingsMenu.toggle_language">
-<span class="sig-name descname"><span class="pre">toggle_language</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SettingsMenu.toggle_language"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SettingsMenu.toggle_language" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">toggle_language</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/settings_menu.html#SettingsMenu.toggle_language"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SettingsMenu.toggle_language" title="Link to this definition"></a></dt>
 <dd><p>Toggle the application language.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.SettingsMenu.handle_event">
-<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SettingsMenu.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SettingsMenu.handle_event" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/settings_menu.html#SettingsMenu.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SettingsMenu.handle_event" title="Link to this definition"></a></dt>
 <dd><p>Handle slider and button events.
 :param event: The Pygame event to process.
 :type event: pygame.event.Event</p>
@@ -785,13 +782,13 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.SettingsMenu.update">
-<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SettingsMenu.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SettingsMenu.update" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/settings_menu.html#SettingsMenu.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SettingsMenu.update" title="Link to this definition"></a></dt>
 <dd><p>Update the audio slider if needed.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.SettingsMenu.draw">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SettingsMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SettingsMenu.draw" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/settings_menu.html#SettingsMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SettingsMenu.draw" title="Link to this definition"></a></dt>
 <dd><p>Draw all settings controls and labels.
 :param surface: The surface to draw the settings menu on.
 :type surface: pygame.Surface</p>
@@ -799,48 +796,45 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id16">
-<span class="sig-name descname"><span class="pre">back_to_main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SettingsMenu.back_to_main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id16" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">back_to_main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/settings_menu.html#SettingsMenu.back_to_main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id16" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id17">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SettingsMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id17" title="Link to this definition"></a></dt>
-<dd><p>Renders the state to the provided screen surface.</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/settings_menu.html#SettingsMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id17" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id18">
-<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SettingsMenu.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id18" title="Link to this definition"></a></dt>
-<dd><p>Handles input events specific to the state.</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/settings_menu.html#SettingsMenu.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id18" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.SettingsMenu.layout">
-<span class="sig-name descname"><span class="pre">layout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SettingsMenu.layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SettingsMenu.layout" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">layout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/settings_menu.html#SettingsMenu.layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SettingsMenu.layout" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.SettingsMenu.toggle_display_mode">
-<span class="sig-name descname"><span class="pre">toggle_display_mode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SettingsMenu.toggle_display_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SettingsMenu.toggle_display_mode" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">toggle_display_mode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/settings_menu.html#SettingsMenu.toggle_display_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SettingsMenu.toggle_display_mode" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id19">
-<span class="sig-name descname"><span class="pre">toggle_language</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SettingsMenu.toggle_language"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id19" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">toggle_language</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/settings_menu.html#SettingsMenu.toggle_language"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id19" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id20">
-<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SettingsMenu.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id20" title="Link to this definition"></a></dt>
-<dd><p>Updates the state’s logic.</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/settings_menu.html#SettingsMenu.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id20" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="src.ui.menus.SkillTreeMenu">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.menus.</span></span><span class="sig-name descname"><span class="pre">SkillTreeMenu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SkillTreeMenu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SkillTreeMenu" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#src.ui.menus.Menu" title="src.ui.menus.Menu"><code class="xref py py-class docutils literal notranslate"><span class="pre">Menu</span></code></a></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.menus.</span></span><span class="sig-name descname"><span class="pre">SkillTreeMenu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/skilltree_menu.html#SkillTreeMenu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SkillTreeMenu" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.ui.menus.Menu" title="src.ui.menus.base.Menu"><code class="xref py py-class docutils literal notranslate"><span class="pre">Menu</span></code></a></p>
 <p>Enhanced skill tree screen inspired by Path of Exile with visual wow effects.
 Features: animated glowing nodes, particle background, gradient links,
 pulsing selection, branch color themes, and expanded node count.</p>
@@ -851,53 +845,68 @@ pulsing selection, branch color themes, and expanded node count.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.SkillTreeMenu.draw">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SkillTreeMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SkillTreeMenu.draw" title="Link to this definition"></a></dt>
-<dd><p>Renders the state to the provided screen surface.</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/skilltree_menu.html#SkillTreeMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SkillTreeMenu.draw" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.SkillTreeMenu.exit_menu">
-<span class="sig-name descname"><span class="pre">exit_menu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SkillTreeMenu.exit_menu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SkillTreeMenu.exit_menu" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">exit_menu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/skilltree_menu.html#SkillTreeMenu.exit_menu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SkillTreeMenu.exit_menu" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.SkillTreeMenu.handle_event">
-<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SkillTreeMenu.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SkillTreeMenu.handle_event" title="Link to this definition"></a></dt>
-<dd><p>Handles input events specific to the state.</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/skilltree_menu.html#SkillTreeMenu.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SkillTreeMenu.handle_event" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.SkillTreeMenu.layout">
-<span class="sig-name descname"><span class="pre">layout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SkillTreeMenu.layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SkillTreeMenu.layout" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">layout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/skilltree_menu.html#SkillTreeMenu.layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SkillTreeMenu.layout" title="Link to this definition"></a></dt>
 <dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.SkillTreeMenu.on_enter">
+<span class="sig-name descname"><span class="pre">on_enter</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/skilltree_menu.html#SkillTreeMenu.on_enter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SkillTreeMenu.on_enter" title="Link to this definition"></a></dt>
+<dd><p>Called when this state becomes active. Resets and triggers the entrance animation (only first time).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.SkillTreeMenu.trigger_entrance_animation">
+<span class="sig-name descname"><span class="pre">trigger_entrance_animation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/skilltree_menu.html#SkillTreeMenu.trigger_entrance_animation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SkillTreeMenu.trigger_entrance_animation" title="Link to this definition"></a></dt>
+<dd><p>Start the multi-phase cinematic entrance animation when the skill tree opens.</p>
+</dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="src.ui.menus.SkillbarMenu">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.menus.</span></span><span class="sig-name descname"><span class="pre">SkillbarMenu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SkillbarMenu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SkillbarMenu" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#src.ui.menus.Menu" title="src.ui.menus.Menu"><code class="xref py py-class docutils literal notranslate"><span class="pre">Menu</span></code></a></p>
-<p>Skillbar editor with a single-skill book and a 6-slot active bar.</p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.menus.</span></span><span class="sig-name descname"><span class="pre">SkillbarMenu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/skillbar_menu.html#SkillbarMenu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SkillbarMenu" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.ui.menus.Menu" title="src.ui.menus.base.Menu"><code class="xref py py-class docutils literal notranslate"><span class="pre">Menu</span></code></a></p>
+<p>Skillbar editor with a single-skill book and a 6-slot active bar.
+Redesigned with stunning animations: glowing neon borders, particle effects,
+smooth hover animations, gradient cards, and pulsing active slots.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.menus.SkillbarMenu.NEON_THEMES">
+<span class="sig-name descname"><span class="pre">NEON_THEMES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'arcane':</span> <span class="pre">{'accent':</span> <span class="pre">(255,</span> <span class="pre">180,</span> <span class="pre">240),</span> <span class="pre">'glow':</span> <span class="pre">(255,</span> <span class="pre">120,</span> <span class="pre">220),</span> <span class="pre">'primary':</span> <span class="pre">(220,</span> <span class="pre">80,</span> <span class="pre">180)},</span> <span class="pre">'default':</span> <span class="pre">{'accent':</span> <span class="pre">(200,</span> <span class="pre">220,</span> <span class="pre">255),</span> <span class="pre">'glow':</span> <span class="pre">(140,</span> <span class="pre">180,</span> <span class="pre">240),</span> <span class="pre">'primary':</span> <span class="pre">(100,</span> <span class="pre">140,</span> <span class="pre">200)},</span> <span class="pre">'fire':</span> <span class="pre">{'accent':</span> <span class="pre">(255,</span> <span class="pre">200,</span> <span class="pre">100),</span> <span class="pre">'glow':</span> <span class="pre">(255,</span> <span class="pre">120,</span> <span class="pre">60),</span> <span class="pre">'primary':</span> <span class="pre">(255,</span> <span class="pre">80,</span> <span class="pre">40)},</span> <span class="pre">'ice':</span> <span class="pre">{'accent':</span> <span class="pre">(180,</span> <span class="pre">220,</span> <span class="pre">255),</span> <span class="pre">'glow':</span> <span class="pre">(100,</span> <span class="pre">180,</span> <span class="pre">255),</span> <span class="pre">'primary':</span> <span class="pre">(60,</span> <span class="pre">140,</span> <span class="pre">255)},</span> <span class="pre">'lightning':</span> <span class="pre">{'accent':</span> <span class="pre">(255,</span> <span class="pre">255,</span> <span class="pre">180),</span> <span class="pre">'glow':</span> <span class="pre">(255,</span> <span class="pre">240,</span> <span class="pre">100),</span> <span class="pre">'primary':</span> <span class="pre">(255,</span> <span class="pre">220,</span> <span class="pre">50)},</span> <span class="pre">'nature':</span> <span class="pre">{'accent':</span> <span class="pre">(180,</span> <span class="pre">255,</span> <span class="pre">180),</span> <span class="pre">'glow':</span> <span class="pre">(120,</span> <span class="pre">240,</span> <span class="pre">140),</span> <span class="pre">'primary':</span> <span class="pre">(80,</span> <span class="pre">200,</span> <span class="pre">100)},</span> <span class="pre">'shadow':</span> <span class="pre">{'accent':</span> <span class="pre">(220,</span> <span class="pre">180,</span> <span class="pre">255),</span> <span class="pre">'glow':</span> <span class="pre">(200,</span> <span class="pre">120,</span> <span class="pre">255),</span> <span class="pre">'primary':</span> <span class="pre">(160,</span> <span class="pre">80,</span> <span class="pre">220)}}</span></em><a class="headerlink" href="#src.ui.menus.SkillbarMenu.NEON_THEMES" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.SkillbarMenu.draw">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SkillbarMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SkillbarMenu.draw" title="Link to this definition"></a></dt>
-<dd><p>Renders the state to the provided screen surface.</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/skillbar_menu.html#SkillbarMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SkillbarMenu.draw" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.SkillbarMenu.exit_menu">
-<span class="sig-name descname"><span class="pre">exit_menu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SkillbarMenu.exit_menu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SkillbarMenu.exit_menu" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">exit_menu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/skillbar_menu.html#SkillbarMenu.exit_menu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SkillbarMenu.exit_menu" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.SkillbarMenu.handle_event">
-<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SkillbarMenu.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SkillbarMenu.handle_event" title="Link to this definition"></a></dt>
-<dd><p>Handles input events specific to the state.</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/skillbar_menu.html#SkillbarMenu.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SkillbarMenu.handle_event" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.menus.SkillbarMenu.layout">
-<span class="sig-name descname"><span class="pre">layout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus.html#SkillbarMenu.layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SkillbarMenu.layout" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">layout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/skillbar_menu.html#SkillbarMenu.layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.SkillbarMenu.layout" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -1042,9 +1051,10 @@ pulsing selection, branch color themes, and expanded node count.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="src.ui.widgets.Dialog">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.widgets.</span></span><span class="sig-name descname"><span class="pre">Dialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lines</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">on_close</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">on_shop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_shop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Dialog"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.widgets.Dialog" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.widgets.</span></span><span class="sig-name descname"><span class="pre">Dialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lines</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">on_close</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">on_shop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_shop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">on_play_cards</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_play_cards</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Dialog"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.widgets.Dialog" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Simple modal dialog with text lines and an OK button.</p>
+<p>Simple modal dialog with text lines and an OK button.
+Supports optional Shop and Play Cards action buttons.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.widgets.Dialog.draw">
 <span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surface</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Dialog.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.widgets.Dialog.draw" title="Link to this definition"></a></dt>
