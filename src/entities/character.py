@@ -281,6 +281,22 @@ class Character:
         self.mystic_barrier_reflect_pct = 0.3
         self.mystic_barrier_particles = []
 
+        # Berserker's Rage keystone
+        self.berserkers_rage_active = False
+        self.berserkers_rage_duration = 8.0
+        self.berserkers_rage_active_time = 0.0
+        self.berserkers_rage_cooldown = 20000
+        self.berserkers_rage_last_used = -self.berserkers_rage_cooldown
+        self.berserkers_rage_particles = []
+
+        # Chrono Shift keystone
+        self.chrono_shift_active = False
+        self.chrono_shift_duration = 3.0
+        self.chrono_shift_active_time = 0.0
+        self.chrono_shift_cooldown = 30000
+        self.chrono_shift_last_used = -self.chrono_shift_cooldown
+        self.chrono_shift_particles = []
+
         self.dash_speed_multiplier = 3.0
         self.dash_duration = 0.14
         self.dash_cooldown = 900
@@ -298,6 +314,24 @@ class Character:
                 actual = object.__getattribute__(self, name)
                 if actual is not None:
                     return int(actual * 0.8)
+        if name.endswith("_damage"):
+            try:
+                rage = object.__getattribute__(self, "berserkers_rage_active")
+            except AttributeError:
+                rage = False
+            if rage:
+                actual = object.__getattribute__(self, name)
+                if actual is not None and isinstance(actual, (int, float)):
+                    return int(actual * 1.5)
+        if name == "attack_cooldown":
+            try:
+                chrono = object.__getattribute__(self, "chrono_shift_active")
+            except AttributeError:
+                chrono = False
+            if chrono:
+                base = object.__getattribute__(self, "base_attack_cooldown")
+                if base is not None:
+                    return int(base * 0.75)
         return object.__getattribute__(self, name)
 
     def _build_skillbook(self):
@@ -505,6 +539,32 @@ class Character:
             "accent": (255, 200, 240),
         })
         logger.info("Player learned Mystic Barrier!")
+
+    def learn_berserkers_rage(self):
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "berserkers_rage":
+                return
+        self.skillbook.append({
+            "skill_id": "berserkers_rage",
+            "name": "Berserker's Rage",
+            "description": "+50% damage dealt, +20% damage taken. The fury consumes you.",
+            "color": (200, 50, 30),
+            "accent": (255, 160, 60),
+        })
+        logger.info("Player learned Berserker's Rage!")
+
+    def learn_chrono_shift(self):
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "chrono_shift":
+                return
+        self.skillbook.append({
+            "skill_id": "chrono_shift",
+            "name": "Chrono Shift",
+            "description": "Slow time for 3 seconds. +25% attack speed. Cooldown: 30s.",
+            "color": (100, 160, 220),
+            "accent": (200, 230, 255),
+        })
+        logger.info("Player learned Chrono Shift!")
 
     def get_skill_in_slot(self, slot_index):
         if 0 <= slot_index < len(self.skillbar):
@@ -893,6 +953,35 @@ class Character:
             logger.info("Player activated Mystic Barrier.")
             return True
 
+        if skill_id == "berserkers_rage":
+            if self.berserkers_rage_active:
+                return False
+            if current_time - getattr(self, "berserkers_rage_last_used", -self.berserkers_rage_cooldown) < self.berserkers_rage_cooldown:
+                return False
+
+            self.berserkers_rage_active = True
+            self.berserkers_rage_active_time = self.berserkers_rage_duration
+            self.berserkers_rage_last_used = current_time
+            logger.info("Player activated Berserker's Rage!")
+            return True
+
+        if skill_id == "chrono_shift":
+            if self.chrono_shift_active:
+                return False
+            if current_time - getattr(self, "chrono_shift_last_used", -self.chrono_shift_cooldown) < self.chrono_shift_cooldown:
+                return False
+
+            self.chrono_shift_active = True
+            self.chrono_shift_active_time = self.chrono_shift_duration
+            self.chrono_shift_last_used = current_time
+            game_state = getattr(self, "game_state", None)
+            if game_state is not None and hasattr(game_state, "enemies"):
+                from database.effects import SlowEffect
+                for enemy in list(game_state.enemies):
+                    enemy.add_effect(SlowEffect(self.chrono_shift_duration, 0.5))
+            logger.info("Player activated Chrono Shift!")
+            return True
+
         return False
 
     def add_effect(self, effect):
@@ -1138,6 +1227,28 @@ class Character:
             else:
                 self._update_mystic_barrier_particles(dt)
 
+        # Update Berserker's Rage active timer
+        if self.berserkers_rage_active:
+            self.berserkers_rage_active_time -= dt
+            if self.berserkers_rage_active_time <= 0:
+                self.berserkers_rage_active = False
+                self.berserkers_rage_active_time = 0.0
+                logger.info("Berserker's Rage faded.")
+                self.berserkers_rage_particles.clear()
+            else:
+                self._update_berserkers_rage_particles(dt)
+
+        # Update Chrono Shift active timer
+        if self.chrono_shift_active:
+            self.chrono_shift_active_time -= dt
+            if self.chrono_shift_active_time <= 0:
+                self.chrono_shift_active = False
+                self.chrono_shift_active_time = 0.0
+                self.chrono_shift_particles.clear()
+                logger.info("Chrono Shift ended.")
+            else:
+                self._update_chrono_shift_particles(dt)
+
         # Update invulnerability
         if self.invulnerable:
             self.invulnerability_timer -= dt
@@ -1199,6 +1310,10 @@ class Character:
             logger.info(f"Ice Armor absorbed {int(absorbed)} damage. Remaining: {int(self.ice_armor_remaining_absorption)}")
             if amount <= 0:
                 return
+
+        # Berserker's Rage: take 20% more damage
+        if self.berserkers_rage_active and amount > 0:
+            amount = int(amount * 1.2)
 
         # Mystic Barrier: reflect 30% of damage to all nearby enemies
         if self.mystic_barrier_active and amount > 0:
@@ -1304,6 +1419,127 @@ class Character:
         # Draw Mystic Barrier visual effect
         if self.mystic_barrier_active:
             self._draw_mystic_barrier(screen, camera_offset)
+
+        # Draw Chrono Shift visual effect
+        if self.chrono_shift_active:
+            self._draw_chrono_shift(screen, camera_offset)
+
+        # Draw Berserker's Rage visual effect
+        if self.berserkers_rage_active:
+            self._draw_berserkers_rage(screen, camera_offset)
+
+    # ─── Berserker's Rage helpers ─────────────────────────────────────
+
+    def _update_berserkers_rage_particles(self, dt):
+        import random
+        if self.berserkers_rage_active:
+            spawn_count = max(1, int(30 * dt))
+            for _ in range(spawn_count):
+                angle = random.uniform(0, math.pi * 2)
+                dist = random.uniform(10, 80)
+                self.berserkers_rage_particles.append({
+                    "angle": angle,
+                    "dist": dist,
+                    "life": random.uniform(0.2, 0.6),
+                    "max_life": random.uniform(0.2, 0.6),
+                    "size": random.uniform(2.0, 5.0),
+                    "drift": random.uniform(30, 90),
+                    "color": random.choice([
+                        (255, 60, 20),
+                        (255, 120, 30),
+                        (255, 200, 50),
+                        (200, 40, 10),
+                    ]),
+                })
+        for p in self.berserkers_rage_particles[:]:
+            p["life"] -= dt
+            if p["life"] <= 0:
+                self.berserkers_rage_particles.remove(p)
+                continue
+            p["dist"] += p["drift"] * dt
+            p["angle"] += 1.5 * dt
+
+    def _draw_berserkers_rage(self, screen, camera_offset):
+        import random
+        center = self.get_center()
+        cx = center.x - camera_offset.x
+        cy = center.y - camera_offset.y
+        t = pygame.time.get_ticks() / 1000.0
+
+        pulse = 0.5 + 0.5 * math.sin(t * 6.0)
+        radius = 70.0
+
+        # ── Outer rage aura ──
+        aura_radius = radius * (0.9 + 0.15 * pulse)
+        aura_surf = pygame.Surface((int(aura_radius * 2) + 4, int(aura_radius * 2) + 4), pygame.SRCALPHA)
+        aura_a = int(40 + 30 * pulse)
+        pygame.draw.circle(aura_surf, (220, 50, 20, aura_a),
+                           (int(aura_radius) + 2, int(aura_radius) + 2),
+                           int(aura_radius))
+        inner_a = int(30 + 20 * pulse)
+        pygame.draw.circle(aura_surf, (255, 100, 30, inner_a),
+                           (int(aura_radius) + 2, int(aura_radius) + 2),
+                           int(aura_radius * 0.6))
+        screen.blit(aura_surf, (int(cx - aura_radius - 2), int(cy - aura_radius - 2)))
+
+        # ── Rage ring ──
+        ring_r = radius * 0.8
+        ring_a = int(80 + 50 * math.sin(t * 9.0))
+        ring_surf = pygame.Surface((int(ring_r * 2) + 4, int(ring_r * 2) + 4), pygame.SRCALPHA)
+        for i in range(3):
+            r = int(ring_r * (0.85 + 0.05 * (i + 1)))
+            offset_phase = t * 4.0 + i * 1.0
+            rr = r * (0.98 + 0.04 * math.sin(offset_phase))
+            pygame.draw.circle(ring_surf,
+                               (200, 60 + i * 30, 10 + i * 10, ring_a // (i + 1)),
+                               (int(ring_r) + 2, int(ring_r) + 2), int(rr),
+                               max(1, 3 - i))
+        screen.blit(ring_surf, (int(cx - ring_r - 2), int(cy - ring_r - 2)))
+
+        # ── Rage spikes ──
+        spike_count = 8
+        for i in range(spike_count):
+            spike_angle = t * 2.5 + i * (math.pi * 2 / spike_count)
+            spike_len = 18 + 12 * math.sin(t * 7.0 + i * 2.0)
+            inner_dist = radius * 0.75 + 8 * math.sin(t * 5.0 + i * 1.5)
+            sx1 = cx + math.cos(spike_angle) * inner_dist
+            sy1 = cy + math.sin(spike_angle) * inner_dist
+            sx2 = cx + math.cos(spike_angle) * (inner_dist + spike_len)
+            sy2 = cy + math.sin(spike_angle) * (inner_dist + spike_len)
+            spike_alpha = int(140 + 80 * math.sin(t * 8.0 + i * 1.7))
+            pygame.draw.line(screen, (220, 80 + i * 12, 10 + i * 5, spike_alpha),
+                             (sx1, sy1), (sx2, sy2),
+                             max(1, int(3 + 2 * math.sin(t * 4.0 + i))))
+
+        # ── Rage particles ──
+        for p in self.berserkers_rage_particles:
+            life_ratio = p["life"] / p["max_life"] if p["max_life"] > 0 else 0
+            if life_ratio <= 0:
+                continue
+            px = cx + math.cos(p["angle"]) * p["dist"]
+            py = cy + math.sin(p["angle"]) * p["dist"]
+            alpha = int(200 * life_ratio)
+            size = max(1, int(p["size"] * life_ratio))
+            r, g, b = p["color"]
+            glow_sz = size * 3
+            glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+            pygame.draw.circle(glow, (r, g, b, alpha // 3),
+                               (glow_sz, glow_sz), glow_sz)
+            screen.blit(glow, (int(px - glow_sz), int(py - glow_sz)))
+            if alpha > 20:
+                pygame.draw.circle(screen, (min(255, r + 40), min(255, g + 30), min(255, b + 10)),
+                                   (int(px), int(py)), size)
+
+        # ── Rising sparkles ──
+        if self.berserkers_rage_active:
+            for _ in range(3):
+                sp_angle = random.uniform(0, math.pi * 2)
+                sp_dist = random.uniform(0, radius * 0.4)
+                sp_x = cx + math.cos(sp_angle) * sp_dist
+                sp_y = cy + random.uniform(-25, 0)
+                sp_size = random.randint(1, 2)
+                sp_color = random.choice([(255, 200, 80), (255, 140, 40), (255, 255, 120)])
+                pygame.draw.circle(screen, sp_color, (int(sp_x), int(sp_y)), sp_size)
 
     # ─── Flame Shield helpers ───────────────────────────────────────────
 
@@ -1677,4 +1913,123 @@ class Character:
                 sp_y = cy + random.uniform(-10, 10)
                 sp_size = random.randint(1, 2)
                 sp_color = random.choice([(220, 180, 255), (180, 120, 240), (255, 220, 255)])
+                pygame.draw.circle(screen, sp_color, (int(sp_x), int(sp_y)), sp_size)
+
+    # ─── Chrono Shift helpers ─────────────────────────────────────────
+
+    def _update_chrono_shift_particles(self, dt):
+        import random
+        if self.chrono_shift_active:
+            spawn_count = max(1, int(20 * dt))
+            for _ in range(spawn_count):
+                angle = random.uniform(0, math.pi * 2)
+                dist = random.uniform(15, 70)
+                self.chrono_shift_particles.append({
+                    "angle": angle,
+                    "dist": dist,
+                    "life": random.uniform(0.15, 0.4),
+                    "max_life": random.uniform(0.15, 0.4),
+                    "size": random.uniform(1.5, 3.5),
+                    "drift": random.uniform(-40, -10),
+                    "color": random.choice([
+                        (180, 220, 255),
+                        (140, 200, 240),
+                        (200, 235, 255),
+                        (160, 210, 250),
+                    ]),
+                })
+        for p in self.chrono_shift_particles[:]:
+            p["life"] -= dt
+            if p["life"] <= 0:
+                self.chrono_shift_particles.remove(p)
+                continue
+            p["angle"] += p["drift"] * dt * 0.3
+            p["dist"] += 20 * dt
+
+    def _draw_chrono_shift(self, screen, camera_offset):
+        import random
+        center = self.get_center()
+        cx = center.x - camera_offset.x
+        cy = center.y - camera_offset.y
+        t = pygame.time.get_ticks() / 1000.0
+
+        radius = 90.0
+
+        # ── Outer time distortion ring ──
+        pulse = 0.5 + 0.5 * math.sin(t * 5.0)
+        glow_radius = radius * (0.85 + 0.15 * pulse)
+        glow_surf = pygame.Surface((int(glow_radius * 2) + 4, int(glow_radius * 2) + 4), pygame.SRCALPHA)
+        glow_a = int(30 + 20 * pulse)
+        pygame.draw.circle(glow_surf, (80, 160, 220, glow_a),
+                           (int(glow_radius) + 2, int(glow_radius) + 2),
+                           int(glow_radius))
+        inner_r = int(glow_radius * 0.5)
+        inner_a = int(20 + 15 * pulse)
+        pygame.draw.circle(glow_surf, (140, 210, 255, inner_a),
+                           (int(glow_radius) + 2, int(glow_radius) + 2),
+                           inner_r)
+        screen.blit(glow_surf, (int(cx - glow_radius - 2), int(cy - glow_radius - 2)))
+
+        # ── Rotating clock hand ring ──
+        ring_r = radius
+        ring_a = int(60 + 40 * math.sin(t * 8.0))
+        ring_surf = pygame.Surface((int(ring_r * 2) + 4, int(ring_r * 2) + 4), pygame.SRCALPHA)
+        pygame.draw.circle(ring_surf, (160, 210, 255, ring_a),
+                           (int(ring_r) + 2, int(ring_r) + 2),
+                           int(ring_r), max(1, int(2 * (0.5 + 0.5 * pulse))))
+        screen.blit(ring_surf, (int(cx - ring_r - 2), int(cy - ring_r - 2)))
+
+        # ── Clock ticks ──
+        tick_count = 12
+        for i in range(tick_count):
+            tick_angle = t * 0.6 + i * (math.pi * 2 / tick_count)
+            tick_dist = radius * 0.85
+            tx = cx + math.cos(tick_angle) * tick_dist
+            ty = cy + math.sin(tick_angle) * tick_dist
+            tick_len = 4 + 3 * math.sin(t * 4.0 + i)
+            tick_alpha = int(100 + 80 * math.sin(t * 6.0 + i * 1.3))
+            pygame.draw.line(screen, (160, 210, 255, tick_alpha),
+                             (tx - math.cos(tick_angle) * tick_len,
+                              ty - math.sin(tick_angle) * tick_len),
+                             (tx + math.cos(tick_angle) * tick_len,
+                              ty + math.sin(tick_angle) * tick_len), 2)
+
+        # ── Clock hands ──
+        hand_angle = t * 2.0
+        for hand_len, hand_width, hand_color in [
+            (radius * 0.5, 3, (180, 220, 255)),
+            (radius * 0.7, 2, (140, 200, 240)),
+        ]:
+            hx = cx + math.cos(hand_angle) * hand_len
+            hy = cy + math.sin(hand_angle) * hand_len
+            pygame.draw.line(screen, hand_color, (cx, cy), (hx, hy), hand_width)
+
+        # ── Time particles ──
+        for p in self.chrono_shift_particles:
+            life_ratio = p["life"] / p["max_life"] if p["max_life"] > 0 else 0
+            if life_ratio <= 0:
+                continue
+            px = cx + math.cos(p["angle"]) * p["dist"]
+            py = cy + math.sin(p["angle"]) * p["dist"]
+            alpha = int(180 * life_ratio)
+            size = max(1, int(p["size"] * life_ratio))
+            r, g, b = p["color"]
+            glow_sz = size * 3
+            glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+            pygame.draw.circle(glow, (r, g, b, alpha // 3),
+                               (glow_sz, glow_sz), glow_sz)
+            screen.blit(glow, (int(px - glow_sz), int(py - glow_sz)))
+            if alpha > 20:
+                pygame.draw.circle(screen, (min(255, r + 40), min(255, g + 30), min(255, b + 10)),
+                                   (int(px), int(py)), size)
+
+        # ── Time sparkles ──
+        if self.chrono_shift_active:
+            for _ in range(4):
+                sp_angle = random.uniform(0, math.pi * 2)
+                sp_dist = random.uniform(0, radius * 0.6)
+                sp_x = cx + math.cos(sp_angle) * sp_dist
+                sp_y = cy + random.uniform(-15, 15)
+                sp_size = random.randint(1, 2)
+                sp_color = random.choice([(200, 235, 255), (160, 210, 255), (220, 240, 255)])
                 pygame.draw.circle(screen, sp_color, (int(sp_x), int(sp_y)), sp_size)

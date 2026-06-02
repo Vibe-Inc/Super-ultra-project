@@ -1285,6 +1285,13 @@ class SkillTreeMenu(Menu):
         if node_id == "cluster_6_2" and hasattr(character, "learn_mystic_barrier"):
             character.learn_mystic_barrier()
 
+        # Keystones: keystone_1 = Berserker's Rage, keystone_6 = Chrono Shift
+        if node_id == "keystone_1" and hasattr(character, "learn_berserkers_rage"):
+            character.learn_berserkers_rage()
+
+        if node_id == "keystone_6" and hasattr(character, "learn_chrono_shift"):
+            character.learn_chrono_shift()
+
         # Trigger unlock animation
         self._spawn_unlock_effect(node_id)
 
