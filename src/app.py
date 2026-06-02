@@ -4,7 +4,7 @@ import sys
 from src.core.logger import logger
 from src.core.state_manager import StateManager
 from src.core.profiling import FrameProfiler, FpsCounter
-from src.inventory.system import INVENTORY_manager
+from src.inventory.inventory_manager import INVENTORY_manager
 from src.items.items import create_item
 import src.config as cfg
 import src.i18n as i18n
