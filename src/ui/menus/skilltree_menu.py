@@ -924,8 +924,24 @@ class SkillTreeMenu(Menu):
                     csize = 13
                     ccolor = bs
                 else:
-                    cname = _("Minor Node")
-                    ceffect = _("Small stat bonus in the {branch} branch.").format(branch=branch.capitalize())
+                    cluster_snames = {
+                        "fire": (_("Fire Power"), _("Fire Blast")),
+                        "ice": (_("Frost Power"), _("Permafrost")),
+                        "lightning": (_("Spark"), _("Arc")),
+                        "nature": (_("Vitality"), _("Spirit Power")),
+                        "shadow": (_("Venom"), _("Dark Power")),
+                        "arcane": (_("Missile Power"), _("Arcane Flow")),
+                    }
+                    cluster_seffects = {
+                        "fire": (_("+3 Fireball Damage"), _("+5% Fireball Radius")),
+                        "ice": (_("+3 Frost Nova Damage"), _("+0.5s Freeze Duration")),
+                        "lightning": (_("+3 Chain Lightning Damage"), _("+1 Chain Bounce")),
+                        "nature": (_("+0.5 HP/s Regen"), _("+3 Summon Spirit Damage")),
+                        "shadow": (_("+2 Poison DPS"), _("+5 Dark Pact Damage")),
+                        "arcane": (_("+3 Arcane Missiles Damage"), _("-3% Skill Cooldowns")),
+                    }
+                    cname = cluster_snames[branch][j - 2]
+                    ceffect = cluster_seffects[branch][j - 2]
                     ckind = "minor"
                     csize = 8
                     ccolor = tuple(max(20, c - 15) for c in bc)
@@ -1008,10 +1024,26 @@ class SkillTreeMenu(Menu):
                     pos[1] + math.sin(offset) * sat_radius,
                 )
                 sat_id = f"keystone_sat_{i + 1}_{j + 1}"
+                sat_names = {
+                    0: (_("Rage Vitality"), _("Rage Duration"), _("Rage Recovery")),
+                    1: (_("Fortress HP"), _("Frost Ward"), _("Fortress Speed")),
+                    2: (_("Harvest HP"), _("Harvest Power"), _("Harvest Time")),
+                    3: (_("Walker Dodge"), _("Walker Range"), _("Walker Strike")),
+                    4: (_("Mastery Power"), _("Mastery Window"), _("Mastery Strike")),
+                    5: (_("Shift Time"), _("Shift Speed"), _("Shift Recovery")),
+                }
+                sat_effects = {
+                    0: (_("+5 Max HP"), _("+1s Rage Duration"), _("-1s Rage Cooldown")),
+                    1: (_("+10 Max HP"), _("+3 Frost Nova Damage"), _("+1% Move Speed")),
+                    2: (_("+1 HP/Kill"), _("+1% Stack Damage"), _("+1s Stack Duration")),
+                    3: (_("+5% Dodge"), _("+30px Teleport"), _("+3 Afterimage Damage")),
+                    4: (_("+3% Elemental"), _("+0.5s Combo"), _("+5 Combo Damage")),
+                    5: (_("+0.5s Shift"), _("+3% Attack Speed"), _("-2s Shift Cooldown")),
+                }
                 add_node(
                     sat_id,
-                    _("Keystone Shard"),
-                    _("A fragment of keystone power: +2% to all stats in this branch."),
+                    sat_names[i][j],
+                    sat_effects[i][j],
                     sat_pos,
                     8,
                     "minor",
@@ -1043,12 +1075,12 @@ class SkillTreeMenu(Menu):
                 _("Ice Blood"), _("Storm Core"),
             ]
             outer_effects = [
-                _("+5% knockback resistance"), _("+3% movement speed"), _("+4% mana regen"),
-                _("+4 armor"), _("+3% attack speed"), _("+5% accuracy"),
-                _("+8 max HP"), _("+3 fire damage on hit"), _("+2% freeze chance"),
-                _("+3% shock chance"), _("+2% root chance on hit"), _("+3% dodge chance"),
-                _("+4 spell power"), _("+3% damage reduction"), _("+2% evasion"),
-                _("+5 fire resistance"), _("+5 cold resistance"), _("+5 lightning resistance"),
+                _("+5 Max HP"), _("+1% Move Speed"), _("+3 Attack Damage"), _("+0.5 HP/s Regen"),
+                _("+3% Attack Speed"), _("+5 Attack Range"), _("+5 Max HP"), _("+2 Fireball Damage"),
+                _("+2 Frost Nova Damage"), _("+2 Chain Lightning Damage"), _("+5 Max Stamina"),
+                _("+5 Max HP"), _("+2 Arcane Missiles Damage"), _("+5 Max Stamina"),
+                _("+1% Move Speed"), _("+0.5 HP/s Regen"), _("+2 Dark Pact Damage"),
+                _("+3 Thunderstrike Damage"),
             ]
             add_node(
                 node_id,
@@ -1339,6 +1371,132 @@ class SkillTreeMenu(Menu):
             character.frost_nova_damage += 3
         elif node_id == "inner_12":
             character.chain_lightning_damage += 3
+
+        # ─── RING 2 cluster minor node effects (cluster_{i+1}_{3} and cluster_{i+1}_{4}) ───
+        if node_id == "cluster_1_3":
+            character.fireball_damage += 3
+        elif node_id == "cluster_1_4":
+            character.fireball_blast_radius = int(character.fireball_blast_radius * 1.05)
+        elif node_id == "cluster_2_3":
+            character.frost_nova_damage += 3
+        elif node_id == "cluster_2_4":
+            character.frost_nova_freeze_duration += 0.5
+        elif node_id == "cluster_3_3":
+            character.chain_lightning_damage += 3
+        elif node_id == "cluster_3_4":
+            character.chain_lightning_max_targets += 1
+        elif node_id == "cluster_4_3":
+            if not character.regeneration:
+                character.regeneration = True
+            character.regeneration_hp_per_sec += 0.5
+        elif node_id == "cluster_4_4":
+            character.summon_spirit_damage += 3
+        elif node_id == "cluster_5_3":
+            character.poison_blade_damage_per_sec += 2
+        elif node_id == "cluster_5_4":
+            character.dark_pact_damage += 5
+        elif node_id == "cluster_6_3":
+            character.arcane_missiles_damage += 3
+        elif node_id == "cluster_6_4":
+            if not hasattr(character, "skill_cooldown_mult"):
+                character.skill_cooldown_mult = 1.0
+            character.skill_cooldown_mult *= 0.97
+
+        # ─── RING 3 keystone satellite effects ───
+        # Berserker's Rage satellites
+        if node_id == "keystone_sat_1_1":
+            character.max_hp += 5; character.hp += 5
+        elif node_id == "keystone_sat_1_2":
+            if not hasattr(character, "berserkers_rage_duration_bonus"):
+                character.berserkers_rage_duration_bonus = 0.0
+            character.berserkers_rage_duration_bonus += 1.0
+        elif node_id == "keystone_sat_1_3":
+            if not hasattr(character, "berserkers_rage_cooldown_bonus"):
+                character.berserkers_rage_cooldown_bonus = 0
+            character.berserkers_rage_cooldown_bonus -= 1000
+        # Eternal Fortress satellites
+        elif node_id == "keystone_sat_2_1":
+            character.max_hp += 10; character.hp += 10
+        elif node_id == "keystone_sat_2_2":
+            character.frost_nova_damage += 3
+        elif node_id == "keystone_sat_2_3":
+            character.speed_multiplier *= 1.01
+            character.speed = character.base_speed * character.speed_multiplier
+        # Soul Harvest satellites
+        elif node_id == "keystone_sat_3_1":
+            character.soul_harvest_hp_per_kill += 1
+        elif node_id == "keystone_sat_3_2":
+            character.soul_harvest_damage_per_stack += 0.01
+        elif node_id == "keystone_sat_3_3":
+            character.soul_harvest_duration += 1.0
+        # Void Walker satellites
+        elif node_id == "keystone_sat_4_1":
+            character.void_walker_dodge_chance += 0.05
+        elif node_id == "keystone_sat_4_2":
+            character.void_walker_teleport_range += 30.0
+        elif node_id == "keystone_sat_4_3":
+            character.void_walker_afterimage_damage += 3
+        # Elemental Mastery satellites
+        elif node_id == "keystone_sat_5_1":
+            character.elemental_damage_mult += 0.03
+        elif node_id == "keystone_sat_5_2":
+            character.combo_window += 0.5
+        elif node_id == "keystone_sat_5_3":
+            if not hasattr(character, "combo_damage_bonus"):
+                character.combo_damage_bonus = 0
+            character.combo_damage_bonus += 5
+        # Chrono Shift satellites
+        elif node_id == "keystone_sat_6_1":
+            if not hasattr(character, "chrono_shift_duration_bonus"):
+                character.chrono_shift_duration_bonus = 0.0
+            character.chrono_shift_duration_bonus += 0.5
+        elif node_id == "keystone_sat_6_2":
+            if not hasattr(character, "attack_cooldown_mult"):
+                character.attack_cooldown_mult = 1.0
+            character.attack_cooldown_mult *= 0.97
+        elif node_id == "keystone_sat_6_3":
+            if not hasattr(character, "chrono_shift_cooldown_bonus"):
+                character.chrono_shift_cooldown_bonus = 0
+            character.chrono_shift_cooldown_bonus -= 2000
+
+        # ─── RING 4 outer node effects ───
+        if node_id == "outer_1" or node_id == "outer_7" or node_id == "outer_13":
+            character.max_hp += 5; character.hp += 5
+        elif node_id == "outer_2" or node_id == "outer_15":
+            character.speed_multiplier *= 1.01
+            character.speed = character.base_speed * character.speed_multiplier
+        elif node_id == "outer_3":
+            character.base_attack_damage += 3; character.attack_damage += 3
+        elif node_id == "outer_4" or node_id == "outer_16":
+            if not character.regeneration:
+                character.regeneration = True
+            character.regeneration_hp_per_sec += 0.5
+        elif node_id == "outer_5":
+            if not hasattr(character, "attack_cooldown_mult"):
+                character.attack_cooldown_mult = 1.0
+            character.attack_cooldown_mult *= 0.97
+        elif node_id == "outer_6":
+            character.attack_range += 5
+        elif node_id == "outer_8":
+            character.fireball_damage += 2
+        elif node_id == "outer_9":
+            character.frost_nova_damage += 2
+        elif node_id == "outer_10":
+            character.chain_lightning_damage += 2
+        elif node_id == "outer_11":
+            character.max_stamina += 5
+            character.stamina = min(character.stamina + 5, character.max_stamina)
+        elif node_id == "outer_12":
+            character.max_hp += 5; character.hp += 5
+        elif node_id == "outer_13":
+            character.arcane_missiles_damage += 2
+        elif node_id == "outer_14":
+            character.max_stamina += 5
+            character.stamina = min(character.stamina + 5, character.max_stamina)
+        elif node_id == "outer_17":
+            character.dark_pact_damage += 2
+        elif node_id == "outer_18":
+            character.thunderstrike_damage += 3
 
         # Trigger unlock animation
         self._spawn_unlock_effect(node_id)

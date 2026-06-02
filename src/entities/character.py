@@ -341,10 +341,15 @@ class Character:
                 mana_flow = object.__getattribute__(self, "mana_flow")
             except AttributeError:
                 mana_flow = False
-            if mana_flow:
+            try:
+                cd_mult = object.__getattribute__(self, "skill_cooldown_mult")
+            except AttributeError:
+                cd_mult = 1.0
+            if mana_flow or cd_mult != 1.0:
                 actual = object.__getattribute__(self, name)
                 if actual is not None:
-                    return int(actual * 0.8)
+                    mult = (0.8 if mana_flow else 1.0) * cd_mult
+                    return int(actual * mult)
         if name.endswith("_damage"):
             try:
                 rage = object.__getattribute__(self, "berserkers_rage_active")
@@ -688,7 +693,7 @@ class Character:
                     game_state = getattr(self, "game_state", None)
                     if game_state is not None and hasattr(game_state, "projectiles"):
                         from src.entities.projectile import ElementalBurst
-                        combo_damage = int(self.elemental_damage_mult * 30)
+                        combo_damage = int(self.elemental_damage_mult * 30) + getattr(self, "combo_damage_bonus", 0)
                         game_state.projectiles.append(
                             ElementalBurst(self.get_center(), combo_damage)
                         )
@@ -1068,11 +1073,13 @@ class Character:
         if skill_id == "berserkers_rage":
             if self.berserkers_rage_active:
                 return False
-            if current_time - getattr(self, "berserkers_rage_last_used", -self.berserkers_rage_cooldown) < self.berserkers_rage_cooldown:
+            cd = self.berserkers_rage_cooldown + getattr(self, "berserkers_rage_cooldown_bonus", 0)
+            if current_time - getattr(self, "berserkers_rage_last_used", -self.berserkers_rage_cooldown) < cd:
                 return False
 
             self.berserkers_rage_active = True
-            self.berserkers_rage_active_time = self.berserkers_rage_duration
+            duration = self.berserkers_rage_duration + getattr(self, "berserkers_rage_duration_bonus", 0.0)
+            self.berserkers_rage_active_time = duration
             self.berserkers_rage_last_used = current_time
             logger.info("Player activated Berserker's Rage!")
             return True
@@ -1080,17 +1087,19 @@ class Character:
         if skill_id == "chrono_shift":
             if self.chrono_shift_active:
                 return False
-            if current_time - getattr(self, "chrono_shift_last_used", -self.chrono_shift_cooldown) < self.chrono_shift_cooldown:
+            cd = self.chrono_shift_cooldown + getattr(self, "chrono_shift_cooldown_bonus", 0)
+            if current_time - getattr(self, "chrono_shift_last_used", -self.chrono_shift_cooldown) < cd:
                 return False
 
             self.chrono_shift_active = True
-            self.chrono_shift_active_time = self.chrono_shift_duration
+            duration = self.chrono_shift_duration + getattr(self, "chrono_shift_duration_bonus", 0.0)
+            self.chrono_shift_active_time = duration
             self.chrono_shift_last_used = current_time
             game_state = getattr(self, "game_state", None)
             if game_state is not None and hasattr(game_state, "enemies"):
                 from database.effects import SlowEffect
                 for enemy in list(game_state.enemies):
-                    enemy.add_effect(SlowEffect(self.chrono_shift_duration, 0.5))
+                    enemy.add_effect(SlowEffect(duration, 0.5))
             logger.info("Player activated Chrono Shift!")
             return True
 
