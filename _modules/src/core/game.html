@@ -241,6 +241,10 @@
 <span class="sd">            Try to spawn a random enemy somewhere on the current map.</span>
 <span class="sd">        _debug_spawn_enemy(profile_name):</span>
 <span class="sd">            Spawn an enemy of a given profile next to the player.</span>
+<span class="sd">        _get_drop_chance_for_enemy(enemy):</span>
+<span class="sd">            Look up the drop table for a given enemy.</span>
+<span class="sd">        _drop_enemy_loot(enemy):</span>
+<span class="sd">            Roll and spawn drops for a defeated enemy (no JSON).</span>
 <span class="sd">        update(dt):</span>
 <span class="sd">            Per-frame state update (input, AI, physics, time, spawning).</span>
 <span class="sd">        draw_scene(screen):</span>
@@ -316,6 +320,10 @@
                     <span class="s2">&quot;slow_factor&quot;</span><span class="p">:</span> <span class="mf">0.6</span><span class="p">,</span>
                 <span class="p">},</span>
                 <span class="s2">&quot;contact_damage&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;drop_chance&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s2">&quot;item_id&quot;</span><span class="p">:</span> <span class="s2">&quot;small_health_potion&quot;</span><span class="p">,</span> <span class="s2">&quot;chance&quot;</span><span class="p">:</span> <span class="mf">0.95</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;item_id&quot;</span><span class="p">:</span> <span class="s2">&quot;large_health_potion&quot;</span><span class="p">,</span> <span class="s2">&quot;chance&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">},</span>
+                <span class="p">],</span>
             <span class="p">},</span>
             <span class="s2">&quot;venomous&quot;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s2">&quot;visual_style&quot;</span><span class="p">:</span> <span class="s2">&quot;venomous&quot;</span><span class="p">,</span>
@@ -335,6 +343,10 @@
                     <span class="s2">&quot;strike_damage_mult&quot;</span><span class="p">:</span> <span class="mf">0.85</span><span class="p">,</span>
                 <span class="p">},</span>
                 <span class="s2">&quot;contact_damage&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;drop_chance&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s2">&quot;item_id&quot;</span><span class="p">:</span> <span class="s2">&quot;small_health_potion&quot;</span><span class="p">,</span> <span class="s2">&quot;chance&quot;</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;item_id&quot;</span><span class="p">:</span> <span class="s2">&quot;potion_of_confusion&quot;</span><span class="p">,</span> <span class="s2">&quot;chance&quot;</span><span class="p">:</span> <span class="mf">0.20</span><span class="p">},</span>
+                <span class="p">],</span>
             <span class="p">},</span>
             <span class="s2">&quot;arcanist&quot;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s2">&quot;visual_style&quot;</span><span class="p">:</span> <span class="s2">&quot;arcanist&quot;</span><span class="p">,</span>
@@ -358,6 +370,11 @@
                     <span class="s2">&quot;spread_degrees&quot;</span><span class="p">:</span> <span class="mf">5.0</span><span class="p">,</span>
                 <span class="p">},</span>
                 <span class="s2">&quot;contact_damage&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;drop_chance&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s2">&quot;item_id&quot;</span><span class="p">:</span> <span class="s2">&quot;small_health_potion&quot;</span><span class="p">,</span> <span class="s2">&quot;chance&quot;</span><span class="p">:</span> <span class="mf">0.30</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;item_id&quot;</span><span class="p">:</span> <span class="s2">&quot;large_health_potion&quot;</span><span class="p">,</span> <span class="s2">&quot;chance&quot;</span><span class="p">:</span> <span class="mf">0.15</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;item_id&quot;</span><span class="p">:</span> <span class="s2">&quot;potion_of_confusion&quot;</span><span class="p">,</span> <span class="s2">&quot;chance&quot;</span><span class="p">:</span> <span class="mf">0.10</span><span class="p">},</span>
+                <span class="p">],</span>
             <span class="p">},</span>
             <span class="s2">&quot;trickster&quot;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s2">&quot;visual_style&quot;</span><span class="p">:</span> <span class="s2">&quot;trickster&quot;</span><span class="p">,</span>
@@ -382,6 +399,10 @@
                     <span class="s2">&quot;damage_mult&quot;</span><span class="p">:</span> <span class="mf">0.7</span><span class="p">,</span>
                 <span class="p">},</span>
                 <span class="s2">&quot;contact_damage&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;drop_chance&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s2">&quot;item_id&quot;</span><span class="p">:</span> <span class="s2">&quot;potion_of_confusion&quot;</span><span class="p">,</span> <span class="s2">&quot;chance&quot;</span><span class="p">:</span> <span class="mf">0.40</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;item_id&quot;</span><span class="p">:</span> <span class="s2">&quot;small_health_potion&quot;</span><span class="p">,</span> <span class="s2">&quot;chance&quot;</span><span class="p">:</span> <span class="mf">0.20</span><span class="p">},</span>
+                <span class="p">],</span>
             <span class="p">},</span>
             <span class="s2">&quot;bomber&quot;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s2">&quot;visual_style&quot;</span><span class="p">:</span> <span class="s2">&quot;bomber&quot;</span><span class="p">,</span>
@@ -412,6 +433,10 @@
                     <span class="s2">&quot;spread_degrees&quot;</span><span class="p">:</span> <span class="mf">12.0</span><span class="p">,</span>
                 <span class="p">},</span>
                 <span class="s2">&quot;contact_damage&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;drop_chance&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s2">&quot;item_id&quot;</span><span class="p">:</span> <span class="s2">&quot;large_health_potion&quot;</span><span class="p">,</span> <span class="s2">&quot;chance&quot;</span><span class="p">:</span> <span class="mf">0.20</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;item_id&quot;</span><span class="p">:</span> <span class="s2">&quot;small_health_potion&quot;</span><span class="p">,</span> <span class="s2">&quot;chance&quot;</span><span class="p">:</span> <span class="mf">0.30</span><span class="p">},</span>
+                <span class="p">],</span>
             <span class="p">},</span>
             <span class="s2">&quot;stalker&quot;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s2">&quot;sprite_set&quot;</span><span class="p">:</span> <span class="s2">&quot;MenHuman1(Recolor)&quot;</span><span class="p">,</span>
@@ -425,6 +450,9 @@
                     <span class="s2">&quot;memory_duration&quot;</span><span class="p">:</span> <span class="mf">3.0</span><span class="p">,</span>
                     <span class="s2">&quot;repath_interval&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
                 <span class="p">},</span>
+                <span class="s2">&quot;drop_chance&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s2">&quot;item_id&quot;</span><span class="p">:</span> <span class="s2">&quot;small_health_potion&quot;</span><span class="p">,</span> <span class="s2">&quot;chance&quot;</span><span class="p">:</span> <span class="mf">0.20</span><span class="p">},</span>
+                <span class="p">],</span>
             <span class="p">},</span>
             <span class="s2">&quot;skirmisher&quot;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s2">&quot;sprite_set&quot;</span><span class="p">:</span> <span class="s2">&quot;WomanHuman1(Recolor)&quot;</span><span class="p">,</span>
@@ -439,6 +467,9 @@
                     <span class="s2">&quot;preferred_max&quot;</span><span class="p">:</span> <span class="mf">170.0</span><span class="p">,</span>
                     <span class="s2">&quot;orbit_radius&quot;</span><span class="p">:</span> <span class="mf">130.0</span><span class="p">,</span>
                 <span class="p">},</span>
+                <span class="s2">&quot;drop_chance&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s2">&quot;item_id&quot;</span><span class="p">:</span> <span class="s2">&quot;small_health_potion&quot;</span><span class="p">,</span> <span class="s2">&quot;chance&quot;</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">},</span>
+                <span class="p">],</span>
             <span class="p">},</span>
             <span class="s2">&quot;guardian&quot;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s2">&quot;sprite_set&quot;</span><span class="p">:</span> <span class="s2">&quot;MenHuman1&quot;</span><span class="p">,</span>
@@ -454,6 +485,10 @@
                     <span class="s2">&quot;leash_slack&quot;</span><span class="p">:</span> <span class="mf">90.0</span><span class="p">,</span>
                     <span class="s2">&quot;patrol_wait&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>
                 <span class="p">},</span>
+                <span class="s2">&quot;drop_chance&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s2">&quot;item_id&quot;</span><span class="p">:</span> <span class="s2">&quot;small_health_potion&quot;</span><span class="p">,</span> <span class="s2">&quot;chance&quot;</span><span class="p">:</span> <span class="mf">0.30</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;item_id&quot;</span><span class="p">:</span> <span class="s2">&quot;large_health_potion&quot;</span><span class="p">,</span> <span class="s2">&quot;chance&quot;</span><span class="p">:</span> <span class="mf">0.10</span><span class="p">},</span>
+                <span class="p">],</span>
             <span class="p">},</span>
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">enemy_profile_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">enemy_profiles</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
@@ -894,6 +929,87 @@
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[DEBUG] Spawned </span><span class="si">{</span><span class="n">profile_name</span><span class="si">}</span><span class="s2"> at (</span><span class="si">{</span><span class="n">spawn_x</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">spawn_y</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="Game._get_drop_chance_for_enemy">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game._get_drop_chance_for_enemy">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_drop_chance_for_enemy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enemy</span><span class="p">:</span> <span class="s2">&quot;Enemy&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Look up the drop table for a given enemy based on its AI profile.</span>
+
+<span class="sd">        Returns a list of drop entries (``{&quot;item_id&quot;: str, &quot;chance&quot;: float}``).</span>
+<span class="sd">        If the enemy has no profile or no ``drop_chance`` entry configured,</span>
+<span class="sd">        returns an empty list (no drops).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">enemy</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="n">profile_name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">enemy</span><span class="p">,</span> <span class="s2">&quot;ai_profile&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">profile_name</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="n">settings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemy_profiles</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">profile_name</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="k">return</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;drop_chance&quot;</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="Game._drop_enemy_loot">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game._drop_enemy_loot">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_drop_enemy_loot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enemy</span><span class="p">:</span> <span class="s2">&quot;Enemy&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Roll each configured drop for the given enemy and spawn matching</span>
+<span class="sd">        ``DroppedItem`` instances near the enemy&#39;s death position.</span>
+
+<span class="sd">        Drops are configured per-archetype in :pyattr:`enemy_profiles` under</span>
+<span class="sd">        the ``drop_chance`` key. Each entry has:</span>
+<span class="sd">          - ``item_id`` (str): the item id to look up via ``create_item``.</span>
+<span class="sd">          - ``chance``  (float): probability in [0, 1] of the drop firing.</span>
+<span class="sd">          - ``amount``  (int, optional): stack size for the drop (defaults to 1).</span>
+
+<span class="sd">        Multiple entries can fire independently in a single kill, so a single</span>
+<span class="sd">        enemy can drop several different items at once.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.dropped_item</span><span class="w"> </span><span class="kn">import</span> <span class="n">DroppedItem</span>
+
+        <span class="n">drop_entries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_drop_chance_for_enemy</span><span class="p">(</span><span class="n">enemy</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">drop_entries</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Anchor the drops near the enemy&#39;s feet (centered on its hitbox bottom).</span>
+        <span class="n">base_x</span><span class="p">,</span> <span class="n">base_y</span> <span class="o">=</span> <span class="n">enemy</span><span class="o">.</span><span class="n">get_rect</span><span class="p">()</span><span class="o">.</span><span class="n">center</span>
+
+        <span class="n">placed</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">drop_entries</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="n">item_id</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;item_id&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">item_id</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">chance</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;chance&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">chance</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">chance</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">amount</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;amount&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">amount</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">amount</span> <span class="o">=</span> <span class="mi">1</span>
+
+            <span class="n">item_obj</span> <span class="o">=</span> <span class="n">create_item</span><span class="p">(</span><span class="n">item_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">item_obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Drop skipped: could not create item &#39;</span><span class="si">{</span><span class="n">item_id</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Spread drops slightly so multiple items don&#39;t fully overlap.</span>
+            <span class="n">spread</span> <span class="o">=</span> <span class="mi">18</span>
+            <span class="n">offset_x</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="o">-</span><span class="n">spread</span><span class="p">,</span> <span class="n">spread</span><span class="p">)</span>
+            <span class="n">offset_y</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="o">-</span><span class="n">spread</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">spread</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">drop</span> <span class="o">=</span> <span class="n">DroppedItem</span><span class="p">(</span><span class="n">base_x</span> <span class="o">+</span> <span class="n">offset_x</span><span class="p">,</span> <span class="n">base_y</span> <span class="o">+</span> <span class="n">offset_y</span><span class="p">,</span> <span class="n">item_obj</span><span class="p">,</span> <span class="n">amount</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">drop</span><span class="p">)</span>
+            <span class="n">placed</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Enemy &#39;</span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">enemy</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;ai_profile&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;unknown&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39; dropped &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">amount</span><span class="si">}</span><span class="s2">x </span><span class="si">{</span><span class="n">item_id</span><span class="si">}</span><span class="s2"> at (</span><span class="si">{</span><span class="n">base_x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">offset_x</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">base_y</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">offset_y</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">placed</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Enemy &#39;</span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">enemy</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;ai_profile&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;unknown&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39; had drop_chance entries but none rolled.&quot;</span><span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="Game.update">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.update">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
@@ -1029,7 +1145,10 @@
                 <span class="n">gold_gain</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">_base_gold_min</span><span class="p">,</span> <span class="n">_base_gold_max</span><span class="p">)</span> <span class="o">*</span> <span class="n">_scale</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span> <span class="o">+=</span> <span class="n">gold_gain</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Gained </span><span class="si">{</span><span class="n">gold_gain</span><span class="si">}</span><span class="s2"> gold. Total: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                
+
+                <span class="c1"># Spawn loot drops at the enemy&#39;s death location (Python-configured, no JSON)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_drop_enemy_loot</span><span class="p">(</span><span class="n">enemy</span><span class="p">)</span>
+
                 <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">enemy</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
