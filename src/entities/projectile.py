@@ -907,3 +907,381 @@ class GlacialCascade:
         sp_x = rect.centerx + int(4 * math.sin(t * 15))
         sp_y = rect.centery + int(4 * math.cos(t * 12))
         pygame.draw.circle(screen, (255, 255, 255), (sp_x, sp_y), max(1, core_size // 2))
+
+
+class ChainLightning:
+    """
+    Lightning bolt that flies forward and chains between up to N enemies.
+
+    Attributes:
+        pos (pygame.Vector2): Current position.
+        direction (pygame.Vector2): Travel direction.
+        speed (float): Travel speed.
+        max_range (float): Maximum travel distance.
+        damage (int): Damage per hit.
+        chain_range (float): Max distance to chain to next target.
+        max_targets (int): Max number of enemies to chain to.
+        alive (bool): Whether the projectile is active.
+        traveled (float): Distance traveled.
+        hit_enemies (list): Enemies already hit (prevents re-hits).
+        chaining (bool): Whether currently chaining between targets.
+        chain_targets (list): Remaining targets to chain to.
+        animation_time (float): Visual animation timer.
+        trail (list): Visual trail points.
+    """
+    def __init__(self, pos, direction, speed, max_range, damage, chain_range, max_targets=5,
+                 color=(255, 220, 50)):
+        self.pos = pygame.Vector2(pos)
+        self.direction = pygame.Vector2(direction)
+        if self.direction.length_squared() == 0:
+            self.direction = pygame.Vector2(1, 0)
+        else:
+            self.direction = self.direction.normalize()
+
+        self.speed = speed
+        self.max_range = max_range
+        self.damage = damage
+        self.chain_range = chain_range
+        self.max_targets = max_targets
+        self.color = color
+        self.alive = True
+        self.traveled = 0.0
+        self.animation_time = 0.0
+        self.trail = []
+        self.trail_length = 12
+
+        self.hit_enemies = []
+        self.chaining = False
+        self.chain_targets = []
+        self.chain_timer = 0.0
+        self.chain_delay = 0.08
+        self.chain_index = 0
+
+        # Visual arc points for rendering chain arcs
+        self.arc_points = []
+
+    def _size(self):
+        return 12, 12
+
+    def get_rect(self):
+        width, height = self._size()
+        rect = pygame.Rect(0, 0, width, height)
+        rect.center = (int(self.pos.x), int(self.pos.y))
+        return rect
+
+    def _find_chain_target(self, from_pos, enemies):
+        """Find nearest alive enemy not yet hit within chain_range."""
+        best = None
+        best_dist = self.chain_range * self.chain_range
+        for enemy in enemies:
+            if enemy.is_dead() or enemy in self.hit_enemies:
+                continue
+            e_center = pygame.Vector2(enemy.get_rect().center)
+            d2 = (e_center - from_pos).length_squared()
+            if d2 < best_dist:
+                best_dist = d2
+                best = enemy
+        return best
+
+    def update(self, dt, obstacles, enemies):
+        if not self.alive:
+            return
+
+        self.animation_time += dt
+
+        if self.chaining:
+            self.chain_timer += dt
+            if self.chain_timer >= self.chain_delay:
+                self.chain_timer = 0.0
+                self.chain_index += 1
+                if self.chain_index >= len(self.chain_targets):
+                    self.alive = False
+                    return
+                enemy = self.chain_targets[self.chain_index]
+                e_center = pygame.Vector2(enemy.get_rect().center)
+                arc_start = pygame.Vector2(self.pos)
+                self.arc_points.append((arc_start, e_center, self.animation_time))
+                enemy.take_damage(self.damage)
+                logger.info(f"Chain Lightning chained to {enemy.__class__.__name__} for {self.damage} damage!")
+                self.pos = e_center
+                self.hit_enemies.append(enemy)
+
+                # Find next chain target
+                next_enemy = self._find_chain_target(self.pos, enemies)
+                if next_enemy and len(self.chain_targets) < self.max_targets:
+                    self.chain_targets.append(next_enemy)
+            return
+
+        # Flying phase
+        movement = self.direction * self.speed * dt
+        self.pos += movement
+        self.traveled += movement.length()
+
+        self.trail.append(pygame.Vector2(self.pos))
+        if len(self.trail) > self.trail_length:
+            self.trail.pop(0)
+
+        rect = self.get_rect()
+        for wall in obstacles:
+            if rect.colliderect(wall):
+                self.alive = False
+                return
+
+        for enemy in enemies:
+            if enemy.is_dead():
+                continue
+            if rect.colliderect(enemy.get_rect()):
+                # First hit: start chaining
+                if enemy not in self.hit_enemies:
+                    enemy.take_damage(self.damage)
+                    logger.info(f"Chain Lightning hit {enemy.__class__.__name__} for {self.damage} damage!")
+                    self.hit_enemies.append(enemy)
+                    e_center = pygame.Vector2(enemy.get_rect().center)
+                    self.arc_points.append((pygame.Vector2(self.pos), e_center, self.animation_time))
+                    self.pos = e_center
+
+                    # Find chain targets
+                    next_enemy = self._find_chain_target(self.pos, enemies)
+                    if next_enemy:
+                        self.chain_targets = [enemy, next_enemy]
+                    else:
+                        self.chain_targets = [enemy]
+                    self.chaining = True
+                    self.chain_index = 0
+                    self.chain_timer = 0.0
+                return
+
+        if self.traveled >= self.max_range:
+            self.alive = False
+
+    def _draw_lightning_arc(self, screen, start, end, time_offset, camera_offset):
+        """Draw a zigzag lightning arc between two points with glow."""
+        sx = start.x - camera_offset.x
+        sy = start.y - camera_offset.y
+        ex = end.x - camera_offset.x
+        ey = end.y - camera_offset.y
+
+        dx = ex - sx
+        dy = ey - sy
+        dist = math.sqrt(dx * dx + dy * dy)
+        if dist < 1:
+            return
+
+        segments = max(5, int(dist / 8))
+        points = [(sx, sy)]
+        for i in range(1, segments):
+            t = i / segments
+            bx = sx + dx * t
+            by = sy + dy * t
+            offset = 6 * math.sin(t * math.pi * 4 + time_offset * 20) + \
+                     4 * math.sin(t * math.pi * 7 + time_offset * 13)
+            perp_x = -dy / dist
+            perp_y = dx / dist
+            points.append((bx + perp_x * offset, by + perp_y * offset))
+        points.append((ex, ey))
+
+        # Glow behind arc
+        glow_surf = pygame.Surface((int(abs(dx) + 30), int(abs(dy) + 30)), pygame.SRCALPHA)
+        g_ox = min(sx, ex) - 15 - camera_offset.x
+        g_oy = min(sy, ey) - 15 - camera_offset.y
+        for thickness in (6, 4):
+            alpha = 40 if thickness > 4 else 80
+            pygame.draw.lines(glow_surf, (255, 220, 50, alpha), False,
+                              [(p[0] - g_ox, p[1] - g_oy) for p in points], thickness)
+        screen.blit(glow_surf, (g_ox, g_oy))
+
+        # Main arc
+        pygame.draw.lines(screen, (255, 255, 200), False, points, 2)
+        pygame.draw.lines(screen, self.color, False, points, 1)
+
+    def draw(self, screen, camera_offset=None):
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+
+        # Draw chain arcs
+        for arc_start, arc_end, t_offset in self.arc_points:
+            self._draw_lightning_arc(screen, arc_start, arc_end, t_offset, camera_offset)
+
+        # Draw trail
+        for i, pos in enumerate(self.trail):
+            alpha = int(120 * (i / len(self.trail)))
+            radius = int(2 + 3 * (i / len(self.trail)))
+            t_surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+            pygame.draw.circle(t_surf, (*self.color[:3], alpha), (radius, radius), radius)
+            screen.blit(t_surf, (pos.x - radius - camera_offset.x, pos.y - radius - camera_offset.y))
+
+        # Draw bolt head
+        if not self.chaining:
+            rect = self.get_rect()
+            rect.x -= int(camera_offset.x)
+            rect.y -= int(camera_offset.y)
+
+            pulse = (math.sin(self.animation_time * 15) + 1.0) * 0.5
+            # Outer glow
+            glow_size = int(rect.width * (1.5 + 0.3 * pulse))
+            glow_surf = pygame.Surface((glow_size * 2, glow_size * 2), pygame.SRCALPHA)
+            pygame.draw.circle(glow_surf, (*self.color, 70), (glow_size, glow_size), glow_size)
+            screen.blit(glow_surf, (rect.centerx - glow_size, rect.centery - glow_size))
+
+            # Core bolt
+            pygame.draw.circle(screen, (255, 255, 220), rect.center, rect.width // 2)
+            pygame.draw.circle(screen, self.color, rect.center, rect.width // 2 - 1)
+
+
+class Thunderstrike:
+    """
+    Calls down lightning from above at a target position, dealing damage in a radius.
+
+    Attributes:
+        pos (pygame.Vector2): Center position of the strike.
+        damage (int): Damage dealt to enemies.
+        radius (float): Effect radius.
+        alive (bool): Whether the effect is active.
+        delay (float): Telegraph delay before strike.
+        timer (float): Current time elapsed.
+        struck (bool): Whether damage has been applied.
+        animation_time (float): Visual animation timer.
+    """
+    def __init__(self, pos, damage, radius=100.0, delay=0.5):
+        self.pos = pygame.Vector2(pos)
+        self.damage = damage
+        self.radius = radius
+        self.alive = True
+        self.delay = delay
+        self.timer = 0.0
+        self.struck = False
+        self.animation_time = 0.0
+        self.flash_alpha = 0
+
+    def get_rect(self):
+        size = int(self.radius * 2)
+        rect = pygame.Rect(0, 0, size, size)
+        rect.center = (int(self.pos.x), int(self.pos.y))
+        return rect
+
+    def update(self, dt, obstacles, enemies):
+        if not self.alive:
+            return
+
+        self.animation_time += dt
+        self.timer += dt
+
+        if not self.struck and self.timer >= self.delay:
+            # Apply damage to all enemies in radius
+            for enemy in enemies:
+                if enemy.is_dead():
+                    continue
+                e_center = pygame.Vector2(enemy.get_rect().center)
+                if (e_center - self.pos).length_squared() <= self.radius * self.radius:
+                    enemy.take_damage(self.damage)
+                    logger.info(f"Thunderstrike hit {enemy.__class__.__name__} for {self.damage} damage!")
+            self.struck = True
+            self.flash_alpha = 255
+
+        if self.struck:
+            self.flash_alpha = max(0, self.flash_alpha - 600 * dt)
+
+        if self.timer >= self.delay + 0.6:
+            self.alive = False
+
+    def draw(self, screen, camera_offset=None):
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+
+        cx = int(self.pos.x - camera_offset.x)
+        cy = int(self.pos.y - camera_offset.y)
+
+        if not self.struck:
+            # Telegraph: pulsing circle on ground + descending particles
+            progress = self.timer / self.delay
+            pulse = (math.sin(self.animation_time * 10) + 1.0) * 0.5
+
+            # Ground target circle
+            circle_alpha = int(80 + 80 * pulse)
+            circle_surf = pygame.Surface((int(self.radius * 2), int(self.radius * 2)), pygame.SRCALPHA)
+            pygame.draw.circle(circle_surf, (255, 220, 50, circle_alpha),
+                               (int(self.radius), int(self.radius)), int(self.radius), 2)
+            pygame.draw.circle(circle_surf, (200, 180, 255, int(circle_alpha * 0.5)),
+                               (int(self.radius), int(self.radius)), int(self.radius * 0.6), 1)
+            screen.blit(circle_surf, (cx - int(self.radius), cy - int(self.radius)))
+
+            # Descending light particles
+            import random
+            for _ in range(4):
+                px = cx + random.uniform(-self.radius * 0.8, self.radius * 0.8)
+                py = cy - 200 + progress * 200 + random.uniform(-20, 20)
+                p_size = random.randint(2, 4)
+                p_alpha = max(0, int(120 * (1 - abs(py - cy) / 200)))
+                p_surf = pygame.Surface((p_size * 2, p_size * 2), pygame.SRCALPHA)
+                pygame.draw.circle(p_surf, (255, 255, 200, p_alpha), (p_size, p_size), p_size)
+                screen.blit(p_surf, (int(px) - p_size, int(py) - p_size))
+        else:
+            # Strike visual: bolt from above + expanding electrical field
+            bolt_alpha = min(255, self.flash_alpha * 2)
+
+            # Main lightning bolt (from top of screen to center)
+            bolt_top_y = cy - 400
+            segments = 12
+            bolt_points = [(cx, bolt_top_y)]
+            for i in range(1, segments):
+                t = i / segments
+                bx = cx + 15 * math.sin(t * math.pi * 5 + self.animation_time * 30)
+                by = bolt_top_y + (cy - bolt_top_y) * t
+                bolt_points.append((bx, by))
+            bolt_points.append((cx, cy))
+
+            # Bolt glow
+            glow_surf = pygame.Surface((200, 450), pygame.SRCALPHA)
+            g_ox = cx - 100
+            g_oy = cy - 400
+            for thickness in (8, 5, 3):
+                alpha = int(30 * bolt_alpha / 255) if thickness > 5 else int(80 * bolt_alpha / 255)
+                pygame.draw.lines(glow_surf, (255, 220, 50, alpha), False,
+                                  [(p[0] - g_ox, p[1] - g_oy) for p in bolt_points], thickness)
+            screen.blit(glow_surf, (g_ox, g_oy))
+
+            # Main bolt
+            bolt_surf = pygame.Surface((200, 450), pygame.SRCALPHA)
+            b_ox = cx - 100
+            b_oy = cy - 400
+            pygame.draw.lines(bolt_surf, (255, 255, 255, bolt_alpha), False,
+                              [(p[0] - b_ox, p[1] - b_oy) for p in bolt_points], 2)
+            pygame.draw.lines(bolt_surf, (255, 220, 80, bolt_alpha), False,
+                              [(p[0] - b_ox, p[1] - b_oy) for p in bolt_points], 1)
+            screen.blit(bolt_surf, (b_ox, b_oy))
+
+            # Expanding electrical field on ground
+            field_progress = min(1.0, (self.timer - self.delay) / 0.5)
+            field_radius = int(self.radius * (0.3 + 0.7 * field_progress))
+            field_surf = pygame.Surface((field_radius * 2, field_radius * 2), pygame.SRCALPHA)
+
+            # Outer ring
+            ring_alpha = int(150 * (1 - field_progress))
+            pygame.draw.circle(field_surf, (100, 80, 200, ring_alpha),
+                               (field_radius, field_radius), field_radius, 2)
+            # Inner glow
+            inner_alpha = int(80 * (1 - field_progress * 0.5))
+            pygame.draw.circle(field_surf, (200, 180, 255, inner_alpha),
+                               (field_radius, field_radius), int(field_radius * 0.7))
+            # Core flash
+            core_alpha = min(200, int(self.flash_alpha * 0.8))
+            pygame.draw.circle(field_surf, (255, 255, 255, core_alpha),
+                               (field_radius, field_radius), int(field_radius * 0.2))
+
+            screen.blit(field_surf, (cx - field_radius, cy - field_radius))
+
+            # Arc sparks on ground
+            import random as rnd
+            spark_surf = pygame.Surface((int(self.radius * 2), int(self.radius * 2)), pygame.SRCALPHA)
+            s_ox = cx - int(self.radius)
+            s_oy = cy - int(self.radius)
+            for _ in range(int(8 * (1 - field_progress) + 2)):
+                angle = rnd.uniform(0, math.pi * 2)
+                dist = rnd.uniform(0, field_radius)
+                sx = cx + math.cos(angle) * dist - s_ox
+                sy = cy + math.sin(angle) * dist - s_oy
+                ex = sx + rnd.uniform(-10, 10)
+                ey = sy + rnd.uniform(-10, 10)
+                spark_alpha = int(200 * (1 - field_progress))
+                pygame.draw.line(spark_surf, (255, 255, 200, spark_alpha), (sx, sy), (ex, ey), 1)
+            screen.blit(spark_surf, (s_ox, s_oy))

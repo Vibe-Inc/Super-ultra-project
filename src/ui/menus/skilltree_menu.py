@@ -1244,7 +1244,17 @@ class SkillTreeMenu(Menu):
 
         if node_id == "cluster_2_2" and hasattr(character, "learn_glacial_cascade"):
             character.learn_glacial_cascade()
-        
+
+        # Lightning: major_3 = Chain Lightning, cluster_3_1 = Static Field, cluster_3_2 = Thunderstrike
+        if node_id == "major_3" and hasattr(character, "learn_chain_lightning"):
+            character.learn_chain_lightning()
+
+        if node_id == "cluster_3_1" and hasattr(character, "learn_static_field"):
+            character.learn_static_field()
+
+        if node_id == "cluster_3_2" and hasattr(character, "learn_thunderstrike"):
+            character.learn_thunderstrike()
+
         # Trigger unlock animation
         self._spawn_unlock_effect(node_id)
 

@@ -1,7 +1,9 @@
 import math
+import random
+
 import pygame
 from src.core.logger import logger
-from src.entities.projectile import Fireball, GlacialCascade, FrostNova
+from src.entities.projectile import Fireball, GlacialCascade, FrostNova, ChainLightning, Thunderstrike
 
 class Character:
     """
@@ -193,6 +195,27 @@ class Character:
         self.glacial_cascade_last_used = -self.glacial_cascade_cooldown
         self.glacial_cascade_width = 80.0
 
+        # Chain Lightning skill
+        self.chain_lightning_speed = 500.0
+        self.chain_lightning_range = 550.0
+        self.chain_lightning_damage = 22
+        self.chain_lightning_chain_range = 180.0
+        self.chain_lightning_max_targets = 5
+        self.chain_lightning_cooldown = 2500
+        self.chain_lightning_last_used = -self.chain_lightning_cooldown
+
+        # Thunderstrike skill
+        self.thunderstrike_damage = 55
+        self.thunderstrike_radius = 100.0
+        self.thunderstrike_range = 600.0
+        self.thunderstrike_cooldown = 4000
+        self.thunderstrike_last_used = -self.thunderstrike_cooldown
+
+        # Passive: Static Field
+        self.static_field = False
+        self.static_field_proc_chance = 0.12
+        self.static_field_damage = 20
+
         # Passive: Pyromancer's Fury
         self.pyromancers_fury = False
         self.pyromancers_fury_damage_mult = 1.25   # +25% fire damage
@@ -289,6 +312,36 @@ class Character:
             "accent": (200, 230, 255),
         })
         logger.info("Player learned Glacial Cascade!")
+
+    def learn_chain_lightning(self):
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "chain_lightning":
+                return
+        self.skillbook.append({
+            "skill_id": "chain_lightning",
+            "name": "Chain Lightning",
+            "description": "Fires a lightning bolt that jumps between up to 5 enemies.",
+            "color": (255, 220, 50),
+            "accent": (255, 255, 180),
+        })
+        logger.info("Player learned Chain Lightning!")
+
+    def learn_static_field(self):
+        self.static_field = True
+        logger.info("Player unlocked Static Field (passive)!")
+
+    def learn_thunderstrike(self):
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "thunderstrike":
+                return
+        self.skillbook.append({
+            "skill_id": "thunderstrike",
+            "name": "Thunderstrike",
+            "description": "Call down lightning from above for 55 damage in a column.",
+            "color": (200, 180, 255),
+            "accent": (255, 230, 255),
+        })
+        logger.info("Player learned Thunderstrike!")
 
     def get_skill_in_slot(self, slot_index):
         if 0 <= slot_index < len(self.skillbar):
@@ -452,6 +505,69 @@ class Character:
             )
             self.glacial_cascade_last_used = current_time
             logger.info("Player used Glacial Cascade.")
+            return True
+
+        if skill_id == "chain_lightning":
+            if current_time - getattr(self, "chain_lightning_last_used", -self.chain_lightning_cooldown) < self.chain_lightning_cooldown:
+                return False
+
+            if aim_direction is not None:
+                direction = pygame.Vector2(aim_direction)
+            else:
+                direction = pygame.Vector2(self.velocity)
+
+            if direction.length_squared() == 0:
+                direction = self.get_forward_direction()
+            if direction.length_squared() == 0:
+                direction = pygame.Vector2(1, 0)
+            else:
+                direction = direction.normalize()
+
+            game_state = getattr(self, "game_state", None)
+            if game_state is None:
+                logger.warning("Chain Lightning skill used without an attached game state.")
+                return False
+
+            spawn_pos = self.get_melee_anchor() + direction * 18
+            game_state.projectiles.append(
+                ChainLightning(
+                    spawn_pos,
+                    direction,
+                    self.chain_lightning_speed,
+                    self.chain_lightning_range,
+                    self.chain_lightning_damage,
+                    self.chain_lightning_chain_range,
+                    self.chain_lightning_max_targets,
+                )
+            )
+            self.chain_lightning_last_used = current_time
+            logger.info("Player used Chain Lightning.")
+            return True
+
+        if skill_id == "thunderstrike":
+            if current_time - getattr(self, "thunderstrike_last_used", -self.thunderstrike_cooldown) < self.thunderstrike_cooldown:
+                return False
+
+            game_state = getattr(self, "game_state", None)
+            if game_state is None:
+                logger.warning("Thunderstrike skill used without an attached game state.")
+                return False
+
+            target_pos = self.get_melee_anchor()
+            if aim_direction is not None:
+                aim_vec = pygame.Vector2(aim_direction)
+                if aim_vec.length_squared() > 0:
+                    target_pos = target_pos + aim_vec.normalize() * self.thunderstrike_range
+
+            game_state.projectiles.append(
+                Thunderstrike(
+                    target_pos,
+                    self.thunderstrike_damage,
+                    self.thunderstrike_radius,
+                )
+            )
+            self.thunderstrike_last_used = current_time
+            logger.info("Player used Thunderstrike.")
             return True
 
         return False
@@ -748,7 +864,20 @@ class Character:
                 return
 
         self.hp -= amount
-        
+
+        # Static Field: 12% chance to shock all nearby enemies when hit
+        if self.static_field and amount > 0:
+            if random.random() < self.static_field_proc_chance:
+                game_state = getattr(self, "game_state", None)
+                if game_state is not None and hasattr(game_state, "enemies"):
+                    player_center = self.get_center()
+                    for enemy in list(game_state.enemies):
+                        enemy_center = enemy.get_center()
+                        distance = player_center.distance_to(enemy_center)
+                        if distance < 200:
+                            enemy.take_damage(self.static_field_damage)
+                            logger.info(f"Static Field shocked {enemy.__class__.__name__} for {self.static_field_damage} damage!")
+
         if not ignore_invulnerability:
             self.invulnerable = True
             self.invulnerability_timer = self.invulnerability_duration
