@@ -509,6 +509,12 @@ class SkillbarMenu(Menu):
             slot_x = storage_x + self.grid_gap + index * (storage_size + self.grid_gap)
             slot_y = storage_y + self.grid_gap
             self.storage_slot_rects.append(pygame.Rect(slot_x, slot_y, storage_size, storage_size))
+        
+        # Resize hover animation list to match the new storage slots count
+        while len(self.storage_hover_anim) < self.storage_slots_count:
+            self.storage_hover_anim.append(0.0)
+        while len(self.storage_hover_anim) > self.storage_slots_count:
+            self.storage_hover_anim.pop()
 
         self.bar_slot_rects = []
         for index in range(self.bar_slots_count):
