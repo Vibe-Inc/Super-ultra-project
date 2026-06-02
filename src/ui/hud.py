@@ -6,6 +6,12 @@ from src.ui.widgets import Button
 import src.config as cfg
 from src.core.logger import logger
 
+# Ensure _ is available for gettext translations
+try:
+    _  # type: ignore[used-before-def]
+except NameError:
+    from gettext import gettext as _
+
 if TYPE_CHECKING:
     from src.app import App
 
@@ -328,12 +334,21 @@ class HUD:
         hp_percent = max(0, self.character.hp / self.character.max_hp)
         current_bar_width = int(bar_width * hp_percent)
 
-        # Draw Background
-        pygame.draw.rect(screen, (50, 50, 50), (bar_x, bar_y, bar_width, bar_height))
-        # Draw HP
-        pygame.draw.rect(screen, (220, 20, 60), (bar_x, bar_y, current_bar_width, bar_height))
-        # Draw Border
-        pygame.draw.rect(screen, (255, 255, 255), (bar_x, bar_y, bar_width, bar_height), 3)
+        # HP Bar Background (Rounded)
+        hp_bg_surf = pygame.Surface((bar_width, bar_height), pygame.SRCALPHA)
+        pygame.draw.rect(hp_bg_surf, (40, 40, 50, 200), hp_bg_surf.get_rect(), border_radius=8)
+        screen.blit(hp_bg_surf, (bar_x, bar_y))
+
+        # HP Bar Fill (Rounded)
+        if current_bar_width > 0:
+            # Clamp radius to avoid distortion on small widths
+            fill_radius = min(8, current_bar_width // 2)
+            hp_fill_surf = pygame.Surface((current_bar_width, bar_height), pygame.SRCALPHA)
+            pygame.draw.rect(hp_fill_surf, (220, 30, 60), hp_fill_surf.get_rect(), border_radius=fill_radius)
+            screen.blit(hp_fill_surf, (bar_x, bar_y))
+
+        # HP Bar Border (Rounded)
+        pygame.draw.rect(screen, (255, 255, 255), (bar_x, bar_y, bar_width, bar_height), 2, border_radius=8)
         
         # Draw HP Text
         hp_text = cfg.INV_nums_font.render(f"{self.character.hp}/{self.character.max_hp}", True, (255, 255, 255))
@@ -368,8 +383,13 @@ class HUD:
 
         screen.blit(self.life_icon, (lives_icon_x, lives_icon_y))
 
-        lives_text = self.font.render(f"x {self.character.death_count}", True, (255, 255, 255))
-        screen.blit(lives_text, (lives_icon_x + 60, lives_icon_y + 5))
+        # Death Counter with Shadow
+        death_str = f" {self.character.death_count}"
+        death_shadow = self.font.render(death_str, True, (0, 0, 0))
+        screen.blit(death_shadow, (lives_icon_x + 62, lives_icon_y + 7))
+        
+        death_text = self.font.render(death_str, True, (220, 50, 50))
+        screen.blit(death_text, (lives_icon_x + 60, lives_icon_y + 5))
 
         # ---- Money display with coin icon ----
         money_x, money_y = self.money_pos
@@ -412,18 +432,30 @@ class HUD:
         current_stamina_width = int(stamina_bar_width * stamina_percent)
 
         if self.character.stamina <= 0:
-            stamina_color = (150, 0, 0)  # Dark red when depleted
+            stamina_color = (200, 40, 40)  # Red when depleted
         elif self.character.is_sprinting:
-            stamina_color = (255, 200, 0)  # Orange while sprinting
+            stamina_color = (255, 200, 0)  # Gold while sprinting
         else:
-            stamina_color = (0, 200, 255)  # Cyan when full/regenerating
+            stamina_color = (0, 180, 240)  # Cyan when full/regenerating
 
-        pygame.draw.rect(screen, (40, 40, 40), (stamina_bar_x, stamina_bar_y, stamina_bar_width, stamina_bar_height))
-        pygame.draw.rect(screen, stamina_color, (stamina_bar_x, stamina_bar_y, current_stamina_width, stamina_bar_height))
-        pygame.draw.rect(screen, (200, 200, 200), (stamina_bar_x, stamina_bar_y, stamina_bar_width, stamina_bar_height), 3)
+        # Stamina Bar Background (Rounded)
+        stam_bg_surf = pygame.Surface((stamina_bar_width, stamina_bar_height), pygame.SRCALPHA)
+        pygame.draw.rect(stam_bg_surf, (30, 30, 40, 200), stam_bg_surf.get_rect(), border_radius=6)
+        screen.blit(stam_bg_surf, (stamina_bar_x, stamina_bar_y))
 
-        label_rect = self.stamina_label.get_rect(center=(stamina_bar_x + stamina_bar_width // 2, stamina_bar_y - 15))
-        screen.blit(self.stamina_label, label_rect)
+        # Stamina Bar Fill (Rounded)
+        if current_stamina_width > 0:
+            fill_radius = min(6, current_stamina_width // 2)
+            stam_fill_surf = pygame.Surface((current_stamina_width, stamina_bar_height), pygame.SRCALPHA)
+            pygame.draw.rect(stam_fill_surf, stamina_color, stam_fill_surf.get_rect(), border_radius=fill_radius)
+            screen.blit(stam_fill_surf, (stamina_bar_x, stamina_bar_y))
+
+        # Stamina Bar Border (Rounded)
+        pygame.draw.rect(screen, (200, 200, 200), (stamina_bar_x, stamina_bar_y, stamina_bar_width, stamina_bar_height), 1, border_radius=6)
+
+        # Stamina Text Label (Centered in bar)
+        stam_text = cfg.get_font(max(8, int(16 * cfg.ui_scale()))).render(f"{int(self.character.stamina)}/{int(self.character.max_stamina)}", True, (255, 255, 255))
+        screen.blit(stam_text, (stamina_bar_x + stamina_bar_width // 2 - stam_text.get_width() // 2, stamina_bar_y + 4))
 
         # Draw vertical skill hotbar (right side) if no shop is open
         if not getattr(self.app.INV_manager, 'current_shop_inv', None):
