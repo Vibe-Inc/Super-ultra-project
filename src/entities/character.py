@@ -126,6 +126,14 @@ class Character:
         self.is_sprinting = False
         self.can_sprint = True
 
+        # Mana / Energy system
+        self.max_mana = 50
+        self.mana = self.max_mana
+        self.mana_drain_rate = 20.0
+        self.mana_regen_rate = 10.0
+        # energy is an alias to support systems that use "energy"
+        self.energy = self.stamina
+
         # Effects
         self.effects = []
         self.confused = False
@@ -531,6 +539,13 @@ class Character:
                 self.stamina = self.max_stamina
                 self.can_sprint = True  
 
+        # Mana regeneration
+        if getattr(self, "mana", None) is not None:
+            if self.mana < self.max_mana:
+                self.mana += self.mana_regen_rate * dt
+                if self.mana > self.max_mana:
+                    self.mana = self.max_mana
+
         # KEY IMPLEMENTATION STEP: Single function call for collision-aware movement
         collision_system.handle_movement_and_collision(self, dt, obstacles)
 
@@ -567,6 +582,80 @@ class Character:
         logger.info(f"Player took {amount} damage. HP: {self.hp}/{self.max_hp}")
         if self.hp <= 0:
             self.die()
+
+    def heal(self, amount):
+        """
+        Restore HP by the specified amount, clamped to max_hp.
+        """
+        if amount <= 0:
+            return
+        prev_hp = self.hp
+        self.hp = min(self.max_hp, self.hp + int(amount))
+        healed = self.hp - prev_hp
+        if healed > 0:
+            logger.info(f"Player healed {healed} HP. HP: {self.hp}/{self.max_hp}")
+
+    def consume_stamina(self, amount):
+        """
+        Attempt to consume stamina. Returns True if enough stamina was available.
+        """
+        if amount <= 0:
+            return True
+        if self.stamina >= amount:
+            self.stamina -= amount
+            # keep energy alias in sync
+            self.energy = self.stamina
+            logger.debug(f"Consumed {amount} stamina. Stamina: {int(self.stamina)}/{self.max_stamina}")
+            return True
+        logger.debug(f"Not enough stamina to consume {amount}. Current: {int(self.stamina)}")
+        return False
+
+    def restore_stamina(self, amount):
+        """
+        Restore stamina (clamped to max_stamina).
+        """
+        if amount <= 0:
+            return
+        prev = int(self.stamina)
+        self.stamina = min(self.max_stamina, self.stamina + amount)
+        self.energy = self.stamina
+        logger.info(f"Player restored {int(self.stamina) - prev} stamina. Stamina: {int(self.stamina)}/{self.max_stamina}")
+
+    def consume_mana(self, amount):
+        """
+        Attempt to consume mana. Returns True if enough mana was available.
+        """
+        if amount <= 0:
+            return True
+        if getattr(self, "mana", 0) >= amount:
+            self.mana -= amount
+            logger.debug(f"Consumed {amount} mana. Mana: {int(self.mana)}/{self.max_mana}")
+            return True
+        logger.debug(f"Not enough mana to consume {amount}. Current: {int(getattr(self,'mana',0))}")
+        return False
+
+    def restore_mana(self, amount):
+        """
+        Restore mana (clamped to max_mana).
+        """
+        if amount <= 0:
+            return
+        prev = int(getattr(self, "mana", 0))
+        self.mana = min(self.max_mana, self.mana + amount)
+        logger.info(f"Player restored {int(self.mana) - prev} mana. Mana: {int(self.mana)}/{self.max_mana}")
+
+    def use_item(self, item):
+        """
+        Use an Item instance on the player. Returns True if item was consumed/used.
+        """
+        try:
+            used = item.use(self)
+            if used:
+                logger.info(f"Player used item {getattr(item, 'id', str(item))}")
+            return bool(used)
+        except Exception as e:
+            logger.exception(f"Error using item: {e}")
+            return False
 
     def die(self):
         logger.warning("Player died!")
