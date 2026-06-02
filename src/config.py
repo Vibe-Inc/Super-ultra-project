@@ -74,9 +74,9 @@ def update_scaled_fonts():
     # Base sizes (authored for 1920x1080)
     myfont = get_font(max(12, int(60 * scale)))
     button_font = get_font(max(10, int(60 * scale)))
-    inventory_tooltip_font = get_font(max(8, int(20 * scale)))
-    tooltip_font_CREDITS = get_font(max(8, int(20 * scale)))
-    INV_nums_font = get_font(max(8, int(15 * scale)))
+    inventory_tooltip_font = get_font(max(14, int(22 * scale)))
+    tooltip_font_CREDITS = get_font(max(14, int(22 * scale)))
+    INV_nums_font = get_font(max(14, int(20 * scale)))
 
 
 def update_brightness():

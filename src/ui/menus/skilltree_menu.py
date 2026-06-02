@@ -32,9 +32,9 @@ class SkillTreeMenu(Menu):
     def __init__(self, app: "App"):
         super().__init__(app)
         scale = cfg.ui_scale()
-        self.title_font = cfg.get_font(max(12, int(36 * scale)))
-        self.section_font = cfg.get_font(max(10, int(22 * scale)))
-        self.small_font = cfg.get_font(max(8, int(16 * scale)))
+        self.title_font = cfg.get_font(max(16, int(36 * scale)))
+        self.section_font = cfg.get_font(max(16, int(26 * scale)))
+        self.small_font = cfg.get_font(max(14, int(20 * scale)))
 
         exit_width = max(120, int(200 * scale))
         exit_height = max(44, int(52 * scale))
