@@ -52,6 +52,11 @@ class StateManager:
         if name in self.states:
             logger.info(f"Switching state to: {name}")
             self.current_state = self.states.get(name)
+            if self.current_state and hasattr(self.current_state, 'on_enter'):
+                try:
+                    self.current_state.on_enter()
+                except Exception:
+                    pass
         else:
             logger.error(f"Attempted to switch to invalid state: {name}")
 

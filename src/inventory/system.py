@@ -619,10 +619,7 @@ class MAIN_player_inventory(Inventory):
             img_rect = scaled_img.get_rect(center=preview_rect.center)
             screen.blit(scaled_img, img_rect)
 
-        # Draw money
-        money_text = f"{_('Money')}: {self.app.money}"
-        text_surf = cfg.tooltip_font_CREDITS.render(money_text, True, (255, 255, 255))
-        screen.blit(text_surf, (preview_x, self.pos_y - 20))
+        # Money is now displayed in the HUD with a coin icon
 
         # position the skillbar/skill tree buttons near the preview area and draw them
         # Draw the buttons only when no shop is active
