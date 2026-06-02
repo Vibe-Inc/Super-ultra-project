@@ -89,6 +89,12 @@ class SkillbarMenu(Menu):
         # Drop zone highlight
         self.drop_highlight_alpha = 0.0
         self.drop_highlight_target = 0.0
+        
+        # Hovered skill for sidebar description
+        self.hovered_skill = None
+        
+        # Cached gradient surfaces
+        self._gradient_cache = {}
     
     def _init_particles(self):
         """Initialize floating particles for ambient background effect."""
@@ -147,6 +153,24 @@ class SkillbarMenu(Menu):
         
         # Update drop highlight
         self.drop_highlight_alpha += (self.drop_highlight_target - self.drop_highlight_alpha) * min(1.0, dt * 6.0)
+        
+        # Track hovered skill for sidebar description
+        self.hovered_skill = None
+        skillbook, skillbar = self._sync_state_to_character()
+        if skillbook is None:
+            skillbook, skillbar = self._skillbook()
+        storage_items = self._storage_items(skillbook, skillbar) if skillbook else []
+        for i, rect in enumerate(self.bar_slot_rects):
+            if rect.collidepoint(mouse_pos):
+                if i < len(skillbar) and skillbar[i] is not None:
+                    self.hovered_skill = skillbar[i]
+                break
+        if self.hovered_skill is None:
+            for i, rect in enumerate(self.storage_slot_rects):
+                if rect.collidepoint(mouse_pos):
+                    if i < len(storage_items) and storage_items[i] is not None:
+                        self.hovered_skill = storage_items[i]
+                    break
         
         # Update drag trail
         if self.drag_payload:
@@ -585,36 +609,179 @@ class SkillbarMenu(Menu):
             self.drag_payload = None
             self.drag_offset = (0, 0)
 
+    def _draw_gradient_rect(self, surface, rect, color_top, color_bottom, border_radius=0):
+        """Draw a vertical gradient rectangle. Cached."""
+        cache_key = (rect.width, rect.height, color_top, color_bottom, border_radius)
+        if cache_key in self._gradient_cache:
+            temp = self._gradient_cache[cache_key]
+        else:
+            height = rect.height
+            temp = pygame.Surface((rect.width, height), pygame.SRCALPHA)
+            for y in range(height):
+                t = y / max(1, height - 1)
+                r = int(color_top[0] + (color_bottom[0] - color_top[0]) * t)
+                g = int(color_top[1] + (color_bottom[1] - color_top[1]) * t)
+                b = int(color_top[2] + (color_bottom[2] - color_top[2]) * t)
+                pygame.draw.line(temp, (r, g, b), (0, y), (rect.width, y))
+            if border_radius > 0:
+                mask = pygame.Surface((rect.width, height), pygame.SRCALPHA)
+                mask.fill((0, 0, 0, 0))
+                pygame.draw.rect(mask, (255, 255, 255, 255), (0, 0, rect.width, height), border_radius=border_radius)
+                temp.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
+            self._gradient_cache[cache_key] = temp
+        surface.blit(temp, rect)
+
     def _draw_sidebar(self, surface: pygame.Surface):
-        title = self.title_font.render(_("Skillbar"), True, (255, 255, 255))
-        surface.blit(title, (self.sidebar_rect.x + 18, self.sidebar_rect.y + 18))
+        t = self.animation_time
+        r = self.sidebar_rect
+        
+        # ── Glassmorphism gradient background ──
+        self._draw_gradient_rect(surface, r, (22, 18, 32), (12, 10, 22), border_radius=18)
+        pygame.draw.rect(surface, (68, 60, 88), r, 2, border_radius=18)
+        inner_border = r.inflate(-4, -4)
+        pygame.draw.rect(surface, (46, 40, 62), inner_border, 1, border_radius=16)
 
-        hint = self.small_font.render(_("Active skills go above. Unused skills stay in the storage row below."), True, (225, 225, 230))
-        surface.blit(hint, (self.sidebar_rect.x + 18, self.sidebar_rect.y + 58))
+        # ── Corner ornaments ──
+        orn_len = 20
+        orn_color = (150, 120, 190)
+        for cx, cy, hdx, hdy in [(r.x, r.y, 1, 1), (r.right, r.y, -1, 1),
+                                  (r.x, r.bottom, 1, -1), (r.right, r.bottom, -1, -1)]:
+            pygame.draw.line(surface, orn_color, (cx, cy), (cx + hdx * orn_len, cy), 2)
+            pygame.draw.line(surface, orn_color, (cx, cy), (cx, cy + hdy * orn_len), 2)
 
-        list_top = self.sidebar_rect.y + 110
-        list_rect = pygame.Rect(self.sidebar_rect.x + 14, list_top, self.sidebar_rect.width - 28, self.exit_button.rect.top - list_top - 16)
-        pygame.draw.rect(surface, (30, 30, 38), list_rect, border_radius=12)
-        pygame.draw.rect(surface, (85, 85, 98), list_rect, 1, border_radius=12)
+        # ── Title with glow ──
+        title_text = _("✦ Skillbar ✦")
+        glow_a = int((math.sin(t * 1.5) + 1.0) * 60 + 60)
+        for i in range(4):
+            glow_surf = self.title_font.render(title_text, True, (100, 80, 170))
+            glow_surf.set_alpha(glow_a // (i + 1))
+            surface.blit(glow_surf, (r.x + 18 + i, r.y + 18 + i))
+        title = self.title_font.render(title_text, True, (240, 230, 250))
+        surface.blit(title, (r.x + 18, r.y + 18))
 
-        label = self.section_font.render(_("Storage"), True, (255, 255, 255))
-        surface.blit(label, (list_rect.x + 12, list_rect.y + 10))
+        # ── Decorative divider ──
+        div_y = r.y + 18 + title.get_height() + 12
+        for i in range(r.width - 36):
+            x = r.x + 18 + i
+            alpha = int((1.0 - abs(i / max(1, r.width - 36) - 0.5) * 2) * 120)
+            pygame.draw.line(surface, (110, 90, 170, alpha), (x, div_y), (x, div_y + 1))
 
-        skillbook, skillbar = self._sync_state_to_character()
-        if skillbook is None:
-            skillbook, skillbar = self._skillbook()
-        storage_items = self._storage_items(skillbook, skillbar)
+        # ── Hint ──
+        hint_text = _("Drag skills between the bar and storage")
+        hint = self.small_font.render(hint_text, True, (150, 145, 175))
+        surface.blit(hint, (r.x + 18, div_y + 10))
+        py = div_y + 10 + hint.get_height() + 16
 
-        if not storage_items:
-            empty = self.small_font.render(_("No unused skills right now."), True, (205, 205, 215))
-            surface.blit(empty, empty.get_rect(center=list_rect.center))
-            return
+        # ── Second divider ──
+        for i in range(r.width - 36):
+            x = r.x + 18 + i
+            alpha = int((1.0 - abs(i / max(1, r.width - 36) - 0.5) * 2) * 80)
+            pygame.draw.line(surface, (80, 65, 100, alpha), (x, py), (x, py + 1))
+        py += 8
 
-        text_y = list_rect.y + 42
-        max_rows = max(1, (list_rect.bottom - text_y - 10) // (self.small_font.get_height() + 8))
-        for index, skill in enumerate(storage_items[:max_rows]):
-            line = self.small_font.render(f"{index + 1}. {skill['name']}", True, (235, 235, 245))
-            surface.blit(line, (list_rect.x + 12, text_y + index * (self.small_font.get_height() + 8)))
+        # ── Hovered skill detail panel ──
+        if self.hovered_skill is not None:
+            skill = self.hovered_skill
+            theme = self._get_skill_theme(skill)
+            
+            # Skill name with theme accent
+            name_color = theme["glow"]
+            name = self.section_font.render(skill["name"], True, name_color)
+            surface.blit(name, (r.x + 18, py))
+            py += name.get_height() + 6
+
+            # Skill ID badge
+            skill_id = skill.get("skill_id", "")
+            if skill_id:
+                badge = self.small_font.render(skill_id.replace("_", " ").upper(), True, (30, 28, 40))
+                bw = badge.get_width() + 14
+                bh = badge.get_height() + 6
+                badge_rect = pygame.Rect(r.x + 18, py, bw, bh)
+                pygame.draw.rect(surface, (*theme["primary"], 50), badge_rect, border_radius=5)
+                pygame.draw.rect(surface, theme["primary"], badge_rect, 1, border_radius=5)
+                surface.blit(badge, (badge_rect.x + 7, badge_rect.y + 3))
+                py += bh + 10
+
+            # Description in styled panel
+            desc = skill.get("description", "")
+            if desc:
+                desc_bg = pygame.Rect(r.x + 14, py, r.width - 28, 0)
+                desc_font = self.small_font
+                max_w = desc_bg.width - 12
+                words = desc.split()
+                desc_lines = []
+                current = ""
+                for word in words:
+                    test = f"{current} {word}".strip()
+                    if desc_font.size(test)[0] <= max_w or not current:
+                        current = test
+                    else:
+                        desc_lines.append(current)
+                        current = word
+                if current:
+                    desc_lines.append(current)
+                total_h = len(desc_lines) * (desc_font.get_height() + 4) + 12
+                desc_bg.h = total_h
+                pygame.draw.rect(surface, (24, 20, 36), desc_bg, border_radius=8)
+                pygame.draw.rect(surface, (50, 44, 68), desc_bg, 1, border_radius=8)
+                dp = desc_bg.y + 6
+                for line in desc_lines:
+                    line_surf = desc_font.render(line, True, (200, 200, 220))
+                    surface.blit(line_surf, (desc_bg.x + 6, dp))
+                    dp += desc_font.get_height() + 4
+                py += total_h + 8
+
+            # Skill stats
+            stats = []
+            if "cooldown" in skill:
+                stats.append((_("Cooldown"), f"{skill['cooldown']}s"))
+            if "mana_cost" in skill:
+                stats.append((_("Mana Cost"), str(skill["mana_cost"])))
+            if "damage" in skill:
+                stats.append((_("Damage"), str(skill["damage"])))
+            if "range" in skill:
+                stats.append((_("Range"), f"{skill['range']}"))
+            if "duration" in skill:
+                stats.append((_("Duration"), f"{skill['duration']}s"))
+
+            if stats:
+                stat_y = py
+                for label, value in stats:
+                    stat_bg = pygame.Rect(r.x + 14, stat_y, r.width - 28, 26)
+                    pygame.draw.rect(surface, (22, 20, 34), stat_bg, border_radius=6)
+                    lbl = self.small_font.render(label, True, (160, 160, 185))
+                    val = self.small_font.render(value, True, theme["accent"])
+                    surface.blit(lbl, (stat_bg.x + 6, stat_bg.y + 4))
+                    surface.blit(val, (stat_bg.right - val.get_width() - 6, stat_bg.y + 4))
+                    stat_y += 30
+
+            py = max(py, stat_y if stats else py)
+
+        else:
+            # Empty state — show storage list
+            skillbook, skillbar = self._sync_state_to_character()
+            if skillbook is None:
+                skillbook, skillbar = self._skillbook()
+            storage_items = self._storage_items(skillbook, skillbar) if skillbook else []
+
+            storage_label = self.section_font.render(_("Storage"), True, (220, 215, 235))
+            surface.blit(storage_label, (r.x + 18, py))
+            py += storage_label.get_height() + 10
+
+            if not storage_items:
+                empty = self.small_font.render(_("No unused skills"), True, (130, 130, 155))
+                surface.blit(empty, (r.x + 18, py))
+            else:
+                for idx, sk in enumerate(storage_items):
+                    # Limit to visible space
+                    if py > self.exit_button.rect.top - 60:
+                        break
+                    theme = self._get_skill_theme(sk)
+                    dot_color = theme["primary"]
+                    pygame.draw.circle(surface, dot_color, (r.x + 22, py + 9), 4)
+                    name = self.small_font.render(sk["name"], True, (220, 220, 235))
+                    surface.blit(name, (r.x + 32, py + 1))
+                    py += name.get_height() + 8
 
     def draw(self, screen: pygame.Surface):
         self.layout(screen)
@@ -629,18 +796,8 @@ class SkillbarMenu(Menu):
         # Update all animations
         self._update_animations(dt)
 
-        # Dark gradient background
-        screen.fill((12, 12, 18))
-        
-        # Draw subtle background gradient
-        bg_overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
-        for y in range(0, screen.get_height(), 4):
-            ratio = y / screen.get_height()
-            r = int(12 + 8 * ratio)
-            g = int(12 + 6 * ratio)
-            b = int(18 + 12 * ratio)
-            pygame.draw.line(bg_overlay, (r, g, b, 240), (0, y), (screen.get_width(), y))
-        screen.blit(bg_overlay, (0, 0))
+        # Dark background
+        screen.fill((12, 10, 20))
         
         # Draw floating particles in background
         self._draw_particle_background(screen, screen.get_rect())
@@ -686,23 +843,7 @@ class SkillbarMenu(Menu):
         storage_glow = (100, 80, 180)
         self._draw_glowing_rect(screen, self.storage_grid_rect, bar_color, storage_glow, 0.5 + 0.3 * title_pulse, 18)
         
-        # Draw sidebar with gradient
-        sidebar_grad = pygame.Surface(self.sidebar_rect.size, pygame.SRCALPHA)
-        for y in range(self.sidebar_rect.height):
-            ratio = y / max(1, self.sidebar_rect.height)
-            r = int(26 + 8 * ratio)
-            g = int(26 + 6 * ratio)
-            b = int(34 + 10 * ratio)
-            pygame.draw.line(sidebar_grad, (r, g, b, 245), (0, y), (self.sidebar_rect.width, y))
-        screen.blit(sidebar_grad, self.sidebar_rect.topleft)
-        
-        # Sidebar neon border
-        sidebar_glow = (90, 70, 160)
-        pygame.draw.rect(screen, sidebar_glow, self.sidebar_rect, 2, border_radius=18)
-        # Inner glow line
-        inner_rect = self.sidebar_rect.inflate(-4, -4)
-        sidebar_glow2 = tuple(max(0, c - 40) for c in sidebar_glow)
-        pygame.draw.rect(screen, sidebar_glow2, inner_rect, 1, border_radius=16)
+        # Sidebar is drawn by _draw_sidebar (handles gradient, border, ornaments)
 
         # Draw bar slots with entrance animation
         for index, slot_rect in enumerate(self.bar_slot_rects):
