@@ -138,6 +138,8 @@ class Character:
         self.effects = []
         self.confused = False
         self.dizzy = False
+        # Resistances: values 0.0..1.0 (1.0 = immune). Example: {"poison": 0.5, "slow": 0.2}
+        self.resistances = {}
 
         # Combat stats
         self.base_attack_damage = 15
@@ -311,12 +313,81 @@ class Character:
 
         return False
 
+    def get_resistance(self, effect_name: str) -> float:
+        """
+        Return resistance in range [0.0, 1.0] for given effect name.
+        1.0 means immune.
+        """
+        return float(self.resistances.get(effect_name, 0.0))
+
+    def is_immune(self, effect_name: str) -> bool:
+        return self.get_resistance(effect_name) >= 1.0
+
     def add_effect(self, effect):
-        for e in self.effects:
+        """
+        Add an effect, applying resistances and simple stacking rules:
+        - Immunity (resistance >= 1.0) blocks the effect.
+        - Partial resistance scales magnitude and duration.
+        - If an existing effect of the same class exists, replace it only if the new one is stronger.
+        """
+        # Map class names to effect keys used in resistances
+        name_map = {
+            "RegenerationEffect": "regeneration",
+            "PoisonEffect": "poison",
+            "BurnEffect": "burn",
+            "ConfusionEffect": "confusion",
+            "DizzinessEffect": "dizziness",
+            "SlowEffect": "slow",
+        }
+        cls_name = effect.__class__.__name__
+        e_name = name_map.get(cls_name, cls_name.lower())
+        r = self.get_resistance(e_name)
+
+        if r >= 1.0:
+            logger.info(f"Effect '{e_name}' blocked by immunity on {getattr(self, 'id', type(self))}")
+            return
+
+        # Apply resistance scaling
+        if r > 0.0:
+            # Scale damage-like fields
+            if hasattr(effect, "damage_per_sec"):
+                effect.damage_per_sec = effect.damage_per_sec * max(0.0, 1.0 - r)
+            if hasattr(effect, "amount_per_sec"):
+                effect.amount_per_sec = effect.amount_per_sec * max(0.0, 1.0 - r)
+            # Scale duration
+            if hasattr(effect, "duration"):
+                effect.duration = effect.duration * max(0.0, 1.0 - r)
+            # Scale slow's speed_multiplier (reduce slow strength)
+            if hasattr(effect, "speed_multiplier") and effect.speed_multiplier < 1.0:
+                reduction = 1.0 - effect.speed_multiplier
+                reduced = reduction * max(0.0, 1.0 - r)
+                effect.speed_multiplier = 1.0 - reduced
+
+            logger.debug(f"Applied resistance {r:.2f} to effect '{e_name}' -> adjusted attrs: {effect.__dict__}")
+
+        # Stacking: if same class exists, replace only if new is stronger
+        def strength_metric(x):
+            s = 0.0
+            if hasattr(x, "damage_per_sec"):
+                s += float(getattr(x, "damage_per_sec", 0.0))
+            if hasattr(x, "amount_per_sec"):
+                s += float(getattr(x, "amount_per_sec", 0.0))
+            if hasattr(x, "duration"):
+                s += float(getattr(x, "duration", 0.0)) * 0.1
+            if hasattr(x, "speed_multiplier"):
+                s += (1.0 - float(getattr(x, "speed_multiplier", 1.0))) * 10.0
+            return s
+
+        for i, e in enumerate(self.effects):
             if type(e) == type(effect):
-                self.effects.remove(e)
-                self.effects.append(effect)
+                if strength_metric(effect) > strength_metric(e):
+                    self.effects[i] = effect
+                    logger.debug(f"Replaced weaker '{e_name}' effect with stronger one on {getattr(self, 'id', type(self))}")
+                else:
+                    logger.debug(f"Ignored incoming weaker or equal '{e_name}' effect on {getattr(self, 'id', type(self))}")
                 return
+
+        # Otherwise append new effect
         self.effects.append(effect)
 
     def gain_xp(self, amount):
