@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 import src.config as cfg
 from src.ui.widgets import Slider, Button
 from src.items.items import Consumable
+from database.GP_database import Gp_database
+from src.items.items import create_item
 
 if TYPE_CHECKING:
     from src.app import App
@@ -401,3 +403,149 @@ class Inventory_slider(Slider):
         result = 1 if self.max_qty <= 1 else 1 + int(float_value * (self.max_qty - 1))
         if self.external_callback:
             self.external_callback(result)
+
+class CraftingGrid(Inventory):
+    def __init__(self, app):
+        super().__init__(3, 3, None, cfg.BASE_INV_slot_size, 0, 0, cfg.BASE_INV_border)
+        self.app = app
+        self.output_slot = None
+        
+        self.pos_x = 0
+        self.pos_y = 0
+        self.output_pos_x = 0
+        self.output_pos_y = 0
+        
+        db = Gp_database()
+        self.all_recipes = db.get_all_recipes()
+        db.close()
+        
+        scale = cfg.ui_scale()
+        self.book_button = Button(
+            rect=pygame.Rect(0, 0, max(80, int(100 * scale)), max(24, int(28 * scale))),
+            text="RECIPES", color=(40, 40, 40), hover_color=(70, 70, 70),
+            font=cfg.INV_nums_font, font_color=(255, 255, 255),
+            corner_width=2, 
+            on_click=self.open_recipe_menu
+        )
+    def open_recipe_menu(self):
+        self.app.manager.set_state("recipe_book")
+
+    def update_positions(self, base_x, base_y):
+        """Динамічно оновлює координати крафту відносно головного інвентарю екіпірування"""
+        scale = cfg.ui_scale()
+        self.pos_x = base_x
+        self.pos_y = base_y
+        
+        grid_size = (self.slot_size + self.border) * 3
+        
+        self.output_pos_x = self.pos_x + (grid_size // 2) - (self.slot_size // 2)
+        self.output_pos_y = self.pos_y + grid_size + int(45 * scale)
+        
+        self.book_button.rect.topleft = (self.pos_x - int(40 * scale), self.pos_y)
+
+    def inventory_interactions(self, event, manager):
+        if event.type != pygame.MOUSEBUTTONDOWN: return
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+
+        if self.book_button.rect.collidepoint((mouse_x, mouse_y)) and event.button == 1:
+            self.book_button.on_click()
+            return
+
+        output_rect = pygame.Rect(self.output_pos_x, self.output_pos_y, self.slot_size, self.slot_size)
+        if output_rect.collidepoint(mouse_x, mouse_y) and event.button == 1:
+            if self.output_slot and not manager.selected_item:
+                manager.selected_item = self.output_slot
+                self.output_slot = None
+                
+                for col in range(3):
+                    for row in range(3):
+                        if self.items[col][row]:
+                            self.items[col][row][1] -= 1
+                            if self.items[col][row][1] <= 0:
+                                self.items[col][row] = None
+                self.check_recipes()
+            return
+
+        super().inventory_interactions(event, manager)
+        self.check_recipes()
+
+    def check_recipes(self):
+        current_matrix = [[None for _ in range(3)] for _ in range(3)]
+        for col in range(3):
+            for row in range(3):
+                if self.items[col][row]:
+                    current_matrix[col][row] = self.items[col][row][0].id
+
+        matched_recipe = None
+        for recipe in self.all_recipes:
+            if self._matrix_match(current_matrix, recipe["matrix"]):
+                matched_recipe = recipe
+                break
+
+        if matched_recipe:
+            new_item = create_item(matched_recipe["result_id"])
+            self.output_slot = [new_item, matched_recipe["amount"]]
+        else:
+            self.output_slot = None
+
+    def _matrix_match(self, m1, m2):
+        """Порівнює дві матриці 3х3"""
+        for c in range(3):
+            for r in range(3):
+                if m1[c][r] != m2[c][r]:
+                    return False
+        return True
+
+class CraftingLogic:
+    @staticmethod
+    def can_craft(player_inv: MAIN_player_inventory, ingredients: dict) -> bool:
+        available = {}
+        for col in range(player_inv.columns):
+            for row in range(player_inv.rows):
+                slot = player_inv.items[col][row]
+                if slot:
+                    item_id = slot[0].id
+                    count = slot[1]
+                    available[item_id] = available.get(item_id, 0) + count
+
+        for req_id, req_amount in ingredients.items():
+            if available.get(req_id, 0) < req_amount:
+                return False
+        return True
+
+    @staticmethod
+    def consume_ingredients(player_inv: MAIN_player_inventory, ingredients: dict):
+        for req_id, req_amount in ingredients.items():
+            amount_to_remove = req_amount
+            for col in range(player_inv.columns):
+                for row in range(player_inv.rows):
+                    if amount_to_remove <= 0:
+                        break
+                    
+                    slot = player_inv.items[col][row]
+                    if slot and slot[0].id == req_id:
+                        if slot[1] >= amount_to_remove:
+                            slot[1] -= amount_to_remove
+                            amount_to_remove = 0
+                            if slot[1] == 0:
+                                player_inv.items[col][row] = None
+                        else:
+                            amount_to_remove -= slot[1]
+                            player_inv.items[col][row] = None
+
+    @staticmethod
+    def add_crafted_item(player_inv: MAIN_player_inventory, result_item, amount: int) -> bool:
+        for col in range(player_inv.columns):
+            for row in range(player_inv.rows):
+                slot = player_inv.items[col][row]
+                if slot and slot[0].id == result_item.id:
+                    slot[1] += amount
+                    return True
+                    
+        for col in range(player_inv.columns):
+            for row in range(player_inv.rows):
+                if player_inv.items[col][row] is None:
+                    import copy
+                    player_inv.items[col][row] = [copy.copy(result_item), amount]
+                    return True
+        return False

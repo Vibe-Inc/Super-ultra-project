@@ -1,7 +1,7 @@
 import math
 import pygame
 import src.config as cfg
-from src.inventory.system import ShopInventory, MAIN_player_inventory, MAIN_player_hotbar
+from src.inventory.system import ShopInventory, MAIN_player_inventory, MAIN_player_hotbar, CraftingGrid
 
 def draw_panel_with_shadow(screen, rect, bg_color, border_color, border_width=2, border_radius=15, shadow_offset=8):
     """
@@ -306,3 +306,45 @@ class InventoryRenderer:
         if surface.get_width() == 0 or surface.get_height() == 0: return surface
         scale = min(target_rect.width / surface.get_width(), target_rect.height / surface.get_height())
         return pygame.transform.smoothscale(surface, (max(1, int(surface.get_width() * scale)), max(1, int(surface.get_height() * scale))))
+    
+    def draw_crafting_system(self, screen, crafting):
+        self.draw_base_inventory(screen, crafting)
+        
+        crafting.book_button.draw(screen)
+        
+        scale = cfg.ui_scale()
+        
+        grid_size = (crafting.slot_size + crafting.border) * 3
+        arrow_center_x = crafting.pos_x + (grid_size // 2)
+        arrow_start_y = crafting.pos_y + grid_size + int(8 * scale)
+        
+        shaft_w = int(12 * scale)
+        shaft_h = int(15 * scale)
+        head_w = int(30 * scale)
+        head_h = int(14 * scale)
+        
+        pygame.draw.polygon(screen, (200, 200, 200), [
+            (arrow_center_x - shaft_w//2, arrow_start_y),                   
+            (arrow_center_x + shaft_w//2, arrow_start_y),                   
+            (arrow_center_x + shaft_w//2, arrow_start_y + shaft_h),         
+            (arrow_center_x + head_w//2, arrow_start_y + shaft_h),          
+            (arrow_center_x, arrow_start_y + shaft_h + head_h),             
+            (arrow_center_x - head_w//2, arrow_start_y + shaft_h),          
+            (arrow_center_x - shaft_w//2, arrow_start_y + shaft_h)          
+        ])
+
+        out_rect = pygame.Rect(crafting.output_pos_x, crafting.output_pos_y, crafting.slot_size, crafting.slot_size)
+        pygame.draw.rect(screen, self.slot_bg_color, out_rect, border_radius=cfg.INV_SLOT_BORDER_RADIUS)
+        pygame.draw.rect(screen, self.slot_inner_shadow, out_rect.inflate(-4, -4), border_radius=cfg.INV_SLOT_INNER_BORDER_RADIUS)
+        pygame.draw.rect(screen, (0, 255, 100) if crafting.output_slot else self.slot_border_color, out_rect, width=2, border_radius=cfg.INV_SLOT_BORDER_RADIUS)
+
+        if crafting.output_slot:
+            item, count = crafting.output_slot
+            padding = cfg.INV_SLOT_PADDING
+            item_size = crafting.slot_size - padding * 2
+            screen.blit(item.resize(item_size), (out_rect.x + padding, out_rect.y + padding))
+            
+            if count > 1:
+                font_obj = cfg.INV_nums_font
+                text_surf = font_obj.render(str(count), True, cfg.INV_ITEM_TEXT_COLOR)
+                screen.blit(text_surf, (out_rect.right - text_surf.get_width() - 4, out_rect.bottom - text_surf.get_height() - 2))

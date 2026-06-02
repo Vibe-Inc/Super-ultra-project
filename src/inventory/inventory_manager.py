@@ -153,8 +153,14 @@ class INVENTORY_manager:
         self.active_split_popup = None
         self.active_inventories = []
         self.player_inventory_opened = False
+
         self.current_shop_inv = None
         self.hotbar = None
+        
+        from src.inventory.system import CraftingGrid
+        self.crafting_system = CraftingGrid(app)
+        
+        self.renderer = InventoryRenderer()
         
         self.renderer = InventoryRenderer()
         
@@ -189,6 +195,9 @@ class INVENTORY_manager:
                 self.renderer.draw_shop(screen, inv)
             elif isinstance(inv, MAIN_player_inventory):
                 self.renderer.draw_player_inventory(screen, inv)
+                self.crafting_system.update_positions(inv.pos_x + 350, inv.pos_y - 120)
+                
+                self.renderer.draw_crafting_system(screen, self.crafting_system)
             elif isinstance(inv, MAIN_player_hotbar):
                 self.renderer.draw_hotbar(screen, inv)
             else:
@@ -235,6 +244,10 @@ class INVENTORY_manager:
         if self.active_split_popup:
             self.active_split_popup.handle_event(event)
             return 
+        
+        if self.player_inventory_opened:
+            self.crafting_system.inventory_interactions(event, self)
+
         if self.hotbar: self.hotbar.handle_hotkeys(event)
         for inv in self.active_inventories: inv.inventory_interactions(event, self)
 
