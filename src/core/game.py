@@ -168,6 +168,10 @@ class Game(State):
             Try to spawn a random enemy somewhere on the current map.
         _debug_spawn_enemy(profile_name):
             Spawn an enemy of a given profile next to the player.
+        _get_drop_chance_for_enemy(enemy):
+            Look up the drop table for a given enemy.
+        _drop_enemy_loot(enemy):
+            Roll and spawn drops for a defeated enemy (no JSON).
         update(dt):
             Per-frame state update (input, AI, physics, time, spawning).
         draw_scene(screen):
@@ -241,6 +245,10 @@ class Game(State):
                     "slow_factor": 0.6,
                 },
                 "contact_damage": False,
+                "drop_chance": [
+                    {"item_id": "small_health_potion", "chance": 0.95},
+                    {"item_id": "large_health_potion", "chance": 1.0},
+                ],
             },
             "venomous": {
                 "visual_style": "venomous",
@@ -260,6 +268,10 @@ class Game(State):
                     "strike_damage_mult": 0.85,
                 },
                 "contact_damage": False,
+                "drop_chance": [
+                    {"item_id": "small_health_potion", "chance": 0.25},
+                    {"item_id": "potion_of_confusion", "chance": 0.20},
+                ],
             },
             "arcanist": {
                 "visual_style": "arcanist",
@@ -283,6 +295,11 @@ class Game(State):
                     "spread_degrees": 5.0,
                 },
                 "contact_damage": False,
+                "drop_chance": [
+                    {"item_id": "small_health_potion", "chance": 0.30},
+                    {"item_id": "large_health_potion", "chance": 0.15},
+                    {"item_id": "potion_of_confusion", "chance": 0.10},
+                ],
             },
             "trickster": {
                 "visual_style": "trickster",
@@ -307,6 +324,10 @@ class Game(State):
                     "damage_mult": 0.7,
                 },
                 "contact_damage": False,
+                "drop_chance": [
+                    {"item_id": "potion_of_confusion", "chance": 0.40},
+                    {"item_id": "small_health_potion", "chance": 0.20},
+                ],
             },
             "bomber": {
                 "visual_style": "bomber",
@@ -337,6 +358,10 @@ class Game(State):
                     "spread_degrees": 12.0,
                 },
                 "contact_damage": False,
+                "drop_chance": [
+                    {"item_id": "large_health_potion", "chance": 0.20},
+                    {"item_id": "small_health_potion", "chance": 0.30},
+                ],
             },
             "stalker": {
                 "sprite_set": "MenHuman1(Recolor)",
@@ -350,6 +375,9 @@ class Game(State):
                     "memory_duration": 3.0,
                     "repath_interval": 0.5,
                 },
+                "drop_chance": [
+                    {"item_id": "small_health_potion", "chance": 0.20},
+                ],
             },
             "skirmisher": {
                 "sprite_set": "WomanHuman1(Recolor)",
@@ -364,6 +392,9 @@ class Game(State):
                     "preferred_max": 170.0,
                     "orbit_radius": 130.0,
                 },
+                "drop_chance": [
+                    {"item_id": "small_health_potion", "chance": 0.25},
+                ],
             },
             "guardian": {
                 "sprite_set": "MenHuman1",
@@ -379,6 +410,10 @@ class Game(State):
                     "leash_slack": 90.0,
                     "patrol_wait": 0.8,
                 },
+                "drop_chance": [
+                    {"item_id": "small_health_potion", "chance": 0.30},
+                    {"item_id": "large_health_potion", "chance": 0.10},
+                ],
             },
         }
         self.enemy_profile_names = list(self.enemy_profiles.keys())
@@ -764,6 +799,81 @@ class Game(State):
         self.enemies.append(new_enemy)
         logger.info(f"[DEBUG] Spawned {profile_name} at ({spawn_x}, {spawn_y})")
 
+    def _get_drop_chance_for_enemy(self, enemy: "Enemy") -> list[dict]:
+        """
+        Look up the drop table for a given enemy based on its AI profile.
+
+        Returns a list of drop entries (``{"item_id": str, "chance": float}``).
+        If the enemy has no profile or no ``drop_chance`` entry configured,
+        returns an empty list (no drops).
+        """
+        if enemy is None:
+            return []
+        profile_name = getattr(enemy, "ai_profile", None)
+        if not profile_name:
+            return []
+        settings = self.enemy_profiles.get(profile_name, {})
+        return settings.get("drop_chance", []) or []
+
+    def _drop_enemy_loot(self, enemy: "Enemy") -> None:
+        """
+        Roll each configured drop for the given enemy and spawn matching
+        ``DroppedItem`` instances near the enemy's death position.
+
+        Drops are configured per-archetype in :pyattr:`enemy_profiles` under
+        the ``drop_chance`` key. Each entry has:
+          - ``item_id`` (str): the item id to look up via ``create_item``.
+          - ``chance``  (float): probability in [0, 1] of the drop firing.
+          - ``amount``  (int, optional): stack size for the drop (defaults to 1).
+
+        Multiple entries can fire independently in a single kill, so a single
+        enemy can drop several different items at once.
+        """
+        from src.entities.dropped_item import DroppedItem
+
+        drop_entries = self._get_drop_chance_for_enemy(enemy)
+        if not drop_entries:
+            return
+
+        # Anchor the drops near the enemy's feet (centered on its hitbox bottom).
+        base_x, base_y = enemy.get_rect().center
+
+        placed = 0
+        for entry in drop_entries:
+            if not isinstance(entry, dict):
+                continue
+            item_id = entry.get("item_id")
+            if not item_id:
+                continue
+            chance = float(entry.get("chance", 0.0))
+            if chance <= 0.0:
+                continue
+            if random.random() > chance:
+                continue
+            amount = int(entry.get("amount", 1))
+            if amount <= 0:
+                amount = 1
+
+            item_obj = create_item(item_id)
+            if item_obj is None:
+                logger.warning(f"Drop skipped: could not create item '{item_id}'")
+                continue
+
+            # Spread drops slightly so multiple items don't fully overlap.
+            spread = 18
+            offset_x = random.randint(-spread, spread)
+            offset_y = random.randint(-spread // 2, spread // 2)
+            drop = DroppedItem(base_x + offset_x, base_y + offset_y, item_obj, amount)
+            self.items.append(drop)
+            placed += 1
+            logger.info(
+                f"Enemy '{getattr(enemy, 'ai_profile', 'unknown')}' dropped "
+                f"{amount}x {item_id} at ({base_x + offset_x}, {base_y + offset_y})"
+            )
+
+        if placed == 0:
+            logger.debug(f"Enemy '{getattr(enemy, 'ai_profile', 'unknown')}' had drop_chance entries but none rolled.")
+
     def update(self, dt):
         switched_map_path = self.map.update(self.character)
 
@@ -897,7 +1007,10 @@ class Game(State):
                 gold_gain = int(random.randint(_base_gold_min, _base_gold_max) * _scale)
                 self.app.money += gold_gain
                 logger.info(f"Gained {gold_gain} gold. Total: {self.app.money}")
-                
+
+                # Spawn loot drops at the enemy's death location (Python-configured, no JSON)
+                self._drop_enemy_loot(enemy)
+
                 self.enemies.remove(enemy)
 
         self.npc.update(self.character.pos)
