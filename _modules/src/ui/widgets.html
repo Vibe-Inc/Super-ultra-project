@@ -189,124 +189,216 @@
 <a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Tooltip">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Tooltip</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Tooltip for displaying contextual information when hovering over UI elements.</span>
+<span class="sd">    Delightful tooltip with rounded corners, soft drop shadow, styled text</span>
+<span class="sd">    hierarchy (gold title · soft-white stats · muted description), a thin</span>
+<span class="sd">    gold accent bar, and a smooth fade-in / slide-up entrance animation.</span>
+
+<span class="sd">    The constructor signature is unchanged so every existing caller keeps working.</span>
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        target_rect (pygame.Rect):</span>
-<span class="sd">            Rectangle area that triggers the tooltip when hovered.</span>
+<span class="sd">            Hover target that triggers the tooltip.</span>
 <span class="sd">        text (str):</span>
-<span class="sd">            Text content displayed in the tooltip. Supports multi-line with &#39;\\n&#39;.</span>
-<span class="sd">        color (tuple[int, int, int]):</span>
-<span class="sd">            Background color of the tooltip box.</span>
-<span class="sd">        border_color (tuple[int, int, int]):</span>
-<span class="sd">            Color of the tooltip border.</span>
-<span class="sd">        font (pygame.font.Font):</span>
-<span class="sd">            Font used to render the tooltip text.</span>
-<span class="sd">        font_color (tuple[int, int, int]):</span>
-<span class="sd">            Color of the tooltip text.</span>
-<span class="sd">        delay (float):</span>
-<span class="sd">            Time in seconds to hover before the tooltip appears.</span>
-<span class="sd">        padding (int):</span>
-<span class="sd">            Padding in pixels around the tooltip text inside the box.</span>
+<span class="sd">            Multi-line content (``&#39;\\n&#39;``-separated).  The first line is treated</span>
+<span class="sd">            as the **title**, the last non-empty line as the **description**, and</span>
+<span class="sd">            everything in between as **stat lines**.</span>
+<span class="sd">        color / border_color / font / font_color / delay / padding:</span>
+<span class="sd">            Kept for API compatibility; the visual palette is defined by the</span>
+<span class="sd">            class-level colour constants below.</span>
 <span class="sd">        hover_start (float | None):</span>
-<span class="sd">            Timestamp when hover started, or None if not hovering.</span>
+<span class="sd">            Timestamp when the cursor entered the target.</span>
 <span class="sd">        active (bool):</span>
 <span class="sd">            Whether the tooltip is currently visible.</span>
 <span class="sd">        rect (pygame.Rect | None):</span>
-<span class="sd">            Rectangle representing the tooltip&#39;s position and size.</span>
-
-<span class="sd">    Methods:</span>
-<span class="sd">        hover_update(mouse_pos):</span>
-<span class="sd">            Update the tooltip&#39;s active state and position based on mouse hover and delay.</span>
-<span class="sd">            Args:</span>
-<span class="sd">                mouse_pos (tuple[int, int]): Mouse position.</span>
-<span class="sd">        draw(surface):</span>
-<span class="sd">            Draw the tooltip box and its text on the given surface if active.</span>
-<span class="sd">            Args:</span>
-<span class="sd">                surface (pygame.Surface): The surface to draw the tooltip on.</span>
-<span class="sd">        draw_multiline_text(surface, x, y):</span>
-<span class="sd">            Render multi-line text centered within the tooltip box.</span>
-<span class="sd">            Args:</span>
-<span class="sd">                surface (pygame.Surface): The surface to draw the text on.</span>
-<span class="sd">                x (int): X-coordinate for text.</span>
-<span class="sd">                y (int): Y-coordinate for text.</span>
-<span class="sd">        update_target(new_rect, new_text):</span>
-<span class="sd">            Update the target rectangle and text for the tooltip.</span>
-<span class="sd">            Args:</span>
-<span class="sd">                new_rect (pygame.Rect): New target rectangle.</span>
-<span class="sd">                new_text (str): New tooltip text.</span>
+<span class="sd">            Bounding rect of the *content* area (excl. shadow padding).</span>
+<span class="sd">        show_time (float | None):</span>
+<span class="sd">            Timestamp when the tooltip became active (for animations).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">target_rect</span>  <span class="p">,</span><span class="n">text</span><span class="p">,</span> <span class="n">color</span> <span class="p">,</span><span class="n">border_color</span><span class="p">,</span> <span class="n">font</span> <span class="p">,</span> <span class="n">font_color</span><span class="p">,</span> <span class="n">delay</span> <span class="p">,</span> <span class="n">padding</span><span class="p">):</span>
+    <span class="c1"># ── Colour palette ──────────────────────────────────────────────</span>
+    <span class="n">BG_COLOR</span>         <span class="o">=</span> <span class="p">(</span><span class="mi">18</span><span class="p">,</span> <span class="mi">22</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">235</span><span class="p">)</span>       <span class="c1"># Deep dark background</span>
+    <span class="n">BORDER_COLOR</span>     <span class="o">=</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">170</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>     <span class="c1"># Warm gold border</span>
+    <span class="n">ACCENT_COLOR</span>     <span class="o">=</span> <span class="p">(</span><span class="mi">230</span><span class="p">,</span> <span class="mi">185</span><span class="p">,</span> <span class="mi">60</span><span class="p">)</span>           <span class="c1"># Gold accent bar / title</span>
+    <span class="n">TITLE_COLOR</span>      <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">215</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>           <span class="c1"># Bright gold title text</span>
+    <span class="n">STAT_COLOR</span>       <span class="o">=</span> <span class="p">(</span><span class="mi">210</span><span class="p">,</span> <span class="mi">218</span><span class="p">,</span> <span class="mi">235</span><span class="p">)</span>          <span class="c1"># Soft blue-white stat text</span>
+    <span class="n">DESC_COLOR</span>       <span class="o">=</span> <span class="p">(</span><span class="mi">140</span><span class="p">,</span> <span class="mi">152</span><span class="p">,</span> <span class="mi">170</span><span class="p">)</span>          <span class="c1"># Muted description text</span>
+    <span class="n">SEPARATOR_COLOR</span>  <span class="o">=</span> <span class="p">(</span><span class="mi">230</span><span class="p">,</span> <span class="mi">185</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">70</span><span class="p">)</span>       <span class="c1"># Subtle gold separator line</span>
+    <span class="n">SHADOW_COLOR</span>     <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>                <span class="c1"># Shadow base colour</span>
+
+    <span class="c1"># ── Layout constants ────────────────────────────────────────────</span>
+    <span class="n">ANIM_DURATION</span>    <span class="o">=</span> <span class="mf">0.15</span>    <span class="c1"># seconds for fade-in</span>
+    <span class="n">SLIDE_OFFSET</span>     <span class="o">=</span> <span class="mi">6</span>       <span class="c1"># pixels to slide up during entrance</span>
+    <span class="n">CORNER_RADIUS</span>    <span class="o">=</span> <span class="mi">10</span>      <span class="c1"># rounded corners</span>
+    <span class="n">BORDER_WIDTH</span>     <span class="o">=</span> <span class="mi">2</span>       <span class="c1"># border thickness</span>
+    <span class="n">ACCENT_HEIGHT</span>    <span class="o">=</span> <span class="mi">3</span>       <span class="c1"># thin gold bar at the top</span>
+    <span class="n">ACCENT_GAP</span>       <span class="o">=</span> <span class="mi">3</span>       <span class="c1"># gap below accent bar</span>
+    <span class="n">SEPARATOR_GAP</span>    <span class="o">=</span> <span class="mi">4</span>       <span class="c1"># gap around the separator line</span>
+    <span class="n">SHADOW_LAYERS</span>    <span class="o">=</span> <span class="mi">5</span>       <span class="c1"># number of layered rects for soft shadow</span>
+    <span class="n">MIN_WIDTH</span>        <span class="o">=</span> <span class="mi">120</span>     <span class="c1"># minimum tooltip width</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_rect</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">border_color</span><span class="p">,</span> <span class="n">font</span><span class="p">,</span>
+                 <span class="n">font_color</span><span class="p">,</span> <span class="n">delay</span><span class="p">,</span> <span class="n">padding</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">target_rect</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span> <span class="o">=</span> <span class="n">target_rect</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">text</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">color</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">color</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">border_color</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">border_color</span>
+        <span class="c1"># Kept for API compatibility; visual palette uses class constants.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">color</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">border_color</span> <span class="o">=</span> <span class="n">border_color</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">Font</span> <span class="o">=</span> <span class="n">font</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">font_color</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">font_color</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">font_color</span> <span class="o">=</span> <span class="n">font_color</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">delay</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">delay</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">padding</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">padding</span>
-    
+
         <span class="bp">self</span><span class="o">.</span><span class="n">hover_start</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">active</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">active</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show_time</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cached_surface</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cache_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pad</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>          <span class="c1"># shadow padding (for blit offset)</span>
 
-<div class="viewcode-block" id="Tooltip.draw_multiline_text">
-<a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Tooltip.draw_multiline_text">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">draw_multiline_text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">surface</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span> 
-        <span class="n">lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ── Internal helpers ────────────────────────────────────────────</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_dimensions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return ``(tooltip_w, tooltip_h, line_height, num_lines)``.&quot;&quot;&quot;</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">num_lines</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
         <span class="n">line_height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
-        <span class="n">box_width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">width</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="n">max_width</span> <span class="o">=</span> <span class="nb">max</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">ln</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">ln</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
-            <span class="n">txt_surface</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">font_color</span><span class="p">)</span>
-            <span class="n">line_width</span> <span class="o">=</span> <span class="n">txt_surface</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>
-            <span class="n">draw_x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="p">(</span><span class="n">box_width</span> <span class="o">-</span> <span class="n">line_width</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">box_width</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">x</span>
-            <span class="n">draw_y</span> <span class="o">=</span> <span class="n">y</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="n">line_height</span> 
-            <span class="n">surface</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">txt_surface</span><span class="p">,</span> <span class="p">(</span><span class="n">draw_x</span><span class="p">,</span> <span class="n">draw_y</span><span class="p">))</span></div>
+        <span class="n">accent_space</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ACCENT_HEIGHT</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">ACCENT_GAP</span>
+        <span class="n">separator_space</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SEPARATOR_GAP</span> <span class="k">if</span> <span class="n">num_lines</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">0</span>
 
+        <span class="n">tooltip_w</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">max_width</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">MIN_WIDTH</span><span class="p">)</span>
+        <span class="n">tooltip_h</span> <span class="o">=</span> <span class="p">(</span><span class="n">line_height</span> <span class="o">*</span> <span class="n">num_lines</span>
+                     <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding</span> <span class="o">*</span> <span class="mi">2</span>
+                     <span class="o">+</span> <span class="n">accent_space</span>
+                     <span class="o">+</span> <span class="n">separator_space</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tooltip_w</span><span class="p">,</span> <span class="n">tooltip_h</span><span class="p">,</span> <span class="n">line_height</span><span class="p">,</span> <span class="n">num_lines</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_surface</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Render the complete tooltip (shadow + chrome + text) onto a</span>
+<span class="sd">        :class:`pygame.Surface` with per-pixel alpha.&quot;&quot;&quot;</span>
+        <span class="n">tooltip_w</span><span class="p">,</span> <span class="n">tooltip_h</span><span class="p">,</span> <span class="n">line_height</span><span class="p">,</span> <span class="n">num_lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_dimensions</span><span class="p">()</span>
+
+        <span class="c1"># Extra canvas room for the shadow</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pad</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SHADOW_LAYERS</span> <span class="o">+</span> <span class="mi">4</span>
+        <span class="n">surf_w</span> <span class="o">=</span> <span class="n">tooltip_w</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pad</span> <span class="o">*</span> <span class="mi">2</span>
+        <span class="n">surf_h</span> <span class="o">=</span> <span class="n">tooltip_h</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pad</span> <span class="o">*</span> <span class="mi">2</span>
+        <span class="n">surface</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">surf_w</span><span class="p">,</span> <span class="n">surf_h</span><span class="p">),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+
+        <span class="c1"># ── Soft drop-shadow (layered rounded rects) ────────────────</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SHADOW_LAYERS</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">alpha</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">45</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">i</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SHADOW_LAYERS</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)))</span>
+            <span class="n">expand</span> <span class="o">=</span> <span class="n">i</span>
+            <span class="n">s_w</span> <span class="o">=</span> <span class="n">tooltip_w</span> <span class="o">+</span> <span class="n">expand</span> <span class="o">*</span> <span class="mi">2</span>
+            <span class="n">s_h</span> <span class="o">=</span> <span class="n">tooltip_h</span> <span class="o">+</span> <span class="n">expand</span> <span class="o">*</span> <span class="mi">2</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">s_w</span><span class="p">,</span> <span class="n">s_h</span><span class="p">),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">CORNER_RADIUS</span> <span class="o">+</span> <span class="n">expand</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">SHADOW_COLOR</span><span class="p">,</span> <span class="n">alpha</span><span class="p">),</span>
+                             <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">s_w</span><span class="p">,</span> <span class="n">s_h</span><span class="p">),</span> <span class="n">border_radius</span><span class="o">=</span><span class="n">r</span><span class="p">)</span>
+            <span class="n">surface</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pad</span> <span class="o">-</span> <span class="n">expand</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pad</span> <span class="o">-</span> <span class="n">expand</span><span class="p">))</span>
+
+        <span class="c1"># ── Background ──────────────────────────────────────────────</span>
+        <span class="n">bg_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pad</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pad</span><span class="p">,</span> <span class="n">tooltip_w</span><span class="p">,</span> <span class="n">tooltip_h</span><span class="p">)</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">BG_COLOR</span><span class="p">,</span> <span class="n">bg_rect</span><span class="p">,</span>
+                         <span class="n">border_radius</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">CORNER_RADIUS</span><span class="p">)</span>
+
+        <span class="c1"># ── Gold accent bar along the top ───────────────────────────</span>
+        <span class="n">bar_w</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">tooltip_w</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">CORNER_RADIUS</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">accent_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pad</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">CORNER_RADIUS</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pad</span><span class="p">,</span>
+            <span class="n">bar_w</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ACCENT_HEIGHT</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ACCENT_COLOR</span><span class="p">,</span> <span class="n">accent_rect</span><span class="p">,</span>
+                         <span class="n">border_radius</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># ── Border ──────────────────────────────────────────────────</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">BORDER_COLOR</span><span class="p">,</span> <span class="n">bg_rect</span><span class="p">,</span>
+                         <span class="n">width</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">BORDER_WIDTH</span><span class="p">,</span>
+                         <span class="n">border_radius</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">CORNER_RADIUS</span><span class="p">)</span>
+
+        <span class="c1"># ── Text rendering with hierarchy ───────────────────────────</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">text_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pad</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding</span>
+        <span class="n">text_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pad</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">ACCENT_HEIGHT</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">ACCENT_GAP</span>
+
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
+            <span class="c1"># Pick colour based on line role</span>
+            <span class="k">if</span> <span class="n">idx</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">clr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TITLE_COLOR</span>          <span class="c1"># title</span>
+            <span class="k">elif</span> <span class="n">idx</span> <span class="o">==</span> <span class="n">num_lines</span> <span class="o">-</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">num_lines</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">clr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">DESC_COLOR</span>           <span class="c1"># description</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">clr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">STAT_COLOR</span>           <span class="c1"># stat line</span>
+
+            <span class="n">txt_surf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">clr</span><span class="p">)</span>
+            <span class="n">surface</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">txt_surf</span><span class="p">,</span> <span class="p">(</span><span class="n">text_x</span><span class="p">,</span> <span class="n">text_y</span><span class="p">))</span>
+            <span class="n">text_y</span> <span class="o">+=</span> <span class="n">line_height</span>
+
+            <span class="c1"># Thin separator right after the title</span>
+            <span class="k">if</span> <span class="n">idx</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">num_lines</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">sep_y</span> <span class="o">=</span> <span class="n">text_y</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span>
+                    <span class="n">surface</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">SEPARATOR_COLOR</span><span class="p">,</span>
+                    <span class="p">(</span><span class="n">text_x</span><span class="p">,</span> <span class="n">sep_y</span><span class="p">,</span> <span class="n">tooltip_w</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                <span class="p">)</span>
+                <span class="n">text_y</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SEPARATOR_GAP</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">surface</span>
+
+    <span class="c1"># ── Public API (unchanged signatures) ───────────────────────────</span>
 
 <div class="viewcode-block" id="Tooltip.hover_update">
 <a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Tooltip.hover_update">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">hover_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mouse_pos</span><span class="p">):</span>
-        <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_rect</span><span class="o">.</span><span class="n">collidepoint</span><span class="p">(</span><span class="n">mouse_pos</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">collidepoint</span><span class="p">(</span><span class="n">mouse_pos</span><span class="p">)):</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="n">is_over_target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_rect</span><span class="o">.</span><span class="n">collidepoint</span><span class="p">(</span><span class="n">mouse_pos</span><span class="p">)</span>
+        <span class="n">is_over_tooltip</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span>
+                           <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">collidepoint</span><span class="p">(</span><span class="n">mouse_pos</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">is_over_target</span> <span class="ow">or</span> <span class="n">is_over_tooltip</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hover_start</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">hover_start</span> <span class="o">=</span> <span class="n">now</span>
-            <span class="n">hovered</span> <span class="o">=</span> <span class="n">now</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">hover_start</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="ow">and</span> <span class="n">hovered</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">delay</span><span class="p">:</span>
-                <span class="n">lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
-                <span class="n">num_lines</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
-                <span class="n">line_height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
-                <span class="n">max_width</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">line</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">)</span> <span class="k">if</span> <span class="n">lines</span> <span class="k">else</span> <span class="mi">0</span>
-                <span class="n">total_height</span> <span class="o">=</span> <span class="n">line_height</span> <span class="o">*</span> <span class="n">num_lines</span>
 
-                <span class="n">mouse_x</span><span class="p">,</span> <span class="n">mouse_y</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mouse</span><span class="o">.</span><span class="n">get_pos</span><span class="p">()</span>
-                <span class="n">tooltip_width</span> <span class="o">=</span> <span class="n">max_width</span>
-                <span class="n">tooltip_height</span> <span class="o">=</span> <span class="n">line_height</span> <span class="o">*</span> <span class="n">num_lines</span>
-                <span class="k">if</span> <span class="n">mouse_x</span> <span class="o">&gt;</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">//</span><span class="mi">2</span> <span class="ow">and</span> <span class="n">mouse_y</span> <span class="o">&gt;</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span> <span class="o">//</span><span class="mi">2</span><span class="p">:</span>
-                    <span class="n">n</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="o">-</span><span class="n">tooltip_width</span> <span class="o">-</span><span class="mi">20</span><span class="p">,</span> <span class="o">-</span><span class="n">tooltip_height</span> <span class="o">-</span><span class="mi">20</span>
-                <span class="k">elif</span> <span class="n">mouse_x</span> <span class="o">&lt;</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">//</span><span class="mi">2</span> <span class="ow">and</span> <span class="n">mouse_y</span> <span class="o">&gt;</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span> <span class="o">//</span><span class="mi">2</span><span class="p">:</span>
-                    <span class="n">n</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span> <span class="o">-</span><span class="n">tooltip_height</span> <span class="o">-</span><span class="mi">20</span>
-                <span class="k">elif</span> <span class="n">mouse_x</span> <span class="o">&gt;</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span> <span class="o">//</span><span class="mi">2</span> <span class="ow">and</span> <span class="n">mouse_y</span> <span class="o">&lt;</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span> <span class="o">//</span><span class="mi">2</span><span class="p">:</span>
-                    <span class="n">n</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="o">-</span><span class="n">tooltip_width</span> <span class="o">-</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span>
-                <span class="k">else</span><span class="p">:</span><span class="n">n</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="ow">and</span> <span class="p">(</span><span class="n">now</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">hover_start</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">delay</span><span class="p">:</span>
+                <span class="n">tooltip_w</span><span class="p">,</span> <span class="n">tooltip_h</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_dimensions</span><span class="p">()</span>
+
+                <span class="n">mouse_x</span><span class="p">,</span> <span class="n">mouse_y</span> <span class="o">=</span> <span class="n">mouse_pos</span>
+                <span class="n">sw</span><span class="p">,</span> <span class="n">sh</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span>
+
+                <span class="k">if</span> <span class="n">mouse_x</span> <span class="o">&gt;</span> <span class="n">sw</span> <span class="o">//</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">mouse_y</span> <span class="o">&gt;</span> <span class="n">sh</span> <span class="o">//</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">n</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="o">-</span><span class="n">tooltip_w</span> <span class="o">-</span> <span class="mi">20</span><span class="p">,</span> <span class="o">-</span><span class="n">tooltip_h</span> <span class="o">-</span> <span class="mi">20</span>
+                <span class="k">elif</span> <span class="n">mouse_x</span> <span class="o">&lt;</span> <span class="n">sw</span> <span class="o">//</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">mouse_y</span> <span class="o">&gt;</span> <span class="n">sh</span> <span class="o">//</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">n</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span> <span class="o">-</span><span class="n">tooltip_h</span> <span class="o">-</span> <span class="mi">20</span>
+                <span class="k">elif</span> <span class="n">mouse_x</span> <span class="o">&gt;</span> <span class="n">sw</span> <span class="o">//</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">mouse_y</span> <span class="o">&lt;</span> <span class="n">sh</span> <span class="o">//</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">n</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="o">-</span><span class="n">tooltip_w</span> <span class="o">-</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">n</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span>
 
                 <span class="bp">self</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span>
-                    <span class="n">mouse_pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">n</span><span class="p">,</span> 
+                    <span class="n">mouse_pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">n</span><span class="p">,</span>
                     <span class="n">mouse_pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">m</span><span class="p">,</span>
-                    <span class="n">max_width</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
-                    <span class="n">total_height</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding</span> <span class="o">*</span> <span class="mi">2</span> 
+                    <span class="n">tooltip_w</span><span class="p">,</span>
+                    <span class="n">tooltip_h</span><span class="p">,</span>
                 <span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="kc">True</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Tooltip shown for target </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_rect</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;name&#39;</span><span class="p">,</span><span class="w"> </span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_rect</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">show_time</span> <span class="o">=</span> <span class="n">now</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_cached_surface</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="s2">&quot;Tooltip shown for target </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_rect</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_rect</span><span class="p">)),</span>
+                <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">hover_start</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="kc">False</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="kc">None</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">show_time</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cached_surface</span> <span class="o">=</span> <span class="kc">None</span></div>
 
-    
+
 <div class="viewcode-block" id="Tooltip.update_target">
 <a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Tooltip.update_target">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">update_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_rect</span><span class="p">,</span> <span class="n">new_text</span><span class="p">):</span>
@@ -315,20 +407,49 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">new_text</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">hover_start</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="kc">False</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="kc">None</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">show_time</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cached_surface</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 <div class="viewcode-block" id="Tooltip.draw">
 <a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Tooltip.draw">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">surface</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="p">:</span>
-            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">color</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="p">)</span>
-            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">border_color</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">draw_multiline_text</span><span class="p">(</span>
-                <span class="n">surface</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">x</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">padding</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">y</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">padding</span>
-            <span class="p">)</span></div>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Build (or re-use) the cached tooltip surface</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_surface</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache_key</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cached_surface</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_surface</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cache_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span>
+
+        <span class="c1"># ── Entrance animation ──────────────────────────────────────</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="mi">255</span>
+        <span class="n">slide_y</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_time</span>
+            <span class="k">if</span> <span class="n">elapsed</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">ANIM_DURATION</span><span class="p">:</span>
+                <span class="n">t</span> <span class="o">=</span> <span class="n">elapsed</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">ANIM_DURATION</span>   <span class="c1"># 0 → 1</span>
+                <span class="c1"># Ease-out cubic for a smooth deceleration</span>
+                <span class="n">t</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">t</span><span class="p">)</span> <span class="o">**</span> <span class="mi">3</span>
+                <span class="n">alpha</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">255</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
+                <span class="n">slide_y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SLIDE_OFFSET</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">t</span><span class="p">))</span>
+
+        <span class="n">blit_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pad</span>
+        <span class="n">blit_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pad</span> <span class="o">+</span> <span class="n">slide_y</span>
+
+        <span class="k">if</span> <span class="n">alpha</span> <span class="o">&lt;</span> <span class="mi">255</span><span class="p">:</span>
+            <span class="n">tmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_surface</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">tmp</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+            <span class="n">surface</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="p">(</span><span class="n">blit_x</span><span class="p">,</span> <span class="n">blit_y</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">surface</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cached_surface</span><span class="p">,</span> <span class="p">(</span><span class="n">blit_x</span><span class="p">,</span> <span class="n">blit_y</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="Tooltip.draw_multiline_text">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Tooltip.draw_multiline_text">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw_multiline_text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">surface</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Legacy helper – text rendering is now handled inside :meth:`draw`.&quot;&quot;&quot;</span></div>
 </div>
 
 

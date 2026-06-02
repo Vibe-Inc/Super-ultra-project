@@ -264,6 +264,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">attack_range</span> <span class="o">=</span> <span class="n">attack_range</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ai_context</span> <span class="o">=</span> <span class="n">AIContext</span><span class="p">(</span><span class="n">dt</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">nav_grid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">obstacles</span><span class="o">=</span><span class="p">[],</span> <span class="n">player</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">effects</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_flash_overlay</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">(</span><span class="n">animation_size</span><span class="p">,</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_flash_overlay</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="mi">255</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_animation_size</span> <span class="o">=</span> <span class="n">animation_size</span>
@@ -286,11 +287,28 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span></div>
 
 
+<div class="viewcode-block" id="Enemy.add_effect">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.enemy.Enemy.add_effect">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_effect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">effect</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">effect</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">effect</span><span class="p">)</span>
+                <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">effect</span><span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="Enemy.update">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.enemy.Enemy.update">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">collision_system</span><span class="p">,</span> <span class="n">obstacles</span><span class="p">,</span> <span class="n">nav_grid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">attack_context</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">active</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hit_flash_timer</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">hit_flash_timer</span> <span class="o">-=</span> <span class="n">dt</span>
+
+        <span class="c1"># Update effects</span>
+        <span class="k">for</span> <span class="n">effect</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="p">[:]:</span>
+            <span class="n">effect</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">effect</span><span class="o">.</span><span class="n">is_finished</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">effect</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">active</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">time_accumulator</span> <span class="o">+=</span> <span class="n">dt</span> <span class="o">*</span> <span class="mf">0.2</span>
@@ -300,20 +318,25 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">animations</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">direction</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">frame_index</span><span class="p">]</span>
             <span class="k">return</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ai_context</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="n">dt</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ai_context</span><span class="o">.</span><span class="n">nav_grid</span> <span class="o">=</span> <span class="n">nav_grid</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ai_context</span><span class="o">.</span><span class="n">obstacles</span> <span class="o">=</span> <span class="n">obstacles</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_ai_context</span><span class="o">.</span><span class="n">player</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_entity</span>
+        <span class="c1"># Skip AI and attacks while frozen (speed_multiplier == 0)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed_multiplier</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ai_context</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="n">dt</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ai_context</span><span class="o">.</span><span class="n">nav_grid</span> <span class="o">=</span> <span class="n">nav_grid</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ai_context</span><span class="o">.</span><span class="n">obstacles</span> <span class="o">=</span> <span class="n">obstacles</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ai_context</span><span class="o">.</span><span class="n">player</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_entity</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">brain</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">brain</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ai_context</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">brain</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">brain</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ai_context</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attack_controller</span> <span class="ow">and</span> <span class="n">attack_context</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">attack_controller</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attack_context</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attack_controller</span> <span class="ow">and</span> <span class="n">attack_context</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">attack_controller</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attack_context</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_speed</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed_multiplier</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_move</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_speed</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed_multiplier</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_move</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">moving</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="n">collision_system</span><span class="o">.</span><span class="n">handle_movement_and_collision</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">obstacles</span><span class="p">)</span>
 
@@ -353,7 +376,7 @@
 
 <div class="viewcode-block" id="Enemy.take_damage">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.enemy.Enemy.take_damage">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">take_damage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">take_damage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">ignore_invulnerability</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="n">prev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hp</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hp</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hp</span> <span class="o">-</span> <span class="n">amount</span><span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Enemy </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;ai_profile&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;unknown&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> took </span><span class="si">{</span><span class="n">amount</span><span class="si">}</span><span class="s2"> damage: </span><span class="si">{</span><span class="n">prev</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">hp</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>

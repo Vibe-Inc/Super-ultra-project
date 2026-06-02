@@ -81,7 +81,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.map.map</span><span class="w"> </span><span class="kn">import</span> <span class="n">LocalMap</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.inventory.system</span><span class="w"> </span><span class="kn">import</span> <span class="n">MAIN_player_inventory</span><span class="p">,</span> <span class="n">MAIN_player_inventory_equipment</span><span class="p">,</span> <span class="n">ShopInventory</span><span class="p">,</span> <span class="n">MAIN_player_hotbar</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.items.items</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_item</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">database.effects</span><span class="w"> </span><span class="kn">import</span> <span class="n">RegenerationEffect</span><span class="p">,</span> <span class="n">PoisonEffect</span><span class="p">,</span> <span class="n">ConfusionEffect</span><span class="p">,</span> <span class="n">DizzinessEffect</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">database.effects</span><span class="w"> </span><span class="kn">import</span> <span class="n">RegenerationEffect</span><span class="p">,</span> <span class="n">PoisonEffect</span><span class="p">,</span> <span class="n">ConfusionEffect</span><span class="p">,</span> <span class="n">DizzinessEffect</span><span class="p">,</span> <span class="n">SlowEffect</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.enemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enemy</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.npc</span><span class="w"> </span><span class="kn">import</span> <span class="n">NPC</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.projectile</span><span class="w"> </span><span class="kn">import</span> <span class="n">Arrow</span>
@@ -285,6 +285,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">projectiles</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">enemy_projectiles</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spirits</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">equipped_weapon</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_dizzy_overlay</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -1121,6 +1122,20 @@
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;update&quot;</span><span class="p">):</span>
                 <span class="n">item</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">obstacles</span><span class="p">)</span>
+        <span class="c1"># Flame Shield: deal damage to nearby enemies</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">flame_shield_active</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_apply_flame_shield_damage</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+
+        <span class="c1"># Ice Armor: slow nearby enemies</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">ice_armor_active</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_apply_ice_armor_slow</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+
+        <span class="c1"># Regeneration passive</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">regeneration</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_apply_regeneration</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+
+        <span class="c1"># Update summoned spirits</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_spirits</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">collision_handler</span><span class="o">.</span><span class="n">check_interactions</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span>
@@ -1140,6 +1155,11 @@
                 <span class="n">_scale</span> <span class="o">=</span> <span class="n">enemy</span><span class="o">.</span><span class="n">max_hp</span> <span class="o">/</span> <span class="mf">100.0</span>
 
                 <span class="n">xp_gain</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">_base_xp_min</span><span class="p">,</span> <span class="n">_base_xp_max</span><span class="p">)</span> <span class="o">*</span> <span class="n">_scale</span><span class="p">)</span>
+                <span class="c1"># Soul Harvest: restore HP and add damage stack</span>
+                <span class="n">character</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span>
+                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">character</span><span class="p">,</span> <span class="s2">&quot;soul_harvest&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+                    <span class="n">character</span><span class="o">.</span><span class="n">hp</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">character</span><span class="o">.</span><span class="n">max_hp</span><span class="p">,</span> <span class="n">character</span><span class="o">.</span><span class="n">hp</span> <span class="o">+</span> <span class="n">character</span><span class="o">.</span><span class="n">soul_harvest_hp_per_kill</span><span class="p">)</span>
+                    <span class="n">character</span><span class="o">.</span><span class="n">soul_harvest_stacks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">character</span><span class="o">.</span><span class="n">soul_harvest_duration</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">gain_xp</span><span class="p">(</span><span class="n">xp_gain</span><span class="p">)</span>
 
                 <span class="n">gold_gain</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">_base_gold_min</span><span class="p">,</span> <span class="n">_base_gold_max</span><span class="p">)</span> <span class="o">*</span> <span class="n">_scale</span><span class="p">)</span>
@@ -1174,8 +1194,75 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">set_gauge</span><span class="p">(</span><span class="s2">&quot;enemies&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">set_gauge</span><span class="p">(</span><span class="s2">&quot;projectiles&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">projectiles</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">set_gauge</span><span class="p">(</span><span class="s2">&quot;enemy_projectiles&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">enemy_projectiles</span><span class="p">))</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">set_gauge</span><span class="p">(</span><span class="s2">&quot;enemy_projectiles&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">enemy_projectiles</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">set_gauge</span><span class="p">(</span><span class="s2">&quot;spirits&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spirits</span><span class="p">))</span></div>
 
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_apply_ice_armor_slow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Slow enemies near the player while Ice Armor is active.&quot;&quot;&quot;</span>
+        <span class="n">center</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">get_center</span><span class="p">()</span>
+        <span class="n">radius</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">ice_armor_slow_radius</span>
+        <span class="n">slow_factor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">ice_armor_slow_factor</span>
+        <span class="n">slow_duration</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="n">radius_sq</span> <span class="o">=</span> <span class="n">radius</span> <span class="o">*</span> <span class="n">radius</span>
+        <span class="k">for</span> <span class="n">enemy</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">enemy</span><span class="o">.</span><span class="n">is_dead</span><span class="p">():</span>
+                <span class="k">continue</span>
+            <span class="n">enemy_rect</span> <span class="o">=</span> <span class="n">enemy</span><span class="o">.</span><span class="n">get_rect</span><span class="p">()</span>
+            <span class="n">enemy_center</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">enemy_rect</span><span class="o">.</span><span class="n">centerx</span><span class="p">,</span> <span class="n">enemy_rect</span><span class="o">.</span><span class="n">centery</span><span class="p">)</span>
+            <span class="n">dist_sq</span> <span class="o">=</span> <span class="p">(</span><span class="n">enemy_center</span> <span class="o">-</span> <span class="n">center</span><span class="p">)</span><span class="o">.</span><span class="n">length_squared</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">dist_sq</span> <span class="o">&lt;=</span> <span class="n">radius_sq</span><span class="p">:</span>
+                <span class="n">enemy</span><span class="o">.</span><span class="n">add_effect</span><span class="p">(</span><span class="n">SlowEffect</span><span class="p">(</span><span class="n">slow_duration</span><span class="p">,</span> <span class="n">slow_factor</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_apply_flame_shield_damage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deal flame shield damage to enemies within the flame shield radius.&quot;&quot;&quot;</span>
+        <span class="n">center</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">get_center</span><span class="p">()</span>
+        <span class="n">radius</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">flame_shield_radius</span>
+        <span class="n">dmg_per_sec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">flame_shield_damage_per_sec</span>
+        <span class="c1"># Apply Pyromancer&#39;s Fury passive buff to flame shield (+25% damage, +15% area)</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">,</span> <span class="s2">&quot;pyromancers_fury&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="n">dmg_per_sec</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pyromancers_fury_damage_mult</span>
+            <span class="n">radius</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pyromancers_fury_area_mult</span>
+        <span class="n">radius_sq</span> <span class="o">=</span> <span class="n">radius</span> <span class="o">*</span> <span class="n">radius</span>
+
+        <span class="c1"># Accumulate fractional damage</span>
+        <span class="n">acc</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">,</span> <span class="s2">&quot;flame_shield_damage_acc&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">acc</span> <span class="o">+=</span> <span class="n">dmg_per_sec</span> <span class="o">*</span> <span class="n">dt</span>
+        <span class="n">damage</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">acc</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">damage</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">flame_shield_damage_acc</span> <span class="o">=</span> <span class="n">acc</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">flame_shield_damage_acc</span> <span class="o">=</span> <span class="n">acc</span> <span class="o">-</span> <span class="n">damage</span>
+
+        <span class="k">for</span> <span class="n">enemy</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">enemy</span><span class="o">.</span><span class="n">is_dead</span><span class="p">():</span>
+                <span class="k">continue</span>
+            <span class="n">enemy_rect</span> <span class="o">=</span> <span class="n">enemy</span><span class="o">.</span><span class="n">get_rect</span><span class="p">()</span>
+            <span class="n">enemy_center</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">enemy_rect</span><span class="o">.</span><span class="n">centerx</span><span class="p">,</span> <span class="n">enemy_rect</span><span class="o">.</span><span class="n">centery</span><span class="p">)</span>
+            <span class="n">dist_sq</span> <span class="o">=</span> <span class="p">(</span><span class="n">enemy_center</span> <span class="o">-</span> <span class="n">center</span><span class="p">)</span><span class="o">.</span><span class="n">length_squared</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">dist_sq</span> <span class="o">&lt;=</span> <span class="n">radius_sq</span><span class="p">:</span>
+                <span class="n">enemy</span><span class="o">.</span><span class="n">take_damage</span><span class="p">(</span><span class="n">damage</span><span class="p">)</span>
+                <span class="c1"># Apply slight knockback pushing enemy away from player</span>
+                <span class="k">if</span> <span class="n">dist_sq</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">push_dir</span> <span class="o">=</span> <span class="p">(</span><span class="n">enemy_center</span> <span class="o">-</span> <span class="n">center</span><span class="p">)</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span>
+                    <span class="n">enemy</span><span class="o">.</span><span class="n">pos</span> <span class="o">+=</span> <span class="n">push_dir</span> <span class="o">*</span> <span class="mi">8</span> <span class="o">*</span> <span class="n">dt</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_apply_regeneration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+        <span class="n">acc</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">,</span> <span class="s2">&quot;regeneration_acc&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">acc</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">regeneration_hp_per_sec</span> <span class="o">*</span> <span class="n">dt</span>
+        <span class="n">heal</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">acc</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">heal</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">old_hp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">hp</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">hp</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">max_hp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">hp</span> <span class="o">+</span> <span class="n">heal</span><span class="p">)</span>
+            <span class="n">acc</span> <span class="o">-=</span> <span class="n">heal</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">hp</span> <span class="o">&gt;</span> <span class="n">old_hp</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Regeneration healed </span><span class="si">{</span><span class="n">heal</span><span class="si">}</span><span class="s2"> HP.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">regeneration_acc</span> <span class="o">=</span> <span class="n">acc</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_update_spirits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">spirit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">spirits</span><span class="p">[:]:</span>
+            <span class="n">spirit</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spirits</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">spirits</span> <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">alive</span><span class="p">]</span>
 
 <div class="viewcode-block" id="Game.draw_scene">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.draw_scene">[docs]</a>
@@ -1213,6 +1300,11 @@
         <span class="c1"># Draw NPCs, player, and dropped items with simple Y-ordering so</span>
         <span class="c1"># they overlap naturally (items at the player&#39;s feet won&#39;t be hidden</span>
         <span class="c1"># behind the player sprite).</span>
+        <span class="k">for</span> <span class="n">spirit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">spirits</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">_is_visible</span><span class="p">(</span><span class="n">spirit</span><span class="p">):</span>
+                <span class="n">spirit</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
+
+        <span class="c1"># Draw NPCs and player with simple Y-ordering so they overlap naturally</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">npc_vis</span> <span class="o">=</span> <span class="n">_is_visible</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>

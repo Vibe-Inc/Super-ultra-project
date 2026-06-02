@@ -1536,11 +1536,14 @@ Supports optional Shop and Play Cards action buttons.</p>
 <dt class="sig sig-object py" id="src.ui.widgets.Tooltip">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.widgets.</span></span><span class="sig-name descname"><span class="pre">Tooltip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_rect</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">border_color</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">font</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">font_color</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">padding</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Tooltip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.widgets.Tooltip" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Tooltip for displaying contextual information when hovering over UI elements.</p>
+<p>Delightful tooltip with rounded corners, soft drop shadow, styled text
+hierarchy (gold title · soft-white stats · muted description), a thin
+gold accent bar, and a smooth fade-in / slide-up entrance animation.</p>
+<p>The constructor signature is unchanged so every existing caller keeps working.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="src.ui.widgets.Tooltip.target_rect">
 <span class="sig-name descname"><span class="pre">target_rect</span></span><a class="headerlink" href="#src.ui.widgets.Tooltip.target_rect" title="Link to this definition"></a></dt>
-<dd><p>Rectangle area that triggers the tooltip when hovered.</p>
+<dd><p>Hover target that triggers the tooltip.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>pygame.Rect</p>
@@ -1551,7 +1554,9 @@ Supports optional Shop and Play Cards action buttons.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="src.ui.widgets.Tooltip.text">
 <span class="sig-name descname"><span class="pre">text</span></span><a class="headerlink" href="#src.ui.widgets.Tooltip.text" title="Link to this definition"></a></dt>
-<dd><p>Text content displayed in the tooltip. Supports multi-line with ‘n’.</p>
+<dd><p>Multi-line content (<code class="docutils literal notranslate"><span class="pre">'\n'</span></code>-separated).  The first line is treated
+as the <strong>title</strong>, the last non-empty line as the <strong>description</strong>, and
+everything in between as <strong>stat lines</strong>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
@@ -1560,75 +1565,16 @@ Supports optional Shop and Play Cards action buttons.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.color">
-<span class="sig-name descname"><span class="pre">color</span></span><a class="headerlink" href="#src.ui.widgets.Tooltip.color" title="Link to this definition"></a></dt>
-<dd><p>Background color of the tooltip box.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple[int, int, int]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.border_color">
-<span class="sig-name descname"><span class="pre">border_color</span></span><a class="headerlink" href="#src.ui.widgets.Tooltip.border_color" title="Link to this definition"></a></dt>
-<dd><p>Color of the tooltip border.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple[int, int, int]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.font">
-<span class="sig-name descname"><span class="pre">font</span></span><a class="headerlink" href="#src.ui.widgets.Tooltip.font" title="Link to this definition"></a></dt>
-<dd><p>Font used to render the tooltip text.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pygame.font.Font</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.font_color">
-<span class="sig-name descname"><span class="pre">font_color</span></span><a class="headerlink" href="#src.ui.widgets.Tooltip.font_color" title="Link to this definition"></a></dt>
-<dd><p>Color of the tooltip text.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple[int, int, int]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.delay">
-<span class="sig-name descname"><span class="pre">delay</span></span><a class="headerlink" href="#src.ui.widgets.Tooltip.delay" title="Link to this definition"></a></dt>
-<dd><p>Time in seconds to hover before the tooltip appears.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.padding">
-<span class="sig-name descname"><span class="pre">padding</span></span><a class="headerlink" href="#src.ui.widgets.Tooltip.padding" title="Link to this definition"></a></dt>
-<dd><p>Padding in pixels around the tooltip text inside the box.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">color</span> <span class="pre">/</span> <span class="pre">border_color</span> <span class="pre">/</span> <span class="pre">font</span> <span class="pre">/</span> <span class="pre">font_color</span> <span class="pre">/</span> <span class="pre">delay</span> <span class="pre">/</span> <span class="pre">padding</span></span></dt>
+<dd><p>Kept for API compatibility; the visual palette is defined by the
+class-level colour constants below.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="src.ui.widgets.Tooltip.hover_start">
 <span class="sig-name descname"><span class="pre">hover_start</span></span><a class="headerlink" href="#src.ui.widgets.Tooltip.hover_start" title="Link to this definition"></a></dt>
-<dd><p>Timestamp when hover started, or None if not hovering.</p>
+<dd><p>Timestamp when the cursor entered the target.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float | None</p>
@@ -1650,7 +1596,7 @@ Supports optional Shop and Play Cards action buttons.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="src.ui.widgets.Tooltip.rect">
 <span class="sig-name descname"><span class="pre">rect</span></span><a class="headerlink" href="#src.ui.widgets.Tooltip.rect" title="Link to this definition"></a></dt>
-<dd><p>Rectangle representing the tooltip’s position and size.</p>
+<dd><p>Bounding rect of the <em>content</em> area (excl. shadow padding).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>pygame.Rect | None</p>
@@ -1658,62 +1604,121 @@ Supports optional Shop and Play Cards action buttons.</p>
 </dl>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.hover_update">
-<span class="sig-name descname"><span class="pre">hover_update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mouse_pos</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Tooltip.hover_update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.widgets.Tooltip.hover_update" title="Link to this definition"></a></dt>
-<dd><p>Update the tooltip’s active state and position based on mouse hover and delay.
-:param mouse_pos: Mouse position.
-:type mouse_pos: tuple[int, int]</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.show_time">
+<span class="sig-name descname"><span class="pre">show_time</span></span><a class="headerlink" href="#src.ui.widgets.Tooltip.show_time" title="Link to this definition"></a></dt>
+<dd><p>Timestamp when the tooltip became active (for animations).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float | None</p>
+</dd>
+</dl>
 </dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.ACCENT_COLOR">
+<span class="sig-name descname"><span class="pre">ACCENT_COLOR</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(230,</span> <span class="pre">185,</span> <span class="pre">60)</span></em><a class="headerlink" href="#src.ui.widgets.Tooltip.ACCENT_COLOR" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.ACCENT_GAP">
+<span class="sig-name descname"><span class="pre">ACCENT_GAP</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#src.ui.widgets.Tooltip.ACCENT_GAP" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.ACCENT_HEIGHT">
+<span class="sig-name descname"><span class="pre">ACCENT_HEIGHT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#src.ui.widgets.Tooltip.ACCENT_HEIGHT" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.ANIM_DURATION">
+<span class="sig-name descname"><span class="pre">ANIM_DURATION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.15</span></em><a class="headerlink" href="#src.ui.widgets.Tooltip.ANIM_DURATION" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.BG_COLOR">
+<span class="sig-name descname"><span class="pre">BG_COLOR</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(18,</span> <span class="pre">22,</span> <span class="pre">32,</span> <span class="pre">235)</span></em><a class="headerlink" href="#src.ui.widgets.Tooltip.BG_COLOR" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.BORDER_COLOR">
+<span class="sig-name descname"><span class="pre">BORDER_COLOR</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(200,</span> <span class="pre">170,</span> <span class="pre">80,</span> <span class="pre">200)</span></em><a class="headerlink" href="#src.ui.widgets.Tooltip.BORDER_COLOR" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.BORDER_WIDTH">
+<span class="sig-name descname"><span class="pre">BORDER_WIDTH</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#src.ui.widgets.Tooltip.BORDER_WIDTH" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.CORNER_RADIUS">
+<span class="sig-name descname"><span class="pre">CORNER_RADIUS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">10</span></em><a class="headerlink" href="#src.ui.widgets.Tooltip.CORNER_RADIUS" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.DESC_COLOR">
+<span class="sig-name descname"><span class="pre">DESC_COLOR</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(140,</span> <span class="pre">152,</span> <span class="pre">170)</span></em><a class="headerlink" href="#src.ui.widgets.Tooltip.DESC_COLOR" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.MIN_WIDTH">
+<span class="sig-name descname"><span class="pre">MIN_WIDTH</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">120</span></em><a class="headerlink" href="#src.ui.widgets.Tooltip.MIN_WIDTH" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.SEPARATOR_COLOR">
+<span class="sig-name descname"><span class="pre">SEPARATOR_COLOR</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(230,</span> <span class="pre">185,</span> <span class="pre">60,</span> <span class="pre">70)</span></em><a class="headerlink" href="#src.ui.widgets.Tooltip.SEPARATOR_COLOR" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.SEPARATOR_GAP">
+<span class="sig-name descname"><span class="pre">SEPARATOR_GAP</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></em><a class="headerlink" href="#src.ui.widgets.Tooltip.SEPARATOR_GAP" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.SHADOW_COLOR">
+<span class="sig-name descname"><span class="pre">SHADOW_COLOR</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(0,</span> <span class="pre">0,</span> <span class="pre">0)</span></em><a class="headerlink" href="#src.ui.widgets.Tooltip.SHADOW_COLOR" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.SHADOW_LAYERS">
+<span class="sig-name descname"><span class="pre">SHADOW_LAYERS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5</span></em><a class="headerlink" href="#src.ui.widgets.Tooltip.SHADOW_LAYERS" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.SLIDE_OFFSET">
+<span class="sig-name descname"><span class="pre">SLIDE_OFFSET</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">6</span></em><a class="headerlink" href="#src.ui.widgets.Tooltip.SLIDE_OFFSET" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.STAT_COLOR">
+<span class="sig-name descname"><span class="pre">STAT_COLOR</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(210,</span> <span class="pre">218,</span> <span class="pre">235)</span></em><a class="headerlink" href="#src.ui.widgets.Tooltip.STAT_COLOR" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.TITLE_COLOR">
+<span class="sig-name descname"><span class="pre">TITLE_COLOR</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(255,</span> <span class="pre">215,</span> <span class="pre">80)</span></em><a class="headerlink" href="#src.ui.widgets.Tooltip.TITLE_COLOR" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.widgets.Tooltip.draw">
 <span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Tooltip.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.widgets.Tooltip.draw" title="Link to this definition"></a></dt>
-<dd><p>Draw the tooltip box and its text on the given surface if active.
-:param surface: The surface to draw the tooltip on.
-:type surface: pygame.Surface</p>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.widgets.Tooltip.draw_multiline_text">
 <span class="sig-name descname"><span class="pre">draw_multiline_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surface</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Tooltip.draw_multiline_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.widgets.Tooltip.draw_multiline_text" title="Link to this definition"></a></dt>
-<dd><p>Render multi-line text centered within the tooltip box.
-:param surface: The surface to draw the text on.
-:type surface: pygame.Surface
-:param x: X-coordinate for text.
-:type x: int
-:param y: Y-coordinate for text.
-:type y: int</p>
+<dd><p>Legacy helper – text rendering is now handled inside <a class="reference internal" href="#src.ui.widgets.Tooltip.draw" title="src.ui.widgets.Tooltip.draw"><code class="xref py py-meth docutils literal notranslate"><span class="pre">draw()</span></code></a>.</p>
 </dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.widgets.Tooltip.hover_update">
+<span class="sig-name descname"><span class="pre">hover_update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mouse_pos</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Tooltip.hover_update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.widgets.Tooltip.hover_update" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ui.widgets.Tooltip.update_target">
 <span class="sig-name descname"><span class="pre">update_target</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_rect</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Tooltip.update_target"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.widgets.Tooltip.update_target" title="Link to this definition"></a></dt>
-<dd><p>Update the target rectangle and text for the tooltip.
-:param new_rect: New target rectangle.
-:type new_rect: pygame.Rect
-:param new_text: New tooltip text.
-:type new_text: str</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id29">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Tooltip.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id29" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id30">
-<span class="sig-name descname"><span class="pre">draw_multiline_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">surface</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Tooltip.draw_multiline_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id30" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id31">
-<span class="sig-name descname"><span class="pre">hover_update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mouse_pos</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Tooltip.hover_update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id31" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id32">
-<span class="sig-name descname"><span class="pre">update_target</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_rect</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/widgets.html#Tooltip.update_target"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id32" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>

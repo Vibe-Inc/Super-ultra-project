@@ -153,9 +153,9 @@
     <span class="c1"># Base sizes (authored for 1920x1080)</span>
     <span class="n">myfont</span> <span class="o">=</span> <span class="n">get_font</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">60</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)))</span>
     <span class="n">button_font</span> <span class="o">=</span> <span class="n">get_font</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">60</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)))</span>
-    <span class="n">inventory_tooltip_font</span> <span class="o">=</span> <span class="n">get_font</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">20</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)))</span>
-    <span class="n">tooltip_font_CREDITS</span> <span class="o">=</span> <span class="n">get_font</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">20</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)))</span>
-    <span class="n">INV_nums_font</span> <span class="o">=</span> <span class="n">get_font</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">15</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)))</span></div>
+    <span class="n">inventory_tooltip_font</span> <span class="o">=</span> <span class="n">get_font</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">22</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)))</span>
+    <span class="n">tooltip_font_CREDITS</span> <span class="o">=</span> <span class="n">get_font</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">22</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)))</span>
+    <span class="n">INV_nums_font</span> <span class="o">=</span> <span class="n">get_font</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">20</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)))</span></div>
 
 
 
@@ -185,16 +185,16 @@
 <span class="n">text_color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 <span class="n">corner_radius</span> <span class="o">=</span> <span class="mi">20</span>
 
-<span class="n">tooltip_padding</span><span class="o">=</span><span class="mi">8</span>
-<span class="n">tooltip_appear</span><span class="o">=</span> <span class="mf">0.7</span>
+<span class="n">tooltip_padding</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">tooltip_appear</span> <span class="o">=</span> <span class="mf">0.5</span>
 
-<span class="n">inventory_tooltip_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">inventory_tooltip_bg</span> <span class="o">=</span> <span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
-<span class="n">inventory_tooltip_border</span> <span class="o">=</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+<span class="n">inventory_tooltip_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">inventory_tooltip_bg</span> <span class="o">=</span> <span class="p">(</span><span class="mi">18</span><span class="p">,</span> <span class="mi">22</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
+<span class="n">inventory_tooltip_border</span> <span class="o">=</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">170</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
 <span class="n">inventory_tooltip_font_color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
 
-<span class="n">tooltip_bg_CREDITS</span> <span class="o">=</span> <span class="p">(</span><span class="mi">156</span><span class="p">,</span> <span class="mi">179</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
-<span class="n">tooltip_border_CREDITS</span> <span class="o">=</span> <span class="p">(</span><span class="mi">54</span><span class="p">,</span> <span class="mi">105</span><span class="p">,</span> <span class="mi">121</span><span class="p">)</span>
+<span class="n">tooltip_bg_CREDITS</span> <span class="o">=</span> <span class="p">(</span><span class="mi">18</span><span class="p">,</span> <span class="mi">22</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
+<span class="n">tooltip_border_CREDITS</span> <span class="o">=</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">170</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
 
 <span class="n">MAIN_INV_columns</span> <span class="o">=</span> <span class="mi">8</span>
 <span class="n">MAIN_INV_rows</span> <span class="o">=</span> <span class="mi">4</span>
