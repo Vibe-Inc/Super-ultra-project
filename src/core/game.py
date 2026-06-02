@@ -16,6 +16,7 @@ from src.entities.npc import NPC
 from src.entities.projectile import Arrow
 from src.ui.hud import HUD
 from src.ui.widgets import Dialog
+from src.ui.debug_menu import SpawnMenu
 from src.core.collision_system import CollisionSystem
 from src.ai.navigation import NavGrid
 from src.entities.monster_visuals import build_monster_animations
@@ -384,6 +385,13 @@ class Game(State):
         # Blackjack game state (None when not playing)
         self.blackjack_game = None
 
+        # Debug menu for spawning mobs
+        self.spawn_menu = SpawnMenu(
+            self.enemy_profile_names,
+            on_spawn=self._debug_spawn_enemy,
+            on_close=lambda: None
+        )
+
     def reinit_ui(self):
         self.hud = HUD(self.character, self.app, self.toggle_player_inventory, self.use_skill_slot, open_shop_callback=self.open_shop)
 
@@ -630,6 +638,15 @@ class Game(State):
                 logger.info(f"Spawned new enemy at ({x}, {y})")
                 break
 
+    def _debug_spawn_enemy(self, profile_name):
+        """Spawn an enemy near the player using the debug menu."""
+        offset_x = 100
+        spawn_x = self.character.pos.x + offset_x
+        spawn_y = self.character.pos.y
+        new_enemy = self._create_enemy(spawn_x, spawn_y, profile=profile_name)
+        self.enemies.append(new_enemy)
+        logger.info(f"[DEBUG] Spawned {profile_name} at ({spawn_x}, {spawn_y})")
+
     def update(self, dt):
         switched_map_path = self.map.update(self.character)
 
@@ -871,12 +888,19 @@ class Game(State):
                 self.blackjack_game.draw(screen)
             except Exception:
                 pass
+        # Draw debug spawn menu
+        self.spawn_menu.draw(screen)
 
     def draw(self, screen):
         self.draw_scene(screen)
         self.draw_ui(screen)
 
     def handle_event(self, event: pygame.event.Event):
+        # Debug menu priority
+        if self.spawn_menu.visible:
+            self.spawn_menu.handle_event(event)
+            return
+
         # If blackjack game is active, route all events to it
         if self.blackjack_game:
             try:
@@ -952,14 +976,6 @@ class Game(State):
                     self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
 
             # Test keys
-            if event.key == pygame.K_F1:
-                self.character.add_effect(RegenerationEffect(5, 5)) # 5 sec, 5 hp/sec
-            if event.key == pygame.K_F2:
-                self.character.add_effect(PoisonEffect(5, 5)) # 5 sec, 5 dmg/sec
-            if event.key == pygame.K_F3:
-                self.character.add_effect(ConfusionEffect(5)) # 5 sec
-            if event.key == pygame.K_F4:
-                self.character.add_effect(DizzinessEffect(5)) # 5 sec
             if event.key == pygame.K_F5:
                 self.character.take_damage(10)
             if event.key == pygame.K_F6:
@@ -967,6 +983,8 @@ class Game(State):
             if event.key == pygame.K_F9:
                 self.character.skill_tree_points += 1
                 logger.info(f"[DEBUG] F9: +1 skill tree point. Total: {self.character.skill_tree_points}")
+            if event.key == pygame.K_F10:
+                self.spawn_menu.toggle()
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
