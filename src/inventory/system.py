@@ -592,15 +592,15 @@ class CraftingLogic:
 
     @staticmethod
     def add_crafted_item(player_inv: MAIN_player_inventory, result_item, amount: int) -> bool:
-        for col in range(player_inv.columns):
-            for row in range(player_inv.rows):
+        for row in range(player_inv.rows):
+            for col in range(player_inv.columns):
                 slot = player_inv.items[col][row]
                 if slot and slot[0].id == result_item.id:
                     slot[1] += amount
                     return True
-                    
-        for col in range(player_inv.columns):
-            for row in range(player_inv.rows):
+
+        for row in range(player_inv.rows):
+            for col in range(player_inv.columns):
                 if player_inv.items[col][row] is None:
                     import copy
                     player_inv.items[col][row] = [copy.copy(result_item), amount]
