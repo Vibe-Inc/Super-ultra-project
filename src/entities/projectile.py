@@ -52,11 +52,13 @@ class Arrow:
         self.traveled = 0.0
         self.color = color
         self.alive = True
+        self.trail = []
+        self.trail_length = 6
 
     def _size(self):
         if abs(self.direction.x) >= abs(self.direction.y):
-            return (18, 6)
-        return (6, 18)
+            return (20, 6)
+        return (6, 20)
 
     def get_rect(self):
         width, height = self._size()
@@ -72,6 +74,10 @@ class Arrow:
         movement = self.direction * self.speed * dt
         self.pos += movement
         self.traveled += abs(self.speed * dt)
+        
+        self.trail.append(pygame.Vector2(self.pos))
+        if len(self.trail) > self.trail_length:
+            self.trail.pop(0)
 
         rect = self.get_rect()
         for wall in obstacles:
@@ -95,17 +101,41 @@ class Arrow:
         if camera_offset is None:
             camera_offset = pygame.Vector2(0, 0)
 
+        # Draw trail
+        for i, pos in enumerate(self.trail):
+            alpha = int(80 * (i / len(self.trail)))
+            radius = int(1 + 2 * (i / len(self.trail)))
+            t_surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+            pygame.draw.circle(t_surf, (180, 150, 100, alpha), (radius, radius), radius)
+            screen.blit(t_surf, (pos.x - radius - camera_offset.x, pos.y - radius - camera_offset.y))
+
+        # Draw shaft
         rect = self.get_rect()
         rect.x -= int(camera_offset.x)
         rect.y -= int(camera_offset.y)
-        pygame.draw.rect(screen, self.color, rect)
+        
+        # Glow
+        glow_surf = pygame.Surface((rect.width + 8, rect.height + 8), pygame.SRCALPHA)
+        pygame.draw.rect(glow_surf, (255, 200, 100, 40), glow_surf.get_rect(), border_radius=4)
+        screen.blit(glow_surf, (rect.x - 4, rect.y - 4))
+        
+        pygame.draw.rect(screen, (180, 130, 80), rect, border_radius=2)
+        pygame.draw.rect(screen, self.color, rect.inflate(-4, -2), border_radius=2)
 
+        # Draw head (triangle)
         if abs(self.direction.x) >= abs(self.direction.y):
-            tip = (rect.left if self.direction.x < 0 else rect.right, rect.centery)
+            if self.direction.x > 0:
+                pts = [(rect.right, rect.centery), (rect.right - 6, rect.top), (rect.right - 6, rect.bottom)]
+            else:
+                pts = [(rect.left, rect.centery), (rect.left + 6, rect.top), (rect.left + 6, rect.bottom)]
         else:
-            tip = (rect.centerx, rect.top if self.direction.y < 0 else rect.bottom)
-
-        pygame.draw.circle(screen, (90, 60, 30), tip, 2)
+            if self.direction.y > 0:
+                pts = [(rect.centerx, rect.bottom), (rect.left, rect.bottom - 6), (rect.right, rect.bottom - 6)]
+            else:
+                pts = [(rect.centerx, rect.top), (rect.left, rect.top + 6), (rect.right, rect.top + 6)]
+        
+        pygame.draw.polygon(screen, (200, 200, 210), pts)
+        pygame.draw.polygon(screen, (100, 100, 110), pts, 1)
 
 
 class ArcaneBolt:
@@ -172,11 +202,14 @@ class ArcaneBolt:
         self.traveled = 0.0
         self.color = color
         self.alive = True
+        self.trail = []
+        self.trail_length = 12
+        self.animation_time = 0.0
 
     def _size(self):
         if abs(self.direction.x) >= abs(self.direction.y):
-            return (14, 8)
-        return (8, 14)
+            return (16, 8)
+        return (8, 16)
 
     def get_rect(self):
         width, height = self._size()
@@ -192,6 +225,11 @@ class ArcaneBolt:
         movement = self.direction * self.speed * dt
         self.pos += movement
         self.traveled += abs(self.speed * dt)
+        self.animation_time += dt
+        
+        self.trail.append(pygame.Vector2(self.pos))
+        if len(self.trail) > self.trail_length:
+            self.trail.pop(0)
 
         rect = self.get_rect()
         for wall in obstacles:
@@ -216,14 +254,30 @@ class ArcaneBolt:
         if camera_offset is None:
             camera_offset = pygame.Vector2(0, 0)
 
+        # Draw trail
+        for i, pos in enumerate(self.trail):
+            alpha = int(150 * (i / len(self.trail)))
+            radius = int(2 + 4 * (i / len(self.trail)))
+            t_surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+            pygame.draw.circle(t_surf, (*self.color, alpha), (radius, radius), radius)
+            screen.blit(t_surf, (pos.x - radius - camera_offset.x, pos.y - radius - camera_offset.y))
+
         rect = self.get_rect()
         rect.x -= int(camera_offset.x)
         rect.y -= int(camera_offset.y)
+        
+        # Outer glow
+        pulse = (math.sin(self.animation_time * 15) + 1.0) * 0.5
+        glow_surf = pygame.Surface((rect.width + 12, rect.height + 12), pygame.SRCALPHA)
+        pygame.draw.ellipse(glow_surf, (*self.color, int(40 + 20 * pulse)), glow_surf.get_rect())
+        screen.blit(glow_surf, (rect.centerx - glow_surf.get_width()//2, rect.centery - glow_surf.get_height()//2))
+        
+        # Main body
         pygame.draw.ellipse(screen, self.color, rect)
-
-        tail_offset = self.direction * -6
-        tail_pos = (int(self.pos.x + tail_offset.x - camera_offset.x), int(self.pos.y + tail_offset.y - camera_offset.y))
-        pygame.draw.circle(screen, (40, 90, 180), tail_pos, 3)
+        
+        # Core
+        core_rect = rect.inflate(-6, -4)
+        pygame.draw.ellipse(screen, (200, 220, 255), core_rect)
 
 
 class Bomb:
@@ -256,7 +310,7 @@ class Bomb:
         color (tuple):
             Render color for the bomb.
         alive (bool):
-            Whether the bomb should continue updating.
+            Whether the projectile should continue updating.
         exploding (bool):
             Whether the bomb is currently in its explosion state.
         explosion_timer (float):
@@ -314,9 +368,10 @@ class Bomb:
         self.exploding = False
         self.explosion_timer = 0.0
         self.damage_applied = False
+        self.animation_time = 0.0
 
     def _size(self):
-        return 12, 12
+        return 14, 14
 
     def get_rect(self):
         width, height = self._size()
@@ -342,6 +397,8 @@ class Bomb:
     def update(self, dt, obstacles, player):
         if not self.alive:
             return
+            
+        self.animation_time += dt
 
         if self.exploding:
             self.explosion_timer += dt
@@ -386,16 +443,40 @@ class Bomb:
             rect = self.get_rect()
             rect.x -= int(camera_offset.x)
             rect.y -= int(camera_offset.y)
+            
+            # Fuse glow
+            pulse = (math.sin(self.animation_time * 20) + 1.0) * 0.5
+            fuse_size = int(4 + 3 * pulse)
+            fuse_surf = pygame.Surface((fuse_size * 2, fuse_size * 2), pygame.SRCALPHA)
+            pygame.draw.circle(fuse_surf, (255, 50, 0, 200), (fuse_size, fuse_size), fuse_size)
+            screen.blit(fuse_surf, (rect.centerx - fuse_size, rect.top - fuse_size - 2))
+            
+            # Bomb body
             pygame.draw.circle(screen, self.color, rect.center, rect.width // 2)
-            pygame.draw.circle(screen, (60, 40, 20), rect.center, 3)
+            # Metal band
+            pygame.draw.rect(screen, (80, 80, 90), rect.inflate(-4, -4), border_radius=4)
+            # Highlight
+            pygame.draw.circle(screen, (255, 255, 255), (rect.centerx - 2, rect.centery - 2), 2)
             return
 
         progress = min(1.0, self.explosion_timer / self.explosion_duration)
         radius = int(self.blast_radius * progress)
         if radius <= 0:
             return
+            
+        # Outer smoke ring
+        smoke_alpha = int(100 * (1 - progress))
+        pygame.draw.circle(screen, (100, 100, 100, smoke_alpha), (int(self.pos.x - camera_offset.x), int(self.pos.y - camera_offset.y)), radius + 10, 5)
+        
+        # Main explosion
         surface = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
-        pygame.draw.circle(surface, (255, 180, 90, 140), (radius, radius), radius)
+        # Outer orange
+        pygame.draw.circle(surface, (255, 150, 50, 150), (radius, radius), radius)
+        # Inner yellow
+        pygame.draw.circle(surface, (255, 220, 100, 200), (radius, radius), max(1, int(radius * 0.6)))
+        # Core white
+        pygame.draw.circle(surface, (255, 255, 240, 220), (radius, radius), max(1, int(radius * 0.2)))
+        
         screen.blit(surface, (self.pos.x - radius - camera_offset.x, self.pos.y - radius - camera_offset.y))
 
 
