@@ -104,30 +104,153 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Main gameplay state for the application.</span>
 
-<span class="sd">    This class manages the core game loop, including the player character, map switching, enemy spawning, HUD, and inventory logic.</span>
+<span class="sd">    Owns the player character, the current map, enemy spawning, the</span>
+<span class="sd">    HUD, the merchant and card-game NPCs, the blackjack minigame, the</span>
+<span class="sd">    debug spawn menu, and the day/night cycle. Drives the per-frame</span>
+<span class="sd">    update + draw pipeline and dispatches pygame events to the right</span>
+<span class="sd">    subsystems (HUD, inventory, combat, dialogs).</span>
 
 <span class="sd">    Attributes:</span>
-<span class="sd">        app (App): Reference to the main application instance.</span>
-<span class="sd">        character (Character): The player character instance.</span>
-<span class="sd">        map (LocalMap): The current game map.</span>
-<span class="sd">        player_inventory_opened (bool): Whether the player&#39;s inventory is open.</span>
-<span class="sd">        MAIN_player_inv: The main player inventory object.</span>
-<span class="sd">        PLAYER_inventory_equipment: The player&#39;s equipment inventory object.</span>
-<span class="sd">        ENEMY_SPAWNS (dict): Mapping of map paths to enemy spawn coordinates.</span>
-<span class="sd">        hud (HUD): The heads-up display for the player.</span>
-<span class="sd">        enemy (Enemy): The main enemy instance for the current map.</span>
+<span class="sd">        app (App):</span>
+<span class="sd">            The main application reference.</span>
+<span class="sd">        character (Character):</span>
+<span class="sd">            The player character instance.</span>
+<span class="sd">        map (LocalMap):</span>
+<span class="sd">            The current game map.</span>
+<span class="sd">        current_map_path (str):</span>
+<span class="sd">            Path of the .tmx map currently loaded.</span>
+<span class="sd">        collision_handler (CollisionSystem):</span>
+<span class="sd">            Helper for movement resolution and interaction checks.</span>
+<span class="sd">        obstacles (list):</span>
+<span class="sd">            Current map&#39;s static collision rectangles.</span>
+<span class="sd">        nav_grid (NavGrid):</span>
+<span class="sd">            Navigation grid for pathfinding around the current map.</span>
+<span class="sd">        MAIN_player_inv (MAIN_player_inventory):</span>
+<span class="sd">            Main grid inventory of the player.</span>
+<span class="sd">        PLAYER_inventory_equipment (MAIN_player_inventory_equipment):</span>
+<span class="sd">            Equipment loadout inventory of the player.</span>
+<span class="sd">        hotbar (MAIN_player_hotbar):</span>
+<span class="sd">            Quick-access hotbar inventory.</span>
+<span class="sd">        player_combat (PlayerCombatController):</span>
+<span class="sd">            Player melee / ranged combat controller.</span>
+<span class="sd">        projectiles (list):</span>
+<span class="sd">            Active player projectiles.</span>
+<span class="sd">        enemy_projectiles (list):</span>
+<span class="sd">            Active enemy projectiles.</span>
+<span class="sd">        equipped_weapon (object):</span>
+<span class="sd">            Currently equipped weapon reference, or None.</span>
+<span class="sd">        enemy_profiles (dict):</span>
+<span class="sd">            Per-archetype enemy stat/AI profile definitions.</span>
+<span class="sd">        enemy_profile_names (list):</span>
+<span class="sd">            Names of all enemy profiles available for spawning.</span>
+<span class="sd">        ENEMY_SPAWNS (dict):</span>
+<span class="sd">            Map-path -&gt; spawn info for default enemies.</span>
+<span class="sd">        NPC_SPAWNS (dict):</span>
+<span class="sd">            Map-path -&gt; (x, y) for the merchant NPC.</span>
+<span class="sd">        CARD_NPC_SPAWNS (dict):</span>
+<span class="sd">            Map-path -&gt; (x, y) for the blackjack NPC.</span>
+<span class="sd">        NO_ENEMY_SPAWN_MAPS (set):</span>
+<span class="sd">            Map paths where enemies are never spawned.</span>
+<span class="sd">        hud (HUD):</span>
+<span class="sd">            Heads-up display for the player.</span>
+<span class="sd">        enemy (Enemy):</span>
+<span class="sd">            The current main enemy instance, if any.</span>
+<span class="sd">        enemies (list):</span>
+<span class="sd">            All currently active enemies.</span>
+<span class="sd">        items (list):</span>
+<span class="sd">            All currently active dropped items.</span>
+<span class="sd">        enemy_spawn_timer (float):</span>
+<span class="sd">            Seconds elapsed since the last periodic spawn check.</span>
+<span class="sd">        enemy_spawn_interval (float):</span>
+<span class="sd">            Seconds between periodic enemy spawn attempts.</span>
+<span class="sd">        npc (NPC):</span>
+<span class="sd">            Merchant NPC instance for the current map.</span>
+<span class="sd">        card_npc (NPC):</span>
+<span class="sd">            Card-game NPC instance for the current map.</span>
+<span class="sd">        card_npc_first_dialog (list):</span>
+<span class="sd">            First-time dialog lines for the card NPC.</span>
+<span class="sd">        card_npc_repeat_dialog (list):</span>
+<span class="sd">            Repeat dialog lines for the card NPC.</span>
+<span class="sd">        card_npc_post_game_dialog (list):</span>
+<span class="sd">            Dialog lines shown after a blackjack round.</span>
+<span class="sd">        shop_inv (ShopInventory):</span>
+<span class="sd">            Merchant shop inventory used by the NPC.</span>
+<span class="sd">        blackjack_game (BlackjackGame):</span>
+<span class="sd">            Active blackjack instance, or None.</span>
+<span class="sd">        spawn_menu (SpawnMenu):</span>
+<span class="sd">            Debug menu for spawning enemies on demand.</span>
+<span class="sd">        game_time_seconds (float):</span>
+<span class="sd">            In-game time in seconds since midnight.</span>
+<span class="sd">        GAME_DAY_SECONDS (int):</span>
+<span class="sd">            Number of in-game seconds in a full day.</span>
+<span class="sd">        DAY_CYCLE_REAL_SECONDS (int):</span>
+<span class="sd">            Number of real-world seconds for a full 24h in-game cycle.</span>
+<span class="sd">        GAME_SECONDS_PER_REAL_SECOND (float):</span>
+<span class="sd">            Conversion factor from real seconds to in-game seconds.</span>
+<span class="sd">        DAY_START (int):</span>
+<span class="sd">            In-game second at which day begins.</span>
+<span class="sd">        DUSK_START (int):</span>
+<span class="sd">            In-game second at which dusk begins.</span>
+<span class="sd">        NIGHT_START (int):</span>
+<span class="sd">            In-game second at which night begins.</span>
+<span class="sd">        DAWN_START (int):</span>
+<span class="sd">            In-game second at which dawn begins.</span>
+<span class="sd">        NIGHT_BRIGHTNESS (float):</span>
+<span class="sd">            Environment brightness multiplier at night.</span>
+<span class="sd">        player_inventory_opened (bool):</span>
+<span class="sd">            Whether the player inventory screen is currently shown.</span>
+<span class="sd">        _dizzy_overlay (pygame.Surface):</span>
+<span class="sd">            Cached white overlay surface used for the dizzy effect.</span>
 
 <span class="sd">    Methods:</span>
 <span class="sd">        __init__(app):</span>
-<span class="sd">            Initialize the game state, character, map, HUD, and enemy.</span>
+<span class="sd">            Build the game state: character, map, HUD, NPCs, blackjack.</span>
 <span class="sd">        reinit_ui():</span>
-<span class="sd">            Recreate the HUD (e.g., after language change).</span>
+<span class="sd">            Recreate UI elements that depend on language/scale (HUD).</span>
 <span class="sd">        toggle_player_inventory():</span>
-<span class="sd">            Toggle the player&#39;s inventory open/closed.</span>
+<span class="sd">            Open or close the player&#39;s main inventory.</span>
+<span class="sd">        open_shop():</span>
+<span class="sd">            Toggle the merchant&#39;s trading interface.</span>
+<span class="sd">        open_blackjack():</span>
+<span class="sd">            Launch the blackjack minigame overlay.</span>
+<span class="sd">        _get_card_npc_dialog():</span>
+<span class="sd">            Pick the right card-NPC dialog lines for the current state.</span>
+<span class="sd">        use_skill_slot(slot_index):</span>
+<span class="sd">            Activate the skill currently bound to the given hotbar slot.</span>
+<span class="sd">        _update_projectiles(dt):</span>
+<span class="sd">            Step all player projectiles and prune dead ones.</span>
+<span class="sd">        _update_enemy_projectiles(dt):</span>
+<span class="sd">            Step all enemy projectiles and prune dead ones.</span>
+<span class="sd">        _rebuild_nav_grid():</span>
+<span class="sd">            Rebuild the navigation grid for the current map.</span>
+<span class="sd">        _format_game_time():</span>
+<span class="sd">            Format the current in-game time as an HH:MM string.</span>
+<span class="sd">        is_daytime():</span>
+<span class="sd">            Return True if the in-game clock is currently daytime.</span>
+<span class="sd">        _update_game_time(dt):</span>
+<span class="sd">            Advance the in-game clock and update day/night brightness.</span>
+<span class="sd">        _get_spawn_info(map_path):</span>
+<span class="sd">            Resolve the default enemy spawn info for a given map path.</span>
+<span class="sd">        _get_camera_offset():</span>
+<span class="sd">            Compute the camera offset (in world space) for this frame.</span>
+<span class="sd">        _make_patrol_points(center, radius):</span>
+<span class="sd">            Build a square patrol loop around a center point.</span>
+<span class="sd">        _create_enemy(x, y, profile=None):</span>
+<span class="sd">            Construct an Enemy with a chosen profile at a given position.</span>
+<span class="sd">        spawn_random_enemy():</span>
+<span class="sd">            Try to spawn a random enemy somewhere on the current map.</span>
+<span class="sd">        _debug_spawn_enemy(profile_name):</span>
+<span class="sd">            Spawn an enemy of a given profile next to the player.</span>
+<span class="sd">        update(dt):</span>
+<span class="sd">            Per-frame state update (input, AI, physics, time, spawning).</span>
+<span class="sd">        draw_scene(screen):</span>
+<span class="sd">            Update + draw the world scene (map, entities, overlays).</span>
+<span class="sd">        draw_ui(screen):</span>
+<span class="sd">            Draw HUD, inventory, dialogs, blackjack, and debug menu.</span>
 <span class="sd">        draw(screen):</span>
-<span class="sd">            Draw the game map, character, enemy, HUD, and inventory if open.</span>
+<span class="sd">            Draw the scene followed by the UI on top of it.</span>
 <span class="sd">        handle_event(event):</span>
-<span class="sd">            Handle Pygame events for HUD, inventory, and pause state.</span>
+<span class="sd">            Dispatch a pygame event to the right subsystem.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="Game.__init__">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.__init__">[docs]</a>
@@ -502,15 +625,12 @@
 <div class="viewcode-block" id="Game.open_blackjack">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.open_blackjack">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">open_blackjack</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Launch the blackjack minigame overlay.&quot;&quot;&quot;</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">on_close</span><span class="p">(</span><span class="n">outcome</span><span class="p">,</span> <span class="n">net_change</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">blackjack_game</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="c1"># Apply money change from blackjack</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span> <span class="o">+=</span> <span class="n">net_change</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Blackjack closed: outcome=</span><span class="si">{</span><span class="n">outcome</span><span class="si">}</span><span class="s2">, net_change=</span><span class="si">{</span><span class="n">net_change</span><span class="si">}</span><span class="s2">, money now=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="c1"># Build post-game dialog mentioning the result</span>
             <span class="k">if</span> <span class="n">net_change</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">post_lines</span> <span class="o">=</span> <span class="p">[</span>
                     <span class="s2">&quot;Thanks for playing! That was a fine round.&quot;</span><span class="p">,</span>
@@ -533,16 +653,17 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">blackjack_game</span> <span class="o">=</span> <span class="n">BlackjackGame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="n">on_close</span><span class="o">=</span><span class="n">on_close</span><span class="p">,</span> <span class="n">player_money</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="Game._get_card_npc_dialog">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game._get_card_npc_dialog">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_card_npc_dialog</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the appropriate dialog lines for the card NPC.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">was_talked</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_npc_first_dialog</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_npc_repeat_dialog</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_npc_repeat_dialog</span></div>
+
 
 <div class="viewcode-block" id="Game.use_skill_slot">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.use_skill_slot">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">use_skill_slot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot_index</span><span class="p">):</span>
-        <span class="c1"># Calculate aim direction from player to cursor (in world coordinates)</span>
         <span class="n">mouse_screen_pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mouse</span><span class="o">.</span><span class="n">get_pos</span><span class="p">()</span>
         <span class="n">camera_offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_camera_offset</span><span class="p">()</span>
         <span class="n">mouse_world_pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">mouse_screen_pos</span><span class="p">)</span> <span class="o">+</span> <span class="n">camera_offset</span>
@@ -554,6 +675,8 @@
 
 
 
+<div class="viewcode-block" id="Game._update_projectiles">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game._update_projectiles">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_update_projectiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">projectiles</span><span class="p">:</span>
             <span class="k">return</span>
@@ -561,8 +684,11 @@
         <span class="k">for</span> <span class="n">projectile</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">projectiles</span><span class="p">:</span>
             <span class="n">projectile</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">obstacles</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">projectiles</span> <span class="o">=</span> <span class="p">[</span><span class="n">projectile</span> <span class="k">for</span> <span class="n">projectile</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">projectiles</span> <span class="k">if</span> <span class="n">projectile</span><span class="o">.</span><span class="n">alive</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">projectiles</span> <span class="o">=</span> <span class="p">[</span><span class="n">projectile</span> <span class="k">for</span> <span class="n">projectile</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">projectiles</span> <span class="k">if</span> <span class="n">projectile</span><span class="o">.</span><span class="n">alive</span><span class="p">]</span></div>
 
+
+<div class="viewcode-block" id="Game._update_enemy_projectiles">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game._update_enemy_projectiles">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_update_enemy_projectiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemy_projectiles</span><span class="p">:</span>
             <span class="k">return</span>
@@ -570,19 +696,26 @@
         <span class="k">for</span> <span class="n">projectile</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemy_projectiles</span><span class="p">:</span>
             <span class="n">projectile</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">obstacles</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">enemy_projectiles</span> <span class="o">=</span> <span class="p">[</span><span class="n">projectile</span> <span class="k">for</span> <span class="n">projectile</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemy_projectiles</span> <span class="k">if</span> <span class="n">projectile</span><span class="o">.</span><span class="n">alive</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enemy_projectiles</span> <span class="o">=</span> <span class="p">[</span><span class="n">projectile</span> <span class="k">for</span> <span class="n">projectile</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemy_projectiles</span> <span class="k">if</span> <span class="n">projectile</span><span class="o">.</span><span class="n">alive</span><span class="p">]</span></div>
 
+
+<div class="viewcode-block" id="Game._rebuild_nav_grid">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game._rebuild_nav_grid">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_rebuild_nav_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">tmx_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">get_tmx_data</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">tmx_data</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">nav_grid</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">return</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">nav_grid</span> <span class="o">=</span> <span class="n">NavGrid</span><span class="o">.</span><span class="n">from_tmx</span><span class="p">(</span><span class="n">tmx_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">obstacles</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nav_grid</span> <span class="o">=</span> <span class="n">NavGrid</span><span class="o">.</span><span class="n">from_tmx</span><span class="p">(</span><span class="n">tmx_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">obstacles</span><span class="p">)</span></div>
 
+
+<div class="viewcode-block" id="Game._format_game_time">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game._format_game_time">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_format_game_time</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">hours</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">game_time_seconds</span> <span class="o">//</span> <span class="mi">3600</span><span class="p">)</span> <span class="o">%</span> <span class="mi">24</span>
         <span class="n">minutes</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">game_time_seconds</span> <span class="o">%</span> <span class="mi">3600</span><span class="p">)</span> <span class="o">//</span> <span class="mi">60</span><span class="p">)</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">hours</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">minutes</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">hours</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">minutes</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
 
 <div class="viewcode-block" id="Game.is_daytime">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.is_daytime">[docs]</a>
@@ -590,6 +723,8 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">DAY_START</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_time_seconds</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">NIGHT_START</span></div>
 
 
+<div class="viewcode-block" id="Game._update_game_time">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game._update_game_time">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_update_game_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">game_time_seconds</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">game_time_seconds</span> <span class="o">+</span> <span class="n">dt</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">GAME_SECONDS_PER_REAL_SECOND</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">GAME_DAY_SECONDS</span>
 
@@ -604,16 +739,22 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">cfg</span><span class="o">.</span><span class="n">ENVIRONMENT_BRIGHTNESS</span> <span class="o">=</span> <span class="mf">1.0</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">set_gauge</span><span class="p">(</span><span class="s2">&quot;game_time&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_format_game_time</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">set_gauge</span><span class="p">(</span><span class="s2">&quot;game_time&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_format_game_time</span><span class="p">())</span></div>
 
+
+<div class="viewcode-block" id="Game._get_spawn_info">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game._get_spawn_info">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_spawn_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">spawn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ENEMY_SPAWNS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">map_path</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">spawn</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">spawn</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">spawn</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="n">spawn</span><span class="p">,</span> <span class="s2">&quot;profile&quot;</span><span class="p">:</span> <span class="s2">&quot;stalker&quot;</span><span class="p">}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="n">spawn</span><span class="p">,</span> <span class="s2">&quot;profile&quot;</span><span class="p">:</span> <span class="s2">&quot;stalker&quot;</span><span class="p">}</span></div>
 
+
+<div class="viewcode-block" id="Game._get_camera_offset">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game._get_camera_offset">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_camera_offset</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">:</span>
         <span class="n">viewport_width</span><span class="p">,</span> <span class="n">viewport_height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">screen</span><span class="o">.</span><span class="n">get_size</span><span class="p">()</span>
 
@@ -642,16 +783,22 @@
             <span class="c1"># center map vertically</span>
             <span class="n">camera_y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">map_height</span> <span class="o">-</span> <span class="n">viewport_height</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">camera_x</span><span class="p">,</span> <span class="n">camera_y</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">camera_x</span><span class="p">,</span> <span class="n">camera_y</span><span class="p">)</span></div>
 
+
+<div class="viewcode-block" id="Game._make_patrol_points">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game._make_patrol_points">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_make_patrol_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">center</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">,</span> <span class="n">radius</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]:</span>
         <span class="k">return</span> <span class="p">[</span>
             <span class="p">(</span><span class="n">center</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">radius</span><span class="p">,</span> <span class="n">center</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">radius</span><span class="p">),</span>
             <span class="p">(</span><span class="n">center</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">radius</span><span class="p">,</span> <span class="n">center</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">radius</span><span class="p">),</span>
             <span class="p">(</span><span class="n">center</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">radius</span><span class="p">,</span> <span class="n">center</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">radius</span><span class="p">),</span>
             <span class="p">(</span><span class="n">center</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">radius</span><span class="p">,</span> <span class="n">center</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">radius</span><span class="p">),</span>
-        <span class="p">]</span>
+        <span class="p">]</span></div>
 
+
+<div class="viewcode-block" id="Game._create_enemy">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game._create_enemy">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_create_enemy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">profile</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Enemy</span><span class="p">:</span>
         <span class="n">profile_name</span> <span class="o">=</span> <span class="n">profile</span> <span class="ow">or</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">enemy_profile_names</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">profile_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemy_profiles</span><span class="p">:</span>
@@ -693,7 +840,8 @@
             <span class="n">contact_damage</span><span class="o">=</span><span class="n">contact_damage</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">enemy</span><span class="o">.</span><span class="n">target_entity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span>
-        <span class="k">return</span> <span class="n">enemy</span>
+        <span class="k">return</span> <span class="n">enemy</span></div>
+
 
 <div class="viewcode-block" id="Game.spawn_random_enemy">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.spawn_random_enemy">[docs]</a>
@@ -735,14 +883,16 @@
                 <span class="k">break</span></div>
 
 
+<div class="viewcode-block" id="Game._debug_spawn_enemy">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game._debug_spawn_enemy">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_debug_spawn_enemy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">profile_name</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Spawn an enemy near the player using the debug menu.&quot;&quot;&quot;</span>
         <span class="n">offset_x</span> <span class="o">=</span> <span class="mi">100</span>
         <span class="n">spawn_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">offset_x</span>
         <span class="n">spawn_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span>
         <span class="n">new_enemy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_enemy</span><span class="p">(</span><span class="n">spawn_x</span><span class="p">,</span> <span class="n">spawn_y</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="n">profile_name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_enemy</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[DEBUG] Spawned </span><span class="si">{</span><span class="n">profile_name</span><span class="si">}</span><span class="s2"> at (</span><span class="si">{</span><span class="n">spawn_x</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">spawn_y</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[DEBUG] Spawned </span><span class="si">{</span><span class="n">profile_name</span><span class="si">}</span><span class="s2"> at (</span><span class="si">{</span><span class="n">spawn_x</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">spawn_y</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="Game.update">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.update">[docs]</a>
@@ -852,6 +1002,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_projectiles</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_enemy_projectiles</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
 
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;update&quot;</span><span class="p">):</span>
+                <span class="n">item</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">obstacles</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">collision_handler</span><span class="o">.</span><span class="n">check_interactions</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span>
         <span class="p">)</span>
@@ -937,7 +1091,9 @@
             <span class="k">if</span> <span class="n">_is_visible</span><span class="p">(</span><span class="n">projectile</span><span class="p">):</span>
                 <span class="n">projectile</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
 
-        <span class="c1"># Draw NPCs and player with simple Y-ordering so they overlap naturally</span>
+        <span class="c1"># Draw NPCs, player, and dropped items with simple Y-ordering so</span>
+        <span class="c1"># they overlap naturally (items at the player&#39;s feet won&#39;t be hidden</span>
+        <span class="c1"># behind the player sprite).</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">npc_vis</span> <span class="o">=</span> <span class="n">_is_visible</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -947,24 +1103,33 @@
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="n">card_npc_vis</span> <span class="o">=</span> <span class="kc">False</span>
 
-        <span class="c1"># Collect all visible entities with their y-position for sorting</span>
+        <span class="c1"># Collect all visible entities with their y-position for sorting.</span>
         <span class="n">draw_entities</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="n">npc_vis</span><span class="p">:</span>
             <span class="n">draw_entities</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="s1">&#39;npc&#39;</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">card_npc_vis</span><span class="p">:</span>
             <span class="n">draw_entities</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="s1">&#39;card_npc&#39;</span><span class="p">))</span>
         <span class="n">draw_entities</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="s1">&#39;player&#39;</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">_is_visible</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+                    <span class="n">draw_entities</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">item</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="s1">&#39;item&#39;</span><span class="p">,</span> <span class="n">item</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">continue</span>
 
         <span class="c1"># Sort by y-position (lower y drawn first = further back)</span>
         <span class="n">draw_entities</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">e</span><span class="p">:</span> <span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 
-        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">draw_entities</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">draw_entities</span><span class="p">:</span>
+            <span class="n">kind</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;npc&#39;</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;card_npc&#39;</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;player&#39;</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;item&#39;</span><span class="p">:</span>
+                <span class="n">entry</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">draw_fringe_overlay</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">)</span>
 
@@ -1044,8 +1209,26 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;pause&quot;</span><span class="p">)</span>
                 
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_q</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="p">,</span> <span class="s1">&#39;hotbar&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">hotbar</span><span class="o">.</span><span class="n">use_active_slot</span><span class="p">()</span>
+                <span class="c1"># Q-drop priority (no longer drops a held/dragged item):</span>
+                <span class="c1"># 1. If the mouse is hovering over an inventory or hotbar slot</span>
+                <span class="c1">#    that contains an item, drop that item.</span>
+                <span class="c1"># 2. Otherwise, if the hotbar&#39;s active slot contains an item,</span>
+                <span class="c1">#    drop that item.</span>
+                <span class="c1"># 3. Otherwise, fall back to the hotbar&#39;s active-slot use</span>
+                <span class="c1">#    behavior (the historical Q action).</span>
+                <span class="n">inv_manager</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span>
+                <span class="n">dropped</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="k">if</span> <span class="n">inv_manager</span><span class="p">:</span>
+                    <span class="n">hovered</span> <span class="o">=</span> <span class="n">inv_manager</span><span class="o">.</span><span class="n">take_item_from_under_mouse</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">hovered</span><span class="p">:</span>
+                        <span class="n">dropped</span> <span class="o">=</span> <span class="n">inv_manager</span><span class="o">.</span><span class="n">drop_item_data</span><span class="p">(</span><span class="n">hovered</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">dropped</span><span class="p">:</span>
+                        <span class="n">hotbar_item</span> <span class="o">=</span> <span class="n">inv_manager</span><span class="o">.</span><span class="n">take_active_hotbar_item</span><span class="p">()</span>
+                        <span class="k">if</span> <span class="n">hotbar_item</span><span class="p">:</span>
+                            <span class="n">dropped</span> <span class="o">=</span> <span class="n">inv_manager</span><span class="o">.</span><span class="n">drop_item_data</span><span class="p">(</span><span class="n">hotbar_item</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">dropped</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">inv_manager</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">inv_manager</span><span class="p">,</span> <span class="s1">&#39;hotbar&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                        <span class="n">inv_manager</span><span class="o">.</span><span class="n">hotbar</span><span class="o">.</span><span class="n">use_active_slot</span><span class="p">()</span>
 
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_1</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">use_skill_slot</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
