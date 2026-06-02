@@ -1817,3 +1817,102 @@ class DarkPact:
             flash_surf = pygame.Surface((flash_r * 2, flash_r * 2), pygame.SRCALPHA)
             pygame.draw.circle(flash_surf, (200, 140, 255, flash_alpha), (flash_r, flash_r), flash_r)
             screen.blit(flash_surf, (cx - flash_r, cy - flash_r))
+
+
+class Afterimage:
+    """
+    Short-lived afterimage left by Void Walker dodge.
+    Deals 18 damage once in a small area at the player's previous position.
+    """
+    def __init__(self, pos, damage=18, radius=70.0, duration=0.7):
+        import random
+        self.pos = pygame.Vector2(pos)
+        self.damage = damage
+        self.radius = radius
+        self.alive = True
+        self.life = 0.0
+        self.max_life = duration
+        self.damage_applied = False
+        self.angle = random.uniform(0, math.pi * 2)
+        self.rot_speed = random.uniform(-1.0, 1.0)
+
+    def get_rect(self):
+        size = int(self.radius * 3)
+        rect = pygame.Rect(0, 0, size, size)
+        rect.center = (int(self.pos.x), int(self.pos.y))
+        return rect
+
+    def update(self, dt, obstacles, enemies):
+        if not self.alive:
+            return
+        self.life += dt
+        self.angle += self.rot_speed * dt
+        if not self.damage_applied and self.life >= 0.05:
+            for enemy in enemies:
+                if enemy.is_dead():
+                    continue
+                enemy_rect = enemy.get_rect()
+                enemy_center = pygame.Vector2(enemy_rect.centerx, enemy_rect.centery)
+                if (enemy_center - self.pos).length_squared() <= self.radius * self.radius:
+                    enemy.take_damage(self.damage)
+            self.damage_applied = True
+        if self.life >= self.max_life:
+            self.alive = False
+
+    def draw(self, screen, camera_offset=None):
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+        cx = int(self.pos.x - camera_offset.x)
+        cy = int(self.pos.y - camera_offset.y)
+        progress = self.life / self.max_life if self.max_life > 0 else 0
+        alpha = int(200 * (1 - progress))
+
+        # ── Player silhouette (humanoid shape) ──
+        if alpha > 10:
+            sil_surf = pygame.Surface((80, 100), pygame.SRCALPHA)
+            # Head
+            pygame.draw.ellipse(sil_surf, (120, 200, 120, alpha), (22, 5, 36, 36))
+            # Body
+            pygame.draw.ellipse(sil_surf, (100, 180, 100, alpha), (15, 38, 50, 55))
+            # Arms
+            pygame.draw.ellipse(sil_surf, (100, 180, 100, alpha // 2), (2, 40, 18, 40))
+            pygame.draw.ellipse(sil_surf, (100, 180, 100, alpha // 2), (60, 40, 18, 40))
+            # Legs
+            pygame.draw.ellipse(sil_surf, (100, 180, 100, alpha // 2), (18, 85, 20, 30))
+            pygame.draw.ellipse(sil_surf, (100, 180, 100, alpha // 2), (42, 85, 20, 30))
+            screen.blit(sil_surf, (cx - 40, cy - 50))
+
+        # ── Expanding ghostly ring ──
+        ring_radius = int(self.radius * (0.5 + 1.0 * progress))
+        ring_alpha = int(alpha * 0.6)
+        if ring_alpha > 5:
+            pygame.draw.circle(screen, (140, 220, 140, ring_alpha), (cx, cy), ring_radius, 3)
+
+        # ── Inner glow ──
+        glow_radius = max(1, int(self.radius * 0.5 * (1 - progress)))
+        glow_alpha = int(alpha * 0.3)
+        glow_surf = pygame.Surface((glow_radius * 2, glow_radius * 2), pygame.SRCALPHA)
+        pygame.draw.circle(glow_surf, (160, 240, 160, glow_alpha), (glow_radius, glow_radius), glow_radius)
+        screen.blit(glow_surf, (cx - glow_radius, cy - glow_radius))
+
+        # ── Rotating nature sigil ──
+        if alpha > 30:
+            sigil_points = 6
+            sigil_r = int(self.radius * 0.35)
+            for i in range(sigil_points):
+                a = self.angle + i * (math.pi * 2 / sigil_points)
+                sx = cx + math.cos(a) * sigil_r
+                sy = cy + math.sin(a) * sigil_r
+                pygame.draw.circle(screen, (100, 220, 100, alpha), (int(sx), int(sy)), 4)
+
+        # ── Sparkles ──
+        import random
+        for _ in range(int(8 * (1 - progress))):
+            sp_angle = random.uniform(0, math.pi * 2)
+            sp_dist = random.uniform(0, self.radius)
+            sp_x = cx + math.cos(sp_angle) * sp_dist
+            sp_y = cy + math.sin(sp_angle) * sp_dist
+            sp_size = random.randint(2, 4)
+            sp_alpha = int(alpha * 0.8)
+            sp_color = random.choice([(180, 255, 180), (140, 230, 140), (220, 255, 200)])
+            pygame.draw.circle(screen, sp_color, (int(sp_x), int(sp_y)), sp_size)

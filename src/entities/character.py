@@ -291,6 +291,15 @@ class Character:
         self.soul_harvest_hp_per_kill = 5
         self.soul_harvest_damage_per_stack = 0.02
 
+        # Void Walker keystone (passive)
+        self.void_walker = False
+        self.void_walker_dodge_chance = 0.3
+        self.void_walker_teleport_range = 200.0
+        self.void_walker_afterimage_damage = 18
+
+        # Floating text popups
+        self.floating_texts = []
+
         # Berserker's Rage keystone
         self.berserkers_rage_active = False
         self.berserkers_rage_duration = 8.0
@@ -588,6 +597,12 @@ class Character:
             return
         self.soul_harvest = True
         logger.info("Player learned Soul Harvest (passive)! (5 HP/kill, +2% damage stack)")
+
+    def learn_void_walker(self):
+        if self.void_walker:
+            return
+        self.void_walker = True
+        logger.info("Player learned Void Walker (passive)! (30% dodge, teleport, afterimage)")
 
     def learn_chrono_shift(self):
         for skill in self.skillbook:
@@ -1289,6 +1304,9 @@ class Character:
         if self.soul_harvest and self.soul_harvest_stacks:
             self.soul_harvest_stacks = [t - dt for t in self.soul_harvest_stacks if t - dt > 0]
 
+        # Update floating texts
+        self._update_floating_texts(dt)
+
         # Update invulnerability
         if self.invulnerable:
             self.invulnerability_timer -= dt
@@ -1341,6 +1359,27 @@ class Character:
     def take_damage(self, amount, ignore_invulnerability=False):
         if self.invulnerable and not ignore_invulnerability:
             return
+
+        # Void Walker: dodge chance
+        if self.void_walker and amount > 0 and not ignore_invulnerability:
+            import random
+            if random.random() < self.void_walker_dodge_chance:
+                old_center = self.get_center()
+                # Teleport in a random direction
+                angle = random.uniform(0, math.pi * 2)
+                offset = pygame.Vector2(math.cos(angle), math.sin(angle)) * self.void_walker_teleport_range
+                self.pos += offset
+                # Spawn afterimage at old center position
+                game_state = getattr(self, "game_state", None)
+                if game_state is not None and hasattr(game_state, "projectiles"):
+                    from src.entities.projectile import Afterimage
+                    game_state.projectiles.append(
+                        Afterimage(old_center, self.void_walker_afterimage_damage)
+                    )
+                # Floating "Dodged" text at the old position
+                self.add_floating_text("Dodged!", old_center.x, old_center.y - 30, (120, 255, 120), 1.2, 24)
+                logger.info("Void Walker dodged an attack!")
+                return
 
         # Ice Armor absorbs damage
         if self.ice_armor_active and self.ice_armor_remaining_absorption > 0 and amount > 0:
@@ -1473,6 +1512,48 @@ class Character:
         # Draw Berserker's Rage visual effect
         if self.berserkers_rage_active:
             self._draw_berserkers_rage(screen, camera_offset)
+
+        # Draw floating texts
+        self._draw_floating_texts(screen, camera_offset)
+
+    # ─── Floating text helpers ─────────────────────────────────────────
+
+    def add_floating_text(self, text, x, y, color=(255, 255, 255), duration=1.5, size=20):
+        self.floating_texts.append({
+            "text": text,
+            "x": x,
+            "y": y,
+            "color": color,
+            "life": duration,
+            "max_life": duration,
+            "speed_y": -40,
+            "size": size,
+        })
+
+    def _update_floating_texts(self, dt):
+        for ft in self.floating_texts[:]:
+            ft["life"] -= dt
+            ft["y"] += ft["speed_y"] * dt
+            if ft["life"] <= 0:
+                self.floating_texts.remove(ft)
+
+    def _draw_floating_texts(self, screen, camera_offset):
+        for ft in self.floating_texts:
+            life_ratio = ft["life"] / ft["max_life"] if ft["max_life"] > 0 else 0
+            if life_ratio <= 0:
+                continue
+            alpha = int(255 * life_ratio)
+            sx = int(ft["x"] - camera_offset.x)
+            sy = int(ft["y"] - camera_offset.y)
+            font = pygame.font.Font(None, ft["size"])
+            text_surf = font.render(ft["text"], True, ft["color"])
+            text_surf.set_alpha(alpha)
+            text_rect = text_surf.get_rect(center=(sx, sy))
+            # Shadow
+            shadow_surf = font.render(ft["text"], True, (0, 0, 0))
+            shadow_surf.set_alpha(alpha // 2)
+            screen.blit(shadow_surf, (text_rect.x + 2, text_rect.y + 2))
+            screen.blit(text_surf, text_rect)
 
     # ─── Berserker's Rage helpers ─────────────────────────────────────
 
