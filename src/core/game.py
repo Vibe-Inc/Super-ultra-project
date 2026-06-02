@@ -410,7 +410,7 @@ class Game(State):
 
     def open_shop(self):
         try:
-            self.app.INV_manager.toggle_trade(self.MAIN_player_inv, self.shop_inv)
+            self.app.INV_manager.toggle_trade(self.MAIN_player_inv, self.shop_inv, self.PLAYER_inventory_equipment)
         except Exception:
             pass
 
@@ -868,7 +868,7 @@ class Game(State):
 
         if not self.npc.is_interactable:
             if getattr(self.app.INV_manager, 'current_shop_inv', None) is not None:
-                self.app.INV_manager.toggle_trade(self.MAIN_player_inv, self.shop_inv)
+                self.app.INV_manager.toggle_trade(self.MAIN_player_inv, self.shop_inv, self.PLAYER_inventory_equipment)
 
         # Dizziness effect (visual)
         if self.character.dizzy:

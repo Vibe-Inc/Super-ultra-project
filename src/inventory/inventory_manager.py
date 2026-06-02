@@ -153,8 +153,14 @@ class INVENTORY_manager:
         self.active_split_popup = None
         self.active_inventories = []
         self.player_inventory_opened = False
+
         self.current_shop_inv = None
         self.hotbar = None
+        
+        from src.inventory.system import CraftingGrid
+        self.crafting_system = CraftingGrid(app)
+        
+        self.renderer = InventoryRenderer()
         
         self.renderer = InventoryRenderer()
         
@@ -189,6 +195,25 @@ class INVENTORY_manager:
                 self.renderer.draw_shop(screen, inv)
             elif isinstance(inv, MAIN_player_inventory):
                 self.renderer.draw_player_inventory(screen, inv)
+                
+                from src.inventory.system import MAIN_player_inventory_equipment
+                equip_inv = None
+                for active_inv in self.active_inventories:
+                    if isinstance(active_inv, MAIN_player_inventory_equipment):
+                        equip_inv = active_inv
+                        break
+                
+                if equip_inv:
+                    scale = cfg.ui_scale()
+                    craft_width = (self.crafting_system.slot_size + self.crafting_system.border) * 3
+                    
+                    craft_x = equip_inv.pos_x - craft_width - int(15 * scale)
+                    craft_y = equip_inv.pos_y
+                    
+                    self.crafting_system.update_positions(craft_x, craft_y)
+                    self.renderer.draw_crafting_system(screen, self.crafting_system)
+                
+                self.renderer.draw_crafting_system(screen, self.crafting_system)
             elif isinstance(inv, MAIN_player_hotbar):
                 self.renderer.draw_hotbar(screen, inv)
             else:
@@ -235,6 +260,10 @@ class INVENTORY_manager:
         if self.active_split_popup:
             self.active_split_popup.handle_event(event)
             return 
+        
+        if self.player_inventory_opened:
+            self.crafting_system.inventory_interactions(event, self)
+
         if self.hotbar: self.hotbar.handle_hotkeys(event)
         for inv in self.active_inventories: inv.inventory_interactions(event, self)
 
@@ -251,19 +280,30 @@ class INVENTORY_manager:
                 self.current_shop_inv = None
                 pl_inv.pos_x = cfg.MAIN_INV_pos_x
 
-    def toggle_trade(self, pl_inv, shop_inv):
+    def toggle_trade(self, pl_inv, shop_inv, equip_inv=None):
         if shop_inv in self.active_inventories:
             self.remove_active_inventory(shop_inv)
             self.remove_active_inventory(pl_inv)
+            if equip_inv:
+                self.remove_active_inventory(equip_inv)
             pl_inv.pos_x = cfg.MAIN_INV_pos_x
+            if equip_inv:
+                equip_inv.pos_x = cfg.MAIN_INV_equipment_pos_x
             self.player_inventory_opened = False
             if self.current_shop_inv is shop_inv: self.current_shop_inv = None
         else:
             self.player_inventory_opened = True 
-            pl_inv.pos_x = cfg.SCREEN_WIDTH // 2 - 500 
+            new_pl_inv_x = cfg.SCREEN_WIDTH // 2 - 500
+            pl_inv.pos_x = new_pl_inv_x
+            if equip_inv:
+                # Calculate equipment position relative to new main inventory position
+                equip_offset = cfg.MAIN_INV_equipment_pos_x - cfg.MAIN_INV_pos_x
+                equip_inv.pos_x = new_pl_inv_x + equip_offset
             shop_inv.pos_x = cfg.SCREEN_WIDTH // 2 + 100
             shop_inv.pos_y = pl_inv.pos_y
             self.add_active_inventory(pl_inv)
+            if equip_inv:
+                self.add_active_inventory(equip_inv)
             self.add_active_inventory(shop_inv)
             self.current_shop_inv = shop_inv
     
