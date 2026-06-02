@@ -107,118 +107,213 @@ class Button:
 
 class Tooltip:
     """
-    Tooltip for displaying contextual information when hovering over UI elements.
+    Delightful tooltip with rounded corners, soft drop shadow, styled text
+    hierarchy (gold title · soft-white stats · muted description), a thin
+    gold accent bar, and a smooth fade-in / slide-up entrance animation.
+
+    The constructor signature is unchanged so every existing caller keeps working.
 
     Attributes:
         target_rect (pygame.Rect):
-            Rectangle area that triggers the tooltip when hovered.
+            Hover target that triggers the tooltip.
         text (str):
-            Text content displayed in the tooltip. Supports multi-line with '\\n'.
-        color (tuple[int, int, int]):
-            Background color of the tooltip box.
-        border_color (tuple[int, int, int]):
-            Color of the tooltip border.
-        font (pygame.font.Font):
-            Font used to render the tooltip text.
-        font_color (tuple[int, int, int]):
-            Color of the tooltip text.
-        delay (float):
-            Time in seconds to hover before the tooltip appears.
-        padding (int):
-            Padding in pixels around the tooltip text inside the box.
+            Multi-line content (``'\\n'``-separated).  The first line is treated
+            as the **title**, the last non-empty line as the **description**, and
+            everything in between as **stat lines**.
+        color / border_color / font / font_color / delay / padding:
+            Kept for API compatibility; the visual palette is defined by the
+            class-level colour constants below.
         hover_start (float | None):
-            Timestamp when hover started, or None if not hovering.
+            Timestamp when the cursor entered the target.
         active (bool):
             Whether the tooltip is currently visible.
         rect (pygame.Rect | None):
-            Rectangle representing the tooltip's position and size.
-
-    Methods:
-        hover_update(mouse_pos):
-            Update the tooltip's active state and position based on mouse hover and delay.
-            Args:
-                mouse_pos (tuple[int, int]): Mouse position.
-        draw(surface):
-            Draw the tooltip box and its text on the given surface if active.
-            Args:
-                surface (pygame.Surface): The surface to draw the tooltip on.
-        draw_multiline_text(surface, x, y):
-            Render multi-line text centered within the tooltip box.
-            Args:
-                surface (pygame.Surface): The surface to draw the text on.
-                x (int): X-coordinate for text.
-                y (int): Y-coordinate for text.
-        update_target(new_rect, new_text):
-            Update the target rectangle and text for the tooltip.
-            Args:
-                new_rect (pygame.Rect): New target rectangle.
-                new_text (str): New tooltip text.
+            Bounding rect of the *content* area (excl. shadow padding).
+        show_time (float | None):
+            Timestamp when the tooltip became active (for animations).
     """
-    
 
-    def __init__(self,target_rect  ,text, color ,border_color, font , font_color, delay , padding):
+    # ── Colour palette ──────────────────────────────────────────────
+    BG_COLOR         = (18, 22, 32, 235)       # Deep dark background
+    BORDER_COLOR     = (200, 170, 80, 200)     # Warm gold border
+    ACCENT_COLOR     = (230, 185, 60)           # Gold accent bar / title
+    TITLE_COLOR      = (255, 215, 80)           # Bright gold title text
+    STAT_COLOR       = (210, 218, 235)          # Soft blue-white stat text
+    DESC_COLOR       = (140, 152, 170)          # Muted description text
+    SEPARATOR_COLOR  = (230, 185, 60, 70)       # Subtle gold separator line
+    SHADOW_COLOR     = (0, 0, 0)                # Shadow base colour
+
+    # ── Layout constants ────────────────────────────────────────────
+    ANIM_DURATION    = 0.15    # seconds for fade-in
+    SLIDE_OFFSET     = 6       # pixels to slide up during entrance
+    CORNER_RADIUS    = 10      # rounded corners
+    BORDER_WIDTH     = 2       # border thickness
+    ACCENT_HEIGHT    = 3       # thin gold bar at the top
+    ACCENT_GAP       = 3       # gap below accent bar
+    SEPARATOR_GAP    = 4       # gap around the separator line
+    SHADOW_LAYERS    = 5       # number of layered rects for soft shadow
+    MIN_WIDTH        = 120     # minimum tooltip width
+
+    def __init__(self, target_rect, text, color, border_color, font,
+                 font_color, delay, padding):
         self.target_rect: pygame.Rect = target_rect
         self.text: str = text
-        self.color: tuple[int, int, int] = color
-        self.border_color: tuple[int, int, int] = border_color
+        # Kept for API compatibility; visual palette uses class constants.
+        self.color = color
+        self.border_color = border_color
         self.font: pygame.font.Font = font
-        self.font_color: tuple[int, int, int] = font_color
+        self.font_color = font_color
         self.delay: float = delay
         self.padding: int = padding
-    
+
         self.hover_start = None
-        self.active: bool = False 
+        self.active: bool = False
         self.rect = None
+        self.show_time = None
+        self._cached_surface: pygame.Surface | None = None
+        self._cache_key: str = ""
+        self._pad: int = 0          # shadow padding (for blit offset)
 
-    def draw_multiline_text(self, surface, x, y): 
-        lines = self.text.split('\n')
+    # ── Internal helpers ────────────────────────────────────────────
+
+    def _compute_dimensions(self):
+        """Return ``(tooltip_w, tooltip_h, line_height, num_lines)``."""
+        lines = self.text.split("\n")
+        num_lines = len(lines)
         line_height = self.font.get_height()
-        box_width = self.rect.width - 2 * self.padding if self.rect else 0
+        max_width = max((self.font.size(ln)[0] for ln in lines), default=0)
 
-        for i, line in enumerate(lines):
-            txt_surface = self.font.render(line, True, self.font_color)
-            line_width = txt_surface.get_width()
-            draw_x = x + (box_width - line_width) // 2 if box_width > 0 else x
-            draw_y = y + i * line_height 
-            surface.blit(txt_surface, (draw_x, draw_y))
+        accent_space = self.ACCENT_HEIGHT + self.ACCENT_GAP
+        separator_space = self.SEPARATOR_GAP if num_lines > 1 else 0
+
+        tooltip_w = max(max_width + self.padding * 2, self.MIN_WIDTH)
+        tooltip_h = (line_height * num_lines
+                     + self.padding * 2
+                     + accent_space
+                     + separator_space)
+        return tooltip_w, tooltip_h, line_height, num_lines
+
+    def _build_surface(self):
+        """Render the complete tooltip (shadow + chrome + text) onto a
+        :class:`pygame.Surface` with per-pixel alpha."""
+        tooltip_w, tooltip_h, line_height, num_lines = self._compute_dimensions()
+
+        # Extra canvas room for the shadow
+        self._pad = self.SHADOW_LAYERS + 4
+        surf_w = tooltip_w + self._pad * 2
+        surf_h = tooltip_h + self._pad * 2
+        surface = pygame.Surface((surf_w, surf_h), pygame.SRCALPHA)
+
+        # ── Soft drop-shadow (layered rounded rects) ────────────────
+        for i in range(self.SHADOW_LAYERS, 0, -1):
+            alpha = int(45 * (1 - i / (self.SHADOW_LAYERS + 1)))
+            expand = i
+            s_w = tooltip_w + expand * 2
+            s_h = tooltip_h + expand * 2
+            s = pygame.Surface((s_w, s_h), pygame.SRCALPHA)
+            r = self.CORNER_RADIUS + expand
+            pygame.draw.rect(s, (*self.SHADOW_COLOR, alpha),
+                             (0, 0, s_w, s_h), border_radius=r)
+            surface.blit(s, (self._pad - expand, self._pad - expand))
+
+        # ── Background ──────────────────────────────────────────────
+        bg_rect = pygame.Rect(self._pad, self._pad, tooltip_w, tooltip_h)
+        pygame.draw.rect(surface, self.BG_COLOR, bg_rect,
+                         border_radius=self.CORNER_RADIUS)
+
+        # ── Gold accent bar along the top ───────────────────────────
+        bar_w = max(0, tooltip_w - self.CORNER_RADIUS * 2)
+        accent_rect = pygame.Rect(
+            self._pad + self.CORNER_RADIUS,
+            self._pad,
+            bar_w,
+            self.ACCENT_HEIGHT,
+        )
+        pygame.draw.rect(surface, self.ACCENT_COLOR, accent_rect,
+                         border_radius=1)
+
+        # ── Border ──────────────────────────────────────────────────
+        pygame.draw.rect(surface, self.BORDER_COLOR, bg_rect,
+                         width=self.BORDER_WIDTH,
+                         border_radius=self.CORNER_RADIUS)
+
+        # ── Text rendering with hierarchy ───────────────────────────
+        lines = self.text.split("\n")
+        text_x = self._pad + self.padding
+        text_y = self._pad + self.padding + self.ACCENT_HEIGHT + self.ACCENT_GAP
+
+        for idx, line in enumerate(lines):
+            # Pick colour based on line role
+            if idx == 0:
+                clr = self.TITLE_COLOR          # title
+            elif idx == num_lines - 1 and num_lines > 1:
+                clr = self.DESC_COLOR           # description
+            else:
+                clr = self.STAT_COLOR           # stat line
+
+            txt_surf = self.font.render(line, True, clr)
+            surface.blit(txt_surf, (text_x, text_y))
+            text_y += line_height
+
+            # Thin separator right after the title
+            if idx == 0 and num_lines > 1:
+                sep_y = text_y + 1
+                pygame.draw.rect(
+                    surface, self.SEPARATOR_COLOR,
+                    (text_x, sep_y, tooltip_w - self.padding * 2, 1),
+                )
+                text_y += self.SEPARATOR_GAP + 1
+
+        return surface
+
+    # ── Public API (unchanged signatures) ───────────────────────────
 
     def hover_update(self, mouse_pos):
-        now = time.time() 
-        if self.target_rect.collidepoint(mouse_pos) or (self.active and self.rect and self.rect.collidepoint(mouse_pos)):
+        now = time.time()
+
+        is_over_target = self.target_rect.collidepoint(mouse_pos)
+        is_over_tooltip = (self.active and self.rect
+                           and self.rect.collidepoint(mouse_pos))
+
+        if is_over_target or is_over_tooltip:
             if self.hover_start is None:
                 self.hover_start = now
-            hovered = now - self.hover_start
-            if not self.active and hovered > self.delay:
-                lines = self.text.split('\n')
-                num_lines = len(lines)
-                line_height = self.font.get_height()
-                max_width = max(self.font.size(line)[0] for line in lines) if lines else 0
-                total_height = line_height * num_lines
 
-                mouse_x, mouse_y = pygame.mouse.get_pos()
-                tooltip_width = max_width
-                tooltip_height = line_height * num_lines
-                if mouse_x > cfg.SCREEN_WIDTH //2 and mouse_y > cfg.SCREEN_HEIGHT //2:
-                    n, m = -tooltip_width -20, -tooltip_height -20
-                elif mouse_x < cfg.SCREEN_WIDTH //2 and mouse_y > cfg.SCREEN_HEIGHT //2:
-                    n, m = 20, -tooltip_height -20
-                elif mouse_x > cfg.SCREEN_WIDTH //2 and mouse_y < cfg.SCREEN_HEIGHT //2:
-                    n, m = -tooltip_width -20, 20
-                else:n, m = 20, 20
+            if not self.active and (now - self.hover_start) > self.delay:
+                tooltip_w, tooltip_h, _, _ = self._compute_dimensions()
+
+                mouse_x, mouse_y = mouse_pos
+                sw, sh = cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT
+
+                if mouse_x > sw // 2 and mouse_y > sh // 2:
+                    n, m = -tooltip_w - 20, -tooltip_h - 20
+                elif mouse_x < sw // 2 and mouse_y > sh // 2:
+                    n, m = 20, -tooltip_h - 20
+                elif mouse_x > sw // 2 and mouse_y < sh // 2:
+                    n, m = -tooltip_w - 20, 20
+                else:
+                    n, m = 20, 20
 
                 self.rect = pygame.Rect(
-                    mouse_pos[0] + n, 
+                    mouse_pos[0] + n,
                     mouse_pos[1] + m,
-                    max_width + self.padding * 2,
-                    total_height + self.padding * 2 
+                    tooltip_w,
+                    tooltip_h,
                 )
                 self.active = True
-                logger.debug(f"Tooltip shown for target {getattr(self.target_rect, 'name', str(self.target_rect))}")
+                self.show_time = now
+                self._cached_surface = None
+                logger.debug(
+                    "Tooltip shown for target %s",
+                    getattr(self.target_rect, "name", str(self.target_rect)),
+                )
         else:
             self.hover_start = None
             self.active = False
             self.rect = None
-    
+            self.show_time = None
+            self._cached_surface = None
+
     def update_target(self, new_rect, new_text):
         if self.target_rect != new_rect:
             self.target_rect = new_rect
@@ -226,16 +321,42 @@ class Tooltip:
             self.hover_start = None
             self.active = False
             self.rect = None
+            self.show_time = None
+            self._cached_surface = None
 
     def draw(self, surface):
-        if self.active and self.rect:
-            pygame.draw.rect(surface, self.color, self.rect)
-            pygame.draw.rect(surface, self.border_color, self.rect, 3)
-            self.draw_multiline_text(
-                surface,
-                self.rect.x+self.padding,
-                self.rect.y+self.padding
-            )
+        if not self.active or not self.rect:
+            return
+
+        # Build (or re-use) the cached tooltip surface
+        if self._cached_surface is None or self._cache_key != self.text:
+            self._cached_surface = self._build_surface()
+            self._cache_key = self.text
+
+        # ── Entrance animation ──────────────────────────────────────
+        alpha = 255
+        slide_y = 0
+        if self.show_time is not None:
+            elapsed = time.time() - self.show_time
+            if elapsed < self.ANIM_DURATION:
+                t = elapsed / self.ANIM_DURATION   # 0 → 1
+                # Ease-out cubic for a smooth deceleration
+                t = 1.0 - (1.0 - t) ** 3
+                alpha = int(255 * t)
+                slide_y = int(self.SLIDE_OFFSET * (1.0 - t))
+
+        blit_x = self.rect.x - self._pad
+        blit_y = self.rect.y - self._pad + slide_y
+
+        if alpha < 255:
+            tmp = self._cached_surface.copy()
+            tmp.set_alpha(alpha)
+            surface.blit(tmp, (blit_x, blit_y))
+        else:
+            surface.blit(self._cached_surface, (blit_x, blit_y))
+
+    def draw_multiline_text(self, surface, x, y):
+        """Legacy helper – text rendering is now handled inside :meth:`draw`."""
 
 
 class Dialog:
