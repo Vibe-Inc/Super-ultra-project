@@ -2353,14 +2353,6 @@ class SkillTreeMenu(Menu):
             screen.blit(line_surf, (self.sidebar_rect.x + 18, y))
             y += line_surf.get_height() + 4
 
-        note_text = _("Effects are placeholders and do not apply yet.")
-        note_lines = self._wrap_text(note_text, self.small_font, self.sidebar_rect.width - 36)
-        y += 6
-        for line in note_lines:
-            line_surf = self.small_font.render(line, True, (180, 180, 190))
-            screen.blit(line_surf, (self.sidebar_rect.x + 18, y))
-            y += line_surf.get_height() + 4
-
         # Update unlock button state and text
         if selected_node is None:
             self.unlock_button.set_text("")

@@ -1,4 +1,5 @@
 import math
+import random
 import pygame
 from database.effects import BurnEffect, FreezeEffect, SlowEffect, RootEffect
 from src.core.logger import logger
@@ -757,20 +758,9 @@ class FrostNova:
 
 class GlacialCascade:
     """
-    Ice shard projectile that cascades forward, dealing damage and freezing on impact.
-
-    Attributes:
-        pos (pygame.Vector2): Current position.
-        direction (pygame.Vector2): Travel direction.
-        speed (float): Travel speed.
-        max_range (float): Maximum travel distance.
-        damage (int): Damage on hit.
-        freeze_duration (float): Freeze duration on hit.
-        cascade_width (float): Width of the cascade area.
-        alive (bool): Whether the projectile is active.
-        traveled (float): Distance traveled.
-        animation_time (float): Visual animation timer.
-        trail (list): Visual trail points.
+    A wide ice wave that cascades forward in a spreading fan, damaging and freezing
+    all enemies it passes through. The wave grows wider as it travels, with visuals
+    of multiple ice shards, frost mist, and a ground frost trail.
     """
     def __init__(self, pos, direction, speed, max_range, damage, freeze_duration,
                  cascade_width=80.0, color=(80, 180, 255)):
@@ -785,128 +775,178 @@ class GlacialCascade:
         self.max_range = max_range
         self.damage = damage
         self.freeze_duration = freeze_duration
-        self.cascade_width = cascade_width
+        self.base_width = cascade_width
         self.color = color
         self.alive = True
         self.traveled = 0.0
         self.animation_time = 0.0
-        self.trail = []
-        self.trail_length = 10
-        self.damage_applied = False
+        self.hit_cooldowns = {}
+        self.frost_particles = []
+        self.ground_trail = []
 
-    def _size(self):
-        return 14, 14
+    @property
+    def cascade_width(self):
+        progress = min(1.0, self.traveled / max(self.max_range, 1))
+        return self.base_width * (0.8 + progress * 1.7)
+
+    def _get_wedge_points(self):
+        half_w = self.cascade_width * 0.5
+        forward = self.direction
+        perp = pygame.Vector2(-forward.y, forward.x)
+        tip = self.pos + forward * 25
+        bl = self.pos - forward * 15 - perp * half_w
+        br = self.pos - forward * 15 + perp * half_w
+        return tip, bl, br
 
     def get_rect(self):
-        width, height = self._size()
-        rect = pygame.Rect(0, 0, width, height)
-        rect.center = (int(self.pos.x), int(self.pos.y))
-        return rect
+        tip, bl, br = self._get_wedge_points()
+        xs = [tip.x, bl.x, br.x]
+        ys = [tip.y, bl.y, br.y]
+        return pygame.Rect(min(xs), min(ys), max(xs) - min(xs), max(ys) - min(ys))
 
     def update(self, dt, obstacles, enemies):
         if not self.alive:
             return
 
         self.animation_time += dt
-
         movement = self.direction * self.speed * dt
         self.pos += movement
         self.traveled += movement.length()
 
-        self.trail.append(pygame.Vector2(self.pos))
-        if len(self.trail) > self.trail_length:
-            self.trail.pop(0)
+        # Ground frost trail
+        perp = pygame.Vector2(-self.direction.y, self.direction.x)
+        for _ in range(2):
+            offset = random.uniform(-self.cascade_width * 0.3, self.cascade_width * 0.3)
+            tp = self.pos + perp * offset - self.direction * random.uniform(0, 25)
+            self.ground_trail.append((tp, self.animation_time))
+        while len(self.ground_trail) > 40:
+            self.ground_trail.pop(0)
 
-        rect = self.get_rect()
+        # Frost mist particles
+        if random.random() < 0.5:
+            off = random.uniform(-self.cascade_width * 0.4, self.cascade_width * 0.4)
+            pp = self.pos + perp * off + self.direction * random.uniform(-20, 10)
+            self.frost_particles.append({
+                "pos": pp, "life": random.uniform(0.3, 0.7), "max_life": 0.7,
+                "size": random.randint(3, 6),
+                "vel": perp * random.uniform(-15, 15) - self.direction * random.uniform(5, 20),
+            })
+        for p in self.frost_particles[:]:
+            p["pos"] += p["vel"] * dt
+            p["life"] -= dt
+            if p["life"] <= 0:
+                self.frost_particles.remove(p)
+
+        # Damage enemies in cascade area
+        self._damage_enemies(enemies)
+
+        # Wall collision
+        tip = self.pos + self.direction * 25
         for wall in obstacles:
-            if rect.colliderect(wall):
-                self._apply_cascade(enemies)
-                self.alive = False
-                return
-
-        for enemy in enemies:
-            if enemy.is_dead():
-                continue
-            if rect.colliderect(enemy.get_rect()):
-                self._apply_cascade(enemies)
+            if wall.collidepoint(tip.x, tip.y):
                 self.alive = False
                 return
 
         if self.traveled >= self.max_range:
-            self._apply_cascade(enemies)
             self.alive = False
 
-    def _apply_cascade(self, enemies):
-        """Apply damage and freeze to enemies within the cascade area."""
-        if self.damage_applied:
-            return
-        self.damage_applied = True
-
-        half_width = self.cascade_width * 0.5
+    def _damage_enemies(self, enemies):
+        half_w = self.cascade_width * 0.5
         for enemy in enemies:
             if enemy.is_dead():
                 continue
-            enemy_rect = enemy.get_rect()
-            enemy_center = pygame.Vector2(enemy_rect.centerx, enemy_rect.centery)
-
-            to_enemy = enemy_center - self.pos
+            eid = id(enemy)
+            ec = pygame.Vector2(enemy.get_rect().center)
+            to_enemy = ec - self.pos
             forward_dist = to_enemy.dot(self.direction)
-            if forward_dist < -half_width or forward_dist > half_width:
+            if forward_dist < -20 or forward_dist > 50:
                 continue
             lateral = to_enemy - self.direction * forward_dist
-            if lateral.length_squared() > self.cascade_width * self.cascade_width * 0.25:
+            if lateral.length_squared() > half_w * half_w:
                 continue
-
+            # Re-hit cooldown ~0.25s
+            last = self.hit_cooldowns.get(eid, -999.0)
+            if self.animation_time - last < 0.25:
+                continue
             if self.damage > 0:
                 enemy.take_damage(self.damage)
             enemy.add_effect(FreezeEffect(self.freeze_duration))
+            self.hit_cooldowns[eid] = self.animation_time
 
     def draw(self, screen, camera_offset=None):
         if camera_offset is None:
             camera_offset = pygame.Vector2(0, 0)
-
-        # ── Ice trail ──
-        for i, pos in enumerate(self.trail):
-            alpha = int(120 * (i / len(self.trail)))
-            radius = int(3 + 3 * (i / len(self.trail)))
-            t_surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
-            pygame.draw.circle(t_surf, (*self.color[:3], alpha), (radius, radius), radius)
-            screen.blit(t_surf, (pos.x - radius - camera_offset.x, pos.y - radius - camera_offset.y))
-
-        # ── Main ice shard ──
-        rect = self.get_rect()
-        rect.x -= int(camera_offset.x)
-        rect.y -= int(camera_offset.y)
-
-        pulse = (math.sin(self.animation_time * 12) + 1.0) * 0.5
+        ox, oy = camera_offset.x, camera_offset.y
         t = self.animation_time
+        perp = pygame.Vector2(-self.direction.y, self.direction.x)
 
-        # Outer glow
-        glow_size = int(rect.width * (1.5 + 0.3 * pulse))
-        glow_surf = pygame.Surface((glow_size * 2, glow_size * 2), pygame.SRCALPHA)
-        glow_color = (self.color[0], self.color[1], self.color[2], 50)
-        pygame.draw.circle(glow_surf, glow_color, (glow_size, glow_size), glow_size)
-        screen.blit(glow_surf, (rect.centerx - glow_size, rect.centery - glow_size))
+        # Ground frost trail
+        for i, (tp, _) in enumerate(self.ground_trail):
+            alpha = int(60 * (i / len(self.ground_trail)))
+            r = int(2 + 5 * (i / len(self.ground_trail)))
+            surf = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
+            pygame.draw.circle(surf, (*self.color[:3], alpha), (r, r), r)
+            screen.blit(surf, (tp.x - r - ox, tp.y - r - oy))
 
-        # Ice shard body (diamond)
-        pts = [
-            (rect.centerx, rect.top + 2),
-            (rect.right - 2, rect.centery),
-            (rect.centerx, rect.bottom - 2),
-            (rect.left + 2, rect.centery),
-        ]
-        pygame.draw.polygon(screen, (160, 210, 255), pts)
-        pygame.draw.polygon(screen, (200, 235, 255), pts, 2)
+        # Frost mist
+        for p in self.frost_particles:
+            lr = p["life"] / p["max_life"]
+            alpha = int(80 * lr)
+            sz = int(p["size"] * (0.5 + 0.5 * lr))
+            surf = pygame.Surface((sz * 2, sz * 2), pygame.SRCALPHA)
+            pygame.draw.circle(surf, (200, 230, 255, alpha), (sz, sz), sz)
+            screen.blit(surf, (p["pos"].x - sz - ox, p["pos"].y - sz - oy))
 
-        # Inner bright core
-        core_size = max(2, rect.width // 3)
-        core_color = (220, 245, 255, int(180 + 75 * pulse))
-        pygame.draw.circle(screen, core_color[:3], rect.center, core_size)
+        # Cascade wedge/crescent
+        tip, bl, br = self._get_wedge_points()
+        tip_s = (tip.x - ox, tip.y - oy)
+        bl_s = (bl.x - ox, bl.y - oy)
+        br_s = (br.x - ox, br.y - oy)
+        pulse = (math.sin(t * 10) + 1.0) * 0.5
+        alpha = int(70 + 50 * pulse)
 
-        # Sparkle effect
-        sp_x = rect.centerx + int(4 * math.sin(t * 15))
-        sp_y = rect.centery + int(4 * math.cos(t * 12))
-        pygame.draw.circle(screen, (255, 255, 255), (sp_x, sp_y), max(1, core_size // 2))
+        # Wedge fill and outline
+        wedge_pts = [tip_s, bl_s, br_s]
+        if len(wedge_pts) >= 3:
+            wedge_surf = pygame.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
+            pygame.draw.polygon(wedge_surf, (*self.color[:3], alpha // 2), wedge_pts)
+            pygame.draw.polygon(wedge_surf, (*self.color[:3], alpha), wedge_pts, 2)
+            screen.blit(wedge_surf, (0, 0))
+
+        # Multiple ice shards within the cascade
+        num_shards = 9
+        for i in range(num_shards):
+            frac = i / (num_shards - 1) if num_shards > 1 else 0.5
+            spread = (frac - 0.5) * self.cascade_width * 0.75
+            depth = 15 - frac * 25
+            spos = self.pos + perp * spread - self.direction * depth
+            ssx, ssy = spos.x - ox, spos.y - oy
+            spulse = (math.sin(t * 15 + i * 2.5) + 1.0) * 0.5
+            sz = 3 + 4 * (1 - abs(frac - 0.5) * 2)
+            pts = [
+                (ssx, ssy - sz * (0.4 + 0.3 * spulse)),
+                (ssx + sz * 0.35, ssy),
+                (ssx, ssy + sz * 0.35),
+                (ssx - sz * 0.35, ssy),
+            ]
+            pygame.draw.polygon(screen, (170, 210, 255), pts)
+            pygame.draw.polygon(screen, (210, 235, 255), pts, 1)
+
+        # Central bright core
+        cx = (tip_s[0] + bl_s[0] + br_s[0]) // 3
+        cy = (tip_s[1] + bl_s[1] + br_s[1]) // 3
+        cr = int(5 + 3 * pulse)
+        pygame.draw.circle(screen, (220, 245, 255), (cx, cy), cr)
+        pygame.draw.circle(screen, (255, 255, 255), (cx, cy), cr // 2)
+
+        # Sparkles
+        for i in range(5):
+            angle = t * 2.5 + i * math.pi * 0.4 * 2
+            dist = 10 + 6 * math.sin(t * 2 + i * 1.3)
+            spx = cx + int(dist * math.cos(angle))
+            spy = cy + int(dist * math.sin(angle))
+            sps = max(1, int(2 + math.sin(t * 5 + i * 2) * 1))
+            pygame.draw.circle(screen, (255, 255, 255), (spx, spy), sps)
 
 
 class ChainLightning:
