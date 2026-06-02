@@ -604,11 +604,14 @@ class Character:
                 logger.warning("Thunderstrike skill used without an attached game state.")
                 return False
 
-            target_pos = self.get_melee_anchor()
+            target_pos = self.get_center()
             if aim_direction is not None:
                 aim_vec = pygame.Vector2(aim_direction)
                 if aim_vec.length_squared() > 0:
-                    target_pos = target_pos + aim_vec.normalize() * self.thunderstrike_range
+                    max_range_sq = self.thunderstrike_range * self.thunderstrike_range
+                    if aim_vec.length_squared() > max_range_sq:
+                        aim_vec = aim_vec.normalize() * self.thunderstrike_range
+                    target_pos = target_pos + aim_vec
 
             game_state.projectiles.append(
                 Thunderstrike(
