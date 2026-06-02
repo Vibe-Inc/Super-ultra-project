@@ -13,6 +13,7 @@ from src.ui.menus.skilltree_menu import SkillTreeMenu
 from src.ui.menus.credits_menu import CreditsMenu
 from src.ui.menus.pause_menu import PauseMenu
 from src.ui.menus.save_load_menu import SaveLoadMenu
+from src.ui.menus.recipe_book import RecipeBookMenu
 
 __all__ = [
     "Menu",
@@ -23,4 +24,5 @@ __all__ = [
     "CreditsMenu",
     "PauseMenu",
     "SaveLoadMenu",
+    "RecipeBookMenu"
 ]

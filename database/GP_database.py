@@ -109,6 +109,48 @@ class Gp_database:
         ''')
         self.conn.commit()
 
+        # Таблиця рецептів
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS crafting_recipes (
+                recipe_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                result_item_id TEXT NOT NULL,
+                result_amount INTEGER DEFAULT 1,
+                FOREIGN KEY (result_item_id) REFERENCES items(id) ON DELETE CASCADE
+            )
+        ''')
+
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS recipe_ingredients (
+                recipe_id INTEGER,
+                ingredient_item_id TEXT NOT NULL,
+                required_amount INTEGER DEFAULT 1,
+                FOREIGN KEY (recipe_id) REFERENCES crafting_recipes(recipe_id) ON DELETE CASCADE,
+                FOREIGN KEY (ingredient_item_id) REFERENCES items(id) ON DELETE CASCADE
+            )
+        ''')
+        self.conn.commit()
+
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS shaped_recipes (
+                recipe_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                result_item_id TEXT NOT NULL,
+                result_amount INTEGER DEFAULT 1,
+                FOREIGN KEY (result_item_id) REFERENCES items(id) ON DELETE CASCADE
+            )
+        ''')
+
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS recipe_matrix (
+                recipe_id INTEGER,
+                ingredient_item_id TEXT NOT NULL,
+                col INTEGER NOT NULL,
+                row INTEGER NOT NULL,
+                FOREIGN KEY (recipe_id) REFERENCES shaped_recipes(recipe_id) ON DELETE CASCADE,
+                FOREIGN KEY (ingredient_item_id) REFERENCES items(id) ON DELETE CASCADE
+            )
+        ''')
+        self.conn.commit()
+
     def add_generic_item(self, item_id: str, item_type: str, name: str, image_path: str, price: int = 0, max_stack: int = 64, description: str = "") -> bool:
         """
         Add a generic item to the database.
@@ -303,6 +345,83 @@ class Gp_database:
                 item_data["effects"].append(effect_dict)
                 
         return item_data
+    
+    def add_recipe(self, result_item_id: str, result_amount: int, ingredients: dict) -> bool:
+        try:
+            self.conn.execute("BEGIN TRANSACTION")
+            
+            self.cursor.execute('''
+                INSERT INTO crafting_recipes (result_item_id, result_amount)
+                VALUES (?, ?)
+            ''', (result_item_id, result_amount))
+            
+            recipe_id = self.cursor.lastrowid
+            
+            for ing_id, req_amount in ingredients.items():
+                self.cursor.execute('''
+                    INSERT INTO recipe_ingredients (recipe_id, ingredient_item_id, required_amount)
+                    VALUES (?, ?, ?)
+                ''', (recipe_id, ing_id, req_amount))
+                
+            self.conn.commit()
+            print(f"Recipe for '{result_item_id}' added successfully.")
+            return True
+        except sqlite3.Error as e:
+            self.conn.rollback()
+            print(f"Error adding recipe: {e}")
+            return False
+        
+    def get_all_recipes(self) -> list:
+        self.cursor.execute('SELECT * FROM shaped_recipes')
+        recipes_rows = self.cursor.fetchall()
+        
+        all_recipes = []
+        for r_row in recipes_rows:
+            recipe_id = r_row["recipe_id"]
+            
+            self.cursor.execute('SELECT * FROM recipe_matrix WHERE recipe_id = ?', (recipe_id,))
+            matrix_rows = self.cursor.fetchall()
+            
+            matrix = [[None for _ in range(3)] for _ in range(3)]
+            for m_row in matrix_rows:
+                matrix[m_row["col"]][m_row["row"]] = m_row["ingredient_item_id"]
+                
+            all_recipes.append({
+                "recipe_id": recipe_id,
+                "result_id": r_row["result_item_id"],
+                "amount": r_row["result_amount"],
+                "matrix": matrix
+            })
+        return all_recipes
+    
+    def add_shaped_recipe(self, result_item_id: str, result_amount: int, grid: list) -> bool:
+        try:
+            self.conn.execute("BEGIN TRANSACTION")
+            
+            self.cursor.execute('''
+                INSERT INTO shaped_recipes (result_item_id, result_amount)
+                VALUES (?, ?)
+            ''', (result_item_id, result_amount))
+            
+            recipe_id = self.cursor.lastrowid
+            
+            for row in range(3):
+                for col in range(3):
+                    ingredient_id = grid[row][col]
+                    if ingredient_id:
+                        self.cursor.execute('''
+                            INSERT INTO recipe_matrix (recipe_id, ingredient_item_id, col, row)
+                            VALUES (?, ?, ?, ?)
+                        ''', (recipe_id, ingredient_id, col, row))
+                        
+            self.conn.commit()
+            print(f"Recipe for '{result_item_id}' added successfully.")
+            return True
+            
+        except Exception as e:
+            self.conn.rollback()
+            print(f"Failed to add recipe for '{result_item_id}': {e}")
+            return False
 
     def close(self):
         """
