@@ -10,19 +10,24 @@ if TYPE_CHECKING:
 
 
 def _wrap_text(text, font, max_width):
-    words = text.split(' ')
     lines = []
-    current = ''
-    for word in words:
-        test = current + ' ' + word if current else word
-        if font.size(test)[0] <= max_width:
-            current = test
-        else:
-            if current:
-                lines.append(current)
-            current = word
-    if current:
-        lines.append(current)
+    paragraphs = text.split('\n')
+    for para in paragraphs:
+        words = para.split(' ')
+        current = ''
+        for word in words:
+            test = current + ' ' + word if current else word
+            if font.size(test)[0] <= max_width:
+                current = test
+            else:
+                if current:
+                    lines.append(current)
+                current = word
+        if current:
+            lines.append(current)
+        lines.append('')
+    if lines and lines[-1] == '':
+        lines.pop()
     return lines
 
 
@@ -708,17 +713,19 @@ class WikiMenu(Menu):
             except Exception:
                 pass
         else:
-            self.back_btn.rect = pygame.Rect(max(20, int(20 * scale)), sh - int(130 * scale), btn_w, btn_h)
+            nav_y = sh - int(130 * scale)
+            back_y = nav_y - btn_h - max(4, int(10 * scale))
+
+            self.back_btn.rect = pygame.Rect(max(20, int(60 * scale)), back_y, btn_w, btn_h)
             try:
                 self.back_btn._update_text_surface()
             except Exception:
                 pass
 
             max_p = self._get_max_subpages()
-            nav_y = sh - int(130 * scale)
 
-            self.prev_btn.rect = pygame.Rect(sw // 2 - btn_w - max(10, int(20 * scale)), nav_y, btn_w, btn_h)
-            self.next_btn.rect = pygame.Rect(sw // 2 + max(10, int(20 * scale)), nav_y, btn_w, btn_h)
+            self.prev_btn.rect = pygame.Rect(max(20, int(60 * scale)), nav_y, btn_w, btn_h)
+            self.next_btn.rect = pygame.Rect(sw - btn_w - max(20, int(60 * scale)), nav_y, btn_w, btn_h)
             try:
                 self.prev_btn._update_text_surface()
             except Exception:
@@ -782,7 +789,9 @@ class WikiMenu(Menu):
         body_lines = _wrap_text(body, self.body_font, inner.width)
         line_h = self.body_font.get_height() + max(2, int(4 * scale))
         y_start = inner.y + title_surf.get_height() + max(8, int(16 * scale))
-        visible_lines = (inner.height - (title_surf.get_height() + max(8, int(16 * scale)))) // line_h
+        text_bottom_margin = int(60 * scale)
+        available_text_height = inner.height - (title_surf.get_height() + max(8, int(16 * scale))) - text_bottom_margin
+        visible_lines = max(0, available_text_height // line_h)
 
         for i in range(visible_lines):
             idx = i + self._scroll_offset
