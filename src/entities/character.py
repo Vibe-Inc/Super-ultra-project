@@ -1998,12 +1998,14 @@ class Character:
                 tip = base_anchor + attack_dir * max(5, thrust)
                 tip_s = to_screen(tip)
                 fade = max(0.0, min(1.0, 1.0 - (p - 0.3) * 1.4))
+                perp = pygame.Vector2(-attack_dir.y, attack_dir.x)
+                tail = base_anchor - attack_dir * 10
+                tail_s = to_screen(tail)
                 shaft_color = (130, 130, 135)
                 shaft_alpha = int(180 * fade)
                 shaft_width = max(2, int(5 - p * 2))
                 shaft_end = tip - attack_dir * 10
-                gust_line(anchor_s, to_screen(shaft_end), shaft_color, shaft_alpha, shaft_width)
-                perp = pygame.Vector2(-attack_dir.y, attack_dir.x)
+                gust_line(tail_s, to_screen(shaft_end), shaft_color, shaft_alpha, shaft_width)
                 head_width = 8
                 head_len = 14
                 base_p1 = tip - attack_dir * head_len + perp * head_width
@@ -2012,6 +2014,29 @@ class Character:
                 if len(head_pts) >= 3:
                     pygame.draw.polygon(screen, (160, 160, 165, int(200 * fade)), head_pts, 0)
                     pygame.draw.polygon(screen, (180, 180, 185, int(220 * fade)), head_pts, 2)
+                if p > 0.1 and p < 0.85:
+                    for i in range(10):
+                        part_p = (p - 0.1 - i * 0.06) / 0.6
+                        if part_p < 0 or part_p > 1:
+                            continue
+                        spread = 4 + 18 * part_p
+                        side = -1 if i % 2 == 0 else 1
+                        offset = 3 + 10 * part_p
+                        pp = tip - attack_dir * offset + perp * spread * side
+                        a = int(90 * (1 - part_p) * fade)
+                        dot(to_screen(pp), (210, 210, 220), a, 1 + int(2 * (1 - part_p)))
+                        gust_line(to_screen(pp - attack_dir * 4), to_screen(pp), (200, 200, 210), int(a * 0.7), 1)
+                    for i in range(8):
+                        part_p = (p - 0.1 - i * 0.07) / 0.6
+                        if part_p < 0 or part_p > 1:
+                            continue
+                        stem_t = part_p * 0.7 + 0.15
+                        stem_pos = tail + attack_dir * (thrust * stem_t)
+                        stem_side = -1 if i % 2 == 0 else 1
+                        stem_off = perp * (3 + 8 * (1 - part_p)) * stem_side
+                        sp = stem_pos + stem_off
+                        sa = int(50 * (1 - part_p) * fade)
+                        dot(to_screen(sp), (190, 190, 200), sa, 1 + int(1 * (1 - part_p)))
 
             elif combat_style == "dagger":
                 for idx, side in enumerate((-1, 1)):
