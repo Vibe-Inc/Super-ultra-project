@@ -2509,8 +2509,11 @@ class SkillTreeMenu(Menu):
                     surface.blit(orb_surf, (int(pos.x) - orb_radius, int(pos.y) - orb_radius))
 
     def _draw_links(self, surface, unlocked, revealed_filter=None, pulse_boost=0.0):
-        """Draw links with glow effect for active connections. Optimized."""
+        """Draw links with curved bezier arcs, gradient coloring, and reduced particle noise."""
         t = self.animation_time
+        link_origin = pygame.Vector2(self.tree_rect.center) + self.pan_offset
+        segments = 14
+
         for a, b in self.links:
             node_a = self.nodes_by_id.get(a)
             node_b = self.nodes_by_id.get(b)
@@ -2523,45 +2526,87 @@ class SkillTreeMenu(Menu):
             pos_b = self._node_screen_pos(node_b)
             active = a in unlocked and b in unlocked
 
+            # Compute bezier control point (bow outward from tree center)
+            mid = (pos_a + pos_b) / 2
+            to_mid = mid - link_origin
+            md = to_mid.length()
+            push = md * 0.3 if md > 1 else 0
+            cp = mid + (to_mid / md * push) if md > 0 else mid
+
+            # Pre-compute bezier points
+            pts = []
+            for i in range(segments + 1):
+                ft = i / segments
+                mt = 1.0 - ft
+                x = mt * mt * pos_a.x + 2.0 * mt * ft * cp.x + ft * ft * pos_b.x
+                y = mt * mt * pos_a.y + 2.0 * mt * ft * cp.y + ft * ft * pos_b.y
+                pts.append((int(x), int(y)))
+
             if active:
-                branch = node_a.get("branch") or node_b.get("branch") or "arcane"
-                theme = self.BRANCH_THEMES.get(branch, self.BRANCH_THEMES["arcane"])
-                glow_color = theme["glow"]
-                base_color = theme["secondary"]
+                branch_a = node_a.get("branch", "arcane")
+                branch_b = node_b.get("branch", "arcane")
+                theme_a = self.BRANCH_THEMES.get(branch_a, self.BRANCH_THEMES["arcane"])
+                theme_b = self.BRANCH_THEMES.get(branch_b, self.BRANCH_THEMES["arcane"])
+                ca = theme_a["secondary"]
+                cb = theme_b["secondary"]
+                ga = theme_a["glow"]
+                gb = theme_b["glow"]
 
                 pulse = (math.sin(t * 2.0) + 1.0) * 0.5
-                glow_alpha = 0.25 + 0.2 * pulse + 0.6 * pulse_boost
+                glow_alpha = 0.2 + 0.15 * pulse + 0.5 * pulse_boost
+                gw = max(2, int((4 + 5 * pulse_boost) * self.zoom))
 
-                g_c = tuple(int(c * min(1, glow_alpha)) for c in glow_color)
-                pygame.draw.line(surface, g_c, pos_a, pos_b, max(3, int((5 + 6 * pulse_boost) * self.zoom)))
-                pygame.draw.line(surface, base_color, pos_a, pos_b, max(1, int(2 * self.zoom)))
+                # Glow curve (wide, low alpha, gradient)
+                for i in range(segments):
+                    ft = i / segments
+                    nr = int(ga[0] * (1 - ft) + gb[0] * ft)
+                    ng = int(ga[1] * (1 - ft) + gb[1] * ft)
+                    nb = int(ga[2] * (1 - ft) + gb[2] * ft)
+                    gl_col = (nr, ng, nb)
+                    a_val = int(255 * (glow_alpha * (0.7 + 0.3 * (1 - abs(ft - 0.5) * 2))))
+                    for gr in range(2):
+                        grc = tuple(min(255, int(c * (0.4 - gr * 0.15))) for c in gl_col)
+                        pygame.draw.line(surface, grc, pts[i], pts[i + 1],
+                                         max(1, gw + gr * 2))
 
-                # Streaming energy particles along each active link
+                # Thin gradient line on top
+                for i in range(segments):
+                    ft = i / segments
+                    lr = int(ca[0] * (1 - ft) + cb[0] * ft)
+                    lg = int(ca[1] * (1 - ft) + cb[1] * ft)
+                    lb = int(ca[2] * (1 - ft) + cb[2] * ft)
+                    pygame.draw.line(surface, (lr, lg, lb), pts[i], pts[i + 1],
+                                     max(1, int(2 * self.zoom)))
+
+                # One streaming particle per link (reduced from 3)
                 link_hash = hash(a + b) * 0.01
-                num_particles = 3 if pulse_boost < 0.01 else 5
-                for flow_idx in range(num_particles):
-                    flow_frac = (t * 0.4 + link_hash + flow_idx * 0.33) % 1.0
-                    fx = pos_a.x + (pos_b.x - pos_a.x) * flow_frac
-                    fy = pos_a.y + (pos_b.y - pos_a.y) * flow_frac
-                    flow_bright = 0.5 + 0.5 * math.sin(flow_frac * math.pi)
-                    pb = 1.0 + 2.0 * pulse_boost
-                    glow_ep_size = max(1, int(3 * self.zoom * flow_bright * pb))
-                    for gw in range(2):
-                        gc = tuple(int(c * (0.3 - gw * 0.1) * flow_bright * pb) for c in base_color)
-                        pygame.draw.circle(surface, gc, (int(fx), int(fy)), glow_ep_size + gw * 2)
-                    flow_sz = max(1, int(2.5 * self.zoom * flow_bright * pb))
-                    pygame.draw.circle(surface, (255, 255, 255), (int(fx), int(fy)), flow_sz)
+                flow_frac = (t * 0.4 + link_hash) % 1.0
+                ft = flow_frac
+                mt2 = 1.0 - ft
+                fx = mt2 * mt2 * pos_a.x + 2.0 * mt2 * ft * cp.x + ft * ft * pos_b.x
+                fy = mt2 * mt2 * pos_a.y + 2.0 * mt2 * ft * cp.y + ft * ft * pos_b.y
+                flow_bright = 0.5 + 0.5 * math.sin(ft * math.pi)
+                pb = 1.0 + 2.0 * pulse_boost
+                fsz = max(1, int(2 * self.zoom * flow_bright * pb))
+                fc = (
+                    int(ca[0] * (1 - ft) + cb[0] * ft),
+                    int(ca[1] * (1 - ft) + cb[1] * ft),
+                    int(ca[2] * (1 - ft) + cb[2] * ft),
+                )
+                pygame.draw.circle(surface, fc, (int(fx), int(fy)), fsz + 1)
+                if flow_bright > 0.3:
+                    pygame.draw.circle(surface, (255, 255, 255), (int(fx), int(fy)), max(1, fsz - 1))
 
-                # Endpoint glow dots on active links
-                ep_size = max(2, int((3 + 3 * pulse_boost) * self.zoom))
-                ep_glow = tuple(int(c * (0.5 + 0.5 * pulse_boost)) for c in base_color)
-                pygame.draw.circle(surface, ep_glow, (int(pos_a.x), int(pos_a.y)), ep_size)
-                pygame.draw.circle(surface, ep_glow, (int(pos_b.x), int(pos_b.y)), ep_size)
-                pygame.draw.circle(surface, base_color, (int(pos_a.x), int(pos_a.y)), max(1, ep_size - 1))
-                pygame.draw.circle(surface, base_color, (int(pos_b.x), int(pos_b.y)), max(1, ep_size - 1))
+                # Subtle endpoint glow dots
+                ep_sz = max(1, int(2 * self.zoom))
+                pygame.draw.circle(surface, ca, (pts[0][0], pts[0][1]), ep_sz)
+                pygame.draw.circle(surface, cb, (pts[-1][0], pts[-1][1]), ep_sz)
             else:
-                dim = 50 + int(10 * (math.sin(t * 0.5 + hash(a + b) * 0.3) + 1.0) * 0.5)
-                pygame.draw.line(surface, (dim, dim, dim + 10), pos_a, pos_b, max(1, int(1.5 * self.zoom)))
+                # Inactive links: faint curved arcs
+                dim_base = 35 + int(10 * (math.sin(t * 0.5 + hash(a + b) * 0.3) + 1.0) * 0.5)
+                dc = (dim_base, dim_base, dim_base + 8)
+                for i in range(segments):
+                    pygame.draw.line(surface, dc, pts[i], pts[i + 1], max(1, int(1 * self.zoom)))
 
     @staticmethod
     def _draw_circle_gradient(surface, pos, radius, inner_color, outer_color):
