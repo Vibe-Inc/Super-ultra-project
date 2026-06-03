@@ -1956,39 +1956,36 @@ class Character:
                 cur_a = base_a + sweep_start + sweep
                 stick_angle = cur_a
                 for side in range(2):
-                    tip_offset = pygame.Vector2(1, 0).rotate(-(stick_angle + side * 180)) * r * 0.85
+                    tip_offset = pygame.Vector2(1, 0).rotate(-(stick_angle + side * 180)) * r * 0.425
                     sx = cx + int(tip_offset.x)
                     sy = cy + int(tip_offset.y)
                     gust_line((cx, cy), (sx, sy), (150, 140, 130), int(180 * fade), max(1, int(4 - p_axe * 2)))
 
-                # Double-headed axe blades at opposite ends
-                gray_blade = (180, 180, 190)
-                gray_edge = (210, 210, 220)
-                for side in range(2):
-                    ba = stick_angle + side * 180
-                    tip_offset = pygame.Vector2(1, 0).rotate(-ba) * r
-                    btip = (cx + int(tip_offset.x), cy + int(tip_offset.y))
-                    b1_offset = pygame.Vector2(1, 0).rotate(-(ba - 17)) * r * 0.7
-                    b2_offset = pygame.Vector2(1, 0).rotate(-(ba + 17)) * r * 0.7
-                    bx1 = cx + int(b1_offset.x)
-                    by1 = cy + int(b1_offset.y)
-                    bx2 = cx + int(b2_offset.x)
-                    by2 = cy + int(b2_offset.y)
-                    bp = [(bx1, by1), btip, (bx2, by2)]
-                    if len(bp) >= 3:
-                        pygame.draw.polygon(screen, (*gray_blade, int(150 * fade)), bp, 0)
-                        pygame.draw.polygon(screen, (*gray_edge, int(200 * fade)), bp, max(1, int(2 - p_axe)))
-
-                # Particles trailing along the arc cutting edge (screen-space, matching draw.arc)
-                for i in range(6):
-                    lp = (p_axe - i * 0.1) / 0.5
-                    if lp < 0 or lp > 1:
-                        continue
-                    pa_rad = math.radians(base_a + sweep_start + lp * sweep)
-                    px = cx + math.cos(pa_rad) * r
-                    py = cy - math.sin(pa_rad) * r
-                    c = int(200 + 20 * lp)
-                    dot((int(px), int(py)), (c, c, c + 10), int(160 * (1 - lp) * fade), 2 + int(2 * (1 - lp)))
+                # Labrys double-bladed axe head at the end of the stick
+                ba = stick_angle
+                tip_offset = pygame.Vector2(1, 0).rotate(-ba) * r * 0.425
+                hx = cx + int(tip_offset.x)
+                hy = cy + int(tip_offset.y)
+                fwd = pygame.Vector2(1, 0).rotate(-ba)
+                perp = pygame.Vector2(1, 0).rotate(-(ba + 90))
+                blade_len = max(4, int(r * 0.35))
+                blade_wid = max(2, int(r * 0.14))
+                neck = max(1, int(r * 0.04))
+                for sign in (-1, 1):
+                    outer_top = (hx + int(perp.x * blade_len * sign + fwd.x * blade_wid),
+                                 hy + int(perp.y * blade_len * sign + fwd.y * blade_wid))
+                    outer_mid = (hx + int(perp.x * blade_len * sign * 0.95),
+                                 hy + int(perp.y * blade_len * sign * 0.95))
+                    outer_bot = (hx + int(perp.x * blade_len * sign - fwd.x * blade_wid),
+                                 hy + int(perp.y * blade_len * sign - fwd.y * blade_wid))
+                    inner_top = (hx + int(perp.x * neck * sign + fwd.x * blade_wid * 0.3),
+                                 hy + int(perp.y * neck * sign + fwd.y * blade_wid * 0.3))
+                    inner_bot = (hx + int(perp.x * neck * sign - fwd.x * blade_wid * 0.3),
+                                 hy + int(perp.y * neck * sign - fwd.y * blade_wid * 0.3))
+                    pts = [outer_top, outer_mid, outer_bot, inner_bot, inner_top]
+                    if len(pts) >= 3:
+                        pygame.draw.polygon(screen, (180, 180, 190, int(150 * fade)), pts, 0)
+                        pygame.draw.polygon(screen, (210, 210, 220, int(200 * fade)), pts, max(1, int(2 - p_axe)))
 
             elif combat_style == "spear":
                 thrust_p = p * 1.3
