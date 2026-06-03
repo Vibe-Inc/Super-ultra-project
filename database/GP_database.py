@@ -113,6 +113,15 @@ class Gp_database:
         ''')
 
         self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS armor (
+                item_id TEXT PRIMARY KEY,
+                slot_type TEXT NOT NULL DEFAULT 'helmet',
+                defense_value INT DEFAULT 0,
+                FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE
+            )
+        ''')
+
+        self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS consumable_effects (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 item_id TEXT,
@@ -255,6 +264,49 @@ class Gp_database:
             self.conn.rollback()
             return False
 
+    def add_armor(self, item_id: str, name: str, image_path: str,
+                   slot_type: str = "helmet", defense_value: int = 0,
+                   price: int = 0, max_stack: int = 1, description: str = "") -> bool:
+        """
+        Add an armor item to the database.
+
+        Args:
+            item_id (str): Unique identifier for the armor.
+            name (str): Display name or translation key.
+            image_path (str): File path to the armor's texture.
+            slot_type (str): Equipment slot type (helmet, chestplate, leggings, boots,
+                             charm, gloves, ring, belt).
+            defense_value (int): Flat damage reduction provided.
+            price (int): Monetary value.
+            max_stack (int): Maximum stack size (usually 1).
+            description (str): Description text.
+
+        Returns:
+            bool: True if successful.
+        """
+        try:
+            self.conn.execute("BEGIN TRANSACTION")
+
+            self.cursor.execute('''
+                INSERT INTO items (id, type, name, image_path, price, max_stack, description)
+                VALUES (?, 'armor', ?, ?, ?, ?, ?)
+            ''', (item_id, name, image_path, price, max_stack, description))
+
+            self.cursor.execute('''
+                INSERT INTO armor (item_id, slot_type, defense_value)
+                VALUES (?, ?, ?)
+            ''', (item_id, slot_type, defense_value))
+
+            self.conn.commit()
+            print(f"Armor '{item_id}' added successfully.")
+            return True
+        except sqlite3.IntegrityError:
+            self.conn.rollback()
+            return False
+        except sqlite3.Error:
+            self.conn.rollback()
+            return False
+
     def add_consumable(self, item_id: str, item_type: str, name: str, image_path: str,
                        heal_amount: int = 0, effects: list = None,
                        price: int = 0, max_stack: int = 64, description: str = "") -> bool:
@@ -337,10 +389,12 @@ class Gp_database:
                    weapons.weapon_class, weapons.damage, weapons.durability, weapons.range,
                    weapons.projectile_speed, weapons.cooldown, weapons.spread_degrees,
                    weapons.cone_degrees, weapons.on_hit_effects,
-                   consumables.heal_amount
+                   consumables.heal_amount,
+                   armor.slot_type, armor.defense_value
             FROM items
             LEFT JOIN weapons ON items.id = weapons.item_id
             LEFT JOIN consumables ON items.id = consumables.item_id
+            LEFT JOIN armor ON items.id = armor.item_id
             WHERE items.id = ?
         ''', (item_id,))
 

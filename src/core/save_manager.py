@@ -364,6 +364,9 @@ class SaveManager:
                 else:
                     equip_inv.items[col][row] = None
 
+        # Sync character defense from loaded equipment
+        equip_inv.sync_character_defense(char)
+
         # Restore game time and visual state
         if "game_time_seconds" in data:
             game_state.game_time_seconds = int(data["game_time_seconds"])

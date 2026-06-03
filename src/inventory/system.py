@@ -4,7 +4,7 @@ import pygame
 from typing import TYPE_CHECKING
 import src.config as cfg
 from src.ui.widgets import Slider, Button
-from src.items.items import Consumable
+from src.items.items import Consumable, Armor
 from database.GP_database import Gp_database
 from src.items.items import create_item
 
@@ -275,18 +275,97 @@ class MAIN_player_inventory_equipment(Inventory):
     """
     Manages the player's equipment loadout slots.
 
-    A specialized grid intended strictly for equippable items such as armor, 
-    weapons, and accessories that alter character stats.
+    A specialized grid intended strictly for equippable armor and accessory items.
+    Each slot position is typed (helmet, chestplate, leggings, boots in column 1;
+    charm, gloves, ring, belt in column 0). Only Armor items with matching
+    slot_type may be placed in each slot.
 
     Methods:
         __init__(app):
             Initialize the equipment inventory grid based on config dimensions.
+        get_slot_type(col, row):
+            Return the slot type string for the given grid position.
+        inventory_interactions(event, manager):
+            Validate slot type before allowing item placement.
+        sync_character_defense(character):
+            Recalculate and apply total defense from equipped armor.
     """
     def __init__(self, app: "App"):
         super().__init__(
             cfg.MAIN_INV_equipment_columns, cfg.MAIN_INV_equipment_rows, None,
             cfg.BASE_INV_slot_size, cfg.MAIN_INV_equipment_pos_x, cfg.MAIN_INV_equipment_pos_y, cfg.BASE_INV_border
         )
+        self.app = app
+
+    def get_slot_type(self, col: int, row: int) -> str:
+        """Return the slot type for the given grid position."""
+        if 0 <= col < len(cfg.EQUIPMENT_SLOT_TYPES) and 0 <= row < len(cfg.EQUIPMENT_SLOT_TYPES[col]):
+            return cfg.EQUIPMENT_SLOT_TYPES[col][row]
+        return "unknown"
+
+    def get_total_defense(self) -> int:
+        """Sum the defense_value of all equipped Armor items."""
+        total = 0
+        for col in range(self.columns):
+            for row in range(self.rows):
+                slot = self.items[col][row]
+                if slot and isinstance(slot[0], Armor):
+                    total += slot[0].defense_value
+        return total
+
+    def sync_character_defense(self, character) -> None:
+        """Recalculate character.defense from all equipped armor."""
+        character.defense = self.get_total_defense()
+
+    def inventory_interactions(self, event, manager):
+        if event.type != pygame.MOUSEBUTTONDOWN:
+            return
+
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        x = (mouse_x - self.pos_x) // (self.slot_size + self.border)
+        y = (mouse_y - self.pos_y) // (self.slot_size + self.border)
+
+        if not (0 <= x < self.columns and 0 <= y < self.rows):
+            return
+
+        slot = self.items[x][y]
+
+        if event.button == 1:
+            if manager.selected_item:
+                dragged_item = manager.selected_item[0]
+                slot_type = self.get_slot_type(x, y)
+
+                # Only allow placing Armor items with matching slot_type
+                if isinstance(dragged_item, Armor) and dragged_item.slot_type == slot_type:
+                    if slot:
+                        if slot[0].id == dragged_item.id:
+                            slot[1] += manager.selected_item[1]
+                            manager.selected_item = None
+                        else:
+                            self.items[x][y], manager.selected_item = manager.selected_item, self.items[x][y]
+                    else:
+                        self.items[x][y] = manager.selected_item
+                        manager.selected_item = None
+                elif slot and slot[0] is dragged_item:
+                    self.items[x][y], manager.selected_item = manager.selected_item, self.items[x][y]
+            else:
+                if slot:
+                    manager.selected_item = slot
+                    self.items[x][y] = None
+
+            # Sync character defense after any equipment change
+            game_state = manager.app.manager.states.get("gameplay")
+            if game_state and hasattr(game_state, 'character'):
+                self.sync_character_defense(game_state.character)
+
+        elif event.button == 3 and slot and not manager.selected_item:
+            item, count = slot
+            if isinstance(item, Consumable):
+                game_state = getattr(manager.app.manager.states.get("gameplay"), 'character', None)
+                if game_state and item.use(game_state):
+                    slot[1] -= 1
+                    if slot[1] <= 0:
+                        self.items[x][y] = None
 
 class MAIN_player_hotbar(Inventory):
     """

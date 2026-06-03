@@ -69,6 +69,11 @@ class App:
         self.MAIN_INV_items[1][0] = [create_item("apple"), 5]
         self.MAIN_INV_items[2][0] = [create_item("wooden_bow"), 1] #test purposes nshit
         self.MAIN_INV_items[3][0] = [create_item("throwing_dagger"), 1] #test purposes nshit
+        # Test armor items
+        self.MAIN_INV_items[0][1] = [create_item("iron_helmet"), 1]
+        self.MAIN_INV_items[1][1] = [create_item("iron_chestplate"), 1]
+        self.MAIN_INV_items[2][1] = [create_item("iron_leggings"), 1]
+        self.MAIN_INV_items[3][1] = [create_item("iron_boots"), 1]
         
         self.money = 100
 

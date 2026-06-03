@@ -119,6 +119,22 @@ MAIN_INV_rows = 4
 MAIN_INV_equipment_columns = 2
 MAIN_INV_equipment_rows = 4
 
+# Equipment slot type definitions (col x row -> slot_type)
+# Column 0: accessories/wearables
+# Column 1: armor pieces
+EQUIPMENT_SLOT_TYPES = [
+    ["charm", "gloves", "ring", "belt"],
+    ["helmet", "chestplate", "leggings", "boots"],
+]
+
+# Human-readable labels for equipment slots
+EQUIPMENT_SLOT_LABELS = {
+    "helmet": "Helmet", "chestplate": "Chestplate",
+    "leggings": "Leggings", "boots": "Boots",
+    "charm": "Charm", "gloves": "Gloves",
+    "ring": "Ring", "belt": "Belt",
+}
+
 BASE_INV_slot_size = 70
 BASE_INV_border = 3
 BASE_INV_slot_color = (216, 223, 203)

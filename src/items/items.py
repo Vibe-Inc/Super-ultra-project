@@ -198,10 +198,33 @@ class Consumable(Item):
 
 class Armor(Item):
     """
-    Represents an armor item.
+    Represents an armor item that can be equipped in a specific equipment slot.
+
+    Attributes:
+        slot_type (str): The equipment slot this armor belongs to
+                         ("helmet", "chestplate", "leggings", "boots",
+                          "charm", "gloves", "ring", "belt").
+        defense_value (int): Flat damage reduction this armor provides.
     """
     def __init__(self, row: dict):
         super().__init__(row)
+        self.slot_type = row.get("slot_type", "helmet")
+        self.defense_value = row.get("defense_value", 0)
+
+    def get_tooltip_text(self):
+        slot_map = {
+            "helmet": _("Helmet"), "chestplate": _("Chestplate"),
+            "leggings": _("Leggings"), "boots": _("Boots"),
+            "charm": _("Charm"), "gloves": _("Gloves"),
+            "ring": _("Ring"), "belt": _("Belt"),
+        }
+        slot_label = slot_map.get(self.slot_type, self.slot_type.capitalize())
+        stats = (
+            f"{_('Type')}: {_('Armor')} ({slot_label})\n"
+            f"{_('Defense')}: +{self.defense_value}\n"
+            f"Price: ${self.price}"
+        )
+        return f"{self.name}\n{stats}\n{self.description}"
 
 
 def create_item(item_id: str):
