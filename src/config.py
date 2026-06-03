@@ -16,7 +16,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BASE_SCREEN_WIDTH, BASE_SCREEN_HEIGHT = 1920, 1080
 DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT = 1280, 720
 SCREEN_WIDTH, SCREEN_HEIGHT = DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT
-FPS = 60
+FPS = 0
 
 def _load_background(screen_width, screen_height):
     try:

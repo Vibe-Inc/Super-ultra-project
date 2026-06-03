@@ -14,6 +14,7 @@ from src.ui.menus.credits_menu import CreditsMenu
 from src.ui.menus.pause_menu import PauseMenu
 from src.ui.menus.save_load_menu import SaveLoadMenu
 from src.ui.menus.recipe_book import RecipeBookMenu
+from src.ui.menus.wiki_menu import WikiMenu
 
 __all__ = [
     "Menu",
@@ -24,5 +25,6 @@ __all__ = [
     "CreditsMenu",
     "PauseMenu",
     "SaveLoadMenu",
-    "RecipeBookMenu"
+    "RecipeBookMenu",
+    "WikiMenu"
 ]
