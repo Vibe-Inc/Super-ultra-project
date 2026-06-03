@@ -6,6 +6,10 @@ from src.core.state_manager import StateManager
 from src.core.profiling import FrameProfiler, FpsCounter
 from src.inventory.inventory_manager import INVENTORY_manager
 from src.items.items import create_item
+from database.item_db.weapons_db import seed_weapons
+from database.item_db.consumables_db import seed_consumables
+from database.item_db.armor_db import seed_armor
+from database.GP_database import Gp_database
 import src.config as cfg
 import src.i18n as i18n
 
@@ -63,17 +67,59 @@ class App:
         i18n.install_language(cfg.LANGUAGE)
         self.create_logo()
 
+        db = Gp_database()
+        seed_weapons(db)
+        seed_consumables(db)
+        seed_armor(db)
+        db.close()
+
         self.INV_manager = INVENTORY_manager(self)
         self.MAIN_INV_items = [[None for _ in range(cfg.MAIN_INV_rows)] for _ in range(cfg.MAIN_INV_columns)]
-        self.MAIN_INV_items[0][0] = [create_item("dull_sword"), 1]
-        self.MAIN_INV_items[1][0] = [create_item("apple"), 5]
-        self.MAIN_INV_items[2][0] = [create_item("wooden_bow"), 1] #test purposes nshit
-        self.MAIN_INV_items[3][0] = [create_item("throwing_dagger"), 1] #test purposes nshit
-        # Test armor items
-        self.MAIN_INV_items[0][1] = [create_item("iron_helmet"), 1]
-        self.MAIN_INV_items[1][1] = [create_item("iron_chestplate"), 1]
-        self.MAIN_INV_items[2][1] = [create_item("iron_leggings"), 1]
-        self.MAIN_INV_items[3][1] = [create_item("iron_boots"), 1]
+
+        def add_item(col, row, item_id, count=1):
+            item = create_item(item_id)
+            if item:
+                self.MAIN_INV_items[col][row] = [item, count]
+
+        # Row 0 — Melee weapons
+        add_item(0, 0, "dull_sword")
+        add_item(1, 0, "iron_sword")
+        add_item(2, 0, "steel_sword")
+        add_item(3, 0, "battle_axe")
+        add_item(4, 0, "war_hammer")
+        add_item(5, 0, "mace")
+        add_item(6, 0, "spear")
+        add_item(7, 0, "rusty_dagger")
+
+        # Row 1 — Ranged weapons + food
+        add_item(0, 1, "wooden_bow")
+        add_item(1, 1, "hunting_bow")
+        add_item(2, 1, "longbow")
+        add_item(3, 1, "crossbow")
+        add_item(4, 1, "throwing_dagger")
+        add_item(5, 1, "flaming_sword")
+        add_item(6, 1, "bread", 8)
+        add_item(7, 1, "cooked_meat", 5)
+
+        # Row 2 — Potions
+        add_item(0, 2, "small_health_potion", 3)
+        add_item(1, 2, "medium_health_potion", 2)
+        add_item(2, 2, "large_health_potion", 2)
+        add_item(3, 2, "greater_health_potion")
+        add_item(4, 2, "potion_of_speed")
+        add_item(5, 2, "potion_of_strength")
+        add_item(6, 2, "potion_of_haste")
+        add_item(7, 2, "potion_of_shield")
+
+        # Row 3 — Armor
+        add_item(0, 3, "iron_helmet")
+        add_item(1, 3, "iron_chestplate")
+        add_item(2, 3, "iron_leggings")
+        add_item(3, 3, "iron_boots")
+        add_item(4, 3, "steel_helmet")
+        add_item(5, 3, "steel_chestplate")
+        add_item(6, 3, "steel_leggings")
+        add_item(7, 3, "steel_boots")
         
         self.money = 100
 

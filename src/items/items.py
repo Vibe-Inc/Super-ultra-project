@@ -102,16 +102,29 @@ class Weapon(Item):
 class MeleeWeapon(Weapon):
     """
     Represents a melee combat weapon.
+
+    Attributes:
+        range (int): Effective attack range in pixels.
+        combat_style (str): Attack pattern identifier:
+            'sword' - standard cone arc,
+            'mace'  - circular AoE at impact point,
+            'axe'   - full 360° spinning sweep,
+            'spear' - long narrow piercing line,
+            'dagger' - quick short multi-strike,
+            'war_hammer' - heavy slam with small AoE stun.
     """
     def __init__(self, row: dict):
         super().__init__(row)
         self.range = row["range"]
+        self.combat_style = row.get("combat_style", "sword")
 
     def get_tooltip_text(self):
         base_stats = self._get_base_stats_text()
+        style_label = self.combat_style.replace("_", " ").title()
         stats = (
             f"{base_stats}"
             f"{_('Range')}: {self.range}\n"
+            f"{_('Style')}: {style_label}\n"
             f"Price: ${self.price}"
         )
         return f"{self.name}\n{stats}\n{self.description}"    

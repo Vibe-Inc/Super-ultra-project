@@ -97,12 +97,14 @@ class Gp_database:
                 spread_degrees REAL DEFAULT 0.0,
                 cone_degrees REAL DEFAULT 0.0,
                 on_hit_effects TEXT DEFAULT NULL,
+                combat_style TEXT DEFAULT 'sword',
                 FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE
             )
         ''')
 
-        # Backwards-compatible column add for existing databases.
+        # Backwards-compatible column adds for existing databases.
         self._ensure_column("weapons", "on_hit_effects", "TEXT DEFAULT NULL")
+        self._ensure_column("weapons", "combat_style", "TEXT DEFAULT 'sword'")
 
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS consumables (
@@ -215,7 +217,8 @@ class Gp_database:
                    projectile_speed: int = 0, cooldown: int = 500,
                    spread_degrees: float = 0.0, cone_degrees: float = 0.0,
                    price: int = 0, description: str = "",
-                   on_hit_effects: list | None = None) -> bool:
+                   on_hit_effects: list | None = None,
+                   combat_style: str = 'sword') -> bool:
         """
         Add a weapon item to the database along with its combat stats.
 
@@ -235,6 +238,8 @@ class Gp_database:
             description (str): Description text or translation key.
             on_hit_effects (list | None): Optional list of effect dicts
                 describing on-hit effects (e.g. burn on hit).
+            combat_style (str): Attack pattern ('sword', 'mace', 'axe', 'spear',
+                'dagger', 'war_hammer').
 
         Returns:
             bool: True if insertion was successful, False otherwise.
@@ -249,10 +254,10 @@ class Gp_database:
 
             self.cursor.execute('''
                 INSERT INTO weapons (item_id, weapon_class, damage, durability, range,
-                                    projectile_speed, cooldown, spread_degrees, cone_degrees, on_hit_effects)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                    projectile_speed, cooldown, spread_degrees, cone_degrees, on_hit_effects, combat_style)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (item_id, weapon_class, damage, durability, range_val,
-                  projectile_speed, cooldown, spread_degrees, cone_degrees, None if on_hit_effects is None else repr(on_hit_effects)))
+                  projectile_speed, cooldown, spread_degrees, cone_degrees, None if on_hit_effects is None else repr(on_hit_effects), combat_style))
 
             self.conn.commit()
             print(f"Weapon '{item_id}' added successfully.")
@@ -388,7 +393,7 @@ class Gp_database:
             SELECT items.*,
                    weapons.weapon_class, weapons.damage, weapons.durability, weapons.range,
                    weapons.projectile_speed, weapons.cooldown, weapons.spread_degrees,
-                   weapons.cone_degrees, weapons.on_hit_effects,
+                   weapons.cone_degrees, weapons.on_hit_effects, weapons.combat_style,
                    consumables.heal_amount,
                    armor.slot_type, armor.defense_value
             FROM items

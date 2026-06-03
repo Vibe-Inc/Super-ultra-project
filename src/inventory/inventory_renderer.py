@@ -103,7 +103,7 @@ class InventoryRenderer:
 
                 if inv.items[n][m]:
                     item, count = inv.items[n][m]
-                    if count <= 0:
+                    if count <= 0 or item is None:
                         inv.items[n][m] = None
                         continue
 

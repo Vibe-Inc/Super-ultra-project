@@ -45,25 +45,29 @@ def seed_weapons(db):
         item_id="battle_axe", name="Battle Axe", image_path=WIP_TEXTURE,
         weapon_class="melee", damage=62, durability=200, range_val=85,
         cone_degrees=130.0, cooldown=850, price=420,
-        description="A heavy two-handed axe that cleaves through armor."
+        description="A heavy two-handed axe that cleaves through armor.",
+        combat_style="axe"
     )
     db.add_weapon(
         item_id="war_hammer", name="War Hammer", image_path=WIP_TEXTURE,
         weapon_class="melee", damage=75, durability=260, range_val=70,
         cone_degrees=100.0, cooldown=1100, price=550,
-        description="An enormous hammer that crushes bones and shields alike."
+        description="An enormous hammer that crushes bones and shields alike.",
+        combat_style="war_hammer"
     )
     db.add_weapon(
         item_id="mace", name="Mace", image_path=WIP_TEXTURE,
         weapon_class="melee", damage=40, durability=140, range_val=70,
         cone_degrees=110.0, cooldown=520, price=230,
-        description="A spiked mace effective against armored foes."
+        description="A spiked mace effective against armored foes.",
+        combat_style="mace"
     )
     db.add_weapon(
         item_id="spear", name="Spear", image_path=WIP_TEXTURE,
         weapon_class="melee", damage=28, durability=150, range_val=110,
         cone_degrees=60.0, cooldown=600, price=160,
-        description="A long wooden spear with a steel tip. Great reach."
+        description="A long wooden spear with a steel tip. Great reach.",
+        combat_style="spear"
     )
     db.add_weapon(
         item_id="flaming_sword", name="Flaming Sword", image_path=WIP_TEXTURE,
@@ -83,7 +87,8 @@ def seed_weapons(db):
         description="A small, rusted dagger. Quick, but fragile.",
         on_hit_effects=[
             {"type": "bleed", "duration": 5, "damage_per_sec": 2}
-        ]
+        ],
+        combat_style="dagger"
     )
 
     # ------------------ Ranged weapons ------------------
