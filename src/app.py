@@ -56,7 +56,7 @@ class App:
         self.windowed_size = (cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT)
         self.is_fullscreen = False
         self.screen = pygame.display.set_mode(self.windowed_size, pygame.RESIZABLE)
-        pygame.display.set_caption("super cooool project ;)")
+        pygame.display.set_caption("Codex Arcanum")
         self.icon = pygame.image.load("assets/smug.png")
         pygame.display.set_icon(self.icon)
 
@@ -87,7 +87,7 @@ class App:
         self.manager = StateManager(self)
 
     def create_logo(self):
-        self.text_logo = cfg.myfont.render(_('Super coooooool project'), True, (0, 0, 0))
+        self.text_logo = cfg.myfont.render(_('Codex Arcanum'), True, (0, 0, 0))
         self.text_rect = self.text_logo.get_rect(center=(cfg.SCREEN_WIDTH//2, cfg.SCREEN_HEIGHT//2 - 150))
 
     def update_language(self, lang_code):
