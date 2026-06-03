@@ -61,7 +61,7 @@ class App:
         self.is_fullscreen = False
         self.screen = pygame.display.set_mode(self.windowed_size, pygame.RESIZABLE)
         pygame.display.set_caption("super cooool project ;)")
-        self.icon = pygame.image.load("assets/smug.png")
+        self.icon = pygame.image.load("assets/ui/smug.png")
         pygame.display.set_icon(self.icon)
 
         i18n.install_language(cfg.LANGUAGE)

@@ -81,7 +81,7 @@ class MainMenu(Menu):
                 on_click=self.open_credits
             )
         ]
-        self.beta_logo_img = pygame.image.load("assets/beta_logo.png")
+        self.beta_logo_img = pygame.image.load("assets/ui/beta_logo.png")
         logo_size = max(8, int(280 * cfg.ui_scale()))
         self.beta_logo_img = pygame.transform.scale(self.beta_logo_img, (logo_size, logo_size))
         self.beta_logo_rect = self.beta_logo_img.get_rect()

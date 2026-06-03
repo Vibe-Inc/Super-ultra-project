@@ -20,7 +20,7 @@ FPS = 60
 
 def _load_background(screen_width, screen_height):
     try:
-        bg_path = os.path.join(BASE_DIR, "assets", "bg_menu.jpg")
+        bg_path = os.path.join(BASE_DIR, "assets", "ui", "bg_menu.jpg")
         return pygame.transform.scale(pygame.image.load(bg_path), (screen_width, screen_height))
     except (FileNotFoundError, pygame.error):
         return pygame.Surface((screen_width, screen_height))
