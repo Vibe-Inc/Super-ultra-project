@@ -10,7 +10,7 @@ from src.entities.character import Character
 from src.map.map import LocalMap
 from src.inventory.system import MAIN_player_inventory, MAIN_player_inventory_equipment, ShopInventory, MAIN_player_hotbar
 from src.items.items import create_item
-from database.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, DizzinessEffect
+from database.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, DizzinessEffect, SlowEffect
 from src.entities.enemy import Enemy
 from src.entities.npc import NPC
 from src.entities.projectile import Arrow
@@ -31,30 +31,157 @@ class Game(State):
     """
     Main gameplay state for the application.
 
-    This class manages the core game loop, including the player character, map switching, enemy spawning, HUD, and inventory logic.
+    Owns the player character, the current map, enemy spawning, the
+    HUD, the merchant and card-game NPCs, the blackjack minigame, the
+    debug spawn menu, and the day/night cycle. Drives the per-frame
+    update + draw pipeline and dispatches pygame events to the right
+    subsystems (HUD, inventory, combat, dialogs).
 
     Attributes:
-        app (App): Reference to the main application instance.
-        character (Character): The player character instance.
-        map (LocalMap): The current game map.
-        player_inventory_opened (bool): Whether the player's inventory is open.
-        MAIN_player_inv: The main player inventory object.
-        PLAYER_inventory_equipment: The player's equipment inventory object.
-        ENEMY_SPAWNS (dict): Mapping of map paths to enemy spawn coordinates.
-        hud (HUD): The heads-up display for the player.
-        enemy (Enemy): The main enemy instance for the current map.
+        app (App):
+            The main application reference.
+        character (Character):
+            The player character instance.
+        map (LocalMap):
+            The current game map.
+        current_map_path (str):
+            Path of the .tmx map currently loaded.
+        collision_handler (CollisionSystem):
+            Helper for movement resolution and interaction checks.
+        obstacles (list):
+            Current map's static collision rectangles.
+        nav_grid (NavGrid):
+            Navigation grid for pathfinding around the current map.
+        MAIN_player_inv (MAIN_player_inventory):
+            Main grid inventory of the player.
+        PLAYER_inventory_equipment (MAIN_player_inventory_equipment):
+            Equipment loadout inventory of the player.
+        hotbar (MAIN_player_hotbar):
+            Quick-access hotbar inventory.
+        player_combat (PlayerCombatController):
+            Player melee / ranged combat controller.
+        projectiles (list):
+            Active player projectiles.
+        enemy_projectiles (list):
+            Active enemy projectiles.
+        equipped_weapon (object):
+            Currently equipped weapon reference, or None.
+        enemy_profiles (dict):
+            Per-archetype enemy stat/AI profile definitions.
+        enemy_profile_names (list):
+            Names of all enemy profiles available for spawning.
+        ENEMY_SPAWNS (dict):
+            Map-path -> spawn info for default enemies.
+        NPC_SPAWNS (dict):
+            Map-path -> (x, y) for the merchant NPC.
+        CARD_NPC_SPAWNS (dict):
+            Map-path -> (x, y) for the blackjack NPC.
+        NO_ENEMY_SPAWN_MAPS (set):
+            Map paths where enemies are never spawned.
+        hud (HUD):
+            Heads-up display for the player.
+        enemy (Enemy):
+            The current main enemy instance, if any.
+        enemies (list):
+            All currently active enemies.
+        items (list):
+            All currently active dropped items.
+        enemy_spawn_timer (float):
+            Seconds elapsed since the last periodic spawn check.
+        enemy_spawn_interval (float):
+            Seconds between periodic enemy spawn attempts.
+        npc (NPC):
+            Merchant NPC instance for the current map.
+        card_npc (NPC):
+            Card-game NPC instance for the current map.
+        card_npc_first_dialog (list):
+            First-time dialog lines for the card NPC.
+        card_npc_repeat_dialog (list):
+            Repeat dialog lines for the card NPC.
+        card_npc_post_game_dialog (list):
+            Dialog lines shown after a blackjack round.
+        shop_inv (ShopInventory):
+            Merchant shop inventory used by the NPC.
+        blackjack_game (BlackjackGame):
+            Active blackjack instance, or None.
+        spawn_menu (SpawnMenu):
+            Debug menu for spawning enemies on demand.
+        game_time_seconds (float):
+            In-game time in seconds since midnight.
+        GAME_DAY_SECONDS (int):
+            Number of in-game seconds in a full day.
+        DAY_CYCLE_REAL_SECONDS (int):
+            Number of real-world seconds for a full 24h in-game cycle.
+        GAME_SECONDS_PER_REAL_SECOND (float):
+            Conversion factor from real seconds to in-game seconds.
+        DAY_START (int):
+            In-game second at which day begins.
+        DUSK_START (int):
+            In-game second at which dusk begins.
+        NIGHT_START (int):
+            In-game second at which night begins.
+        DAWN_START (int):
+            In-game second at which dawn begins.
+        NIGHT_BRIGHTNESS (float):
+            Environment brightness multiplier at night.
+        player_inventory_opened (bool):
+            Whether the player inventory screen is currently shown.
+        _dizzy_overlay (pygame.Surface):
+            Cached white overlay surface used for the dizzy effect.
 
     Methods:
         __init__(app):
-            Initialize the game state, character, map, HUD, and enemy.
+            Build the game state: character, map, HUD, NPCs, blackjack.
         reinit_ui():
-            Recreate the HUD (e.g., after language change).
+            Recreate UI elements that depend on language/scale (HUD).
         toggle_player_inventory():
-            Toggle the player's inventory open/closed.
+            Open or close the player's main inventory.
+        open_shop():
+            Toggle the merchant's trading interface.
+        open_blackjack():
+            Launch the blackjack minigame overlay.
+        _get_card_npc_dialog():
+            Pick the right card-NPC dialog lines for the current state.
+        use_skill_slot(slot_index):
+            Activate the skill currently bound to the given hotbar slot.
+        _update_projectiles(dt):
+            Step all player projectiles and prune dead ones.
+        _update_enemy_projectiles(dt):
+            Step all enemy projectiles and prune dead ones.
+        _rebuild_nav_grid():
+            Rebuild the navigation grid for the current map.
+        _format_game_time():
+            Format the current in-game time as an HH:MM string.
+        is_daytime():
+            Return True if the in-game clock is currently daytime.
+        _update_game_time(dt):
+            Advance the in-game clock and update day/night brightness.
+        _get_spawn_info(map_path):
+            Resolve the default enemy spawn info for a given map path.
+        _get_camera_offset():
+            Compute the camera offset (in world space) for this frame.
+        _make_patrol_points(center, radius):
+            Build a square patrol loop around a center point.
+        _create_enemy(x, y, profile=None):
+            Construct an Enemy with a chosen profile at a given position.
+        spawn_random_enemy():
+            Try to spawn a random enemy somewhere on the current map.
+        _debug_spawn_enemy(profile_name):
+            Spawn an enemy of a given profile next to the player.
+        _get_drop_chance_for_enemy(enemy):
+            Look up the drop table for a given enemy.
+        _drop_enemy_loot(enemy):
+            Roll and spawn drops for a defeated enemy (no JSON).
+        update(dt):
+            Per-frame state update (input, AI, physics, time, spawning).
+        draw_scene(screen):
+            Update + draw the world scene (map, entities, overlays).
+        draw_ui(screen):
+            Draw HUD, inventory, dialogs, blackjack, and debug menu.
         draw(screen):
-            Draw the game map, character, enemy, HUD, and inventory if open.
+            Draw the scene followed by the UI on top of it.
         handle_event(event):
-            Handle Pygame events for HUD, inventory, and pause state.
+            Dispatch a pygame event to the right subsystem.
     """
     def __init__(self, app: "App"):
         super().__init__(app)
@@ -83,6 +210,7 @@ class Game(State):
 
         self.projectiles = []
         self.enemy_projectiles = []
+        self.spirits = []
         self.equipped_weapon = None
         self._dizzy_overlay = None
 
@@ -118,6 +246,10 @@ class Game(State):
                     "slow_factor": 0.6,
                 },
                 "contact_damage": False,
+                "drop_chance": [
+                    {"item_id": "small_health_potion", "chance": 0.95},
+                    {"item_id": "large_health_potion", "chance": 1.0},
+                ],
             },
             "venomous": {
                 "visual_style": "venomous",
@@ -137,6 +269,10 @@ class Game(State):
                     "strike_damage_mult": 0.85,
                 },
                 "contact_damage": False,
+                "drop_chance": [
+                    {"item_id": "small_health_potion", "chance": 0.25},
+                    {"item_id": "potion_of_confusion", "chance": 0.20},
+                ],
             },
             "arcanist": {
                 "visual_style": "arcanist",
@@ -160,6 +296,11 @@ class Game(State):
                     "spread_degrees": 5.0,
                 },
                 "contact_damage": False,
+                "drop_chance": [
+                    {"item_id": "small_health_potion", "chance": 0.30},
+                    {"item_id": "large_health_potion", "chance": 0.15},
+                    {"item_id": "potion_of_confusion", "chance": 0.10},
+                ],
             },
             "trickster": {
                 "visual_style": "trickster",
@@ -184,6 +325,10 @@ class Game(State):
                     "damage_mult": 0.7,
                 },
                 "contact_damage": False,
+                "drop_chance": [
+                    {"item_id": "potion_of_confusion", "chance": 0.40},
+                    {"item_id": "small_health_potion", "chance": 0.20},
+                ],
             },
             "bomber": {
                 "visual_style": "bomber",
@@ -214,6 +359,10 @@ class Game(State):
                     "spread_degrees": 12.0,
                 },
                 "contact_damage": False,
+                "drop_chance": [
+                    {"item_id": "large_health_potion", "chance": 0.20},
+                    {"item_id": "small_health_potion", "chance": 0.30},
+                ],
             },
             "stalker": {
                 "sprite_set": "MenHuman1(Recolor)",
@@ -227,6 +376,9 @@ class Game(State):
                     "memory_duration": 3.0,
                     "repath_interval": 0.5,
                 },
+                "drop_chance": [
+                    {"item_id": "small_health_potion", "chance": 0.20},
+                ],
             },
             "skirmisher": {
                 "sprite_set": "WomanHuman1(Recolor)",
@@ -241,6 +393,9 @@ class Game(State):
                     "preferred_max": 170.0,
                     "orbit_radius": 130.0,
                 },
+                "drop_chance": [
+                    {"item_id": "small_health_potion", "chance": 0.25},
+                ],
             },
             "guardian": {
                 "sprite_set": "MenHuman1",
@@ -256,6 +411,10 @@ class Game(State):
                     "leash_slack": 90.0,
                     "patrol_wait": 0.8,
                 },
+                "drop_chance": [
+                    {"item_id": "small_health_potion", "chance": 0.30},
+                    {"item_id": "large_health_potion", "chance": 0.10},
+                ],
             },
         }
         self.enemy_profile_names = list(self.enemy_profiles.keys())
@@ -415,15 +574,12 @@ class Game(State):
             pass
 
     def open_blackjack(self):
-        """Launch the blackjack minigame overlay."""
         def on_close(outcome, net_change):
             self.blackjack_game = None
-            # Apply money change from blackjack
             self.app.money += net_change
             if self.app.money < 0:
                 self.app.money = 0
             logger.info(f"Blackjack closed: outcome={outcome}, net_change={net_change}, money now={self.app.money}")
-            # Build post-game dialog mentioning the result
             if net_change > 0:
                 post_lines = [
                     "Thanks for playing! That was a fine round.",
@@ -446,13 +602,11 @@ class Game(State):
         self.blackjack_game = BlackjackGame(self.app, on_close=on_close, player_money=self.app.money)
 
     def _get_card_npc_dialog(self):
-        """Return the appropriate dialog lines for the card NPC."""
         if not self.card_npc.was_talked:
             return self.card_npc_first_dialog
         return self.card_npc_repeat_dialog
 
     def use_skill_slot(self, slot_index):
-        # Calculate aim direction from player to cursor (in world coordinates)
         mouse_screen_pos = pygame.mouse.get_pos()
         camera_offset = self._get_camera_offset()
         mouse_world_pos = pygame.Vector2(mouse_screen_pos) + camera_offset
@@ -639,13 +793,87 @@ class Game(State):
                 break
 
     def _debug_spawn_enemy(self, profile_name):
-        """Spawn an enemy near the player using the debug menu."""
         offset_x = 100
         spawn_x = self.character.pos.x + offset_x
         spawn_y = self.character.pos.y
         new_enemy = self._create_enemy(spawn_x, spawn_y, profile=profile_name)
         self.enemies.append(new_enemy)
         logger.info(f"[DEBUG] Spawned {profile_name} at ({spawn_x}, {spawn_y})")
+
+    def _get_drop_chance_for_enemy(self, enemy: "Enemy") -> list[dict]:
+        """
+        Look up the drop table for a given enemy based on its AI profile.
+
+        Returns a list of drop entries (``{"item_id": str, "chance": float}``).
+        If the enemy has no profile or no ``drop_chance`` entry configured,
+        returns an empty list (no drops).
+        """
+        if enemy is None:
+            return []
+        profile_name = getattr(enemy, "ai_profile", None)
+        if not profile_name:
+            return []
+        settings = self.enemy_profiles.get(profile_name, {})
+        return settings.get("drop_chance", []) or []
+
+    def _drop_enemy_loot(self, enemy: "Enemy") -> None:
+        """
+        Roll each configured drop for the given enemy and spawn matching
+        ``DroppedItem`` instances near the enemy's death position.
+
+        Drops are configured per-archetype in :pyattr:`enemy_profiles` under
+        the ``drop_chance`` key. Each entry has:
+          - ``item_id`` (str): the item id to look up via ``create_item``.
+          - ``chance``  (float): probability in [0, 1] of the drop firing.
+          - ``amount``  (int, optional): stack size for the drop (defaults to 1).
+
+        Multiple entries can fire independently in a single kill, so a single
+        enemy can drop several different items at once.
+        """
+        from src.entities.dropped_item import DroppedItem
+
+        drop_entries = self._get_drop_chance_for_enemy(enemy)
+        if not drop_entries:
+            return
+
+        # Anchor the drops near the enemy's feet (centered on its hitbox bottom).
+        base_x, base_y = enemy.get_rect().center
+
+        placed = 0
+        for entry in drop_entries:
+            if not isinstance(entry, dict):
+                continue
+            item_id = entry.get("item_id")
+            if not item_id:
+                continue
+            chance = float(entry.get("chance", 0.0))
+            if chance <= 0.0:
+                continue
+            if random.random() > chance:
+                continue
+            amount = int(entry.get("amount", 1))
+            if amount <= 0:
+                amount = 1
+
+            item_obj = create_item(item_id)
+            if item_obj is None:
+                logger.warning(f"Drop skipped: could not create item '{item_id}'")
+                continue
+
+            # Spread drops slightly so multiple items don't fully overlap.
+            spread = 18
+            offset_x = random.randint(-spread, spread)
+            offset_y = random.randint(-spread // 2, spread // 2)
+            drop = DroppedItem(base_x + offset_x, base_y + offset_y, item_obj, amount)
+            self.items.append(drop)
+            placed += 1
+            logger.info(
+                f"Enemy '{getattr(enemy, 'ai_profile', 'unknown')}' dropped "
+                f"{amount}x {item_id} at ({base_x + offset_x}, {base_y + offset_y})"
+            )
+
+        if placed == 0:
+            logger.debug(f"Enemy '{getattr(enemy, 'ai_profile', 'unknown')}' had drop_chance entries but none rolled.")
 
     def update(self, dt):
         switched_map_path = self.map.update(self.character)
@@ -753,6 +981,24 @@ class Game(State):
         self._update_projectiles(dt)
         self._update_enemy_projectiles(dt)
 
+        for item in self.items:
+            if hasattr(item, "update"):
+                item.update(dt, self.obstacles)
+        # Flame Shield: deal damage to nearby enemies
+        if self.character.flame_shield_active:
+            self._apply_flame_shield_damage(dt)
+
+        # Ice Armor: slow nearby enemies
+        if self.character.ice_armor_active:
+            self._apply_ice_armor_slow(dt)
+
+        # Regeneration passive
+        if self.character.regeneration:
+            self._apply_regeneration(dt)
+
+        # Update summoned spirits
+        self._update_spirits(dt)
+
         self.collision_handler.check_interactions(
             self.character, self.enemies, self.items
         )
@@ -771,12 +1017,20 @@ class Game(State):
                 _scale = enemy.max_hp / 100.0
 
                 xp_gain = int(random.randint(_base_xp_min, _base_xp_max) * _scale)
+                # Soul Harvest: restore HP and add damage stack
+                character = self.character
+                if getattr(character, "soul_harvest", False):
+                    character.hp = min(character.max_hp, character.hp + character.soul_harvest_hp_per_kill)
+                    character.soul_harvest_stacks.append(character.soul_harvest_duration)
                 self.character.gain_xp(xp_gain)
 
                 gold_gain = int(random.randint(_base_gold_min, _base_gold_max) * _scale)
                 self.app.money += gold_gain
                 logger.info(f"Gained {gold_gain} gold. Total: {self.app.money}")
-                
+
+                # Spawn loot drops at the enemy's death location (Python-configured, no JSON)
+                self._drop_enemy_loot(enemy)
+
                 self.enemies.remove(enemy)
 
         self.npc.update(self.character.pos)
@@ -803,6 +1057,73 @@ class Game(State):
         self.app.profiler.set_gauge("enemies", len(self.enemies))
         self.app.profiler.set_gauge("projectiles", len(self.projectiles))
         self.app.profiler.set_gauge("enemy_projectiles", len(self.enemy_projectiles))
+        self.app.profiler.set_gauge("spirits", len(self.spirits))
+
+    def _apply_ice_armor_slow(self, dt):
+        """Slow enemies near the player while Ice Armor is active."""
+        center = self.character.get_center()
+        radius = self.character.ice_armor_slow_radius
+        slow_factor = self.character.ice_armor_slow_factor
+        slow_duration = 1.0
+        radius_sq = radius * radius
+        for enemy in self.enemies:
+            if enemy.is_dead():
+                continue
+            enemy_rect = enemy.get_rect()
+            enemy_center = pygame.Vector2(enemy_rect.centerx, enemy_rect.centery)
+            dist_sq = (enemy_center - center).length_squared()
+            if dist_sq <= radius_sq:
+                enemy.add_effect(SlowEffect(slow_duration, slow_factor))
+
+    def _apply_flame_shield_damage(self, dt):
+        """Deal flame shield damage to enemies within the flame shield radius."""
+        center = self.character.get_center()
+        radius = self.character.flame_shield_radius
+        dmg_per_sec = self.character.flame_shield_damage_per_sec
+        # Apply Pyromancer's Fury passive buff to flame shield (+25% damage, +15% area)
+        if getattr(self.character, "pyromancers_fury", False):
+            dmg_per_sec *= self.character.pyromancers_fury_damage_mult
+            radius *= self.character.pyromancers_fury_area_mult
+        radius_sq = radius * radius
+
+        # Accumulate fractional damage
+        acc = getattr(self.character, "flame_shield_damage_acc", 0.0)
+        acc += dmg_per_sec * dt
+        damage = int(acc)
+        if damage < 1:
+            self.character.flame_shield_damage_acc = acc
+            return
+        self.character.flame_shield_damage_acc = acc - damage
+
+        for enemy in self.enemies:
+            if enemy.is_dead():
+                continue
+            enemy_rect = enemy.get_rect()
+            enemy_center = pygame.Vector2(enemy_rect.centerx, enemy_rect.centery)
+            dist_sq = (enemy_center - center).length_squared()
+            if dist_sq <= radius_sq:
+                enemy.take_damage(damage)
+                # Apply slight knockback pushing enemy away from player
+                if dist_sq > 0:
+                    push_dir = (enemy_center - center).normalize()
+                    enemy.pos += push_dir * 8 * dt
+
+    def _apply_regeneration(self, dt):
+        acc = getattr(self.character, "regeneration_acc", 0.0)
+        acc += self.character.regeneration_hp_per_sec * dt
+        heal = int(acc)
+        if heal >= 1:
+            old_hp = self.character.hp
+            self.character.hp = min(self.character.max_hp, self.character.hp + heal)
+            acc -= heal
+            if self.character.hp > old_hp:
+                logger.debug(f"Regeneration healed {heal} HP.")
+        self.character.regeneration_acc = acc
+
+    def _update_spirits(self, dt):
+        for spirit in self.spirits[:]:
+            spirit.update(dt, self.enemies)
+        self.spirits = [s for s in self.spirits if s.alive]
 
     def draw_scene(self, screen):
         dt = self.app.clock.get_time() / 1000
@@ -835,6 +1156,13 @@ class Game(State):
             if _is_visible(projectile):
                 projectile.draw(screen, camera_offset)
 
+        # Draw NPCs, player, and dropped items with simple Y-ordering so
+        # they overlap naturally (items at the player's feet won't be hidden
+        # behind the player sprite).
+        for spirit in self.spirits:
+            if _is_visible(spirit):
+                spirit.draw(screen, camera_offset)
+
         # Draw NPCs and player with simple Y-ordering so they overlap naturally
         try:
             npc_vis = _is_visible(self.npc)
@@ -845,24 +1173,33 @@ class Game(State):
         except Exception:
             card_npc_vis = False
 
-        # Collect all visible entities with their y-position for sorting
+        # Collect all visible entities with their y-position for sorting.
         draw_entities = []
         if npc_vis:
             draw_entities.append((self.npc.pos.y, 'npc'))
         if card_npc_vis:
             draw_entities.append((self.card_npc.pos.y, 'card_npc'))
         draw_entities.append((self.character.pos.y, 'player'))
+        for item in self.items:
+            try:
+                if _is_visible(item):
+                    draw_entities.append((item.pos.y, 'item', item))
+            except Exception:
+                continue
 
         # Sort by y-position (lower y drawn first = further back)
         draw_entities.sort(key=lambda e: e[0])
 
-        for _, kind in draw_entities:
+        for entry in draw_entities:
+            kind = entry[1]
             if kind == 'npc':
                 self.npc.draw(screen, camera_offset)
             elif kind == 'card_npc':
                 self.card_npc.draw(screen, camera_offset)
             elif kind == 'player':
                 self.character.draw(screen, camera_offset)
+            elif kind == 'item':
+                entry[2].draw(screen, camera_offset)
 
         self.map.draw_fringe_overlay(screen, camera_offset, self.character)
 
@@ -933,8 +1270,26 @@ class Game(State):
                 self.app.manager.set_state("pause")
                 
             if event.key == pygame.K_q:
-                if getattr(self.app.INV_manager, 'hotbar', None):
-                    self.app.INV_manager.hotbar.use_active_slot()
+                # Q-drop priority (no longer drops a held/dragged item):
+                # 1. If the mouse is hovering over an inventory or hotbar slot
+                #    that contains an item, drop that item.
+                # 2. Otherwise, if the hotbar's active slot contains an item,
+                #    drop that item.
+                # 3. Otherwise, fall back to the hotbar's active-slot use
+                #    behavior (the historical Q action).
+                inv_manager = self.app.INV_manager
+                dropped = False
+                if inv_manager:
+                    hovered = inv_manager.take_item_from_under_mouse()
+                    if hovered:
+                        dropped = inv_manager.drop_item_data(hovered)
+                    if not dropped:
+                        hotbar_item = inv_manager.take_active_hotbar_item()
+                        if hotbar_item:
+                            dropped = inv_manager.drop_item_data(hotbar_item)
+                if not dropped:
+                    if inv_manager and getattr(inv_manager, 'hotbar', None):
+                        inv_manager.hotbar.use_active_slot()
 
             if event.key == pygame.K_1:
                 self.use_skill_slot(0)
