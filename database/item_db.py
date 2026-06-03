@@ -127,12 +127,6 @@ def seed_items():
         description="A polished steel blade forged by a skilled blacksmith."
     )
     db.add_weapon(
-        item_id="rusty_dagger", name="Rusty Dagger", image_path=WIP_TEXTURE,
-        weapon_class="melee", damage=12, durability=20, range_val=40,
-        cone_degrees=80.0, cooldown=220, price=15,
-        description="A small, rusted dagger. Quick, but fragile."
-    )
-    db.add_weapon(
         item_id="battle_axe", name="Battle Axe", image_path=WIP_TEXTURE,
         weapon_class="melee", damage=62, durability=200, range_val=85,
         cone_degrees=130.0, cooldown=850, price=420,
@@ -160,7 +154,22 @@ def seed_items():
         item_id="flaming_sword", name="Flaming Sword", image_path=WIP_TEXTURE,
         weapon_class="melee", damage=55, durability=160, range_val=80,
         cone_degrees=120.0, cooldown=500, price=600,
-        description="A magical blade wreathed in eternal flame."
+        description="A magical blade wreathed in eternal flame.",
+        on_hit_effects=[
+            {"type": "burn", "duration": 4, "damage_per_sec": 8}
+        ]
+    )
+
+    # --- New mechanic: Bleed on hit ---
+    db.add_weapon(
+        item_id="rusty_dagger",
+        name="Rusty Dagger", image_path=WIP_TEXTURE,
+        weapon_class="melee", damage=12, durability=20, range_val=40,
+        cone_degrees=80.0, cooldown=220, price=15,
+        description="A small, rusted dagger. Quick, but fragile.",
+        on_hit_effects=[
+            {"type": "bleed", "duration": 5, "damage_per_sec": 2}
+        ]
     )
 
     # ------------------ Ranged weapons ------------------
@@ -264,11 +273,15 @@ def seed_items():
         description="An incredibly powerful potion that almost fully restores health.",
         effects=[{"type": "regeneration", "duration": 8, "amount_per_sec": 30}]
     )
+    # Potion of Speed now uses the new Haste effect to actually
+    # increase attack speed + movement speed.
     db.add_consumable(
         item_id="potion_of_speed", item_type="potion", name="Potion of Speed",
         image_path=WIP_TEXTURE, heal_amount=0, max_stack=1, price=80,
-        description="A swift potion that makes the drinker much faster for a short time.",
-        effects=[{"type": "regeneration", "duration": 2, "amount_per_sec": 1}]
+        description="A swift potion that makes the drinker much faster and attack quicker.",
+        effects=[
+            {"type": "haste", "duration": 15, "cooldown_multiplier": 0.7, "speed_multiplier": 1.3}
+        ]
     )
     db.add_consumable(
         item_id="potion_of_slow", item_type="potion", name="Potion of Slowness",
@@ -294,17 +307,43 @@ def seed_items():
         description="A swirling draught that makes the world spin.",
         effects=[{"type": "dizziness", "duration": 25}]
     )
-    db.add_consumable(
-        item_id="mana_potion", item_type="potion", name="Mana Potion",
-        image_path=WIP_TEXTURE, heal_amount=0, max_stack=1, price=70,
-        description="A glowing blue potion that restores magical energy.",
-        effects=[{"type": "regeneration", "duration": 5, "amount_per_sec": 8}]
-    )
+    # Elixir of Life is a self-resurrection / full heal item. It uses
+    # a heal_amount of 999 so Consumable.use() snaps HP to max.
     db.add_consumable(
         item_id="elixir_of_life", item_type="potion", name="Elixir of Life",
         image_path=WIP_TEXTURE, heal_amount=999, max_stack=1, price=2000,
-        description="A legendary elixir said to fully restore the drinker.",
+        description="A legendary elixir that fully restores the drinker.",
         effects=[{"type": "regeneration", "duration": 15, "amount_per_sec": 60}]
+    )
+
+    # ------------------ New buff / utility consumables ------------------
+    db.add_consumable(
+        item_id="potion_of_strength", item_type="potion", name="Potion of Strength",
+        image_path=WIP_TEXTURE, heal_amount=0, max_stack=1, price=110,
+        description="Increases melee damage for a short time.",
+        effects=[{"type": "strength", "duration": 30, "damage_bonus": 12}]
+    )
+    db.add_consumable(
+        item_id="potion_of_haste", item_type="potion", name="Potion of Haste",
+        image_path=WIP_TEXTURE, heal_amount=0, max_stack=1, price=130,
+        description="Massively boosts attack and movement speed.",
+        effects=[
+            {"type": "haste", "duration": 20, "cooldown_multiplier": 0.5, "speed_multiplier": 1.5}
+        ]
+    )
+    db.add_consumable(
+        item_id="potion_of_shield", item_type="potion", name="Potion of Shield",
+        image_path=WIP_TEXTURE, heal_amount=0, max_stack=1, price=100,
+        description="Creates a magical shield that absorbs incoming damage.",
+        effects=[{"type": "shield", "duration": 30, "absorb_amount": 80}]
+    )
+    db.add_consumable(
+        item_id="potion_of_lethargy", item_type="potion", name="Potion of Lethargy",
+        image_path=WIP_TEXTURE, heal_amount=0, max_stack=1, price=70,
+        description="A calming draught that saps strength and slows attacks.",
+        effects=[
+            {"type": "lethargy", "duration": 20, "speed_multiplier": 0.7, "cooldown_multiplier": 1.4}
+        ]
     )
 
     db.close()

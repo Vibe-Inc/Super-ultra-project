@@ -121,10 +121,18 @@ class Character:
         # Stamina system
         self.max_stamina = 100
         self.stamina = self.max_stamina
-        self.stamina_drain_rate = 35  
-        self.stamina_regen_rate = 25  
+        self.stamina_drain_rate = 35
+        self.stamina_regen_rate = 25
         self.is_sprinting = False
         self.can_sprint = True
+
+        # Armor / defense system (consumed by Armor items)
+        self.defense = 0
+
+        # Buff / debuff dynamic multipliers (touched by HasteEffect, LethargyEffect, ...)
+        self.damage_bonus = 0         # flat damage added to every attack
+        self.cooldown_multiplier = 1.0  # <1 = faster, >1 = slower
+        self.shield = 0.0             # absorbs damage before HP is touched
 
         # Effects
         self.effects = []
@@ -287,13 +295,18 @@ class Character:
     def can_attack(self, current_time=None):
         if current_time is None:
             current_time = pygame.time.get_ticks()
-        return current_time - self.last_attack_time >= self.attack_cooldown
+        effective_cooldown = self.attack_cooldown * getattr(self, "cooldown_multiplier", 1.0)
+        return current_time - self.last_attack_time >= effective_cooldown
 
     def start_attack(self, current_time=None, show_slash=True):
         if current_time is None:
             current_time = pygame.time.get_ticks()
         self.last_attack_time = current_time
         self.is_attacking = show_slash
+
+    def get_effective_attack_damage(self):
+        """Compute the final damage of an attack, factoring in weapon + damage_bonus buff."""
+        return int(self.attack_damage) + int(getattr(self, "damage_bonus", 0))
 
     def get_forward_direction(self):
         if self.direction == "up":
@@ -363,10 +376,41 @@ class Character:
                 continue
 
             logger.info(f"Hit enemy for {self.attack_damage} damage!")
-            enemy.take_damage(self.attack_damage)
+            final_damage = self.get_effective_attack_damage()
+            enemy.take_damage(final_damage)
+
+            # Apply weapon on-hit enchantments (Flaming Sword, etc.) if enemy supports it.
+            self._apply_weapon_enchantments(enemy)
 
             knockback_force = 20
             enemy.pos += knock_dir * knockback_force
+
+    def _apply_weapon_enchantments(self, enemy):
+        """
+        Apply on-hit effects from the currently equipped weapon (if any).
+
+        New weapons can declare `on_hit_effects` as a list of effect dicts
+        (the same shape used by consumable effects) and they will be applied
+        to the struck enemy here.
+        """
+        weapon = getattr(self, "equipped_weapon", None)
+        if weapon is None:
+            return
+        on_hit = getattr(weapon, "on_hit_effects", None)
+        if not on_hit:
+            return
+        from database.effects import create_effect  # local import to avoid cycles
+        for effect_data in on_hit:
+            if not isinstance(effect_data, dict):
+                continue
+            effect_obj = create_effect(effect_data)
+            if effect_obj is None:
+                continue
+            if hasattr(enemy, "add_effect"):
+                enemy.add_effect(effect_obj)
+            else:
+                # Fallback: try to apply take_damage for DoT-style effects.
+                pass
 
     def get_rect(self):
         """Returns the collision rectangle (hitbox), updated to the current float position."""
@@ -486,7 +530,7 @@ class Character:
             self.stamina += self.stamina_regen_rate * dt
             if self.stamina >= self.max_stamina:
                 self.stamina = self.max_stamina
-                self.can_sprint = True  
+                self.can_sprint = True
 
         # KEY IMPLEMENTATION STEP: Single function call for collision-aware movement
         collision_system.handle_movement_and_collision(self, dt, obstacles)
@@ -514,13 +558,35 @@ class Character:
     def take_damage(self, amount, ignore_invulnerability=False):
         if self.invulnerable and not ignore_invulnerability:
             return
-            
+
+        # Apply armor / defense reduction first
+        defense = getattr(self, "defense", 0)
+        if defense > 0 and not ignore_invulnerability:
+            reduction = min(defense, int(amount * 0.6))
+            amount = max(0, amount - reduction)
+            self.defense = max(0, self.defense - reduction // 2)
+            if amount == 0:
+                logger.debug(f"Player attack fully absorbed by armor ({defense} def).")
+                return
+
+        # Shield absorbs next, before HP is touched
+        shield = getattr(self, "shield", 0.0)
+        if shield > 0.0 and not ignore_invulnerability:
+            if amount <= shield:
+                self.shield = shield - amount
+                logger.debug(f"Player shield absorbed {amount} damage. Remaining shield: {self.shield:.1f}")
+                return
+            else:
+                amount -= shield
+                self.shield = 0.0
+                logger.debug(f"Player shield depleted, remaining {amount} damage taken.")
+
         self.hp -= amount
-        
+
         if not ignore_invulnerability:
             self.invulnerable = True
             self.invulnerability_timer = self.invulnerability_duration
-        
+
         logger.info(f"Player took {amount} damage. HP: {self.hp}/{self.max_hp}")
         if self.hp <= 0:
             self.die()
