@@ -554,14 +554,27 @@ class Game(State):
     def reinit_ui(self):
         self.hud = HUD(self.character, self.app, self.toggle_player_inventory, self.use_skill_slot, open_shop_callback=self.open_shop)
 
+        scale = cfg.ui_scale()
+        slot_size = int(cfg.BASE_INV_slot_size * scale)
+        border = int(cfg.BASE_INV_border * scale)
+
+        self.MAIN_player_inv.slot_size = slot_size
+        self.MAIN_player_inv.border = border
         self.MAIN_player_inv.pos_x = cfg.MAIN_INV_pos_x
         self.MAIN_player_inv.pos_y = cfg.MAIN_INV_pos_y
+
+        self.PLAYER_inventory_equipment.slot_size = slot_size
+        self.PLAYER_inventory_equipment.border = border
         self.PLAYER_inventory_equipment.pos_x = cfg.MAIN_INV_equipment_pos_x
         self.PLAYER_inventory_equipment.pos_y = cfg.MAIN_INV_equipment_pos_y
 
+        hotbar_scale = cfg.INV_HOTBAR_SCALE * scale
+        self.hotbar.slot_size = int(cfg.BASE_INV_slot_size * hotbar_scale)
+        self.hotbar.border = border
+
         if self.app.INV_manager.current_shop_inv:
-            self.MAIN_player_inv.pos_x = cfg.SCREEN_WIDTH // 2 - 500
-            self.app.INV_manager.current_shop_inv.pos_x = cfg.SCREEN_WIDTH // 2 + 100
+            self.MAIN_player_inv.pos_x = cfg.SCREEN_WIDTH // 2 - int(500 * scale)
+            self.app.INV_manager.current_shop_inv.pos_x = cfg.SCREEN_WIDTH // 2 + int(100 * scale)
             self.app.INV_manager.current_shop_inv.pos_y = self.MAIN_player_inv.pos_y
 
     def toggle_player_inventory(self):

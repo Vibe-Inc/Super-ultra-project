@@ -130,10 +130,11 @@ class InventoryRenderer:
                         screen.blit(text_surf, (text_x, text_y))
 
     def draw_shop(self, screen, inv: ShopInventory):
+        sc = cfg.ui_scale()
         bg_rect = pygame.Rect(
-            inv.pos_x - 20, inv.pos_y - 20,
-            (inv.slot_size + inv.border) * inv.columns + inv.border + 40,
-            (inv.slot_size + inv.border) * inv.rows + inv.border + 40
+            inv.pos_x - int(20 * sc), inv.pos_y - int(20 * sc),
+            (inv.slot_size + inv.border) * inv.columns + inv.border + int(40 * sc),
+            (inv.slot_size + inv.border) * inv.rows + inv.border + int(40 * sc)
         )
         
         draw_panel_with_shadow(
@@ -144,7 +145,7 @@ class InventoryRenderer:
         
         title_font = cfg.tooltip_font_CREDITS
         title_surf = title_font.render("MERCHANT", True, cfg.INV_SHOP_TITLE_COLOR)
-        screen.blit(title_surf, (bg_rect.centerx - title_surf.get_width()//2, bg_rect.y - 10))
+        screen.blit(title_surf, (bg_rect.centerx - title_surf.get_width()//2, bg_rect.y - int(10 * sc)))
         
         self.draw_base_inventory(screen, inv)
         
@@ -168,17 +169,18 @@ class InventoryRenderer:
                     screen.blit(text, (bg_pos[0] + 3, bg_pos[1] + 1))
 
         if getattr(inv, 'close_button', None):
-            inv.close_button.rect.topleft = (bg_rect.right - inv.close_button.rect.width - 16, bg_rect.bottom - inv.close_button.rect.height - 16)
+            inv.close_button.rect.topleft = (bg_rect.right - inv.close_button.rect.width - int(16 * sc), bg_rect.bottom - inv.close_button.rect.height - int(16 * sc))
             try: inv.close_button._update_text_surface()
             except Exception: pass
             inv.close_button.draw(screen)
 
     def draw_player_inventory(self, screen, inv: MAIN_player_inventory):
+        sc = cfg.ui_scale()
         btn_extra = int(inv.slot_size * cfg.INV_PLAYER_RIGHT_BTN_EXTRA)
         bg_rect = pygame.Rect(
-            inv.pos_x - 24, inv.pos_y - 340,
-            (inv.slot_size + inv.border) * inv.columns + inv.border + 48 + btn_extra,
-            (inv.slot_size + inv.border) * inv.rows + inv.border + 364
+            inv.pos_x - int(24 * sc), inv.pos_y - int(340 * sc),
+            (inv.slot_size + inv.border) * inv.columns + inv.border + int(48 * sc) + btn_extra,
+            (inv.slot_size + inv.border) * inv.rows + inv.border + int(364 * sc)
         )
         
         draw_panel_with_shadow(
@@ -187,11 +189,11 @@ class InventoryRenderer:
             border_radius=cfg.INV_PLAYER_BORDER_RADIUS, shadow_offset=cfg.INV_PLAYER_SHADOW_OFFSET
         )
             
-        preview_offset_x = cfg.INV_PLAYER_PREVIEW_OFFSET_X
+        preview_offset_x = int(cfg.INV_PLAYER_PREVIEW_OFFSET_X * sc)
         preview_x = inv.pos_x + preview_offset_x
         
-        portrait_bg = pygame.Rect(preview_x, inv.pos_y + cfg.INV_PLAYER_PREVIEW_Y_OFFSET, 
-                                  cfg.INV_PLAYER_PREVIEW_WIDTH, cfg.INV_PLAYER_PREVIEW_HEIGHT)
+        portrait_bg = pygame.Rect(preview_x, inv.pos_y + int(cfg.INV_PLAYER_PREVIEW_Y_OFFSET * sc), 
+                                  int(cfg.INV_PLAYER_PREVIEW_WIDTH * sc), int(cfg.INV_PLAYER_PREVIEW_HEIGHT * sc))
         pygame.draw.rect(screen, cfg.INV_SLOT_INNER_SHADOW, portrait_bg, border_radius=cfg.INV_PLAYER_PORTRAIT_BORDER_RADIUS)
         
         game_state = inv.app.manager.states.get("gameplay")
@@ -206,8 +208,8 @@ class InventoryRenderer:
         pygame.draw.rect(screen, cfg.INV_PLAYER_PORTRAIT_BORDER_COLOR_2, portrait_bg.inflate(2, 2), 
                         width=1, border_radius=cfg.INV_PLAYER_PORTRAIT_BORDER_RADIUS)
 
-        money_panel = pygame.Rect(preview_x, inv.pos_y + cfg.INV_PLAYER_MONEY_PANEL_Y_OFFSET, 
-                                 cfg.INV_PLAYER_MONEY_PANEL_WIDTH, cfg.INV_PLAYER_MONEY_PANEL_HEIGHT)
+        money_panel = pygame.Rect(preview_x, inv.pos_y + int(cfg.INV_PLAYER_MONEY_PANEL_Y_OFFSET * sc), 
+                                 int(cfg.INV_PLAYER_MONEY_PANEL_WIDTH * sc), int(cfg.INV_PLAYER_MONEY_PANEL_HEIGHT * sc))
         pygame.draw.rect(screen, cfg.INV_PLAYER_MONEY_PANEL_BG_COLOR, money_panel, 
                         border_radius=cfg.INV_PLAYER_MONEY_PANEL_BORDER_RADIUS)
         pygame.draw.rect(screen, cfg.INV_PLAYER_MONEY_PANEL_BORDER_COLOR, money_panel, 
@@ -224,12 +226,11 @@ class InventoryRenderer:
 
         # ─── Right-side majestic skillbar & talent tree buttons ───
         if not getattr(inv.app.INV_manager, 'current_shop_inv', None):
-            scale = cfg.ui_scale()
-            gap = int(cfg.INV_PLAYER_RIGHT_BTN_GAP * scale)
+            gap = int(cfg.INV_PLAYER_RIGHT_BTN_GAP * sc)
             
-            btn_x = portrait_bg.right + int(cfg.INV_PLAYER_RIGHT_BTN_MARGIN_X * scale) + 120
+            btn_x = portrait_bg.right + int(cfg.INV_PLAYER_RIGHT_BTN_MARGIN_X * sc) + int(120 * sc)
             stack_height = inv.open_skillbar_btn.rect.height + inv.open_skilltree_btn.rect.height + gap
-            btn_y = portrait_bg.centery - stack_height // 2 + 100
+            btn_y = portrait_bg.centery - stack_height // 2 + int(100 * sc)
 
             inv.open_skillbar_btn.rect.topleft = (btn_x, btn_y)
             inv.open_skilltree_btn.rect.topleft = (btn_x, btn_y + inv.open_skillbar_btn.rect.height + gap)
@@ -441,10 +442,11 @@ class InventoryRenderer:
 
     def draw_hotbar(self, screen, inv: MAIN_player_hotbar):
         inv.update_position()
+        sc = cfg.ui_scale()
         bg_rect = pygame.Rect(
-            inv.pos_x - 16, inv.pos_y - 16,
-            (inv.slot_size + inv.border) * inv.columns + inv.border + 32,
-            (inv.slot_size + inv.border) * inv.rows + inv.border + 32
+            inv.pos_x - int(16 * sc), inv.pos_y - int(16 * sc),
+            (inv.slot_size + inv.border) * inv.columns + inv.border + int(32 * sc),
+            (inv.slot_size + inv.border) * inv.rows + inv.border + int(32 * sc)
         )
         
         draw_panel_with_shadow(

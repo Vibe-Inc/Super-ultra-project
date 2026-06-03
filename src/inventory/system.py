@@ -151,6 +151,7 @@ class ShopInventory(Inventory):
     """
     def __init__(self, app, items_list):
         self.app = app
+        scale = cfg.ui_scale()
         rows, columns = 4, 4
         items_grid = [[None for _ in range(rows)] for _ in range(columns)]
         for i, item in enumerate(items_list):
@@ -159,9 +160,9 @@ class ShopInventory(Inventory):
             
         super().__init__(
             columns, rows, items_grid, 
-            cfg.BASE_INV_slot_size, 0, 0, cfg.BASE_INV_border
+            int(cfg.BASE_INV_slot_size * scale), 0, 0,
+            int(cfg.BASE_INV_border * scale)
         )
-        scale = cfg.ui_scale()
         btn_w, btn_h = max(80, int(140 * scale)), max(28, int(38 * scale))
         self.close_button = Button(
             rect=pygame.Rect(0, 0, btn_w, btn_h),
@@ -235,11 +236,12 @@ class MAIN_player_inventory(Inventory):
     """
     def __init__(self, app:"App"):
         self.app = app
+        scale = cfg.ui_scale()
         super().__init__(
             cfg.MAIN_INV_columns, cfg.MAIN_INV_rows, app.MAIN_INV_items,
-            cfg.BASE_INV_slot_size, cfg.MAIN_INV_pos_x, cfg.MAIN_INV_pos_y, cfg.BASE_INV_border
+            int(cfg.BASE_INV_slot_size * scale), cfg.MAIN_INV_pos_x, cfg.MAIN_INV_pos_y,
+            int(cfg.BASE_INV_border * scale)
         )
-        scale = cfg.ui_scale()
         btn_w = max(20, int(cfg.INV_PLAYER_RIGHT_BTN_WIDTH * scale))
         btn_h = max(8, int(cfg.INV_PLAYER_RIGHT_BTN_HEIGHT * scale))
         
@@ -284,9 +286,11 @@ class MAIN_player_inventory_equipment(Inventory):
             Initialize the equipment inventory grid based on config dimensions.
     """
     def __init__(self, app: "App"):
+        scale = cfg.ui_scale()
         super().__init__(
             cfg.MAIN_INV_equipment_columns, cfg.MAIN_INV_equipment_rows, None,
-            cfg.BASE_INV_slot_size, cfg.MAIN_INV_equipment_pos_x, cfg.MAIN_INV_equipment_pos_y, cfg.BASE_INV_border
+            int(cfg.BASE_INV_slot_size * scale), cfg.MAIN_INV_equipment_pos_x, cfg.MAIN_INV_equipment_pos_y,
+            int(cfg.BASE_INV_border * scale)
         )
 
 class MAIN_player_hotbar(Inventory):
@@ -324,7 +328,7 @@ class MAIN_player_hotbar(Inventory):
         self.app = app
         columns = getattr(cfg, 'INV_HOTBAR_COLUMNS', 10)
         rows = cfg.INV_HOTBAR_ROWS
-        scale = cfg.INV_HOTBAR_SCALE
+        scale = cfg.INV_HOTBAR_SCALE * cfg.ui_scale()
         slot_size = int(cfg.BASE_INV_slot_size * scale)
         
         if not hasattr(app, 'MAIN_HOTBAR_items'):
@@ -445,7 +449,10 @@ class CraftingGrid(Inventory):
             Compare two 3x3 matrices for equality.
     """
     def __init__(self, app):
-        super().__init__(3, 3, None, cfg.BASE_INV_slot_size, 0, 0, cfg.BASE_INV_border)
+        scale = cfg.ui_scale()
+        super().__init__(3, 3, None,
+            int(cfg.BASE_INV_slot_size * scale), 0, 0,
+            int(cfg.BASE_INV_border * scale))
         self.app = app
         self.output_slot = None
         
@@ -457,8 +464,6 @@ class CraftingGrid(Inventory):
         db = Gp_database()
         self.all_recipes = db.get_all_recipes()
         db.close()
-
-        scale = cfg.ui_scale()
         btn_size = int(self.slot_size * 0.85)
         self.book_button = Button(
             rect=pygame.Rect(0, 0, btn_size, btn_size),
