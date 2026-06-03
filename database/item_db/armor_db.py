@@ -68,17 +68,13 @@ def seed_armor(db):
         description="A finely crafted steel ring etched with runes."
     )
     db.add_armor(
-        item_id="chain_gloves", name="Chain Gloves", image_path=WIP_TEXTURE,
+        item_id="iron_gloves", name="Iron Gloves", image_path=WIP_TEXTURE,
         slot_type="gloves", defense_value=5, price=140,
-        description="Chainmail gloves offering good hand protection."
+        description="Iron gloves offering good hand protection."
     )
     db.add_armor(
         item_id="silver_charm", name="Silver Charm", image_path=WIP_TEXTURE,
         slot_type="charm", defense_value=6, price=300,
         description="A gleaming silver charm radiating pure protective energy."
     )
-    db.add_armor(
-        item_id="studded_belt", name="Studded Belt", image_path=WIP_TEXTURE,
-        slot_type="belt", defense_value=4, price=110,
-        description="A thick belt reinforced with metal studs."
-    )
+
