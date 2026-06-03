@@ -16,13 +16,15 @@ from src.entities.npc import NPC
 from src.entities.projectile import Arrow
 from src.ui.hud import HUD
 from src.ui.widgets import Dialog
-from src.ui.debug_menu import SpawnMenu
+from src.ui.debug_menu import SpawnMenu, EffectsMenu
 from src.core.collision_system import CollisionSystem
 from src.ai.navigation import NavGrid
 from src.entities.monster_visuals import build_monster_animations
 from src.entities.monster_attacks import build_attack_controller, AttackContext
 from src.combat.base_player_combat import PlayerCombatController
 from src.minigames.blackjack import BlackjackGame
+import inspect
+import database.effects as effects_db
 
 if TYPE_CHECKING:
     from src.app import App
@@ -551,6 +553,18 @@ class Game(State):
             on_close=lambda: None
         )
 
+        # Debug menu for applying effects
+        effect_names = [
+            name for name, obj in inspect.getmembers(effects_db, inspect.isclass)
+            if issubclass(obj, effects_db.Effect) and obj is not effects_db.Effect
+        ]
+        effect_names.sort()
+        self.effects_menu = EffectsMenu(
+            effect_names,
+            on_apply=self._debug_apply_effect,
+            on_close=lambda: None
+        )
+
     def reinit_ui(self):
         self.hud = HUD(self.character, self.app, self.toggle_player_inventory, self.use_skill_slot, open_shop_callback=self.open_shop)
 
@@ -799,6 +813,36 @@ class Game(State):
         new_enemy = self._create_enemy(spawn_x, spawn_y, profile=profile_name)
         self.enemies.append(new_enemy)
         logger.info(f"[DEBUG] Spawned {profile_name} at ({spawn_x}, {spawn_y})")
+
+    def _debug_apply_effect(self, effect_name, duration):
+        """
+        Instantiate an effect by name and attach it to the player character.
+        Uses simple fallbacks for constructors that require an extra numeric arg.
+        """
+        cls = getattr(effects_db, effect_name, None)
+        if cls is None:
+            logger.warning(f"[DEBUG] Unknown effect: {effect_name}")
+            return
+        try:
+            eff = cls(duration)
+        except TypeError:
+            # Try common fallback: pass a single extra numeric parameter (1.0)
+            try:
+                eff = cls(duration, 1.0)
+            except Exception as e:
+                logger.exception(f"[DEBUG] Failed to instantiate effect {effect_name}: {e}")
+                return
+
+        # Attach to whichever list the Character uses for effects
+        if hasattr(self.character, "active_effects"):
+            self.character.active_effects.append(eff)
+        elif hasattr(self.character, "effects"):
+            self.character.effects.append(eff)
+        else:
+            # last resort: create active_effects container
+            self.character.active_effects = [eff]
+
+        logger.info(f"[DEBUG] Applied effect {effect_name} duration={duration}s to player")
 
     def _get_drop_chance_for_enemy(self, enemy: "Enemy") -> list[dict]:
         """
@@ -1231,18 +1275,37 @@ class Game(State):
                 self.blackjack_game.draw(screen)
             except Exception:
                 pass
-        # Draw debug spawn menu
+        # Draw debug spawn / effects menus
         self.spawn_menu.draw(screen)
+        try:
+            self.effects_menu.draw(screen)
+        except Exception:
+            pass
 
     def draw(self, screen):
         self.draw_scene(screen)
         self.draw_ui(screen)
 
     def handle_event(self, event: pygame.event.Event):
-        # Debug menu priority
-        if self.spawn_menu.visible:
-            self.spawn_menu.handle_event(event)
-            return
+        # Debug menu priority (support Spawn <-> Effects tab switching)
+        if getattr(self, "spawn_menu", None) and getattr(self, "effects_menu", None) and (self.spawn_menu.visible or self.effects_menu.visible):
+            # allow keyboard tab switching between menus
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RIGHT and self.spawn_menu.visible:
+                    self.spawn_menu.visible = False
+                    self.effects_menu.toggle()
+                    return
+                if event.key == pygame.K_LEFT and self.effects_menu.visible:
+                    self.effects_menu.visible = False
+                    self.spawn_menu.toggle()
+                    return
+            # route events to the visible menu
+            if self.spawn_menu.visible:
+                self.spawn_menu.handle_event(event)
+                return
+            if self.effects_menu.visible:
+                self.effects_menu.handle_event(event)
+                return
 
         # If blackjack game is active, route all events to it
         if self.blackjack_game:
