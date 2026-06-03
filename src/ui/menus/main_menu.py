@@ -11,7 +11,7 @@ from src.ui.effects import (
     GOLD, GOLD_BRIGHT, GOLD_DARK,
     ease_out_back, ease_out_cubic, ease_out_elastic,
     Star, LightRay, AmbientEmber, FloatingOrb, LaunchBurst,
-    render_shimmer_text, TitleSparkle,
+    render_shimmer_text, TitleSparkle, MenuClock,
 )
 import src.config as cfg
 from src.core.logger import logger
@@ -87,6 +87,12 @@ class MainMenu(Menu):
         self._bg_key = None
         self._astrolabe_surf = None
         self._astrolabe_key = None
+        self._clock = MenuClock()
+        self._surf_cache = {}
+        self._cached_chars = {}
+        self._cached_title_chars = {}
+        self._orn_cache = None
+        self._orn_key = None
 
     def on_enter(self):
         self._anim_time = 0.0
@@ -246,54 +252,67 @@ class MainMenu(Menu):
         for s in self._title_sparkles:
             s.update(dt)
 
+    def _get_surf(self, name, sw, sh):
+        key = (name, sw, sh)
+        s = self._surf_cache.get(key)
+        if s is None:
+            s = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            self._surf_cache[key] = s
+        else:
+            s.fill((0, 0, 0, 0))
+        return s
+
     def draw(self, screen):
         self.layout(screen)
         sw, sh = self._screen_size(screen)
         self.update(1 / 60)
         t = self._anim_time
         lp = ease_out_cubic(self._launch_phase)
+        scale = cfg.ui_scale()
 
         bg = self._get_bg(sw, sh)
         screen.blit(bg, (0, 0))
 
-        star_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        star_surf = self._get_surf('star', sw, sh)
         for star in self._stars:
             star.draw(star_surf, t)
         screen.blit(star_surf, (0, 0))
 
-        ray_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        ray_surf = self._get_surf('ray', sw, sh)
         for ray in self._light_rays:
             ray.draw(ray_surf, t)
         screen.blit(ray_surf, (0, 0))
 
-        wash = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        wash = self._get_surf('wash', sw, sh)
         wash_a = int(12 + 8 * math.sin(t * 0.4))
         wash_phase = t * 0.2
         wr = int(sw * 0.4)
         wg_cx = int(sw * 0.5 + math.cos(wash_phase) * sw * 0.15)
         wg_cy = int(sh * 0.3 + math.sin(wash_phase * 0.7) * sh * 0.1)
-        wg = pygame.Surface((wr * 2, wr * 2), pygame.SRCALPHA)
+        wg = self._get_surf('wg', wr * 2, wr * 2)
+        wg.fill((0, 0, 0, 0))
         pygame.draw.circle(wg, (255, 200, 80, max(0, min(30, wash_a))), (wr, wr), wr)
         wash.blit(wg, (wg_cx - wr, wg_cy - wr))
         wg2_cx = int(sw * 0.6 + math.sin(wash_phase * 1.3) * sw * 0.12)
         wg2_cy = int(sh * 0.6 + math.cos(wash_phase * 0.9) * sh * 0.08)
-        wg2 = pygame.Surface((wr, wr), pygame.SRCALPHA)
+        wg2 = self._get_surf('wg2', wr, wr)
+        wg2.fill((0, 0, 0, 0))
         pygame.draw.circle(wg2, (180, 140, 255, max(0, min(18, wash_a - 3))), (wr // 2, wr // 2), wr // 2)
         wash.blit(wg2, (wg2_cx - wr // 2, wg2_cy - wr // 2))
         screen.blit(wash, (0, 0))
 
-        orb_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        orb_surf = self._get_surf('orb', sw, sh)
         for p in self._particles:
             p.draw(orb_surf, t)
         screen.blit(orb_surf, (0, 0))
 
-        ember_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        ember_surf = self._get_surf('ember', sw, sh)
         for e in self._embers:
             e.draw(ember_surf, t)
         screen.blit(ember_surf, (0, 0))
 
         if self._bursts:
-            burst_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            burst_surf = self._get_surf('burst', sw, sh)
             for b in self._bursts:
                 b.draw(burst_surf)
             screen.blit(burst_surf, (0, 0))
@@ -303,11 +322,13 @@ class MainMenu(Menu):
         astrolabe.set_alpha(astro_alpha)
         screen.blit(astrolabe, (0, 0))
 
+        self._clock.draw(screen, t, sw, sh, scale)
+
         logo_progress = min(1.0, max(0, (t - 0.2) / 0.8))
         logo_scale_eased = ease_out_back(logo_progress)
         logo_base_w = self.beta_logo_img.get_width()
         logo_base_h = self.beta_logo_img.get_height()
-        logo_float = math.sin(t * 0.7) * 5 * cfg.ui_scale()
+        logo_float = math.sin(t * 0.7) * 5 * scale
         lw = max(1, int(logo_base_w * logo_scale_eased))
         lh = max(1, int(logo_base_h * logo_scale_eased))
         logo_scaled = pygame.transform.smoothscale(self.beta_logo_img, (lw, lh))
@@ -315,7 +336,7 @@ class MainMenu(Menu):
         logo_rect = logo_scaled.get_rect(center=(sw // 2, logo_cy))
 
         if logo_progress > 0.05:
-            glow_sz = max(lw, lh) + int(50 * cfg.ui_scale() * logo_scale_eased)
+            glow_sz = max(lw, lh) + int(50 * scale * logo_scale_eased)
             glow = pygame.Surface((glow_sz, glow_sz), pygame.SRCALPHA)
             ga = int(35 + 20 * math.sin(t * 1.3)) if logo_progress > 0.5 else int(60 * logo_progress)
             pygame.draw.circle(glow, (*GOLD, max(0, min(60, ga))), (glow_sz // 2, glow_sz // 2), glow_sz // 2)
@@ -327,7 +348,13 @@ class MainMenu(Menu):
         title_text = "CODEX ARCANUM"
         title_y = int(sh * 0.35)
         title_chars = list(title_text)
-        char_widths = [self._title_font.size(c)[0] for c in title_chars]
+        char_widths = []
+        for c in title_chars:
+            if c not in self._cached_title_chars:
+                self._cached_title_chars[c] = self._title_font.render(c, True, GOLD_BRIGHT)
+            if ('glow', c) not in self._cached_title_chars:
+                self._cached_title_chars[('glow', c)] = self._title_font.render(c, True, (255, 200, 50))
+            char_widths.append(self._cached_title_chars[c].get_width())
         total_title_w = sum(char_widths)
         title_start_x = (sw - total_title_w) // 2
 
@@ -339,18 +366,18 @@ class MainMenu(Menu):
             char_alpha = int(255 * char_eased)
 
             char_x = title_start_x + sum(char_widths[:i])
-            char_s = self._title_font.render(char, True, GOLD_BRIGHT)
-            char_s.set_alpha(char_alpha)
 
             if char_eased > 0.3:
                 glow_a = int(40 * (1 - char_eased * 0.5))
-                gs = self._title_font.render(char, True, (255, 200, 50))
+                gs = self._cached_title_chars[('glow', char)]
                 gs.set_alpha(max(0, min(60, glow_a)))
                 screen.blit(gs, (char_x, title_y + char_offset_y))
 
+            char_s = self._cached_title_chars[char]
+            char_s.set_alpha(char_alpha)
             screen.blit(char_s, (char_x, title_y + char_offset_y))
 
-        sparkle_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        sparkle_surf = self._get_surf('sparkle', sw, sh)
         for s in self._title_sparkles:
             s.draw(sparkle_surf)
         screen.blit(sparkle_surf, (0, 0))
@@ -361,15 +388,15 @@ class MainMenu(Menu):
             div_eased = ease_out_cubic(div_t)
             div_w = int(sw * 0.55 * div_eased)
             div_x = (sw - div_w) // 2
-            div_y = title_y + self._title_font.get_height() + int(12 * cfg.ui_scale())
-            thin = max(1, int(1.5 * cfg.ui_scale()))
-            thick = max(2, int(3 * cfg.ui_scale()))
+            div_y = title_y + self._title_font.get_height() + int(12 * scale)
+            thin = max(1, int(1.5 * scale))
+            thick = max(2, int(3 * scale))
             div_a = int(220 * div_eased)
             pygame.draw.line(screen, (*GOLD_DARK, div_a), (div_x, div_y), (div_x + div_w, div_y), thick)
             pygame.draw.line(screen, (*GOLD_BRIGHT, div_a), (div_x, div_y - thin), (div_x + div_w, div_y - thin), thin)
             for j, cx in enumerate((div_x + div_w // 4, div_x + div_w // 2, div_x + 3 * div_w // 4)):
                 phase = t * 2.0 + j * 1.2
-                ds = max(3, int(7 * cfg.ui_scale() * (0.8 + 0.2 * math.sin(phase))))
+                ds = max(3, int(7 * scale * (0.8 + 0.2 * math.sin(phase))))
                 pts = [(cx, div_y - ds), (cx + ds, div_y), (cx, div_y + ds), (cx - ds, div_y)]
                 pygame.draw.polygon(screen, (*GOLD_BRIGHT, div_a), pts)
 
@@ -377,7 +404,7 @@ class MainMenu(Menu):
         sub_t = max(0, min(1.0, (t - sub_delay) / 0.6))
         if sub_t > 0:
             sub_alpha = int((140 + 50 * math.sin(t * 0.8)) * ease_out_cubic(sub_t))
-            sub_y = title_y + self._title_font.get_height() + int(30 * cfg.ui_scale())
+            sub_y = title_y + self._title_font.get_height() + int(30 * scale)
             sub_s = self._sub_font.render(_("An Epic Adventure Awaits"), True, (200, 185, 140))
             sub_s.set_alpha(sub_alpha)
             screen.blit(sub_s, ((sw - sub_s.get_width()) // 2, sub_y))
@@ -397,34 +424,35 @@ class MainMenu(Menu):
         corner_t = max(0, min(1.0, (t - 0.8) / 0.5))
         if corner_t > 0:
             ca = int(180 * ease_out_cubic(corner_t))
-            cc = (*GOLD, ca)
-            ofs = max(20, int(40 * cfg.ui_scale()))
-            cr = max(4, int(8 * cfg.ui_scale()))
-            orn_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
-            for cx2, cy2 in [(ofs, ofs), (sw - ofs, ofs), (ofs, sh - ofs), (sw - ofs, sh - ofs)]:
-                outer_r = max(8, int(16 * cfg.ui_scale()))
-                inner_r = max(4, int(8 * cfg.ui_scale()))
-                s = pygame.Surface((outer_r * 2, outer_r * 2), pygame.SRCALPHA)
-                pygame.draw.circle(s, (*GOLD, max(0, min(40, ca // 3))), (outer_r, outer_r), outer_r)
-                pygame.draw.circle(s, (*GOLD_BRIGHT, max(0, min(60, ca // 2))), (outer_r, outer_r), inner_r)
-                for angle in range(0, 360, 30):
-                    rad = math.radians(angle)
-                    ex = outer_r + int(math.cos(rad) * (outer_r - 2))
-                    ey = outer_r + int(math.sin(rad) * (outer_r - 2))
-                    lw = max(1, outer_r // 6)
-                    lc = (*GOLD, max(0, min(30, ca // 4)))
-                    pygame.draw.line(s, lc, (outer_r, outer_r), (ex, ey), lw)
-                orn_surf.blit(s, (cx2 - outer_r, cy2 - outer_r))
-            screen.blit(orn_surf, (0, 0))
+            if self._orn_key != (sw, sh) or self._orn_cache is None:
+                ofs = max(20, int(40 * scale))
+                self._orn_cache = pygame.Surface((sw, sh), pygame.SRCALPHA)
+                for cx2, cy2 in [(ofs, ofs), (sw - ofs, ofs), (ofs, sh - ofs), (sw - ofs, sh - ofs)]:
+                    outer_r = max(8, int(16 * scale))
+                    inner_r = max(4, int(8 * scale))
+                    s = pygame.Surface((outer_r * 2, outer_r * 2), pygame.SRCALPHA)
+                    pygame.draw.circle(s, (*GOLD, 40), (outer_r, outer_r), outer_r)
+                    pygame.draw.circle(s, (*GOLD_BRIGHT, 60), (outer_r, outer_r), inner_r)
+                    for angle in range(0, 360, 30):
+                        rad = math.radians(angle)
+                        ex = outer_r + int(math.cos(rad) * (outer_r - 2))
+                        ey = outer_r + int(math.sin(rad) * (outer_r - 2))
+                        lw = max(1, outer_r // 6)
+                        pygame.draw.line(s, (*GOLD, 30), (outer_r, outer_r), (ex, ey), lw)
+                    self._orn_cache.blit(s, (cx2 - outer_r, cy2 - outer_r))
+                self._orn_key = (sw, sh)
+            self._orn_cache.set_alpha(ca)
+            screen.blit(self._orn_cache, (0, 0))
+            self._orn_cache.set_alpha(255)
 
         ver_t = max(0, min(1.0, (t - 2.0) / 0.5))
         if ver_t > 0:
             ver_s = self.font_small.render("v0.1.0 \u2014 Codex Arcanum", True, (150, 135, 105))
             ver_s.set_alpha(int(140 * ease_out_cubic(ver_t)))
-            screen.blit(ver_s, ((sw - ver_s.get_width()) // 2, sh - int(30 * cfg.ui_scale())))
+            screen.blit(ver_s, ((sw - ver_s.get_width()) // 2, sh - int(30 * scale)))
 
         if lp < 1.0:
-            ov = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            ov = self._get_surf('overlay', sw, sh)
             ov.fill((0, 0, 0, max(0, min(255, int(255 * (1.0 - lp))))))
             screen.blit(ov, (0, 0))
 

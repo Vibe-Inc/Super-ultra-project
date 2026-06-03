@@ -59,6 +59,7 @@ Special thanks to Vibe inc""")
         self._embers = []
         self._bursts = []
         self._sparkles = []
+        self._surf_cache = {}
 
     def on_enter(self):
         self._anim_time = 0.0
@@ -100,44 +101,54 @@ Special thanks to Vibe inc""")
         except Exception:
             pass
 
+    def _get_surf(self, name, sw, sh):
+        key = (name, sw, sh)
+        if key in self._surf_cache:
+            surf = self._surf_cache[key]
+            surf.fill((0, 0, 0, 0))
+            return surf
+        surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        self._surf_cache[key] = surf
+        return surf
+
     def _draw_background(self, screen, sw, sh, t, lp):
-        star_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        star_surf = self._get_surf('star', sw, sh)
         for star in self._stars:
             star.draw(star_surf, t)
         screen.blit(star_surf, (0, 0))
 
-        ray_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        ray_surf = self._get_surf('ray', sw, sh)
         for ray in self._light_rays:
             ray.draw(ray_surf, t)
         screen.blit(ray_surf, (0, 0))
 
-        wash = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        wash = self._get_surf('wash', sw, sh)
         wash_a = int(10 + 6 * math.sin(t * 0.35))
         wash_phase = t * 0.15
         wr = int(sw * 0.35)
         wg_cx = int(sw * 0.5 + math.cos(wash_phase) * sw * 0.12)
         wg_cy = int(sh * 0.4 + math.sin(wash_phase * 0.6) * sh * 0.08)
-        wg = pygame.Surface((wr * 2, wr * 2), pygame.SRCALPHA)
+        wg = self._get_surf('wg', wr * 2, wr * 2)
         pygame.draw.circle(wg, (255, 200, 80, max(0, min(25, wash_a))), (wr, wr), wr)
         wash.blit(wg, (wg_cx - wr, wg_cy - wr))
-        wg2 = pygame.Surface((wr, wr), pygame.SRCALPHA)
+        wg2 = self._get_surf('wg2', wr, wr)
         pygame.draw.circle(wg2, (140, 100, 255, max(0, min(15, wash_a - 3))),
                           (wr // 2, wr // 2), wr // 2)
         wash.blit(wg2, (int(sw * 0.6) - wr // 2, int(sh * 0.6) - wr // 2))
         screen.blit(wash, (0, 0))
 
-        orb_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        orb_surf = self._get_surf('orb', sw, sh)
         for p in self._particles:
             p.draw(orb_surf, t)
         screen.blit(orb_surf, (0, 0))
 
-        ember_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        ember_surf = self._get_surf('ember', sw, sh)
         for e in self._embers:
             e.draw(ember_surf, t)
         screen.blit(ember_surf, (0, 0))
 
         if self._bursts:
-            burst_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            burst_surf = self._get_surf('burst', sw, sh)
             for b in self._bursts:
                 b.draw(burst_surf)
             screen.blit(burst_surf, (0, 0))

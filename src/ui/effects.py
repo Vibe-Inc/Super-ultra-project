@@ -1,6 +1,7 @@
 import math
 import random
 import pygame
+import src.config as cfg
 
 GOLD = (212, 175, 55)
 GOLD_BRIGHT = (255, 215, 0)
@@ -264,3 +265,107 @@ class TitleSparkle:
         s = pygame.Surface((int(sz * 2 + 2), int(sz * 2 + 2)), pygame.SRCALPHA)
         pygame.draw.circle(s, (*self.color, max(0, min(255, a))), (int(sz + 1), int(sz + 1)), int(sz))
         surf.blit(s, (int(self.x - sz), int(self.y - sz)))
+
+
+class MenuClock:
+    def __init__(self):
+        self._face = None
+        self._key = (0, 0)
+        self._numerals = ["XII", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI"]
+        self._num_cache = {}
+
+    def _get_num_surf(self, text, font):
+        if text not in self._num_cache:
+            self._num_cache[text] = font.render(text, True, GOLD_BRIGHT)
+        return self._num_cache[text]
+
+    def _build_face(self, sw, sh, scale):
+        self._key = (sw, sh)
+        self._face = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        cx, cy = sw // 2, int(sh * 0.35)
+        base_r = min(sw, sh) // 4
+        if base_r < 30:
+            base_r = 30
+
+        ring = pygame.Surface((base_r * 2, base_r * 2), pygame.SRCALPHA)
+        for r, a, w in [(base_r, 30, 3), (base_r - 4, 20, 1), (base_r - 8, 15, 1)]:
+            if r >= 4:
+                pygame.draw.circle(ring, (*GOLD, a), (base_r, base_r), r, w)
+        self._face.blit(ring, (cx - base_r, cy - base_r))
+
+        for i in range(12):
+            angle = math.radians(i * 30 - 90)
+            inner_r = base_r - max(8, int(15 * scale))
+            outer_r = base_r - max(3, int(5 * scale))
+            ix = cx + int(math.cos(angle) * inner_r)
+            iy = cy + int(math.sin(angle) * inner_r)
+            ox = cx + int(math.cos(angle) * outer_r)
+            oy = cy + int(math.sin(angle) * outer_r)
+            pygame.draw.line(self._face, (*GOLD_BRIGHT, 40), (ix, iy), (ox, oy), 2)
+
+        for i in range(60):
+            if i % 5 == 0:
+                continue
+            angle = math.radians(i * 6 - 90)
+            inner_r = base_r - max(6, int(10 * scale))
+            outer_r = base_r - max(2, int(4 * scale))
+            ix = cx + int(math.cos(angle) * inner_r)
+            iy = cy + int(math.sin(angle) * inner_r)
+            ox = cx + int(math.cos(angle) * outer_r)
+            oy = cy + int(math.sin(angle) * outer_r)
+            pygame.draw.line(self._face, (*GOLD, 20), (ix, iy), (ox, oy), 1)
+
+        num_size = max(8, int(20 * scale))
+        num_font = cfg.get_font(num_size)
+        for i, numeral in enumerate(self._numerals):
+            angle = math.radians(i * 30 - 90)
+            r = base_r - max(18, int(30 * scale))
+            ns = self._get_num_surf(numeral, num_font)
+            nx = cx + int(math.cos(angle) * r) - ns.get_width() // 2
+            ny = cy + int(math.sin(angle) * r) - ns.get_height() // 2
+            self._face.blit(ns, (nx, ny))
+
+        cd_r = max(3, int(6 * scale))
+        cs = pygame.Surface((cd_r * 2, cd_r * 2), pygame.SRCALPHA)
+        pygame.draw.circle(cs, (*GOLD_BRIGHT, 60), (cd_r, cd_r), cd_r)
+        self._face.blit(cs, (cx - cd_r, cy - cd_r))
+
+    def draw(self, screen, t, sw, sh, scale):
+        if self._key != (sw, sh) or self._face is None:
+            self._build_face(sw, sh, scale)
+
+        screen.blit(self._face, (0, 0))
+
+        cx, cy = sw // 2, int(sh * 0.35)
+        base_r = min(sw, sh) // 4
+        if base_r < 30:
+            base_r = 30
+
+        total_ms = pygame.time.get_ticks()
+        total_sec = total_ms / 1000.0
+        second = total_sec % 60
+        minute = (total_sec / 60) % 60
+        hour = (total_sec / 3600) % 12
+
+        sec_angle = math.radians(second * 6 - 90)
+        sec_len = base_r - max(10, int(20 * scale))
+        sec_x = cx + int(math.cos(sec_angle) * sec_len)
+        sec_y = cy + int(math.sin(sec_angle) * sec_len)
+        pygame.draw.line(screen, (*GOLD_BRIGHT, 50), (cx, cy), (sec_x, sec_y), 1)
+
+        min_angle = math.radians(minute * 6 + second * 0.1 - 90)
+        min_len = base_r - max(20, int(40 * scale))
+        min_x = cx + int(math.cos(min_angle) * min_len)
+        min_y = cy + int(math.sin(min_angle) * min_len)
+        pygame.draw.line(screen, (*GOLD, 70), (cx, cy), (min_x, min_y), 3)
+
+        hour_angle = math.radians(hour * 30 + minute * 0.5 - 90)
+        hour_len = base_r - max(35, int(70 * scale))
+        hour_x = cx + int(math.cos(hour_angle) * hour_len)
+        hour_y = cy + int(math.sin(hour_angle) * hour_len)
+        pygame.draw.line(screen, (*GOLD_BRIGHT, 80), (cx, cy), (hour_x, hour_y), 4)
+
+        cap_r = max(2, int(4 * scale))
+        s = pygame.Surface((cap_r * 2, cap_r * 2), pygame.SRCALPHA)
+        pygame.draw.circle(s, (*GOLD_BRIGHT, 80), (cap_r, cap_r), cap_r)
+        screen.blit(s, (cx - cap_r, cy - cap_r))
