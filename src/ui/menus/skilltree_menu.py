@@ -2158,13 +2158,15 @@ class SkillTreeMenu(Menu):
                 brightness = int(brightness * star_alpha_mult)
             pygame.draw.circle(surface, (brightness, brightness, brightness + 3), origin, int(r * self.zoom), 0)
 
-        # Guide rings (no pulse animation to reduce math)
+        # Guide rings with subtle pulse
         ring_radii = [130, 210, 310, 330, 460, 580]
         for idx, radius in enumerate(ring_radii):
-            c = int(22 * (0.85 + 0.15 * (idx % 2)))
+            ring_pulse = (math.sin(t * 0.4 + idx * 0.7) + 1.0) * 0.5
+            c = int(22 * (0.65 + 0.35 * ring_pulse) * (0.85 + 0.15 * (idx % 2)))
             if self.entrance_active and self.entrance_phase < 2:
                 c = int(c * star_alpha_mult)
-            pygame.draw.circle(surface, (c, c, c + 8), origin, int(radius * self.zoom), 1)
+            alpha = max(8, c)
+            pygame.draw.circle(surface, (alpha, alpha, alpha + 8), origin, int(radius * self.zoom), 1)
 
         # Draw twinkling stars with branch-themed colors
         branch_star_colors = [
@@ -2245,8 +2247,20 @@ class SkillTreeMenu(Menu):
                 flow_frac = (t * 0.5 + hash(a + b) * 0.01) % 1.0
                 fx = pos_a.x + (pos_b.x - pos_a.x) * flow_frac
                 fy = pos_a.y + (pos_b.y - pos_a.y) * flow_frac
+                glow_ep_size = max(1, int(3 * self.zoom))
+                for gw in range(2):
+                    gc = tuple(int(c * (0.3 - gw * 0.1)) for c in base_color)
+                    pygame.draw.circle(surface, gc, (int(fx), int(fy)), glow_ep_size + gw * 2)
                 flow_sz = max(1, int(2.5 * self.zoom))
                 pygame.draw.circle(surface, (255, 255, 255), (int(fx), int(fy)), flow_sz)
+
+                # Endpoint glow dots on active links
+                ep_size = max(2, int(3 * self.zoom))
+                ep_glow = tuple(int(c * 0.5) for c in base_color)
+                pygame.draw.circle(surface, ep_glow, (int(pos_a.x), int(pos_a.y)), ep_size)
+                pygame.draw.circle(surface, ep_glow, (int(pos_b.x), int(pos_b.y)), ep_size)
+                pygame.draw.circle(surface, base_color, (int(pos_a.x), int(pos_a.y)), max(1, ep_size - 1))
+                pygame.draw.circle(surface, base_color, (int(pos_b.x), int(pos_b.y)), max(1, ep_size - 1))
             else:
                 dim = 50 + int(10 * (math.sin(t * 0.5 + hash(a + b) * 0.3) + 1.0) * 0.5)
                 pygame.draw.line(surface, (dim, dim, dim + 10), pos_a, pos_b, max(1, int(1.5 * self.zoom)))
@@ -2350,6 +2364,30 @@ class SkillTreeMenu(Menu):
                 core_r = max(1, int(radius * 0.25))
                 core_shine = tuple(min(255, c + 80) for c in fill)
                 pygame.draw.circle(surface, core_shine, (int(pos.x - radius * 0.18), int(pos.y - radius * 0.18)), core_r)
+
+            # ── Kind-based inner symbol (diamond for major, star for keystone) ──
+            if is_unlocked and radius > 8:
+                if kind == "major":
+                    dia_size = int(radius * 0.4)
+                    dia_pts = [
+                        (int(pos.x), int(pos.y - dia_size)),
+                        (int(pos.x + dia_size), int(pos.y)),
+                        (int(pos.x), int(pos.y + dia_size)),
+                        (int(pos.x - dia_size), int(pos.y)),
+                    ]
+                    sym_color = tuple(min(255, c + 60) for c in accent)
+                    pygame.draw.polygon(surface, sym_color, dia_pts)
+                    pygame.draw.polygon(surface, (255, 255, 255), dia_pts, 1)
+                elif kind == "keystone":
+                    star_size = int(radius * 0.45)
+                    star_pts = []
+                    for i in range(10):
+                        a = t * 0.5 + i * math.pi / 5
+                        r = star_size if i % 2 == 0 else star_size * 0.4
+                        star_pts.append((int(pos.x + math.cos(a) * r), int(pos.y + math.sin(a) * r)))
+                    sym_color = tuple(min(255, c + 60) for c in accent)
+                    pygame.draw.polygon(surface, sym_color, star_pts)
+                    pygame.draw.polygon(surface, (255, 255, 255), star_pts, 1)
 
             # ── Border with glow ──
             border_width = 2 if kind in ("core", "keystone", "major") else 1
@@ -2526,6 +2564,16 @@ class SkillTreeMenu(Menu):
         name = self.section_font.render(selected_node["name"], True, name_color)
         screen.blit(name, (r.x + 18, py))
         py += name.get_height() + 6
+
+        # Branch accent bar
+        if branch:
+            bar_rect = pygame.Rect(r.x + 18, py, min(100, r.width - 36), 3)
+            bar_color = theme["secondary"] if is_unlocked else (60, 58, 72)
+            bar_pulse = (math.sin(t * 1.5) + 1.0) * 0.5 if is_unlocked else 0
+            if bar_pulse:
+                bar_color = tuple(min(255, int(c + 30 * bar_pulse)) for c in bar_color)
+            pygame.draw.rect(screen, bar_color, bar_rect, border_radius=2)
+            py += 12
 
         # Kind badge
         kind_map = {
