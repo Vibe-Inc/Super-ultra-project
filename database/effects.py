@@ -274,6 +274,143 @@ class RootEffect(Effect):
         self.rooted = False
         logger.debug(f"RootEffect ended on {getattr(target, 'id', type(target))}")
 
+# ─── New positive effects ────────────────────────────────────────────────────
+class RadiantFortitude(Effect):
+    """
+    Buff: increases incoming healing and slightly reduces damage taken.
+    """
+    def __init__(self, duration=30.0, heal_mult=1.2, damage_mult=0.95):
+        super().__init__(duration)
+        self.heal_mult = heal_mult
+        self.damage_mult = damage_mult
+        self.started = False
+
+    def apply(self, dt, target):
+        if not self.started:
+            # store previous values for safe revert
+            self._prev_heal = getattr(target, "incoming_healing_mult", 1.0)
+            self._prev_damage = getattr(target, "damage_taken_mult", 1.0)
+            target.incoming_healing_mult = self._prev_heal * self.heal_mult
+            target.damage_taken_mult = self._prev_damage * self.damage_mult
+            self.started = True
+            logger.debug(f"Applied RadiantFortitude to {getattr(target,'id',type(target))}")
+
+    def on_end(self, target):
+        # restore previous values if present
+        if hasattr(self, "_prev_heal"):
+            target.incoming_healing_mult = getattr(target, "incoming_healing_mult", 1.0) / self.heal_mult
+        if hasattr(self, "_prev_damage"):
+            target.damage_taken_mult = getattr(target, "damage_taken_mult", 1.0) / self.damage_mult
+        logger.debug(f"RadiantFortitude ended on {getattr(target,'id',type(target))}")
+
+class Haste(Effect):
+    """
+    Buff: increases movement speed and reduces attack cooldown.
+    """
+    def __init__(self, duration=10.0, speed_mult=1.3, cooldown_mult=0.7):
+        super().__init__(duration)
+        self.speed_mult = speed_mult
+        self.cooldown_mult = cooldown_mult
+        self.started = False
+
+    def apply(self, dt, target):
+        if not self.started:
+            self._prev_speed = getattr(target, "speed_multiplier", 1.0)
+            self._prev_cd_mult = getattr(target, "attack_cooldown_mult", 1.0)
+            target.speed_multiplier = self._prev_speed * self.speed_mult
+            target.attack_cooldown_mult = self._prev_cd_mult * self.cooldown_mult
+            self.started = True
+            logger.debug(f"Applied Haste to {getattr(target,'id',type(target))}")
+
+    def on_end(self, target):
+        target.speed_multiplier = getattr(target, "speed_multiplier", 1.0) / self.speed_mult
+        target.attack_cooldown_mult = getattr(target, "attack_cooldown_mult", 1.0) / self.cooldown_mult
+        logger.debug(f"Haste ended on {getattr(target,'id',type(target))}")
+
+class VampiricEdge(Effect):
+    """
+    Buff: attacks heal the caster for a percentage of damage dealt.
+    """
+    def __init__(self, duration=20.0, vampiric_pct=0.2):
+        super().__init__(duration)
+        self.vampiric_pct = vampiric_pct
+        self.started = False
+
+    def apply(self, dt, target):
+        if not self.started:
+            self._prev = getattr(target, "vampiric_pct", 0.0)
+            target.vampiric_pct = self.vampiric_pct
+            self.started = True
+            logger.debug(f"Applied VampiricEdge to {getattr(target,'id',type(target))}")
+
+    def on_end(self, target):
+        target.vampiric_pct = max(0.0, getattr(target, "vampiric_pct", 0.0) - self.vampiric_pct)
+        logger.debug(f"VampiricEdge ended on {getattr(target,'id',type(target))}")
+
+class ArcaneShield(Effect):
+    """
+    Shield: grants flat absorption that is consumed before HP.
+    """
+    def __init__(self, duration=60.0, absorption=150.0):
+        super().__init__(duration)
+        self.absorption = float(absorption)
+        self.started = False
+
+    def apply(self, dt, target):
+        if not self.started:
+            target.shield_absorption = getattr(target, "shield_absorption", 0.0) + self.absorption
+            self.started = True
+            logger.debug(f"ArcaneShield applied {self.absorption} to {getattr(target,'id',type(target))}")
+
+    def on_end(self, target):
+        # remove the shield portion granted by this instance
+        target.shield_absorption = max(0.0, getattr(target, "shield_absorption", 0.0) - self.absorption)
+        logger.debug(f"ArcaneShield expired on {getattr(target,'id',type(target))}")
+
+class KeenInsight(Effect):
+    """
+    Buff: increases critical chance for duration.
+    """
+    def __init__(self, duration=20.0, crit_bonus=0.25):
+        super().__init__(duration)
+        self.crit_bonus = crit_bonus
+        self.started = False
+
+    def apply(self, dt, target):
+        if not self.started:
+            target.crit_chance_bonus = getattr(target, "crit_chance_bonus", 0.0) + self.crit_bonus
+            self.started = True
+            logger.debug(f"KeenInsight applied to {getattr(target,'id',type(target))}")
+
+    def on_end(self, target):
+        target.crit_chance_bonus = max(0.0, getattr(target, "crit_chance_bonus", 0.0) - self.crit_bonus)
+        logger.debug(f"KeenInsight ended on {getattr(target,'id',type(target))}")
+
+class Momentum(Effect):
+    """
+    Triggered short damage buff (intended to be applied on kill by combat code).
+    Grants a percentage damage increase for the duration.
+    """
+    def __init__(self, duration=6.0, damage_pct=0.10):
+        super().__init__(duration)
+        self.damage_pct = damage_pct
+        self.started = False
+        self._added = 0
+
+    def apply(self, dt, target):
+        if not self.started:
+            base = getattr(target, "base_attack_damage", getattr(target, "attack_damage", 0))
+            self._added = int(base * self.damage_pct)
+            target.attack_damage = getattr(target, "attack_damage", base) + self._added
+            self.started = True
+            logger.debug(f"Momentum applied (+{self._added}) to {getattr(target,'id',type(target))}")
+
+    def on_end(self, target):
+        # remove added flat damage
+        target.attack_damage = max(0, getattr(target, "attack_damage", 0) - self._added)
+        logger.debug(f"Momentum ended on {getattr(target,'id',type(target))}")
+# ─────────────────────────────────────────────────────────────────────────────
+
 Effect_list = {
     "regeneration": RegenerationEffect,
     "poison": PoisonEffect,
@@ -283,6 +420,12 @@ Effect_list = {
     "slow": SlowEffect,
     "freeze": FreezeEffect,
     "root": RootEffect,
+    "radiant_fortitude": RadiantFortitude,
+    "haste": Haste,
+    "vampiric_edge": VampiricEdge,
+    "arcane_shield": ArcaneShield,
+    "keen_insight": KeenInsight,
+    "momentum": Momentum,
 }
 
 def create_effect(effect_data: dict):
