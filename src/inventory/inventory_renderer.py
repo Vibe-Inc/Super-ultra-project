@@ -174,9 +174,10 @@ class InventoryRenderer:
             inv.close_button.draw(screen)
 
     def draw_player_inventory(self, screen, inv: MAIN_player_inventory):
+        btn_extra = int(inv.slot_size * cfg.INV_PLAYER_RIGHT_BTN_EXTRA)
         bg_rect = pygame.Rect(
             inv.pos_x - 24, inv.pos_y - 340,
-            (inv.slot_size + inv.border) * inv.columns + inv.border + 48,
+            (inv.slot_size + inv.border) * inv.columns + inv.border + 48 + btn_extra,
             (inv.slot_size + inv.border) * inv.rows + inv.border + 364
         )
         
@@ -221,12 +222,14 @@ class InventoryRenderer:
         screen.blit(shadow_surf, (text_pos_x + 1, text_pos_y + 1))
         screen.blit(text_surf, (text_pos_x, text_pos_y))
 
+        # ─── Right-side majestic skillbar & talent tree buttons ───
         if not getattr(inv.app.INV_manager, 'current_shop_inv', None):
             scale = cfg.ui_scale()
-            gap = max(cfg.INV_PLAYER_BTN_GAP_MIN, int(cfg.INV_PLAYER_BTN_GAP_SCALE * scale))
+            gap = int(cfg.INV_PLAYER_RIGHT_BTN_GAP * scale)
+            
+            btn_x = portrait_bg.right + int(cfg.INV_PLAYER_RIGHT_BTN_MARGIN_X * scale) + 120
             stack_height = inv.open_skillbar_btn.rect.height + inv.open_skilltree_btn.rect.height + gap
-            btn_x = preview_x + (cfg.INV_PLAYER_PREVIEW_WIDTH - inv.open_skillbar_btn.rect.width) // 2
-            btn_y = inv.pos_y - stack_height - max(cfg.INV_PLAYER_BTN_SPACING_MIN, int(cfg.INV_PLAYER_BTN_SPACING_SCALE * scale)) - cfg.INV_PLAYER_BTN_TOP_OFFSET
+            btn_y = portrait_bg.centery - stack_height // 2 + 100
 
             inv.open_skillbar_btn.rect.topleft = (btn_x, btn_y)
             inv.open_skilltree_btn.rect.topleft = (btn_x, btn_y + inv.open_skillbar_btn.rect.height + gap)
@@ -236,10 +239,205 @@ class InventoryRenderer:
             try: inv.open_skilltree_btn._update_text_surface()
             except Exception: pass
             
-            inv.open_skillbar_btn.draw(screen)
-            inv.open_skilltree_btn.draw(screen)
+            self._draw_majestic_skill_button(screen, inv.open_skillbar_btn, is_skillbar=True, pulse_offset=0.0)
+            self._draw_majestic_skill_button(screen, inv.open_skilltree_btn, is_skillbar=False, pulse_offset=2.0)
 
         self.draw_base_inventory(screen, inv)
+
+    def _draw_majestic_skill_button(self, screen, button, is_skillbar=True, pulse_offset=0.0):
+        rect = button.rect
+        t = pygame.time.get_ticks() / 1000.0
+        pulse = (math.sin(t * 0.004 + pulse_offset) + 1) / 2
+        scale = cfg.ui_scale()
+        is_hovered = rect.collidepoint(pygame.mouse.get_pos())
+
+        gold = (212, 175, 55)
+        gold_light = (240, 210, 100)
+        gold_dark = (150, 120, 50)
+
+        if is_skillbar:
+            theme_primary = (60, 100, 200)
+            theme_glow = (100, 150, 255)
+            theme_bg = (25, 30, 45)
+        else:
+            theme_primary = (160, 60, 200)
+            theme_glow = (190, 120, 255)
+            theme_bg = (35, 22, 45)
+
+        hover_boost = 0.3 if is_hovered else 0.0
+
+        # ── Radiant aura ──
+        aura_size = int(rect.width * 2.2)
+        aura_surf = pygame.Surface((aura_size, aura_size), pygame.SRCALPHA)
+        aura_alpha = int(35 + pulse * 30 + hover_boost * 40)
+        for r in range(aura_size // 2, 0, -1):
+            a = int(aura_alpha * (1.0 - r / (aura_size // 2)))
+            if a > 0:
+                c = tuple(min(255, int(c * 1.0)) for c in theme_glow)
+                pygame.draw.circle(aura_surf, (*c, a), (aura_size // 2, aura_size // 2), r)
+        screen.blit(aura_surf, (rect.centerx - aura_size // 2, rect.centery - aura_size // 2))
+
+        # ── Outer ornate triple-gold frame ──
+        pad = int(6 * scale)
+        frame_rect = pygame.Rect(rect.x - pad, rect.y - pad, rect.width + pad * 2, rect.height + pad * 2)
+        for fi in range(3):
+            frect = pygame.Rect(frame_rect.x - fi, frame_rect.y - fi,
+                                frame_rect.width + fi * 2, frame_rect.height + fi * 2)
+            fc = [gold_light, gold, gold_dark][fi]
+            bw = max(1, int(2.5 * scale - fi * 0.4 + hover_boost))
+            pygame.draw.rect(screen, fc, frect, width=bw,
+                             border_radius=int(10 * scale - fi * 2))
+
+        # ── Corner gems ──
+        gem_size = max(1, int(4 * scale + pulse * 1.5 + hover_boost * 2))
+        gem_colors = [(220, 40, 40), (40, 70, 220), (40, 200, 40), (220, 180, 40)]
+        for gi, (gx, gy) in enumerate([
+            (frame_rect.x, frame_rect.y), (frame_rect.right, frame_rect.y),
+            (frame_rect.x, frame_rect.bottom), (frame_rect.right, frame_rect.bottom)
+        ]):
+            gc = gem_colors[gi]
+            lighter = tuple(min(255, c + 80) for c in gc)
+            darker = tuple(max(0, c - 40) for c in gc)
+            pts_top = [(gx, gy - gem_size), (gx - gem_size, gy), (gx + gem_size, gy)]
+            pts_bot = [(gx - gem_size, gy), (gx + gem_size, gy), (gx, gy + gem_size)]
+            pygame.draw.polygon(screen, lighter, pts_top)
+            pygame.draw.polygon(screen, darker, pts_bot)
+
+            # Gem sparkle
+            spark_sz = max(1, gem_size // 2)
+            spark_surf = pygame.Surface((spark_sz * 4, spark_sz * 4), pygame.SRCALPHA)
+            spark_alpha = int(180 * pulse)
+            pygame.draw.circle(spark_surf, (255, 255, 255, spark_alpha), (spark_sz * 2, spark_sz * 2), spark_sz)
+            screen.blit(spark_surf, (gx - spark_sz * 2, gy - spark_sz * 2))
+
+        # ── Button background ──
+        if is_hovered:
+            bg = tuple(min(255, c + 15) for c in theme_bg)
+        else:
+            bg = theme_bg
+        pygame.draw.rect(screen, bg, rect, border_radius=int(8 * scale))
+
+        # Inner glowing border
+        inner_border = rect.inflate(-int(3 * scale), -int(3 * scale))
+        ib_pulse = (math.sin(t * 0.005 + pulse_offset + 1) + 1) * 0.3 + 0.4
+        ib_color = tuple(min(255, int(c * ib_pulse)) for c in theme_primary)
+        pygame.draw.rect(screen, ib_color, inner_border, width=max(1, int(2 * scale)),
+                         border_radius=int(6 * scale))
+
+        # ── Icon ──
+        icon_cx = rect.left + int(rect.width * 0.2)
+        icon_cy = rect.centery
+
+        if is_skillbar:
+            # Spellbook icon
+            bw = int(rect.width * 0.22)
+            bh = int(rect.height * 0.7)
+            shadow_rect = pygame.Rect(icon_cx - bw // 2 + int(1.5 * scale),
+                                      icon_cy - bh // 2 + int(1.5 * scale), bw, bh)
+            shadow_s = pygame.Surface((bw, bh), pygame.SRCALPHA)
+            pygame.draw.rect(shadow_s, (0, 0, 0, 80), shadow_s.get_rect(), border_radius=int(3 * scale))
+            screen.blit(shadow_s, shadow_rect)
+
+            cover = pygame.Rect(icon_cx - bw // 2, icon_cy - bh // 2, bw, bh)
+            pygame.draw.rect(screen, (70, 18, 10), cover, border_radius=int(3 * scale))
+            pygame.draw.rect(screen, gold, cover, width=max(1, int(1.5 * scale)),
+                             border_radius=int(3 * scale))
+
+            spine_w = max(2, int(bw * 0.2))
+            spine = pygame.Rect(icon_cx - spine_w // 2, cover.y, spine_w, bh)
+            pygame.draw.rect(screen, gold_dark, spine, border_radius=int(1 * scale))
+
+            page_color = (250, 240, 215)
+            pm = max(1, int(bw * 0.1))
+            left_p = pygame.Rect(cover.x + pm, cover.y + int(bh * 0.12),
+                                 spine.x - cover.x - pm, int(bh * 0.76))
+            right_p = pygame.Rect(spine.right, cover.y + int(bh * 0.12),
+                                  cover.right - spine.right - pm, int(bh * 0.76))
+            pygame.draw.rect(screen, page_color, left_p)
+            pygame.draw.rect(screen, page_color, right_p)
+
+            accent_y = cover.y + int(bh * 0.35)
+            pygame.draw.line(screen, gold, (cover.x + int(bw * 0.15), accent_y),
+                             (cover.right - int(bw * 0.15), accent_y), max(1, int(1 * scale)))
+        else:
+            # Crown/Tree icon
+            tw = int(rect.width * 0.28)
+            th = int(rect.height * 0.65)
+
+            # Crown base
+            crown_rect = pygame.Rect(icon_cx - tw // 2, icon_cy - th // 2, tw, th)
+            crown_color = (200, 160, 50)
+            crown_dark = (140, 110, 40)
+
+            # Crown points (3 peaks)
+            pts = [
+                (crown_rect.left, crown_rect.bottom),
+                (crown_rect.left + tw // 4, crown_rect.top + th // 4),
+                (icon_cx, crown_rect.top),
+                (crown_rect.right - tw // 4, crown_rect.top + th // 4),
+                (crown_rect.right, crown_rect.bottom),
+            ]
+            pygame.draw.polygon(screen, crown_dark, pts)
+            pygame.draw.polygon(screen, crown_color, [(p[0], p[1] - 1) for p in pts], width=0)
+
+            # Crown band
+            band_y = crown_rect.bottom - int(th * 0.22)
+            pygame.draw.line(screen, gold, (crown_rect.left + 2, band_y),
+                             (crown_rect.right - 2, band_y), max(1, int(2 * scale)))
+
+            # Crown jewels
+            jcolors = [(220, 40, 40), (40, 200, 40), (40, 70, 220)]
+            jewel_positions = [icon_cx, icon_cx - tw // 4, icon_cx + tw // 4]
+            for ji, jx in enumerate(jewel_positions):
+                jc = jcolors[ji % len(jcolors)]
+                pygame.draw.circle(screen, jc, (jx, crown_rect.top + int(th * 0.12)),
+                                   max(1, int(2.5 * scale)))
+
+        # ── Text in gold ──
+        text_x = rect.left + int(rect.width * 0.4)
+        text_w = rect.width - (text_x - rect.x) - 8
+        text_surf = button.font.render(button.text, True, gold_light)
+        if text_surf.get_width() > text_w:
+            text_surf = pygame.transform.smoothscale(text_surf,
+                (int(text_w), int(text_surf.get_height() * text_w / text_surf.get_width())))
+        shadow_surf = button.font.render(button.text, True, (0, 0, 0))
+        if shadow_surf.get_width() > text_w:
+            shadow_surf = pygame.transform.smoothscale(shadow_surf,
+                (int(text_w), int(shadow_surf.get_height() * text_w / shadow_surf.get_width())))
+
+        txt_rect = text_surf.get_rect(midleft=(text_x, rect.centery))
+        shd_rect = shadow_surf.get_rect(midleft=(text_x + 1, rect.centery + 1))
+
+        # Text glow
+        glow_txt = pygame.Surface((text_surf.get_width() + 20, text_surf.get_height() + 20), pygame.SRCALPHA)
+        glow_alpha = int(40 + 30 * pulse)
+        glow_txt.fill((*theme_glow, glow_alpha))
+        # Soften the glow edges
+        glow_center = pygame.Rect(6, 6, text_surf.get_width() + 8, text_surf.get_height() + 8)
+        pygame.draw.rect(glow_txt, (*theme_glow, 0), glow_center)
+        screen.blit(glow_txt, (txt_rect.x - 10, txt_rect.y - 10))
+
+        screen.blit(shadow_surf, shd_rect)
+        screen.blit(text_surf, txt_rect)
+
+        # ── Sparkle dots around button ──
+        for si in range(3):
+            angle = si * 2.094 + t * 0.5 + pulse_offset
+            dist = rect.width * 0.7
+            sx = rect.centerx + int(math.cos(angle) * dist)
+            sy = rect.centery + int(math.sin(angle) * dist)
+            dot_s = max(1, int(1.5 * scale + pulse * 0.8))
+            da = int(150 + 105 * pulse)
+            dot_surf = pygame.Surface((dot_s * 4, dot_s * 4), pygame.SRCALPHA)
+            pygame.draw.circle(dot_surf, (*gold_light, da), (dot_s * 2, dot_s * 2), dot_s)
+            screen.blit(dot_surf, (sx - dot_s * 2, sy - dot_s * 2))
+
+        # ── Hover border glow ──
+        if is_hovered:
+            hw = max(1, int(3 * scale))
+            hover_pulse = (math.sin(t * 0.008 + pulse_offset) + 1) * 0.3 + 0.4
+            hc = tuple(min(255, int(c * hover_pulse)) for c in gold_light)
+            pygame.draw.rect(screen, hc, rect, width=hw, border_radius=int(8 * scale))
 
     def draw_hotbar(self, screen, inv: MAIN_player_hotbar):
         inv.update_position()
@@ -307,11 +505,110 @@ class InventoryRenderer:
         scale = min(target_rect.width / surface.get_width(), target_rect.height / surface.get_height())
         return pygame.transform.smoothscale(surface, (max(1, int(surface.get_width() * scale)), max(1, int(surface.get_height() * scale))))
     
+    def _draw_ornate_rec_button(self, screen, button):
+        scale = cfg.ui_scale()
+        rect = button.rect
+        cx, cy = rect.center
+        pulse = (math.sin(pygame.time.get_ticks() * 0.004) + 1) / 2
+
+        # Radiant golden aura
+        glow_size = int(rect.width * 2.2)
+        glow_surf = pygame.Surface((glow_size, glow_size), pygame.SRCALPHA)
+        glow_alpha = int(50 + pulse * 40)
+        for r in range(glow_size // 2, 0, -1):
+            a = int(glow_alpha * (1.0 - r / (glow_size // 2)))
+            if a > 0:
+                pygame.draw.circle(glow_surf, (212, 175, 55, a), (glow_size // 2, glow_size // 2), r)
+        screen.blit(glow_surf, (cx - glow_size // 2, cy - glow_size // 2))
+
+        # Outer ornate frame - triple gold
+        pad = int(5 * scale)
+        frame_rect = pygame.Rect(rect.x - pad, rect.y - pad, rect.width + pad * 2, rect.height + pad * 2)
+        gold = (212, 175, 55)
+        gold_light = (240, 210, 100)
+        gold_dark = (150, 120, 50)
+        for fi in range(3):
+            frect = pygame.Rect(frame_rect.x - fi, frame_rect.y - fi,
+                                frame_rect.width + fi * 2, frame_rect.height + fi * 2)
+            fc = [gold_light, gold, gold_dark][fi]
+            pygame.draw.rect(screen, fc, frect, width=max(1, int(2 * scale - fi * 0.5)),
+                             border_radius=int(7 * scale - fi * 2))
+
+        # Corner gems
+        gem_size = max(1, int(3 * scale + pulse))
+        gem_colors = [(220, 40, 40), (40, 70, 220), (40, 200, 40), (220, 180, 40)]
+        for gi, (gx, gy) in enumerate([(frame_rect.x, frame_rect.y), (frame_rect.right, frame_rect.y),
+                                        (frame_rect.x, frame_rect.bottom), (frame_rect.right, frame_rect.bottom)]):
+            gc = gem_colors[gi]
+            lighter = tuple(min(255, c + 70) for c in gc)
+            darker = tuple(max(0, c - 40) for c in gc)
+            pts_top = [(gx, gy - gem_size), (gx - gem_size, gy), (gx + gem_size, gy)]
+            pts_bot = [(gx - gem_size, gy), (gx + gem_size, gy), (gx, gy + gem_size)]
+            pygame.draw.polygon(screen, lighter, pts_top)
+            pygame.draw.polygon(screen, darker, pts_bot)
+
+        # Button background - dark leather
+        pygame.draw.rect(screen, (50, 30, 15), rect, border_radius=int(6 * scale))
+
+        # Draw majestic book icon inside button
+        book_cx = cx
+        book_cy = cy
+        bw = int(rect.width * 0.55)
+        bh = int(rect.height * 0.6)
+
+        # Book shadow
+        shadow_rect = pygame.Rect(book_cx - bw // 2 + int(2 * scale), book_cy - bh // 2 + int(2 * scale), bw, bh)
+        pygame.draw.rect(screen, (0, 0, 0, 80), shadow_rect, border_radius=int(3 * scale))
+
+        # Book cover
+        cover_rect = pygame.Rect(book_cx - bw // 2, book_cy - bh // 2, bw, bh)
+        pygame.draw.rect(screen, (80, 20, 10), cover_rect, border_radius=int(3 * scale))
+        pygame.draw.rect(screen, gold, cover_rect, width=max(1, int(1.5 * scale)), border_radius=int(3 * scale))
+
+        # Book spine
+        spine_w = max(2, int(bw * 0.18))
+        spine_rect = pygame.Rect(book_cx - spine_w // 2, cover_rect.y, spine_w, bh)
+        pygame.draw.rect(screen, gold_dark, spine_rect, border_radius=int(1 * scale))
+
+        # Pages (visible on sides)
+        page_color = (250, 240, 215)
+        page_margin = max(1, int(bw * 0.08))
+        left_page = pygame.Rect(cover_rect.x + page_margin, cover_rect.y + int(bh * 0.1),
+                                spine_rect.x - cover_rect.x - page_margin, int(bh * 0.8))
+        right_page = pygame.Rect(spine_rect.right, cover_rect.y + int(bh * 0.1),
+                                 cover_rect.right - spine_rect.right - page_margin, int(bh * 0.8))
+        pygame.draw.rect(screen, page_color, left_page)
+        pygame.draw.rect(screen, page_color, right_page)
+
+        # Gold accent line on cover
+        accent_y = cover_rect.y + int(bh * 0.35)
+        pygame.draw.line(screen, gold, (cover_rect.x + int(bw * 0.15), accent_y),
+                         (cover_rect.right - int(bw * 0.15), accent_y), max(1, int(1 * scale)))
+
+        # Small gem on cover
+        gem_cx = book_cx
+        gem_cy = cover_rect.y + int(bh * 0.55)
+        gem_s = max(1, int(2.5 * scale))
+        gcol = (220, 40, 40)
+        gl = tuple(min(255, c + 70) for c in gcol)
+        gd = tuple(max(0, c - 40) for c in gcol)
+        pygame.draw.polygon(screen, gl, [(gem_cx, gem_cy - gem_s), (gem_cx - gem_s, gem_cy), (gem_cx + gem_s, gem_cy)])
+        pygame.draw.polygon(screen, gd, [(gem_cx - gem_s, gem_cy), (gem_cx + gem_s, gem_cy), (gem_cx, gem_cy + gem_s)])
+
+        # Golden sparkle dots around the button
+        for i in range(4):
+            angle = i * math.pi / 2 + pulse * 0.5
+            dist = rect.width * 0.65
+            sx = cx + int(math.cos(angle) * dist)
+            sy = cy + int(math.sin(angle) * dist)
+            dot_s = max(1, int(1.5 * scale + pulse * 0.5))
+            pygame.draw.circle(screen, gold_light, (sx, sy), dot_s)
+
     def draw_crafting_system(self, screen, crafting):
         self.draw_base_inventory(screen, crafting)
-        
-        crafting.book_button.draw(screen)
-        
+
+        self._draw_ornate_rec_button(screen, crafting.book_button)
+
         scale = cfg.ui_scale()
         
         grid_size = (crafting.slot_size + crafting.border) * 3
@@ -324,7 +621,8 @@ class InventoryRenderer:
         head_w = int(24 * scale)
         head_h = int(8 * scale)
         
-        pygame.draw.polygon(screen, (200, 200, 200), [
+        gold_color = (212, 175, 55)
+        pygame.draw.polygon(screen, gold_color, [
             (arrow_center_x - shaft_w//2, arrow_start_y),                   
             (arrow_center_x + shaft_w//2, arrow_start_y),                   
             (arrow_center_x + shaft_w//2, arrow_start_y + shaft_h),         
@@ -333,6 +631,12 @@ class InventoryRenderer:
             (arrow_center_x - head_w//2, arrow_start_y + shaft_h),          
             (arrow_center_x - shaft_w//2, arrow_start_y + shaft_h)          
         ])
+        pygame.draw.polygon(screen, (160, 130, 60), [
+            (arrow_center_x - shaft_w//2, arrow_start_y),
+            (arrow_center_x + shaft_w//2, arrow_start_y),
+            (arrow_center_x + shaft_w//2, arrow_start_y + shaft_h),
+            (arrow_center_x - shaft_w//2, arrow_start_y + shaft_h)
+        ], 1)
 
         out_rect = pygame.Rect(crafting.output_pos_x, crafting.output_pos_y, crafting.slot_size, crafting.slot_size)
         pygame.draw.rect(screen, self.slot_bg_color, out_rect, border_radius=cfg.INV_SLOT_BORDER_RADIUS)

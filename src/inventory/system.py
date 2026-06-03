@@ -240,20 +240,21 @@ class MAIN_player_inventory(Inventory):
             cfg.BASE_INV_slot_size, cfg.MAIN_INV_pos_x, cfg.MAIN_INV_pos_y, cfg.BASE_INV_border
         )
         scale = cfg.ui_scale()
-        btn_w, btn_h = max(20, int(160 * scale)), max(8, int(36 * scale))
+        btn_w = max(20, int(cfg.INV_PLAYER_RIGHT_BTN_WIDTH * scale))
+        btn_h = max(8, int(cfg.INV_PLAYER_RIGHT_BTN_HEIGHT * scale))
         
         self.open_skillbar_btn = Button(
             rect=pygame.Rect(0, 0, btn_w, btn_h),
             text=_("SKILLS & MAGIC"), color=cfg.INV_SKILLBAR_BTN_COLOR, 
             hover_color=cfg.INV_SKILLBAR_BTN_HOVER_COLOR,
-            font=cfg.tooltip_font_CREDITS, font_color=cfg.INV_SKILLBAR_BTN_FONT_COLOR,
+            font=cfg.get_font(max(10, int(22 * scale))), font_color=cfg.INV_SKILLBAR_BTN_FONT_COLOR,
             corner_width=max(2, int(8 * scale)), on_click=None
         )
         self.open_skilltree_btn = Button(
             rect=pygame.Rect(0, 0, btn_w, btn_h),
             text=_("TALENT TREE"), color=cfg.INV_SKILLTREE_BTN_COLOR, 
             hover_color=cfg.INV_SKILLTREE_BTN_HOVER_COLOR,
-            font=cfg.tooltip_font_CREDITS, font_color=cfg.INV_SKILLTREE_BTN_FONT_COLOR,
+            font=cfg.get_font(max(10, int(22 * scale))), font_color=cfg.INV_SKILLTREE_BTN_FONT_COLOR,
             corner_width=max(2, int(8 * scale)), on_click=None
         )
 
@@ -458,12 +459,12 @@ class CraftingGrid(Inventory):
         db.close()
 
         scale = cfg.ui_scale()
-        btn_size = int(self.slot_size * 0.95)
+        btn_size = int(self.slot_size * 0.85)
         self.book_button = Button(
             rect=pygame.Rect(0, 0, btn_size, btn_size),
-            text="REC",
-            color=(40, 40, 40), hover_color=(70, 70, 70),
-            font=cfg.INV_nums_font, font_color=(255, 255, 255),
+            text="",
+            color=(40, 25, 10), hover_color=(60, 40, 20),
+            font=cfg.INV_nums_font, font_color=(255, 215, 0),
             corner_width=max(2, int(cfg.INV_SLOT_BORDER_RADIUS * 0.75)),
             on_click=self.open_recipe_menu
         )
@@ -481,9 +482,9 @@ class CraftingGrid(Inventory):
         
         self.output_pos_x = self.pos_x + (grid_size // 2) - (self.slot_size // 2)
         self.output_pos_y = self.pos_y + grid_size + int(15 * scale)
-        btn_y = self.output_pos_y + (self.slot_size - self.book_button.rect.height) // 2
+        btn_y = self.output_pos_y + (self.slot_size - self.book_button.rect.height) // 2 - int(2 * scale)
         
-        btn_x = self.output_pos_x - self.book_button.rect.width - int(10 * scale)
+        btn_x = self.output_pos_x + self.slot_size + int(12 * scale)
         
         self.book_button.rect.topleft = (btn_x, btn_y)
 

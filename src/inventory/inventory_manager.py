@@ -227,7 +227,7 @@ class INVENTORY_manager:
                     scale = cfg.ui_scale()
                     craft_width = (self.crafting_system.slot_size + self.crafting_system.border) * 3
 
-                    craft_x = equip_inv.pos_x - craft_width - int(15 * scale)
+                    craft_x = equip_inv.pos_x - craft_width - int(8 * scale)
                     craft_y = equip_inv.pos_y
 
                     self.crafting_system.update_positions(craft_x, craft_y)
