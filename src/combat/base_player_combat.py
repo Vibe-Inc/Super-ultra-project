@@ -185,8 +185,6 @@ class PlayerCombatController:
             char.attack_axe(self.game.enemies, aim_direction=aim_dir)
         elif combat_style == "spear":
             char.attack_spear(self.game.enemies, aim_direction=aim_dir)
-        elif combat_style == "dagger":
-            char.attack_dagger(self.game.enemies, aim_direction=aim_dir)
         elif combat_style == "war_hammer":
             char.attack_war_hammer(self.game.enemies, aim_direction=aim_dir)
         else:

@@ -79,18 +79,6 @@ def seed_weapons(db):
         ]
     )
 
-    db.add_weapon(
-        item_id="rusty_dagger",
-        name="Rusty Dagger", image_path=WIP_TEXTURE,
-        weapon_class="melee", damage=12, durability=20, range_val=40,
-        cone_degrees=80.0, cooldown=220, price=15,
-        description="A small, rusted dagger. Quick, but fragile.",
-        on_hit_effects=[
-            {"type": "bleed", "duration": 5, "damage_per_sec": 2}
-        ],
-        combat_style="dagger"
-    )
-
     # ------------------ Ranged weapons ------------------
     db.add_weapon(
         item_id="hunting_bow", name="Hunting Bow", image_path=WIP_TEXTURE,

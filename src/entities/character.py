@@ -1385,56 +1385,6 @@ class Character:
 
             enemy.pos += aim_dir * knockback_force
 
-    def attack_dagger(self, enemies, aim_direction=None):
-        """Quick short-range double strike. Two rapid hits in a narrow cone."""
-        current_time = pygame.time.get_ticks()
-        if not self.can_attack(current_time):
-            return
-
-        self.start_attack(current_time, show_slash=True)
-
-        if aim_direction is None:
-            aim_direction = self.get_forward_direction()
-        aim_dir = pygame.Vector2(aim_direction)
-        if aim_dir.length_squared() == 0:
-            aim_dir = pygame.Vector2(1, 0)
-        aim_dir = aim_dir.normalize()
-        self.last_attack_dir = pygame.Vector2(aim_dir)
-
-        cone_half_angle = 35.0
-        cos_half_angle = math.cos(math.radians(cone_half_angle))
-        range_sq = float(self.attack_range) * float(self.attack_range)
-        origin = self.get_melee_anchor() + aim_dir * self.melee_origin_offset
-        strikes = 2
-        knockback_force = 12
-
-        for enemy in enemies:
-            enemy_rect = enemy.get_rect()
-            enemy_center = pygame.Vector2(enemy_rect.centerx, enemy_rect.centery)
-            to_enemy = enemy_center - origin
-            dist_sq = to_enemy.length_squared()
-            if dist_sq > range_sq:
-                continue
-
-            if dist_sq == 0:
-                hit = True
-            else:
-                to_enemy_dir = to_enemy.normalize()
-                hit = aim_dir.dot(to_enemy_dir) >= cos_half_angle
-
-            if not hit:
-                continue
-
-            final_damage = self.get_effective_attack_damage() * strikes
-            logger.info(f"Dagger double-strike hit enemy for {final_damage} damage!")
-            enemy.take_damage(final_damage)
-            self._apply_weapon_enchantments(enemy)
-            if self.poison_blade:
-                enemy.add_effect(PoisonEffect(self.poison_blade_duration, self.poison_blade_damage_per_sec))
-
-            if dist_sq > 0:
-                enemy.pos += to_enemy.normalize() * knockback_force
-
     def attack_war_hammer(self, enemies, aim_direction=None):
         """Heavy slam with small AoE. Deals high damage and stuns enemies in a radius."""
         current_time = pygame.time.get_ticks()
@@ -2037,24 +1987,6 @@ class Character:
                         sp = stem_pos + stem_off
                         sa = int(50 * (1 - part_p) * fade)
                         dot(to_screen(sp), (190, 190, 200), sa, 1 + int(1 * (1 - part_p)))
-
-            elif combat_style == "dagger":
-                for idx, side in enumerate((-1, 1)):
-                    local_p = (p - idx * 0.35) / 0.65
-                    if local_p < 0 or local_p > 1:
-                        continue
-                    lfade = 1.0 - local_p * 0.5
-                    base_color = (230, 230, 255)
-                    d = attack_dir.rotate(side * (15 + 25 * local_p))
-                    mid = base_anchor + d * (30 + 40 * local_p)
-                    mid_s = to_screen(mid)
-                    gust_line(anchor_s, mid_s, base_color, int(160 * lfade), max(1, int(4 - local_p * 2)))
-                    for j in range(3):
-                        jitter = d.rotate(side * (5 + j * 8) * (1 - local_p * 0.5))
-                        jp = base_anchor + jitter * (20 + 50 * local_p)
-                        gust_line(anchor_s, to_screen(jp), (base_color[0], base_color[1], base_color[2]),
-                                  int(60 * lfade * 1 - j * 0.25), 1)
-                    dot(mid_s, (255, 255, 255), int(120 * lfade), 2)
 
             elif combat_style == "war_hammer":
                 if p < 0.25:

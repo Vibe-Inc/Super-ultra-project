@@ -89,8 +89,6 @@ class App:
         add_item(4, 0, "war_hammer")
         add_item(5, 0, "mace")
         add_item(6, 0, "spear")
-        add_item(7, 0, "rusty_dagger")
-
         # Row 1 — Ranged weapons + food
         add_item(0, 1, "wooden_bow")
         add_item(1, 1, "hunting_bow")
