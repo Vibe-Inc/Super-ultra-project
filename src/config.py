@@ -16,7 +16,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BASE_SCREEN_WIDTH, BASE_SCREEN_HEIGHT = 1920, 1080
 DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT = 1280, 720
 SCREEN_WIDTH, SCREEN_HEIGHT = DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT
-FPS = 60
+FPS = 0
 
 def _load_background(screen_width, screen_height):
     try:
@@ -150,22 +150,27 @@ MAIN_INV_equipment_pos_y = 0
 def recalculate_inventory_positions():
     global MAIN_INV_pos_x, MAIN_INV_pos_y, MAIN_INV_equipment_pos_x, MAIN_INV_equipment_pos_y
     
-    MAIN_INV_pos_x = SCREEN_WIDTH // 2 - (BASE_INV_slot_size + BASE_INV_border) * MAIN_INV_rows + BASE_INV_border
+    scale = ui_scale()
+    slot_size = int(BASE_INV_slot_size * scale)
+    border = int(BASE_INV_border * scale)
     
-    grid_height = (BASE_INV_slot_size + BASE_INV_border) * MAIN_INV_rows + BASE_INV_border
+    grid_width = (slot_size + border) * MAIN_INV_columns
+    grid_height = (slot_size + border) * MAIN_INV_rows
     
-    total_window_height = grid_height + 350
+    MAIN_INV_pos_x = SCREEN_WIDTH // 2 - grid_width // 2
     
-    hotbar_height = int(BASE_INV_slot_size * 0.8) + 40
+    total_window_height = grid_height + int(350 * scale)
+    
+    hotbar_height = int(slot_size * 0.8) + int(40 * scale)
     
     available_height = SCREEN_HEIGHT - hotbar_height
     
     window_top = (available_height - total_window_height) // 2
     
-    MAIN_INV_pos_y = window_top + 335
+    MAIN_INV_pos_y = window_top + int(335 * scale)
 
-    MAIN_INV_equipment_pos_x = MAIN_INV_pos_x + (BASE_INV_slot_size + BASE_INV_border) * 3 + BASE_INV_border
-    MAIN_INV_equipment_pos_y = MAIN_INV_pos_y - 310
+    MAIN_INV_equipment_pos_x = MAIN_INV_pos_x + (slot_size + border) * 3 + border
+    MAIN_INV_equipment_pos_y = MAIN_INV_pos_y - int(310 * scale)
 
 recalculate_inventory_positions()
 
@@ -220,6 +225,13 @@ INV_PLAYER_BTN_GAP_SCALE = 10
 INV_PLAYER_BTN_SPACING_MIN = 8
 INV_PLAYER_BTN_SPACING_SCALE = 12
 INV_PLAYER_BTN_TOP_OFFSET = 25
+
+# Right-side button positioning (majestic style)
+INV_PLAYER_RIGHT_BTN_WIDTH = 260
+INV_PLAYER_RIGHT_BTN_HEIGHT = 85
+INV_PLAYER_RIGHT_BTN_GAP = 28
+INV_PLAYER_RIGHT_BTN_MARGIN_X = 12
+INV_PLAYER_RIGHT_BTN_EXTRA = 6.0  # multiplier for extra panel width on right
 
 # ============== HOTBAR COLORS AND STYLING ==============
 INV_HOTBAR_BG_COLOR = (20, 24, 30, 230)
@@ -282,6 +294,15 @@ INV_SELECTED_ITEM_SHADOW_OFFSET_X = 12
 INV_SELECTED_ITEM_SHADOW_OFFSET_Y = 18
 INV_SELECTED_ITEM_TEXT_OFFSET_X = 12
 INV_SELECTED_ITEM_TEXT_OFFSET_Y = 10
+
+# ============== SKILL COOLDOWN INDICATORS ==============
+COOLDOWN_BAR_HEIGHT = 4
+COOLDOWN_BAR_BG_COLOR = (20, 20, 25, 200)
+COOLDOWN_BAR_FILL_COLOR = (255, 80, 80, 220)
+COOLDOWN_BAR_READY_COLOR = (80, 255, 120, 180)
+COOLDOWN_OVERLAY_COLOR = (0, 0, 0, 140)
+COOLDOWN_TEXT_COLOR = (255, 255, 255)
+COOLDOWN_TEXT_SIZE = 14
 
 def set_screen_size(screen_width, screen_height):
     global SCREEN_WIDTH, SCREEN_HEIGHT, bg

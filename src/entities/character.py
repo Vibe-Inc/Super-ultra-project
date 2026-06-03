@@ -130,6 +130,13 @@ class Character:
         self.is_sprinting = False
         self.can_sprint = True
 
+        # Mana / Energy system
+        self.max_mana = 50
+        self.mana = self.max_mana
+        self.mana_drain_rate = 20.0
+        self.mana_regen_rate = 10.0
+        # energy is an alias to support systems that use "energy"
+        self.energy = self.stamina
         # Armor / defense system (consumed by Armor items)
         self.defense = 0
 
@@ -142,6 +149,8 @@ class Character:
         self.effects = []
         self.confused = False
         self.dizzy = False
+        # Resistances: values 0.0..1.0 (1.0 = immune). Example: {"poison": 0.5, "slow": 0.2}
+        self.resistances = {}
 
         # Combat stats
         self.base_attack_damage = 15
@@ -678,6 +687,49 @@ class Character:
             return False
         return self.use_skill(skill, aim_direction=aim_direction)
 
+    def get_skill_cooldown_percent(self, skill):
+        """
+        Get the cooldown progress for a skill (0.0 = ready, 1.0 = just used).
+        
+        Args:
+            skill (dict): The skill dictionary with skill_id.
+            
+        Returns:
+            float: Cooldown percentage (0.0 to 1.0), where 0.0 means ready.
+        """
+        if skill is None:
+            return 0.0
+        
+        skill_id = skill.get("skill_id", "")
+        current_time = pygame.time.get_ticks()
+        
+        if skill_id == "dash":
+            elapsed = current_time - self.dash_last_used
+            if elapsed >= self.dash_cooldown:
+                return 0.0
+            return 1.0 - (elapsed / self.dash_cooldown)
+        
+        if skill_id == "fireball":
+            last_used = getattr(self, "fireball_last_used", -self.fireball_cooldown)
+            elapsed = current_time - last_used
+            if elapsed >= self.fireball_cooldown:
+                return 0.0
+            return 1.0 - (elapsed / self.fireball_cooldown)
+        
+        return 0.0
+
+    def is_skill_ready(self, skill):
+        """
+        Check if a skill is ready to use (cooldown expired).
+        
+        Args:
+            skill (dict): The skill dictionary with skill_id.
+            
+        Returns:
+            bool: True if skill is ready, False if on cooldown.
+        """
+        return self.get_skill_cooldown_percent(skill) == 0.0
+
     def use_skill(self, skill, aim_direction=None):
         if skill is None:
             return False
@@ -1113,12 +1165,81 @@ class Character:
 
         return False
 
+    def get_resistance(self, effect_name: str) -> float:
+        """
+        Return resistance in range [0.0, 1.0] for given effect name.
+        1.0 means immune.
+        """
+        return float(self.resistances.get(effect_name, 0.0))
+
+    def is_immune(self, effect_name: str) -> bool:
+        return self.get_resistance(effect_name) >= 1.0
+
     def add_effect(self, effect):
-        for e in self.effects:
+        """
+        Add an effect, applying resistances and simple stacking rules:
+        - Immunity (resistance >= 1.0) blocks the effect.
+        - Partial resistance scales magnitude and duration.
+        - If an existing effect of the same class exists, replace it only if the new one is stronger.
+        """
+        # Map class names to effect keys used in resistances
+        name_map = {
+            "RegenerationEffect": "regeneration",
+            "PoisonEffect": "poison",
+            "BurnEffect": "burn",
+            "ConfusionEffect": "confusion",
+            "DizzinessEffect": "dizziness",
+            "SlowEffect": "slow",
+        }
+        cls_name = effect.__class__.__name__
+        e_name = name_map.get(cls_name, cls_name.lower())
+        r = self.get_resistance(e_name)
+
+        if r >= 1.0:
+            logger.info(f"Effect '{e_name}' blocked by immunity on {getattr(self, 'id', type(self))}")
+            return
+
+        # Apply resistance scaling
+        if r > 0.0:
+            # Scale damage-like fields
+            if hasattr(effect, "damage_per_sec"):
+                effect.damage_per_sec = effect.damage_per_sec * max(0.0, 1.0 - r)
+            if hasattr(effect, "amount_per_sec"):
+                effect.amount_per_sec = effect.amount_per_sec * max(0.0, 1.0 - r)
+            # Scale duration
+            if hasattr(effect, "duration"):
+                effect.duration = effect.duration * max(0.0, 1.0 - r)
+            # Scale slow's speed_multiplier (reduce slow strength)
+            if hasattr(effect, "speed_multiplier") and effect.speed_multiplier < 1.0:
+                reduction = 1.0 - effect.speed_multiplier
+                reduced = reduction * max(0.0, 1.0 - r)
+                effect.speed_multiplier = 1.0 - reduced
+
+            logger.debug(f"Applied resistance {r:.2f} to effect '{e_name}' -> adjusted attrs: {effect.__dict__}")
+
+        # Stacking: if same class exists, replace only if new is stronger
+        def strength_metric(x):
+            s = 0.0
+            if hasattr(x, "damage_per_sec"):
+                s += float(getattr(x, "damage_per_sec", 0.0))
+            if hasattr(x, "amount_per_sec"):
+                s += float(getattr(x, "amount_per_sec", 0.0))
+            if hasattr(x, "duration"):
+                s += float(getattr(x, "duration", 0.0)) * 0.1
+            if hasattr(x, "speed_multiplier"):
+                s += (1.0 - float(getattr(x, "speed_multiplier", 1.0))) * 10.0
+            return s
+
+        for i, e in enumerate(self.effects):
             if type(e) == type(effect):
-                self.effects.remove(e)
-                self.effects.append(effect)
+                if strength_metric(effect) > strength_metric(e):
+                    self.effects[i] = effect
+                    logger.debug(f"Replaced weaker '{e_name}' effect with stronger one on {getattr(self, 'id', type(self))}")
+                else:
+                    logger.debug(f"Ignored incoming weaker or equal '{e_name}' effect on {getattr(self, 'id', type(self))}")
                 return
+
+        # Otherwise append new effect
         self.effects.append(effect)
 
     def gain_xp(self, amount):
@@ -1617,6 +1738,13 @@ class Character:
                 self.stamina = self.max_stamina
                 self.can_sprint = True
 
+        # Mana regeneration
+        if getattr(self, "mana", None) is not None:
+            if self.mana < self.max_mana:
+                self.mana += self.mana_regen_rate * dt
+                if self.mana > self.max_mana:
+                    self.mana = self.max_mana
+
         # KEY IMPLEMENTATION STEP: Single function call for collision-aware movement
         collision_system.handle_movement_and_collision(self, dt, obstacles)
 
@@ -1744,6 +1872,80 @@ class Character:
         logger.info(f"Player took {amount} damage. HP: {self.hp}/{self.max_hp}")
         if self.hp <= 0:
             self.die()
+
+    def heal(self, amount):
+        """
+        Restore HP by the specified amount, clamped to max_hp.
+        """
+        if amount <= 0:
+            return
+        prev_hp = self.hp
+        self.hp = min(self.max_hp, self.hp + int(amount))
+        healed = self.hp - prev_hp
+        if healed > 0:
+            logger.info(f"Player healed {healed} HP. HP: {self.hp}/{self.max_hp}")
+
+    def consume_stamina(self, amount):
+        """
+        Attempt to consume stamina. Returns True if enough stamina was available.
+        """
+        if amount <= 0:
+            return True
+        if self.stamina >= amount:
+            self.stamina -= amount
+            # keep energy alias in sync
+            self.energy = self.stamina
+            logger.debug(f"Consumed {amount} stamina. Stamina: {int(self.stamina)}/{self.max_stamina}")
+            return True
+        logger.debug(f"Not enough stamina to consume {amount}. Current: {int(self.stamina)}")
+        return False
+
+    def restore_stamina(self, amount):
+        """
+        Restore stamina (clamped to max_stamina).
+        """
+        if amount <= 0:
+            return
+        prev = int(self.stamina)
+        self.stamina = min(self.max_stamina, self.stamina + amount)
+        self.energy = self.stamina
+        logger.info(f"Player restored {int(self.stamina) - prev} stamina. Stamina: {int(self.stamina)}/{self.max_stamina}")
+
+    def consume_mana(self, amount):
+        """
+        Attempt to consume mana. Returns True if enough mana was available.
+        """
+        if amount <= 0:
+            return True
+        if getattr(self, "mana", 0) >= amount:
+            self.mana -= amount
+            logger.debug(f"Consumed {amount} mana. Mana: {int(self.mana)}/{self.max_mana}")
+            return True
+        logger.debug(f"Not enough mana to consume {amount}. Current: {int(getattr(self,'mana',0))}")
+        return False
+
+    def restore_mana(self, amount):
+        """
+        Restore mana (clamped to max_mana).
+        """
+        if amount <= 0:
+            return
+        prev = int(getattr(self, "mana", 0))
+        self.mana = min(self.max_mana, self.mana + amount)
+        logger.info(f"Player restored {int(self.mana) - prev} mana. Mana: {int(self.mana)}/{self.max_mana}")
+
+    def use_item(self, item):
+        """
+        Use an Item instance on the player. Returns True if item was consumed/used.
+        """
+        try:
+            used = item.use(self)
+            if used:
+                logger.info(f"Player used item {getattr(item, 'id', str(item))}")
+            return bool(used)
+        except Exception as e:
+            logger.exception(f"Error using item: {e}")
+            return False
 
     def die(self):
         logger.warning("Player died!")
