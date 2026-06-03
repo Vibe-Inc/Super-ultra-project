@@ -1990,32 +1990,28 @@ class Character:
             elif combat_style == "spear":
                 thrust_p = p * 1.3
                 if thrust_p < 0.2:
-                    thrust = thrust_p * 5 * self.attack_range / 0.2
+                    thrust = self.attack_range * (thrust_p / 0.2)
                 elif thrust_p < 0.8:
-                    thrust = self.attack_range + (thrust_p - 0.2) / 0.6 * 12
+                    thrust = self.attack_range + (thrust_p - 0.2) / 0.6 * 10
                 else:
-                    thrust = (self.attack_range + 12) * max(0, 1.0 - (thrust_p - 0.8) / 0.5)
+                    thrust = (self.attack_range + 10) * max(0, 1.0 - (thrust_p - 0.8) / 0.5)
                 tip = base_anchor + attack_dir * max(5, thrust)
                 tip_s = to_screen(tip)
-                perp = pygame.Vector2(-attack_dir.y, attack_dir.x)
                 fade = max(0.0, min(1.0, 1.0 - (p - 0.3) * 1.4))
-                width = 4 + 10 * (1 - p)
-                p1 = base_anchor + perp * width
-                p2 = base_anchor - perp * width
-                pts = [to_screen(p1), to_screen(p2), tip_s]
-                if len(pts) >= 3:
-                    pygame.draw.polygon(screen, (190, 215, 255, int(120 * fade)), pts, 0)
-                gust_line(anchor_s, tip_s, (210, 230, 255), int(180 * fade), max(1, int(3 - p * 2)))
-                for i in range(4):
-                    lp = (p - 0.1 - i * 0.12) / 0.5
-                    if lp < 0 or lp > 1:
-                        continue
-                    spread = 6 + 20 * lp
-                    d = base_anchor + attack_dir * (thrust * lp) + perp * spread * (-1 if i % 2 == 0 else 1)
-                    dot(to_screen(d), (220, 240, 255), int(80 * (1 - lp) * fade), 2 + int(2 * (1 - lp)))
-                if p > 0.75 and p < 0.95:
-                    flash = int(200 * (p - 0.75) / 0.2)
-                    dot(tip_s, (255, 255, 255), flash, 5)
+                shaft_color = (130, 130, 135)
+                shaft_alpha = int(180 * fade)
+                shaft_width = max(2, int(5 - p * 2))
+                shaft_end = tip - attack_dir * 10
+                gust_line(anchor_s, to_screen(shaft_end), shaft_color, shaft_alpha, shaft_width)
+                perp = pygame.Vector2(-attack_dir.y, attack_dir.x)
+                head_width = 8
+                head_len = 14
+                base_p1 = tip - attack_dir * head_len + perp * head_width
+                base_p2 = tip - attack_dir * head_len - perp * head_width
+                head_pts = [tip_s, to_screen(base_p1), to_screen(base_p2)]
+                if len(head_pts) >= 3:
+                    pygame.draw.polygon(screen, (160, 160, 165, int(200 * fade)), head_pts, 0)
+                    pygame.draw.polygon(screen, (180, 180, 185, int(220 * fade)), head_pts, 2)
 
             elif combat_style == "dagger":
                 for idx, side in enumerate((-1, 1)):
