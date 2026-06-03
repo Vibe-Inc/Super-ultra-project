@@ -166,7 +166,7 @@ class SaveLoadMenu(Menu):
             pass
 
         panel_cx = sw // 2
-        panel_cy = int(sh * 0.46)
+        panel_cy = int(sh * 0.52)
         panel_w = int(880 * scale)
         pad_x = int(60 * scale)
         pad_y = int(50 * scale)
