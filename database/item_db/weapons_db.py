@@ -69,16 +69,6 @@ def seed_weapons(db):
         description="A long wooden spear with a steel tip. Great reach.",
         combat_style="spear"
     )
-    db.add_weapon(
-        item_id="flaming_sword", name="Flaming Sword", image_path=WIP_TEXTURE,
-        weapon_class="melee", damage=55, durability=160, range_val=80,
-        cone_degrees=120.0, cooldown=500, price=600,
-        description="A magical blade wreathed in eternal flame.",
-        on_hit_effects=[
-            {"type": "burn", "duration": 4, "damage_per_sec": 8}
-        ]
-    )
-
     # ------------------ Ranged weapons ------------------
     db.add_weapon(
         item_id="hunting_bow", name="Hunting Bow", image_path=WIP_TEXTURE,

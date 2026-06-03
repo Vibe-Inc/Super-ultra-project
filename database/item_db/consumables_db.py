@@ -71,62 +71,6 @@ def seed_consumables(db):
     # art assets are created.
     # ============================================================
 
-    # ------------------ Food / consumables ------------------
-    db.add_consumable(
-        item_id="bread", item_type="food", name="Bread", image_path=WIP_TEXTURE,
-        heal_amount=15, max_stack=32, price=8,
-        description="A loaf of fresh bread. Restores a bit of health.",
-        effects=[{"type": "regeneration", "duration": 4, "amount_per_sec": 3}]
-    )
-    db.add_consumable(
-        item_id="cheese", item_type="food", name="Cheese", image_path=WIP_TEXTURE,
-        heal_amount=20, max_stack=16, price=12,
-        description="Aged cheese, rich in flavor and calories.",
-        effects=[{"type": "regeneration", "duration": 5, "amount_per_sec": 4}]
-    )
-    db.add_consumable(
-        item_id="cooked_meat", item_type="food", name="Cooked Meat", image_path=WIP_TEXTURE,
-        heal_amount=35, max_stack=16, price=22,
-        description="A juicy piece of cooked meat. Very satisfying.",
-        effects=[{"type": "regeneration", "duration": 6, "amount_per_sec": 6}]
-    )
-    db.add_consumable(
-        item_id="fish", item_type="food", name="Fish", image_path=WIP_TEXTURE,
-        heal_amount=22, max_stack=16, price=14,
-        description="A freshly caught fish. Tasty when cooked.",
-        effects=[{"type": "regeneration", "duration": 5, "amount_per_sec": 4}]
-    )
-    db.add_consumable(
-        item_id="berry", item_type="food", name="Berry", image_path=WIP_TEXTURE,
-        heal_amount=5, max_stack=64, price=3,
-        description="A small handful of sweet forest berries.",
-        effects=[{"type": "regeneration", "duration": 3, "amount_per_sec": 2}]
-    )
-    db.add_consumable(
-        item_id="mushroom", item_type="food", name="Mushroom", image_path=WIP_TEXTURE,
-        heal_amount=8, max_stack=32, price=6,
-        description="An edible mushroom found in damp forests.",
-        effects=[{"type": "regeneration", "duration": 4, "amount_per_sec": 2}]
-    )
-    db.add_consumable(
-        item_id="spicy_pepper", item_type="food", name="Spicy Pepper", image_path=WIP_TEXTURE,
-        heal_amount=-3, max_stack=32, price=5,
-        description="An extremely spicy pepper. Burns on the way down.",
-        effects=[{"type": "burn", "duration": 6, "damage_per_sec": 3}]
-    )
-    db.add_consumable(
-        item_id="rotten_fish", item_type="food", name="Rotten Fish", image_path=WIP_TEXTURE,
-        heal_amount=-8, max_stack=16, price=1,
-        description="A foul-smelling fish. Eating it is a terrible idea.",
-        effects=[{"type": "poison", "duration": 8, "damage_per_sec": 3}]
-    )
-    db.add_consumable(
-        item_id="honey", item_type="food", name="Honey", image_path=WIP_TEXTURE,
-        heal_amount=12, max_stack=16, price=10,
-        description="Sweet golden honey harvested from wild bees.",
-        effects=[{"type": "regeneration", "duration": 5, "amount_per_sec": 3}]
-    )
-
     # ------------------ Potions ------------------
     db.add_consumable(
         item_id="medium_health_potion", item_type="potion", name="Medium Health Potion",
