@@ -1,3 +1,4 @@
+import math
 import pygame
 import time
 from typing import Callable
@@ -71,38 +72,121 @@ class Button:
         """Adjust color brightness by a factor."""
         return tuple(min(255, max(0, int(c * factor))) for c in color)
 
+    # Class-level cache for patterned button backgrounds
+    _pattern_cache = {}
+
     def draw(self, screen):
         mouse_pos = pygame.mouse.get_pos()
         is_hovered = self.rect.collidepoint(mouse_pos)
         base_color = self.hover_color if is_hovered else self.color
-        
-        # Draw subtle shadow (small offset, less opacity for flat design)
-        shadow_offset = 2
-        shadow_rect = pygame.Rect(
-            self.rect.x + shadow_offset,
-            self.rect.y + shadow_offset,
-            self.rect.width,
-            self.rect.height
-        )
-        shadow_surf = pygame.Surface((shadow_rect.width, shadow_rect.height), pygame.SRCALPHA)
-        shadow_surf.fill((0, 0, 0, 50))  # Lighter shadow
-        # Create rounded shadow
-        shadow_mask = pygame.Surface((shadow_rect.width, shadow_rect.height), pygame.SRCALPHA)
-        pygame.draw.rect(shadow_mask, (255, 255, 255, 255), 
-                        (0, 0, shadow_rect.width, shadow_rect.height), 
-                        border_radius=self.corner_width)
-        shadow_surf.blit(shadow_mask, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
-        screen.blit(shadow_surf, shadow_rect.topleft)
-        
-        # Draw flat button background with rounded corners
-        pygame.draw.rect(screen, base_color, self.rect, border_radius=self.corner_width)
-        
-        # Draw subtle border (slightly darker than base color)
-        border_color = self._adjust_color_brightness(base_color, 0.7)
-        pygame.draw.rect(screen, border_color, self.rect, width=1, border_radius=self.corner_width)
-        
-        # Draw main text (no shadow to avoid overlapping/duplicated look)
-        screen.blit(self.text_surf, self.text_rect)
+        r = self.rect
+        cw = self.corner_width
+
+        # ── Cache key: size + color + corner radius + hover state ──
+        ck = (r.width, r.height, base_color, cw, is_hovered)
+        cached = self._pattern_cache.get(ck)
+        if cached is None and len(self._pattern_cache) < 60:
+            cached = self._build_button_surface(r.width, r.height, base_color, cw, is_hovered)
+            self._pattern_cache[ck] = cached
+        if cached is None:
+            cached = self._build_button_surface(r.width, r.height, base_color, cw, is_hovered)
+
+        # ── Soft drop shadow ──
+        sw = cached.get_width()
+        sh2 = cached.get_height()
+        shadow = pygame.Surface((sw + 8, sh2 + 8), pygame.SRCALPHA)
+        pygame.draw.ellipse(shadow, (0, 0, 0, 28), (2, sh2 - 2, sw - 4, 10))
+        screen.blit(shadow, (r.x - 2, r.y + 2))
+
+        screen.blit(cached, r.topleft)
+
+        # ── Hover glow aura ──
+        if is_hovered:
+            glow = pygame.Surface((r.width + 12, r.height + 12), pygame.SRCALPHA)
+            glow_a = int(18 + 8 * math.sin(time.time() * 3))
+            pygame.draw.rect(glow, (255, 220, 80, max(0, min(40, glow_a))),
+                             glow.get_rect(), border_radius=cw + 6)
+            screen.blit(glow, (r.x - 6, r.y - 6))
+
+        # ── Text shadow + text ──
+        ts = self.text_surf
+        tr = self.text_rect
+        shd = ts.copy()
+        shd.fill((0, 0, 0, 35), special_flags=pygame.BLEND_RGBA_MIN)
+        screen.blit(shd, (tr.x + 1, tr.y + 2))
+        screen.blit(ts, tr)
+
+    def _build_button_surface(self, w, h, base_color, cw, is_hovered):
+        """Build a single button surface with decorative pattern, cached."""
+        import math as _m
+        import time as _t
+
+        surf = pygame.Surface((w, h), pygame.SRCALPHA)
+
+        # ── Base fill ──
+        dark_c = tuple(max(0, c - 25) for c in base_color)
+        surf.fill((*dark_c, 255))
+
+        # ── Inner lighter fill (rounded) ──
+        inner = pygame.Surface((w, h), pygame.SRCALPHA)
+        mid_c = tuple(min(255, c + 8) for c in base_color)
+        pygame.draw.rect(inner, (*mid_c, 255), (0, 0, w, h), border_radius=cw)
+        mask = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.rect(mask, (255, 255, 255, 255), (0, 0, w, h), border_radius=cw)
+        inner.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
+        surf.blit(inner, (0, 0))
+
+        # ── Decorative diamond/lattice pattern inside ──
+        pat = pygame.Surface((w, h), pygame.SRCALPHA)
+        line_color = tuple(min(255, c + 18) for c in base_color)
+        pat_a = 35 if not is_hovered else 50
+        spacing = max(12, int(h * 0.38))
+        for dy in range(-h, h * 2, spacing):
+            for dx in range(-w, w * 2, spacing):
+                pts = [
+                    (dx + spacing // 2, dy),
+                    (dx + spacing, dy + spacing // 2),
+                    (dx + spacing // 2, dy + spacing),
+                    (dx, dy + spacing // 2),
+                ]
+                pygame.draw.lines(pat, (*line_color, pat_a), True, pts, 1)
+        # Clip pattern to rounded rect
+        clip_mask = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.rect(clip_mask, (255, 255, 255, 255), (0, 0, w, h), border_radius=cw)
+        pat.blit(clip_mask, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
+        surf.blit(pat, (0, 0))
+
+        # ── Inner decorative border (thin gold) ──
+        inset = max(3, cw // 2 + 1)
+        inner_rect = pygame.Rect(inset, inset, w - inset * 2, h - inset * 2)
+        if inner_rect.width > 4 and inner_rect.height > 4:
+            gold_c = (210, 175, 50) if not is_hovered else (240, 210, 80)
+            pygame.draw.rect(surf, (*gold_c, 90), inner_rect,
+                             max(1, int(1)), border_radius=max(2, cw - inset))
+
+        # ── Outer border ──
+        border_c = tuple(max(0, c - 40) for c in base_color)
+        if is_hovered:
+            border_c = (220, 190, 60)
+        pygame.draw.rect(surf, border_c, (0, 0, w, h), max(1, min(2, cw // 3)), border_radius=cw)
+
+        # ── Thin gold accent lines (top & bottom) ──
+        gold_accent = (220, 185, 55) if is_hovered else (190, 155, 45)
+        accent_w = max(0, w - cw * 2)
+        if accent_w > 10:
+            pygame.draw.line(surf, (*gold_accent, 180),
+                             (cw + 2, 2), (w - cw - 2, 2), 1)
+            pygame.draw.line(surf, (*gold_accent, 120),
+                             (cw + 2, h - 3), (w - cw - 2, h - 3), 1)
+
+        # ── Corner accent dots ──
+        dot_r = max(1, int(2))
+        dot_c = (*gold_accent, 140) if not is_hovered else (*gold_accent, 200)
+        for cx, cy in [(cw + 2, 4), (w - cw - 2, 4),
+                       (cw + 2, h - 5), (w - cw - 2, h - 5)]:
+            pygame.draw.circle(surf, dot_c, (cx, cy), dot_r)
+
+        return surf
 
 
 class Tooltip:
