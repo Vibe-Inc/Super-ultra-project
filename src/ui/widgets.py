@@ -1,4 +1,5 @@
 import math
+import random
 import pygame
 import time
 from typing import Callable
@@ -7,39 +8,7 @@ import src.config as cfg
 from src.core.logger import logger
 
 class Button:
-    """
-    Clickable button class.
-
-    Attributes:
-        rect (pygame.Rect):
-            Rectangle defining the button's position and size.
-        text (str):
-            Text displayed on the button.
-        color (tuple[int, int, int]):
-            RGB color of the button in its normal state.
-        hover_color (tuple[int, int, int]):
-            RGB color of the button when hovered.
-        font (pygame.font.Font):
-            Font used to render the button's text.
-        font_color (tuple[int, int, int]):
-            RGB color of the button's text.
-        corner_width (int):
-            Radius of the button's corners.
-        on_click (Callable[[], None]):
-            Function to call when the button is clicked.
-        text_surf (pygame.Surface):
-            Rendered text surface.
-        text_rect (pygame.Rect):
-            Rectangle for positioning the text surface.
-
-    Methods:
-        draw(screen):
-            Draw the button on the given screen surface, changing color on hover.
-            Args:
-                screen (pygame.Surface): The surface to draw the button on.
-    """
-
-    def __init__(self, rect, text, color, hover_color, font, font_color, corner_width, on_click):
+    def __init__(self, rect, text, color, hover_color, font, font_color, corner_width, on_click, shape='rect'):
         self.rect: pygame.Rect = rect
         self.text: str = text
         self.color: tuple[int, int, int] = color
@@ -48,6 +17,9 @@ class Button:
         self.font_color: tuple[int, int, int] = font_color
         self.corner_width: int = corner_width
         self.on_click: Callable[[], None] = on_click
+        self.shape: str = shape
+        self._hover_progress: float = 0.0
+        self._hover_particles: list = []
         self._update_text_surface()
 
     def _update_text_surface(self):
@@ -69,46 +41,143 @@ class Button:
         self._update_text_surface()
 
     def _adjust_color_brightness(self, color, factor):
-        """Adjust color brightness by a factor."""
         return tuple(min(255, max(0, int(c * factor))) for c in color)
 
-    # Class-level cache for patterned button backgrounds
+    @staticmethod
+    def _shield_points(w, h):
+        cx = w // 2
+        inset_x = w * 0.08
+        inset_y = h * 0.06
+        return [
+            (inset_x, inset_y),
+            (w - inset_x, inset_y),
+            (w - inset_x * 0.3, h * 0.42),
+            (w - inset_x * 0.7, h * 0.68),
+            (cx, h),
+            (inset_x * 0.7, h * 0.68),
+            (inset_x * 0.3, h * 0.42),
+        ]
+
+    def _draw_shield_button(self, screen, r, base_color, cw, is_hovered, eased):
+        w, h = r.width, r.height
+        pts = self._shield_points(w, h)
+
+        shadow = pygame.Surface((w + 8, h + 8), pygame.SRCALPHA)
+        shadow_pts = [(x + 2, y + 4) for x, y in pts]
+        pygame.draw.polygon(shadow, (0, 0, 0, 35), shadow_pts)
+        screen.blit(shadow, (r.x - 2, r.y))
+
+        dark_c = tuple(max(0, c - 30) for c in base_color)
+        mid_c = tuple(min(255, c + 10) for c in base_color)
+        gold_c = (230, 195, 70) if is_hovered else (200, 165, 50)
+        gold_bright = (255, 215, 80)
+
+        surf = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.polygon(surf, dark_c, pts)
+
+        inner_pts = [(x * 0.88 + w * 0.06, y * 0.88 + h * 0.06) for x, y in pts]
+        inner_pts[4] = (w // 2, h - 2)
+        pygame.draw.polygon(surf, mid_c, inner_pts)
+
+        glow_val = int(40 * eased)
+        if glow_val > 0:
+            glow_surf = pygame.Surface((w, h), pygame.SRCALPHA)
+            glow_pts = [(x, y) for x, y in pts]
+            pygame.draw.polygon(glow_surf, (*gold_bright, glow_val), glow_pts)
+            surf.blit(glow_surf, (0, 0))
+
+        pygame.draw.polygon(surf, gold_c, pts, max(1, int(2 + eased * 1.5)))
+
+        diag_pts = [(x, y) for x, y in pts]
+        pygame.draw.polygon(surf, (*gold_c, 60), diag_pts, 1)
+
+        for cx, cy in [(pts[0][0] + 4, pts[0][1] + 4),
+                       (pts[1][0] - 4, pts[1][1] + 4)]:
+            pygame.draw.circle(surf, gold_bright, (int(cx), int(cy)), max(1, int(2 + eased)))
+
+        diamond_sz = max(2, int(4 * (1 + eased * 0.3)))
+        d_phase = time.time() * 2.0
+        for dx in [w * 0.25, w * 0.75]:
+            dy = h * 0.22
+            puls = 0.8 + 0.2 * math.sin(d_phase + dx)
+            ds = max(1, int(diamond_sz * puls))
+            dp = [(dx, dy - ds), (dx + ds, dy), (dx, dy + ds), (dx - ds, dy)]
+            pygame.draw.polygon(surf, gold_bright, dp)
+
+        screen.blit(surf, r.topleft)
+
     _pattern_cache = {}
 
     def draw(self, screen):
+        dt = 1.0 / 60.0
         mouse_pos = pygame.mouse.get_pos()
         is_hovered = self.rect.collidepoint(mouse_pos)
+
+        if is_hovered:
+            self._hover_progress = min(1.0, self._hover_progress + dt * 4.0)
+        else:
+            self._hover_progress = max(0.0, self._hover_progress - dt * 3.0)
+
         base_color = self.hover_color if is_hovered else self.color
         r = self.rect
         cw = self.corner_width
 
-        # ── Cache key: size + color + corner radius + hover state ──
-        ck = (r.width, r.height, base_color, cw, is_hovered)
-        cached = self._pattern_cache.get(ck)
-        if cached is None and len(self._pattern_cache) < 60:
-            cached = self._build_button_surface(r.width, r.height, base_color, cw, is_hovered)
-            self._pattern_cache[ck] = cached
-        if cached is None:
-            cached = self._build_button_surface(r.width, r.height, base_color, cw, is_hovered)
+        eased = 1.0 - (1.0 - self._hover_progress) ** 3
 
-        # ── Soft drop shadow ──
-        sw = cached.get_width()
-        sh2 = cached.get_height()
-        shadow = pygame.Surface((sw + 8, sh2 + 8), pygame.SRCALPHA)
-        pygame.draw.ellipse(shadow, (0, 0, 0, 28), (2, sh2 - 2, sw - 4, 10))
-        screen.blit(shadow, (r.x - 2, r.y + 2))
+        if self.shape == 'shield' or self.shape == 'pill':
+            self._draw_shield_button(screen, r, base_color, cw, is_hovered, eased)
+        else:
+            ck = (r.width, r.height, base_color, cw, is_hovered)
+            cached = self._pattern_cache.get(ck)
+            if cached is None and len(self._pattern_cache) < 60:
+                cached = self._build_button_surface(r.width, r.height, base_color, cw, is_hovered)
+                self._pattern_cache[ck] = cached
+            if cached is None:
+                cached = self._build_button_surface(r.width, r.height, base_color, cw, is_hovered)
 
-        screen.blit(cached, r.topleft)
+            shadow = pygame.Surface((r.width + 8, r.height + 8), pygame.SRCALPHA)
+            pygame.draw.ellipse(shadow, (0, 0, 0, 28), (2, r.height - 2, r.width - 4, 10))
+            screen.blit(shadow, (r.x - 2, r.y + 2))
+            screen.blit(cached, r.topleft)
 
-        # ── Hover glow aura ──
-        if is_hovered:
-            glow = pygame.Surface((r.width + 12, r.height + 12), pygame.SRCALPHA)
-            glow_a = int(18 + 8 * math.sin(time.time() * 3))
-            pygame.draw.rect(glow, (255, 220, 80, max(0, min(40, glow_a))),
-                             glow.get_rect(), border_radius=cw + 6)
-            screen.blit(glow, (r.x - 6, r.y - 6))
+        if eased > 0.01:
+            glow = pygame.Surface((r.width + 20, r.height + 20), pygame.SRCALPHA)
+            ga = int(15 + 10 * math.sin(time.time() * 3))
+            ga = int(ga * eased)
+            glow_color = (255, 215, 80, max(0, min(50, ga)))
+            if self.shape == 'shield':
+                pts = self._shield_points(r.width, r.height)
+                offset_pts = [(x + 10, y + 10) for x, y in pts]
+                pygame.draw.polygon(glow, glow_color, offset_pts)
+            else:
+                pygame.draw.rect(glow, glow_color, glow.get_rect(), border_radius=cw + 10)
+            screen.blit(glow, (r.x - 10, r.y - 10))
 
-        # ── Text shadow + text ──
+        if is_hovered and random.random() < 0.15:
+            self._hover_particles.append({
+                'x': random.uniform(r.x, r.x + r.width),
+                'y': r.y + r.height,
+                'vx': random.uniform(-20, 20),
+                'vy': random.uniform(-60, -120),
+                'life': 1.0,
+                'size': random.uniform(1, 3),
+            })
+
+        alive = []
+        for p in self._hover_particles:
+            p['x'] += p['vx'] * dt
+            p['y'] += p['vy'] * dt
+            p['vy'] += 40 * dt
+            p['life'] -= dt * 1.2
+            if p['life'] > 0:
+                a = int(200 * p['life'])
+                sz = max(0.5, p['size'] * p['life'])
+                s = pygame.Surface((int(sz * 2), int(sz * 2)), pygame.SRCALPHA)
+                pygame.draw.circle(s, (255, 215, 80, max(0, min(255, a))), (int(sz), int(sz)), int(sz))
+                screen.blit(s, (int(p['x'] - sz), int(p['y'] - sz)))
+                alive.append(p)
+        self._hover_particles = alive
+
         ts = self.text_surf
         tr = self.text_rect
         shd = ts.copy()
