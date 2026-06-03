@@ -203,10 +203,20 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">is_sprinting</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">can_sprint</span> <span class="o">=</span> <span class="kc">True</span>
 
+        <span class="c1"># Mana / Energy system</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_mana</span> <span class="o">=</span> <span class="mi">50</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mana</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_mana</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mana_drain_rate</span> <span class="o">=</span> <span class="mf">20.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mana_regen_rate</span> <span class="o">=</span> <span class="mf">10.0</span>
+        <span class="c1"># energy is an alias to support systems that use &quot;energy&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">energy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stamina</span>
+
         <span class="c1"># Effects</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">effects</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">confused</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dizzy</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># Resistances: values 0.0..1.0 (1.0 = immune). Example: {&quot;poison&quot;: 0.5, &quot;slow&quot;: 0.2}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resistances</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="c1"># Combat stats</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">base_attack_damage</span> <span class="o">=</span> <span class="mi">15</span>
@@ -821,6 +831,55 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_skill</span><span class="p">(</span><span class="n">skill</span><span class="p">,</span> <span class="n">aim_direction</span><span class="o">=</span><span class="n">aim_direction</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="Character.get_skill_cooldown_percent">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.get_skill_cooldown_percent">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_skill_cooldown_percent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skill</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the cooldown progress for a skill (0.0 = ready, 1.0 = just used).</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            skill (dict): The skill dictionary with skill_id.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            float: Cooldown percentage (0.0 to 1.0), where 0.0 means ready.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">skill</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.0</span>
+        
+        <span class="n">skill_id</span> <span class="o">=</span> <span class="n">skill</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;skill_id&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">current_time</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="n">skill_id</span> <span class="o">==</span> <span class="s2">&quot;dash&quot;</span><span class="p">:</span>
+            <span class="n">elapsed</span> <span class="o">=</span> <span class="n">current_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">dash_last_used</span>
+            <span class="k">if</span> <span class="n">elapsed</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dash_cooldown</span><span class="p">:</span>
+                <span class="k">return</span> <span class="mf">0.0</span>
+            <span class="k">return</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="p">(</span><span class="n">elapsed</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">dash_cooldown</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">skill_id</span> <span class="o">==</span> <span class="s2">&quot;fireball&quot;</span><span class="p">:</span>
+            <span class="n">last_used</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;fireball_last_used&quot;</span><span class="p">,</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">fireball_cooldown</span><span class="p">)</span>
+            <span class="n">elapsed</span> <span class="o">=</span> <span class="n">current_time</span> <span class="o">-</span> <span class="n">last_used</span>
+            <span class="k">if</span> <span class="n">elapsed</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fireball_cooldown</span><span class="p">:</span>
+                <span class="k">return</span> <span class="mf">0.0</span>
+            <span class="k">return</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="p">(</span><span class="n">elapsed</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">fireball_cooldown</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="mf">0.0</span></div>
+
+
+<div class="viewcode-block" id="Character.is_skill_ready">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.is_skill_ready">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_skill_ready</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skill</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a skill is ready to use (cooldown expired).</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            skill (dict): The skill dictionary with skill_id.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if skill is ready, False if on cooldown.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_skill_cooldown_percent</span><span class="p">(</span><span class="n">skill</span><span class="p">)</span> <span class="o">==</span> <span class="mf">0.0</span></div>
+
+
 <div class="viewcode-block" id="Character.use_skill">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.use_skill">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">use_skill</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skill</span><span class="p">,</span> <span class="n">aim_direction</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -1259,14 +1318,89 @@
         <span class="k">return</span> <span class="kc">False</span></div>
 
 
+<div class="viewcode-block" id="Character.get_resistance">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.get_resistance">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_resistance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">effect_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return resistance in range [0.0, 1.0] for given effect name.</span>
+<span class="sd">        1.0 means immune.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resistances</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">effect_name</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="Character.is_immune">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.is_immune">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_immune</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">effect_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_resistance</span><span class="p">(</span><span class="n">effect_name</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mf">1.0</span></div>
+
+
 <div class="viewcode-block" id="Character.add_effect">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.add_effect">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">add_effect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">effect</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add an effect, applying resistances and simple stacking rules:</span>
+<span class="sd">        - Immunity (resistance &gt;= 1.0) blocks the effect.</span>
+<span class="sd">        - Partial resistance scales magnitude and duration.</span>
+<span class="sd">        - If an existing effect of the same class exists, replace it only if the new one is stronger.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Map class names to effect keys used in resistances</span>
+        <span class="n">name_map</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;RegenerationEffect&quot;</span><span class="p">:</span> <span class="s2">&quot;regeneration&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;PoisonEffect&quot;</span><span class="p">:</span> <span class="s2">&quot;poison&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;BurnEffect&quot;</span><span class="p">:</span> <span class="s2">&quot;burn&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;ConfusionEffect&quot;</span><span class="p">:</span> <span class="s2">&quot;confusion&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;DizzinessEffect&quot;</span><span class="p">:</span> <span class="s2">&quot;dizziness&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;SlowEffect&quot;</span><span class="p">:</span> <span class="s2">&quot;slow&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">cls_name</span> <span class="o">=</span> <span class="n">effect</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="n">e_name</span> <span class="o">=</span> <span class="n">name_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cls_name</span><span class="p">,</span> <span class="n">cls_name</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_resistance</span><span class="p">(</span><span class="n">e_name</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">r</span> <span class="o">&gt;=</span> <span class="mf">1.0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Effect &#39;</span><span class="si">{</span><span class="n">e_name</span><span class="si">}</span><span class="s2">&#39; blocked by immunity on </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;id&#39;</span><span class="p">,</span><span class="w"> </span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Apply resistance scaling</span>
+        <span class="k">if</span> <span class="n">r</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="c1"># Scale damage-like fields</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">effect</span><span class="p">,</span> <span class="s2">&quot;damage_per_sec&quot;</span><span class="p">):</span>
+                <span class="n">effect</span><span class="o">.</span><span class="n">damage_per_sec</span> <span class="o">=</span> <span class="n">effect</span><span class="o">.</span><span class="n">damage_per_sec</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">r</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">effect</span><span class="p">,</span> <span class="s2">&quot;amount_per_sec&quot;</span><span class="p">):</span>
+                <span class="n">effect</span><span class="o">.</span><span class="n">amount_per_sec</span> <span class="o">=</span> <span class="n">effect</span><span class="o">.</span><span class="n">amount_per_sec</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">r</span><span class="p">)</span>
+            <span class="c1"># Scale duration</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">effect</span><span class="p">,</span> <span class="s2">&quot;duration&quot;</span><span class="p">):</span>
+                <span class="n">effect</span><span class="o">.</span><span class="n">duration</span> <span class="o">=</span> <span class="n">effect</span><span class="o">.</span><span class="n">duration</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">r</span><span class="p">)</span>
+            <span class="c1"># Scale slow&#39;s speed_multiplier (reduce slow strength)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">effect</span><span class="p">,</span> <span class="s2">&quot;speed_multiplier&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">effect</span><span class="o">.</span><span class="n">speed_multiplier</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">:</span>
+                <span class="n">reduction</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">effect</span><span class="o">.</span><span class="n">speed_multiplier</span>
+                <span class="n">reduced</span> <span class="o">=</span> <span class="n">reduction</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">r</span><span class="p">)</span>
+                <span class="n">effect</span><span class="o">.</span><span class="n">speed_multiplier</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">reduced</span>
+
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Applied resistance </span><span class="si">{</span><span class="n">r</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> to effect &#39;</span><span class="si">{</span><span class="n">e_name</span><span class="si">}</span><span class="s2">&#39; -&gt; adjusted attrs: </span><span class="si">{</span><span class="n">effect</span><span class="o">.</span><span class="vm">__dict__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Stacking: if same class exists, replace only if new is stronger</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">strength_metric</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s2">&quot;damage_per_sec&quot;</span><span class="p">):</span>
+                <span class="n">s</span> <span class="o">+=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s2">&quot;damage_per_sec&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s2">&quot;amount_per_sec&quot;</span><span class="p">):</span>
+                <span class="n">s</span> <span class="o">+=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s2">&quot;amount_per_sec&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s2">&quot;duration&quot;</span><span class="p">):</span>
+                <span class="n">s</span> <span class="o">+=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s2">&quot;duration&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span> <span class="o">*</span> <span class="mf">0.1</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s2">&quot;speed_multiplier&quot;</span><span class="p">):</span>
+                <span class="n">s</span> <span class="o">+=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s2">&quot;speed_multiplier&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)))</span> <span class="o">*</span> <span class="mf">10.0</span>
+            <span class="k">return</span> <span class="n">s</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="p">):</span>
             <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">effect</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">effect</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">strength_metric</span><span class="p">(</span><span class="n">effect</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">strength_metric</span><span class="p">(</span><span class="n">e</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">effect</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Replaced weaker &#39;</span><span class="si">{</span><span class="n">e_name</span><span class="si">}</span><span class="s2">&#39; effect with stronger one on </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;id&#39;</span><span class="p">,</span><span class="w"> </span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ignored incoming weaker or equal &#39;</span><span class="si">{</span><span class="n">e_name</span><span class="si">}</span><span class="s2">&#39; effect on </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;id&#39;</span><span class="p">,</span><span class="w"> </span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                 <span class="k">return</span>
+
+        <span class="c1"># Otherwise append new effect</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">effect</span><span class="p">)</span></div>
 
 
@@ -1592,6 +1726,13 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">stamina</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_stamina</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">can_sprint</span> <span class="o">=</span> <span class="kc">True</span>  
 
+        <span class="c1"># Mana regeneration</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;mana&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mana</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_mana</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">mana</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mana_regen_rate</span> <span class="o">*</span> <span class="n">dt</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mana</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_mana</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">mana</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_mana</span>
+
         <span class="c1"># KEY IMPLEMENTATION STEP: Single function call for collision-aware movement</span>
         <span class="n">collision_system</span><span class="o">.</span><span class="n">handle_movement_and_collision</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">obstacles</span><span class="p">)</span>
 
@@ -1698,6 +1839,98 @@
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Player took </span><span class="si">{</span><span class="n">amount</span><span class="si">}</span><span class="s2"> damage. HP: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">hp</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hp</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">die</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Character.heal">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.heal">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">heal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Restore HP by the specified amount, clamped to max_hp.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">amount</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">prev_hp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hp</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hp</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">amount</span><span class="p">))</span>
+        <span class="n">healed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hp</span> <span class="o">-</span> <span class="n">prev_hp</span>
+        <span class="k">if</span> <span class="n">healed</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Player healed </span><span class="si">{</span><span class="n">healed</span><span class="si">}</span><span class="s2"> HP. HP: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">hp</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Character.consume_stamina">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.consume_stamina">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">consume_stamina</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Attempt to consume stamina. Returns True if enough stamina was available.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">amount</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stamina</span> <span class="o">&gt;=</span> <span class="n">amount</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stamina</span> <span class="o">-=</span> <span class="n">amount</span>
+            <span class="c1"># keep energy alias in sync</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">energy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stamina</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Consumed </span><span class="si">{</span><span class="n">amount</span><span class="si">}</span><span class="s2"> stamina. Stamina: </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stamina</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_stamina</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Not enough stamina to consume </span><span class="si">{</span><span class="n">amount</span><span class="si">}</span><span class="s2">. Current: </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stamina</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="Character.restore_stamina">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.restore_stamina">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">restore_stamina</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Restore stamina (clamped to max_stamina).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">amount</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">prev</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stamina</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stamina</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_stamina</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stamina</span> <span class="o">+</span> <span class="n">amount</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">energy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stamina</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Player restored </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stamina</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">prev</span><span class="si">}</span><span class="s2"> stamina. Stamina: </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stamina</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_stamina</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Character.consume_mana">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.consume_mana">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">consume_mana</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Attempt to consume mana. Returns True if enough mana was available.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">amount</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;mana&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">amount</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mana</span> <span class="o">-=</span> <span class="n">amount</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Consumed </span><span class="si">{</span><span class="n">amount</span><span class="si">}</span><span class="s2"> mana. Mana: </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mana</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_mana</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Not enough mana to consume </span><span class="si">{</span><span class="n">amount</span><span class="si">}</span><span class="s2">. Current: </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="s1">&#39;mana&#39;</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="Character.restore_mana">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.restore_mana">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">restore_mana</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Restore mana (clamped to max_mana).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">amount</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">prev</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;mana&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mana</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_mana</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mana</span> <span class="o">+</span> <span class="n">amount</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Player restored </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mana</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">prev</span><span class="si">}</span><span class="s2"> mana. Mana: </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mana</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_mana</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Character.use_item">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.use_item">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">use_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Use an Item instance on the player. Returns True if item was consumed/used.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">used</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">used</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Player used item </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;id&#39;</span><span class="p">,</span><span class="w"> </span><span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">used</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error using item: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
 
 
 <div class="viewcode-block" id="Character.die">

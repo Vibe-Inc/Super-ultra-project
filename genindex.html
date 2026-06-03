@@ -388,16 +388,20 @@
 </li>
       <li><a href="src.inventory.html#src.inventory.system.Inventory.columns">columns (src.inventory.system.Inventory attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.items.html#src.items.items.Consumable">Consumable (class in src.items.items)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.inventory.html#src.inventory.system.CraftingLogic.consume_ingredients">consume_ingredients() (src.inventory.system.CraftingLogic method)</a>
 
       <ul>
         <li><a href="src.inventory.html#id6">(src.inventory.system.CraftingLogic static method)</a>
 </li>
       </ul></li>
+      <li><a href="src.entities.html#src.entities.character.Character.consume_mana">consume_mana() (src.entities.character.Character method)</a>
+</li>
+      <li><a href="src.entities.html#src.entities.character.Character.consume_stamina">consume_stamina() (src.entities.character.Character method)</a>
+</li>
       <li><a href="src.entities.html#src.entities.enemy.Enemy.contact_damage">contact_damage (src.entities.enemy.Enemy attribute)</a>
 </li>
       <li><a href="src.items.html#src.items.items.Weapon.cooldown">cooldown (src.items.items.Weapon attribute)</a>
@@ -682,12 +686,16 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="src.entities.html#src.entities.character.Character.get_resistance">get_resistance() (src.entities.character.Character method)</a>
+</li>
       <li><a href="src.core.html#src.core.save_manager.SaveManager.get_save_files">get_save_files() (src.core.save_manager.SaveManager method)</a>
 
       <ul>
         <li><a href="src.core.html#id14">(src.core.save_manager.SaveManager static method)</a>
 </li>
       </ul></li>
+      <li><a href="src.entities.html#src.entities.character.Character.get_skill_cooldown_percent">get_skill_cooldown_percent() (src.entities.character.Character method)</a>
+</li>
       <li><a href="src.entities.html#src.entities.character.Character.get_skill_in_slot">get_skill_in_slot() (src.entities.character.Character method)</a>
 </li>
       <li><a href="src.inventory.html#id7">get_slot_under_mouse() (src.inventory.system.Inventory method)</a>, <a href="src.inventory.html#src.inventory.system.Inventory.get_slot_under_mouse">[1]</a>
@@ -742,9 +750,11 @@
         <li><a href="src.ui.html#id28">(src.ui.widgets.Slider method)</a>, <a href="src.ui.html#src.ui.widgets.Slider.handle_event">[1]</a>
 </li>
       </ul></li>
+      <li><a href="src.inventory.html#id10">handle_hotkeys() (src.inventory.system.MAIN_player_hotbar method)</a>, <a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.handle_hotkeys">[1]</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="src.inventory.html#id10">handle_hotkeys() (src.inventory.system.MAIN_player_hotbar method)</a>, <a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.handle_hotkeys">[1]</a>
+      <li><a href="src.entities.html#src.entities.character.Character.heal">heal() (src.entities.character.Character method)</a>
 </li>
       <li><a href="src.items.html#src.items.items.Consumable.heal_amount">heal_amount (src.items.items.Consumable attribute)</a>
 </li>
@@ -830,9 +840,13 @@
 </li>
       <li><a href="src.inventory.html#src.inventory.system.Inventory.is_hidden">is_hidden (src.inventory.system.Inventory attribute)</a>
 </li>
+      <li><a href="src.entities.html#src.entities.character.Character.is_immune">is_immune() (src.entities.character.Character method)</a>
+</li>
       <li><a href="src.entities.html#src.entities.npc.NPC.is_interactable">is_interactable (src.entities.npc.NPC attribute)</a>
 </li>
       <li><a href="src.ui.html#src.ui.menus.RecipeBookMenu.is_opening">is_opening (src.ui.menus.RecipeBookMenu attribute)</a>
+</li>
+      <li><a href="src.entities.html#src.entities.character.Character.is_skill_ready">is_skill_ready() (src.entities.character.Character method)</a>
 </li>
       <li><a href="src.items.html#src.items.items.Item">Item (class in src.items.items)</a>
 </li>
@@ -1225,6 +1239,10 @@
 </li>
       <li><a href="src.items.html#src.items.items.Item.resize">resize() (src.items.items.Item method)</a>
 </li>
+      <li><a href="src.entities.html#src.entities.character.Character.restore_mana">restore_mana() (src.entities.character.Character method)</a>
+</li>
+      <li><a href="src.entities.html#src.entities.character.Character.restore_stamina">restore_stamina() (src.entities.character.Character method)</a>
+</li>
       <li><a href="src.ui.html#id9">resume_game() (src.ui.menus.PauseMenu method)</a>, <a href="src.ui.html#src.ui.menus.PauseMenu.resume_game">[1]</a>
 </li>
       <li><a href="src.inventory.html#src.inventory.system.Inventory.rows">rows (src.inventory.system.Inventory attribute)</a>
@@ -1597,10 +1615,10 @@
       </ul></li>
       <li><a href="src.html#src.config.update_brightness">update_brightness() (in module src.config)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.html#id3">update_language() (src.app.App method)</a>, <a href="src.html#src.app.App.update_language">[1]</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.inventory.html#id13">update_position() (src.inventory.system.MAIN_player_hotbar method)</a>, <a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.update_position">[1]</a>
 </li>
       <li><a href="src.inventory.html#id3">update_positions() (src.inventory.system.CraftingGrid method)</a>, <a href="src.inventory.html#src.inventory.system.CraftingGrid.update_positions">[1]</a>
@@ -1616,6 +1634,8 @@
 </li>
       </ul></li>
       <li><a href="src.inventory.html#id14">use_active_slot() (src.inventory.system.MAIN_player_hotbar method)</a>, <a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.use_active_slot">[1]</a>
+</li>
+      <li><a href="src.entities.html#src.entities.character.Character.use_item">use_item() (src.entities.character.Character method)</a>
 </li>
       <li><a href="src.entities.html#src.entities.character.Character.use_skill">use_skill() (src.entities.character.Character method)</a>
 </li>
