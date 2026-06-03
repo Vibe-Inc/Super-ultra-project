@@ -1932,7 +1932,7 @@ class Character:
                 # Slower spin (350ms duration vs default 200ms)
                 p_axe = min(elapsed / 350.0, 1.0)
 
-                sweep_start = -150
+                sweep_start = 0
                 sweep = 360 * p_axe
                 fade = max(0, 1.0 - p_axe * 0.5)
                 base_a = math.degrees(math.atan2(attack_dir.y, attack_dir.x))
