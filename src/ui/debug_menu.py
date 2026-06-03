@@ -1,4 +1,4 @@
-erimport pygame
+import pygame
 import src.config as cfg
 
 class SpawnMenu:
