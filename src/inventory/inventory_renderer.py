@@ -1,7 +1,7 @@
 import math
 import pygame
 import src.config as cfg
-from src.inventory.system import ShopInventory, MAIN_player_inventory, MAIN_player_hotbar, CraftingGrid
+from src.inventory.system import ShopInventory, MAIN_player_inventory, MAIN_player_hotbar, MAIN_player_inventory_equipment, CraftingGrid
 
 def draw_panel_with_shadow(screen, rect, bg_color, border_color, border_width=2, border_radius=15, shadow_offset=8):
     """
@@ -103,7 +103,7 @@ class InventoryRenderer:
 
                 if inv.items[n][m]:
                     item, count = inv.items[n][m]
-                    if count <= 0:
+                    if count <= 0 or item is None:
                         inv.items[n][m] = None
                         continue
 
@@ -123,6 +123,66 @@ class InventoryRenderer:
                         shadow2 = font_obj.render(text_str, True, (0, 0, 0))
                         text_surf = font_obj.render(text_str, True, cfg.INV_ITEM_TEXT_COLOR)
                         
+                        text_x = rect.right - text_surf.get_width() - 4
+                        text_y = rect.bottom - text_surf.get_height() - 2
+                        screen.blit(shadow1, (text_x + 2, text_y + 2))
+                        screen.blit(shadow2, (text_x + 1, text_y + 1))
+                        screen.blit(text_surf, (text_x, text_y))
+
+    def draw_equipment(self, screen, inv: MAIN_player_inventory_equipment):
+        # Draw slot backgrounds with labels
+        label_font = cfg.INV_nums_font
+        for n in range(inv.columns):
+            for m in range(inv.rows):
+                slot_type = inv.get_slot_type(n, m)
+                label = cfg.EQUIPMENT_SLOT_LABELS.get(slot_type, slot_type.capitalize())
+
+                rect = pygame.Rect(
+                    inv.pos_x + (inv.slot_size + inv.border) * n + inv.border,
+                    inv.pos_y + (inv.slot_size + inv.border) * m + inv.border,
+                    inv.slot_size, inv.slot_size
+                )
+
+                # Draw slot background
+                pygame.draw.rect(screen, self.slot_bg_color, rect, border_radius=cfg.INV_SLOT_BORDER_RADIUS)
+                inner_rect = rect.inflate(-4, -4)
+                pygame.draw.rect(screen, self.slot_inner_shadow, inner_rect, border_radius=cfg.INV_SLOT_INNER_BORDER_RADIUS)
+
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                is_hovered = rect.collidepoint(mouse_x, mouse_y) and not inv.is_hidden
+                if is_hovered:
+                    hover_surf = pygame.Surface((inv.slot_size, inv.slot_size), pygame.SRCALPHA)
+                    pygame.draw.rect(hover_surf, self.hover_fill, hover_surf.get_rect(), border_radius=cfg.INV_SLOT_BORDER_RADIUS)
+                    screen.blit(hover_surf, rect.topleft)
+                    pygame.draw.rect(screen, self.hover_border, rect, width=2, border_radius=cfg.INV_SLOT_BORDER_RADIUS)
+                else:
+                    pygame.draw.rect(screen, self.slot_border_color, rect, width=2, border_radius=cfg.INV_SLOT_BORDER_RADIUS)
+
+                # Draw label only on empty slots
+                if not inv.items[n][m]:
+                    text_surf = label_font.render(label, True, (80, 85, 95))
+                    text_x = rect.centerx - text_surf.get_width() // 2
+                    text_y = rect.centery - text_surf.get_height() // 2
+                    screen.blit(text_surf, (text_x, text_y))
+
+                # Draw item if present
+                if inv.items[n][m]:
+                    item, count = inv.items[n][m]
+                    if count <= 0:
+                        inv.items[n][m] = None
+                        continue
+                    padding = cfg.INV_SLOT_PADDING
+                    item_size = inv.slot_size - padding * 2
+                    shadow_surf = pygame.Surface((item_size, item_size), pygame.SRCALPHA)
+                    pygame.draw.circle(shadow_surf, cfg.INV_ITEM_SHADOW_COLOR, (item_size//2, item_size//2), item_size//2 - 2)
+                    screen.blit(shadow_surf, (rect.x + padding + 2, rect.y + padding + 4))
+                    screen.blit(item.resize(item_size), (rect.x + padding, rect.y + padding))
+                    if count > 1:
+                        font_obj = cfg.INV_nums_font
+                        text_str = str(count)
+                        shadow1 = font_obj.render(text_str, True, (0, 0, 0))
+                        shadow2 = font_obj.render(text_str, True, (0, 0, 0))
+                        text_surf = font_obj.render(text_str, True, cfg.INV_ITEM_TEXT_COLOR)
                         text_x = rect.right - text_surf.get_width() - 4
                         text_y = rect.bottom - text_surf.get_height() - 2
                         screen.blit(shadow1, (text_x + 2, text_y + 2))

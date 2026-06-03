@@ -45,9 +45,27 @@ class Gp_database:
             db_name (str): The file path to the SQLite database.
         """
         self.conn = sqlite3.connect(db_name)
-        self.conn.row_factory = sqlite3.Row 
+        self.conn.row_factory = sqlite3.Row
         self.cursor = self.conn.cursor()
         self.setup_tables()
+
+    def _ensure_column(self, table: str, column: str, definition: str):
+        """
+        Add a column to a table if it doesn't already exist (safe migration).
+
+        Args:
+            table (str): Table name.
+            column (str): Column to add.
+            definition (str): Full column definition (e.g. "INT DEFAULT 0").
+        """
+        try:
+            self.cursor.execute(f"PRAGMA table_info({table})")
+            existing = {row[1] for row in self.cursor.fetchall()}
+            if column not in existing:
+                self.cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+                self.conn.commit()
+        except sqlite3.Error as exc:
+            print(f"_ensure_column({table}.{column}) failed: {exc}")
 
     def setup_tables(self):
         """
@@ -70,22 +88,37 @@ class Gp_database:
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS weapons (
                 item_id TEXT PRIMARY KEY,
-                weapon_class TEXT,       
-                damage INT DEFAULT 1,    
+                weapon_class TEXT,
+                damage INT DEFAULT 1,
                 durability INT DEFAULT 100,
-                range INT,            
-                projectile_speed INT DEFAULT 0, 
+                range INT,
+                projectile_speed INT DEFAULT 0,
                 cooldown INT DEFAULT 500,
                 spread_degrees REAL DEFAULT 0.0,
-                cone_degrees REAL DEFAULT 0.0,     
+                cone_degrees REAL DEFAULT 0.0,
+                on_hit_effects TEXT DEFAULT NULL,
+                combat_style TEXT DEFAULT 'sword',
                 FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE
             )
         ''')
+
+        # Backwards-compatible column adds for existing databases.
+        self._ensure_column("weapons", "on_hit_effects", "TEXT DEFAULT NULL")
+        self._ensure_column("weapons", "combat_style", "TEXT DEFAULT 'sword'")
 
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS consumables (
                 item_id TEXT PRIMARY KEY,
                 heal_amount INT DEFAULT 0,
+                FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE
+            )
+        ''')
+
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS armor (
+                item_id TEXT PRIMARY KEY,
+                slot_type TEXT NOT NULL DEFAULT 'helmet',
+                defense_value INT DEFAULT 0,
                 FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE
             )
         ''')
@@ -179,11 +212,13 @@ class Gp_database:
             print(f"Item '{item_id}' already exists (skipping).")
             return False
 
-    def add_weapon(self, item_id: str, name: str, image_path: str, weapon_class: str, 
-                   damage: int = 1, durability: int = 100, range_val: int = 65, 
-                   projectile_speed: int = 0, cooldown: int = 500, 
+    def add_weapon(self, item_id: str, name: str, image_path: str, weapon_class: str,
+                   damage: int = 1, durability: int = 100, range_val: int = 65,
+                   projectile_speed: int = 0, cooldown: int = 500,
                    spread_degrees: float = 0.0, cone_degrees: float = 0.0,
-                   price: int = 0, description: str = "") -> bool:
+                   price: int = 0, description: str = "",
+                   on_hit_effects: list | None = None,
+                   combat_style: str = 'sword') -> bool:
         """
         Add a weapon item to the database along with its combat stats.
 
@@ -201,6 +236,10 @@ class Gp_database:
             cone_degrees (float): Attack arc angle for melee.
             price (int): Monetary value of the weapon.
             description (str): Description text or translation key.
+            on_hit_effects (list | None): Optional list of effect dicts
+                describing on-hit effects (e.g. burn on hit).
+            combat_style (str): Attack pattern ('sword', 'mace', 'axe', 'spear',
+                'dagger', 'war_hammer').
 
         Returns:
             bool: True if insertion was successful, False otherwise.
@@ -214,11 +253,11 @@ class Gp_database:
             ''', (item_id, name, image_path, price, description))
 
             self.cursor.execute('''
-                INSERT INTO weapons (item_id, weapon_class, damage, durability, range, 
-                                    projectile_speed, cooldown, spread_degrees, cone_degrees)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (item_id, weapon_class, damage, durability, range_val, 
-                  projectile_speed, cooldown, spread_degrees, cone_degrees))
+                INSERT INTO weapons (item_id, weapon_class, damage, durability, range,
+                                    projectile_speed, cooldown, spread_degrees, cone_degrees, on_hit_effects, combat_style)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (item_id, weapon_class, damage, durability, range_val,
+                  projectile_speed, cooldown, spread_degrees, cone_degrees, None if on_hit_effects is None else repr(on_hit_effects), combat_style))
 
             self.conn.commit()
             print(f"Weapon '{item_id}' added successfully.")
@@ -230,8 +269,51 @@ class Gp_database:
             self.conn.rollback()
             return False
 
-    def add_consumable(self, item_id: str, item_type: str, name: str, image_path: str, 
-                       heal_amount: int = 0, effects: list = None, 
+    def add_armor(self, item_id: str, name: str, image_path: str,
+                   slot_type: str = "helmet", defense_value: int = 0,
+                   price: int = 0, max_stack: int = 1, description: str = "") -> bool:
+        """
+        Add an armor item to the database.
+
+        Args:
+            item_id (str): Unique identifier for the armor.
+            name (str): Display name or translation key.
+            image_path (str): File path to the armor's texture.
+            slot_type (str): Equipment slot type (helmet, chestplate, leggings, boots,
+                             charm, gloves, ring, belt).
+            defense_value (int): Flat damage reduction provided.
+            price (int): Monetary value.
+            max_stack (int): Maximum stack size (usually 1).
+            description (str): Description text.
+
+        Returns:
+            bool: True if successful.
+        """
+        try:
+            self.conn.execute("BEGIN TRANSACTION")
+
+            self.cursor.execute('''
+                INSERT INTO items (id, type, name, image_path, price, max_stack, description)
+                VALUES (?, 'armor', ?, ?, ?, ?, ?)
+            ''', (item_id, name, image_path, price, max_stack, description))
+
+            self.cursor.execute('''
+                INSERT INTO armor (item_id, slot_type, defense_value)
+                VALUES (?, ?, ?)
+            ''', (item_id, slot_type, defense_value))
+
+            self.conn.commit()
+            print(f"Armor '{item_id}' added successfully.")
+            return True
+        except sqlite3.IntegrityError:
+            self.conn.rollback()
+            return False
+        except sqlite3.Error:
+            self.conn.rollback()
+            return False
+
+    def add_consumable(self, item_id: str, item_type: str, name: str, image_path: str,
+                       heal_amount: int = 0, effects: list = None,
                        price: int = 0, max_stack: int = 64, description: str = "") -> bool:
         """
         Add a consumable item to the database and dynamically map its effects.
@@ -252,10 +334,10 @@ class Gp_database:
         """
         if effects is None:
             effects = []
-            
+
         try:
             self.conn.execute("BEGIN TRANSACTION")
-            
+
             self.cursor.execute('''
                 INSERT INTO items (id, type, name, image_path, price, max_stack, description)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -308,42 +390,55 @@ class Gp_database:
             dict | None: A dictionary mapping item attributes to their values, or None if not found.
         """
         self.cursor.execute('''
-            SELECT items.*, 
-                   weapons.weapon_class, weapons.damage, weapons.durability, weapons.range, 
-                   weapons.projectile_speed, weapons.cooldown, weapons.spread_degrees, weapons.cone_degrees,
-                   consumables.heal_amount
+            SELECT items.*,
+                   weapons.weapon_class, weapons.damage, weapons.durability, weapons.range,
+                   weapons.projectile_speed, weapons.cooldown, weapons.spread_degrees,
+                   weapons.cone_degrees, weapons.on_hit_effects, weapons.combat_style,
+                   consumables.heal_amount,
+                   armor.slot_type, armor.defense_value
             FROM items
             LEFT JOIN weapons ON items.id = weapons.item_id
             LEFT JOIN consumables ON items.id = consumables.item_id
+            LEFT JOIN armor ON items.id = armor.item_id
             WHERE items.id = ?
         ''', (item_id,))
-        
+
         row = self.cursor.fetchone()
         if not row:
             return None
-            
+
         item_data = dict(row)
         item_data["effects"] = []
-        
+
+        # Decode on_hit_effects for weapons, if any.
+        if item_data.get("on_hit_effects"):
+            import ast
+            try:
+                item_data["on_hit_effects"] = ast.literal_eval(item_data["on_hit_effects"])
+            except (ValueError, SyntaxError, TypeError):
+                item_data["on_hit_effects"] = []
+        else:
+            item_data["on_hit_effects"] = []
+
         if item_data["type"] in ("food", "potion"):
             self.cursor.execute('SELECT id, effect_type FROM consumable_effects WHERE item_id = ?', (item_id,))
             effects_rows = self.cursor.fetchall()
-            
+
             for e_row in effects_rows:
                 e_id = e_row["id"]
                 effect_dict = {"type": e_row["effect_type"]}
-                
+
                 self.cursor.execute('SELECT param_name, param_value FROM effect_params WHERE effect_id = ?', (e_id,))
                 params_rows = self.cursor.fetchall()
-                
+
                 for p_row in params_rows:
                     val = p_row["param_value"]
-                    if val.is_integer(): 
+                    if val.is_integer():
                         val = int(val)
                     effect_dict[p_row["param_name"]] = val
-                    
+
                 item_data["effects"].append(effect_dict)
-                
+
         return item_data
     
     def add_recipe(self, result_item_id: str, result_amount: int, ingredients: dict) -> bool:

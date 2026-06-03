@@ -20,7 +20,7 @@ FPS = 0
 
 def _load_background(screen_width, screen_height):
     try:
-        bg_path = os.path.join(BASE_DIR, "assets", "bg_menu.jpg")
+        bg_path = os.path.join(BASE_DIR, "assets", "ui", "bg_menu.jpg")
         return pygame.transform.scale(pygame.image.load(bg_path), (screen_width, screen_height))
     except (FileNotFoundError, pygame.error):
         return pygame.Surface((screen_width, screen_height))
@@ -118,6 +118,22 @@ MAIN_INV_rows = 4
 
 MAIN_INV_equipment_columns = 2
 MAIN_INV_equipment_rows = 4
+
+# Equipment slot type definitions (col x row -> slot_type)
+# Column 0: accessories/wearables
+# Column 1: armor pieces
+EQUIPMENT_SLOT_TYPES = [
+    ["charm", "gloves", "ring", "belt"],
+    ["helmet", "chestplate", "leggings", "boots"],
+]
+
+# Human-readable labels for equipment slots
+EQUIPMENT_SLOT_LABELS = {
+    "helmet": "Helmet", "chestplate": "Chestplate",
+    "leggings": "Leggings", "boots": "Boots",
+    "charm": "Charm", "gloves": "Gloves",
+    "ring": "Ring", "belt": "Belt",
+}
 
 BASE_INV_slot_size = 70
 BASE_INV_border = 3

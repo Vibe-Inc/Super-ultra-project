@@ -74,6 +74,10 @@ class PlayerCombatController:
         self.game.equipped_weapon = weapon
 
         char = self.game.character
+        # Expose the equipped weapon to the character so on-hit enchantments
+        # (Flaming Sword, etc.) can be applied to enemies that get struck.
+        char.equipped_weapon = weapon
+
         if weapon:
             char.attack_damage = weapon.damage
             char.attack_cooldown = getattr(weapon, "cooldown", char.base_attack_cooldown)
@@ -173,5 +177,16 @@ class PlayerCombatController:
         if not char.can_attack():
             return
 
-        cone_degrees = float(getattr(weapon, "cone_degrees", 90.0))
-        char.attack(self.game.enemies, aim_direction=aim_dir, cone_degrees=cone_degrees)
+        combat_style = getattr(weapon, "combat_style", "sword")
+
+        if combat_style == "mace":
+            char.attack_mace(self.game.enemies, aim_direction=aim_dir)
+        elif combat_style == "axe":
+            char.attack_axe(self.game.enemies, aim_direction=aim_dir)
+        elif combat_style == "spear":
+            char.attack_spear(self.game.enemies, aim_direction=aim_dir)
+        elif combat_style == "war_hammer":
+            char.attack_war_hammer(self.game.enemies, aim_direction=aim_dir)
+        else:
+            cone_degrees = float(getattr(weapon, "cone_degrees", 90.0))
+            char.attack(self.game.enemies, aim_direction=aim_dir, cone_degrees=cone_degrees)

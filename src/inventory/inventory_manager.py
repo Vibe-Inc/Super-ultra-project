@@ -2,7 +2,7 @@ import math
 import pygame
 import src.config as cfg
 from src.ui.widgets import Tooltip, Button
-from src.inventory.system import Inventory_slider, ShopInventory, MAIN_player_inventory, MAIN_player_hotbar
+from src.inventory.system import Inventory_slider, ShopInventory, MAIN_player_inventory, MAIN_player_inventory_equipment, MAIN_player_hotbar
 from src.inventory.inventory_renderer import InventoryRenderer
 
 
@@ -216,7 +216,6 @@ class INVENTORY_manager:
             elif isinstance(inv, MAIN_player_inventory):
                 self.renderer.draw_player_inventory(screen, inv)
 
-                from src.inventory.system import MAIN_player_inventory_equipment
                 equip_inv = None
                 for active_inv in self.active_inventories:
                     if isinstance(active_inv, MAIN_player_inventory_equipment):
@@ -234,6 +233,8 @@ class INVENTORY_manager:
                     self.renderer.draw_crafting_system(screen, self.crafting_system)
 
                 self.renderer.draw_crafting_system(screen, self.crafting_system)
+            elif isinstance(inv, MAIN_player_inventory_equipment):
+                self.renderer.draw_equipment(screen, inv)
             elif isinstance(inv, MAIN_player_hotbar):
                 self.renderer.draw_hotbar(screen, inv)
             else:

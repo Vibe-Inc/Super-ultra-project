@@ -65,6 +65,9 @@ class Weapon(Item):
         durability (int): Current weapon durability points.
         cooldown (int): Attack cooldown in milliseconds.
         weapon_class (str): Classification (e.g., melee, ranged).
+        on_hit_effects (list): Optional list of effect dicts applied to a
+            target each time the weapon lands a hit (e.g. Flaming Sword ->
+            BurnEffect).
     """
     def __init__(self, row: dict):
         super().__init__(row)
@@ -72,6 +75,20 @@ class Weapon(Item):
         self.durability = row["durability"]
         self.cooldown = row["cooldown"]
         self.weapon_class = row["weapon_class"]
+        # Per-weapon on-hit effects (list of effect dicts).
+        # We keep it as a plain attribute even if the column is missing so
+        # that existing items (with no on-hit effects) keep working.
+        self.on_hit_effects = []
+        raw_on_hit = row.get("on_hit_effects")
+        if raw_on_hit:
+            if isinstance(raw_on_hit, str):
+                import ast
+                try:
+                    self.on_hit_effects = ast.literal_eval(raw_on_hit)
+                except (ValueError, SyntaxError, TypeError):
+                    self.on_hit_effects = []
+            elif isinstance(raw_on_hit, list):
+                self.on_hit_effects = list(raw_on_hit)
 
     def _get_base_stats_text(self):
         weapon_label = f"{_('Weapon')} ({self.weapon_class.capitalize()})"
@@ -85,16 +102,29 @@ class Weapon(Item):
 class MeleeWeapon(Weapon):
     """
     Represents a melee combat weapon.
+
+    Attributes:
+        range (int): Effective attack range in pixels.
+        combat_style (str): Attack pattern identifier:
+            'sword' - standard cone arc,
+            'mace'  - circular AoE at impact point,
+            'axe'   - full 360° spinning sweep,
+            'spear' - long narrow piercing line,
+            'dagger' - quick short multi-strike,
+            'war_hammer' - heavy slam with small AoE stun.
     """
     def __init__(self, row: dict):
         super().__init__(row)
         self.range = row["range"]
+        self.combat_style = row.get("combat_style", "sword")
 
     def get_tooltip_text(self):
         base_stats = self._get_base_stats_text()
+        style_label = self.combat_style.replace("_", " ").title()
         stats = (
             f"{base_stats}"
             f"{_('Range')}: {self.range}\n"
+            f"{_('Style')}: {style_label}\n"
             f"Price: ${self.price}"
         )
         return f"{self.name}\n{stats}\n{self.description}"    
@@ -124,7 +154,8 @@ class RangedWeapon(Weapon):
 
 class Consumable(Item):
     """
-    Represents an item that can be used to restore health or apply effects.
+    Represents an item that can be used to restore health
+    or apply temporary effects to the target.
 
     Attributes:
         heal_amount (int): Points of HP restored or lost.
@@ -134,32 +165,43 @@ class Consumable(Item):
         super().__init__(row)
         self.heal_amount = row.get("heal_amount", 0)
         self.effects_list = row.get("effects", [])
-        
+
     def get_tooltip_text(self):
         stats = f"{_('Type')}: {_('Consumable')}"
         if self.heal_amount > 0:
             stats += f"\n{_('Heal')}: +{self.heal_amount} {_('HP')}"
         elif self.heal_amount < 0:
             stats += f"\n{_('Damage')}: {self.heal_amount} {_('HP')}"
-        
         if self.effects_list:
             stats += f"\n{_('Effects')}:"
             for effect_data in self.effects_list:
                 etype = effect_data.get("type", "unknown")
                 dur = effect_data.get("duration", 0)
                 stats += f"\n - {etype.capitalize()} ({dur}s)"
-        
+
         stats += f"\nPrice: ${self.price}"
         return f"{self.name}\n{stats}\n{self.description}"
 
     def use(self, target):
-        used = False 
+        """
+        Apply the consumable's effects to the target.
+
+        Returns True when at least one effect was applied (HP, mana, or
+        a status effect), False otherwise.
+        """
+        used = False
         if self.heal_amount != 0:
-            target.hp = min(target.max_hp, max(0, target.hp + self.heal_amount))
+            new_hp = min(target.max_hp, max(0, target.hp + self.heal_amount))
+            # Special case: very large heal_amount (e.g. Elixir of Life) acts
+            # as a full restore, no matter the current missing HP.
+            if self.heal_amount >= target.max_hp:
+                target.hp = target.max_hp
+            else:
+                target.hp = new_hp
             used = True
 
         if self.effects_list:
-            used = True 
+            used = True
             for effect_data in self.effects_list:
                 effect_obj = create_effect(effect_data)
                 if effect_obj:
@@ -169,10 +211,33 @@ class Consumable(Item):
 
 class Armor(Item):
     """
-    Represents an armor item.
+    Represents an armor item that can be equipped in a specific equipment slot.
+
+    Attributes:
+        slot_type (str): The equipment slot this armor belongs to
+                         ("helmet", "chestplate", "leggings", "boots",
+                          "charm", "gloves", "ring", "belt").
+        defense_value (int): Flat damage reduction this armor provides.
     """
     def __init__(self, row: dict):
         super().__init__(row)
+        self.slot_type = row.get("slot_type", "helmet")
+        self.defense_value = row.get("defense_value", 0)
+
+    def get_tooltip_text(self):
+        slot_map = {
+            "helmet": _("Helmet"), "chestplate": _("Chestplate"),
+            "leggings": _("Leggings"), "boots": _("Boots"),
+            "charm": _("Charm"), "gloves": _("Gloves"),
+            "ring": _("Ring"), "belt": _("Belt"),
+        }
+        slot_label = slot_map.get(self.slot_type, self.slot_type.capitalize())
+        stats = (
+            f"{_('Type')}: {_('Armor')} ({slot_label})\n"
+            f"{_('Defense')}: +{self.defense_value}\n"
+            f"Price: ${self.price}"
+        )
+        return f"{self.name}\n{stats}\n{self.description}"
 
 
 def create_item(item_id: str):

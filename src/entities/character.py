@@ -125,8 +125,8 @@ class Character:
         # Stamina system
         self.max_stamina = 100
         self.stamina = self.max_stamina
-        self.stamina_drain_rate = 35  
-        self.stamina_regen_rate = 25  
+        self.stamina_drain_rate = 35
+        self.stamina_regen_rate = 25
         self.is_sprinting = False
         self.can_sprint = True
 
@@ -137,6 +137,13 @@ class Character:
         self.mana_regen_rate = 10.0
         # energy is an alias to support systems that use "energy"
         self.energy = self.stamina
+        # Armor / defense system (consumed by Armor items)
+        self.defense = 0
+
+        # Buff / debuff dynamic multipliers (touched by HasteEffect, LethargyEffect, ...)
+        self.damage_bonus = 0         # flat damage added to every attack
+        self.cooldown_multiplier = 1.0  # <1 = faster, >1 = slower
+        self.shield = 0.0             # absorbs damage before HP is touched
 
         # Effects
         self.effects = []
@@ -1254,13 +1261,18 @@ class Character:
     def can_attack(self, current_time=None):
         if current_time is None:
             current_time = pygame.time.get_ticks()
-        return current_time - self.last_attack_time >= self.attack_cooldown
+        effective_cooldown = self.attack_cooldown * getattr(self, "cooldown_multiplier", 1.0)
+        return current_time - self.last_attack_time >= effective_cooldown
 
     def start_attack(self, current_time=None, show_slash=True):
         if current_time is None:
             current_time = pygame.time.get_ticks()
         self.last_attack_time = current_time
         self.is_attacking = show_slash
+
+    def get_effective_attack_damage(self):
+        """Compute the final damage of an attack, factoring in weapon + damage_bonus buff."""
+        return int(self.attack_damage) + int(getattr(self, "damage_bonus", 0))
 
     def get_forward_direction(self):
         if self.direction == "up":
@@ -1330,12 +1342,213 @@ class Character:
                 continue
 
             logger.info(f"Hit enemy for {self.attack_damage} damage!")
-            enemy.take_damage(self.attack_damage)
+            final_damage = self.get_effective_attack_damage()
+            enemy.take_damage(final_damage)
+
+            # Apply weapon on-hit enchantments (Flaming Sword, etc.) if enemy supports it.
+            self._apply_weapon_enchantments(enemy)
 
             if self.poison_blade:
                 enemy.add_effect(PoisonEffect(self.poison_blade_duration, self.poison_blade_damage_per_sec))
 
             knockback_force = 20
+            enemy.pos += knock_dir * knockback_force
+
+    def _apply_weapon_enchantments(self, enemy):
+        """
+        Apply on-hit effects from the currently equipped weapon (if any).
+
+        New weapons can declare `on_hit_effects` as a list of effect dicts
+        (the same shape used by consumable effects) and they will be applied
+        to the struck enemy here.
+        """
+        weapon = getattr(self, "equipped_weapon", None)
+        if weapon is None:
+            return
+        on_hit = getattr(weapon, "on_hit_effects", None)
+        if not on_hit:
+            return
+        from database.effects import create_effect  # local import to avoid cycles
+        for effect_data in on_hit:
+            if not isinstance(effect_data, dict):
+                continue
+            effect_obj = create_effect(effect_data)
+            if effect_obj is None:
+                continue
+            if hasattr(enemy, "add_effect"):
+                enemy.add_effect(effect_obj)
+            else:
+                # Fallback: try to apply take_damage for DoT-style effects.
+                pass
+
+    def attack_mace(self, enemies, aim_direction=None):
+        """Circle AoE centered at the impact point. Hits all enemies in a radius."""
+        current_time = pygame.time.get_ticks()
+        if not self.can_attack(current_time):
+            return
+
+        self.start_attack(current_time, show_slash=True)
+
+        if aim_direction is None:
+            aim_direction = self.get_forward_direction()
+        aim_dir = pygame.Vector2(aim_direction)
+        if aim_dir.length_squared() == 0:
+            aim_dir = pygame.Vector2(1, 0)
+        aim_dir = aim_dir.normalize()
+        self.last_attack_dir = pygame.Vector2(aim_dir)
+
+        origin = self.get_melee_anchor()
+        impact_point = origin + aim_dir * self.attack_range
+        blast_radius = 55.0
+        blast_radius_sq = blast_radius * blast_radius
+        knockback_force = 35
+
+        for enemy in enemies:
+            enemy_rect = enemy.get_rect()
+            enemy_center = pygame.Vector2(enemy_rect.centerx, enemy_rect.centery)
+            to_impact = enemy_center - impact_point
+            dist_sq = to_impact.length_squared()
+            if dist_sq > blast_radius_sq:
+                continue
+
+            logger.info(f"Mace hit enemy for {self.attack_damage} damage!")
+            final_damage = self.get_effective_attack_damage()
+            enemy.take_damage(final_damage)
+            self._apply_weapon_enchantments(enemy)
+
+            if self.poison_blade:
+                enemy.add_effect(PoisonEffect(self.poison_blade_duration, self.poison_blade_damage_per_sec))
+
+            knock_dir = to_impact.normalize() if dist_sq > 0 else pygame.Vector2(aim_dir)
+            enemy.pos += knock_dir * knockback_force
+
+    def attack_axe(self, enemies, aim_direction=None):
+        """Full 360° spinning sweep. Hits all enemies within range regardless of direction."""
+        current_time = pygame.time.get_ticks()
+        if not self.can_attack(current_time):
+            return
+
+        self.start_attack(current_time, show_slash=True)
+
+        if aim_direction is None:
+            aim_direction = self.get_forward_direction()
+        aim_dir = pygame.Vector2(aim_direction)
+        if aim_dir.length_squared() == 0:
+            aim_dir = pygame.Vector2(1, 0)
+        aim_dir = aim_dir.normalize()
+        self.last_attack_dir = pygame.Vector2(aim_dir)
+
+        range_sq = float(self.attack_range) * float(self.attack_range)
+        origin = self.get_melee_anchor()
+        knockback_force = 30
+
+        for enemy in enemies:
+            enemy_rect = enemy.get_rect()
+            enemy_center = pygame.Vector2(enemy_rect.centerx, enemy_rect.centery)
+            to_enemy = enemy_center - origin
+            dist_sq = to_enemy.length_squared()
+            if dist_sq > range_sq:
+                continue
+
+            logger.info(f"Axe spin hit enemy for {self.attack_damage} damage!")
+            final_damage = self.get_effective_attack_damage()
+            enemy.take_damage(final_damage)
+            self._apply_weapon_enchantments(enemy)
+
+            if self.poison_blade:
+                enemy.add_effect(PoisonEffect(self.poison_blade_duration, self.poison_blade_damage_per_sec))
+
+            knock_dir = to_enemy.normalize() if dist_sq > 0 else pygame.Vector2(aim_dir)
+            enemy.pos += knock_dir * knockback_force
+
+    def attack_spear(self, enemies, aim_direction=None):
+        """Long narrow piercing line. Hits enemies in a thin rectangle extending forward."""
+        current_time = pygame.time.get_ticks()
+        if not self.can_attack(current_time):
+            return
+
+        self.start_attack(current_time, show_slash=True)
+
+        if aim_direction is None:
+            aim_direction = self.get_forward_direction()
+        aim_dir = pygame.Vector2(aim_direction)
+        if aim_dir.length_squared() == 0:
+            aim_dir = pygame.Vector2(1, 0)
+        aim_dir = aim_dir.normalize()
+        self.last_attack_dir = pygame.Vector2(aim_dir)
+
+        origin = self.get_melee_anchor()
+        half_width = 18.0
+        perp = pygame.Vector2(-aim_dir.y, aim_dir.x)
+        range_len = float(self.attack_range)
+        knockback_force = 25
+
+        for enemy in enemies:
+            enemy_rect = enemy.get_rect()
+            enemy_center = pygame.Vector2(enemy_rect.centerx, enemy_rect.centery)
+            to_enemy = enemy_center - origin
+
+            proj_len = to_enemy.dot(aim_dir)
+            if proj_len < 0 or proj_len > range_len:
+                continue
+
+            perp_dist = abs(to_enemy.dot(perp))
+            if perp_dist > half_width:
+                continue
+
+            logger.info(f"Spear pierced enemy for {self.attack_damage} damage!")
+            final_damage = self.get_effective_attack_damage()
+            enemy.take_damage(final_damage)
+            self._apply_weapon_enchantments(enemy)
+
+            if self.poison_blade:
+                enemy.add_effect(PoisonEffect(self.poison_blade_duration, self.poison_blade_damage_per_sec))
+
+            enemy.pos += aim_dir * knockback_force
+
+    def attack_war_hammer(self, enemies, aim_direction=None):
+        """Heavy slam with small AoE. Deals high damage and stuns enemies in a radius."""
+        current_time = pygame.time.get_ticks()
+        if not self.can_attack(current_time):
+            return
+
+        self.start_attack(current_time, show_slash=True)
+
+        if aim_direction is None:
+            aim_direction = self.get_forward_direction()
+        aim_dir = pygame.Vector2(aim_direction)
+        if aim_dir.length_squared() == 0:
+            aim_dir = pygame.Vector2(1, 0)
+        aim_dir = aim_dir.normalize()
+        self.last_attack_dir = pygame.Vector2(aim_dir)
+
+        origin = self.get_melee_anchor()
+        impact_point = origin + aim_dir * self.attack_range
+        blast_radius = 50.0
+        blast_radius_sq = blast_radius * blast_radius
+        knockback_force = 45
+
+        for enemy in enemies:
+            enemy_rect = enemy.get_rect()
+            enemy_center = pygame.Vector2(enemy_rect.centerx, enemy_rect.centery)
+            to_impact = enemy_center - impact_point
+            dist_sq = to_impact.length_squared()
+            if dist_sq > blast_radius_sq:
+                continue
+
+            logger.info(f"War Hammer crushed enemy for {self.attack_damage} damage!")
+            final_damage = self.get_effective_attack_damage()
+            enemy.take_damage(final_damage)
+            self._apply_weapon_enchantments(enemy)
+
+            if self.poison_blade:
+                enemy.add_effect(PoisonEffect(self.poison_blade_duration, self.poison_blade_damage_per_sec))
+
+            from database.effects import DizzinessEffect
+            if hasattr(enemy, "add_effect"):
+                enemy.add_effect(DizzinessEffect(duration=2.0))
+
+            knock_dir = to_impact.normalize() if dist_sq > 0 else pygame.Vector2(aim_dir)
             enemy.pos += knock_dir * knockback_force
 
     def get_rect(self):
@@ -1523,7 +1736,7 @@ class Character:
             self.stamina += self.stamina_regen_rate * dt
             if self.stamina >= self.max_stamina:
                 self.stamina = self.max_stamina
-                self.can_sprint = True  
+                self.can_sprint = True
 
         # Mana regeneration
         if getattr(self, "mana", None) is not None:
@@ -1628,10 +1841,34 @@ class Character:
                             enemy.take_damage(self.static_field_damage)
                             logger.info(f"Static Field shocked {enemy.__class__.__name__} for {self.static_field_damage} damage!")
 
+        # Apply armor / defense reduction first
+        defense = getattr(self, "defense", 0)
+        if defense > 0 and not ignore_invulnerability:
+            reduction = min(defense, int(amount * 0.6))
+            amount = max(0, amount - reduction)
+            self.defense = max(0, self.defense - reduction // 2)
+            if amount == 0:
+                logger.debug(f"Player attack fully absorbed by armor ({defense} def).")
+                return
+
+        # Shield absorbs next, before HP is touched
+        shield = getattr(self, "shield", 0.0)
+        if shield > 0.0 and not ignore_invulnerability:
+            if amount <= shield:
+                self.shield = shield - amount
+                logger.debug(f"Player shield absorbed {amount} damage. Remaining shield: {self.shield:.1f}")
+                return
+            else:
+                amount -= shield
+                self.shield = 0.0
+                logger.debug(f"Player shield depleted, remaining {amount} damage taken.")
+
+        self.hp -= amount
+
         if not ignore_invulnerability:
             self.invulnerable = True
             self.invulnerability_timer = self.invulnerability_duration
-        
+
         logger.info(f"Player took {amount} damage. HP: {self.hp}/{self.max_hp}")
         if self.hp <= 0:
             self.die()
@@ -1733,7 +1970,7 @@ class Character:
                 img = self.animations_flipped["side"][self.frame_index]
             screen.blit(img, draw_pos)
         
-        # Draw attack visual
+        # Draw attack visual based on equipped weapon's combat style — wind-swoosh effects
         if self.is_attacking:
             attack_dir = pygame.Vector2(self.last_attack_dir)
             if attack_dir.length_squared() == 0:
@@ -1743,28 +1980,265 @@ class Character:
             else:
                 attack_dir = attack_dir.normalize()
 
-            slash_size = 120
-            slash_surface = pygame.Surface((slash_size, slash_size), pygame.SRCALPHA)
+            weapon = getattr(self, "equipped_weapon", None)
+            combat_style = getattr(weapon, "combat_style", "sword") if weapon else "sword"
 
-            color = (255, 255, 255, 200)
-            width = 5
-            rect = pygame.Rect(10, 10, slash_size - 20, slash_size - 20)
-            pygame.draw.arc(
-                slash_surface,
-                color,
-                rect,
-                math.radians(300),
-                math.radians(420),
-                width,
-            )
-
-            angle_deg = -math.degrees(math.atan2(attack_dir.y, attack_dir.x))
-            rotated = pygame.transform.rotate(slash_surface, angle_deg)
+            now = pygame.time.get_ticks()
+            elapsed = now - self.last_attack_time
+            duration = 200
+            p = min(elapsed / duration, 1.0)
 
             base_anchor = self.get_melee_anchor() + attack_dir * self.melee_origin_offset
-            center = base_anchor + attack_dir * self.melee_slash_distance
-            rotated_rect = rotated.get_rect(center=(int(center.x - camera_offset.x), int(center.y - camera_offset.y)))
-            screen.blit(rotated, rotated_rect.topleft)
+            to_screen = lambda v: (int(v.x - camera_offset.x), int(v.y - camera_offset.y))
+            anchor_s = to_screen(base_anchor)
+
+            def swoosh(center, angle_deg, arc_total, radius, color, width, alpha, layers=3):
+                surf_size = int(radius * 2 + 20)
+                for layer in range(layers):
+                    lf = 1.0 - layer * 0.25
+                    r = radius * (1.0 - layer * 0.12)
+                    w = max(1, int(width * lf * (layers - layer) / layers))
+                    a = int(alpha * lf)
+                    if a <= 0:
+                        continue
+                    s = pygame.Surface((surf_size, surf_size), pygame.SRCALPHA)
+                    half = arc_total * 0.5 * (1.0 - layer * 0.08)
+                    off = layer * 4 - layers * 2
+                    pygame.draw.arc(s, (*color, a),
+                                    pygame.Rect(surf_size // 2 - r, surf_size // 2 - r, r * 2, r * 2),
+                                    math.radians(270 - half + off), math.radians(270 + half + off), w)
+                    rot = pygame.transform.rotate(s, angle_deg)
+                    cr = rot.get_rect(center=center)
+                    screen.blit(rot, cr.topleft)
+
+            def gust_line(start, end, color, alpha, width):
+                pygame.draw.line(screen, (*color, max(0, min(255, alpha))), start, end, max(1, width))
+
+            def dot(center, color, alpha, radius):
+                pygame.draw.circle(screen, (*color, max(0, min(255, alpha))), center, max(1, radius))
+
+            if combat_style == "sword":
+                base_angle = -math.degrees(math.atan2(attack_dir.y, attack_dir.x))
+
+                swing_total = 140
+                start_offset = 65
+                current_angle = base_angle - 90 + start_offset - swing_total * p
+
+                fade = 1.0 - p * 0.45
+                alpha = int(180 * fade)
+                arc_radius = 60 + 10 * p
+                arc_current = swing_total * p
+
+                # ── Crescent slash trail (procedural, no sprite) ──
+                # Dark outer glow
+                swoosh(anchor_s, base_angle - 270, arc_current, arc_radius + 16, (70, 80, 140), 10, alpha // 5, 2)
+                # Mid glow
+                swoosh(anchor_s, base_angle - 270, arc_current, arc_radius + 8, (110, 140, 210), 7, alpha // 3, 2)
+                # Main crescent body (light)
+                swoosh(anchor_s, base_angle - 270, arc_current, arc_radius, (180, 210, 255), 5, alpha, 3)
+                # Bright inner core
+                swoosh(anchor_s, base_angle - 270, arc_current * 0.7, arc_radius * 0.8, (220, 235, 255), 3, alpha, 2)
+                # Hot cutting edge
+                swoosh(anchor_s, base_angle - 270, arc_current * 0.4, arc_radius * 0.6, (255, 255, 255), 2, int(alpha * 0.8), 1)
+
+                # Bright tip flare at the blade edge
+                tip_angle = base_angle + arc_current * 0.5
+                tip_dir = pygame.Vector2(1, 0).rotate(-tip_angle)
+                tip_pos = base_anchor + tip_dir * (arc_radius + 5)
+                dot(to_screen(tip_pos), (255, 255, 255), int(220 * (1 - p * 0.5)), 3 + int(5 * (1 - p)))
+
+                # Particles scattered along the arc
+                for i in range(8):
+                    lp = (p - i * 0.09) / 0.8
+                    if lp < 0 or lp > 1:
+                        continue
+                    dot_angle = base_angle - arc_current * 0.5 + lp * arc_current
+                    d = pygame.Vector2(1, 0).rotate(-dot_angle)
+                    pos = base_anchor + d * (30 + 40 * lp)
+                    c = (160, 200, 255)
+                    dot(to_screen(pos), c, int(100 * (1 - lp) * fade), 1 + int(3 * (1 - lp)))
+
+            elif combat_style == "mace":
+                ip = base_anchor + attack_dir * (self.attack_range * min(1.0, p * 1.5))
+                ip_s = to_screen(ip)
+                fade = max(0, 1.0 - p * 1.0)
+                r = 20 + p * 50
+                pygame.draw.circle(screen, (200, 210, 255, int(80 * fade)), ip_s, int(r), max(1, int(4 - p * 2)))
+                pygame.draw.circle(screen, (180, 190, 255, int(40 * fade)), ip_s, int(r * 0.7), 1)
+                for i in range(10):
+                    a = math.radians(i * 36 + elapsed * 0.2)
+                    length = 15 + p * 45 * (0.4 + 0.6 * abs(math.sin(a)))
+                    end = (ip_s[0] + math.cos(a) * length, ip_s[1] + math.sin(a) * length)
+                    gust_line(ip_s, end, (200, 215, 255), int(70 * fade * (0.3 + 0.7 * (1 - abs(math.sin(a))))), max(1, int(3 - p * 1.5)))
+                for i in range(6):
+                    lp = (p - i * 0.08) / 0.6
+                    if lp < 0 or lp > 1:
+                        continue
+                    a = math.radians(i * 60 + elapsed * 0.5)
+                    pos = ip + pygame.Vector2(math.cos(a), math.sin(a)) * (10 + lp * 40)
+                    dot(to_screen(pos), (220, 230, 255), int(100 * (1 - lp) * fade), 2 + int(3 * (1 - lp)))
+
+            elif combat_style == "axe":
+                cx, cy = anchor_s
+
+                # Slower spin (350ms duration vs default 200ms)
+                p_axe = min(elapsed / 350.0, 1.0)
+
+                sweep_start = 0
+                sweep = 360 * p_axe
+                fade = max(0, 1.0 - p_axe * 0.5)
+                base_a = math.degrees(math.atan2(attack_dir.y, attack_dir.x))
+                r = 60 + 15 * math.sin(p_axe * math.pi)
+
+                # Gray metallic arc layers (spinning sweep trail)
+                for layer in range(3):
+                    lf = 1.0 - layer * 0.2
+                    lr = r * (1.0 - layer * 0.08)
+                    a_start = math.radians(base_a + sweep_start - layer * 6)
+                    a_end = math.radians(base_a + sweep_start + sweep + layer * 6)
+                    w = max(1, int(6 * lf))
+                    c = int(140 + 40 * lf)
+                    surf = pygame.Surface((int(lr * 2 + 30), int(lr * 2 + 30)), pygame.SRCALPHA)
+                    pygame.draw.arc(surf, (c, c, c + 10, int(90 * fade * lf)),
+                                    pygame.Rect(15, 15, lr * 2, lr * 2), a_start, a_end, w)
+                    screen.blit(surf, (cx - lr - 15, cy - lr - 15),
+                                special_flags=pygame.BLEND_ALPHA_SDL2)
+
+                # Spinning stick (shaft) connecting two blades
+                cur_a = base_a + sweep_start + sweep
+                stick_angle = cur_a
+                for side in range(2):
+                    tip_offset = pygame.Vector2(1, 0).rotate(-(stick_angle + side * 180)) * r * 0.425
+                    sx = cx + int(tip_offset.x)
+                    sy = cy + int(tip_offset.y)
+                    gust_line((cx, cy), (sx, sy), (150, 140, 130), int(180 * fade), max(1, int(4 - p_axe * 2)))
+
+                # Labrys double-bladed axe head at the end of the stick
+                ba = stick_angle
+                tip_offset = pygame.Vector2(1, 0).rotate(-ba) * r * 0.425
+                hx = cx + int(tip_offset.x)
+                hy = cy + int(tip_offset.y)
+                fwd = pygame.Vector2(1, 0).rotate(-ba)
+                perp = pygame.Vector2(1, 0).rotate(-(ba + 90))
+                blade_len = max(4, int(r * 0.35))
+                blade_wid = max(2, int(r * 0.14))
+                neck = max(1, int(r * 0.04))
+                for sign in (-1, 1):
+                    outer_top = (hx + int(perp.x * blade_len * sign + fwd.x * blade_wid),
+                                 hy + int(perp.y * blade_len * sign + fwd.y * blade_wid))
+                    outer_mid = (hx + int(perp.x * blade_len * sign * 0.95),
+                                 hy + int(perp.y * blade_len * sign * 0.95))
+                    outer_bot = (hx + int(perp.x * blade_len * sign - fwd.x * blade_wid),
+                                 hy + int(perp.y * blade_len * sign - fwd.y * blade_wid))
+                    inner_top = (hx + int(perp.x * neck * sign + fwd.x * blade_wid * 0.3),
+                                 hy + int(perp.y * neck * sign + fwd.y * blade_wid * 0.3))
+                    inner_bot = (hx + int(perp.x * neck * sign - fwd.x * blade_wid * 0.3),
+                                 hy + int(perp.y * neck * sign - fwd.y * blade_wid * 0.3))
+                    pts = [outer_top, outer_mid, outer_bot, inner_bot, inner_top]
+                    if len(pts) >= 3:
+                        pygame.draw.polygon(screen, (180, 180, 190, int(150 * fade)), pts, 0)
+                        pygame.draw.polygon(screen, (210, 210, 220, int(200 * fade)), pts, max(1, int(2 - p_axe)))
+
+            elif combat_style == "spear":
+                thrust_p = p * 1.3
+                if thrust_p < 0.2:
+                    thrust = self.attack_range * (thrust_p / 0.2)
+                elif thrust_p < 0.8:
+                    thrust = self.attack_range + (thrust_p - 0.2) / 0.6 * 10
+                else:
+                    thrust = (self.attack_range + 10) * max(0, 1.0 - (thrust_p - 0.8) / 0.5)
+                tip = base_anchor + attack_dir * max(5, thrust)
+                tip_s = to_screen(tip)
+                fade = max(0.0, min(1.0, 1.0 - (p - 0.3) * 1.4))
+                perp = pygame.Vector2(-attack_dir.y, attack_dir.x)
+                tail = base_anchor - attack_dir * 10
+                tail_s = to_screen(tail)
+                shaft_color = (130, 130, 135)
+                shaft_alpha = int(180 * fade)
+                shaft_width = max(2, int(5 - p * 2))
+                shaft_end = tip - attack_dir * 10
+                gust_line(tail_s, to_screen(shaft_end), shaft_color, shaft_alpha, shaft_width)
+                head_width = 8
+                head_len = 14
+                base_p1 = tip - attack_dir * head_len + perp * head_width
+                base_p2 = tip - attack_dir * head_len - perp * head_width
+                head_pts = [tip_s, to_screen(base_p1), to_screen(base_p2)]
+                if len(head_pts) >= 3:
+                    pygame.draw.polygon(screen, (160, 160, 165, int(200 * fade)), head_pts, 0)
+                    pygame.draw.polygon(screen, (180, 180, 185, int(220 * fade)), head_pts, 2)
+                if p > 0.1 and p < 0.85:
+                    for i in range(10):
+                        part_p = (p - 0.1 - i * 0.06) / 0.6
+                        if part_p < 0 or part_p > 1:
+                            continue
+                        spread = 4 + 18 * part_p
+                        side = -1 if i % 2 == 0 else 1
+                        offset = 3 + 10 * part_p
+                        pp = tip - attack_dir * offset + perp * spread * side
+                        a = int(90 * (1 - part_p) * fade)
+                        dot(to_screen(pp), (210, 210, 220), a, 1 + int(2 * (1 - part_p)))
+                        gust_line(to_screen(pp - attack_dir * 4), to_screen(pp), (200, 200, 210), int(a * 0.7), 1)
+                    for i in range(8):
+                        part_p = (p - 0.1 - i * 0.07) / 0.6
+                        if part_p < 0 or part_p > 1:
+                            continue
+                        stem_t = part_p * 0.7 + 0.15
+                        stem_pos = tail + attack_dir * (thrust * stem_t)
+                        stem_side = -1 if i % 2 == 0 else 1
+                        stem_off = perp * (3 + 8 * (1 - part_p)) * stem_side
+                        sp = stem_pos + stem_off
+                        sa = int(50 * (1 - part_p) * fade)
+                        dot(to_screen(sp), (190, 190, 200), sa, 1 + int(1 * (1 - part_p)))
+
+            elif combat_style == "war_hammer":
+                if p < 0.25:
+                    windup = p / 0.25
+                    fade = 1.0 - windup * 0.3
+                    swing_dir = attack_dir.rotate(-40 + 80 * windup)
+                    tip = base_anchor + swing_dir * (self.attack_range * 0.5 * windup)
+                    tip_s = to_screen(tip)
+                    gust_line(anchor_s, tip_s, (255, 195, 195), int(100 * windup), max(1, int(4 + windup * 4)))
+                    for i in range(3):
+                        d = swing_dir.rotate(-20 + 40 * (i / 2))
+                        pos = base_anchor + d * (20 + 40 * windup)
+                        dot(to_screen(pos), (255, 210, 210), int(80 * windup * (1 - i * 0.25)), 2 + int(3 * windup))
+                else:
+                    impact_p = (p - 0.25) / 0.75
+                    impact_point = base_anchor + attack_dir * self.attack_range
+                    ip_s = to_screen(impact_point)
+                    fade = max(0, 1.0 - impact_p * 0.9)
+                    r = 15 + impact_p * 55
+                    pygame.draw.circle(screen, (255, 185, 185, int(100 * fade)), ip_s, int(r), max(1, int(5 - impact_p * 3)))
+                    pygame.draw.circle(screen, (255, 155, 155, int(60 * fade)), ip_s, int(r * 0.6), 1)
+                    for i in range(8):
+                        a = math.radians(i * 45 + impact_p * 20)
+                        length = 10 + impact_p * 50 * (0.5 + 0.5 * abs(math.cos(a)))
+                        end = (ip_s[0] + math.cos(a) * length, ip_s[1] + math.sin(a) * length)
+                        gust_line(ip_s, end, (255, 175, 175), int(80 * fade * (0.4 + 0.6 * (1 - abs(math.sin(a))))),
+                                  max(1, int(3 - impact_p * 2)))
+                    for i in range(5):
+                        lp = (impact_p - i * 0.08) / 0.5
+                        if lp < 0 or lp > 1:
+                            continue
+                        a = math.radians(i * 72 + impact_p * 40)
+                        pos = impact_point + pygame.Vector2(math.cos(a), math.sin(a)) * (8 + lp * 35)
+                        dot(to_screen(pos), (255, 210, 210), int(90 * (1 - lp) * fade), 2 + int(4 * (1 - lp)))
+
+            else:
+                base_angle = -math.degrees(math.atan2(attack_dir.y, attack_dir.x))
+                sweep = 100 * p
+                fade = 1.0 - p * 0.45
+                alpha = int(180 * fade)
+                swoosh(anchor_s, base_angle, sweep, 70 + 10 * p, (220, 220, 255), 4, alpha, 3)
+                swoosh(anchor_s, base_angle, sweep * 0.7, 55 + 8 * p, (200, 200, 255), 6, int(alpha * 0.6), 2)
+                for i in range(4):
+                    lp = (p - i * 0.15) / 0.7
+                    if lp < 0 or lp > 1:
+                        continue
+                    spread = 20 + 35 * lp
+                    d = attack_dir.rotate(-20 + 40 * lp + i * 18)
+                    pos = base_anchor + d * (45 + 30 * lp)
+                    dot(to_screen(pos), (255, 255, 255), int(120 * (1 - lp) * fade), 2 + int(3 * (1 - lp)))
 
         # Draw Flame Shield visual effect
         if self.flame_shield_active:
