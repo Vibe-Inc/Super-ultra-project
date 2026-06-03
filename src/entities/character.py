@@ -1928,34 +1928,67 @@ class Character:
 
             elif combat_style == "axe":
                 cx, cy = anchor_s
+
+                # Slower spin (350ms duration vs default 200ms)
+                p_axe = min(elapsed / 350.0, 1.0)
+
                 sweep_start = -150
-                sweep = 360 * p
-                fade = max(0, 1.0 - p * 0.5)
+                sweep = 360 * p_axe
+                fade = max(0, 1.0 - p_axe * 0.5)
                 base_a = math.degrees(math.atan2(attack_dir.y, attack_dir.x))
-                r = 60 + 15 * math.sin(p * math.pi)
+                r = 60 + 15 * math.sin(p_axe * math.pi)
+
+                # Gray metallic arc layers (spinning sweep trail)
                 for layer in range(3):
                     lf = 1.0 - layer * 0.2
                     lr = r * (1.0 - layer * 0.08)
                     a_start = math.radians(base_a + sweep_start - layer * 6)
                     a_end = math.radians(base_a + sweep_start + sweep + layer * 6)
                     w = max(1, int(6 * lf))
+                    c = int(140 + 40 * lf)
                     surf = pygame.Surface((int(lr * 2 + 30), int(lr * 2 + 30)), pygame.SRCALPHA)
-                    pygame.draw.arc(surf, (255, 215, 170, int(100 * fade * lf)),
+                    pygame.draw.arc(surf, (c, c, c + 10, int(90 * fade * lf)),
                                     pygame.Rect(15, 15, lr * 2, lr * 2), a_start, a_end, w)
-                    screen.blit(surf, (cx - lr - 15 + surf.get_width() // 2, cy - lr - 15 + surf.get_height() // 2),
+                    screen.blit(surf, (cx - lr - 15, cy - lr - 15),
                                 special_flags=pygame.BLEND_ALPHA_SDL2)
-                tip_a = math.radians(base_a + sweep_start + sweep)
-                tip_x = cx + math.cos(tip_a) * r
-                tip_y = cy + math.sin(tip_a) * r
-                gust_line((cx, cy), (int(tip_x), int(tip_y)), (255, 225, 180), int(160 * fade), max(2, int(5 - p * 3)))
+
+                # Spinning stick (shaft) connecting two blades
+                cur_a = base_a + sweep_start + sweep
+                stick_angle = cur_a
+                for side in range(2):
+                    tip_offset = pygame.Vector2(1, 0).rotate(-(stick_angle + side * 180)) * r * 0.85
+                    sx = cx + int(tip_offset.x)
+                    sy = cy + int(tip_offset.y)
+                    gust_line((cx, cy), (sx, sy), (150, 140, 130), int(180 * fade), max(1, int(4 - p_axe * 2)))
+
+                # Double-headed axe blades at opposite ends
+                gray_blade = (180, 180, 190)
+                gray_edge = (210, 210, 220)
+                for side in range(2):
+                    ba = stick_angle + side * 180
+                    tip_offset = pygame.Vector2(1, 0).rotate(-ba) * r
+                    btip = (cx + int(tip_offset.x), cy + int(tip_offset.y))
+                    b1_offset = pygame.Vector2(1, 0).rotate(-(ba - 17)) * r * 0.7
+                    b2_offset = pygame.Vector2(1, 0).rotate(-(ba + 17)) * r * 0.7
+                    bx1 = cx + int(b1_offset.x)
+                    by1 = cy + int(b1_offset.y)
+                    bx2 = cx + int(b2_offset.x)
+                    by2 = cy + int(b2_offset.y)
+                    bp = [(bx1, by1), btip, (bx2, by2)]
+                    if len(bp) >= 3:
+                        pygame.draw.polygon(screen, (*gray_blade, int(150 * fade)), bp, 0)
+                        pygame.draw.polygon(screen, (*gray_edge, int(200 * fade)), bp, max(1, int(2 - p_axe)))
+
+                # Particles trailing along the arc cutting edge (screen-space, matching draw.arc)
                 for i in range(6):
-                    lp = (p - i * 0.1) / 0.6
+                    lp = (p_axe - i * 0.1) / 0.5
                     if lp < 0 or lp > 1:
                         continue
-                    a = math.radians(base_a + sweep_start + lp * sweep * (0.6 + 0.4 * i / 6))
-                    drift = pygame.Vector2(math.cos(a), math.sin(a))
-                    pos = base_anchor + drift * (r * (0.3 + 0.7 * lp))
-                    dot(to_screen(pos), (255, 230, 190), int(100 * (1 - lp) * fade), 2 + int(3 * (1 - lp)))
+                    pa_rad = math.radians(base_a + sweep_start + lp * sweep)
+                    px = cx + math.cos(pa_rad) * r
+                    py = cy - math.sin(pa_rad) * r
+                    c = int(200 + 20 * lp)
+                    dot((int(px), int(py)), (c, c, c + 10), int(160 * (1 - lp) * fade), 2 + int(2 * (1 - lp)))
 
             elif combat_style == "spear":
                 thrust_p = p * 1.3
