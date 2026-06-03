@@ -324,7 +324,7 @@ class MainMenu(Menu):
         logo_scaled.set_alpha(int(255 * min(1.0, logo_progress * 2)))
         screen.blit(logo_scaled, logo_rect)
 
-        title_text = "SUPER ULTRA PROJECT"
+        title_text = "CODEX ARCANUM"
         title_y = int(sh * 0.35)
         title_chars = list(title_text)
         char_widths = [self._title_font.size(c)[0] for c in title_chars]

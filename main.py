@@ -16,7 +16,6 @@ if platform.system() == "Windows":
 
 pygame.init()
 
-# Ensure project root is on sys.path so 'src' package is importable when running this script directly
 import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

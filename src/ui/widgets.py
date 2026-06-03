@@ -683,7 +683,8 @@ class Slider:
                 event (pygame.event.Event): The Pygame event to process.
     """
     def __init__(self, x, y, height, track_thickness, track_colour, knob_colour,
-                 knob_width, knob_height, track_length, value=0.3, dragging=False, smooth_speed=0.05, action=None):
+                 knob_width, knob_height, track_length, value=0.3, dragging=False,
+                 smooth_speed=0.05, action=None, style='default'):
         self.x = x
         self.y = y
         self.height = height
@@ -697,14 +698,16 @@ class Slider:
         self.dragging = dragging
         self.smooth_speed = smooth_speed
         self.action = action
+        self.style = style
 
         knob_x = self.x + int(self.value * self.track_length) - self.knob_width // 2
         knob_y = self.y + self.height // 2 - self.knob_height // 2
         self.knob_rect = pygame.Rect(knob_x, knob_y, self.knob_width, self.knob_height)
 
-        # We don't set current_volume here anymore as this is a generic slider
-        
     def draw(self, surface):
+        if self.style == 'gold':
+            self._draw_gold(surface)
+            return
         track_start = (self.x, self.y + self.height // 2)
         track_end = (self.x + self.track_length, self.y + self.height // 2)
         pygame.draw.line(surface, self.track_colour, track_start, track_end, width=self.track_thickness)
@@ -716,6 +719,45 @@ class Slider:
         knob_y = self.y + self.height // 2 - self.knob_height // 2
         self.knob_rect = pygame.Rect(knob_x, knob_y, self.knob_width, self.knob_height)
         pygame.draw.rect(surface, self.knob_colour, self.knob_rect)
+
+    def _draw_gold(self, surface):
+        cx = self.x + int(self.value * self.track_length)
+        cy = self.y + self.height // 2
+        t = time.time()
+
+        track_rect = pygame.Rect(self.x, cy - self.track_thickness // 2,
+                                 self.track_length, self.track_thickness)
+        pygame.draw.rect(surface, (25, 23, 35), track_rect, border_radius=self.track_thickness // 2)
+
+        fill_w = max(2, int(self.value * self.track_length))
+        if fill_w > 0:
+            fill_r = self.track_thickness // 2
+            for i in range(self.track_thickness):
+                ratio = 1.0 - abs(i - self.track_thickness / 2) / (self.track_thickness / 2)
+                a = int(180 * max(0, ratio))
+                c = (max(0, min(255, 212 + int(20 * ratio))),
+                     max(0, min(255, 175 + int(20 * ratio))),
+                     max(0, min(255, 55 + int(10 * ratio))))
+                pygame.draw.line(surface, (*c, a),
+                                 (self.x, cy - self.track_thickness // 2 + i),
+                                 (self.x + fill_w, cy - self.track_thickness // 2 + i))
+
+        knob_r = max(4, self.knob_width // 2)
+        glow_r = knob_r + 6
+        glow = pygame.Surface((glow_r * 2, glow_r * 2), pygame.SRCALPHA)
+        for ri in range(glow_r, 0, -2):
+            ratio = ri / glow_r
+            a = int(15 * (1 - ratio))
+            pygame.draw.circle(glow, (255, 215, 0, max(0, min(30, a))),
+                              (glow_r, glow_r), ri)
+        surface.blit(glow, (cx - glow_r, cy - glow_r))
+
+        pygame.draw.circle(surface, (255, 215, 0), (cx, cy), knob_r)
+        pygame.draw.circle(surface, (200, 170, 50), (cx, cy), knob_r, 1)
+        inner_r = max(2, knob_r - 3)
+        pygame.draw.circle(surface, (180, 140, 30), (cx, cy), inner_r, 1)
+
+        self.knob_rect = pygame.Rect(cx - knob_r, cy - knob_r, knob_r * 2, knob_r * 2)
 
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
