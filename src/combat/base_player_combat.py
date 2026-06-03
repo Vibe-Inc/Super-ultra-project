@@ -74,6 +74,10 @@ class PlayerCombatController:
         self.game.equipped_weapon = weapon
 
         char = self.game.character
+        # Expose the equipped weapon to the character so on-hit enchantments
+        # (Flaming Sword, etc.) can be applied to enemies that get struck.
+        char.equipped_weapon = weapon
+
         if weapon:
             char.attack_damage = weapon.damage
             char.attack_cooldown = getattr(weapon, "cooldown", char.base_attack_cooldown)
