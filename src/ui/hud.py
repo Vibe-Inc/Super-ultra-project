@@ -287,6 +287,55 @@ class HUD:
         pygame.draw.rect(surface, final_border, rect, 2, border_radius=cfg.INV_SLOT_BORDER_RADIUS)
 
         if skill:
+            # Get cooldown percentage (0.0 = ready, 1.0 = just used)
+            cooldown_percent = self.character.get_skill_cooldown_percent(skill)
+            
+            # Draw cooldown overlay if skill is on cooldown
+            if cooldown_percent > 0.0:
+                # Semi-transparent dark overlay
+                overlay_surf = pygame.Surface(rect.size, pygame.SRCALPHA)
+                pygame.draw.rect(overlay_surf, cfg.COOLDOWN_OVERLAY_COLOR, overlay_surf.get_rect(), border_radius=cfg.INV_SLOT_BORDER_RADIUS)
+                surface.blit(overlay_surf, rect.topleft)
+                
+                # Progress bar at bottom of slot
+                bar_height = cfg.COOLDOWN_BAR_HEIGHT
+                bar_rect = pygame.Rect(rect.left + 2, rect.bottom - bar_height - 2, rect.width - 4, bar_height)
+                
+                # Background of progress bar
+                pygame.draw.rect(surface, cfg.COOLDOWN_BAR_BG_COLOR, bar_rect, border_radius=2)
+                
+                # Fill showing remaining cooldown (fills from left as cooldown recovers)
+                fill_width = int((1.0 - cooldown_percent) * bar_rect.width)
+                if fill_width > 0:
+                    fill_rect = pygame.Rect(bar_rect.left, bar_rect.top, fill_width, bar_rect.height)
+                    pygame.draw.rect(surface, cfg.COOLDOWN_BAR_FILL_COLOR, fill_rect, border_radius=2)
+                
+                # Display cooldown time remaining
+                cooldown_time = 0.0
+                skill_id = skill.get("skill_id", "")
+                if skill_id == "dash":
+                    cooldown_time = self.character.dash_cooldown / 1000.0
+                elif skill_id == "fireball":
+                    cooldown_time = self.character.fireball_cooldown / 1000.0
+                
+                remaining_time = cooldown_time * cooldown_percent
+                if remaining_time > 0.0:
+                    cooldown_font = cfg.get_font(max(8, int(cfg.COOLDOWN_TEXT_SIZE * cfg.ui_scale())))
+                    time_text = f"{remaining_time:.1f}s"
+                    time_surf = cooldown_font.render(time_text, True, cfg.COOLDOWN_TEXT_COLOR)
+                    # Lower the remaining time text slightly for better visual alignment
+                    y_offset = int(10 * cfg.ui_scale())
+                    time_rect = time_surf.get_rect(center=(rect.centerx, rect.centery + y_offset))
+                    surface.blit(time_surf, time_rect)
+            else:
+                # Skill is ready - show subtle ready indicator
+                ready_pulse = (math.sin(t * 3.0) + 1.0) * 0.5
+                ready_alpha = int(60 + 40 * ready_pulse)
+                ready_surf = pygame.Surface((rect.width - 4, cfg.COOLDOWN_BAR_HEIGHT), pygame.SRCALPHA)
+                ready_color = (*cfg.COOLDOWN_BAR_READY_COLOR[:3], ready_alpha)
+                pygame.draw.rect(ready_surf, ready_color, ready_surf.get_rect(), border_radius=2)
+                surface.blit(ready_surf, (rect.left + 2, rect.bottom - cfg.COOLDOWN_BAR_HEIGHT - 2))
+            
             small_font = cfg.get_font(max(8, int(16 * cfg.ui_scale())))
             name = small_font.render(skill.get("name", ""), True, cfg.INV_ITEM_TEXT_COLOR)
             surface.blit(name, name.get_rect(center=(rect.centerx, rect.centery - 4)))
