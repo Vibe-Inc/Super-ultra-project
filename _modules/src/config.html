@@ -219,22 +219,27 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">recalculate_inventory_positions</span><span class="p">():</span>
     <span class="k">global</span> <span class="n">MAIN_INV_pos_x</span><span class="p">,</span> <span class="n">MAIN_INV_pos_y</span><span class="p">,</span> <span class="n">MAIN_INV_equipment_pos_x</span><span class="p">,</span> <span class="n">MAIN_INV_equipment_pos_y</span>
     
-    <span class="n">MAIN_INV_pos_x</span> <span class="o">=</span> <span class="n">SCREEN_WIDTH</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="p">(</span><span class="n">BASE_INV_slot_size</span> <span class="o">+</span> <span class="n">BASE_INV_border</span><span class="p">)</span> <span class="o">*</span> <span class="n">MAIN_INV_rows</span> <span class="o">+</span> <span class="n">BASE_INV_border</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="n">ui_scale</span><span class="p">()</span>
+    <span class="n">slot_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">BASE_INV_slot_size</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+    <span class="n">border</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">BASE_INV_border</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
     
-    <span class="n">grid_height</span> <span class="o">=</span> <span class="p">(</span><span class="n">BASE_INV_slot_size</span> <span class="o">+</span> <span class="n">BASE_INV_border</span><span class="p">)</span> <span class="o">*</span> <span class="n">MAIN_INV_rows</span> <span class="o">+</span> <span class="n">BASE_INV_border</span>
+    <span class="n">grid_width</span> <span class="o">=</span> <span class="p">(</span><span class="n">slot_size</span> <span class="o">+</span> <span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="n">MAIN_INV_columns</span>
+    <span class="n">grid_height</span> <span class="o">=</span> <span class="p">(</span><span class="n">slot_size</span> <span class="o">+</span> <span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="n">MAIN_INV_rows</span>
     
-    <span class="n">total_window_height</span> <span class="o">=</span> <span class="n">grid_height</span> <span class="o">+</span> <span class="mi">350</span>
+    <span class="n">MAIN_INV_pos_x</span> <span class="o">=</span> <span class="n">SCREEN_WIDTH</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">grid_width</span> <span class="o">//</span> <span class="mi">2</span>
     
-    <span class="n">hotbar_height</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">BASE_INV_slot_size</span> <span class="o">*</span> <span class="mf">0.8</span><span class="p">)</span> <span class="o">+</span> <span class="mi">40</span>
+    <span class="n">total_window_height</span> <span class="o">=</span> <span class="n">grid_height</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">350</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+    
+    <span class="n">hotbar_height</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">slot_size</span> <span class="o">*</span> <span class="mf">0.8</span><span class="p">)</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">40</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
     
     <span class="n">available_height</span> <span class="o">=</span> <span class="n">SCREEN_HEIGHT</span> <span class="o">-</span> <span class="n">hotbar_height</span>
     
     <span class="n">window_top</span> <span class="o">=</span> <span class="p">(</span><span class="n">available_height</span> <span class="o">-</span> <span class="n">total_window_height</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
     
-    <span class="n">MAIN_INV_pos_y</span> <span class="o">=</span> <span class="n">window_top</span> <span class="o">+</span> <span class="mi">335</span>
+    <span class="n">MAIN_INV_pos_y</span> <span class="o">=</span> <span class="n">window_top</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">335</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
 
-    <span class="n">MAIN_INV_equipment_pos_x</span> <span class="o">=</span> <span class="n">MAIN_INV_pos_x</span> <span class="o">+</span> <span class="p">(</span><span class="n">BASE_INV_slot_size</span> <span class="o">+</span> <span class="n">BASE_INV_border</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="n">BASE_INV_border</span>
-    <span class="n">MAIN_INV_equipment_pos_y</span> <span class="o">=</span> <span class="n">MAIN_INV_pos_y</span> <span class="o">-</span> <span class="mi">310</span></div>
+    <span class="n">MAIN_INV_equipment_pos_x</span> <span class="o">=</span> <span class="n">MAIN_INV_pos_x</span> <span class="o">+</span> <span class="p">(</span><span class="n">slot_size</span> <span class="o">+</span> <span class="n">border</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="n">border</span>
+    <span class="n">MAIN_INV_equipment_pos_y</span> <span class="o">=</span> <span class="n">MAIN_INV_pos_y</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="mi">310</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span></div>
 
 
 <span class="n">recalculate_inventory_positions</span><span class="p">()</span>
@@ -290,6 +295,13 @@
 <span class="n">INV_PLAYER_BTN_SPACING_MIN</span> <span class="o">=</span> <span class="mi">8</span>
 <span class="n">INV_PLAYER_BTN_SPACING_SCALE</span> <span class="o">=</span> <span class="mi">12</span>
 <span class="n">INV_PLAYER_BTN_TOP_OFFSET</span> <span class="o">=</span> <span class="mi">25</span>
+
+<span class="c1"># Right-side button positioning (majestic style)</span>
+<span class="n">INV_PLAYER_RIGHT_BTN_WIDTH</span> <span class="o">=</span> <span class="mi">260</span>
+<span class="n">INV_PLAYER_RIGHT_BTN_HEIGHT</span> <span class="o">=</span> <span class="mi">85</span>
+<span class="n">INV_PLAYER_RIGHT_BTN_GAP</span> <span class="o">=</span> <span class="mi">28</span>
+<span class="n">INV_PLAYER_RIGHT_BTN_MARGIN_X</span> <span class="o">=</span> <span class="mi">12</span>
+<span class="n">INV_PLAYER_RIGHT_BTN_EXTRA</span> <span class="o">=</span> <span class="mf">6.0</span>  <span class="c1"># multiplier for extra panel width on right</span>
 
 <span class="c1"># ============== HOTBAR COLORS AND STYLING ==============</span>
 <span class="n">INV_HOTBAR_BG_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">230</span><span class="p">)</span>
