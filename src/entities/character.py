@@ -1856,7 +1856,7 @@ class Character:
                                     pygame.Rect(surf_size // 2 - r, surf_size // 2 - r, r * 2, r * 2),
                                     math.radians(270 - half + off), math.radians(270 + half + off), w)
                     rot = pygame.transform.rotate(s, angle_deg)
-                    cr = rot.get_rect(center=(center[0] + surf_size // 2, center[1] + surf_size // 2))
+                    cr = rot.get_rect(center=center)
                     screen.blit(rot, cr.topleft)
 
             def gust_line(start, end, color, alpha, width):
@@ -1867,19 +1867,44 @@ class Character:
 
             if combat_style == "sword":
                 base_angle = -math.degrees(math.atan2(attack_dir.y, attack_dir.x))
-                sweep = 100 * p
+
+                swing_total = 140
+                start_offset = 65
+                current_angle = base_angle - 90 + start_offset - swing_total * p
+
                 fade = 1.0 - p * 0.45
                 alpha = int(180 * fade)
-                swoosh(anchor_s, base_angle, sweep, 70 + 10 * p, (220, 220, 255), 4, alpha, 3)
-                swoosh(anchor_s, base_angle, sweep * 0.7, 55 + 8 * p, (200, 200, 255), 6, int(alpha * 0.6), 2)
-                for i in range(4):
-                    lp = (p - i * 0.15) / 0.7
+                arc_radius = 60 + 10 * p
+                arc_current = swing_total * p
+
+                # ── Crescent slash trail (procedural, no sprite) ──
+                # Dark outer glow
+                swoosh(anchor_s, base_angle - 270, arc_current, arc_radius + 16, (70, 80, 140), 10, alpha // 5, 2)
+                # Mid glow
+                swoosh(anchor_s, base_angle - 270, arc_current, arc_radius + 8, (110, 140, 210), 7, alpha // 3, 2)
+                # Main crescent body (light)
+                swoosh(anchor_s, base_angle - 270, arc_current, arc_radius, (180, 210, 255), 5, alpha, 3)
+                # Bright inner core
+                swoosh(anchor_s, base_angle - 270, arc_current * 0.7, arc_radius * 0.8, (220, 235, 255), 3, alpha, 2)
+                # Hot cutting edge
+                swoosh(anchor_s, base_angle - 270, arc_current * 0.4, arc_radius * 0.6, (255, 255, 255), 2, int(alpha * 0.8), 1)
+
+                # Bright tip flare at the blade edge
+                tip_angle = base_angle + arc_current * 0.5
+                tip_dir = pygame.Vector2(1, 0).rotate(-tip_angle)
+                tip_pos = base_anchor + tip_dir * (arc_radius + 5)
+                dot(to_screen(tip_pos), (255, 255, 255), int(220 * (1 - p * 0.5)), 3 + int(5 * (1 - p)))
+
+                # Particles scattered along the arc
+                for i in range(8):
+                    lp = (p - i * 0.09) / 0.8
                     if lp < 0 or lp > 1:
                         continue
-                    spread = 20 + 35 * lp
-                    d = attack_dir.rotate(-20 + 40 * lp + i * 18)
-                    pos = base_anchor + d * (45 + 30 * lp)
-                    dot(to_screen(pos), (255, 255, 255), int(120 * (1 - lp) * fade), 2 + int(3 * (1 - lp)))
+                    dot_angle = base_angle - arc_current * 0.5 + lp * arc_current
+                    d = pygame.Vector2(1, 0).rotate(-dot_angle)
+                    pos = base_anchor + d * (30 + 40 * lp)
+                    c = (160, 200, 255)
+                    dot(to_screen(pos), c, int(100 * (1 - lp) * fade), 1 + int(3 * (1 - lp)))
 
             elif combat_style == "mace":
                 ip = base_anchor + attack_dir * (self.attack_range * min(1.0, p * 1.5))
