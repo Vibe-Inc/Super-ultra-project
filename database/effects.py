@@ -409,6 +409,75 @@ class Momentum(Effect):
         # remove added flat damage
         target.attack_damage = max(0, getattr(target, "attack_damage", 0) - self._added)
         logger.debug(f"Momentum ended on {getattr(target,'id',type(target))}")
+class BlindEffect(Effect):
+    """
+    Reduces aim/accuracy for duration.
+    """
+    def __init__(self, duration=6.0, accuracy_mult=0.5):
+        super().__init__(duration)
+        self.accuracy_mult = accuracy_mult
+        self.started = False
+
+    def apply(self, dt, target):
+        if not self.started:
+            self._prev = getattr(target, "accuracy_mult", 1.0)
+            target.accuracy_mult = self._prev * self.accuracy_mult
+            self.started = True
+            logger.debug(f"BlindEffect applied to {getattr(target,'id',type(target))}")
+
+    def on_end(self, target):
+        target.accuracy_mult = getattr(target, "accuracy_mult", 1.0) / self.accuracy_mult
+        logger.debug(f"BlindEffect ended on {getattr(target,'id',type(target))}")
+
+class WeakenEffect(Effect):
+    """
+    Reduces damage dealt by the target for duration.
+    """
+    def __init__(self, duration=8.0, damage_mult=0.8):
+        super().__init__(duration)
+        self.damage_mult = damage_mult
+        self.started = False
+
+    def apply(self, dt, target):
+        if not self.started:
+            self._prev = getattr(target, "damage_dealt_mult", 1.0)
+            target.damage_dealt_mult = self._prev * self.damage_mult
+            self.started = True
+            logger.debug(f"WeakenEffect applied to {getattr(target,'id',type(target))}")
+
+    def on_end(self, target):
+        target.damage_dealt_mult = getattr(target, "damage_dealt_mult", 1.0) / self.damage_mult
+        logger.debug(f"WeakenEffect ended on {getattr(target,'id',type(target))}")
+
+class CurseEffect(Effect):
+    """
+    Increases damage taken and reduces resistances while active.
+    """
+    def __init__(self, duration=12.0, damage_taken_mult=1.25, resist_penalty=0.15):
+        super().__init__(duration)
+        self.damage_taken_mult = damage_taken_mult
+        self.resist_penalty = resist_penalty
+        self.started = False
+        self._prev_resists = {}
+
+    def apply(self, dt, target):
+        if not self.started:
+            self._prev = getattr(target, "damage_taken_mult", 1.0)
+            target.damage_taken_mult = self._prev * self.damage_taken_mult
+            # apply resist penalty to every existing resistance key
+            prevs = {}
+            for k, v in getattr(target, "resistances", {}).items():
+                prevs[k] = v
+                target.resistances[k] = max(0.0, v - self.resist_penalty)
+            self._prev_resists = prevs
+            self.started = True
+            logger.debug(f"CurseEffect applied to {getattr(target,'id',type(target))}")
+
+    def on_end(self, target):
+        target.damage_taken_mult = getattr(target, "damage_taken_mult", 1.0) / self.damage_taken_mult
+        for k, v in self._prev_resists.items():
+            target.resistances[k] = v
+        logger.debug(f"CurseEffect ended on {getattr(target,'id',type(target))}")
 # ─────────────────────────────────────────────────────────────────────────────
 
 Effect_list = {
@@ -426,6 +495,9 @@ Effect_list = {
     "arcane_shield": ArcaneShield,
     "keen_insight": KeenInsight,
     "momentum": Momentum,
+    "blind": BlindEffect,
+    "weaken": WeakenEffect,
+    "curse": CurseEffect,
 }
 
 def create_effect(effect_data: dict):
