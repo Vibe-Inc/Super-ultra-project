@@ -1,7 +1,11 @@
 import math
+import random
+
 import pygame
+from database.effects import PoisonEffect
 from src.core.logger import logger
-from src.entities.projectile import Fireball
+from src.entities.projectile import Fireball, GlacialCascade, FrostNova, ChainLightning, Thunderstrike, EntanglingRoots, NatureBolt, DarkPact, ArcaneMissile
+from src.entities.nature_spirit import NatureSpirit
 
 class Character:
     """
@@ -146,6 +150,7 @@ class Character:
         self.attack_damage = self.base_attack_damage
         self.attack_range = self.base_attack_range
         self.attack_cooldown = self.base_attack_cooldown
+        self.attack_cooldown_mult = 1.0
         self.last_attack_time = 0
         self.is_attacking = False
         self.last_attack_dir = pygame.Vector2(1, 0)
@@ -161,12 +166,246 @@ class Character:
         self.fireball_cooldown = 1300
         self.fireball_knockback = 18.0
         self.game_state = None
+
+        # Flame Shield skill
+        self.flame_shield_duration = 6.0       # seconds active
+        self.flame_shield_cooldown = 14000      # ms cooldown
+        self.flame_shield_last_used = -14000    # ms timestamp
+        self.flame_shield_active = False
+        self.flame_shield_active_time = 0.0     # remaining active time
+        self.flame_shield_damage_per_sec = 8.0
+        self.flame_shield_radius = 110.0        # pixels
+        self.flame_shield_particles = []        # visual particles
+        self.flame_shield_damage_acc = 0.0      # fractional damage accumulator
+
+        # Frost Nova skill
+        self.frost_nova_radius = 150.0
+        self.frost_nova_freeze_duration = 3.0
+        self.frost_nova_damage = 0
+        self.frost_nova_cooldown = 8000
+        self.frost_nova_last_used = -self.frost_nova_cooldown
+
+        # Ice Armor skill
+        self.ice_armor_duration = 8.0
+        self.ice_armor_cooldown = 16000
+        self.ice_armor_last_used = -self.ice_armor_cooldown
+        self.ice_armor_active = False
+        self.ice_armor_active_time = 0.0
+        self.ice_armor_remaining_absorption = 30.0
+        self.ice_armor_max_absorption = 30.0
+        self.ice_armor_slow_radius = 80.0
+        self.ice_armor_slow_factor = 0.5
+        self.ice_armor_particles = []
+
+        # Glacial Cascade skill
+        self.glacial_cascade_speed = 400.0
+        self.glacial_cascade_range = 500.0
+        self.glacial_cascade_damage = 35
+        self.glacial_cascade_freeze_duration = 2.0
+        self.glacial_cascade_cooldown = 3000
+        self.glacial_cascade_last_used = -self.glacial_cascade_cooldown
+        self.glacial_cascade_width = 80.0
+
+        # Chain Lightning skill
+        self.chain_lightning_speed = 500.0
+        self.chain_lightning_range = 550.0
+        self.chain_lightning_damage = 22
+        self.chain_lightning_chain_range = 180.0
+        self.chain_lightning_max_targets = 5
+        self.chain_lightning_cooldown = 2500
+        self.chain_lightning_last_used = -self.chain_lightning_cooldown
+
+        # Thunderstrike skill
+        self.thunderstrike_damage = 55
+        self.thunderstrike_radius = 100.0
+        self.thunderstrike_range = 600.0
+        self.thunderstrike_cooldown = 4000
+        self.thunderstrike_last_used = -self.thunderstrike_cooldown
+
+        # Passive: Static Field
+        self.static_field = False
+        self.static_field_proc_chance = 0.12
+        self.static_field_damage = 20
+
+        # Entangling Roots skill
+        self.entangling_roots_speed = 380.0
+        self.entangling_roots_range = 500.0
+        self.entangling_roots_radius = 140.0
+        self.entangling_roots_root_duration = 4.0
+        self.entangling_roots_damage = 0
+        self.entangling_roots_cooldown = 7000
+        self.entangling_roots_last_used = -self.entangling_roots_cooldown
+
+        # Summon Spirit skill
+        self.summon_spirit_damage = 15
+        self.summon_spirit_duration = 10.0
+        self.summon_spirit_cooldown = 12000
+        self.summon_spirit_last_used = -self.summon_spirit_cooldown
+
+        # Passive: Regeneration
+        self.regeneration = False
+        self.regeneration_hp_per_sec = 3.0
+        self.regeneration_acc = 0.0
+
+        # Passive: Pyromancer's Fury
+        self.pyromancers_fury = False
+        self.pyromancers_fury_damage_mult = 1.25   # +25% fire damage
+        self.pyromancers_fury_area_mult = 1.15     # +15% fire area
+
+        # Shadow Step skill
+        self.shadow_step_range = 300.0
+        self.shadow_step_cooldown = 6000
+        self.shadow_step_last_used = -self.shadow_step_cooldown
+        self.shadow_step_invuln_duration = 0.5
+
+        # Passive: Poison Blade
+        self.poison_blade = False
+        self.poison_blade_damage_per_sec = 6.0
+        self.poison_blade_duration = 5.0
+
+        # Dark Pact skill
+        self.dark_pact_hp_cost_percent = 0.1
+        self.dark_pact_damage = 60
+        self.dark_pact_radius = 150.0
+        self.dark_pact_cooldown = 8000
+        self.dark_pact_last_used = -self.dark_pact_cooldown
+
+        # Arcane Missiles skill
+        self.arcane_missiles_speed = 420.0
+        self.arcane_missiles_range = 500.0
+        self.arcane_missiles_damage = 14
+        self.arcane_missiles_count = 5
+        self.arcane_missiles_cooldown = 4000
+        self.arcane_missiles_last_used = -self.arcane_missiles_cooldown
+
+        # Passive: Mana Flow
+        self.mana_flow = False
+
+        # Mystic Barrier skill
+        self.mystic_barrier_duration = 5.0
+        self.mystic_barrier_cooldown = 12000
+        self.mystic_barrier_last_used = -self.mystic_barrier_cooldown
+        self.mystic_barrier_active = False
+        self.mystic_barrier_active_time = 0.0
+        self.mystic_barrier_reflect_pct = 0.3
+        self.mystic_barrier_particles = []
+
+        # Eternal Fortress keystone (passive)
+        self.eternal_fortress = False
+
+        # Soul Harvest keystone (passive)
+        self.soul_harvest = False
+        self.soul_harvest_stacks = []
+        self.soul_harvest_duration = 8.0
+        self.soul_harvest_hp_per_kill = 5
+        self.soul_harvest_damage_per_stack = 0.02
+
+        # Void Walker keystone (passive)
+        self.void_walker = False
+        self.void_walker_dodge_chance = 0.3
+        self.void_walker_teleport_range = 200.0
+        self.void_walker_afterimage_damage = 18
+
+        # Floating text popups
+        self.floating_texts = []
+
+        # Elemental Mastery keystone (passive)
+        self.elemental_mastery = False
+        self.elemental_damage_mult = 1.35
+        self.last_elemental_skill = None
+        self.last_elemental_time = 0.0
+        self.combo_window = 3.0
+        self.elemental_damage_attrs = frozenset({
+            "fireball_damage", "frost_nova_damage", "glacial_cascade_damage",
+            "chain_lightning_damage", "thunderstrike_damage", "static_field_damage",
+        })
+
+        # Berserker's Rage keystone
+        self.berserkers_rage_active = False
+        self.berserkers_rage_duration = 8.0
+        self.berserkers_rage_active_time = 0.0
+        self.berserkers_rage_cooldown = 20000
+        self.berserkers_rage_last_used = -self.berserkers_rage_cooldown
+        self.berserkers_rage_particles = []
+
+        # Chrono Shift keystone
+        self.chrono_shift_active = False
+        self.chrono_shift_duration = 3.0
+        self.chrono_shift_active_time = 0.0
+        self.chrono_shift_cooldown = 30000
+        self.chrono_shift_last_used = -self.chrono_shift_cooldown
+        self.chrono_shift_particles = []
+
         self.dash_speed_multiplier = 3.0
         self.dash_duration = 0.14
         self.dash_cooldown = 900
         self.dash_active_time = 0.0
         self.dash_last_used = -self.dash_cooldown
         self.dash_direction = pygame.Vector2(1, 0)
+
+    def __getattribute__(self, name):
+        if name.endswith("_cooldown") and name not in ("attack_cooldown", "base_attack_cooldown"):
+            try:
+                mana_flow = object.__getattribute__(self, "mana_flow")
+            except AttributeError:
+                mana_flow = False
+            try:
+                cd_mult = object.__getattribute__(self, "skill_cooldown_mult")
+            except AttributeError:
+                cd_mult = 1.0
+            if mana_flow or cd_mult != 1.0:
+                actual = object.__getattribute__(self, name)
+                if actual is not None:
+                    mult = (0.8 if mana_flow else 1.0) * cd_mult
+                    return int(actual * mult)
+        if name.endswith("_damage"):
+            try:
+                rage = object.__getattribute__(self, "berserkers_rage_active")
+            except AttributeError:
+                rage = False
+            try:
+                soul_harvest = object.__getattribute__(self, "soul_harvest")
+            except AttributeError:
+                soul_harvest = False
+            try:
+                elem = object.__getattribute__(self, "elemental_mastery")
+            except AttributeError:
+                elem = False
+            if rage or soul_harvest or elem:
+                actual = object.__getattribute__(self, name)
+                if actual is not None and isinstance(actual, (int, float)):
+                    mult = 1.0
+                    if rage:
+                        mult *= 1.5
+                    if soul_harvest:
+                        stacks = object.__getattribute__(self, "soul_harvest_stacks")
+                        mult *= 1.0 + len(stacks) * 0.02
+                    if elem:
+                        try:
+                            elem_attrs = object.__getattribute__(self, "elemental_damage_attrs")
+                            if name in elem_attrs:
+                                mult *= object.__getattribute__(self, "elemental_damage_mult")
+                        except AttributeError:
+                            pass
+                    return int(actual * mult)
+        if name == "attack_cooldown":
+            try:
+                chrono = object.__getattribute__(self, "chrono_shift_active")
+            except AttributeError:
+                chrono = False
+            if chrono:
+                base = object.__getattribute__(self, "base_attack_cooldown")
+                if base is not None:
+                    return int(base * 0.75)
+            try:
+                cd_mult = object.__getattribute__(self, "attack_cooldown_mult")
+            except AttributeError:
+                cd_mult = 1.0
+            if cd_mult != 1.0:
+                base = object.__getattribute__(self, "base_attack_cooldown")
+                if base is not None:
+                    return int(base * cd_mult)
+        return object.__getattribute__(self, name)
 
     def _build_skillbook(self):
         return [
@@ -187,11 +426,246 @@ class Character:
         self.skillbook.append({
             "skill_id": "fireball",
             "name": "Fireball",
-            "description": "Випускає вибуховий вогняний шар, що завдає 28 пошкоджень, має радіус вибуху 110 і відкидає ворогів.",
+            "description": "Launch an explosive fireball dealing 28 damage with area effect and knockback.",
             "color": (188, 82, 35),
             "accent": (255, 214, 120),
         })
         logger.info("Player learned Fireball!")
+
+    def learn_flame_shield(self):
+        """Add the Flame Shield skill to the skillbook if not already present."""
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "flame_shield":
+                return  # already learned
+        self.skillbook.append({
+            "skill_id": "flame_shield",
+            "name": "Flame Shield",
+            "description": "Surrounds you with flames, dealing 8 damage/sec to nearby enemies.",
+            "color": (220, 80, 20),
+            "accent": (255, 180, 60),
+        })
+        logger.info("Player learned Flame Shield!")
+
+    def learn_pyromancers_fury(self):
+        """Activate the Pyromancer's Fury passive: fire skills deal 25% more damage and have 15% larger area."""
+        self.pyromancers_fury = True
+        logger.info("Player unlocked Pyromancer's Fury (passive)!")
+
+    def learn_frost_nova(self):
+        """Add the Frost Nova skill to the skillbook if not already present."""
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "frost_nova":
+                return
+        self.skillbook.append({
+            "skill_id": "frost_nova",
+            "name": "Frost Nova",
+            "description": "Freeze all enemies within radius for 3 seconds.",
+            "color": (60, 140, 255),
+            "accent": (180, 220, 255),
+        })
+        logger.info("Player learned Frost Nova!")
+
+    def learn_ice_armor(self):
+        """Add the Ice Armor skill to the skillbook if not already present."""
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "ice_armor":
+                return
+        self.skillbook.append({
+            "skill_id": "ice_armor",
+            "name": "Ice Armor",
+            "description": "Grants a shield of ice absorbing 30 damage and slowing attackers.",
+            "color": (40, 100, 220),
+            "accent": (140, 200, 255),
+        })
+        logger.info("Player learned Ice Armor!")
+
+    def learn_glacial_cascade(self):
+        """Add the Glacial Cascade skill to the skillbook if not already present."""
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "glacial_cascade":
+                return
+        self.skillbook.append({
+            "skill_id": "glacial_cascade",
+            "name": "Glacial Cascade",
+            "description": "Ice shards cascade outward dealing 35 damage and freezing enemies.",
+            "color": (80, 160, 240),
+            "accent": (200, 230, 255),
+        })
+        logger.info("Player learned Glacial Cascade!")
+
+    def learn_chain_lightning(self):
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "chain_lightning":
+                return
+        self.skillbook.append({
+            "skill_id": "chain_lightning",
+            "name": "Chain Lightning",
+            "description": "Fires a lightning bolt that jumps between up to 5 enemies.",
+            "color": (255, 220, 50),
+            "accent": (255, 255, 180),
+        })
+        logger.info("Player learned Chain Lightning!")
+
+    def learn_static_field(self):
+        self.static_field = True
+        logger.info("Player unlocked Static Field (passive)!")
+
+    def learn_thunderstrike(self):
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "thunderstrike":
+                return
+        self.skillbook.append({
+            "skill_id": "thunderstrike",
+            "name": "Thunderstrike",
+            "description": "Call down lightning from above for 55 damage in a column.",
+            "color": (200, 180, 255),
+            "accent": (255, 230, 255),
+        })
+        logger.info("Player learned Thunderstrike!")
+
+    def learn_entangling_roots(self):
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "entangling_roots":
+                return
+        self.skillbook.append({
+            "skill_id": "entangling_roots",
+            "name": "Entangling Roots",
+            "description": "Unleash roots that immobilize enemies for 4 seconds.",
+            "color": (60, 180, 60),
+            "accent": (160, 255, 140),
+        })
+        logger.info("Player learned Entangling Roots!")
+
+    def learn_regeneration(self):
+        self.regeneration = True
+        logger.info("Player unlocked Regeneration (passive)!")
+
+    def learn_summon_spirit(self):
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "summon_spirit":
+                return
+        self.skillbook.append({
+            "skill_id": "summon_spirit",
+            "name": "Summon Spirit",
+            "description": "Summon a nature spirit that attacks for 15 damage.",
+            "color": (100, 220, 120),
+            "accent": (200, 255, 200),
+        })
+        logger.info("Player learned Summon Spirit!")
+
+    def learn_shadow_step(self):
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "shadow_step":
+                return
+        self.skillbook.append({
+            "skill_id": "shadow_step",
+            "name": "Shadow Step",
+            "description": "Teleport through shadows, becoming invulnerable briefly.",
+            "color": (100, 50, 140),
+            "accent": (200, 160, 255),
+        })
+        logger.info("Player learned Shadow Step!")
+
+    def learn_poison_blade(self):
+        self.poison_blade = True
+        logger.info("Player unlocked Poison Blade (passive)!")
+
+    def learn_dark_pact(self):
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "dark_pact":
+                return
+        self.skillbook.append({
+            "skill_id": "dark_pact",
+            "name": "Dark Pact",
+            "description": "Sacrifice 10% HP to deal 60 shadow damage to all nearby enemies.",
+            "color": (140, 60, 180),
+            "accent": (220, 160, 255),
+        })
+        logger.info("Player learned Dark Pact!")
+
+    def learn_arcane_missiles(self):
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "arcane_missiles":
+                return
+        self.skillbook.append({
+            "skill_id": "arcane_missiles",
+            "name": "Arcane Missiles",
+            "description": "Fire homing arcane missiles dealing 22 damage each.",
+            "color": (140, 60, 120),
+            "accent": (255, 180, 240),
+        })
+        logger.info("Player learned Arcane Missiles!")
+
+    def learn_mana_flow(self):
+        self.mana_flow = True
+        logger.info("Player unlocked Mana Flow (passive)!")
+
+    def learn_mystic_barrier(self):
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "mystic_barrier":
+                return
+        self.skillbook.append({
+            "skill_id": "mystic_barrier",
+            "name": "Mystic Barrier",
+            "description": "Creates a barrier that reflects 30% of incoming damage.",
+            "color": (180, 80, 160),
+            "accent": (255, 200, 240),
+        })
+        logger.info("Player learned Mystic Barrier!")
+
+    def learn_berserkers_rage(self):
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "berserkers_rage":
+                return
+        self.skillbook.append({
+            "skill_id": "berserkers_rage",
+            "name": "Berserker's Rage",
+            "description": "+50% damage dealt, +20% damage taken. The fury consumes you.",
+            "color": (200, 50, 30),
+            "accent": (255, 160, 60),
+        })
+        logger.info("Player learned Berserker's Rage!")
+
+    def learn_eternal_fortress(self):
+        if self.eternal_fortress:
+            return
+        self.eternal_fortress = True
+        self.max_hp += 40
+        self.hp += 40
+        self.speed_multiplier *= 0.85
+        self.speed = self.base_speed * self.speed_multiplier
+        logger.info("Player learned Eternal Fortress (passive)! (+40 HP, +80% defense, -15% speed)")
+
+    def learn_soul_harvest(self):
+        if self.soul_harvest:
+            return
+        self.soul_harvest = True
+        logger.info("Player learned Soul Harvest (passive)! (5 HP/kill, +2% damage stack)")
+
+    def learn_void_walker(self):
+        if self.void_walker:
+            return
+        self.void_walker = True
+        logger.info("Player learned Void Walker (passive)! (30% dodge, teleport, afterimage)")
+
+    def learn_elemental_mastery(self):
+        if self.elemental_mastery:
+            return
+        self.elemental_mastery = True
+        logger.info("Player learned Elemental Mastery (passive)! (+35% elemental damage, dual-element combos)")
+
+    def learn_chrono_shift(self):
+        for skill in self.skillbook:
+            if skill.get("skill_id") == "chrono_shift":
+                return
+        self.skillbook.append({
+            "skill_id": "chrono_shift",
+            "name": "Chrono Shift",
+            "description": "Slow time for 3 seconds. +25% attack speed. Cooldown: 30s.",
+            "color": (100, 160, 220),
+            "accent": (200, 230, 255),
+        })
+        logger.info("Player learned Chrono Shift!")
 
     def get_skill_in_slot(self, slot_index):
         if 0 <= slot_index < len(self.skillbar):
@@ -210,6 +684,30 @@ class Character:
 
         skill_id = skill.get("skill_id", "")
         current_time = pygame.time.get_ticks()
+
+        # Elemental Mastery: dual-element combo tracking
+        if self.elemental_mastery:
+            element_map = {
+                "fireball": "fire", "frost_nova": "ice", "glacial_cascade": "ice",
+                "chain_lightning": "lightning", "thunderstrike": "lightning",
+            }
+            elem = element_map.get(skill_id)
+            if elem is not None:
+                last_elem = getattr(self, "last_elemental_skill", None)
+                last_time = getattr(self, "last_elemental_time", 0.0)
+                combo_window_ms = int(self.combo_window * 1000)
+                if (last_elem is not None and last_elem != elem
+                        and current_time - last_time < combo_window_ms):
+                    game_state = getattr(self, "game_state", None)
+                    if game_state is not None and hasattr(game_state, "projectiles"):
+                        from src.entities.projectile import ElementalBurst
+                        combo_damage = int(self.elemental_damage_mult * 30) + getattr(self, "combo_damage_bonus", 0)
+                        game_state.projectiles.append(
+                            ElementalBurst(self.get_center(), combo_damage)
+                        )
+                    self.add_floating_text("Elemental Combo!", self.pos.x, self.pos.y - 40, (255, 200, 100), 1.5, 22)
+                self.last_elemental_skill = elem
+                self.last_elemental_time = current_time
 
         if skill_id == "dash":
             if current_time - self.dash_last_used < self.dash_cooldown:
@@ -250,20 +748,367 @@ class Character:
                 return False
 
             spawn_pos = self.get_melee_anchor() + direction * 18
+            # Apply Pyromancer's Fury passive: +25% fire damage, +15% area
+            fb_damage = self.fireball_damage
+            fb_radius = self.fireball_blast_radius
+            if self.pyromancers_fury:
+                fb_damage = int(fb_damage * self.pyromancers_fury_damage_mult)
+                fb_radius = fb_radius * self.pyromancers_fury_area_mult
             game_state.projectiles.append(
                 Fireball(
                     spawn_pos,
                     direction,
                     self.fireball_speed,
                     self.fireball_range,
-                    self.fireball_damage,
-                    self.fireball_blast_radius,
+                    fb_damage,
+                    fb_radius,
                     self.fireball_fuse_time,
                     knockback_force=self.fireball_knockback,
                 )
             )
             self.fireball_last_used = current_time
             logger.info("Player used Fireball.")
+            return True
+
+        if skill_id == "flame_shield":
+            if self.flame_shield_active:
+                return False  # already active
+            if current_time - self.flame_shield_last_used < self.flame_shield_cooldown:
+                return False  # on cooldown
+
+            self.flame_shield_active = True
+            self.flame_shield_active_time = self.flame_shield_duration
+            self.flame_shield_last_used = current_time
+            logger.info("Player activated Flame Shield.")
+            return True
+
+        if skill_id == "frost_nova":
+            if current_time - getattr(self, "frost_nova_last_used", -self.frost_nova_cooldown) < self.frost_nova_cooldown:
+                return False
+
+            game_state = getattr(self, "game_state", None)
+            if game_state is None:
+                logger.warning("Frost Nova skill used without an attached game state.")
+                return False
+
+            from src.entities.projectile import FrostNova
+            center = self.get_center()
+            game_state.projectiles.append(
+                FrostNova(
+                    center,
+                    self.frost_nova_radius,
+                    self.frost_nova_freeze_duration,
+                    self.frost_nova_damage,
+                )
+            )
+            self.frost_nova_last_used = current_time
+            logger.info("Player used Frost Nova.")
+            return True
+
+        if skill_id == "ice_armor":
+            if self.ice_armor_active:
+                return False
+            if current_time - self.ice_armor_last_used < self.ice_armor_cooldown:
+                return False
+
+            self.ice_armor_active = True
+            self.ice_armor_active_time = self.ice_armor_duration
+            self.ice_armor_remaining_absorption = self.ice_armor_max_absorption
+            self.ice_armor_last_used = current_time
+            logger.info("Player activated Ice Armor.")
+            return True
+
+        if skill_id == "glacial_cascade":
+            if current_time - getattr(self, "glacial_cascade_last_used", -self.glacial_cascade_cooldown) < self.glacial_cascade_cooldown:
+                return False
+
+            if aim_direction is not None:
+                direction = pygame.Vector2(aim_direction)
+            else:
+                direction = pygame.Vector2(self.velocity)
+
+            if direction.length_squared() == 0:
+                direction = self.get_forward_direction()
+            if direction.length_squared() == 0:
+                direction = pygame.Vector2(1, 0)
+            else:
+                direction = direction.normalize()
+
+            game_state = getattr(self, "game_state", None)
+            if game_state is None:
+                logger.warning("Glacial Cascade skill used without an attached game state.")
+                return False
+
+            spawn_pos = self.get_melee_anchor() + direction * 22
+            game_state.projectiles.append(
+                GlacialCascade(
+                    spawn_pos,
+                    direction,
+                    self.glacial_cascade_speed,
+                    self.glacial_cascade_range,
+                    self.glacial_cascade_damage,
+                    self.glacial_cascade_freeze_duration,
+                    cascade_width=self.glacial_cascade_width,
+                )
+            )
+            self.glacial_cascade_last_used = current_time
+            logger.info("Player used Glacial Cascade.")
+            return True
+
+        if skill_id == "chain_lightning":
+            if current_time - getattr(self, "chain_lightning_last_used", -self.chain_lightning_cooldown) < self.chain_lightning_cooldown:
+                return False
+
+            if aim_direction is not None:
+                direction = pygame.Vector2(aim_direction)
+            else:
+                direction = pygame.Vector2(self.velocity)
+
+            if direction.length_squared() == 0:
+                direction = self.get_forward_direction()
+            if direction.length_squared() == 0:
+                direction = pygame.Vector2(1, 0)
+            else:
+                direction = direction.normalize()
+
+            game_state = getattr(self, "game_state", None)
+            if game_state is None:
+                logger.warning("Chain Lightning skill used without an attached game state.")
+                return False
+
+            spawn_pos = self.get_melee_anchor() + direction * 18
+            game_state.projectiles.append(
+                ChainLightning(
+                    spawn_pos,
+                    direction,
+                    self.chain_lightning_speed,
+                    self.chain_lightning_range,
+                    self.chain_lightning_damage,
+                    self.chain_lightning_chain_range,
+                    self.chain_lightning_max_targets,
+                )
+            )
+            self.chain_lightning_last_used = current_time
+            logger.info("Player used Chain Lightning.")
+            return True
+
+        if skill_id == "thunderstrike":
+            if current_time - getattr(self, "thunderstrike_last_used", -self.thunderstrike_cooldown) < self.thunderstrike_cooldown:
+                return False
+
+            game_state = getattr(self, "game_state", None)
+            if game_state is None:
+                logger.warning("Thunderstrike skill used without an attached game state.")
+                return False
+
+            target_pos = self.get_center()
+            if aim_direction is not None:
+                aim_vec = pygame.Vector2(aim_direction)
+                if aim_vec.length_squared() > 0:
+                    max_range_sq = self.thunderstrike_range * self.thunderstrike_range
+                    if aim_vec.length_squared() > max_range_sq:
+                        aim_vec = aim_vec.normalize() * self.thunderstrike_range
+                    target_pos = target_pos + aim_vec
+
+            game_state.projectiles.append(
+                Thunderstrike(
+                    target_pos,
+                    self.thunderstrike_damage,
+                    self.thunderstrike_radius,
+                )
+            )
+            self.thunderstrike_last_used = current_time
+            logger.info("Player used Thunderstrike.")
+            return True
+
+        if skill_id == "shadow_step":
+            if current_time - getattr(self, "shadow_step_last_used", -self.shadow_step_cooldown) < self.shadow_step_cooldown:
+                return False
+
+            direction = pygame.Vector2(aim_direction) if aim_direction is not None else pygame.Vector2(self.velocity)
+            if direction.length_squared() == 0:
+                direction = self.get_forward_direction()
+            if direction.length_squared() == 0:
+                direction = pygame.Vector2(1, 0)
+
+            teleport_offset = direction.normalize() * self.shadow_step_range
+            self.pos += teleport_offset
+            self.invulnerable = True
+            self.invulnerability_timer = self.shadow_step_invuln_duration
+            self.shadow_step_last_used = current_time
+            logger.info("Player used Shadow Step.")
+            return True
+
+        if skill_id == "dark_pact":
+            if current_time - getattr(self, "dark_pact_last_used", -self.dark_pact_cooldown) < self.dark_pact_cooldown:
+                return False
+
+            hp_cost = int(self.max_hp * self.dark_pact_hp_cost_percent)
+            self.hp = max(0, self.hp - hp_cost)
+
+            game_state = getattr(self, "game_state", None)
+            if game_state is not None:
+                center = self.get_center()
+                game_state.projectiles.append(
+                    DarkPact(
+                        center,
+                        self.dark_pact_damage,
+                        self.dark_pact_radius,
+                    )
+                )
+            self.dark_pact_last_used = current_time
+            logger.info("Player used Dark Pact.")
+            return True
+
+        if skill_id == "entangling_roots":
+            if current_time - getattr(self, "entangling_roots_last_used", -self.entangling_roots_cooldown) < self.entangling_roots_cooldown:
+                return False
+
+            if aim_direction is not None:
+                direction = pygame.Vector2(aim_direction)
+            else:
+                direction = pygame.Vector2(self.velocity)
+
+            if direction.length_squared() == 0:
+                direction = self.get_forward_direction()
+            if direction.length_squared() == 0:
+                direction = pygame.Vector2(1, 0)
+            else:
+                direction = direction.normalize()
+
+            game_state = getattr(self, "game_state", None)
+            if game_state is None:
+                logger.warning("Entangling Roots skill used without an attached game state.")
+                return False
+
+            spawn_pos = self.get_melee_anchor() + direction * 18
+            game_state.projectiles.append(
+                EntanglingRoots(
+                    spawn_pos,
+                    direction,
+                    self.entangling_roots_speed,
+                    self.entangling_roots_range,
+                    self.entangling_roots_radius,
+                    self.entangling_roots_root_duration,
+                    self.entangling_roots_damage,
+                )
+            )
+            self.entangling_roots_last_used = current_time
+            logger.info("Player used Entangling Roots.")
+            return True
+
+        if skill_id == "summon_spirit":
+            if current_time - getattr(self, "summon_spirit_last_used", -self.summon_spirit_cooldown) < self.summon_spirit_cooldown:
+                return False
+
+            game_state = getattr(self, "game_state", None)
+            if game_state is None:
+                logger.warning("Summon Spirit skill used without an attached game state.")
+                return False
+
+            spawn_pos = self.get_melee_anchor()
+            spirit = NatureSpirit(
+                spawn_pos,
+                self,
+                damage=self.summon_spirit_damage,
+                duration=self.summon_spirit_duration,
+            )
+            if not hasattr(game_state, "spirits"):
+                game_state.spirits = []
+            game_state.spirits.append(spirit)
+            self.summon_spirit_last_used = current_time
+            logger.info("Player used Summon Spirit.")
+            return True
+
+        if skill_id == "arcane_missiles":
+            if current_time - getattr(self, "arcane_missiles_last_used", -self.arcane_missiles_cooldown) < self.arcane_missiles_cooldown:
+                return False
+
+            if aim_direction is not None:
+                direction = pygame.Vector2(aim_direction)
+            else:
+                direction = pygame.Vector2(self.velocity)
+
+            if direction.length_squared() == 0:
+                direction = self.get_forward_direction()
+            if direction.length_squared() == 0:
+                direction = pygame.Vector2(1, 0)
+            else:
+                direction = direction.normalize()
+
+            game_state = getattr(self, "game_state", None)
+            if game_state is None:
+                logger.warning("Arcane Missiles skill used without an attached game state.")
+                return False
+
+            spawn_pos = self.get_melee_anchor() + direction * 18
+            missile_spread = 0.3
+            for i in range(self.arcane_missiles_count):
+                spread_angle = (i - (self.arcane_missiles_count - 1) / 2) * missile_spread
+                spread_dir = pygame.Vector2(direction)
+                if spread_angle != 0:
+                    cos_a = math.cos(spread_angle)
+                    sin_a = math.sin(spread_angle)
+                    spread_dir = pygame.Vector2(
+                        direction.x * cos_a - direction.y * sin_a,
+                        direction.x * sin_a + direction.y * cos_a,
+                    )
+                game_state.projectiles.append(
+                    ArcaneMissile(
+                        pygame.Vector2(spawn_pos),
+                        spread_dir,
+                        self.arcane_missiles_speed,
+                        self.arcane_missiles_range,
+                        self.arcane_missiles_damage,
+                    )
+                )
+            self.arcane_missiles_last_used = current_time
+            logger.info("Player used Arcane Missiles.")
+            return True
+
+        if skill_id == "mystic_barrier":
+            if self.mystic_barrier_active:
+                return False
+            if current_time - getattr(self, "mystic_barrier_last_used", -self.mystic_barrier_cooldown) < self.mystic_barrier_cooldown:
+                return False
+
+            self.mystic_barrier_active = True
+            self.mystic_barrier_active_time = self.mystic_barrier_duration
+            self.mystic_barrier_last_used = current_time
+            logger.info("Player activated Mystic Barrier.")
+            return True
+
+        if skill_id == "berserkers_rage":
+            if self.berserkers_rage_active:
+                return False
+            cd = self.berserkers_rage_cooldown + getattr(self, "berserkers_rage_cooldown_bonus", 0)
+            if current_time - getattr(self, "berserkers_rage_last_used", -self.berserkers_rage_cooldown) < cd:
+                return False
+
+            self.berserkers_rage_active = True
+            duration = self.berserkers_rage_duration + getattr(self, "berserkers_rage_duration_bonus", 0.0)
+            self.berserkers_rage_active_time = duration
+            self.berserkers_rage_last_used = current_time
+            logger.info("Player activated Berserker's Rage!")
+            return True
+
+        if skill_id == "chrono_shift":
+            if self.chrono_shift_active:
+                return False
+            cd = self.chrono_shift_cooldown + getattr(self, "chrono_shift_cooldown_bonus", 0)
+            if current_time - getattr(self, "chrono_shift_last_used", -self.chrono_shift_cooldown) < cd:
+                return False
+
+            self.chrono_shift_active = True
+            duration = self.chrono_shift_duration + getattr(self, "chrono_shift_duration_bonus", 0.0)
+            self.chrono_shift_active_time = duration
+            self.chrono_shift_last_used = current_time
+            game_state = getattr(self, "game_state", None)
+            if game_state is not None and hasattr(game_state, "enemies"):
+                from database.effects import SlowEffect
+                for enemy in list(game_state.enemies):
+                    enemy.add_effect(SlowEffect(duration, 0.5))
+            logger.info("Player activated Chrono Shift!")
             return True
 
         return False
@@ -381,6 +1226,9 @@ class Character:
 
             # Apply weapon on-hit enchantments (Flaming Sword, etc.) if enemy supports it.
             self._apply_weapon_enchantments(enemy)
+
+            if self.poison_blade:
+                enemy.add_effect(PoisonEffect(self.poison_blade_duration, self.poison_blade_damage_per_sec))
 
             knockback_force = 20
             enemy.pos += knock_dir * knockback_force
@@ -506,6 +1354,73 @@ class Character:
         if self.is_attacking and pygame.time.get_ticks() - self.last_attack_time > 200:
             self.is_attacking = False
 
+        # Update Flame Shield active timer
+        if self.flame_shield_active:
+            self.flame_shield_active_time -= dt
+            if self.flame_shield_active_time <= 0:
+                self.flame_shield_active = False
+                self.flame_shield_active_time = 0.0
+                self.flame_shield_particles.clear()
+                logger.info("Flame Shield expired.")
+
+        # Update Flame Shield particles
+        self._update_flame_shield_particles(dt)
+
+        # Update Ice Armor active timer
+        if self.ice_armor_active:
+            self.ice_armor_active_time -= dt
+            if self.ice_armor_active_time <= 0 or self.ice_armor_remaining_absorption <= 0:
+                self.ice_armor_active = False
+                self.ice_armor_active_time = 0.0
+                self.ice_armor_particles.clear()
+                if self.ice_armor_remaining_absorption <= 0:
+                    logger.info("Ice Armor shattered!")
+                else:
+                    logger.info("Ice Armor expired.")
+
+        # Update Ice Armor particles
+        self._update_ice_armor_particles(dt)
+
+        # Update Mystic Barrier active timer
+        if self.mystic_barrier_active:
+            self.mystic_barrier_active_time -= dt
+            if self.mystic_barrier_active_time <= 0:
+                self.mystic_barrier_active = False
+                self.mystic_barrier_active_time = 0.0
+                self.mystic_barrier_particles.clear()
+                logger.info("Mystic Barrier expired.")
+            else:
+                self._update_mystic_barrier_particles(dt)
+
+        # Update Berserker's Rage active timer
+        if self.berserkers_rage_active:
+            self.berserkers_rage_active_time -= dt
+            if self.berserkers_rage_active_time <= 0:
+                self.berserkers_rage_active = False
+                self.berserkers_rage_active_time = 0.0
+                logger.info("Berserker's Rage faded.")
+                self.berserkers_rage_particles.clear()
+            else:
+                self._update_berserkers_rage_particles(dt)
+
+        # Update Chrono Shift active timer
+        if self.chrono_shift_active:
+            self.chrono_shift_active_time -= dt
+            if self.chrono_shift_active_time <= 0:
+                self.chrono_shift_active = False
+                self.chrono_shift_active_time = 0.0
+                self.chrono_shift_particles.clear()
+                logger.info("Chrono Shift ended.")
+            else:
+                self._update_chrono_shift_particles(dt)
+
+        # Update Soul Harvest stacks
+        if self.soul_harvest and self.soul_harvest_stacks:
+            self.soul_harvest_stacks = [t - dt for t in self.soul_harvest_stacks if t - dt > 0]
+
+        # Update floating texts
+        self._update_floating_texts(dt)
+
         # Update invulnerability
         if self.invulnerable:
             self.invulnerability_timer -= dt
@@ -558,6 +1473,75 @@ class Character:
     def take_damage(self, amount, ignore_invulnerability=False):
         if self.invulnerable and not ignore_invulnerability:
             return
+
+        # Void Walker: dodge chance
+        if self.void_walker and amount > 0 and not ignore_invulnerability:
+            import random
+            if random.random() < self.void_walker_dodge_chance:
+                old_center = self.get_center()
+                # Teleport in a random direction
+                angle = random.uniform(0, math.pi * 2)
+                offset = pygame.Vector2(math.cos(angle), math.sin(angle)) * self.void_walker_teleport_range
+                self.pos += offset
+                # Spawn afterimage at old center position
+                game_state = getattr(self, "game_state", None)
+                if game_state is not None and hasattr(game_state, "projectiles"):
+                    from src.entities.projectile import Afterimage
+                    game_state.projectiles.append(
+                        Afterimage(old_center, self.void_walker_afterimage_damage)
+                    )
+                # Floating "Dodged" text at the old position
+                self.add_floating_text("Dodged!", old_center.x, old_center.y - 30, (120, 255, 120), 1.2, 24)
+                logger.info("Void Walker dodged an attack!")
+                return
+
+        # Ice Armor absorbs damage
+        if self.ice_armor_active and self.ice_armor_remaining_absorption > 0 and amount > 0:
+            absorbed = min(self.ice_armor_remaining_absorption, float(amount))
+            self.ice_armor_remaining_absorption -= absorbed
+            amount -= int(absorbed)
+            logger.info(f"Ice Armor absorbed {int(absorbed)} damage. Remaining: {int(self.ice_armor_remaining_absorption)}")
+            if amount <= 0:
+                return
+
+        # Berserker's Rage: take 20% more damage
+        if self.berserkers_rage_active and amount > 0:
+            amount = int(amount * 1.2)
+
+        # Eternal Fortress: 80% defense = 20% damage reduction
+        if self.eternal_fortress and amount > 0:
+            amount = int(amount * 0.8)
+            if amount < 1:
+                amount = 1
+
+        # Mystic Barrier: reflect 30% of damage to all nearby enemies
+        if self.mystic_barrier_active and amount > 0:
+            reflect_damage = int(amount * self.mystic_barrier_reflect_pct)
+            if reflect_damage > 0:
+                game_state = getattr(self, "game_state", None)
+                if game_state is not None and hasattr(game_state, "enemies"):
+                    player_center = self.get_center()
+                    reflect_radius = 200.0
+                    for enemy in list(game_state.enemies):
+                        enemy_center = enemy.get_center()
+                        if player_center.distance_to(enemy_center) < reflect_radius:
+                            enemy.take_damage(reflect_damage)
+                            logger.info(f"Mystic Barrier reflected {reflect_damage} damage to {enemy.__class__.__name__}!")
+
+        self.hp -= amount
+
+        # Static Field: 12% chance to shock all nearby enemies when hit
+        if self.static_field and amount > 0:
+            if random.random() < self.static_field_proc_chance:
+                game_state = getattr(self, "game_state", None)
+                if game_state is not None and hasattr(game_state, "enemies"):
+                    player_center = self.get_center()
+                    for enemy in list(game_state.enemies):
+                        enemy_center = enemy.get_center()
+                        distance = player_center.distance_to(enemy_center)
+                        if distance < 200:
+                            enemy.take_damage(self.static_field_damage)
+                            logger.info(f"Static Field shocked {enemy.__class__.__name__} for {self.static_field_damage} damage!")
 
         # Apply armor / defense reduction first
         defense = getattr(self, "defense", 0)
@@ -646,3 +1630,671 @@ class Character:
             center = base_anchor + attack_dir * self.melee_slash_distance
             rotated_rect = rotated.get_rect(center=(int(center.x - camera_offset.x), int(center.y - camera_offset.y)))
             screen.blit(rotated, rotated_rect.topleft)
+
+        # Draw Flame Shield visual effect
+        if self.flame_shield_active:
+            self._draw_flame_shield(screen, camera_offset)
+
+        # Draw Ice Armor visual effect
+        if self.ice_armor_active:
+            self._draw_ice_armor(screen, camera_offset)
+
+        # Draw Mystic Barrier visual effect
+        if self.mystic_barrier_active:
+            self._draw_mystic_barrier(screen, camera_offset)
+
+        # Draw Chrono Shift visual effect
+        if self.chrono_shift_active:
+            self._draw_chrono_shift(screen, camera_offset)
+
+        # Draw Berserker's Rage visual effect
+        if self.berserkers_rage_active:
+            self._draw_berserkers_rage(screen, camera_offset)
+
+        # Draw floating texts
+        self._draw_floating_texts(screen, camera_offset)
+
+    # ─── Floating text helpers ─────────────────────────────────────────
+
+    def add_floating_text(self, text, x, y, color=(255, 255, 255), duration=1.5, size=20):
+        self.floating_texts.append({
+            "text": text,
+            "x": x,
+            "y": y,
+            "color": color,
+            "life": duration,
+            "max_life": duration,
+            "speed_y": -40,
+            "size": size,
+        })
+
+    def _update_floating_texts(self, dt):
+        for ft in self.floating_texts[:]:
+            ft["life"] -= dt
+            ft["y"] += ft["speed_y"] * dt
+            if ft["life"] <= 0:
+                self.floating_texts.remove(ft)
+
+    def _draw_floating_texts(self, screen, camera_offset):
+        for ft in self.floating_texts:
+            life_ratio = ft["life"] / ft["max_life"] if ft["max_life"] > 0 else 0
+            if life_ratio <= 0:
+                continue
+            alpha = int(255 * life_ratio)
+            sx = int(ft["x"] - camera_offset.x)
+            sy = int(ft["y"] - camera_offset.y)
+            font = pygame.font.Font(None, ft["size"])
+            text_surf = font.render(ft["text"], True, ft["color"])
+            text_surf.set_alpha(alpha)
+            text_rect = text_surf.get_rect(center=(sx, sy))
+            # Shadow
+            shadow_surf = font.render(ft["text"], True, (0, 0, 0))
+            shadow_surf.set_alpha(alpha // 2)
+            screen.blit(shadow_surf, (text_rect.x + 2, text_rect.y + 2))
+            screen.blit(text_surf, text_rect)
+
+    # ─── Berserker's Rage helpers ─────────────────────────────────────
+
+    def _update_berserkers_rage_particles(self, dt):
+        import random
+        if self.berserkers_rage_active:
+            spawn_count = max(1, int(30 * dt))
+            for _ in range(spawn_count):
+                angle = random.uniform(0, math.pi * 2)
+                dist = random.uniform(10, 80)
+                self.berserkers_rage_particles.append({
+                    "angle": angle,
+                    "dist": dist,
+                    "life": random.uniform(0.2, 0.6),
+                    "max_life": random.uniform(0.2, 0.6),
+                    "size": random.uniform(2.0, 5.0),
+                    "drift": random.uniform(30, 90),
+                    "color": random.choice([
+                        (255, 60, 20),
+                        (255, 120, 30),
+                        (255, 200, 50),
+                        (200, 40, 10),
+                    ]),
+                })
+        for p in self.berserkers_rage_particles[:]:
+            p["life"] -= dt
+            if p["life"] <= 0:
+                self.berserkers_rage_particles.remove(p)
+                continue
+            p["dist"] += p["drift"] * dt
+            p["angle"] += 1.5 * dt
+
+    def _draw_berserkers_rage(self, screen, camera_offset):
+        import random
+        center = self.get_center()
+        cx = center.x - camera_offset.x
+        cy = center.y - camera_offset.y
+        t = pygame.time.get_ticks() / 1000.0
+
+        pulse = 0.5 + 0.5 * math.sin(t * 6.0)
+        radius = 70.0
+
+        # ── Outer rage aura ──
+        aura_radius = radius * (0.9 + 0.15 * pulse)
+        aura_surf = pygame.Surface((int(aura_radius * 2) + 4, int(aura_radius * 2) + 4), pygame.SRCALPHA)
+        aura_a = int(40 + 30 * pulse)
+        pygame.draw.circle(aura_surf, (220, 50, 20, aura_a),
+                           (int(aura_radius) + 2, int(aura_radius) + 2),
+                           int(aura_radius))
+        inner_a = int(30 + 20 * pulse)
+        pygame.draw.circle(aura_surf, (255, 100, 30, inner_a),
+                           (int(aura_radius) + 2, int(aura_radius) + 2),
+                           int(aura_radius * 0.6))
+        screen.blit(aura_surf, (int(cx - aura_radius - 2), int(cy - aura_radius - 2)))
+
+        # ── Rage ring ──
+        ring_r = radius * 0.8
+        ring_a = int(80 + 50 * math.sin(t * 9.0))
+        ring_surf = pygame.Surface((int(ring_r * 2) + 4, int(ring_r * 2) + 4), pygame.SRCALPHA)
+        for i in range(3):
+            r = int(ring_r * (0.85 + 0.05 * (i + 1)))
+            offset_phase = t * 4.0 + i * 1.0
+            rr = r * (0.98 + 0.04 * math.sin(offset_phase))
+            pygame.draw.circle(ring_surf,
+                               (200, 60 + i * 30, 10 + i * 10, ring_a // (i + 1)),
+                               (int(ring_r) + 2, int(ring_r) + 2), int(rr),
+                               max(1, 3 - i))
+        screen.blit(ring_surf, (int(cx - ring_r - 2), int(cy - ring_r - 2)))
+
+        # ── Rage spikes ──
+        spike_count = 8
+        for i in range(spike_count):
+            spike_angle = t * 2.5 + i * (math.pi * 2 / spike_count)
+            spike_len = 18 + 12 * math.sin(t * 7.0 + i * 2.0)
+            inner_dist = radius * 0.75 + 8 * math.sin(t * 5.0 + i * 1.5)
+            sx1 = cx + math.cos(spike_angle) * inner_dist
+            sy1 = cy + math.sin(spike_angle) * inner_dist
+            sx2 = cx + math.cos(spike_angle) * (inner_dist + spike_len)
+            sy2 = cy + math.sin(spike_angle) * (inner_dist + spike_len)
+            spike_alpha = int(140 + 80 * math.sin(t * 8.0 + i * 1.7))
+            pygame.draw.line(screen, (220, 80 + i * 12, 10 + i * 5, spike_alpha),
+                             (sx1, sy1), (sx2, sy2),
+                             max(1, int(3 + 2 * math.sin(t * 4.0 + i))))
+
+        # ── Rage particles ──
+        for p in self.berserkers_rage_particles:
+            life_ratio = p["life"] / p["max_life"] if p["max_life"] > 0 else 0
+            if life_ratio <= 0:
+                continue
+            px = cx + math.cos(p["angle"]) * p["dist"]
+            py = cy + math.sin(p["angle"]) * p["dist"]
+            alpha = int(200 * life_ratio)
+            size = max(1, int(p["size"] * life_ratio))
+            r, g, b = p["color"]
+            glow_sz = size * 3
+            glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+            pygame.draw.circle(glow, (r, g, b, alpha // 3),
+                               (glow_sz, glow_sz), glow_sz)
+            screen.blit(glow, (int(px - glow_sz), int(py - glow_sz)))
+            if alpha > 20:
+                pygame.draw.circle(screen, (min(255, r + 40), min(255, g + 30), min(255, b + 10)),
+                                   (int(px), int(py)), size)
+
+        # ── Rising sparkles ──
+        if self.berserkers_rage_active:
+            for _ in range(3):
+                sp_angle = random.uniform(0, math.pi * 2)
+                sp_dist = random.uniform(0, radius * 0.4)
+                sp_x = cx + math.cos(sp_angle) * sp_dist
+                sp_y = cy + random.uniform(-25, 0)
+                sp_size = random.randint(1, 2)
+                sp_color = random.choice([(255, 200, 80), (255, 140, 40), (255, 255, 120)])
+                pygame.draw.circle(screen, sp_color, (int(sp_x), int(sp_y)), sp_size)
+
+    # ─── Flame Shield helpers ───────────────────────────────────────────
+
+    def _update_flame_shield_particles(self, dt):
+        """Spawn, move, and cull flame particles around the character."""
+        import random
+
+        # Spawn new particles while active
+        if self.flame_shield_active:
+            spawn_count = max(1, int(18 * dt))  # particles per frame
+            for _ in range(spawn_count):
+                effective_radius = self.flame_shield_radius
+                if self.pyromancers_fury:
+                    effective_radius *= self.pyromancers_fury_area_mult
+                angle = random.uniform(0, math.pi * 2)
+                dist = random.uniform(effective_radius * 0.45, effective_radius)
+                speed = random.uniform(25, 70)  # upward drift speed
+                self.flame_shield_particles.append({
+                    "angle": angle,
+                    "dist": dist,
+                    "life": random.uniform(0.3, 0.7),
+                    "max_life": random.uniform(0.3, 0.7),
+                    "size": random.uniform(2.5, 6.0),
+                    "drift": random.uniform(-15, 15),
+                    "vertical_speed": -speed,
+                    "color": random.choice([
+                        (255, 120, 20),   # orange
+                        (255, 80, 10),    # deep orange
+                        (255, 180, 40),   # bright yellow
+                        (255, 60, 10),    # red-orange
+                        (255, 200, 80),   # bright yellow
+                    ]),
+                })
+
+        # Update existing particles
+        for p in self.flame_shield_particles[:]:
+            p["life"] -= dt
+            if p["life"] <= 0:
+                self.flame_shield_particles.remove(p)
+                continue
+            # Slowly spiral inward and drift upward
+            p["angle"] += p["drift"] * dt
+            p["dist"] = max(0, p["dist"] - 8 * dt)
+            p["vertical_speed"] -= 120 * dt  # accelerate upward (negative)
+
+    def _draw_flame_shield(self, screen, camera_offset):
+        """Draw the flame shield aura and particles."""
+        center = self.get_center()
+        cx = center.x - camera_offset.x
+        cy = center.y - camera_offset.y
+        t = pygame.time.get_ticks() / 1000.0
+
+        # Apply Pyromancer's Fury area buff to visual radius
+        visual_radius = self.flame_shield_radius
+        if self.pyromancers_fury:
+            visual_radius *= self.pyromancers_fury_area_mult
+
+        # ── Inner pulsing glow ring ──
+        pulse = 0.6 + 0.4 * math.sin(t * 6.0)
+        glow_radius = visual_radius * (0.85 + 0.15 * pulse)
+        glow_surf = pygame.Surface((int(glow_radius * 2) + 4, int(glow_radius * 2) + 4), pygame.SRCALPHA)
+        glow_a = int(35 + 25 * pulse)
+        pygame.draw.circle(glow_surf, (255, 100, 20, glow_a),
+                           (int(glow_radius) + 2, int(glow_radius) + 2),
+                           int(glow_radius))
+        # brighter inner core
+        inner_r = int(glow_radius * 0.55)
+        inner_a = int(25 + 20 * pulse)
+        pygame.draw.circle(glow_surf, (255, 160, 40, inner_a),
+                           (int(glow_radius) + 2, int(glow_radius) + 2),
+                           inner_r)
+        screen.blit(glow_surf, (int(cx - glow_radius - 2), int(cy - glow_radius - 2)))
+
+        # ── Outer flickering ring ──
+        ring_r = visual_radius
+        ring_a = int(70 + 40 * math.sin(t * 9.0))
+        ring_surf = pygame.Surface((int(ring_r * 2) + 4, int(ring_r * 2) + 4), pygame.SRCALPHA)
+        pygame.draw.circle(ring_surf, (255, 90, 10, ring_a),
+                           (int(ring_r) + 2, int(ring_r) + 2),
+                           int(ring_r), max(1, int(3 * pulse)))
+        screen.blit(ring_surf, (int(cx - ring_r - 2), int(cy - ring_r - 2)))
+
+        # ── Flame particles ──
+        for p in self.flame_shield_particles:
+            life_ratio = p["life"] / p["max_life"] if p["max_life"] > 0 else 0
+            if life_ratio <= 0:
+                continue
+
+            # World position from polar around center
+            px = cx + math.cos(p["angle"]) * p["dist"]
+            py = cy + math.sin(p["angle"]) * p["dist"] + p["vertical_speed"] * (1 - life_ratio) * 0.3
+
+            alpha = int(255 * life_ratio)
+            size = max(1, int(p["size"] * life_ratio))
+            r, g, b = p["color"]
+
+            # Glow layer
+            glow_sz = size * 3
+            glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+            pygame.draw.circle(glow, (r, g, b, alpha // 3),
+                               (glow_sz, glow_sz), glow_sz)
+            screen.blit(glow, (int(px - glow_sz), int(py - glow_sz)))
+
+            # Core
+            if alpha > 20:
+                pygame.draw.circle(screen, (min(255, r + 40), min(255, g + 30), b),
+                                   (int(px), int(py)), size)
+
+        # ── Rising ember sparkles ──
+        if self.flame_shield_active:
+            import random
+            for _ in range(2):
+                em_angle = random.uniform(0, math.pi * 2)
+                em_dist = random.uniform(0, visual_radius * 0.3)
+                em_x = cx + math.cos(em_angle) * em_dist
+                em_y = cy + random.uniform(-20, 20)
+                em_size = random.randint(1, 3)
+                em_color = random.choice([(255, 220, 100), (255, 180, 60), (255, 255, 140)])
+                pygame.draw.circle(screen, em_color, (int(em_x), int(em_y)), em_size)
+
+    # ─── Ice Armor helpers ───────────────────────────────────────────
+
+    def _update_ice_armor_particles(self, dt):
+        """Spawn, move, and cull ice particles around the character."""
+        import random
+
+        if self.ice_armor_active:
+            spawn_count = max(1, int(15 * dt))
+            for _ in range(spawn_count):
+                angle = random.uniform(0, math.pi * 2)
+                dist = random.uniform(self.ice_armor_slow_radius * 0.3, self.ice_armor_slow_radius)
+                speed = random.uniform(20, 50)
+                self.ice_armor_particles.append({
+                    "angle": angle,
+                    "dist": dist,
+                    "life": random.uniform(0.4, 0.8),
+                    "max_life": random.uniform(0.4, 0.8),
+                    "size": random.uniform(2.0, 5.0),
+                    "drift": random.uniform(-10, 10),
+                    "vertical_speed": -speed,
+                    "color": random.choice([
+                        (180, 220, 255),
+                        (200, 235, 255),
+                        (160, 200, 255),
+                        (220, 240, 255),
+                        (140, 190, 255),
+                    ]),
+                })
+
+        for p in self.ice_armor_particles[:]:
+            p["life"] -= dt
+            if p["life"] <= 0:
+                self.ice_armor_particles.remove(p)
+                continue
+            p["angle"] += p["drift"] * dt
+            p["dist"] = max(0, p["dist"] - 6 * dt)
+            p["vertical_speed"] -= 80 * dt
+
+    def _draw_ice_armor(self, screen, camera_offset):
+        """Draw the ice armor aura and particles."""
+        import random
+        center = self.get_center()
+        cx = center.x - camera_offset.x
+        cy = center.y - camera_offset.y
+        t = pygame.time.get_ticks() / 1000.0
+
+        visual_radius = self.ice_armor_slow_radius
+
+        # ── Inner frost glow ring ──
+        pulse = 0.5 + 0.5 * math.sin(t * 4.0)
+        glow_radius = visual_radius * (0.8 + 0.2 * pulse)
+        glow_surf = pygame.Surface((int(glow_radius * 2) + 4, int(glow_radius * 2) + 4), pygame.SRCALPHA)
+        glow_a = int(30 + 20 * pulse)
+        pygame.draw.circle(glow_surf, (60, 140, 255, glow_a),
+                           (int(glow_radius) + 2, int(glow_radius) + 2),
+                           int(glow_radius))
+        inner_r = int(glow_radius * 0.5)
+        inner_a = int(20 + 15 * pulse)
+        pygame.draw.circle(glow_surf, (140, 200, 255, inner_a),
+                           (int(glow_radius) + 2, int(glow_radius) + 2),
+                           inner_r)
+        screen.blit(glow_surf, (int(cx - glow_radius - 2), int(cy - glow_radius - 2)))
+
+        # ── Outer frost ring ──
+        ring_r = visual_radius
+        ring_a = int(60 + 40 * math.sin(t * 7.0))
+        ring_surf = pygame.Surface((int(ring_r * 2) + 4, int(ring_r * 2) + 4), pygame.SRCALPHA)
+        pygame.draw.circle(ring_surf, (100, 180, 255, ring_a),
+                           (int(ring_r) + 2, int(ring_r) + 2),
+                           int(ring_r), max(1, int(2 * pulse)))
+        screen.blit(ring_surf, (int(cx - ring_r - 2), int(cy - ring_r - 2)))
+
+        # ── Ice crystal shield overlay ──
+        shard_count = 8
+        for i in range(shard_count):
+            shard_angle = t * 0.5 + i * (math.pi * 2 / shard_count)
+            shard_dist = visual_radius * 0.7 + 10 * math.sin(t * 3.0 + i)
+            sx = cx + math.cos(shard_angle) * shard_dist
+            sy = cy + math.sin(shard_angle) * shard_dist
+            shard_size = max(2, int(4 + 2 * math.sin(t * 2.0 + i * 1.5)))
+            shard_alpha = int(100 + 80 * math.sin(t * 5.0 + i * 2.0))
+            shard_color = (180, 220, 255, shard_alpha)
+            # Draw shard as small diamond
+            pts = [
+                (sx, sy - shard_size),
+                (sx + shard_size * 0.6, sy),
+                (sx, sy + shard_size),
+                (sx - shard_size * 0.6, sy),
+            ]
+            pygame.draw.polygon(screen, shard_color[:3], pts)
+            pygame.draw.polygon(screen, (220, 240, 255), pts, 1)
+
+        # ── Ice particles ──
+        for p in self.ice_armor_particles:
+            life_ratio = p["life"] / p["max_life"] if p["max_life"] > 0 else 0
+            if life_ratio <= 0:
+                continue
+
+            px = cx + math.cos(p["angle"]) * p["dist"]
+            py = cy + math.sin(p["angle"]) * p["dist"] + p["vertical_speed"] * (1 - life_ratio) * 0.3
+
+            alpha = int(200 * life_ratio)
+            size = max(1, int(p["size"] * life_ratio))
+            r, g, b = p["color"]
+
+            glow_sz = size * 3
+            glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+            pygame.draw.circle(glow, (r, g, b, alpha // 3),
+                               (glow_sz, glow_sz), glow_sz)
+            screen.blit(glow, (int(px - glow_sz), int(py - glow_sz)))
+
+            if alpha > 20:
+                pygame.draw.circle(screen, (min(255, r + 40), min(255, g + 30), min(255, b + 10)),
+                                   (int(px), int(py)), size)
+
+        # ── Shield health indicator (frost cracks at edges) ──
+        absorb_ratio = self.ice_armor_remaining_absorption / self.ice_armor_max_absorption
+        if absorb_ratio < 0.5:
+            crack_alpha = int(150 * (1.0 - absorb_ratio * 2))
+            for _ in range(3):
+                crack_angle = random.uniform(0, math.pi * 2)
+                crack_dist = visual_radius
+                cpx = cx + math.cos(crack_angle) * crack_dist
+                cpy = cy + math.sin(crack_angle) * crack_dist
+                pygame.draw.line(screen, (200, 220, 255, crack_alpha),
+                                 (cpx - 3, cpy - 3), (cpx + 3, cpy + 3), 2)
+
+        # ── Frost sparkles ──
+        if self.ice_armor_active:
+            for _ in range(2):
+                sp_angle = random.uniform(0, math.pi * 2)
+                sp_dist = random.uniform(0, visual_radius * 0.4)
+                sp_x = cx + math.cos(sp_angle) * sp_dist
+                sp_y = cy + random.uniform(-15, 15)
+                sp_size = random.randint(1, 2)
+                sp_color = random.choice([(200, 240, 255), (160, 210, 255), (220, 250, 255)])
+                pygame.draw.circle(screen, sp_color, (int(sp_x), int(sp_y)), sp_size)
+
+    # ─── Mystic Barrier helpers ──────────────────────────────────────
+
+    def _update_mystic_barrier_particles(self, dt):
+        import random
+
+        if self.mystic_barrier_active:
+            spawn_count = max(1, int(12 * dt))
+            for _ in range(spawn_count):
+                angle = random.uniform(0, math.pi * 2)
+                dist = random.uniform(30, 100)
+                self.mystic_barrier_particles.append({
+                    "angle": angle,
+                    "dist": dist,
+                    "life": random.uniform(0.3, 0.7),
+                    "max_life": random.uniform(0.3, 0.7),
+                    "size": random.uniform(2.0, 4.0),
+                    "drift": random.uniform(-20, 20),
+                    "color": random.choice([
+                        (200, 140, 255),
+                        (160, 80, 220),
+                        (220, 180, 255),
+                        (180, 100, 240),
+                        (240, 200, 255),
+                    ]),
+                })
+
+        for p in self.mystic_barrier_particles[:]:
+            p["life"] -= dt
+            if p["life"] <= 0:
+                self.mystic_barrier_particles.remove(p)
+                continue
+            p["angle"] += p["drift"] * dt
+            pulse = 1.0 + 0.3 * math.sin(p["life"] * 8.0)
+            p["dist"] *= pulse
+
+    def _draw_mystic_barrier(self, screen, camera_offset):
+        import random
+        center = self.get_center()
+        cx = center.x - camera_offset.x
+        cy = center.y - camera_offset.y
+        t = pygame.time.get_ticks() / 1000.0
+
+        radius = 85.0
+
+        # ── Outer magenta barrier ring ──
+        pulse = 0.6 + 0.4 * math.sin(t * 3.5)
+        glow_radius = radius * (0.9 + 0.1 * pulse)
+        glow_surf = pygame.Surface((int(glow_radius * 2) + 4, int(glow_radius * 2) + 4), pygame.SRCALPHA)
+        glow_a = int(40 + 25 * pulse)
+        pygame.draw.circle(glow_surf, (140, 60, 180, glow_a),
+                           (int(glow_radius) + 2, int(glow_radius) + 2),
+                           int(glow_radius))
+        inner_r = int(glow_radius * 0.55)
+        inner_a = int(25 + 20 * pulse)
+        pygame.draw.circle(glow_surf, (200, 120, 240, inner_a),
+                           (int(glow_radius) + 2, int(glow_radius) + 2),
+                           inner_r)
+        screen.blit(glow_surf, (int(cx - glow_radius - 2), int(cy - glow_radius - 2)))
+
+        # ── Arcane rune ring ──
+        ring_r = radius
+        ring_a = int(80 + 60 * math.sin(t * 6.0))
+        ring_surf = pygame.Surface((int(ring_r * 2) + 4, int(ring_r * 2) + 4), pygame.SRCALPHA)
+        pygame.draw.circle(ring_surf, (200, 140, 255, ring_a),
+                           (int(ring_r) + 2, int(ring_r) + 2),
+                           int(ring_r), max(1, int(2 * (0.5 + 0.5 * pulse))))
+        screen.blit(ring_surf, (int(cx - ring_r - 2), int(cy - ring_r - 2)))
+
+        # ── Rotating energy sigils ──
+        sigil_count = 4
+        for i in range(sigil_count):
+            sigil_angle = t * 0.8 + i * (math.pi * 2 / sigil_count)
+            sigil_dist = radius * 0.75 + 8 * math.sin(t * 4.0 + i * 1.2)
+            sx = cx + math.cos(sigil_angle) * sigil_dist
+            sy = cy + math.sin(sigil_angle) * sigil_dist
+            sigil_size = max(2, int(5 + 3 * math.sin(t * 3.0 + i * 1.7)))
+            sigil_alpha = int(120 + 80 * math.sin(t * 5.0 + i * 2.3))
+            sigil_color = (220, 160, 255, sigil_alpha)
+            pts = [
+                (sx, sy - sigil_size),
+                (sx + sigil_size * 0.7, sy),
+                (sx, sy + sigil_size),
+                (sx - sigil_size * 0.7, sy),
+            ]
+            pygame.draw.polygon(screen, sigil_color[:3], pts)
+            pygame.draw.polygon(screen, (240, 210, 255), pts, 1)
+
+        # ── Barrier particles ──
+        for p in self.mystic_barrier_particles:
+            life_ratio = p["life"] / p["max_life"] if p["max_life"] > 0 else 0
+            if life_ratio <= 0:
+                continue
+            px = cx + math.cos(p["angle"]) * p["dist"]
+            py = cy + math.sin(p["angle"]) * p["dist"]
+            alpha = int(200 * life_ratio)
+            size = max(1, int(p["size"] * life_ratio))
+            r, g, b = p["color"]
+            glow_sz = size * 3
+            glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+            pygame.draw.circle(glow, (r, g, b, alpha // 3),
+                               (glow_sz, glow_sz), glow_sz)
+            screen.blit(glow, (int(px - glow_sz), int(py - glow_sz)))
+            if alpha > 20:
+                pygame.draw.circle(screen, (min(255, r + 40), min(255, g + 30), min(255, b + 10)),
+                                   (int(px), int(py)), size)
+
+        # ── Arcane sparkles ──
+        if self.mystic_barrier_active:
+            for _ in range(3):
+                sp_angle = random.uniform(0, math.pi * 2)
+                sp_dist = random.uniform(0, radius * 0.5)
+                sp_x = cx + math.cos(sp_angle) * sp_dist
+                sp_y = cy + random.uniform(-10, 10)
+                sp_size = random.randint(1, 2)
+                sp_color = random.choice([(220, 180, 255), (180, 120, 240), (255, 220, 255)])
+                pygame.draw.circle(screen, sp_color, (int(sp_x), int(sp_y)), sp_size)
+
+    # ─── Chrono Shift helpers ─────────────────────────────────────────
+
+    def _update_chrono_shift_particles(self, dt):
+        import random
+        if self.chrono_shift_active:
+            spawn_count = max(1, int(20 * dt))
+            for _ in range(spawn_count):
+                angle = random.uniform(0, math.pi * 2)
+                dist = random.uniform(15, 70)
+                self.chrono_shift_particles.append({
+                    "angle": angle,
+                    "dist": dist,
+                    "life": random.uniform(0.15, 0.4),
+                    "max_life": random.uniform(0.15, 0.4),
+                    "size": random.uniform(1.5, 3.5),
+                    "drift": random.uniform(-40, -10),
+                    "color": random.choice([
+                        (180, 220, 255),
+                        (140, 200, 240),
+                        (200, 235, 255),
+                        (160, 210, 250),
+                    ]),
+                })
+        for p in self.chrono_shift_particles[:]:
+            p["life"] -= dt
+            if p["life"] <= 0:
+                self.chrono_shift_particles.remove(p)
+                continue
+            p["angle"] += p["drift"] * dt * 0.3
+            p["dist"] += 20 * dt
+
+    def _draw_chrono_shift(self, screen, camera_offset):
+        import random
+        center = self.get_center()
+        cx = center.x - camera_offset.x
+        cy = center.y - camera_offset.y
+        t = pygame.time.get_ticks() / 1000.0
+
+        radius = 90.0
+
+        # ── Outer time distortion ring ──
+        pulse = 0.5 + 0.5 * math.sin(t * 5.0)
+        glow_radius = radius * (0.85 + 0.15 * pulse)
+        glow_surf = pygame.Surface((int(glow_radius * 2) + 4, int(glow_radius * 2) + 4), pygame.SRCALPHA)
+        glow_a = int(30 + 20 * pulse)
+        pygame.draw.circle(glow_surf, (80, 160, 220, glow_a),
+                           (int(glow_radius) + 2, int(glow_radius) + 2),
+                           int(glow_radius))
+        inner_r = int(glow_radius * 0.5)
+        inner_a = int(20 + 15 * pulse)
+        pygame.draw.circle(glow_surf, (140, 210, 255, inner_a),
+                           (int(glow_radius) + 2, int(glow_radius) + 2),
+                           inner_r)
+        screen.blit(glow_surf, (int(cx - glow_radius - 2), int(cy - glow_radius - 2)))
+
+        # ── Rotating clock hand ring ──
+        ring_r = radius
+        ring_a = int(60 + 40 * math.sin(t * 8.0))
+        ring_surf = pygame.Surface((int(ring_r * 2) + 4, int(ring_r * 2) + 4), pygame.SRCALPHA)
+        pygame.draw.circle(ring_surf, (160, 210, 255, ring_a),
+                           (int(ring_r) + 2, int(ring_r) + 2),
+                           int(ring_r), max(1, int(2 * (0.5 + 0.5 * pulse))))
+        screen.blit(ring_surf, (int(cx - ring_r - 2), int(cy - ring_r - 2)))
+
+        # ── Clock ticks ──
+        tick_count = 12
+        for i in range(tick_count):
+            tick_angle = t * 0.6 + i * (math.pi * 2 / tick_count)
+            tick_dist = radius * 0.85
+            tx = cx + math.cos(tick_angle) * tick_dist
+            ty = cy + math.sin(tick_angle) * tick_dist
+            tick_len = 4 + 3 * math.sin(t * 4.0 + i)
+            tick_alpha = int(100 + 80 * math.sin(t * 6.0 + i * 1.3))
+            pygame.draw.line(screen, (160, 210, 255, tick_alpha),
+                             (tx - math.cos(tick_angle) * tick_len,
+                              ty - math.sin(tick_angle) * tick_len),
+                             (tx + math.cos(tick_angle) * tick_len,
+                              ty + math.sin(tick_angle) * tick_len), 2)
+
+        # ── Clock hands ──
+        hand_angle = t * 2.0
+        for hand_len, hand_width, hand_color in [
+            (radius * 0.5, 3, (180, 220, 255)),
+            (radius * 0.7, 2, (140, 200, 240)),
+        ]:
+            hx = cx + math.cos(hand_angle) * hand_len
+            hy = cy + math.sin(hand_angle) * hand_len
+            pygame.draw.line(screen, hand_color, (cx, cy), (hx, hy), hand_width)
+
+        # ── Time particles ──
+        for p in self.chrono_shift_particles:
+            life_ratio = p["life"] / p["max_life"] if p["max_life"] > 0 else 0
+            if life_ratio <= 0:
+                continue
+            px = cx + math.cos(p["angle"]) * p["dist"]
+            py = cy + math.sin(p["angle"]) * p["dist"]
+            alpha = int(180 * life_ratio)
+            size = max(1, int(p["size"] * life_ratio))
+            r, g, b = p["color"]
+            glow_sz = size * 3
+            glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+            pygame.draw.circle(glow, (r, g, b, alpha // 3),
+                               (glow_sz, glow_sz), glow_sz)
+            screen.blit(glow, (int(px - glow_sz), int(py - glow_sz)))
+            if alpha > 20:
+                pygame.draw.circle(screen, (min(255, r + 40), min(255, g + 30), min(255, b + 10)),
+                                   (int(px), int(py)), size)
+
+        # ── Time sparkles ──
+        if self.chrono_shift_active:
+            for _ in range(4):
+                sp_angle = random.uniform(0, math.pi * 2)
+                sp_dist = random.uniform(0, radius * 0.6)
+                sp_x = cx + math.cos(sp_angle) * sp_dist
+                sp_y = cy + random.uniform(-15, 15)
+                sp_size = random.randint(1, 2)
+                sp_color = random.choice([(200, 235, 255), (160, 210, 255), (220, 240, 255)])
+                pygame.draw.circle(screen, sp_color, (int(sp_x), int(sp_y)), sp_size)

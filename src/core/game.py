@@ -10,7 +10,7 @@ from src.entities.character import Character
 from src.map.map import LocalMap
 from src.inventory.system import MAIN_player_inventory, MAIN_player_inventory_equipment, ShopInventory, MAIN_player_hotbar
 from src.items.items import create_item
-from database.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, DizzinessEffect
+from database.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, DizzinessEffect, SlowEffect
 from src.entities.enemy import Enemy
 from src.entities.npc import NPC
 from src.entities.projectile import Arrow
@@ -210,6 +210,7 @@ class Game(State):
 
         self.projectiles = []
         self.enemy_projectiles = []
+        self.spirits = []
         self.equipped_weapon = None
         self._dizzy_overlay = None
 
@@ -983,6 +984,20 @@ class Game(State):
         for item in self.items:
             if hasattr(item, "update"):
                 item.update(dt, self.obstacles)
+        # Flame Shield: deal damage to nearby enemies
+        if self.character.flame_shield_active:
+            self._apply_flame_shield_damage(dt)
+
+        # Ice Armor: slow nearby enemies
+        if self.character.ice_armor_active:
+            self._apply_ice_armor_slow(dt)
+
+        # Regeneration passive
+        if self.character.regeneration:
+            self._apply_regeneration(dt)
+
+        # Update summoned spirits
+        self._update_spirits(dt)
 
         self.collision_handler.check_interactions(
             self.character, self.enemies, self.items
@@ -1002,6 +1017,11 @@ class Game(State):
                 _scale = enemy.max_hp / 100.0
 
                 xp_gain = int(random.randint(_base_xp_min, _base_xp_max) * _scale)
+                # Soul Harvest: restore HP and add damage stack
+                character = self.character
+                if getattr(character, "soul_harvest", False):
+                    character.hp = min(character.max_hp, character.hp + character.soul_harvest_hp_per_kill)
+                    character.soul_harvest_stacks.append(character.soul_harvest_duration)
                 self.character.gain_xp(xp_gain)
 
                 gold_gain = int(random.randint(_base_gold_min, _base_gold_max) * _scale)
@@ -1037,6 +1057,73 @@ class Game(State):
         self.app.profiler.set_gauge("enemies", len(self.enemies))
         self.app.profiler.set_gauge("projectiles", len(self.projectiles))
         self.app.profiler.set_gauge("enemy_projectiles", len(self.enemy_projectiles))
+        self.app.profiler.set_gauge("spirits", len(self.spirits))
+
+    def _apply_ice_armor_slow(self, dt):
+        """Slow enemies near the player while Ice Armor is active."""
+        center = self.character.get_center()
+        radius = self.character.ice_armor_slow_radius
+        slow_factor = self.character.ice_armor_slow_factor
+        slow_duration = 1.0
+        radius_sq = radius * radius
+        for enemy in self.enemies:
+            if enemy.is_dead():
+                continue
+            enemy_rect = enemy.get_rect()
+            enemy_center = pygame.Vector2(enemy_rect.centerx, enemy_rect.centery)
+            dist_sq = (enemy_center - center).length_squared()
+            if dist_sq <= radius_sq:
+                enemy.add_effect(SlowEffect(slow_duration, slow_factor))
+
+    def _apply_flame_shield_damage(self, dt):
+        """Deal flame shield damage to enemies within the flame shield radius."""
+        center = self.character.get_center()
+        radius = self.character.flame_shield_radius
+        dmg_per_sec = self.character.flame_shield_damage_per_sec
+        # Apply Pyromancer's Fury passive buff to flame shield (+25% damage, +15% area)
+        if getattr(self.character, "pyromancers_fury", False):
+            dmg_per_sec *= self.character.pyromancers_fury_damage_mult
+            radius *= self.character.pyromancers_fury_area_mult
+        radius_sq = radius * radius
+
+        # Accumulate fractional damage
+        acc = getattr(self.character, "flame_shield_damage_acc", 0.0)
+        acc += dmg_per_sec * dt
+        damage = int(acc)
+        if damage < 1:
+            self.character.flame_shield_damage_acc = acc
+            return
+        self.character.flame_shield_damage_acc = acc - damage
+
+        for enemy in self.enemies:
+            if enemy.is_dead():
+                continue
+            enemy_rect = enemy.get_rect()
+            enemy_center = pygame.Vector2(enemy_rect.centerx, enemy_rect.centery)
+            dist_sq = (enemy_center - center).length_squared()
+            if dist_sq <= radius_sq:
+                enemy.take_damage(damage)
+                # Apply slight knockback pushing enemy away from player
+                if dist_sq > 0:
+                    push_dir = (enemy_center - center).normalize()
+                    enemy.pos += push_dir * 8 * dt
+
+    def _apply_regeneration(self, dt):
+        acc = getattr(self.character, "regeneration_acc", 0.0)
+        acc += self.character.regeneration_hp_per_sec * dt
+        heal = int(acc)
+        if heal >= 1:
+            old_hp = self.character.hp
+            self.character.hp = min(self.character.max_hp, self.character.hp + heal)
+            acc -= heal
+            if self.character.hp > old_hp:
+                logger.debug(f"Regeneration healed {heal} HP.")
+        self.character.regeneration_acc = acc
+
+    def _update_spirits(self, dt):
+        for spirit in self.spirits[:]:
+            spirit.update(dt, self.enemies)
+        self.spirits = [s for s in self.spirits if s.alive]
 
     def draw_scene(self, screen):
         dt = self.app.clock.get_time() / 1000
@@ -1072,6 +1159,11 @@ class Game(State):
         # Draw NPCs, player, and dropped items with simple Y-ordering so
         # they overlap naturally (items at the player's feet won't be hidden
         # behind the player sprite).
+        for spirit in self.spirits:
+            if _is_visible(spirit):
+                spirit.draw(screen, camera_offset)
+
+        # Draw NPCs and player with simple Y-ordering so they overlap naturally
         try:
             npc_vis = _is_visible(self.npc)
         except Exception:

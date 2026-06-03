@@ -232,6 +232,47 @@ class SlowEffect(Effect):
         target.speed_multiplier = 1.0
         logger.debug(f"SlowEffect ended on {getattr(target, 'id', type(target))}")
 
+class FreezeEffect(Effect):
+    """
+    Completely immobilizes the target for a duration.
+
+    Attributes:
+        frozen (bool): Whether the freeze has been applied.
+    """
+    def __init__(self, duration):
+        super().__init__(duration)
+        self.frozen = False
+
+    def apply(self, dt, target):
+        if not self.frozen:
+            target.speed_multiplier = 0.0
+            self.frozen = True
+
+    def on_end(self, target):
+        target.speed_multiplier = 1.0
+        self.frozen = False
+        logger.debug(f"FreezeEffect ended on {getattr(target, 'id', type(target))}")
+
+class RootEffect(Effect):
+    """
+    Immobilizes the target with roots for a duration.
+
+    Attributes:
+        rooted (bool): Whether the root has been applied.
+    """
+    def __init__(self, duration):
+        super().__init__(duration)
+        self.rooted = False
+
+    def apply(self, dt, target):
+        if not self.rooted:
+            target.speed_multiplier = 0.0
+            self.rooted = True
+
+    def on_end(self, target):
+        target.speed_multiplier = 1.0
+        self.rooted = False
+        logger.debug(f"RootEffect ended on {getattr(target, 'id', type(target))}")
 
 # =====================================================================
 # New effects added to support the new WIP_TEXTURE items.
@@ -364,6 +405,8 @@ Effect_list = {
     "confusion": ConfusionEffect,
     "dizziness": DizzinessEffect,
     "slow": SlowEffect,
+    "freeze": FreezeEffect,
+    "root": RootEffect,
     # New effects below
     "bleed": BleedEffect,
     "strength": StrengthEffect,

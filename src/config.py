@@ -74,9 +74,9 @@ def update_scaled_fonts():
     # Base sizes (authored for 1920x1080)
     myfont = get_font(max(12, int(60 * scale)))
     button_font = get_font(max(10, int(60 * scale)))
-    inventory_tooltip_font = get_font(max(8, int(20 * scale)))
-    tooltip_font_CREDITS = get_font(max(8, int(20 * scale)))
-    INV_nums_font = get_font(max(8, int(15 * scale)))
+    inventory_tooltip_font = get_font(max(14, int(22 * scale)))
+    tooltip_font_CREDITS = get_font(max(14, int(22 * scale)))
+    INV_nums_font = get_font(max(14, int(20 * scale)))
 
 
 def update_brightness():
@@ -102,16 +102,16 @@ button_hover_color_CREDITS = (255, 220, 97)
 text_color = (0, 0, 0)
 corner_radius = 20
 
-tooltip_padding=8
-tooltip_appear= 0.7
+tooltip_padding = 10
+tooltip_appear = 0.5
 
-inventory_tooltip_rect = pygame.Rect(0,0,1,1)
-inventory_tooltip_bg = (50, 50, 50)
-inventory_tooltip_border = (200, 200, 200)
+inventory_tooltip_rect = pygame.Rect(0, 0, 1, 1)
+inventory_tooltip_bg = (18, 22, 32)
+inventory_tooltip_border = (200, 170, 80)
 inventory_tooltip_font_color = (255, 255, 255)
 
-tooltip_bg_CREDITS = (156, 179, 200)
-tooltip_border_CREDITS = (54, 105, 121)
+tooltip_bg_CREDITS = (18, 22, 32)
+tooltip_border_CREDITS = (200, 170, 80)
 
 MAIN_INV_columns = 8
 MAIN_INV_rows = 4

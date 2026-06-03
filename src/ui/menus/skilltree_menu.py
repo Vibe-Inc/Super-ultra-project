@@ -32,9 +32,9 @@ class SkillTreeMenu(Menu):
     def __init__(self, app: "App"):
         super().__init__(app)
         scale = cfg.ui_scale()
-        self.title_font = cfg.get_font(max(12, int(36 * scale)))
-        self.section_font = cfg.get_font(max(10, int(22 * scale)))
-        self.small_font = cfg.get_font(max(8, int(16 * scale)))
+        self.title_font = cfg.get_font(max(16, int(36 * scale)))
+        self.section_font = cfg.get_font(max(16, int(26 * scale)))
+        self.small_font = cfg.get_font(max(14, int(20 * scale)))
 
         exit_width = max(120, int(200 * scale))
         exit_height = max(44, int(52 * scale))
@@ -122,6 +122,8 @@ class SkillTreeMenu(Menu):
         self.rotation_angle = 0.0
         self.target_zoom = 1.0
         self.target_pan_offset = pygame.Vector2(0, 0)
+        self._nebula_cache = None
+        self._gradient_cache = {}
         
     def on_enter(self):
         """Called when this state becomes active. Resets and triggers the entrance animation (only first time)."""
@@ -147,16 +149,20 @@ class SkillTreeMenu(Menu):
     def _init_particles(self):
         """Initialize floating particles for ambient background effect."""
         self.particles = []
-        for _ in range(60):
+        branch_colors = []
+        for theme in self.BRANCH_THEMES.values():
+            branch_colors.extend([theme["glow"], theme["secondary"], theme["accent"], theme["primary"]])
+        for _ in range(35):
             self.particles.append({
-                "x": random.uniform(-700, 700),
-                "y": random.uniform(-600, 600),
-                "size": random.uniform(1, 3),
-                "speed_x": random.uniform(-0.2, 0.2),
-                "speed_y": random.uniform(-0.3, -0.05),
-                "alpha": random.uniform(0.3, 0.8),
-                "pulse_speed": random.uniform(0.5, 2.0),
-                "color": random.choice([(100, 140, 200), (140, 100, 180), (180, 140, 100), (100, 180, 140)]),
+                "x": random.uniform(-750, 750),
+                "y": random.uniform(-650, 650),
+                "size": random.uniform(1, 3.5),
+                "speed_x": random.uniform(-0.15, 0.15),
+                "speed_y": random.uniform(-0.35, -0.05),
+                "alpha": random.uniform(0.2, 0.7),
+                "pulse_speed": random.uniform(0.5, 2.5),
+                "color": random.choice(branch_colors),
+                "pulse_offset": random.uniform(0, math.pi * 2),
             })
 
     def trigger_entrance_animation(self):
@@ -608,13 +614,17 @@ class SkillTreeMenu(Menu):
                 cx = origin.x + core_node["pos"].x * self.zoom
                 cy = origin.y + core_node["pos"].y * self.zoom
                 
-                # Bright flash
-                flash_r = int(120 * self.core_ignition_flash * self.zoom)
+                flash_r = int(160 * self.core_ignition_flash * self.zoom)
                 flash_surf = pygame.Surface((flash_r * 2, flash_r * 2), pygame.SRCALPHA)
-                flash_a = int(200 * self.core_ignition_flash)
-                pygame.draw.circle(flash_surf, (200, 220, 255, flash_a), (flash_r, flash_r), flash_r)
-                inner_r = int(flash_r * 0.4)
-                pygame.draw.circle(flash_surf, (255, 255, 255, min(255, flash_a + 50)), (flash_r, flash_r), inner_r)
+                flash_a = int(180 * self.core_ignition_flash)
+                colors = [(200, 220, 255), (255, 220, 200), (220, 200, 255)]
+                c_idx = int(self.animation_time * 5) % len(colors)
+                flash_color = colors[c_idx]
+                pygame.draw.circle(flash_surf, (*flash_color, flash_a), (flash_r, flash_r), flash_r)
+                inner_r = int(flash_r * 0.35)
+                for r_ in range(3):
+                    ia = int(flash_a * (1.0 - r_ * 0.25))
+                    pygame.draw.circle(flash_surf, (255, 255, 255, ia), (flash_r, flash_r), inner_r - r_ * 2)
                 surface.blit(flash_surf, (int(cx) - flash_r, int(cy) - flash_r))
         
         # ─── Phase 3: Core ignition expanding rings ───
@@ -827,14 +837,15 @@ class SkillTreeMenu(Menu):
             ba = get_branch_color(branch, "accent")
             node_id = f"inner_{i + 1}"
             stat_names = [
-                _("Vitality I"), _("Strength I"), _("Agility I"), _("Wisdom I"),
-                _("Endurance I"), _("Focus I"), _("Reflexes I"), _("Fortitude I"),
-                _("Precision I"), _("Resilience I"), _("Power I"), _("Speed I"),
+                _("Vitality I"), _("Stamina I"), _("Might I"), _("Recovery I"),
+                _("Swiftness I"), _("Power I"), _("Agility I"), _("Alacrity I"),
+                _("Reach I"), _("Endurance I"), _("Wisdom I"), _("Mastery I"),
             ]
             stat_effects = [
-                _("+5 Max HP"), _("+3 Melee Damage"), _("+2% Dodge Chance"), _("+4 Max Mana"),
-                _("+2 Armor"), _("+3% Crit Chance"), _("+2% Attack Speed"), _("+3 Block Chance"),
-                _("+2 Accuracy"), _("+2% Damage Reduction"), _("+3 Spell Damage"), _("+2% Move Speed"),
+                _("+10 Max HP"), _("+8 Max Stamina"), _("+3 Attack Damage"), _("+1.0 HP/s"),
+                _("+2% Move Speed"), _("+3 Fireball Damage"), _("+2% Move Speed"),
+                _("+5 Attack Range"), _("+3% Attack Speed"), _("+5 Max HP"),
+                _("+3 Frost Nova Damage"), _("+3 Chain Lightning Damage"),
             ]
             add_node(
                 node_id,
@@ -923,8 +934,24 @@ class SkillTreeMenu(Menu):
                     csize = 13
                     ccolor = bs
                 else:
-                    cname = _("Minor Node")
-                    ceffect = _("Small stat bonus in the {branch} branch.").format(branch=branch.capitalize())
+                    cluster_snames = {
+                        "fire": (_("Fire Power"), _("Fire Blast")),
+                        "ice": (_("Frost Power"), _("Permafrost")),
+                        "lightning": (_("Spark"), _("Arc")),
+                        "nature": (_("Vitality"), _("Spirit Power")),
+                        "shadow": (_("Venom"), _("Dark Power")),
+                        "arcane": (_("Missile Power"), _("Arcane Flow")),
+                    }
+                    cluster_seffects = {
+                        "fire": (_("+3 Fireball Damage"), _("+5% Fireball Radius")),
+                        "ice": (_("+3 Frost Nova Damage"), _("+0.5s Freeze Duration")),
+                        "lightning": (_("+3 Chain Lightning Damage"), _("+1 Chain Bounce")),
+                        "nature": (_("+0.5 HP/s Regen"), _("+3 Summon Spirit Damage")),
+                        "shadow": (_("+2 Poison DPS"), _("+5 Dark Pact Damage")),
+                        "arcane": (_("+3 Arcane Missiles Damage"), _("-3% Skill Cooldowns")),
+                    }
+                    cname = cluster_snames[branch][j - 2]
+                    ceffect = cluster_seffects[branch][j - 2]
                     ckind = "minor"
                     csize = 8
                     ccolor = tuple(max(20, c - 15) for c in bc)
@@ -1007,10 +1034,26 @@ class SkillTreeMenu(Menu):
                     pos[1] + math.sin(offset) * sat_radius,
                 )
                 sat_id = f"keystone_sat_{i + 1}_{j + 1}"
+                sat_names = {
+                    0: (_("Rage Vitality"), _("Rage Duration"), _("Rage Recovery")),
+                    1: (_("Fortress HP"), _("Frost Ward"), _("Fortress Speed")),
+                    2: (_("Harvest HP"), _("Harvest Power"), _("Harvest Time")),
+                    3: (_("Walker Dodge"), _("Walker Range"), _("Walker Strike")),
+                    4: (_("Mastery Power"), _("Mastery Window"), _("Mastery Strike")),
+                    5: (_("Shift Time"), _("Shift Speed"), _("Shift Recovery")),
+                }
+                sat_effects = {
+                    0: (_("+5 Max HP"), _("+1s Rage Duration"), _("-1s Rage Cooldown")),
+                    1: (_("+10 Max HP"), _("+3 Frost Nova Damage"), _("+1% Move Speed")),
+                    2: (_("+1 HP/Kill"), _("+1% Stack Damage"), _("+1s Stack Duration")),
+                    3: (_("+5% Dodge"), _("+30px Teleport"), _("+3 Afterimage Damage")),
+                    4: (_("+3% Elemental"), _("+0.5s Combo"), _("+5 Combo Damage")),
+                    5: (_("+0.5s Shift"), _("+3% Attack Speed"), _("-2s Shift Cooldown")),
+                }
                 add_node(
                     sat_id,
-                    _("Keystone Shard"),
-                    _("A fragment of keystone power: +2% to all stats in this branch."),
+                    sat_names[i][j],
+                    sat_effects[i][j],
                     sat_pos,
                     8,
                     "minor",
@@ -1042,12 +1085,12 @@ class SkillTreeMenu(Menu):
                 _("Ice Blood"), _("Storm Core"),
             ]
             outer_effects = [
-                _("+5% knockback resistance"), _("+3% movement speed"), _("+4% mana regen"),
-                _("+4 armor"), _("+3% attack speed"), _("+5% accuracy"),
-                _("+8 max HP"), _("+3 fire damage on hit"), _("+2% freeze chance"),
-                _("+3% shock chance"), _("+2% root chance on hit"), _("+3% dodge chance"),
-                _("+4 spell power"), _("+3% damage reduction"), _("+2% evasion"),
-                _("+5 fire resistance"), _("+5 cold resistance"), _("+5 lightning resistance"),
+                _("+5 Max HP"), _("+1% Move Speed"), _("+3 Attack Damage"), _("+0.5 HP/s Regen"),
+                _("+3% Attack Speed"), _("+5 Attack Range"), _("+5 Max HP"), _("+2 Fireball Damage"),
+                _("+2 Frost Nova Damage"), _("+2 Chain Lightning Damage"), _("+5 Max Stamina"),
+                _("+5 Max HP"), _("+2 Arcane Missiles Damage"), _("+5 Max Stamina"),
+                _("+1% Move Speed"), _("+0.5 HP/s Regen"), _("+2 Dark Pact Damage"),
+                _("+3 Thunderstrike Damage"),
             ]
             add_node(
                 node_id,
@@ -1078,19 +1121,19 @@ class SkillTreeMenu(Menu):
         return nodes, links
 
     def _build_background_points(self):
-        """Build twinkling star background with more stars and varied sizes."""
+        """Build twinkling star background."""
         rng = random.Random(23)
         points = []
-        for _ in range(400):
-            points.append(
-                (
-                    rng.uniform(-750, 750),
-                    rng.uniform(-650, 650),
-                    rng.randint(1, 3),
-                    rng.uniform(0.3, 1.0),  # twinkle phase offset
-                    rng.uniform(0.5, 2.0),  # twinkle speed
-                )
-            )
+        for _ in range(180):
+            size = rng.randint(1, 3)
+            points.append((
+                rng.uniform(-780, 780),
+                rng.uniform(-680, 680),
+                size,
+                rng.uniform(0, math.pi * 2),
+                rng.uniform(0.3, 2.5),
+                rng.uniform(0.2, 1.0),
+            ))
         return points
 
     def _node_screen_pos(self, node):
@@ -1226,7 +1269,245 @@ class SkillTreeMenu(Menu):
         # If the Fireball Mastery node was unlocked, teach the fireball skill
         if node_id == "major_1" and hasattr(character, "learn_fireball"):
             character.learn_fireball()
-        
+
+        # Flame Shield: cluster_1_1
+        if node_id == "cluster_1_1" and hasattr(character, "learn_flame_shield"):
+            character.learn_flame_shield()
+
+        # Pyromancer's Fury (passive): cluster_1_2
+        if node_id == "cluster_1_2" and hasattr(character, "learn_pyromancers_fury"):
+            character.learn_pyromancers_fury()
+
+        # Ice: major_2 = Frost Nova, cluster_2_1 = Ice Armor, cluster_2_2 = Glacial Cascade
+        if node_id == "major_2" and hasattr(character, "learn_frost_nova"):
+            character.learn_frost_nova()
+
+        if node_id == "cluster_2_1" and hasattr(character, "learn_ice_armor"):
+            character.learn_ice_armor()
+
+        if node_id == "cluster_2_2" and hasattr(character, "learn_glacial_cascade"):
+            character.learn_glacial_cascade()
+
+        # Lightning: major_3 = Chain Lightning, cluster_3_1 = Static Field, cluster_3_2 = Thunderstrike
+        if node_id == "major_3" and hasattr(character, "learn_chain_lightning"):
+            character.learn_chain_lightning()
+
+        if node_id == "cluster_3_1" and hasattr(character, "learn_static_field"):
+            character.learn_static_field()
+
+        if node_id == "cluster_3_2" and hasattr(character, "learn_thunderstrike"):
+            character.learn_thunderstrike()
+
+        # Nature: major_4 = Entangling Roots, cluster_4_1 = Regeneration, cluster_4_2 = Summon Spirit
+        if node_id == "major_4" and hasattr(character, "learn_entangling_roots"):
+            character.learn_entangling_roots()
+
+        if node_id == "cluster_4_1" and hasattr(character, "learn_regeneration"):
+            character.learn_regeneration()
+
+        if node_id == "cluster_4_2" and hasattr(character, "learn_summon_spirit"):
+            character.learn_summon_spirit()
+
+        # Shadow: major_5 = Shadow Step, cluster_5_1 = Poison Blade, cluster_5_2 = Dark Pact
+        if node_id == "major_5" and hasattr(character, "learn_shadow_step"):
+            character.learn_shadow_step()
+
+        if node_id == "cluster_5_1" and hasattr(character, "learn_poison_blade"):
+            character.learn_poison_blade()
+
+        if node_id == "cluster_5_2" and hasattr(character, "learn_dark_pact"):
+            character.learn_dark_pact()
+
+        # Arcane: major_6 = Arcane Missiles, cluster_6_1 = Mana Flow, cluster_6_2 = Mystic Barrier
+        if node_id == "major_6" and hasattr(character, "learn_arcane_missiles"):
+            character.learn_arcane_missiles()
+
+        if node_id == "cluster_6_1" and hasattr(character, "learn_mana_flow"):
+            character.learn_mana_flow()
+
+        if node_id == "cluster_6_2" and hasattr(character, "learn_mystic_barrier"):
+            character.learn_mystic_barrier()
+
+        # Keystones: keystone_1 = Berserker's Rage, keystone_2 = Eternal Fortress, keystone_3 = Soul Harvest, keystone_4 = Void Walker, keystone_5 = Elemental Mastery, keystone_6 = Chrono Shift
+        if node_id == "keystone_1" and hasattr(character, "learn_berserkers_rage"):
+            character.learn_berserkers_rage()
+
+        if node_id == "keystone_2" and hasattr(character, "learn_eternal_fortress"):
+            character.learn_eternal_fortress()
+
+        if node_id == "keystone_3" and hasattr(character, "learn_soul_harvest"):
+            character.learn_soul_harvest()
+
+        if node_id == "keystone_4" and hasattr(character, "learn_void_walker"):
+            character.learn_void_walker()
+
+        if node_id == "keystone_5" and hasattr(character, "learn_elemental_mastery"):
+            character.learn_elemental_mastery()
+
+        if node_id == "keystone_6" and hasattr(character, "learn_chrono_shift"):
+            character.learn_chrono_shift()
+
+        # ─── RING 1 minor node effects ───
+        if node_id == "inner_1":
+            character.max_hp += 10
+            character.hp += 10
+        elif node_id == "inner_2":
+            character.max_stamina += 8
+            character.stamina = min(character.stamina + 8, character.max_stamina)
+        elif node_id == "inner_3":
+            character.base_attack_damage += 3
+            character.attack_damage += 3
+        elif node_id == "inner_4":
+            if not character.regeneration:
+                character.regeneration = True
+            character.regeneration_hp_per_sec += 1.0
+        elif node_id == "inner_5":
+            character.speed_multiplier *= 1.02
+            character.speed = character.base_speed * character.speed_multiplier
+        elif node_id == "inner_6":
+            character.fireball_damage += 3
+        elif node_id == "inner_7":
+            character.speed_multiplier *= 1.02
+            character.speed = character.base_speed * character.speed_multiplier
+        elif node_id == "inner_8":
+            character.attack_range += 5
+        elif node_id == "inner_9":
+            reduction = getattr(character, "attack_cooldown_mult", 1.0)
+            character.attack_cooldown_mult = reduction * 0.97
+        elif node_id == "inner_10":
+            character.max_hp += 5
+            character.hp += 5
+        elif node_id == "inner_11":
+            character.frost_nova_damage += 3
+        elif node_id == "inner_12":
+            character.chain_lightning_damage += 3
+
+        # ─── RING 2 cluster minor node effects (cluster_{i+1}_{3} and cluster_{i+1}_{4}) ───
+        if node_id == "cluster_1_3":
+            character.fireball_damage += 3
+        elif node_id == "cluster_1_4":
+            character.fireball_blast_radius = int(character.fireball_blast_radius * 1.05)
+        elif node_id == "cluster_2_3":
+            character.frost_nova_damage += 3
+        elif node_id == "cluster_2_4":
+            character.frost_nova_freeze_duration += 0.5
+        elif node_id == "cluster_3_3":
+            character.chain_lightning_damage += 3
+        elif node_id == "cluster_3_4":
+            character.chain_lightning_max_targets += 1
+        elif node_id == "cluster_4_3":
+            if not character.regeneration:
+                character.regeneration = True
+            character.regeneration_hp_per_sec += 0.5
+        elif node_id == "cluster_4_4":
+            character.summon_spirit_damage += 3
+        elif node_id == "cluster_5_3":
+            character.poison_blade_damage_per_sec += 2
+        elif node_id == "cluster_5_4":
+            character.dark_pact_damage += 5
+        elif node_id == "cluster_6_3":
+            character.arcane_missiles_damage += 3
+        elif node_id == "cluster_6_4":
+            if not hasattr(character, "skill_cooldown_mult"):
+                character.skill_cooldown_mult = 1.0
+            character.skill_cooldown_mult *= 0.97
+
+        # ─── RING 3 keystone satellite effects ───
+        # Berserker's Rage satellites
+        if node_id == "keystone_sat_1_1":
+            character.max_hp += 5; character.hp += 5
+        elif node_id == "keystone_sat_1_2":
+            if not hasattr(character, "berserkers_rage_duration_bonus"):
+                character.berserkers_rage_duration_bonus = 0.0
+            character.berserkers_rage_duration_bonus += 1.0
+        elif node_id == "keystone_sat_1_3":
+            if not hasattr(character, "berserkers_rage_cooldown_bonus"):
+                character.berserkers_rage_cooldown_bonus = 0
+            character.berserkers_rage_cooldown_bonus -= 1000
+        # Eternal Fortress satellites
+        elif node_id == "keystone_sat_2_1":
+            character.max_hp += 10; character.hp += 10
+        elif node_id == "keystone_sat_2_2":
+            character.frost_nova_damage += 3
+        elif node_id == "keystone_sat_2_3":
+            character.speed_multiplier *= 1.01
+            character.speed = character.base_speed * character.speed_multiplier
+        # Soul Harvest satellites
+        elif node_id == "keystone_sat_3_1":
+            character.soul_harvest_hp_per_kill += 1
+        elif node_id == "keystone_sat_3_2":
+            character.soul_harvest_damage_per_stack += 0.01
+        elif node_id == "keystone_sat_3_3":
+            character.soul_harvest_duration += 1.0
+        # Void Walker satellites
+        elif node_id == "keystone_sat_4_1":
+            character.void_walker_dodge_chance += 0.05
+        elif node_id == "keystone_sat_4_2":
+            character.void_walker_teleport_range += 30.0
+        elif node_id == "keystone_sat_4_3":
+            character.void_walker_afterimage_damage += 3
+        # Elemental Mastery satellites
+        elif node_id == "keystone_sat_5_1":
+            character.elemental_damage_mult += 0.03
+        elif node_id == "keystone_sat_5_2":
+            character.combo_window += 0.5
+        elif node_id == "keystone_sat_5_3":
+            if not hasattr(character, "combo_damage_bonus"):
+                character.combo_damage_bonus = 0
+            character.combo_damage_bonus += 5
+        # Chrono Shift satellites
+        elif node_id == "keystone_sat_6_1":
+            if not hasattr(character, "chrono_shift_duration_bonus"):
+                character.chrono_shift_duration_bonus = 0.0
+            character.chrono_shift_duration_bonus += 0.5
+        elif node_id == "keystone_sat_6_2":
+            if not hasattr(character, "attack_cooldown_mult"):
+                character.attack_cooldown_mult = 1.0
+            character.attack_cooldown_mult *= 0.97
+        elif node_id == "keystone_sat_6_3":
+            if not hasattr(character, "chrono_shift_cooldown_bonus"):
+                character.chrono_shift_cooldown_bonus = 0
+            character.chrono_shift_cooldown_bonus -= 2000
+
+        # ─── RING 4 outer node effects ───
+        if node_id == "outer_1" or node_id == "outer_7" or node_id == "outer_13":
+            character.max_hp += 5; character.hp += 5
+        elif node_id == "outer_2" or node_id == "outer_15":
+            character.speed_multiplier *= 1.01
+            character.speed = character.base_speed * character.speed_multiplier
+        elif node_id == "outer_3":
+            character.base_attack_damage += 3; character.attack_damage += 3
+        elif node_id == "outer_4" or node_id == "outer_16":
+            if not character.regeneration:
+                character.regeneration = True
+            character.regeneration_hp_per_sec += 0.5
+        elif node_id == "outer_5":
+            if not hasattr(character, "attack_cooldown_mult"):
+                character.attack_cooldown_mult = 1.0
+            character.attack_cooldown_mult *= 0.97
+        elif node_id == "outer_6":
+            character.attack_range += 5
+        elif node_id == "outer_8":
+            character.fireball_damage += 2
+        elif node_id == "outer_9":
+            character.frost_nova_damage += 2
+        elif node_id == "outer_10":
+            character.chain_lightning_damage += 2
+        elif node_id == "outer_11":
+            character.max_stamina += 5
+            character.stamina = min(character.stamina + 5, character.max_stamina)
+        elif node_id == "outer_12":
+            character.max_hp += 5; character.hp += 5
+        elif node_id == "outer_13":
+            character.arcane_missiles_damage += 2
+        elif node_id == "outer_14":
+            character.max_stamina += 5
+            character.stamina = min(character.stamina + 5, character.max_stamina)
+        elif node_id == "outer_17":
+            character.dark_pact_damage += 2
+        elif node_id == "outer_18":
+            character.thunderstrike_damage += 3
+
         # Trigger unlock animation
         self._spawn_unlock_effect(node_id)
 
@@ -1274,6 +1555,8 @@ class SkillTreeMenu(Menu):
             self.target_pan_offset = pygame.Vector2(0, 0)
             self.zoom = 1.0
             self.pan_offset = pygame.Vector2(0, 0)
+            self._nebula_cache = None
+            self._gradient_cache.clear()
 
     def handle_event(self, event: pygame.event.Event):
         # Route events to dialog first if one is active
@@ -1454,17 +1737,24 @@ class SkillTreeMenu(Menu):
                         "alpha": 1.0,
                     })
         
-        # ─── 4. Floating text effect (scaled by node kind) ───
+        # ─── 4. Floating text effect ───
+        unlock_texts = {
+            "minor": "✦ Unlocked ✦",
+            "major": "★ Unlocked ★",
+            "keystone": "✧ UNLOCKED ✧",
+            "core": "⚜ MASTERED ⚜",
+        }
         float_text = {
             "type": "float_text",
             "x": screen_pos.x,
             "y": screen_pos.y - node_size - 20,
-            "text": "✦ UNLOCKED ✦" if kind == "minor" else "★ UNLOCKED ★" if kind == "major" else "✧ UNLOCKED ✧" if kind == "keystone" else "⚜ UNLOCKED ⚜",
-            "color": accent_color,
+            "text": unlock_texts.get(kind, "✦ Unlocked ✦"),
+            "color": (255, 255, 255),
+            "glow_color": accent_color,
             "life": 2.0,
             "max_life": 2.0,
-            "speed_y": -50 * self.zoom,
-            "size": max(16, int(22 * self.zoom * text_size_mult)),
+            "speed_y": -55 * self.zoom,
+            "size": max(16, int(24 * self.zoom * text_size_mult)),
         }
         
         # Add all effects to the queue
@@ -1575,19 +1865,15 @@ class SkillTreeMenu(Menu):
         for p in self.particles:
             p["x"] += p["speed_x"] * dt * 60
             p["y"] += p["speed_y"] * dt * 60
-            # Wrap particles that drift too far
             if p["y"] < -650:
                 p["y"] = 650
-                p["x"] = random.uniform(-700, 700)
-            if p["x"] < -750:
-                p["x"] = 750
-            elif p["x"] > 750:
-                p["x"] = -750
-        
-        # Update unlock effects
+                p["x"] = random.uniform(-750, 750)
+            if p["x"] < -800:
+                p["x"] = 800
+            elif p["x"] > 800:
+                p["x"] = -800
+
         self._update_unlock_effects(dt)
-        
-        # Update entrance animation
         self._update_entrance(dt)
     
     def _update_unlock_effects(self, dt):
@@ -1695,16 +1981,22 @@ class SkillTreeMenu(Menu):
                     continue
                 color = effect["color"]
                 r, g, b = color[:3]
-                # Fade to white as it fades
                 fade = alpha / 255
                 dr = int(r * fade + 255 * (1 - fade))
                 dg = int(g * fade + 255 * (1 - fade))
                 db = int(b * fade + 255 * (1 - fade))
-                clr = (dr, dg, db, alpha)
+                clr = (dr, dg, db)
                 size = max(1, effect["size"] * effect["alpha"])
                 pos = (int(effect["x"]), int(effect["y"]))
                 if self.tree_rect.collidepoint(pos):
-                    pygame.draw.circle(surface, clr[:3], pos, int(size))
+                    # Glow
+                    if size > 1:
+                        gs = int(size * 4)
+                        g_surf = pygame.Surface((gs * 2, gs * 2), pygame.SRCALPHA)
+                        ga = int(60 * effect["alpha"])
+                        pygame.draw.circle(g_surf, (*clr, ga), (gs, gs), gs)
+                        surface.blit(g_surf, (pos[0] - gs, pos[1] - gs))
+                    pygame.draw.circle(surface, clr, pos, int(size))
             
             elif effect_type == "shockwave":
                 alpha = int(255 * effect["alpha"])
@@ -1747,14 +2039,22 @@ class SkillTreeMenu(Menu):
                 if alpha <= 0:
                     continue
                 font = cfg.get_font(max(12, int(effect["size"])))
+                glow_color = effect.get("glow_color", effect["color"])
+                pos = (int(effect["x"]), int(effect["y"]))
+                # Draw glow layers
+                for i in range(4):
+                    glow_offset = (i + 1) * 2
+                    glow_alpha = alpha // (3 + i * 2)
+                    glow_surf = font.render(effect["text"], True, glow_color)
+                    glow_surf.set_alpha(glow_alpha)
+                    glow_pos = (pos[0] - glow_surf.get_width() // 2 + glow_offset, pos[1] + glow_offset)
+                    surface.blit(glow_surf, glow_pos)
+                    neg_pos = (pos[0] - glow_surf.get_width() // 2 - glow_offset, pos[1] - glow_offset)
+                    surface.blit(glow_surf, neg_pos)
+                # Main text
                 text_surf = font.render(effect["text"], True, effect["color"])
                 text_surf.set_alpha(alpha)
-                pos = (int(effect["x"] - text_surf.get_width() // 2), int(effect["y"]))
-                # Draw shadow for readability
-                shadow = font.render(effect["text"], True, (0, 0, 0))
-                shadow.set_alpha(alpha // 2)
-                surface.blit(shadow, (pos[0] + 2, pos[1] + 2))
-                surface.blit(text_surf, pos)
+                surface.blit(text_surf, (pos[0] - text_surf.get_width() // 2, pos[1]))
             
             elif effect_type == "spiral_particle":
                 alpha = int(255 * effect["alpha"])
@@ -1809,64 +2109,118 @@ class SkillTreeMenu(Menu):
             surface.blit(flash, (0, 0))
 
     def _draw_tree_background(self, surface):
-        """Draw enhanced background with concentric rings, twinkling stars, and particles."""
+        """Draw enhanced background with nebula clouds, twinkling stars, and particles."""
         origin = pygame.Vector2(self.tree_rect.center) + self.pan_offset
         t = self.animation_time
         
-        # During entrance, star visibility is controlled by entrance_star_alpha
         star_alpha_mult = self.entrance_star_alpha if self.entrance_active else 1.0
 
-        # Draw subtle radial gradient background using concentric circles
-        for r in range(700, 0, -8):
-            brightness = max(12, 22 - r // 50)
-            # During entrance, dim the background until stars fade in
+        if self._nebula_cache is None:
+            nebula_colors = [
+                (8, 4, 20), (10, 6, 24), (12, 8, 28), (14, 10, 24),
+                (10, 8, 22), (8, 10, 24), (12, 6, 22), (10, 12, 20),
+            ]
+            nebula_centers = [
+                (0.3, 0.4), (0.7, 0.3), (0.5, 0.7), (0.2, 0.6),
+                (0.8, 0.6), (0.4, 0.8), (0.6, 0.2), (0.3, 0.5),
+            ]
+            neb_w = self.tree_rect.width
+            neb_h = self.tree_rect.height
+            n_surf = pygame.Surface((neb_w, neb_h), pygame.SRCALPHA)
+            for y in range(0, neb_h, 3):
+                for x in range(0, neb_w, 3):
+                    blend_r, blend_g, blend_b = 0, 0, 0
+                    total = 0
+                    for (nc, (nx, ny)) in zip(nebula_colors, nebula_centers):
+                        dx = x / neb_w - nx
+                        dy = y / neb_h - ny
+                        dist = math.sqrt(dx*dx + dy*dy) * 3.0
+                        if dist < 1.5:
+                            w = (1.0 - dist / 1.5) * 0.35
+                            blend_r += nc[0] * w
+                            blend_g += nc[1] * w
+                            blend_b += nc[2] * w
+                            total += w
+                    if total > 0:
+                        r2 = int(min(255, blend_r / total))
+                        g2 = int(min(255, blend_g / total))
+                        b2 = int(min(255, blend_b / total))
+                        n_surf.set_at((x, y), (r2, g2, b2, 120))
+            self._nebula_cache = n_surf
+
+        self._nebula_cache.set_alpha(int(star_alpha_mult * 255))
+        surface.blit(self._nebula_cache, (self.tree_rect.x, self.tree_rect.y))
+
+        # Radial gradient background (fewer layers)
+        for r in range(700, 0, -40):
+            brightness = max(8, 18 - r // 60)
             if self.entrance_active and self.entrance_phase < 2:
                 brightness = int(brightness * star_alpha_mult)
-            pygame.draw.circle(surface, (brightness, brightness, brightness + 4), origin, int(r * self.zoom), 0)
+            pygame.draw.circle(surface, (brightness, brightness, brightness + 3), origin, int(r * self.zoom), 0)
 
-        # Draw concentric guide rings with subtle pulse
+        # Guide rings (no pulse animation to reduce math)
         ring_radii = [130, 210, 310, 330, 460, 580]
         for idx, radius in enumerate(ring_radii):
-            pulse = math.sin(t * 0.5 + idx * 0.8) * 0.15 + 0.85
-            c = int(28 * pulse)
+            c = int(22 * (0.85 + 0.15 * (idx % 2)))
             if self.entrance_active and self.entrance_phase < 2:
                 c = int(c * star_alpha_mult)
             pygame.draw.circle(surface, (c, c, c + 8), origin, int(radius * self.zoom), 1)
 
-        # Draw twinkling stars (fade in during entrance phase 1+)
+        # Draw twinkling stars with branch-themed colors
+        branch_star_colors = [
+            (180, 100, 80), (80, 120, 180), (160, 150, 60),
+            (80, 160, 100), (120, 80, 160), (160, 90, 140),
+            (200, 180, 100), (100, 200, 180),
+        ]
         for star_data in self.background_points:
-            x, y, size, phase, speed = star_data
+            x, y, size, phase, speed, bright = star_data
             pos = origin + pygame.Vector2(x, y) * self.zoom
             if self.tree_rect.collidepoint(pos):
                 twinkle = (math.sin(t * speed + phase) + 1.0) * 0.5
-                brightness = int((25 + 35 * twinkle) * star_alpha_mult)
-                star_color = (brightness, brightness, brightness + 12)
-                pygame.draw.circle(surface, star_color, (int(pos.x), int(pos.y)), size)
+                b = int((15 + 45 * twinkle) * star_alpha_mult * bright)
+                col_idx = int(abs(x + y) * 0.008) % len(branch_star_colors)
+                base_color = branch_star_colors[col_idx]
+                star_color = (
+                    min(255, int(base_color[0] * 0.25 + b * 0.75)),
+                    min(255, int(base_color[1] * 0.25 + b * 0.75)),
+                    min(255, int(base_color[2] * 0.25 + b * 0.75)),
+                )
+                if twinkle > 0.7 and size > 1:
+                    glow_r = int(size * 5)
+                    glow_surf = pygame.Surface((glow_r * 2, glow_r * 2), pygame.SRCALPHA)
+                    glow_a = int(35 * twinkle * star_alpha_mult * bright)
+                    pygame.draw.circle(glow_surf, (*star_color, glow_a), (glow_r, glow_r), glow_r)
+                    surface.blit(glow_surf, (int(pos.x) - glow_r, int(pos.y) - glow_r))
+                if b > 5:
+                    pygame.draw.circle(surface, star_color, (int(pos.x), int(pos.y)), size)
 
-        # Draw floating particles (fade in during entrance)
+        # Draw floating particles
         for p in self.particles:
             pos = origin + pygame.Vector2(p["x"], p["y"]) * self.zoom
             if self.tree_rect.collidepoint(pos):
-                pulse = (math.sin(t * p["pulse_speed"]) + 1.0) * 0.5
+                offset = p.get("pulse_offset", 0)
+                pulse = (math.sin(t * p["pulse_speed"] + offset) + 1.0) * 0.5
                 alpha = p["alpha"] * (0.4 + 0.6 * pulse) * star_alpha_mult
                 r, g, b = p["color"]
                 pcolor = (int(r * alpha), int(g * alpha), int(b * alpha))
                 sz = max(1, int(p["size"] * self.zoom * (0.8 + 0.4 * pulse)))
-                pygame.draw.circle(surface, pcolor, (int(pos.x), int(pos.y)), sz)
+                if alpha > 0.1 and sz > 1:
+                    glow_sz = int(sz * 4)
+                    glow_s = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+                    ga = int(50 * alpha)
+                    pygame.draw.circle(glow_s, (*p["color"], ga), (glow_sz, glow_sz), glow_sz)
+                    surface.blit(glow_s, (int(pos.x) - glow_sz, int(pos.y) - glow_sz))
+                if alpha > 0.05:
+                    pygame.draw.circle(surface, pcolor, (int(pos.x), int(pos.y)), sz)
 
     def _draw_links(self, surface, unlocked, revealed_filter=None):
-        """Draw links with glow effect for active (unlocked) connections.
-        
-        Args:
-            revealed_filter: If provided, only draw links where both nodes are in this set.
-        """
+        """Draw links with glow effect for active connections. Optimized."""
         t = self.animation_time
         for a, b in self.links:
             node_a = self.nodes_by_id.get(a)
             node_b = self.nodes_by_id.get(b)
             if node_a is None or node_b is None:
                 continue
-            # During entrance animation, only draw links where both nodes have been revealed
             if revealed_filter is not None:
                 if a not in revealed_filter or b not in revealed_filter:
                     continue
@@ -1875,42 +2229,44 @@ class SkillTreeMenu(Menu):
             active = a in unlocked and b in unlocked
 
             if active:
-                # Determine branch color for the link
-                branch = node_a.get("branch") or node_b.get("branch")
-                if branch and branch in self.BRANCH_THEMES:
-                    theme = self.BRANCH_THEMES[branch]
-                    glow_color = theme["glow"]
-                    base_color = theme["secondary"]
-                else:
-                    glow_color = (140, 180, 220)
-                    base_color = (120, 160, 200)
+                branch = node_a.get("branch") or node_b.get("branch") or "arcane"
+                theme = self.BRANCH_THEMES.get(branch, self.BRANCH_THEMES["arcane"])
+                glow_color = theme["glow"]
+                base_color = theme["secondary"]
 
-                # Animated pulse for active links
                 pulse = (math.sin(t * 2.0) + 1.0) * 0.5
-                glow_alpha = 0.3 + 0.2 * pulse
+                glow_alpha = 0.25 + 0.2 * pulse
 
-                # Draw glow (wider, semi-transparent line underneath)
-                glow_r = int(glow_color[0] * glow_alpha)
-                glow_g = int(glow_color[1] * glow_alpha)
-                glow_b = int(glow_color[2] * glow_alpha)
-                pygame.draw.line(surface, (glow_r, glow_g, glow_b), pos_a, pos_b, max(3, int(5 * self.zoom)))
-
-                # Draw main line
+                g_c = tuple(int(c * glow_alpha) for c in glow_color)
+                pygame.draw.line(surface, g_c, pos_a, pos_b, max(3, int(5 * self.zoom)))
                 pygame.draw.line(surface, base_color, pos_a, pos_b, max(1, int(2 * self.zoom)))
+
+                # Single energy particle per link — much cheaper
+                flow_frac = (t * 0.5 + hash(a + b) * 0.01) % 1.0
+                fx = pos_a.x + (pos_b.x - pos_a.x) * flow_frac
+                fy = pos_a.y + (pos_b.y - pos_a.y) * flow_frac
+                flow_sz = max(1, int(2.5 * self.zoom))
+                pygame.draw.circle(surface, (255, 255, 255), (int(fx), int(fy)), flow_sz)
             else:
-                # Inactive links — dim
-                pygame.draw.line(surface, (48, 48, 58), pos_a, pos_b, max(1, int(1.5 * self.zoom)))
+                dim = 50 + int(10 * (math.sin(t * 0.5 + hash(a + b) * 0.3) + 1.0) * 0.5)
+                pygame.draw.line(surface, (dim, dim, dim + 10), pos_a, pos_b, max(1, int(1.5 * self.zoom)))
+
+    @staticmethod
+    def _draw_circle_gradient(surface, pos, radius, inner_color, outer_color):
+        """Draw a circle with radial gradient effect. Optimized: only 4 layers."""
+        layers = [(radius, inner_color),
+                  (int(radius * 0.75), tuple((inner_color[j] * 3 + outer_color[j]) // 4 for j in range(3))),
+                  (int(radius * 0.45), tuple((inner_color[j] + outer_color[j]) // 2 for j in range(3))),
+                  (int(radius * 0.2), inner_color)]
+        for r, c in layers:
+            if r > 0:
+                pygame.draw.circle(surface, c, (int(pos.x), int(pos.y)), r)
 
     def _draw_nodes(self, surface, unlocked, revealed_filter=None):
-        """Draw nodes with glow halos, pulsing effects, and inner highlights.
-        
-        Args:
-            revealed_filter: If provided, only draw nodes that are in this set.
-        """
+        """Draw nodes with glow halos, pulsing effects, and inner highlights."""
         t = self.animation_time
         for node in self.nodes:
             node_id = node["id"]
-            # During entrance animation, only draw nodes that have been revealed
             if revealed_filter is not None and node_id not in revealed_filter:
                 continue
             pos = self._node_screen_pos(node)
@@ -1921,7 +2277,6 @@ class SkillTreeMenu(Menu):
             kind = node["kind"]
             branch = node.get("branch")
 
-            # Determine colors
             if is_unlocked:
                 fill = node["color"]
                 accent = node["accent"]
@@ -1936,14 +2291,22 @@ class SkillTreeMenu(Menu):
                 glow_radius = radius + int((6 + 4 * pulse) * self.zoom)
                 glow_alpha = 0.15 + 0.1 * pulse
 
-                # Draw multiple glow rings for soft effect
                 for ring in range(3):
                     r_off = ring * int(3 * self.zoom)
                     alpha_factor = glow_alpha * (1.0 - ring * 0.3)
                     gc = tuple(max(0, min(255, int(c * alpha_factor))) for c in glow_color)
                     pygame.draw.circle(surface, gc, (int(pos.x), int(pos.y)), glow_radius + r_off, 1)
 
-            # ── Core node special effect: rotating ring ──
+                # Soft radial glow (skip for small nodes)
+                if radius > 10:
+                    glow_surf_size = int(radius * 4)
+                    gs = pygame.Surface((glow_surf_size * 2, glow_surf_size * 2), pygame.SRCALPHA)
+                    glow_a = int(50 * (0.6 + 0.4 * pulse))
+                    gsc = tuple(min(255, c) for c in glow_color)
+                    pygame.draw.circle(gs, (*gsc, glow_a), (glow_surf_size, glow_surf_size), glow_surf_size)
+                    surface.blit(gs, (int(pos.x) - glow_surf_size, int(pos.y) - glow_surf_size))
+
+            # ── Core node special effect ──
             if kind == "core" and is_unlocked:
                 core_pulse = (math.sin(t * 1.2) + 1.0) * 0.5
                 core_glow_r = radius + int((10 + 6 * core_pulse) * self.zoom)
@@ -1953,15 +2316,15 @@ class SkillTreeMenu(Menu):
                     gc = (int(100 * alpha), int(160 * alpha), int(255 * alpha))
                     pygame.draw.circle(surface, gc, (int(pos.x), int(pos.y)), core_glow_r + r_off, 1)
 
-                # Draw rotating decorative arcs around core
-                for i in range(6):
-                    arc_angle = t * 0.8 + i * math.pi / 3
-                    arc_x = pos.x + math.cos(arc_angle) * (radius + 8) * self.zoom
-                    arc_y = pos.y + math.sin(arc_angle) * (radius + 8) * self.zoom
+                for i in range(8):
+                    arc_angle = t * 0.6 + i * math.pi / 4
+                    arc_x = pos.x + math.cos(arc_angle) * (radius + 10) * self.zoom
+                    arc_y = pos.y + math.sin(arc_angle) * (radius + 10) * self.zoom
                     dot_r = max(2, int(2 * self.zoom))
-                    pygame.draw.circle(surface, (180, 210, 255), (int(arc_x), int(arc_y)), dot_r)
+                    dc = (180 + int(75 * core_pulse), 210 + int(45 * core_pulse), 255)
+                    pygame.draw.circle(surface, dc, (int(arc_x), int(arc_y)), dot_r)
 
-            # ── Keystone special effect: diamond shape indicator ──
+            # ── Keystone special effect ──
             if kind == "keystone" and is_unlocked:
                 ks_pulse = (math.sin(t * 1.8 + hash(node_id) * 0.2) + 1.0) * 0.5
                 ks_glow_r = radius + int((8 + 5 * ks_pulse) * self.zoom)
@@ -1972,18 +2335,30 @@ class SkillTreeMenu(Menu):
                     gc = tuple(max(0, min(255, int(c * alpha))) for c in glow_color)
                     pygame.draw.circle(surface, gc, (int(pos.x), int(pos.y)), ks_glow_r + r_off, 1)
 
-            # ── Draw main node circle ──
-            pygame.draw.circle(surface, fill, (int(pos.x), int(pos.y)), radius)
+            # ── Draw main node circle (gradient for larger nodes, solid for small) ──
+            if is_unlocked and radius > 8:
+                dark_fill = tuple(max(0, c - 30) for c in fill)
+                self._draw_circle_gradient(surface, pos, radius, fill, dark_fill)
+            else:
+                pygame.draw.circle(surface, fill, (int(pos.x), int(pos.y)), radius)
 
-            # ── Inner highlight (lighter center for 3D effect) ──
-            if is_unlocked and radius > 5:
-                inner_r = max(2, radius // 2)
-                highlight = tuple(min(255, c + 40) for c in fill)
-                pygame.draw.circle(surface, highlight, (int(pos.x - radius * 0.15), int(pos.y - radius * 0.15)), inner_r)
+            # ── Inner glow / highlight for 3D effect (nodes > 8 only) ──
+            if is_unlocked and radius > 8:
+                inner_r = max(2, int(radius * 0.55))
+                highlight = tuple(min(255, c + 50) for c in fill)
+                pygame.draw.circle(surface, highlight, (int(pos.x - radius * 0.12), int(pos.y - radius * 0.12)), inner_r)
+                core_r = max(1, int(radius * 0.25))
+                core_shine = tuple(min(255, c + 80) for c in fill)
+                pygame.draw.circle(surface, core_shine, (int(pos.x - radius * 0.18), int(pos.y - radius * 0.18)), core_r)
 
-            # ── Border ──
+            # ── Border with glow ──
             border_width = 2 if kind in ("core", "keystone", "major") else 1
-            pygame.draw.circle(surface, accent, (int(pos.x), int(pos.y)), radius, border_width)
+            if is_unlocked:
+                border_pulse = (math.sin(t * 2.0 + hash(node_id) * 0.1) + 1.0) * 0.5
+                border_glow = tuple(min(255, c + int(30 * border_pulse)) for c in accent)
+                pygame.draw.circle(surface, border_glow, (int(pos.x), int(pos.y)), radius, border_width)
+            else:
+                pygame.draw.circle(surface, accent, (int(pos.x), int(pos.y)), radius, border_width)
 
             # ── Selection ring (animated pulse) ──
             if is_selected:
@@ -1994,27 +2369,38 @@ class SkillTreeMenu(Menu):
                     int(200 + 55 * sel_pulse),
                     255,
                 )
+                # Selection glow
+                for w in range(3, 0, -1):
+                    alpha = int(255 * (1.0 - w / 4) * (0.6 + 0.4 * sel_pulse))
+                    gc = tuple(int(c * alpha / 255) for c in sel_color)
+                    pygame.draw.circle(surface, gc, (int(pos.x), int(pos.y)), sel_r + w * 2, 1)
                 pygame.draw.circle(surface, sel_color, (int(pos.x), int(pos.y)), sel_r, 2)
                 # Second outer ring
-                sel_r2 = sel_r + int(3 * self.zoom)
+                sel_r2 = sel_r + int(4 * self.zoom)
                 sel_alpha = 0.4 + 0.3 * sel_pulse
                 sel_color2 = (int(180 * sel_alpha), int(180 * sel_alpha), int(255 * sel_alpha))
                 pygame.draw.circle(surface, sel_color2, (int(pos.x), int(pos.y)), sel_r2, 1)
             elif is_hovered:
+                hover_pulse = (math.sin(t * 2.5) + 1.0) * 0.5
                 hover_r = radius + int(4 * self.zoom)
-                pygame.draw.circle(surface, (180, 180, 210), (int(pos.x), int(pos.y)), hover_r, 1)
+                hover_color = (180 + int(60 * hover_pulse), 180 + int(60 * hover_pulse), 210 + int(45 * hover_pulse))
+                pygame.draw.circle(surface, hover_color, (int(pos.x), int(pos.y)), hover_r, 1)
 
-            # ── Unlockable indicator: dotted ring for nodes that can be unlocked ──
+            # ── Unlockable indicator ──
             if not is_unlocked and node_id != "core":
                 adjacent_unlocked = bool(self._get_adjacent_nodes(node_id) & unlocked)
                 if adjacent_unlocked:
                     can_pulse = (math.sin(t * 2.5) + 1.0) * 0.5
                     can_r = radius + int(4 * self.zoom)
                     can_color = (
-                        int(80 + 60 * can_pulse),
-                        int(120 + 60 * can_pulse),
-                        int(80 + 60 * can_pulse),
+                        int(80 + 80 * can_pulse),
+                        int(150 + 60 * can_pulse),
+                        int(80 + 80 * can_pulse),
                     )
+                    for w in range(2, 0, -1):
+                        ga = int(180 * (0.4 + 0.6 * can_pulse) * (1.0 - w / 3))
+                        gc = tuple(int(c * ga / 255) for c in can_color)
+                        pygame.draw.circle(surface, gc, (int(pos.x), int(pos.y)), can_r + w * 2, 1)
                     pygame.draw.circle(surface, can_color, (int(pos.x), int(pos.y)), can_r, 1)
 
             # ── Labels for important nodes ──
@@ -2022,86 +2408,200 @@ class SkillTreeMenu(Menu):
                 label_color = (235, 235, 245) if is_unlocked else (160, 160, 175)
                 label = self.small_font.render(node["name"], True, label_color)
                 label_rect = label.get_rect(center=(pos.x, pos.y - radius - int(14 * self.zoom)))
-                # Draw label background for readability
-                bg_pad = 3
-                bg_rect = label_rect.inflate(bg_pad * 2, bg_pad)
-                bg_surface = pygame.Surface(bg_rect.size, pygame.SRCALPHA)
-                bg_surface.fill((16, 16, 22, 160))
-                surface.blit(bg_surface, bg_rect)
+                bg_rect = label_rect.inflate(8, 4)
+                if branch and is_unlocked:
+                    theme = self.BRANCH_THEMES.get(branch, self.BRANCH_THEMES["arcane"])
+                    bg_alpha = 100
+                    bg_color = (theme["primary"][0], theme["primary"][1], theme["primary"][2])
+                else:
+                    bg_alpha = 80
+                    bg_color = (16, 16, 22)
+                bg_surf = pygame.Surface(bg_rect.size, pygame.SRCALPHA)
+                bg_surf.fill((*bg_color, bg_alpha))
+                surface.blit(bg_surf, bg_rect)
                 surface.blit(label, label_rect)
 
+    def _draw_gradient_rect(self, surface, rect, color_top, color_bottom, border_radius=0):
+        """Draw a vertical gradient rectangle. Cached."""
+        cache_key = (rect.width, rect.height, color_top, color_bottom, border_radius)
+        if not hasattr(self, '_gradient_cache'):
+            self._gradient_cache = {}
+        if cache_key in self._gradient_cache:
+            temp = self._gradient_cache[cache_key]
+        else:
+            height = rect.height
+            temp = pygame.Surface((rect.width, height), pygame.SRCALPHA)
+            for y in range(height):
+                t = y / max(1, height - 1)
+                r = int(color_top[0] + (color_bottom[0] - color_top[0]) * t)
+                g = int(color_top[1] + (color_bottom[1] - color_top[1]) * t)
+                b = int(color_top[2] + (color_bottom[2] - color_top[2]) * t)
+                pygame.draw.line(temp, (r, g, b), (0, y), (rect.width, y))
+            if border_radius > 0:
+                mask = pygame.Surface((rect.width, height), pygame.SRCALPHA)
+                mask.fill((0, 0, 0, 0))
+                pygame.draw.rect(mask, (255, 255, 255, 255), (0, 0, rect.width, height), border_radius=border_radius)
+                temp.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
+            self._gradient_cache[cache_key] = temp
+        surface.blit(temp, rect)
+
     def _draw_sidebar(self, screen, selected_node):
-        pygame.draw.rect(screen, (24, 24, 30), self.sidebar_rect, border_radius=18)
-        pygame.draw.rect(screen, (82, 82, 96), self.sidebar_rect, 2, border_radius=18)
+        r = self.sidebar_rect
+        t = self.animation_time
 
-        title = self.title_font.render(_("Skill Tree"), True, (235, 235, 245))
-        screen.blit(title, (self.sidebar_rect.x + 18, self.sidebar_rect.y + 18))
+        # ── Glassmorphism gradient background ──
+        self._draw_gradient_rect(screen, r, (18, 14, 28), (10, 10, 20), border_radius=18)
+        pygame.draw.rect(screen, (62, 55, 82), r, 2, border_radius=18)
+        inner_border = r.inflate(-4, -4)
+        pygame.draw.rect(screen, (42, 38, 58), inner_border, 1, border_radius=16)
 
-        hint_text = _("Wheel: zoom. Right mouse: pan. Left click: inspect.")
-        hint_lines = self._wrap_text(hint_text, self.small_font, self.sidebar_rect.width - 36)
-        y = self.sidebar_rect.y + 70
-        for line in hint_lines:
-            hint = self.small_font.render(line, True, (190, 190, 200))
-            screen.blit(hint, (self.sidebar_rect.x + 18, y))
-            y += hint.get_height() + 4
+        # ── Corner ornaments ──
+        orn_len = 20
+        orn_color = (140, 120, 180)
+        for corner in [(r.x, r.y), (r.right, r.y), (r.x, r.bottom), (r.right, r.bottom)]:
+            cx, cy = corner
+            hor_dir = 1 if corner[0] == r.x else -1
+            ver_dir = 1 if corner[1] == r.y else -1
+            pygame.draw.line(screen, orn_color,
+                             (cx, cy), (cx + hor_dir * orn_len, cy), 2)
+            pygame.draw.line(screen, orn_color,
+                             (cx, cy), (cx, cy + ver_dir * orn_len), 2)
 
+        # ── Title with glow ──
+        title_text = _("✦ Skill Tree ✦")
+        glow_a = int((math.sin(t * 1.5) + 1.0) * 60 + 60)
+        for i in range(4):
+            glow_surf = self.title_font.render(title_text, True, (100, 80, 160))
+            glow_surf.set_alpha(glow_a // (i + 1))
+            screen.blit(glow_surf, (r.x + 18 + i, r.y + 18 + i))
+        title = self.title_font.render(title_text, True, (235, 230, 250))
+        screen.blit(title, (r.x + 18, r.y + 18))
+
+        # ── Decorative divider ──
+        div_y = r.y + 18 + title.get_height() + 12
+        for i in range(r.width - 36):
+            x = r.x + 18 + i
+            alpha = int((1.0 - abs(i / max(1, r.width - 36) - 0.5) * 2) * 120)
+            pygame.draw.line(screen, (100, 80, 160, alpha), (x, div_y), (x, div_y + 1))
+
+        # ── Controls hint ──
+        hint_text = _("Scroll · zoom  |  Right-drag · pan  |  Click · inspect")
+        hint = self.small_font.render(hint_text, True, (140, 140, 165))
+        screen.blit(hint, (r.x + 18, div_y + 10))
+
+        # ── Points display (gem icon style) ──
         character = self._character()
         points = getattr(character, "skill_tree_points", 0) if character else 0
-        points_text = self.section_font.render(f"{_('Points')}: {points}", True, (235, 235, 245))
-        screen.blit(points_text, (self.sidebar_rect.x + 18, y + 10))
-        y += points_text.get_height() + 18
+        py = div_y + 10 + hint.get_height() + 16
+        pts_pulse = (math.sin(t * 2.0) + 1.0) * 0.5
+        pts_glow = int(160 + 60 * pts_pulse)
+        points_label = self.section_font.render(f"{_('Talent Points')}", True, (180, 175, 195))
+        screen.blit(points_label, (r.x + 18, py))
+        py += points_label.get_height() + 4
+        points_text = self.title_font.render(f"{points}", True, (pts_glow, 210 + int(45 * pts_pulse), 220))
+        screen.blit(points_text, (r.x + 18, py))
+        py += points_text.get_height() + 18
+
+        # ── Second decorative divider ──
+        for i in range(r.width - 36):
+            x = r.x + 18 + i
+            alpha = int((1.0 - abs(i / max(1, r.width - 36) - 0.5) * 2) * 80)
+            pygame.draw.line(screen, (70, 60, 90, alpha), (x, py), (x, py + 1))
+        py += 8
 
         if selected_node is None:
+            # Show empty state hint
+            empty = self.small_font.render(_("Select a node to inspect"), True, (110, 110, 135))
+            screen.blit(empty, (r.x + 18, py))
             return
 
-        name = self.section_font.render(selected_node["name"], True, (235, 235, 245))
-        screen.blit(name, (self.sidebar_rect.x + 18, y))
-        y += name.get_height() + 8
-
-        kind_map = {
-            "core": _("Core"),
-            "minor": _("Minor"),
-            "major": _("Notable"),
-            "keystone": _("Keystone"),
-        }
-        kind = kind_map.get(selected_node.get("kind"), _("Unknown"))
-        kind_text = self.small_font.render(f"{_('Type')}: {kind}", True, (210, 210, 220))
-        screen.blit(kind_text, (self.sidebar_rect.x + 18, y))
-        y += kind_text.get_height() + 6
-
+        # ── Selected node info ──
         unlocked = self._get_unlocked_nodes()
-        status_label = _("Unlocked") if selected_node["id"] in unlocked else _("Locked")
-        status_text = self.small_font.render(f"{_('Status')}: {status_label}", True, (210, 210, 220))
-        screen.blit(status_text, (self.sidebar_rect.x + 18, y))
-        y += status_text.get_height() + 8
+        is_unlocked = selected_node["id"] in unlocked
+        branch = selected_node.get("branch", "arcane")
+        theme = self.BRANCH_THEMES.get(branch, self.BRANCH_THEMES["arcane"])
 
-        effect_label = f"{_('Effect')}: {selected_node['effect']}"
-        effect_lines = self._wrap_text(effect_label, self.small_font, self.sidebar_rect.width - 36)
-        for line in effect_lines:
-            line_surf = self.small_font.render(line, True, (210, 210, 220))
-            screen.blit(line_surf, (self.sidebar_rect.x + 18, y))
-            y += line_surf.get_height() + 4
+        # Node name with branch accent color
+        name_color = theme["accent"] if is_unlocked else (180, 180, 195)
+        name = self.section_font.render(selected_node["name"], True, name_color)
+        screen.blit(name, (r.x + 18, py))
+        py += name.get_height() + 6
 
-        note_text = _("Effects are placeholders and do not apply yet.")
-        note_lines = self._wrap_text(note_text, self.small_font, self.sidebar_rect.width - 36)
-        y += 6
-        for line in note_lines:
-            line_surf = self.small_font.render(line, True, (180, 180, 190))
-            screen.blit(line_surf, (self.sidebar_rect.x + 18, y))
-            y += line_surf.get_height() + 4
+        # Kind badge
+        kind_map = {
+            "core": (_("Core"), (180, 180, 220)),
+            "minor": (_("Minor"), (160, 180, 160)),
+            "major": (_("Notable"), theme["secondary"]),
+            "keystone": (_("Keystone"), theme["glow"]),
+        }
+        kind_label, kind_color = kind_map.get(selected_node.get("kind"), (_("Unknown"), (180, 180, 180)))
+        badge_rect = pygame.Rect(r.x + 18, py, 0, 0)
+        kind_surf = self.small_font.render(kind_label, True, (20, 18, 28))
+        bw = kind_surf.get_width() + 14
+        bh = kind_surf.get_height() + 6
+        badge_rect = pygame.Rect(r.x + 18, py, bw, bh)
+        pygame.draw.rect(screen, (*kind_color[:3], 40), badge_rect, border_radius=5)
+        pygame.draw.rect(screen, kind_color, badge_rect, 1, border_radius=5)
+        screen.blit(kind_surf, (badge_rect.x + 7, badge_rect.y + 3))
+        py += bh + 6
+
+        # Status with animated icon
+        if is_unlocked:
+            status_pulse = (math.sin(t * 2.5) + 1.0) * 0.5
+            status_glow = int(180 + 75 * status_pulse)
+            status_color = (100 + int(100 * status_pulse), status_glow, 100 + int(100 * status_pulse))
+            status_icon = "● "
+        else:
+            status_color = (200, 180, 100)
+            status_icon = "○ "
+        status_text = self.small_font.render(status_icon + (_("Unlocked") if is_unlocked else _("Locked")), True, status_color)
+        screen.blit(status_text, (r.x + 18, py))
+        py += status_text.get_height() + 8
+
+        # Cost with gem icon
+        cost_map = {"minor": 1, "major": 2, "keystone": 3, "core": 0}
+        cost = cost_map.get(selected_node.get("kind"), 1)
+        if cost > 0:
+            cost_surf = self.small_font.render(f"◆ {cost} {_('point(s)')}", True, (220, 200, 130))
+            screen.blit(cost_surf, (r.x + 18, py))
+            py += cost_surf.get_height() + 8
+
+        # Effect text with quote style
+        if selected_node["effect"]:
+            eff_bg = pygame.Rect(r.x + 14, py - 2, r.width - 28, 0)
+            eff_lines = self._wrap_text(selected_node["effect"], self.small_font, r.width - 44)
+            total_h = sum(self.small_font.get_height() + 4 for _ in eff_lines) + 8
+            eff_bg.h = total_h
+            pygame.draw.rect(screen, (22, 20, 32), eff_bg, border_radius=6)
+            pygame.draw.rect(screen, (45, 40, 60), eff_bg, 1, border_radius=6)
+            for line in eff_lines:
+                line_surf = self.small_font.render(line, True, (190, 190, 210))
+                screen.blit(line_surf, (r.x + 22, py + 4))
+                py += line_surf.get_height() + 4
+            py += 6
+        else:
+            py += 4
+
+        # Connected nodes
+        adjacent = self._get_adjacent_nodes(selected_node["id"])
+        if adjacent:
+            conn_text = self.small_font.render(_("Connections:"), True, (150, 150, 175))
+            screen.blit(conn_text, (r.x + 18, py))
+            py += conn_text.get_height() + 2
+            adj_unlocked = sum(1 for a in adjacent if a in unlocked)
+            adj_total = len(adjacent)
+            conn_detail = self.small_font.render(f"  {adj_unlocked}/{adj_total} unlocked", True, (140, 140, 165))
+            screen.blit(conn_detail, (r.x + 18, py))
+            py += conn_detail.get_height() + 4
 
         # Update unlock button state and text
         if selected_node is None:
             self.unlock_button.set_text("")
         else:
-            kind = selected_node.get("kind")
-            # cost mapping: minor(normal)=1, major(notable)=2, keystone(best)=3
-            cost_map = {"minor": 1, "major": 2, "keystone": 3, "core": 0}
-            cost = cost_map.get(kind, 1)
             if selected_node["id"] in unlocked or cost == 0:
-                self.unlock_button.set_text(_("Unlocked"))
+                self.unlock_button.set_text(_("✓ Unlocked"))
             else:
-                self.unlock_button.set_text(f"{_('Unlock')} ({cost})")
+                self.unlock_button.set_text(f"{_('Unlock')} ◆ {cost}")
 
     def draw(self, screen: pygame.Surface):
         self.layout(screen)
@@ -2127,30 +2627,35 @@ class SkillTreeMenu(Menu):
         self._update_particles(dt)
 
         # Dark background fill
-        screen.fill((10, 10, 16))
+        screen.fill((10, 8, 18))
         
-        # During entrance phase 0 (void), draw almost nothing — just a dark screen
-        # The tree area border fades in during phase 1
         entrance_border_alpha = 1.0
         if self.entrance_active and self.entrance_phase <= 1:
             if self.entrance_phase == 0:
                 entrance_border_alpha = 0.0
             elif self.entrance_phase == 1:
                 entrance_border_alpha = min(1.0, self.entrance_phase_time / 0.8)
-        
-        # Draw tree area background with subtle gradient border
-        border_color = (18, 18, 24)
-        if entrance_border_alpha < 1.0:
-            border_color = tuple(int(c * entrance_border_alpha) for c in border_color)
+
+        # Tree area background with border
+        border_color = tuple(int(c * entrance_border_alpha) for c in (14, 12, 22))
         pygame.draw.rect(screen, border_color, self.tree_rect, border_radius=18)
-        
-        # Decorative double border (fades in)
+
         if entrance_border_alpha > 0.1:
-            outer_border = tuple(int(c * entrance_border_alpha) for c in (55, 55, 72))
+            # Outer glow border
+            outer_border = tuple(int(c * entrance_border_alpha) for c in (55, 50, 78))
             pygame.draw.rect(screen, outer_border, self.tree_rect, 2, border_radius=18)
-            inner_border = tuple(int(c * entrance_border_alpha) for c in (35, 35, 48))
+            # Inner border
             inner_rect = self.tree_rect.inflate(-4, -4)
+            inner_border = tuple(int(c * entrance_border_alpha) for c in (35, 32, 50))
             pygame.draw.rect(screen, inner_border, inner_rect, 1, border_radius=16)
+            # Corner accents on tree area
+            orn_len = 16
+            orn_color = (120, 100, 160, int(120 * entrance_border_alpha))
+            tr = self.tree_rect
+            for cx, cy, hdx, hdy in [(tr.x, tr.y, 1, 1), (tr.right, tr.y, -1, 1),
+                                      (tr.x, tr.bottom, 1, -1), (tr.right, tr.bottom, -1, -1)]:
+                pygame.draw.line(screen, orn_color[:3], (cx, cy), (cx + hdx * orn_len, cy), 2)
+                pygame.draw.line(screen, orn_color[:3], (cx, cy), (cx, cy + hdy * orn_len), 2)
 
         old_clip = screen.get_clip()
         screen.set_clip(self.tree_rect)
@@ -2191,14 +2696,19 @@ class SkillTreeMenu(Menu):
         
         screen.set_clip(old_clip)
 
-        # Draw node count info in bottom-left of tree area (fade in after entrance)
+        # Draw node count info in bottom-left of tree area
         if not self.entrance_active or self.entrance_phase >= 5:
             total_nodes = len(self.nodes)
             unlocked_count = len(unlocked)
+            prog_pulse = (math.sin(self.animation_time * 1.5) + 1.0) * 0.5
+            prog_color = (60 + int(60 * prog_pulse), 120 + int(60 * prog_pulse), 60 + int(60 * prog_pulse))
+            info_bg = pygame.Rect(self.tree_rect.x + 8, self.tree_rect.bottom - 34, 160, 26)
+            pygame.draw.rect(screen, (16, 14, 24, 180), info_bg, border_radius=6)
+            pygame.draw.rect(screen, (45, 42, 60), info_bg, 1, border_radius=6)
             info_text = self.small_font.render(
-                f"{unlocked_count}/{total_nodes} nodes", True, (100, 100, 120)
+                f"✦ {unlocked_count}/{total_nodes} nodes", True, prog_color
             )
-            screen.blit(info_text, (self.tree_rect.x + 12, self.tree_rect.bottom - info_text.get_height() - 8))
+            screen.blit(info_text, (info_bg.x + 8, info_bg.y + 3))
 
         selected_node = self.nodes_by_id.get(self.selected_node_id)
         self._draw_sidebar(screen, selected_node)

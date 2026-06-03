@@ -193,6 +193,7 @@ class Enemy:
         self.attack_range = attack_range
         self._ai_context = AIContext(dt=0.0, nav_grid=None, obstacles=[], player=None)
 
+        self.effects = []
         # Status effect container (matches the player's API so weapons
         # can apply burn / poison / etc. by calling enemy.add_effect()).
         self.effects: list = []
@@ -238,10 +239,23 @@ class Enemy:
         self.rect = pygame.Rect(int(self.pos.x + offset_x), int(self.pos.y + offset_y), hitbox_width, hitbox_height)
         return self.rect
 
+    def add_effect(self, effect):
+        for e in self.effects:
+            if type(e) == type(effect):
+                self.effects.remove(e)
+                self.effects.append(effect)
+                return
+        self.effects.append(effect)
+
     def update(self, dt: float, collision_system, obstacles, nav_grid=None, attack_context=None, active: bool = True):
         if self.hit_flash_timer > 0:
             self.hit_flash_timer -= dt
 
+        # Update effects
+        for effect in self.effects[:]:
+            effect.update(dt, self)
+            if effect.is_finished:
+                self.effects.remove(effect)
         # Tick status effects first so debuffs can modify speed_multiplier
         # before the movement code below consumes it.
         self._tick_effects(dt)
@@ -254,20 +268,25 @@ class Enemy:
             self.image = self.animations[self.direction][self.frame_index]
             return
 
-        self._ai_context.dt = dt
-        self._ai_context.nav_grid = nav_grid
-        self._ai_context.obstacles = obstacles
-        self._ai_context.player = self.target_entity
+        # Skip AI and attacks while frozen (speed_multiplier == 0)
+        if self.speed_multiplier > 0:
+            self._ai_context.dt = dt
+            self._ai_context.nav_grid = nav_grid
+            self._ai_context.obstacles = obstacles
+            self._ai_context.player = self.target_entity
 
-        if self.brain:
-            self.brain.update(self, self._ai_context)
+            if self.brain:
+                self.brain.update(self, self._ai_context)
 
-        if self.attack_controller and attack_context:
-            self.attack_controller.update(self, attack_context)
+            if self.attack_controller and attack_context:
+                self.attack_controller.update(self, attack_context)
 
-        self.speed = self.base_speed * self.speed_multiplier
-
-        self._move(dt)
+            self.speed = self.base_speed * self.speed_multiplier
+            self._move(dt)
+        else:
+            self.speed = 0.0
+            self.velocity = pygame.Vector2(0, 0)
+            self.moving = False
 
         collision_system.handle_movement_and_collision(self, dt, obstacles)
 
@@ -304,7 +323,7 @@ class Enemy:
             self.frame_index = 0
             self.image = self.animations[self.direction][0]
 
-    def take_damage(self, amount: int) -> bool:
+    def take_damage(self, amount: int, ignore_invulnerability=False) -> bool:
         prev = self.hp
         self.hp = max(0, self.hp - amount)
         logger.debug(f"Enemy {getattr(self, 'ai_profile', 'unknown')} took {amount} damage: {prev} -> {self.hp}")
