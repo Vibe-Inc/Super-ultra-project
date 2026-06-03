@@ -54,6 +54,16 @@ class PauseMenu(Menu):
             ),
             Button(
                 pygame.Rect(cx, int(650 * scale), button_width, button_height),
+                _("WIKI"),
+                cfg.button_color_CREDITS,
+                cfg.button_hover_color_CREDITS,
+                cfg.button_font,
+                cfg.text_color,
+                cfg.corner_radius,
+                on_click=self.open_wiki
+            ),
+            Button(
+                pygame.Rect(cx, int(800 * scale), button_width, button_height),
                 _("RESUME"),
                 cfg.button_color_START,
                 cfg.button_hover_color_START,
@@ -63,7 +73,7 @@ class PauseMenu(Menu):
                 on_click=self.resume_game
             ),
             Button(
-                pygame.Rect(cx, int(800 * scale), button_width, button_height),
+                pygame.Rect(cx, int(950 * scale), button_width, button_height),
                 _("MAIN MENU"),
                 cfg.button_color_EXIT,
                 cfg.button_hover_color_EXIT,
@@ -92,6 +102,7 @@ class PauseMenu(Menu):
             (center_x - button_width // 2, int(sh * 0.42)),
             (center_x - button_width // 2, int(sh * 0.56)),
             (center_x - button_width // 2, int(sh * 0.70)),
+            (center_x - button_width // 2, int(sh * 0.84)),
         ]
         for button, (x, y) in zip(self.buttons, positions):
             button.rect = pygame.Rect(x, y, button_width, button_height)
@@ -104,6 +115,9 @@ class PauseMenu(Menu):
         self.app.manager.states["save_load"].mode = "save"
         self.app.manager.states["save_load"].refresh_saves()
         self.app.manager.set_state("save_load")
+
+    def open_wiki(self):
+        self.app.manager.set_state("wiki")
 
     def resume_game(self):
         self.app.manager.set_state("gameplay")

@@ -2,7 +2,7 @@ import pygame
 from typing import TYPE_CHECKING
 
 from src.core.logger import logger
-from src.ui.menus import MainMenu, SettingsMenu, CreditsMenu, PauseMenu, SaveLoadMenu, SkillbarMenu, SkillTreeMenu, RecipeBookMenu
+from src.ui.menus import MainMenu, SettingsMenu, CreditsMenu, PauseMenu, SaveLoadMenu, SkillbarMenu, SkillTreeMenu, RecipeBookMenu, WikiMenu
 from src.core.game import Game
 
 if TYPE_CHECKING:
@@ -45,7 +45,8 @@ class StateManager:
             "skill_tree": SkillTreeMenu(app),
             "pause": PauseMenu(app),
             "save_load": SaveLoadMenu(app),
-            "recipe_book": RecipeBookMenu(app)
+            "recipe_book": RecipeBookMenu(app),
+            "wiki": WikiMenu(app)
         }
         self.current_state = None
 
@@ -92,7 +93,8 @@ class StateManager:
             "skill_tree": SkillTreeMenu(self.states["main"].app),
             "pause": PauseMenu(self.states["pause"].app),
             "save_load": SaveLoadMenu(self.states["main"].app),
-            "recipe_book": RecipeBookMenu(self.states["main"].app)
+            "recipe_book": RecipeBookMenu(self.states["main"].app),
+            "wiki": WikiMenu(self.states["main"].app)
         }
         
         if current_name:
