@@ -227,7 +227,7 @@ class INVENTORY_manager:
                     scale = cfg.ui_scale()
                     craft_width = (self.crafting_system.slot_size + self.crafting_system.border) * 3
 
-                    craft_x = equip_inv.pos_x - craft_width - int(15 * scale)
+                    craft_x = equip_inv.pos_x - craft_width - int(8 * scale)
                     craft_y = equip_inv.pos_y
 
                     self.crafting_system.update_positions(craft_x, craft_y)
@@ -374,12 +374,13 @@ class INVENTORY_manager:
             if self.current_shop_inv is shop_inv: self.current_shop_inv = None
         else:
             self.player_inventory_opened = True
-            new_pl_inv_x = cfg.SCREEN_WIDTH // 2 - 500
+            sc = cfg.ui_scale()
+            new_pl_inv_x = cfg.SCREEN_WIDTH // 2 - int(500 * sc)
             pl_inv.pos_x = new_pl_inv_x
             if equip_inv:
                 equip_offset = cfg.MAIN_INV_equipment_pos_x - cfg.MAIN_INV_pos_x
                 equip_inv.pos_x = new_pl_inv_x + equip_offset
-            shop_inv.pos_x = cfg.SCREEN_WIDTH // 2 + 100
+            shop_inv.pos_x = cfg.SCREEN_WIDTH // 2 + int(100 * sc)
             shop_inv.pos_y = pl_inv.pos_y
             self.add_active_inventory(pl_inv)
             if equip_inv:

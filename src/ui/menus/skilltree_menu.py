@@ -108,6 +108,36 @@ class SkillTreeMenu(Menu):
         
         # Swirling convergence vortex particles
         self.entrance_vortex = []
+
+        # Anticipation lights for phase 0 (shimmer before stars appear)
+        self.entrance_anticipation_lights = []
+
+        # Star bloom multiplier for phase 1
+        self.entrance_star_bloom = 0.0
+
+        # Screen shake for phase 3
+        self.entrance_shake_offset = pygame.Vector2(0, 0)
+        self.entrance_shake_intensity = 0.0
+
+        # Energy after-wave pulses for phase 4/5
+        self.entrance_energy_pulses = []
+        self._pulse_waves_spawned = False
+
+        # Continuous BFS growth timer (phase-independent for smooth transitions)
+        self.entrance_growth_timer = 0.0
+
+        # ─── Periodic core pulse wave (wow effect) ───
+        self.core_pulse_timer = 0.0
+        self.core_pulse_interval = 7.0
+        self.core_pulse_rings = []       # expanding rings
+        self.core_pulse_flash = 0.0
+
+        # ─── Node ambient sparkles ───
+        self.node_sparkles = []
+
+        # ─── Breathing / idle animation ───
+        self.idle_breathe = 0.0
+        self.breathe_scale = 1.0
         
         self.nodes, self.links = self._build_tree()
         self.nodes_by_id = {node["id"]: node for node in self.nodes}
@@ -149,18 +179,32 @@ class SkillTreeMenu(Menu):
     def _init_particles(self):
         """Initialize floating particles for ambient background effect."""
         self.particles = []
+        self.ambient_orbs = []
         branch_colors = []
         for theme in self.BRANCH_THEMES.values():
             branch_colors.extend([theme["glow"], theme["secondary"], theme["accent"], theme["primary"]])
-        for _ in range(35):
+        for _ in range(60):
             self.particles.append({
-                "x": random.uniform(-750, 750),
-                "y": random.uniform(-650, 650),
+                "x": random.uniform(-780, 780),
+                "y": random.uniform(-680, 680),
                 "size": random.uniform(1, 3.5),
                 "speed_x": random.uniform(-0.15, 0.15),
                 "speed_y": random.uniform(-0.35, -0.05),
                 "alpha": random.uniform(0.2, 0.7),
                 "pulse_speed": random.uniform(0.5, 2.5),
+                "color": random.choice(branch_colors),
+                "pulse_offset": random.uniform(0, math.pi * 2),
+            })
+        # Large ambient floating orbs for atmosphere
+        for _ in range(8):
+            self.ambient_orbs.append({
+                "x": random.uniform(-600, 600),
+                "y": random.uniform(-500, 500),
+                "radius": random.uniform(60, 160),
+                "speed_x": random.uniform(-3, 3),
+                "speed_y": random.uniform(-2, 2),
+                "alpha": random.uniform(0.03, 0.08),
+                "pulse_speed": random.uniform(0.3, 0.8),
                 "color": random.choice(branch_colors),
                 "pulse_offset": random.uniform(0, math.pi * 2),
             })
@@ -190,10 +234,38 @@ class SkillTreeMenu(Menu):
         self.entrance_glow = 1.0
         
         rng = random.Random(42)
-        
+
+        # Pre-generate anticipation lights for phase 0 (faint shimmer in the void)
+        self.entrance_anticipation_lights = []
+        for _ in range(50):
+            a = rng.uniform(0, math.pi * 2)
+            d = rng.uniform(80, 680)
+            self.entrance_anticipation_lights.append({
+                "angle": a,
+                "dist": d,
+                "size": rng.uniform(0.5, 2.0),
+                "phase": rng.uniform(0, math.pi * 2),
+                "speed": rng.uniform(0.5, 2.5),
+                "brightness": rng.uniform(0.04, 0.15),
+            })
+
+        # Reset star bloom
+        self.entrance_star_bloom = 0.0
+        self.entrance_shake_offset = pygame.Vector2(0, 0)
+        self.entrance_shake_intensity = 0.0
+        self.entrance_energy_pulses = []
+        self._pulse_waves_spawned = False
+        self.entrance_growth_timer = 0.0
+        self.core_pulse_rings.clear()
+        self.node_sparkles.clear()
+        self.core_pulse_flash = 0.0
+        self.core_pulse_timer = 0.0
+        self.idle_breathe = 0.0
+        self.breathe_scale = 1.0
+
         # Pre-generate vortex particles that will spiral into the center
         self.entrance_vortex = []
-        for _ in range(120):
+        for _ in range(200):
             angle = rng.uniform(0, math.pi * 2)
             dist = rng.uniform(300, 700)
             speed = rng.uniform(0.6, 1.8)
@@ -269,28 +341,38 @@ class SkillTreeMenu(Menu):
         
         # ─── Phase transitions ───
         if self.entrance_phase == 0:
-            # Phase 0: Void — brief darkness (0.4s)
-            if self.entrance_phase_time >= 0.4:
+            # Phase 0: Void with anticipation shimmer (0.8s)
+            # Lights pulse more intensely as phase progresses
+            if self.entrance_phase_time >= 0.8:
                 self.entrance_phase = 1
                 self.entrance_phase_time = 0.0
         
         elif self.entrance_phase == 1:
-            # Phase 1: Starfield — background stars fade in (0.8s)
-            self.entrance_star_alpha = min(1.0, self.entrance_phase_time / 0.8)
-            if self.entrance_phase_time >= 0.8:
+            # Phase 1: Starfield — background stars fade in AND bloom in size (1.0s)
+            self.entrance_star_alpha = min(1.0, self.entrance_phase_time / 1.0)
+            self.entrance_star_bloom = min(1.0, self.entrance_phase_time / 0.7)
+            # Pre-fade vortex particles in during last 0.3s of phase 1 → smooth transition
+            if self.entrance_phase_time > 0.7:
+                pre_fade = (self.entrance_phase_time - 0.7) / 0.3
+                for vp in self.entrance_vortex:
+                    vp["alpha"] = min(vp["brightness"] * pre_fade, vp["alpha"] + dt * 3.0)
+            if self.entrance_phase_time >= 1.0:
                 self.entrance_phase = 2
                 self.entrance_phase_time = 0.0
         
         elif self.entrance_phase == 2:
-            # Phase 2: Convergence — vortex particles spiral inward (1.8s)
+            # Phase 2: Convergence — vortex particles spiral inward (2.2s)
             # Also start moving sparks toward their targets
-            progress = min(1.0, self.entrance_phase_time / 1.8)
+            progress = min(1.0, self.entrance_phase_time / 2.2)
             self.entrance_progress = progress * 0.3  # map to 0..0.3 range
             
             # Update vortex particles: spiral inward
             for vp in self.entrance_vortex:
-                # Fade in
-                vp["alpha"] = min(vp["brightness"], vp["alpha"] + dt * 2.0)
+                # Fade in (early), fade out (late) for smooth transition
+                if self.entrance_phase_time > 1.6:
+                    vp["alpha"] = max(0, vp["alpha"] - dt * 1.5)
+                else:
+                    vp["alpha"] = min(vp["brightness"], vp["alpha"] + dt * 2.0)
                 # Spiral inward
                 vp["dist"] = max(0, vp["dist"] - vp["speed"] * 180 * dt)
                 vp["angle"] += vp["orbit_speed"] * dt
@@ -305,35 +387,37 @@ class SkillTreeMenu(Menu):
             # Also update sparks (they start moving during convergence)
             self._update_entrance_sparks(dt)
             
-            if self.entrance_phase_time >= 1.8:
+            if self.entrance_phase_time >= 2.2:
                 self.entrance_phase = 3
                 self.entrance_phase_time = 0.0
-                # Trigger core ignition!
-                self.core_ignition_flash = 1.0
+                # Trigger core ignition — ramp flash from 0 for smooth start
+                self.core_ignition_flash = 0.0
+                self._core_flash_ramp = 0.0
+                self.entrance_shake_intensity = 12.0
                 # Spawn expanding energy rings from core
-                for i in range(5):
+                for i in range(7):
                     self.core_ignition_rings.append({
                         "radius": 0,
-                        "max_radius": 200 + i * 80,
-                        "speed": 250 + i * 40,
-                        "alpha": 0.9 - i * 0.1,
-                        "width": 4 - i * 0.5,
-                        "delay": i * 0.12,
+                        "max_radius": 180 + i * 70,
+                        "speed": 280 + i * 35,
+                        "alpha": 0.9 - i * 0.08,
+                        "width": 5 - i * 0.4,
+                        "delay": i * 0.1,
                         "started": False,
                     })
                 # Spawn burst particles from core
-                for _ in range(60):
+                for _ in range(120):
                     angle = random.uniform(0, math.pi * 2)
-                    speed = random.uniform(80, 300)
-                    life = random.uniform(0.5, 1.5)
+                    speed = random.uniform(60, 350)
+                    life = random.uniform(0.4, 1.8)
                     branch = random.choice(list(self.BRANCH_THEMES.keys()))
                     theme = self.BRANCH_THEMES[branch]
-                    color = random.choice([theme["glow"], theme["accent"], (255, 255, 255)])
+                    color = random.choice([theme["glow"], theme["secondary"], theme["accent"], (255, 255, 255)])
                     self.core_ignition_particles.append({
                         "x": 0, "y": 0,
                         "vx": math.cos(angle) * speed,
                         "vy": math.sin(angle) * speed,
-                        "size": random.uniform(2, 6),
+                        "size": random.uniform(2, 7),
                         "life": life,
                         "max_life": life,
                         "color": color,
@@ -349,8 +433,20 @@ class SkillTreeMenu(Menu):
                         self.entrance_growth_frontier.append((a, 0.0))
         
         elif self.entrance_phase == 3:
-            # Phase 3: Core ignition flash + rings expanding (1.2s)
-            self.core_ignition_flash = max(0, self.core_ignition_flash - dt * 2.5)
+            # Phase 3: Core ignition flash + rings expanding + screen shake (1.5s)
+            # Smooth flash ramp: build up over 0.15s, then decay
+            if not hasattr(self, '_core_flash_ramp'):
+                self._core_flash_ramp = 0.0
+            self._core_flash_ramp = min(1.0, self._core_flash_ramp + dt * 7.0)
+            self.core_ignition_flash = max(0, (1.0 - self.entrance_phase_time * 2.5 / 1.5)) * self._core_flash_ramp
+            # Screen shake decays
+            self.entrance_shake_intensity = max(0, self.entrance_shake_intensity - dt * 20)
+            if self.entrance_shake_intensity > 0.5:
+                self.entrance_shake_offset = pygame.Vector2(
+                    random.uniform(-1, 1) * self.entrance_shake_intensity,
+                    random.uniform(-1, 1) * self.entrance_shake_intensity,
+                )
+            # (BFS growth runs continuously via _process_branch_growth at the end of _update_entrance)
             
             # Update ignition rings
             for ring in self.core_ignition_rings:
@@ -385,11 +481,12 @@ class SkillTreeMenu(Menu):
             # Continue sparks
             self._update_entrance_sparks(dt)
             
-            self.entrance_progress = 0.3 + min(0.15, self.entrance_phase_time / 1.2 * 0.15)
+            self.entrance_progress = 0.3 + min(0.15, self.entrance_phase_time / 1.5 * 0.15)
             
-            if self.entrance_phase_time >= 1.2:
+            if self.entrance_phase_time >= 1.5:
                 self.entrance_phase = 4
                 self.entrance_phase_time = 0.0
+                self.entrance_shake_offset = pygame.Vector2(0, 0)
         
         elif self.entrance_phase == 4:
             # Phase 4: Branch growth — energy spreads from core outward through links
@@ -397,56 +494,7 @@ class SkillTreeMenu(Menu):
             growth_speed = 220  # nodes per second conceptually
             max_phase_duration = 8.0  # fallback timeout
             
-            # Process frontier: reveal nodes and spawn link travels
-            new_frontier = []
-            for node_id, arrival_time in self.entrance_growth_frontier:
-                if node_id in self.entrance_revealed_nodes:
-                    continue
-                if self.entrance_phase_time >= arrival_time:
-                    self.entrance_revealed_nodes.add(node_id)
-                    # Find links from this node to unrevealed neighbors
-                    for a, b in self.links:
-                        neighbor = None
-                        if a == node_id and b not in self.entrance_revealed_nodes:
-                            neighbor = b
-                        elif b == node_id and a not in self.entrance_revealed_nodes:
-                            neighbor = a
-                        if neighbor is not None:
-                            # Calculate distance for travel time
-                            node_a = self.nodes_by_id.get(a)
-                            node_b = self.nodes_by_id.get(b)
-                            if node_a and node_b:
-                                dist = math.sqrt((node_a["pos"].x - node_b["pos"].x)**2 + 
-                                                (node_a["pos"].y - node_b["pos"].y)**2)
-                                travel_time = dist / growth_speed
-                                link_key = (min(a, b), max(a, b))
-                                if link_key not in self.entrance_revealed_links:
-                                    self.entrance_revealed_links.add(link_key)
-                                    self.entrance_link_travels.append({
-                                        "from_id": node_id,
-                                        "to_id": neighbor,
-                                        "progress": 0.0,
-                                        "speed": 1.0 / max(0.15, travel_time),
-                                        "alpha": 1.0,
-                                    })
-                                # Only add if not already in new_frontier
-                                if not any(nid == neighbor for nid, _ in new_frontier):
-                                    new_frontier.append((neighbor, self.entrance_phase_time + travel_time))
-                else:
-                    # Node hasn't reached arrival time yet — keep it in the frontier!
-                    if not any(nid == node_id for nid, _ in new_frontier):
-                        new_frontier.append((node_id, arrival_time))
-            
-            self.entrance_growth_frontier = new_frontier
-            
-            # Update link travel visuals
-            for travel in self.entrance_link_travels:
-                travel["progress"] = min(1.0, travel["progress"] + dt * travel["speed"])
-                if travel["progress"] >= 1.0:
-                    travel["alpha"] = max(0, travel["alpha"] - dt * 3.0)
-            
-            # Clean up finished travels
-            self.entrance_link_travels = [t for t in self.entrance_link_travels if t["alpha"] > 0.01]
+            # BFS growth runs continuously via _process_branch_growth at end of _update_entrance
             
             # Update remaining sparks
             self._update_entrance_sparks(dt)
@@ -454,6 +502,25 @@ class SkillTreeMenu(Menu):
             # Progress: 0.45 to 0.9
             self.entrance_progress = 0.45 + min(0.45, self.entrance_phase_time / max_phase_duration * 0.45)
             
+            # Spawn energy after-wave pulses once all nodes are nearly revealed
+            if len(self.entrance_revealed_nodes) >= len(self.nodes) * 0.6 and not hasattr(self, '_pulse_waves_spawned'):
+                self._pulse_waves_spawned = True
+                for wave in range(3):
+                    delay = wave * 0.6
+                    self.entrance_energy_pulses.append({
+                        "progress": -delay,
+                        "speed": 1.2,
+                        "alpha": 0.6,
+                        "branches": [random.choice(list(self.BRANCH_THEMES.keys())) for _ in range(6)],
+                    })
+
+            # Update energy after-wave pulses
+            for pulse in self.entrance_energy_pulses:
+                pulse["progress"] += dt * pulse["speed"]
+                pulse["alpha"] = max(0, 0.6 * (1.0 - max(0, pulse["progress"]) / 1.5))
+
+            self.entrance_energy_pulses = [p for p in self.entrance_energy_pulses if p["alpha"] > 0.01]
+
             # Check if all nodes are revealed and travels done, OR timeout reached
             all_revealed = len(self.entrance_revealed_nodes) >= len(self.nodes)
             all_travels_done = len(self.entrance_link_travels) == 0
@@ -461,6 +528,8 @@ class SkillTreeMenu(Menu):
             if (all_revealed and all_travels_done) or timeout_reached:
                 self.entrance_phase = 5
                 self.entrance_phase_time = 0.0
+                if hasattr(self, '_pulse_waves_spawned'):
+                    del self._pulse_waves_spawned
         
         elif self.entrance_phase == 5:
             # Phase 5: Settlement — everything is revealed, gentle fade to normal
@@ -473,6 +542,10 @@ class SkillTreeMenu(Menu):
             # Clean up ignition effects
             self.core_ignition_particles = [p for p in self.core_ignition_particles if p["life"] > 0]
             
+            # Clear screen shake
+            self.entrance_shake_intensity = 0
+            self.entrance_shake_offset = pygame.Vector2(0, 0)
+
             # Clear any remaining link travels to prevent lights staying on
             self.entrance_link_travels = []
             
@@ -483,6 +556,11 @@ class SkillTreeMenu(Menu):
                 # Final celebratory flash
                 self.screen_flash_alpha = 0.15
                 self.screen_flash_timer = 0.25
+
+        # ─── Continuous BFS branch growth (phase-independent, runs from core ignition onward) ───
+        if self.entrance_active and self.entrance_phase >= 3 and self.entrance_phase < 6:
+            self.entrance_growth_timer += dt
+            self._process_branch_growth(dt, growth_speed=200)
     
     def _update_entrance_sparks(self, dt):
         """Update the converging spark particles during entrance."""
@@ -509,13 +587,71 @@ class SkillTreeMenu(Menu):
                 else:
                     spark["alpha"] = 0.6 + 0.4 * ((1.0 - ease) / 0.5)
 
+    def _process_branch_growth(self, dt, growth_speed=200):
+        """Process BFS frontier: reveal nodes and spawn link travel visuals."""
+        new_frontier = []
+        for node_id, arrival_time in self.entrance_growth_frontier:
+            if node_id in self.entrance_revealed_nodes:
+                continue
+            if self.entrance_growth_timer >= arrival_time:
+                self.entrance_revealed_nodes.add(node_id)
+                for a, b in self.links:
+                    neighbor = None
+                    if a == node_id and b not in self.entrance_revealed_nodes:
+                        neighbor = b
+                    elif b == node_id and a not in self.entrance_revealed_nodes:
+                        neighbor = a
+                    if neighbor is not None:
+                        node_a = self.nodes_by_id.get(a)
+                        node_b = self.nodes_by_id.get(b)
+                        if node_a and node_b:
+                            dist = math.sqrt((node_a["pos"].x - node_b["pos"].x)**2 +
+                                            (node_a["pos"].y - node_b["pos"].y)**2)
+                            travel_time = dist / growth_speed
+                            link_key = (min(a, b), max(a, b))
+                            if link_key not in self.entrance_revealed_links:
+                                self.entrance_revealed_links.add(link_key)
+                                self.entrance_link_travels.append({
+                                    "from_id": node_id,
+                                    "to_id": neighbor,
+                                    "progress": 0.0,
+                                    "speed": 1.0 / max(0.15, travel_time),
+                                    "alpha": 1.0,
+                                })
+                            if not any(nid == neighbor for nid, _ in new_frontier):
+                                new_frontier.append((neighbor, self.entrance_growth_timer + travel_time))
+            else:
+                if not any(nid == node_id for nid, _ in new_frontier):
+                    new_frontier.append((node_id, arrival_time))
+        self.entrance_growth_frontier = new_frontier
+
+        # Update link travel visuals
+        for travel in self.entrance_link_travels:
+            travel["progress"] = min(1.0, travel["progress"] + dt * travel["speed"])
+            if travel["progress"] >= 1.0:
+                travel["alpha"] = max(0, travel["alpha"] - dt * 3.0)
+        self.entrance_link_travels = [t for t in self.entrance_link_travels if t["alpha"] > 0.01]
+
     def _draw_entrance_sparks(self, surface):
         """Draw all entrance animation effects: vortex, sparks, core ignition, branch growth."""
-        if self.entrance_phase == 0:
-            # Phase 0: void — draw nothing extra
-            return
-        
+        t = self.animation_time
         origin = pygame.Vector2(self.tree_rect.center) + self.pan_offset
+        
+        # ─── Phase 0→1 cross-fade: anticipation lights persist into early phase 1 ───
+        if self.entrance_phase == 0 or self.entrance_phase == 1:
+            lights_alpha = 1.0
+            if self.entrance_phase == 1:
+                lights_alpha = max(0.0, 1.0 - self.entrance_phase_time / 0.4)
+            for light in self.entrance_anticipation_lights:
+                shimmer = (math.sin(t * light["speed"] + light["phase"]) + 1.0) * 0.5
+                lx = origin.x + math.cos(light["angle"]) * light["dist"] * self.zoom
+                ly = origin.y + math.sin(light["angle"]) * light["dist"] * self.zoom
+                alpha = int(80 * shimmer * light["brightness"] * lights_alpha)
+                if alpha > 2:
+                    sz = max(1, int(light["size"] * self.zoom * (0.5 + shimmer)))
+                    pygame.draw.circle(surface, (100, 120, 180), (int(lx), int(ly)), sz)
+            if self.entrance_phase == 0:
+                return
         
         # ─── Phase 1+: Background star fade-in overlay ───
         # (Stars are drawn in _draw_tree_background, controlled by entrance_star_alpha)
@@ -722,6 +858,68 @@ class SkillTreeMenu(Menu):
                     spark_color = tuple(max(0, min(255, int(c * spark_brightness))) for c in color)
                     spark_sz = max(1, int(2 * self.zoom))
                     pygame.draw.circle(surface, spark_color, (int(sx), int(sy)), spark_sz)
+
+        # ─── Energy after-wave pulses (phase 4+) ───
+        if self.entrance_energy_pulses and self.entrance_phase >= 4:
+            for pulse in self.entrance_energy_pulses:
+                p_progress = pulse["progress"]
+                p_alpha = pulse["alpha"]
+                if p_progress < 0 or p_alpha < 0.01:
+                    continue
+                for i, link in enumerate(self.links):
+                    node_a = self.nodes_by_id.get(link[0])
+                    node_b = self.nodes_by_id.get(link[1])
+                    if node_a is None or node_b is None:
+                        continue
+                    if link[0] not in self.entrance_revealed_nodes or link[1] not in self.entrance_revealed_nodes:
+                        continue
+                    # Only draw on some links to keep performance reasonable
+                    if hash(link[0] + link[1] + str(i)) % 3 != 0:
+                        continue
+                    branch = node_a.get("branch") or node_b.get("branch") or "arcane"
+                    theme = self.BRANCH_THEMES.get(branch, self.BRANCH_THEMES["arcane"])
+                    pulse_color = theme["glow"]
+                    from_pos = self._node_screen_pos(node_a)
+                    to_pos = self._node_screen_pos(node_b)
+                    frac = (p_progress * 1.5 + i * 0.01) % 1.0
+                    px = from_pos.x + (to_pos.x - from_pos.x) * frac
+                    py = from_pos.y + (to_pos.y - from_pos.y) * frac
+                    pa = int(120 * p_alpha * (0.5 + 0.5 * math.sin(frac * math.pi)))
+                    if pa > 5:
+                        psz = max(1, int(3 * self.zoom))
+                        pygame.draw.circle(surface, pulse_color, (int(px), int(py)), psz)
+                        if p_alpha > 0.3:
+                            glow_surf = pygame.Surface((psz * 6, psz * 6), pygame.SRCALPHA)
+                            pygame.draw.circle(glow_surf, (*pulse_color, pa // 2), (psz * 3, psz * 3), psz * 3)
+                            surface.blit(glow_surf, (int(px) - psz * 3, int(py) - psz * 3))
+
+        # ─── Idle core pulse rings (wow effect) ───
+        if not self.entrance_active:
+            origin = pygame.Vector2(self.tree_rect.center) + self.pan_offset
+            core_node = self.nodes_by_id.get("core")
+            if core_node:
+                cx = origin.x + core_node["pos"].x * self.zoom
+                cy = origin.y + core_node["pos"].y * self.zoom
+                # Core flash
+                if self.core_pulse_flash > 0.01:
+                    f_a = int(80 * self.core_pulse_flash)
+                    f_r = int(160 * self.core_pulse_flash * self.zoom)
+                    flash_surf = pygame.Surface((f_r * 2, f_r * 2), pygame.SRCALPHA)
+                    for r_ in range(4):
+                        ia = int(f_a * (1.0 - r_ * 0.2))
+                        pygame.draw.circle(flash_surf, (200, 220, 255, ia), (f_r, f_r), f_r - r_ * 3)
+                    surface.blit(flash_surf, (int(cx) - f_r, int(cy) - f_r))
+                # Expanding rings
+                for ring in self.core_pulse_rings:
+                    if not ring["started"] or ring["alpha"] <= 0.01:
+                        continue
+                    r = int(ring["radius"] * self.zoom)
+                    if r > 0:
+                        a = int(255 * ring["alpha"])
+                        color = (140, 180, 255)
+                        pygame.draw.circle(surface, color, (int(cx), int(cy)), r, max(1, int(ring["width"] * self.zoom)))
+                        if r > 4:
+                            pygame.draw.circle(surface, (200, 220, 255), (int(cx), int(cy)), r - 2, max(1, int(ring["width"] * self.zoom * 0.5)))
 
     def _character(self):
         gameplay_state = getattr(getattr(self.app, "manager", None), "states", {}).get("gameplay")
@@ -1144,7 +1342,8 @@ class SkillTreeMenu(Menu):
         sin_a = math.sin(angle)
         rx = node["pos"].x * cos_a - node["pos"].y * sin_a
         ry = node["pos"].x * sin_a + node["pos"].y * cos_a
-        return origin + pygame.Vector2(rx, ry) * self.zoom
+        bs = self.breathe_scale if not self.entrance_active else 1.0
+        return origin + pygame.Vector2(rx, ry) * self.zoom * bs
 
     def _hit_test_node(self, pos):
         if not self.tree_rect.collidepoint(pos):
@@ -1865,17 +2064,95 @@ class SkillTreeMenu(Menu):
         for p in self.particles:
             p["x"] += p["speed_x"] * dt * 60
             p["y"] += p["speed_y"] * dt * 60
-            if p["y"] < -650:
-                p["y"] = 650
-                p["x"] = random.uniform(-750, 750)
+            if p["y"] < -680:
+                p["y"] = 680
+                p["x"] = random.uniform(-780, 780)
             if p["x"] < -800:
                 p["x"] = 800
             elif p["x"] > 800:
                 p["x"] = -800
 
+        # Update ambient orbs
+        for o in self.ambient_orbs:
+            o["x"] += o["speed_x"] * dt
+            o["y"] += o["speed_y"] * dt
+            if o["x"] < -700 or o["x"] > 700:
+                o["speed_x"] *= -1
+            if o["y"] < -600 or o["y"] > 600:
+                o["speed_y"] *= -1
+
+        # ─── Periodic core pulse wave (wow effect) ───
+        if not self.entrance_active:
+            self.core_pulse_timer += dt
+            if self.core_pulse_timer >= self.core_pulse_interval:
+                self.core_pulse_timer = 0.0
+                self.core_pulse_flash = 0.8
+                for i in range(4):
+                    self.core_pulse_rings.append({
+                        "radius": 0,
+                        "max_radius": 120 + i * 50,
+                        "speed": 220 + i * 25,
+                        "alpha": 0.6 - i * 0.1,
+                        "width": 4 - i * 0.5,
+                        "delay": i * 0.1,
+                        "started": False,
+                    })
+
+        # Update pulse flash decay
+        self.core_pulse_flash = max(0, self.core_pulse_flash - dt * 2.5)
+
+        # Update pulse rings
+        for ring in self.core_pulse_rings[:]:
+            if ring["delay"] > 0:
+                ring["delay"] -= dt
+                continue
+            ring["started"] = True
+            ring["radius"] += ring["speed"] * dt
+            ring["alpha"] = max(0, ring["alpha"] - dt * 0.6)
+            ring["width"] = max(0.5, ring["width"] - dt * 1.0)
+            if ring["alpha"] <= 0.01:
+                self.core_pulse_rings.remove(ring)
+
+        # ─── Node ambient sparkles ───
+        if not self.entrance_active and random.random() < 0.015:
+            unlocked = self._get_unlocked_nodes()
+            if unlocked:
+                sn_id = random.choice(list(unlocked))
+                sn = self.nodes_by_id.get(sn_id)
+                if sn:
+                    sp_screen = self._node_screen_pos(sn)
+                    branch = sn.get("branch", "arcane")
+                    theme = self.BRANCH_THEMES.get(branch, self.BRANCH_THEMES["arcane"])
+                    colors = [theme["glow"], theme["accent"], (255, 255, 255)]
+                    for _ in range(random.randint(4, 10)):
+                        angle = random.uniform(0, math.pi * 2)
+                        speed = random.uniform(20, 60)
+                        self.node_sparkles.append({
+                            "x": sp_screen.x,
+                            "y": sp_screen.y,
+                            "vx": math.cos(angle) * speed,
+                            "vy": math.sin(angle) * speed,
+                            "size": random.uniform(1.5, 3.5),
+                            "life": random.uniform(0.3, 0.7),
+                            "max_life": random.uniform(0.3, 0.7),
+                            "color": random.choice(colors),
+                            "alpha": 1.0,
+                        })
+
+        # Update node sparkles
+        for sp in self.node_sparkles[:]:
+            sp["x"] += sp["vx"] * dt
+            sp["y"] += sp["vy"] * dt
+            sp["vx"] *= 0.95
+            sp["vy"] *= 0.95
+            sp["life"] -= dt
+            sp["alpha"] = max(0, sp["life"] / sp["max_life"])
+            if sp["life"] <= 0:
+                self.node_sparkles.remove(sp)
+
         self._update_unlock_effects(dt)
         self._update_entrance(dt)
-    
+
     def _update_unlock_effects(self, dt):
         """Update all active unlock animation effects."""
         to_remove = []
@@ -2111,6 +2388,8 @@ class SkillTreeMenu(Menu):
     def _draw_tree_background(self, surface):
         """Draw enhanced background with nebula clouds, twinkling stars, and particles."""
         origin = pygame.Vector2(self.tree_rect.center) + self.pan_offset
+        # Parallax: background elements shift slower than the tree for depth feel
+        bg_origin = pygame.Vector2(self.tree_rect.center) + self.pan_offset * 0.6
         t = self.animation_time
         
         star_alpha_mult = self.entrance_star_alpha if self.entrance_active else 1.0
@@ -2158,13 +2437,15 @@ class SkillTreeMenu(Menu):
                 brightness = int(brightness * star_alpha_mult)
             pygame.draw.circle(surface, (brightness, brightness, brightness + 3), origin, int(r * self.zoom), 0)
 
-        # Guide rings (no pulse animation to reduce math)
+        # Guide rings with subtle pulse
         ring_radii = [130, 210, 310, 330, 460, 580]
         for idx, radius in enumerate(ring_radii):
-            c = int(22 * (0.85 + 0.15 * (idx % 2)))
+            ring_pulse = (math.sin(t * 0.4 + idx * 0.7) + 1.0) * 0.5
+            c = int(22 * (0.65 + 0.35 * ring_pulse) * (0.85 + 0.15 * (idx % 2)))
             if self.entrance_active and self.entrance_phase < 2:
                 c = int(c * star_alpha_mult)
-            pygame.draw.circle(surface, (c, c, c + 8), origin, int(radius * self.zoom), 1)
+            alpha = max(8, c)
+            pygame.draw.circle(surface, (alpha, alpha, alpha + 8), origin, int(radius * self.zoom), 1)
 
         # Draw twinkling stars with branch-themed colors
         branch_star_colors = [
@@ -2172,12 +2453,14 @@ class SkillTreeMenu(Menu):
             (80, 160, 100), (120, 80, 160), (160, 90, 140),
             (200, 180, 100), (100, 200, 180),
         ]
+        bloom = getattr(self, 'entrance_star_bloom', 1.0)
         for star_data in self.background_points:
             x, y, size, phase, speed, bright = star_data
-            pos = origin + pygame.Vector2(x, y) * self.zoom
+            pos = bg_origin + pygame.Vector2(x, y) * self.zoom
             if self.tree_rect.collidepoint(pos):
                 twinkle = (math.sin(t * speed + phase) + 1.0) * 0.5
                 b = int((15 + 45 * twinkle) * star_alpha_mult * bright)
+                bloom_size = max(0.5, size * bloom)
                 col_idx = int(abs(x + y) * 0.008) % len(branch_star_colors)
                 base_color = branch_star_colors[col_idx]
                 star_color = (
@@ -2185,18 +2468,18 @@ class SkillTreeMenu(Menu):
                     min(255, int(base_color[1] * 0.25 + b * 0.75)),
                     min(255, int(base_color[2] * 0.25 + b * 0.75)),
                 )
-                if twinkle > 0.7 and size > 1:
-                    glow_r = int(size * 5)
+                if twinkle > 0.7 and bloom_size > 1:
+                    glow_r = int(bloom_size * 5)
                     glow_surf = pygame.Surface((glow_r * 2, glow_r * 2), pygame.SRCALPHA)
                     glow_a = int(35 * twinkle * star_alpha_mult * bright)
                     pygame.draw.circle(glow_surf, (*star_color, glow_a), (glow_r, glow_r), glow_r)
                     surface.blit(glow_surf, (int(pos.x) - glow_r, int(pos.y) - glow_r))
                 if b > 5:
-                    pygame.draw.circle(surface, star_color, (int(pos.x), int(pos.y)), size)
+                    pygame.draw.circle(surface, star_color, (int(pos.x), int(pos.y)), int(bloom_size))
 
         # Draw floating particles
         for p in self.particles:
-            pos = origin + pygame.Vector2(p["x"], p["y"]) * self.zoom
+            pos = bg_origin + pygame.Vector2(p["x"], p["y"]) * self.zoom
             if self.tree_rect.collidepoint(pos):
                 offset = p.get("pulse_offset", 0)
                 pulse = (math.sin(t * p["pulse_speed"] + offset) + 1.0) * 0.5
@@ -2213,9 +2496,24 @@ class SkillTreeMenu(Menu):
                 if alpha > 0.05:
                     pygame.draw.circle(surface, pcolor, (int(pos.x), int(pos.y)), sz)
 
-    def _draw_links(self, surface, unlocked, revealed_filter=None):
-        """Draw links with glow effect for active connections. Optimized."""
+        # Draw ambient floating orbs (large soft-colored blobs)
+        for o in self.ambient_orbs:
+            pos = bg_origin + pygame.Vector2(o["x"], o["y"]) * self.zoom
+            if self.tree_rect.collidepoint(pos):
+                o_pulse = (math.sin(t * o["pulse_speed"] + o["pulse_offset"]) + 1.0) * 0.5
+                orb_alpha = int(255 * o["alpha"] * (0.6 + 0.4 * o_pulse) * star_alpha_mult)
+                if orb_alpha > 2:
+                    orb_radius = int(o["radius"] * self.zoom)
+                    orb_surf = pygame.Surface((orb_radius * 2, orb_radius * 2), pygame.SRCALPHA)
+                    pygame.draw.circle(orb_surf, (*o["color"], orb_alpha), (orb_radius, orb_radius), orb_radius)
+                    surface.blit(orb_surf, (int(pos.x) - orb_radius, int(pos.y) - orb_radius))
+
+    def _draw_links(self, surface, unlocked, revealed_filter=None, pulse_boost=0.0):
+        """Draw links with curved bezier arcs, gradient coloring, and reduced particle noise."""
         t = self.animation_time
+        link_origin = pygame.Vector2(self.tree_rect.center) + self.pan_offset
+        segments = 14
+
         for a, b in self.links:
             node_a = self.nodes_by_id.get(a)
             node_b = self.nodes_by_id.get(b)
@@ -2228,28 +2526,87 @@ class SkillTreeMenu(Menu):
             pos_b = self._node_screen_pos(node_b)
             active = a in unlocked and b in unlocked
 
+            # Compute bezier control point (bow outward from tree center)
+            mid = (pos_a + pos_b) / 2
+            to_mid = mid - link_origin
+            md = to_mid.length()
+            push = md * 0.3 if md > 1 else 0
+            cp = mid + (to_mid / md * push) if md > 0 else mid
+
+            # Pre-compute bezier points
+            pts = []
+            for i in range(segments + 1):
+                ft = i / segments
+                mt = 1.0 - ft
+                x = mt * mt * pos_a.x + 2.0 * mt * ft * cp.x + ft * ft * pos_b.x
+                y = mt * mt * pos_a.y + 2.0 * mt * ft * cp.y + ft * ft * pos_b.y
+                pts.append((int(x), int(y)))
+
             if active:
-                branch = node_a.get("branch") or node_b.get("branch") or "arcane"
-                theme = self.BRANCH_THEMES.get(branch, self.BRANCH_THEMES["arcane"])
-                glow_color = theme["glow"]
-                base_color = theme["secondary"]
+                branch_a = node_a.get("branch", "arcane")
+                branch_b = node_b.get("branch", "arcane")
+                theme_a = self.BRANCH_THEMES.get(branch_a, self.BRANCH_THEMES["arcane"])
+                theme_b = self.BRANCH_THEMES.get(branch_b, self.BRANCH_THEMES["arcane"])
+                ca = theme_a["secondary"]
+                cb = theme_b["secondary"]
+                ga = theme_a["glow"]
+                gb = theme_b["glow"]
 
                 pulse = (math.sin(t * 2.0) + 1.0) * 0.5
-                glow_alpha = 0.25 + 0.2 * pulse
+                glow_alpha = 0.2 + 0.15 * pulse + 0.5 * pulse_boost
+                gw = max(2, int((4 + 5 * pulse_boost) * self.zoom))
 
-                g_c = tuple(int(c * glow_alpha) for c in glow_color)
-                pygame.draw.line(surface, g_c, pos_a, pos_b, max(3, int(5 * self.zoom)))
-                pygame.draw.line(surface, base_color, pos_a, pos_b, max(1, int(2 * self.zoom)))
+                # Glow curve (wide, low alpha, gradient)
+                for i in range(segments):
+                    ft = i / segments
+                    nr = int(ga[0] * (1 - ft) + gb[0] * ft)
+                    ng = int(ga[1] * (1 - ft) + gb[1] * ft)
+                    nb = int(ga[2] * (1 - ft) + gb[2] * ft)
+                    gl_col = (nr, ng, nb)
+                    a_val = int(255 * (glow_alpha * (0.7 + 0.3 * (1 - abs(ft - 0.5) * 2))))
+                    for gr in range(2):
+                        grc = tuple(min(255, int(c * (0.4 - gr * 0.15))) for c in gl_col)
+                        pygame.draw.line(surface, grc, pts[i], pts[i + 1],
+                                         max(1, gw + gr * 2))
 
-                # Single energy particle per link — much cheaper
-                flow_frac = (t * 0.5 + hash(a + b) * 0.01) % 1.0
-                fx = pos_a.x + (pos_b.x - pos_a.x) * flow_frac
-                fy = pos_a.y + (pos_b.y - pos_a.y) * flow_frac
-                flow_sz = max(1, int(2.5 * self.zoom))
-                pygame.draw.circle(surface, (255, 255, 255), (int(fx), int(fy)), flow_sz)
+                # Thin gradient line on top
+                for i in range(segments):
+                    ft = i / segments
+                    lr = int(ca[0] * (1 - ft) + cb[0] * ft)
+                    lg = int(ca[1] * (1 - ft) + cb[1] * ft)
+                    lb = int(ca[2] * (1 - ft) + cb[2] * ft)
+                    pygame.draw.line(surface, (lr, lg, lb), pts[i], pts[i + 1],
+                                     max(1, int(2 * self.zoom)))
+
+                # One streaming particle per link (reduced from 3)
+                link_hash = hash(a + b) * 0.01
+                flow_frac = (t * 0.4 + link_hash) % 1.0
+                ft = flow_frac
+                mt2 = 1.0 - ft
+                fx = mt2 * mt2 * pos_a.x + 2.0 * mt2 * ft * cp.x + ft * ft * pos_b.x
+                fy = mt2 * mt2 * pos_a.y + 2.0 * mt2 * ft * cp.y + ft * ft * pos_b.y
+                flow_bright = 0.5 + 0.5 * math.sin(ft * math.pi)
+                pb = 1.0 + 2.0 * pulse_boost
+                fsz = max(1, int(2 * self.zoom * flow_bright * pb))
+                fc = (
+                    int(ca[0] * (1 - ft) + cb[0] * ft),
+                    int(ca[1] * (1 - ft) + cb[1] * ft),
+                    int(ca[2] * (1 - ft) + cb[2] * ft),
+                )
+                pygame.draw.circle(surface, fc, (int(fx), int(fy)), fsz + 1)
+                if flow_bright > 0.3:
+                    pygame.draw.circle(surface, (255, 255, 255), (int(fx), int(fy)), max(1, fsz - 1))
+
+                # Subtle endpoint glow dots
+                ep_sz = max(1, int(2 * self.zoom))
+                pygame.draw.circle(surface, ca, (pts[0][0], pts[0][1]), ep_sz)
+                pygame.draw.circle(surface, cb, (pts[-1][0], pts[-1][1]), ep_sz)
             else:
-                dim = 50 + int(10 * (math.sin(t * 0.5 + hash(a + b) * 0.3) + 1.0) * 0.5)
-                pygame.draw.line(surface, (dim, dim, dim + 10), pos_a, pos_b, max(1, int(1.5 * self.zoom)))
+                # Inactive links: faint curved arcs
+                dim_base = 35 + int(10 * (math.sin(t * 0.5 + hash(a + b) * 0.3) + 1.0) * 0.5)
+                dc = (dim_base, dim_base, dim_base + 8)
+                for i in range(segments):
+                    pygame.draw.line(surface, dc, pts[i], pts[i + 1], max(1, int(1 * self.zoom)))
 
     @staticmethod
     def _draw_circle_gradient(surface, pos, radius, inner_color, outer_color):
@@ -2403,6 +2760,28 @@ class SkillTreeMenu(Menu):
                         pygame.draw.circle(surface, gc, (int(pos.x), int(pos.y)), can_r + w * 2, 1)
                     pygame.draw.circle(surface, can_color, (int(pos.x), int(pos.y)), can_r, 1)
 
+            # ── Orbiting satellites for major and keystone nodes ──
+            if is_unlocked:
+                if kind == "major":
+                    for i in range(3):
+                        oa = t * 0.8 + i * math.pi * 2 / 3
+                        ox = pos.x + math.cos(oa) * (radius + 5) * self.zoom
+                        oy = pos.y + math.sin(oa) * (radius + 5) * self.zoom
+                        oc = tuple(min(255, c + 50) for c in fill)
+                        pygame.draw.circle(surface, oc, (int(ox), int(oy)), max(1, int(1.5 * self.zoom)))
+                elif kind == "keystone":
+                    for i in range(5):
+                        oa = t * 0.5 + i * math.pi * 2 / 5
+                        ox = pos.x + math.cos(oa) * (radius + 7) * self.zoom
+                        oy = pos.y + math.sin(oa) * (radius + 7) * self.zoom
+                        oc = tuple(min(255, c + 60) for c in accent)
+                        osz = max(1, int(2 * self.zoom))
+                        # Glow
+                        og_surf = pygame.Surface((osz * 6, osz * 6), pygame.SRCALPHA)
+                        pygame.draw.circle(og_surf, (*oc, 80), (osz * 3, osz * 3), osz * 3)
+                        surface.blit(og_surf, (int(ox) - osz * 3, int(oy) - osz * 3))
+                        pygame.draw.circle(surface, oc, (int(ox), int(oy)), osz)
+
             # ── Labels for important nodes ──
             if kind in ("core", "major", "keystone"):
                 label_color = (235, 235, 245) if is_unlocked else (160, 160, 175)
@@ -2527,6 +2906,16 @@ class SkillTreeMenu(Menu):
         screen.blit(name, (r.x + 18, py))
         py += name.get_height() + 6
 
+        # Branch accent bar
+        if branch:
+            bar_rect = pygame.Rect(r.x + 18, py, min(100, r.width - 36), 3)
+            bar_color = theme["secondary"] if is_unlocked else (60, 58, 72)
+            bar_pulse = (math.sin(t * 1.5) + 1.0) * 0.5 if is_unlocked else 0
+            if bar_pulse:
+                bar_color = tuple(min(255, int(c + 30 * bar_pulse)) for c in bar_color)
+            pygame.draw.rect(screen, bar_color, bar_rect, border_radius=2)
+            py += 12
+
         # Kind badge
         kind_map = {
             "core": (_("Core"), (180, 180, 220)),
@@ -2606,16 +2995,29 @@ class SkillTreeMenu(Menu):
     def draw(self, screen: pygame.Surface):
         self.layout(screen)
 
-        # Update animation time using pygame clock
-        dt = 0.016  # Default ~60fps delta
+        # Update animation time with smoothed dt for fluid motion
+        raw_dt = 0.016
         try:
-            dt = self.app.clock.get_time() / 1000.0 if hasattr(self.app, 'clock') else 0.016
+            raw_dt = self.app.clock.get_time() / 1000.0 if hasattr(self.app, 'clock') else 0.016
         except Exception:
             pass
+        raw_dt = min(0.05, raw_dt)  # cap to prevent large stutter spikes
+        if not hasattr(self, '_smooth_dt'):
+            self._smooth_dt = raw_dt
+        self._smooth_dt = self._smooth_dt * 0.85 + raw_dt * 0.15
+        dt = self._smooth_dt
         
         # Update rotation only if no node is selected and entrance animation is not active
         if self.selected_node_id is None and not self.entrance_active:
             self.rotation_angle += dt * 0.15  # Slow rotation (~8.6 degrees per second)
+            # Gentle breathing wobble
+            self.idle_breathe += dt * 0.6
+            breathe_wobble = math.sin(self.idle_breathe) * 0.002
+            self.breathe_scale = 1.0 + math.sin(self.idle_breathe * 0.7) * 0.003
+            self.rotation_angle += breathe_wobble
+        else:
+            self.idle_breathe = 0.0
+            self.breathe_scale = 1.0
         
         # Smoothly interpolate zoom and pan towards targets
         lerp_speed = 6.0 * dt
@@ -2625,6 +3027,11 @@ class SkillTreeMenu(Menu):
         
         self.animation_time += dt
         self._update_particles(dt)
+
+        # Apply screen shake to pan offset during entrance
+        original_pan = pygame.Vector2(self.pan_offset)
+        if self.entrance_active and self.entrance_shake_intensity > 0.5:
+            self.pan_offset += self.entrance_shake_offset
 
         # Dark background fill
         screen.fill((10, 8, 18))
@@ -2678,7 +3085,7 @@ class SkillTreeMenu(Menu):
             revealed_filter = self.entrance_revealed_nodes if use_entrance_filter else None
             
             # Normal link and node drawing (after core ignition, nodes are revealed by entrance)
-            self._draw_links(screen, unlocked, revealed_filter=revealed_filter)
+            self._draw_links(screen, unlocked, revealed_filter=revealed_filter, pulse_boost=self.core_pulse_flash)
 
             mouse_pos = pygame.mouse.get_pos()
             self.hovered_node_id = self._hit_test_node(mouse_pos)
@@ -2690,10 +3097,59 @@ class SkillTreeMenu(Menu):
         
         # Draw entrance animation effects (vortex, sparks, core ignition, branch growth)
         self._draw_entrance_sparks(screen)
-        
+
+        # Grand completion progress ring around the entire tree
+        if not hide_tree and (not self.entrance_active or self.entrance_phase >= 5):
+            total_nodes = len(self.nodes)
+            unlocked_count = len(unlocked)
+            progress = unlocked_count / max(1, total_nodes)
+            origin = pygame.Vector2(self.tree_rect.center) + self.pan_offset
+            ring_radius = int(620 * self.zoom)
+            ring_segments = 120
+            ring_width = max(2, int(3 * self.zoom))
+            for i in range(ring_segments):
+                angle = (i / ring_segments) * math.pi * 2 - math.pi / 2
+                next_angle = ((i + 1) / ring_segments) * math.pi * 2 - math.pi / 2
+                frac = i / ring_segments
+                if frac <= progress:
+                    interp = frac / max(0.01, progress)
+                    seg_color = (
+                        int(80 + 120 * interp),
+                        int(160 + 60 * (1 - interp)),
+                        int(220 + 35 * interp),
+                    )
+                    glow_a = int(40 + 60 * (1 - abs(interp - 0.5) * 2))
+                else:
+                    seg_color = (30, 28, 42)
+                    glow_a = 20
+                x1 = origin.x + math.cos(angle) * ring_radius
+                y1 = origin.y + math.sin(angle) * ring_radius
+                x2 = origin.x + math.cos(next_angle) * ring_radius
+                y2 = origin.y + math.sin(next_angle) * ring_radius
+                if seg_color[0] > 40:
+                    for gw in range(2):
+                        gc = tuple(min(255, int(c + 20 * gw)) for c in seg_color)
+                        pygame.draw.line(screen, gc, (int(x1), int(y1)), (int(x2), int(y2)), ring_width + gw * 2)
+                else:
+                    pygame.draw.line(screen, seg_color, (int(x1), int(y1)), (int(x2), int(y2)), max(1, ring_width - 1))
+
         # Draw unlock animation effects on top of everything
         self._draw_unlock_effects(screen)
-        
+
+        # ─── Node ambient sparkles ───
+        for sp in self.node_sparkles:
+            sx, sy = int(sp["x"]), int(sp["y"])
+            sa = max(0, min(255, int(255 * sp["alpha"])))
+            sp_sz = max(1, int(sp["size"] * self.zoom))
+            glow_sz = int(sp_sz * 4)
+            if sa > 5 and self.tree_rect.collidepoint(sx, sy):
+                c = sp["color"]
+                glow_s = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+                pygame.draw.circle(glow_s, (c[0], c[1], c[2], sa), (glow_sz, glow_sz), glow_sz)
+                screen.blit(glow_s, (sx - glow_sz, sy - glow_sz))
+            if sa > 20:
+                pygame.draw.circle(screen, sp["color"], (sx, sy), sp_sz)
+
         screen.set_clip(old_clip)
 
         # Draw node count info in bottom-left of tree area
@@ -2725,3 +3181,6 @@ class SkillTreeMenu(Menu):
                 self.app.current_dialog.draw(screen)
             except Exception:
                 pass
+
+        # Restore original pan offset (remove screen shake)
+        self.pan_offset = original_pan

@@ -134,22 +134,27 @@ MAIN_INV_equipment_pos_y = 0
 def recalculate_inventory_positions():
     global MAIN_INV_pos_x, MAIN_INV_pos_y, MAIN_INV_equipment_pos_x, MAIN_INV_equipment_pos_y
     
-    MAIN_INV_pos_x = SCREEN_WIDTH // 2 - (BASE_INV_slot_size + BASE_INV_border) * MAIN_INV_rows + BASE_INV_border
+    scale = ui_scale()
+    slot_size = int(BASE_INV_slot_size * scale)
+    border = int(BASE_INV_border * scale)
     
-    grid_height = (BASE_INV_slot_size + BASE_INV_border) * MAIN_INV_rows + BASE_INV_border
+    grid_width = (slot_size + border) * MAIN_INV_columns
+    grid_height = (slot_size + border) * MAIN_INV_rows
     
-    total_window_height = grid_height + 350
+    MAIN_INV_pos_x = SCREEN_WIDTH // 2 - grid_width // 2
     
-    hotbar_height = int(BASE_INV_slot_size * 0.8) + 40
+    total_window_height = grid_height + int(350 * scale)
+    
+    hotbar_height = int(slot_size * 0.8) + int(40 * scale)
     
     available_height = SCREEN_HEIGHT - hotbar_height
     
     window_top = (available_height - total_window_height) // 2
     
-    MAIN_INV_pos_y = window_top + 335
+    MAIN_INV_pos_y = window_top + int(335 * scale)
 
-    MAIN_INV_equipment_pos_x = MAIN_INV_pos_x + (BASE_INV_slot_size + BASE_INV_border) * 3 + BASE_INV_border
-    MAIN_INV_equipment_pos_y = MAIN_INV_pos_y - 310
+    MAIN_INV_equipment_pos_x = MAIN_INV_pos_x + (slot_size + border) * 3 + border
+    MAIN_INV_equipment_pos_y = MAIN_INV_pos_y - int(310 * scale)
 
 recalculate_inventory_positions()
 
@@ -204,6 +209,13 @@ INV_PLAYER_BTN_GAP_SCALE = 10
 INV_PLAYER_BTN_SPACING_MIN = 8
 INV_PLAYER_BTN_SPACING_SCALE = 12
 INV_PLAYER_BTN_TOP_OFFSET = 25
+
+# Right-side button positioning (majestic style)
+INV_PLAYER_RIGHT_BTN_WIDTH = 260
+INV_PLAYER_RIGHT_BTN_HEIGHT = 85
+INV_PLAYER_RIGHT_BTN_GAP = 28
+INV_PLAYER_RIGHT_BTN_MARGIN_X = 12
+INV_PLAYER_RIGHT_BTN_EXTRA = 6.0  # multiplier for extra panel width on right
 
 # ============== HOTBAR COLORS AND STYLING ==============
 INV_HOTBAR_BG_COLOR = (20, 24, 30, 230)
