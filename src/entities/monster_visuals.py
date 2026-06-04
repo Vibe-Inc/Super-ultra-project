@@ -59,12 +59,25 @@ def _palette_for(style: str) -> dict:
             "mask": (45, 45, 55), "mask_light": (65, 65, 78), "grin": (245, 228, 210), "shadow": (0, 0, 0, 48),
         },
         "bomber": {
-            "skin": (150, 100, 45), "skin_light": (220, 170, 100), "skin_dark": (88, 55, 22),
-            "skin_mid": (185, 135, 70), "metal": (170, 160, 150), "metal_light": (200, 190, 180),
-            "metal_dark": (130, 120, 110), "accent": (230, 75, 55), "accent_dark": (180, 50, 30),
-            "eye_white": (255, 235, 195), "eye_pupil": (100, 95, 90),
-            "fuse": (185, 125, 65), "fuse_light": (210, 150, 80),
-            "spark": (255, 210, 60), "spark_bright": (255, 240, 180), "stitch": (135, 90, 38), "shadow": (0, 0, 0, 48),
+            # brass / bronze body shell
+            "skin": (170, 130, 70), "skin_light": (220, 180, 110), "skin_dark": (90, 62, 28),
+            "skin_mid": (195, 150, 85), "skin_warm": (235, 195, 120),
+            # steel/iron for joints, rivets, banded tank sections
+            "metal": (140, 130, 120), "metal_light": (190, 180, 168), "metal_dark": (90, 82, 74),
+            "rivet": (70, 62, 52), "rivet_light": (160, 150, 135),
+            # verdigris patina / copper oxidation accents
+            "accent": (95, 165, 145), "accent_dark": (55, 110, 95),
+            # glowing eye lens and antenna spark
+            "eye_white": (255, 230, 150), "eye_pupil": (240, 140, 50),
+            "eye_glow": (255, 200, 80, 110),
+            "spark": (255, 210, 60), "spark_bright": (255, 240, 180),
+            "fuse": (185, 145, 80), "fuse_light": (215, 175, 105),
+            "stitch": (110, 75, 32),
+            # leather belt + dynamite sticks
+            "belt": (78, 55, 32), "belt_light": (115, 85, 50), "belt_dark": (50, 32, 18),
+            "dynamite": (215, 55, 40), "dynamite_dark": (140, 28, 22),
+            "dynamite_cap": (235, 200, 130), "dynamite_cap_dark": (185, 150, 90),
+            "shadow": (0, 0, 0, 48),
         },
         "stalker": {
             "cloth": (48, 52, 62), "cloth_light": (78, 85, 100), "cloth_dark": (28, 30, 38),
@@ -537,67 +550,207 @@ def _draw_trickster(s, w, h, cx, cy, p, dir, bob, frame):
 
 
 # ============================================================
-# BOMBER — barrel-body with goggles, fuse, patches
+# BOMBER — brass steampunk automaton: domed helmet, antenna spark,
+# segmented tank torso, thin pipe limbs with claw hands & peg feet
 # ============================================================
 def _draw_bomber(s, w, h, cx, cy, p, dir, bob, frame):
     _draw_shadow(s, cx, h, p, bob)
     lo, ro, la, ra = _walk_offset(frame)
-    wob = [0, 1, 0, -1][frame]
-    _draw_leg_pair(s, cx, int(h * 0.64), bob, 11, 14, p, lo, ro, "metal_dark", "metal")
-    bw = int(w * 0.58); bh = int(h * 0.42)
-    bx = cx - bw // 2; by = int(h * 0.32) + bob
-    pygame.draw.rect(s, p["skin"], (bx + wob // 2, by, bw, bh), border_radius=14)
-    pygame.draw.rect(s, p["skin_mid"], (bx + 4 + wob // 2, by + 4, bw - 8, bh - 8), border_radius=12)
-    for py2 in range(by + 6, by + bh - 4, 8):
-        pygame.draw.line(s, p["skin_dark"], (bx + 6 + wob // 2, py2), (bx + bw - 6 + wob // 2, py2), 1)
-    for sx2 in range(bx + 6, bx + bw - 6, 10):
-        sy2 = by + 5
-        pygame.draw.line(s, p["stitch"], (sx2, sy2), (sx2 + 3, sy2 + 4), 2)
-        pygame.draw.line(s, p["stitch"], (sx2 + 3, sy2 + 4), (sx2 + 6, sy2), 2)
-    by2 = by + int(bh * 0.62)
-    pygame.draw.rect(s, p["metal"], (bx - 2 + wob // 2, by2, bw + 4, 7), border_radius=3)
-    pygame.draw.rect(s, p["metal_light"], (bx + wob // 2, by2 + 1, bw, 3), border_radius=2)
-    pygame.draw.rect(s, p["accent"], (cx - 5 + wob // 2, by2, 10, 7), border_radius=2)
-    pygame.draw.rect(s, p["accent_dark"], (cx - 3 + wob // 2, by2 + 1, 6, 5), border_radius=1)
-    for bi, bdx in enumerate([-8, 8]):
-        bx3 = cx + bdx + wob // 2
-        pygame.draw.circle(s, p["accent_dark"], (bx3, by2 + 7), 4)
-        pygame.draw.circle(s, p["accent"], (bx3, by2 + 7), 3)
-        pygame.draw.line(s, p["fuse"], (bx3, by2 + 4), (bx3 + 2, by2 + 1), 1)
-    _draw_arm_pair(s, bx, bw, by, bob, 8, int(h * 0.24), p, la, ra, "metal_dark", "metal", 4)
-    hr = int(w * 0.19); hx, hy = cx, int(h * 0.19) + bob
+    sway = [0, 1, 0, -1][frame]
+
+    # --- thin pipe legs with peg feet ---
+    leg_top = int(h * 0.66) + bob
+    leg_bottom = h - 10 + bob
+    for side, off in [(-1, lo), (1, ro)]:
+        lx = cx + side * 9 + off // 2
+        # dark outline pipe
+        pygame.draw.line(s, p["metal_dark"], (lx, leg_top), (lx, leg_bottom), 4)
+        # brass pipe core
+        pygame.draw.line(s, p["skin_mid"], (lx, leg_top), (lx, leg_bottom), 2)
+        # knee rivet
+        ky = (leg_top + leg_bottom) // 2
+        pygame.draw.circle(s, p["metal_dark"], (lx, ky), 2)
+        pygame.draw.circle(s, p["rivet_light"], (lx - 1, ky - 1), 1)
+        # peg foot (small disc with a heel)
+        fx = lx
+        fy = leg_bottom
+        pygame.draw.ellipse(s, p["metal_dark"], (fx - 5, fy - 1, 10, 4))
+        pygame.draw.ellipse(s, p["metal"], (fx - 4, fy - 1, 8, 3))
+        pygame.draw.ellipse(s, p["metal_light"], (fx - 3, fy - 1, 4, 1))
+
+    # --- segmented tank torso (banded brass canister, longer) ---
+    bw = int(w * 0.28)
+    bh = int(h * 0.36)
+    bx = cx - bw // 2
+    by = int(h * 0.34) + bob
+    # outer dark
+    pygame.draw.rect(s, p["skin_dark"], (bx - 1 + sway // 2, by, bw + 2, bh), border_radius=8)
+    # brass shell
+    pygame.draw.rect(s, p["skin"], (bx + sway // 2, by, bw, bh), border_radius=7)
+    # left highlight
+    pygame.draw.rect(s, p["skin_light"], (bx + 2 + sway // 2, by + 2, 3, bh - 4), border_radius=1)
+    # right shadow
+    pygame.draw.rect(s, p["skin_dark"], (bx + bw - 5 + sway // 2, by + 2, 3, bh - 4), border_radius=1)
+    # horizontal bands (tank segments)
+    for band_y in (by + 5, by + bh // 2 - 1, by + bh - 6):
+        pygame.draw.line(s, p["metal_dark"], (bx - 1 + sway // 2, band_y),
+                         (bx + bw + 1 + sway // 2, band_y), 1)
+        pygame.draw.line(s, p["metal_light"], (bx - 1 + sway // 2, band_y + 1),
+                         (bx + bw + 1 + sway // 2, band_y + 1), 1)
+    # rivets on bands
+    for band_y in (by + 5, by + bh // 2 - 1, by + bh - 6):
+        for rx in (bx + 3, bx + bw // 2, bx + bw - 4):
+            pygame.draw.circle(s, p["rivet"], (rx + sway // 2, band_y), 1)
+    # small verdigris pressure gauge near top of chest
+    gauge_cx, gauge_cy = cx + sway // 2, by + 9
+    pygame.draw.circle(s, p["metal_dark"], (gauge_cx, gauge_cy), 5)
+    pygame.draw.circle(s, p["metal_light"], (gauge_cx, gauge_cy), 4)
+    pygame.draw.circle(s, p["accent_dark"], (gauge_cx, gauge_cy), 3)
+    pygame.draw.line(s, p["accent"], (gauge_cx, gauge_cy),
+                     (gauge_cx + 2, gauge_cy - 2), 1)
+
+    # --- leather belt strap around the lower torso (behind the sticks) ---
+    belt_y = by + int(bh * 0.66) + sway // 2
+    # dark leather wrap that extends slightly past the canister
+    pygame.draw.rect(s, p["belt_dark"], (bx - 4 + sway // 2, belt_y - 2, bw + 8, 5), border_radius=1)
+    pygame.draw.rect(s, p["belt"], (bx - 3 + sway // 2, belt_y - 2, bw + 6, 4), border_radius=1)
+    pygame.draw.rect(s, p["belt_light"], (bx - 3 + sway // 2, belt_y - 2, bw + 6, 1))
+    # belt stitch line
+    pygame.draw.line(s, p["stitch"], (bx - 2 + sway // 2, belt_y + 1),
+                     (bx + bw + 2 + sway // 2, belt_y + 1), 1)
+    # tiny belt rivets at the ends
+    pygame.draw.circle(s, p["rivet"], (bx - 1 + sway // 2, belt_y), 1)
+    pygame.draw.circle(s, p["rivet"], (bx + bw + 1 + sway // 2, belt_y), 1)
+
+    # --- thin pipe arms with claw hands ---
+    shoulder_y = by + 3
+    elbow_y = by + int(bh * 0.50)
+    hand_y = by + bh + int(h * 0.05)
+    for side, swing in [(-1, la), (1, ra)]:
+        sx = cx + side * (bw // 2 + 1) + sway // 2
+        ex = sx + side * 3 + swing // 2
+        wx = sx + side * 4 + swing
+        # shoulder rivet
+        pygame.draw.circle(s, p["rivet"], (sx, shoulder_y + 1), 2)
+        pygame.draw.circle(s, p["rivet_light"], (sx - 1, shoulder_y), 1)
+        # upper arm
+        pygame.draw.line(s, p["metal_dark"], (sx, shoulder_y + 2), (ex, elbow_y), 3)
+        pygame.draw.line(s, p["skin_mid"], (sx, shoulder_y + 2), (ex, elbow_y), 1)
+        # elbow joint
+        pygame.draw.circle(s, p["metal_dark"], (ex, elbow_y), 2)
+        # forearm
+        pygame.draw.line(s, p["metal_dark"], (ex, elbow_y), (wx, hand_y), 3)
+        pygame.draw.line(s, p["skin_mid"], (ex, elbow_y), (wx, hand_y), 1)
+        # claw hand (small brass ball with two prongs)
+        pygame.draw.circle(s, p["metal_dark"], (wx, hand_y), 3)
+        pygame.draw.circle(s, p["skin"], (wx, hand_y), 2)
+        pygame.draw.line(s, p["metal_dark"], (wx, hand_y), (wx + side * 2, hand_y + 3), 1)
+        pygame.draw.line(s, p["metal_dark"], (wx, hand_y), (wx - side * 1, hand_y + 3), 1)
+
+    # --- domed brass helmet (the iconic head) ---
+    hr = int(w * 0.19)
+    hx = cx
+    hy = int(h * 0.26) + bob
+    # shadow ring under the dome
+    pygame.draw.ellipse(s, p["metal_dark"], (hx - hr - 1, hy + hr - 2, (hr + 1) * 2, 6))
+    # dome base (skull)
+    pygame.draw.circle(s, p["skin_dark"], (hx, hy), hr + 1)
     pygame.draw.circle(s, p["skin"], (hx, hy), hr)
-    pygame.draw.circle(s, p["skin_light"], (hx, hy), hr - 3)
-    px2 = hx + 8 if dir != "side" else hx + 4
-    py3 = hy + 5
-    pygame.draw.rect(s, p["skin_dark"], (px2 - 4, py3 - 3, 8, 6), border_radius=2)
-    pygame.draw.line(s, p["stitch"], (px2 - 3, py3 - 2), (px2 + 3, py3 + 2), 1)
-    pygame.draw.line(s, p["stitch"], (px2 + 3, py3 - 2), (px2 - 3, py3 + 2), 1)
-    gw2 = 11 if dir != "side" else 9; gy2 = hy - 1
-    if dir == "side":
-        pygame.draw.ellipse(s, p["metal"], (hx - gw2 // 2, gy2 - 5, gw2, 10))
-        pygame.draw.ellipse(s, p["metal_dark"], (hx - gw2 // 2 + 2, gy2 - 3, gw2 - 4, 6))
-    else:
-        for gx in (hx - 7, hx + 7):
-            pygame.draw.ellipse(s, p["metal"], (gx - gw2 // 2, gy2 - 5, gw2, 10))
-            pygame.draw.ellipse(s, p["metal_dark"], (gx - gw2 // 2 + 2, gy2 - 3, gw2 - 4, 6))
-            pygame.draw.ellipse(s, (200, 220, 255, 100), (gx - gw2 // 2 + 1, gy2 - 3, 4, 4))
-    esp = 6 if dir != "side" else 5; so = 2 if dir == "side" else 0
+    # dome highlight (top-left curve)
+    pygame.draw.arc(s, p["skin_warm"], (hx - hr + 2, hy - hr + 2, hr * 2, hr * 2), 2.0, 2.7, 2)
+    # equator band (rim of the helmet)
+    pygame.draw.line(s, p["metal_dark"], (hx - hr, hy + 2), (hx + hr, hy + 2), 2)
+    pygame.draw.line(s, p["metal_light"], (hx - hr, hy + 4), (hx + hr, hy + 4), 1)
+    # rivets along the rim
+    for rx in (hx - hr + 4, hx - 8, hx + 8, hx + hr - 4):
+        pygame.draw.circle(s, p["rivet"], (rx, hy + 3), 1)
+    # neck collar (segmented ring under head)
+    pygame.draw.rect(s, p["metal_dark"], (hx - 7, hy + hr - 1, 14, 4), border_radius=1)
+    pygame.draw.rect(s, p["metal"], (hx - 6, hy + hr, 12, 2), border_radius=1)
+
+    # --- two large round goggle eyes (the signature look) ---
+    eye_y = hy - 2
+    esp = 8 if dir != "side" else 6
+    so = 2 if dir == "side" else 0
     for ex in (hx - esp + so, hx + esp + so):
-        pygame.draw.circle(s, p["eye_white"], (ex, gy2 + 1), 3)
-    _draw_pupils(s, hx, gy2 + 1, esp, p["eye_pupil"], so)
-    my2 = gy2 + 9
-    pygame.draw.arc(s, p["skin_dark"], (hx - 7, my2 - 2, 14, 8), 0.2, 2.94, 2)
-    for tx in range(hx - 4, hx + 5, 4):
-        pygame.draw.line(s, p["eye_white"], (tx, my2 + 1), (tx, my2 + 3), 1)
-    fy = hy - hr - 3; fx2 = [0, 1, -1, 1][frame]
-    pygame.draw.lines(s, p["fuse"], False, [(hx + fx2, fy), (hx + 3 + fx2, fy - 10), (hx + fx2, fy - 18)], 2)
-    sy3 = fy - 18; sr = 4 + (frame % 2)
-    pygame.draw.circle(s, p["spark"], (hx + fx2 - 1, sy3), sr)
-    pygame.draw.circle(s, p["spark_bright"], (hx + fx2 - 1, sy3), sr - 1)
-    for ei in range(2):
-        ex = hx + fx2 + ei * 4 - 2; ey = sy3 - ei * 4 + 2
-        pygame.draw.circle(s, p["accent"], (ex + frame, ey), 2)
+        # outer dark bezel
+        pygame.draw.circle(s, p["metal_dark"], (ex, eye_y), 6)
+        # brass bezel
+        pygame.draw.circle(s, p["skin_mid"], (ex, eye_y), 5)
+        # dark inner lens
+        pygame.draw.circle(s, p["rivet"], (ex, eye_y), 4)
+        # glowing pupil
+        pygame.draw.circle(s, p["eye_pupil"], (ex, eye_y), 3)
+        # soft glow
+        glow = pygame.Surface((12, 12), pygame.SRCALPHA)
+        pygame.draw.circle(glow, p["eye_glow"], (6, 6), 5)
+        s.blit(glow, (ex - 6, eye_y - 6), special_flags=pygame.BLEND_ALPHA_SDL2)
+        # bright pupil core
+        pygame.draw.circle(s, p["eye_white"], (ex, eye_y), 1)
+        # top reflection
+        pygame.draw.circle(s, (255, 255, 255, 180), (ex - 1, eye_y - 2), 1)
+    # goggle strap across forehead
+    pygame.draw.line(s, p["metal_dark"], (hx - hr + 2, eye_y - 2),
+                     (hx - esp - 4, eye_y - 3), 1)
+    pygame.draw.line(s, p["metal_dark"], (hx + hr - 2, eye_y - 2),
+                     (hx + esp + 4, eye_y - 3), 1)
+
+    # --- thin grinning mouth slit (bolted plate) ---
+    my = eye_y + 8
+    pygame.draw.rect(s, p["skin_dark"], (hx - 6, my - 1, 12, 3), border_radius=1)
+    pygame.draw.line(s, p["accent_dark"], (hx - 5, my), (hx + 5, my), 1)
+    pygame.draw.circle(s, p["rivet"], (hx - 5, my + 1), 1)
+    pygame.draw.circle(s, p["rivet"], (hx + 5, my + 1), 1)
+
+    # --- sparking antenna on top of the dome (kept inside bounds) ---
+    ant_base_x = hx + 2
+    ant_base_y = hy - hr + 2
+    sway_ant = [0, 1, -1, 1][frame]
+    # antenna rod
+    pygame.draw.line(s, p["metal_dark"], (ant_base_x, ant_base_y),
+                     (ant_base_x + sway_ant, ant_base_y - 7), 2)
+    pygame.draw.line(s, p["skin_mid"], (ant_base_x, ant_base_y),
+                     (ant_base_x + sway_ant, ant_base_y - 7), 1)
+    # antenna cap
+    cap_x = ant_base_x + sway_ant
+    cap_y = ant_base_y - 7
+    pygame.draw.circle(s, p["metal_dark"], (cap_x, cap_y), 3)
+    pygame.draw.circle(s, p["skin_mid"], (cap_x, cap_y), 2)
+    # spark burst
+    sr = 4 + (frame % 2)
+    pygame.draw.circle(s, p["spark"], (cap_x, cap_y - 1), sr)
+    pygame.draw.circle(s, p["spark_bright"], (cap_x, cap_y - 1), sr - 1)
+    # flying embers
+    for ei, (edx, edy) in enumerate([(3, -1), (-3, -2), (2, -4), (-2, -3)]):
+        ex = cap_x + edx + [1, -1, 1, -1][frame] * (ei + 1)
+        ey = cap_y + edy - (frame + ei) % 3
+        pygame.draw.circle(s, p["accent"], (ex, ey), 1)
+
+    # --- dynamite sticks strapped to the belt (drawn last so they sit in front) ---
+    stick_w = 3
+    stick_h_list = [6, 8, 6]  # short, tall, short — gives a varied silhouette
+    gap = 2
+    n_sticks = 3
+    total_w = n_sticks * stick_w + (n_sticks - 1) * gap
+    start_x = cx - total_w // 2 + sway // 2
+    # micro sway for each stick so they look hand-stuffed, not perfectly rigid
+    micro = [0, 0, 0, 0][frame]
+    for i in range(n_sticks):
+        sx = start_x + i * (stick_w + gap) + (1 if i == 1 else 0) * micro
+        sh = stick_h_list[i]
+        # red stick body (outline + fill)
+        pygame.draw.rect(s, p["dynamite_dark"], (sx - 1, belt_y - sh, stick_w + 2, sh), border_radius=1)
+        pygame.draw.rect(s, p["dynamite"], (sx, belt_y - sh + 1, stick_w, sh - 1), border_radius=1)
+        # tan wax cap on top
+        pygame.draw.rect(s, p["dynamite_cap_dark"], (sx - 1, belt_y - sh - 1, stick_w + 2, 1))
+        pygame.draw.rect(s, p["dynamite_cap"], (sx, belt_y - sh - 2, stick_w, 1))
+        # tiny fuse and spark
+        fuse_x = sx + stick_w // 2 + (1 if i % 2 == 0 else 0)
+        fuse_y = belt_y - sh - 2
+        pygame.draw.line(s, p["fuse"], (fuse_x, fuse_y), (fuse_x + 1, fuse_y - 2), 1)
+        pygame.draw.circle(s, p["spark"], (fuse_x + 1, fuse_y - 2), 1)
+        # tiny belt strap tying the stick down
+        pygame.draw.rect(s, p["belt_dark"], (sx - 1, belt_y - 1, stick_w + 2, 1))
 
 
 # ============================================================

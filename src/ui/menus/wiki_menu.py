@@ -468,8 +468,8 @@ class WikiMenu(Menu):
                 "Their touch clouds the mind\u2014suddenly left is right, forward is back.\n\n"
                 "Abilities: Blink (240 range), Confuse (2.8s), Dizzy (2.2s). Health: 75. Speed: 150.")},
             {"title": _("The Bomber"), "portrait": "bomber", "body": _(
-                "Where there is fire, there is the Bomber. These mad engineers carry satchels of volatile concoctions.\n\n"
-                "They keep their distance, lobbing timed bombs that arc through the air with deceptive grace.\n\n"
+                "A hiss of steam, a flicker of arc-light\u2014the Bomber lumbers in on riveted peg legs.\n\n"
+                "Brass-plated and pressure-sealed, these wandering automatons keep their distance while lobbing timed bombs that arc through the air with deceptive grace.\n\n"
                 "Abilities: Timed Bomb (95 blast radius, 80 knockback, 0.9s fuse). Health: 125. Speed: 105.")},
         ]
 
