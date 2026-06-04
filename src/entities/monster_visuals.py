@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from functools import lru_cache
 
 import pygame
@@ -22,12 +23,17 @@ def _build_monster_animations_cached(style: str, size: tuple[int, int]) -> dict[
 def _palette_for(style: str) -> dict:
     palettes = {
         "brute": {
-            "skin": (140, 82, 50), "skin_light": (180, 115, 75), "skin_dark": (90, 45, 28),
-            "skin_mid": (160, 98, 62), "fur": (110, 62, 38), "fur_light": (145, 88, 58),
-            "fur_dark": (70, 35, 20), "accent": (190, 55, 55), "accent_dark": (130, 30, 30),
-            "eye_white": (255, 245, 235), "eye_pupil": (210, 45, 45),
-            "horn": (105, 65, 40), "horn_light": (140, 90, 60), "horn_dark": (75, 40, 25),
-            "tusk": (240, 235, 225), "shadow": (0, 0, 0, 48),
+            "skin": (180, 55, 35), "skin_light": (230, 100, 60), "skin_dark": (100, 25, 15),
+            "skin_mid": (200, 75, 45), "fur": (40, 18, 10), "fur_light": (70, 32, 18),
+            "fur_dark": (20, 8, 4), "accent": (255, 120, 30), "accent_dark": (200, 70, 15),
+            "eye_white": (255, 200, 50), "eye_pupil": (255, 80, 20),
+            "horn": (60, 55, 70), "horn_light": (100, 90, 115), "horn_dark": (30, 25, 40),
+            "horn_glow": (255, 140, 30, 120), "tusk": (245, 235, 220),
+            "core_glow": (255, 180, 50), "core_dark": (200, 80, 20),
+            "aura": (200, 50, 20, 30), "aura_bright": (255, 100, 30, 60),
+            "ember": (255, 200, 80), "shadow": (0, 0, 0, 60),
+            "vein": (200, 60, 30), "metal": (80, 75, 85), "metal_dark": (50, 45, 55),
+            "spike": (70, 65, 78), "spike_light": (100, 92, 110),
         },
         "venomous": {
             "skin": (42, 125, 72), "skin_light": (65, 180, 98), "skin_dark": (20, 72, 42),
@@ -137,45 +143,233 @@ def _draw_eye_pair(surface, cx, ey, spacing, palette, side_off=0):
 
 
 # ============================================================
-# BRUTE — hulking beast with horns, tusks, spikes
+# BRUTE — fiery demonic hulk with magma core, glowing runes, ember aura
 # ============================================================
 def _draw_brute(s, w, h, cx, cy, p, dir, bob, frame):
+    # -- aura glow beneath --
+    ag = pygame.Surface((w, h), pygame.SRCALPHA)
+    pulse_r = 18 + (frame % 2) * 3
+    pygame.draw.ellipse(ag, p["aura_bright"], (cx - pulse_r, h - 12 + bob, pulse_r * 2, 10))
+    pygame.draw.ellipse(ag, p["aura"], (cx - pulse_r - 4, h - 10 + bob, pulse_r * 2 + 8, 8))
+    s.blit(ag, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
     _draw_shadow(s, cx, h, p, bob)
     lo, ro, la, ra = _walk_offset(frame)
-    bw = int(w * 0.74); bh = int(h * 0.44)
-    bx = cx - bw // 2; by = int(h * 0.30) + bob
-    _draw_leg_pair(s, cx, int(h * 0.62), bob, 13, 18, p, lo, ro, "fur_dark", "fur")
-    pygame.draw.rect(s, p["fur"], (bx, by, bw, bh), border_radius=12)
-    pygame.draw.rect(s, p["fur_light"], (bx + 8, by + 8, bw - 16, bh - 14), border_radius=8)
-    for my in range(by + 16, by + bh - 8, 6):
-        mw = bw - 24 - (my - by) * 2 // 3
-        if mw > 6:
-            pygame.draw.line(s, p["fur_dark"], (cx - mw // 2, my), (cx + mw // 2, my), 1)
-    sy = by + int(bh * 0.42)
-    pygame.draw.rect(s, p["accent_dark"], (bx + 12, sy, bw - 24, 5), border_radius=2)
-    pygame.draw.line(s, p["accent"], (bx + 14, sy + 1), (bx + bw - 14, sy + 1), 1)
-    _draw_arm_pair(s, bx, bw, by, bob, 11, int(h * 0.32), p, la, ra, "fur_dark", "fur", 5)
-    for sx, fl in [(bx - 4, -1), (bx + bw + 4, 1)]:
-        pygame.draw.polygon(s, p["horn"], [(sx, by - 2), (sx + fl * 8, by + 14), (sx - fl * 2, by + 6)])
-        pygame.draw.polygon(s, p["horn_light"], [(sx - fl * 1, by), (sx + fl * 5, by + 10), (sx - fl * 1, by + 4)])
-    hr = int(w * 0.21); hx, hy = cx, int(h * 0.18) + bob
+
+    # --- legs with armour and knee spikes ---
+    leg_y = int(h * 0.74)
+    leg_h = 22
+    for lx, off, side in [(cx - 16 + lo, lo, -1), (cx + 5 + ro, ro, 1)]:
+        lh = leg_h + abs(off)
+        pygame.draw.ellipse(s, p["fur_dark"], (lx - 2, leg_y + bob, 15, lh))
+        pygame.draw.ellipse(s, p["fur_light"], (lx, leg_y + bob + 2, 11, lh - 4))
+        pygame.draw.rect(s, p["metal"], (lx - 1, leg_y + bob + lh - 7, 13, 5), border_radius=2)
+        pygame.draw.polygon(s, p["spike"], [(lx + 2, leg_y + bob + lh - 9),
+                                             (lx + 6, leg_y + bob + lh - 14),
+                                             (lx + 10, leg_y + bob + lh - 9)])
+
+    # --- body: massive dual torso ---
+    bw1 = int(w * 0.80); bw2 = int(w * 0.64)
+    bh1 = int(h * 0.26); bh2 = int(h * 0.18)
+    bx1 = cx - bw1 // 2; bx2 = cx - bw2 // 2
+    gap = 1
+    by1 = int(h * 0.26) + bob
+    by2 = by1 + bh1 + gap
+
+    # -- upper torso (V-shape muscular) --
+    ut_pts = [(bx1, by1), (bx1 + bw1, by1), (bx1 + bw1 - 4, by1 + bh1), (bx1 + 4, by1 + bh1)]
+    pygame.draw.polygon(s, p["fur"], ut_pts)
+    ut_inner = [(bx1 + 4, by1 + 3), (bx1 + bw1 - 4, by1 + 3),
+                (bx1 + bw1 - 7, by1 + bh1 - 3), (bx1 + 7, by1 + bh1 - 3)]
+    pygame.draw.polygon(s, p["fur_light"], ut_inner)
+    pec_y1 = by1 + int(bh1 * 0.30)
+    pygame.draw.line(s, p["fur_dark"], (cx, by1 + 2), (cx, pec_y1), 2)
+    l_pec = [(bx1 + 5, by1 + 2), (cx - 1, by1 + 2), (cx - 3, pec_y1), (bx1 + 9, pec_y1 - 2)]
+    r_pec = [(cx + 1, by1 + 2), (bx1 + bw1 - 5, by1 + 2), (bx1 + bw1 - 9, pec_y1 - 2), (cx + 3, pec_y1)]
+    pygame.draw.lines(s, p["fur_dark"], True, l_pec, 2)
+    pygame.draw.lines(s, p["fur_dark"], True, r_pec, 2)
+
+    # -- lower torso (narrower, tighter abs) --
+    lt_pts = [(bx2, by2), (bx2 + bw2, by2), (bx2 + bw2 - 2, by2 + bh2), (bx2 + 2, by2 + bh2)]
+    pygame.draw.polygon(s, p["fur_dark"], lt_pts)
+    lt_inner = [(bx2 + 3, by2 + 2), (bx2 + bw2 - 3, by2 + 2),
+                (bx2 + bw2 - 4, by2 + bh2 - 2), (bx2 + 4, by2 + bh2 - 2)]
+    pygame.draw.polygon(s, p["fur"], lt_inner)
+    pygame.draw.line(s, p["fur_dark"], (cx, by2 + 2), (cx, by2 + bh2 - 2), 2)
+    for ab_row in range(2):
+        aby = by2 + 4 + ab_row * 6
+        pygame.draw.line(s, p["fur_dark"], (cx - 7, aby), (cx + 7, aby), 2)
+
+    # -- glowing chest core / rune (between torsos, overlapped) --
+    core_cx, core_cy = cx, by1 + bh1 - 1
+    core_pulse = 4 + (frame % 2) * 3
+    cg = pygame.Surface((w, h), pygame.SRCALPHA)
+    pygame.draw.circle(cg, (*p["core_glow"][:3], 70), (core_cx, core_cy), 14 + core_pulse)
+    s.blit(cg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+    pygame.draw.ellipse(s, p["core_dark"], (core_cx - 8, core_cy - 4, 16, 8))
+    pygame.draw.ellipse(s, p["core_glow"], (core_cx - 6, core_cy - 3, 12, 6))
+    pygame.draw.ellipse(s, (255, 255, 220), (core_cx - 3, core_cy - 2, 6, 4))
+    for angle in [0, 1.05, 2.1, 3.14, 4.2, 5.25]:
+        rx = core_cx + int(13 * math.cos(angle + frame * 0.3))
+        ry = core_cy + int(6 * math.sin(angle + frame * 0.3))
+        pygame.draw.line(s, p["core_glow"], (core_cx, core_cy), (rx, ry), 1)
+
+    # -- connecting tissue between torsos --
+    for rx2 in (cx - 10, cx - 5, cx + 5, cx + 10):
+        pygame.draw.line(s, p["vein"], (rx2, by1 + bh1), (rx2, by2), 1)
+
+    # -- body veins on upper torso --
+    for vx in (cx - 11, cx + 11):
+        for vy in range(by1 + 10, by1 + bh1 - 4, 5):
+            pygame.draw.line(s, p["vein"], (vx, vy), (vx + (1 if vx > cx else -1), vy + 2), 1)
+
+    # -- shoulder spikes ---
+    for sx, fl in [(bx1 - 5, -1), (bx1 + bw1 + 3, 1)]:
+        for i in range(4):
+            spx = sx + fl * i * 4
+            spy = by1 + 2 + i * 7
+            pygame.draw.polygon(s, p["spike"],
+                [(spx, spy), (spx + fl * 9, spy - 3), (spx + fl * 2, spy + 5)])
+
+    # -- back spike row (upper torso) --
+    for si in range(5):
+        sx = bx1 + 5 + si * (bw1 - 10) // 4
+        sy = by1 + 1 - si
+        pygame.draw.polygon(s, p["spike"], [(sx, sy), (sx - 3, sy - 6 - si), (sx + 3, sy - 5 - si)])
+
+    # -- arms with spiked bracers ---
+    for ax, swing, side in [(bx1 - 6 + la // 2, la, -1), (bx1 + bw1 - 5 + ra // 2, ra, 1)]:
+        arm_w, arm_h = 12, int(h * 0.38)
+        aw = arm_w + abs(swing) // 2
+        pygame.draw.rect(s, p["skin_dark"], (ax, by1 + 6 + bob, aw, arm_h), border_radius=4)
+        pygame.draw.rect(s, p["skin"], (ax + 1, by1 + 8 + bob, aw - 2, arm_h - 4), border_radius=3)
+        br_y = by1 + arm_h - 2 + bob
+        pygame.draw.rect(s, p["metal"], (ax - 1, br_y, aw + 2, 8), border_radius=2)
+        pygame.draw.rect(s, p["metal_dark"], (ax, br_y + 1, aw, 3), border_radius=1)
+        fy = br_y + 8
+        pygame.draw.circle(s, p["skin_dark"], (ax + aw // 2, fy), 5)
+        pygame.draw.circle(s, p["skin"], (ax + aw // 2, fy - 1), 4)
+        pygame.draw.polygon(s, p["spike"],
+            [(ax + aw // 2, br_y), (ax + aw // 2 + side * 5, br_y - 5), (ax + aw // 2, br_y + 2)])
+        # extra elbow spike
+        ey2 = by1 + int(arm_h * 0.5) + bob
+        pygame.draw.polygon(s, p["spike"],
+            [(ax + (0 if side < 0 else aw), ey2),
+             (ax + (0 if side < 0 else aw) + side * 6, ey2 - 4),
+             (ax + (0 if side < 0 else aw), ey2 + 2)])
+
+    # --- head ---
+    hr = int(w * 0.20); hx, hy = cx, int(h * 0.17) + bob
+    head_bob = [0, -1, 0, 1][frame]
+    hy += head_bob
+
+    # jaw / lower face
+    pygame.draw.circle(s, p["skin_dark"], (hx, hy + 6), int(hr * 0.85))
     pygame.draw.circle(s, p["skin"], (hx, hy), hr)
     pygame.draw.circle(s, p["skin_light"], (hx, hy), hr - 3)
-    pygame.draw.circle(s, p["skin_dark"], (hx, hy + 6), int(hr * 0.85))
+    # brow ridge
+    for brx in (hx - 6, hx + 6):
+        pygame.draw.arc(s, p["skin_dark"], (brx - 5, hy - 7, 10, 8), 3.14, 0, 2)
+
+    # --- majestic horns ---
+    horn_frame_off = [0, -1, 1, -1][frame]
     if dir == "side":
-        pygame.draw.polygon(s, p["horn"], [(hx + hr - 1, hy - 4), (hx + hr + 14, hy - 14), (hx + hr, hy)])
+        horn_points = [
+            (hx + hr - 2, hy - 5),
+            (hx + hr + 18 + horn_frame_off, hy - 22 - horn_frame_off),
+            (hx + hr + 12, hy - 8),
+            (hx + hr + 22 + horn_frame_off, hy - 10),
+        ]
+        pygame.draw.polygon(s, p["horn_dark"], horn_points[:3])
+        pygame.draw.polygon(s, p["horn_light"], [
+            (horn_points[0][0] + 2, horn_points[0][1] + 1),
+            (horn_points[1][0] - 2, horn_points[1][1] + 2),
+            (horn_points[2][0] - 1, horn_points[2][1] - 1),
+        ])
+        # glow crack on horn
+        pygame.draw.line(s, p["horn_glow"], horn_points[1], horn_points[3], 2)
     else:
         for hf in (-1, 1):
-            pygame.draw.polygon(s, p["horn"], [(hx + hf * (hr - 1), hy - 4), (hx + hf * (hr + 12), hy - 14), (hx + hf * hr, hy)])
-    esp = 8 if dir != "side" else 6; so = 2 if dir == "side" else 0
+            horn_base = hx + hf * (hr - 2)
+            horn_tip = hx + hf * (hr + 22 + horn_frame_off)
+            tip_y = hy - 22 - horn_frame_off
+            # main horn
+            pygame.draw.polygon(s, p["horn_dark"], [
+                (horn_base, hy - 4), (horn_tip, tip_y), (horn_base - hf * 4, hy - 6)
+            ])
+            # lighter inner
+            pygame.draw.polygon(s, p["horn_light"], [
+                (horn_base + hf * 1, hy - 5), (horn_tip - hf * 2, tip_y + 2),
+                (horn_base + hf * 1, hy - 5)
+            ])
+            # glow rune on horn
+            grx = (horn_base + horn_tip) // 2
+            gry = (hy - 4 + tip_y) // 2
+            pygame.draw.circle(s, p["horn_glow"], (grx, gry), 3)
+            pygame.draw.line(s, p["horn_glow"], (horn_base + hf * 2, hy - 6), (grx, gry), 1)
+            pygame.draw.line(s, p["horn_glow"], (grx, gry), (horn_tip - hf * 1, tip_y + 2), 1)
+
+    # --- eyes (glowing) ---
+    esp = 7 if dir != "side" else 5
+    so = 2 if dir == "side" else 0
+    glint_frame = frame % 2
     for ex in (hx - esp + so, hx + esp + so):
-        pygame.draw.line(s, p["skin_dark"], (ex - 5, hy - 6), (ex + 5, hy - 2), 3)
-    _draw_eye_pair(s, hx, hy, esp, p, so)
+        # eye glow aura
+        eg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(eg, (255, 150, 50, 40), (ex, hy), 7)
+        s.blit(eg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+        # eye white (fiery)
+        pygame.draw.circle(s, p["eye_white"], (ex, hy), 4)
+        pupil_c = p["eye_pupil"]
+        # pupil
+        pygame.draw.circle(s, pupil_c, (ex, hy), 2)
+        # glint
+        if glint_frame:
+            pygame.draw.circle(s, (255, 255, 255, 220), (ex - 1, hy - 1), 1)
+
+    # --- glowing eye trail / brow flames ---
+    for brx in (hx - esp + so - 4, hx + esp + so + 4):
+        pygame.draw.polygon(s, p["accent"], [
+            (brx, hy - 6), (brx + (1 if brx > hx else -1) * 4, hy - 12), (brx, hy - 4)
+        ], 1)
+
+    # --- flaming maw ---
+    maw_y = hy + 9
     if dir == "side":
-        pygame.draw.polygon(s, p["tusk"], [(hx + 1, hy + 8), (hx - 3, hy + 16), (hx + 5, hy + 10)])
+        maw_pts = [(hx + so - 4, maw_y), (hx + so + 6, maw_y + 3), (hx + so - 2, maw_y + 7)]
+        pygame.draw.polygon(s, p["skin_dark"], maw_pts)
+        for ti in range(3):
+            tx = hx + so - 2 + ti * 3
+            pygame.draw.polygon(s, (255, 255, 240), [(tx, maw_y + 1), (tx - 1, maw_y + 4), (tx + 1, maw_y + 4)])
+        # inner fire glow
+        pygame.draw.circle(s, (255, 150, 30, 80), (hx + so, maw_y + 3), 4)
+        # flame tongue
+        flame_pts = [(hx + so - 2, maw_y + 3), (hx + so + frame - 3, maw_y + 12 + (frame % 2)),
+                     (hx + so + 1, maw_y + 3)]
+        pygame.draw.polygon(s, (255, 200, 50, 120), flame_pts)
     else:
-        for tx in (hx - 5, hx + 5):
-            pygame.draw.polygon(s, p["tusk"], [(tx, hy + 8), (tx - 2, hy + 17), (tx + 2, hy + 10)])
+        maw_pts = [(hx - 6, maw_y), (hx + 6, maw_y), (hx + 4, maw_y + 7), (hx - 4, maw_y + 7)]
+        pygame.draw.polygon(s, p["skin_dark"], maw_pts)
+        for ti in range(4):
+            tx = hx - 5 + ti * 3
+            pygame.draw.polygon(s, (255, 255, 240), [(tx, maw_y + 1), (tx - 1, maw_y + 4), (tx + 1, maw_y + 4)])
+        # inner fire glow
+        pygame.draw.ellipse(s, (255, 150, 30, 100), (hx - 3, maw_y + 2, 6, 4))
+        # flame tongue
+        flame_pts = [(hx - 4, maw_y + 4), (hx + frame - 2, maw_y + 13 + (frame % 2) * 2),
+                     (hx + 4, maw_y + 4)]
+        pygame.draw.polygon(s, (255, 200, 50, 120), flame_pts)
+
+    # --- ember particles floating around ---
+    for ei in range(4):
+        angle = (frame * 0.8 + ei * 1.57) % 6.28
+        dist = 14 + ei * 3 + int(math.sin(frame * 0.5 + ei) * 4)
+        ex = cx + int(math.cos(angle) * dist)
+        ey = hy - 8 + int(math.sin(angle * 0.7) * dist * 0.5)
+        es = max(1, 3 - ei // 2)
+        ea = max(30, 100 - ei * 15)
+        pygame.draw.circle(s, (*p["ember"][:3], ea), (ex, ey + bob), es)
+
 
 
 # ============================================================
@@ -254,7 +448,6 @@ def _draw_arcanist(s, w, h, cx, cy, p, dir, bob, frame):
         pygame.draw.circle(s, sc, (cx, sy2), 2)
         pygame.draw.circle(s, sc, (cx - 10, sy2 + 4), 1)
         pygame.draw.circle(s, sc, (cx + 10, sy2 + 4), 1)
-    import math
     for ri in range(3):
         rx = cx + int(14 * math.cos(frame * 1.57 + ri * 2.1))
         ry = by + 14 + ri * 18 + bob
