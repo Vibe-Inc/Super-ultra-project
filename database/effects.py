@@ -303,30 +303,6 @@ class RadiantFortitude(Effect):
             target.damage_taken_mult = getattr(target, "damage_taken_mult", 1.0) / self.damage_mult
         logger.debug(f"RadiantFortitude ended on {getattr(target,'id',type(target))}")
 
-class Haste(Effect):
-    """
-    Buff: increases movement speed and reduces attack cooldown.
-    """
-    def __init__(self, duration=10.0, speed_mult=1.3, cooldown_mult=0.7):
-        super().__init__(duration)
-        self.speed_mult = speed_mult
-        self.cooldown_mult = cooldown_mult
-        self.started = False
-
-    def apply(self, dt, target):
-        if not self.started:
-            self._prev_speed = getattr(target, "speed_multiplier", 1.0)
-            self._prev_cd_mult = getattr(target, "attack_cooldown_mult", 1.0)
-            target.speed_multiplier = self._prev_speed * self.speed_mult
-            target.attack_cooldown_mult = self._prev_cd_mult * self.cooldown_mult
-            self.started = True
-            logger.debug(f"Applied Haste to {getattr(target,'id',type(target))}")
-
-    def on_end(self, target):
-        target.speed_multiplier = getattr(target, "speed_multiplier", 1.0) / self.speed_mult
-        target.attack_cooldown_mult = getattr(target, "attack_cooldown_mult", 1.0) / self.cooldown_mult
-        logger.debug(f"Haste ended on {getattr(target,'id',type(target))}")
-
 class VampiricEdge(Effect):
     """
     Buff: attacks heal the caster for a percentage of damage dealt.
@@ -347,26 +323,6 @@ class VampiricEdge(Effect):
         target.vampiric_pct = max(0.0, getattr(target, "vampiric_pct", 0.0) - self.vampiric_pct)
         logger.debug(f"VampiricEdge ended on {getattr(target,'id',type(target))}")
 
-class ArcaneShield(Effect):
-    """
-    Shield: grants flat absorption that is consumed before HP.
-    """
-    def __init__(self, duration=60.0, absorption=150.0):
-        super().__init__(duration)
-        self.absorption = float(absorption)
-        self.started = False
-
-    def apply(self, dt, target):
-        if not self.started:
-            target.shield_absorption = getattr(target, "shield_absorption", 0.0) + self.absorption
-            self.started = True
-            logger.debug(f"ArcaneShield applied {self.absorption} to {getattr(target,'id',type(target))}")
-
-    def on_end(self, target):
-        # remove the shield portion granted by this instance
-        target.shield_absorption = max(0.0, getattr(target, "shield_absorption", 0.0) - self.absorption)
-        logger.debug(f"ArcaneShield expired on {getattr(target,'id',type(target))}")
-
 class KeenInsight(Effect):
     """
     Buff: increases critical chance for duration.
@@ -374,6 +330,18 @@ class KeenInsight(Effect):
     def __init__(self, duration=20.0, crit_bonus=0.25):
         super().__init__(duration)
         self.crit_bonus = crit_bonus
+        self.started = False
+
+    def apply(self, dt, target):
+        if not self.started:
+            target.crit_chance_bonus = getattr(target, "crit_chance_bonus", 0.0) + self.crit_bonus
+            self.started = True
+            logger.debug(f"KeenInsight applied to {getattr(target,'id',type(target))}")
+
+    def on_end(self, target):
+        target.crit_chance_bonus = max(0.0, getattr(target, "crit_chance_bonus", 0.0) - self.crit_bonus)
+        logger.debug(f"KeenInsight ended on {getattr(target,'id',type(target))}")
+
 # =====================================================================
 # New effects added to support the new WIP_TEXTURE items.
 # =====================================================================
@@ -414,13 +382,13 @@ class StrengthEffect(Effect):
 
     def apply(self, dt, target):
         if not self.started:
-            target.crit_chance_bonus = getattr(target, "crit_chance_bonus", 0.0) + self.crit_bonus
+            target.damage_bonus = getattr(target, "damage_bonus", 0) + self.damage_bonus
             self.started = True
-            logger.debug(f"KeenInsight applied to {getattr(target,'id',type(target))}")
+            logger.debug(f"StrengthEffect applied to {getattr(target,'id',type(target))}")
 
     def on_end(self, target):
-        target.crit_chance_bonus = max(0.0, getattr(target, "crit_chance_bonus", 0.0) - self.crit_bonus)
-        logger.debug(f"KeenInsight ended on {getattr(target,'id',type(target))}")
+        target.damage_bonus = max(0, getattr(target, "damage_bonus", 0) - self.damage_bonus)
+        logger.debug(f"StrengthEffect ended on {getattr(target, 'id', type(target))}")
 
 class Momentum(Effect):
     """
@@ -452,12 +420,18 @@ class BlindEffect(Effect):
     def __init__(self, duration=6.0, accuracy_mult=0.5):
         super().__init__(duration)
         self.accuracy_mult = accuracy_mult
-            target.damage_bonus = getattr(target, "damage_bonus", 0) + self.damage_bonus
+        self.started = False
+
+    def apply(self, dt, target):
+        if not self.started:
+            self._prev = getattr(target, "accuracy_mult", 1.0)
+            target.accuracy_mult = self._prev * self.accuracy_mult
             self.started = True
+            logger.debug(f"BlindEffect applied to {getattr(target,'id',type(target))}")
 
     def on_end(self, target):
-        target.damage_bonus = max(0, getattr(target, "damage_bonus", 0) - self.damage_bonus)
-        logger.debug(f"StrengthEffect ended on {getattr(target, 'id', type(target))}")
+        target.accuracy_mult = getattr(target, "accuracy_mult", 1.0) / self.accuracy_mult
+        logger.debug(f"BlindEffect ended on {getattr(target,'id',type(target))}")
 
 
 class HasteEffect(Effect):
@@ -476,14 +450,15 @@ class HasteEffect(Effect):
 
     def apply(self, dt, target):
         if not self.started:
-            self._prev = getattr(target, "accuracy_mult", 1.0)
-            target.accuracy_mult = self._prev * self.accuracy_mult
+            target.cooldown_multiplier = min(getattr(target, "cooldown_multiplier", 1.0), self.cooldown_multiplier)
+            target.speed_multiplier = max(getattr(target, "speed_multiplier", 1.0), self.speed_multiplier)
             self.started = True
-            logger.debug(f"BlindEffect applied to {getattr(target,'id',type(target))}")
+            logger.debug(f"HasteEffect applied to {getattr(target,'id',type(target))}")
 
     def on_end(self, target):
-        target.accuracy_mult = getattr(target, "accuracy_mult", 1.0) / self.accuracy_mult
-        logger.debug(f"BlindEffect ended on {getattr(target,'id',type(target))}")
+        target.cooldown_multiplier = 1.0
+        target.speed_multiplier = 1.0
+        logger.debug(f"HasteEffect ended on {getattr(target, 'id', type(target))}")
 
 class WeakenEffect(Effect):
     """
@@ -492,14 +467,18 @@ class WeakenEffect(Effect):
     def __init__(self, duration=8.0, damage_mult=0.8):
         super().__init__(duration)
         self.damage_mult = damage_mult
-            target.cooldown_multiplier = min(getattr(target, "cooldown_multiplier", 1.0), self.cooldown_multiplier)
-            target.speed_multiplier = max(getattr(target, "speed_multiplier", 1.0), self.speed_multiplier)
+        self.started = False
+
+    def apply(self, dt, target):
+        if not self.started:
+            self._prev = getattr(target, "damage_dealt_mult", 1.0)
+            target.damage_dealt_mult = self._prev * self.damage_mult
             self.started = True
+            logger.debug(f"WeakenEffect applied to {getattr(target,'id',type(target))}")
 
     def on_end(self, target):
-        target.cooldown_multiplier = 1.0
-        target.speed_multiplier = 1.0
-        logger.debug(f"HasteEffect ended on {getattr(target, 'id', type(target))}")
+        target.damage_dealt_mult = getattr(target, "damage_dealt_mult", 1.0) / self.damage_mult
+        logger.debug(f"WeakenEffect ended on {getattr(target,'id',type(target))}")
 
 
 class ShieldEffect(Effect):
@@ -518,14 +497,12 @@ class ShieldEffect(Effect):
 
     def apply(self, dt, target):
         if not self.started:
-            self._prev = getattr(target, "damage_dealt_mult", 1.0)
-            target.damage_dealt_mult = self._prev * self.damage_mult
+            target.shield = getattr(target, "shield", 0.0) + self.remaining
             self.started = True
-            logger.debug(f"WeakenEffect applied to {getattr(target,'id',type(target))}")
 
     def on_end(self, target):
-        target.damage_dealt_mult = getattr(target, "damage_dealt_mult", 1.0) / self.damage_mult
-        logger.debug(f"WeakenEffect ended on {getattr(target,'id',type(target))}")
+        target.shield = max(0.0, getattr(target, "shield", 0.0) - self.remaining)
+        logger.debug(f"ShieldEffect ended on {getattr(target, 'id', type(target))}")
 
 class CurseEffect(Effect):
     """
@@ -556,13 +533,6 @@ class CurseEffect(Effect):
         for k, v in self._prev_resists.items():
             target.resistances[k] = v
         logger.debug(f"CurseEffect ended on {getattr(target,'id',type(target))}")
-# ─────────────────────────────────────────────────────────────────────────────
-            target.shield = getattr(target, "shield", 0.0) + self.remaining
-            self.started = True
-
-    def on_end(self, target):
-        target.shield = max(0.0, getattr(target, "shield", 0.0) - self.remaining)
-        logger.debug(f"ShieldEffect ended on {getattr(target, 'id', type(target))}")
 
 
 class LethargyEffect(Effect):
@@ -601,9 +571,7 @@ Effect_list = {
     "freeze": FreezeEffect,
     "root": RootEffect,
     "radiant_fortitude": RadiantFortitude,
-    "haste": Haste,
     "vampiric_edge": VampiricEdge,
-    "arcane_shield": ArcaneShield,
     "keen_insight": KeenInsight,
     "momentum": Momentum,
     "blind": BlindEffect,
