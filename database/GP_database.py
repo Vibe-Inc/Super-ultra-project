@@ -124,6 +124,16 @@ class Gp_database:
         ''')
 
         self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS tools (
+                item_id TEXT PRIMARY KEY,
+                tool_type TEXT NOT NULL DEFAULT 'generic',
+                durability INT DEFAULT 100,
+                power INT DEFAULT 0,
+                FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE
+            )
+        ''')
+
+        self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS consumable_effects (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 item_id TEXT,
@@ -166,7 +176,7 @@ class Gp_database:
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS shaped_recipes (
                 recipe_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                result_item_id TEXT NOT NULL,
+                result_item_id TEXT NOT NULL UNIQUE,
                 result_amount INTEGER DEFAULT 1,
                 FOREIGN KEY (result_item_id) REFERENCES items(id) ON DELETE CASCADE
             )
@@ -183,6 +193,60 @@ class Gp_database:
             )
         ''')
         self.conn.commit()
+
+        self._migrate_shaped_recipes_unique()
+
+    def _migrate_shaped_recipes_unique(self):
+        """
+        Ensure shaped_recipes.result_item_id has a UNIQUE constraint and that
+        no duplicate rows exist. Older databases may have been seeded multiple
+        times, so collapse duplicates to a single row before adding the
+        constraint.
+        """
+        try:
+            self.cursor.execute(
+                "SELECT name FROM sqlite_master "
+                "WHERE type = 'index' AND tbl_name = 'shaped_recipes' "
+                "AND sql LIKE '%result_item_id%'"
+            )
+            existing_indexes = {row[0] for row in self.cursor.fetchall()}
+
+            has_unique = False
+            for idx_name in existing_indexes:
+                self.cursor.execute(f"PRAGMA index_info({idx_name})")
+                cols = [row[2] for row in self.cursor.fetchall()]
+                if cols == ["result_item_id"]:
+                    self.cursor.execute(
+                        "SELECT sql FROM sqlite_master "
+                        "WHERE type = 'index' AND name = ?",
+                        (idx_name,)
+                    )
+                    row = self.cursor.fetchone()
+                    if row and row[0] and "UNIQUE" in row[0].upper():
+                        has_unique = True
+                        break
+
+            if not has_unique:
+                self.cursor.execute('''
+                    DELETE FROM recipe_matrix
+                    WHERE recipe_id NOT IN (
+                        SELECT MIN(recipe_id) FROM shaped_recipes GROUP BY result_item_id
+                    )
+                ''')
+                self.cursor.execute('''
+                    DELETE FROM shaped_recipes
+                    WHERE recipe_id NOT IN (
+                        SELECT MIN(recipe_id) FROM shaped_recipes GROUP BY result_item_id
+                    )
+                ''')
+                self.cursor.execute('''
+                    CREATE UNIQUE INDEX IF NOT EXISTS idx_shaped_recipes_result_item_id
+                    ON shaped_recipes(result_item_id)
+                ''')
+                self.conn.commit()
+        except sqlite3.Error as exc:
+            print(f"_migrate_shaped_recipes_unique failed: {exc}")
+            self.conn.rollback()
 
     def add_generic_item(self, item_id: str, item_type: str, name: str, image_path: str, price: int = 0, max_stack: int = 64, description: str = "") -> bool:
         """
@@ -312,6 +376,56 @@ class Gp_database:
             self.conn.rollback()
             return False
 
+    def add_tool(self, item_id: str, name: str, image_path: str,
+                 tool_type: str = "generic", durability: int = 100,
+                 power: int = 0, price: int = 0, max_stack: int = 1,
+                 description: str = "") -> bool:
+        """
+        Add a tool item to the database.
+
+        Tools are non-combat, non-consumable items used to perform a specific
+        in-world action (fishing, mining, woodcutting, etc.). They typically
+        do not stack and have their own durability / power stats.
+
+        Args:
+            item_id (str): Unique identifier for the tool.
+            name (str): Display name or translation key.
+            image_path (str): File path to the tool's texture.
+            tool_type (str): Sub-category of the tool
+                (e.g. "fishing", "pickaxe", "axe").
+            durability (int): Maximum durability points.
+            power (int): Generic effectiveness multiplier (e.g. catch power
+                bonus for a fishing rod, mining speed for a pickaxe).
+            price (int): Monetary value.
+            max_stack (int): Maximum stack size (usually 1).
+            description (str): Description text.
+
+        Returns:
+            bool: True if successful, False otherwise.
+        """
+        try:
+            self.conn.execute("BEGIN TRANSACTION")
+
+            self.cursor.execute('''
+                INSERT INTO items (id, type, name, image_path, price, max_stack, description)
+                VALUES (?, 'tool', ?, ?, ?, ?, ?)
+            ''', (item_id, name, image_path, price, max_stack, description))
+
+            self.cursor.execute('''
+                INSERT INTO tools (item_id, tool_type, durability, power)
+                VALUES (?, ?, ?, ?)
+            ''', (item_id, tool_type, durability, power))
+
+            self.conn.commit()
+            print(f"Tool '{item_id}' added successfully.")
+            return True
+        except sqlite3.IntegrityError:
+            self.conn.rollback()
+            return False
+        except sqlite3.Error:
+            self.conn.rollback()
+            return False
+
     def add_consumable(self, item_id: str, item_type: str, name: str, image_path: str,
                        heal_amount: int = 0, effects: list = None,
                        price: int = 0, max_stack: int = 64, description: str = "") -> bool:
@@ -395,11 +509,13 @@ class Gp_database:
                    weapons.projectile_speed, weapons.cooldown, weapons.spread_degrees,
                    weapons.cone_degrees, weapons.on_hit_effects, weapons.combat_style,
                    consumables.heal_amount,
-                   armor.slot_type, armor.defense_value
+                   armor.slot_type, armor.defense_value,
+                   tools.tool_type, tools.durability AS tool_durability, tools.power
             FROM items
             LEFT JOIN weapons ON items.id = weapons.item_id
             LEFT JOIN consumables ON items.id = consumables.item_id
             LEFT JOIN armor ON items.id = armor.item_id
+            LEFT JOIN tools ON items.id = tools.item_id
             WHERE items.id = ?
         ''', (item_id,))
 
@@ -491,15 +607,22 @@ class Gp_database:
     
     def add_shaped_recipe(self, result_item_id: str, result_amount: int, grid: list) -> bool:
         try:
+            self.cursor.execute(
+                'SELECT 1 FROM shaped_recipes WHERE result_item_id = ?',
+                (result_item_id,)
+            )
+            if self.cursor.fetchone() is not None:
+                return False
+
             self.conn.execute("BEGIN TRANSACTION")
-            
+
             self.cursor.execute('''
                 INSERT INTO shaped_recipes (result_item_id, result_amount)
                 VALUES (?, ?)
             ''', (result_item_id, result_amount))
-            
+
             recipe_id = self.cursor.lastrowid
-            
+
             for row in range(3):
                 for col in range(3):
                     ingredient_id = grid[row][col]
@@ -508,11 +631,11 @@ class Gp_database:
                             INSERT INTO recipe_matrix (recipe_id, ingredient_item_id, col, row)
                             VALUES (?, ?, ?, ?)
                         ''', (recipe_id, ingredient_id, col, row))
-                        
+
             self.conn.commit()
             print(f"Recipe for '{result_item_id}' added successfully.")
             return True
-            
+
         except Exception as e:
             self.conn.rollback()
             print(f"Failed to add recipe for '{result_item_id}': {e}")

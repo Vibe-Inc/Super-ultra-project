@@ -278,20 +278,32 @@ class ShopInventory(Inventory):
         for i, item in enumerate(items_list):
             x, y = i % columns, i // columns
             if y < rows: items_grid[x][y] = [item, 1]
-            
+
         super().__init__(
-            columns, rows, items_grid, 
+            columns, rows, items_grid,
             int(cfg.BASE_INV_slot_size * scale), 0, 0,
             int(cfg.BASE_INV_border * scale)
         )
         btn_w, btn_h = max(80, int(140 * scale)), max(28, int(38 * scale))
         self.close_button = Button(
             rect=pygame.Rect(0, 0, btn_w, btn_h),
-            text=_("LEAVE SHOP"), color=cfg.INV_SHOP_CLOSE_BTN_COLOR, 
+            text=_("LEAVE SHOP"), color=cfg.INV_SHOP_CLOSE_BTN_COLOR,
             hover_color=cfg.INV_SHOP_CLOSE_BTN_HOVER_COLOR,
             font=cfg.INV_nums_font, font_color=cfg.INV_SHOP_CLOSE_BTN_FONT_COLOR,
             corner_width=max(2, int(8 * scale)), on_click=self._close_shop
         )
+
+    def rescale(self):
+        """Recompute slot_size, border, and the close button for the current UI scale."""
+        scale = cfg.ui_scale()
+        self.slot_size = int(cfg.BASE_INV_slot_size * scale)
+        self.border = int(cfg.BASE_INV_border * scale)
+        btn_w, btn_h = max(80, int(140 * scale)), max(28, int(38 * scale))
+        self.close_button.rect.width = btn_w
+        self.close_button.rect.height = btn_h
+        self.close_button.corner_width = max(2, int(8 * scale))
+        self.close_button.font = cfg.INV_nums_font
+        self.close_button._update_text_surface()
 
     def inventory_interactions(self, event, manager):
         if event.type != pygame.MOUSEBUTTONDOWN: return
@@ -765,6 +777,18 @@ class CraftingGrid(Inventory):
 
     def open_recipe_menu(self):
         self.app.manager.set_state("recipe_book")
+
+    def rescale(self):
+        """Recompute slot_size, border, and the recipe book button for the current UI scale."""
+        scale = cfg.ui_scale()
+        self.slot_size = int(cfg.BASE_INV_slot_size * scale)
+        self.border = int(cfg.BASE_INV_border * scale)
+        btn_size = int(self.slot_size * 0.85)
+        self.book_button.rect.width = btn_size
+        self.book_button.rect.height = btn_size
+        self.book_button.corner_width = max(2, int(cfg.INV_SLOT_BORDER_RADIUS * 0.75))
+        self.book_button.font = cfg.INV_nums_font
+        self.book_button._update_text_surface()
 
     def update_positions(self, base_x, base_y):
         scale = cfg.ui_scale()

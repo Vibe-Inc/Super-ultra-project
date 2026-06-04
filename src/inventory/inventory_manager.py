@@ -183,8 +183,6 @@ class INVENTORY_manager:
 
         self.renderer = InventoryRenderer()
 
-        self.renderer = InventoryRenderer()
-
         self.overlay_alpha = 0
         self.target_alpha = 0
 
@@ -223,16 +221,17 @@ class INVENTORY_manager:
                         equip_inv = active_inv
                         break
 
-                if equip_inv:
-                    scale = cfg.ui_scale()
-                    craft_width = (self.crafting_system.slot_size + self.crafting_system.border) * 3
+                scale = cfg.ui_scale()
+                craft_width = (self.crafting_system.slot_size + self.crafting_system.border) * 3
 
+                if equip_inv:
                     craft_x = equip_inv.pos_x - craft_width - int(8 * scale)
                     craft_y = equip_inv.pos_y
+                else:
+                    craft_x = inv.pos_x
+                    craft_y = inv.pos_y
 
-                    self.crafting_system.update_positions(craft_x, craft_y)
-                    self.renderer.draw_crafting_system(screen, self.crafting_system)
-
+                self.crafting_system.update_positions(craft_x, craft_y)
                 self.renderer.draw_crafting_system(screen, self.crafting_system)
             elif isinstance(inv, MAIN_player_inventory_equipment):
                 self.renderer.draw_equipment(screen, inv)
