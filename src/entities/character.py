@@ -490,6 +490,9 @@ class Character:
         self.fireball_knockback = 18.0
         self.game_state = None
 
+        # Light/lamp support
+        self.active_lamp = None
+
         # Flame Shield skill
         self.flame_shield_duration = 6.0       # seconds active
         self.flame_shield_cooldown = 14000      # ms cooldown

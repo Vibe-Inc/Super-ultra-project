@@ -285,11 +285,42 @@ class App:
                 if self._brightness_overlay is None or self._brightness_overlay.get_size() != (cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT):
                     self._brightness_overlay = pygame.Surface((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT))
                 self._brightness_overlay.set_alpha(int((1 - effective_brightness) * 255))
+                # Use the environment tint color computed by the game state for dawn/dusk/night
                 if night_tint:
-                    self._brightness_overlay.fill((10, 24, 80))
+                    tint = cfg.ENVIRONMENT_TINT
                 else:
-                    self._brightness_overlay.fill((0, 0, 0))
-                self.screen.blit(self._brightness_overlay, (0, 0))
+                    tint = (0, 0, 0)
+                self._brightness_overlay.fill(tint)
+
+                # Apply local light sources (from gameplay state) to reveal areas around lights
+                overlay = self._brightness_overlay.copy()
+                if self.manager.get_state() == "gameplay":
+                    gameplay_state = self.manager.states.get("gameplay")
+                    try:
+                        lights = gameplay_state.get_light_sources() if gameplay_state and hasattr(gameplay_state, 'get_light_sources') else []
+                        for l in lights:
+                            lx, ly = l.get('pos', (0,0))
+                            radius = int(l.get('radius', 120))
+                            intensity = float(l.get('intensity', 1.0))
+                            if radius <= 0:
+                                continue
+                            # build a radial gradient surface
+                            grad = pygame.Surface((radius*2, radius*2), pygame.SRCALPHA)
+                            for r in range(radius, 0, -4):
+                                a = int((1.0 - (r / radius)) * 200 * intensity)
+                                a = max(0, min(255, a))
+                                pygame.draw.circle(grad, (255,255,255,a), (radius, radius), r)
+                            # Blit additive to lighten the overlay where the light is
+                            gx = lx - radius
+                            gy = ly - radius
+                            try:
+                                overlay.blit(grad, (gx, gy), special_flags=pygame.BLEND_RGBA_ADD)
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
+
+                self.screen.blit(overlay, (0, 0))
             self.profiler.end_section("postfx")
 
             if self.manager.get_state() == "gameplay":

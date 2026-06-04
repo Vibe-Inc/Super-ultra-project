@@ -279,6 +279,39 @@ class Armor(Item):
         return f"{self.name}\n{stats}\n{self.description}"
 
 
+class Lamp(Item):
+    """Simple handheld lamp item that can be toggled on/off to provide light."""
+    def __init__(self, row: dict | None = None, *, image_path: str = "assets/items/lamp.png"):
+        # Create a minimal row-like dict if none provided
+        if row is None:
+            row = {
+                "id": "hand_lamp",
+                "name": "Hand Lamp",
+                "type": "misc",
+                "max_stack": 1,
+                "price": 15,
+                "description": "A small oil lamp that provides light when turned on.",
+                "image_path": image_path,
+            }
+        super().__init__(row)
+        self.lit = False
+        self.light_radius = 220  # pixels
+        self.intensity = 1.0
+
+    def toggle(self, target=None):
+        self.lit = not self.lit
+        return self.lit
+
+    def use(self, target):
+        # Toggle lamp on the target (player)
+        try:
+            target.active_lamp = self if getattr(target, 'active_lamp', None) is not self else None
+        except Exception:
+            pass
+        self.lit = not self.lit
+        return True
+
+
 def create_item(item_id: str):
     """
     Factory function to instantiate the appropriate item class.
@@ -289,6 +322,14 @@ def create_item(item_id: str):
     Returns:
         Item | None: An instance of a specific item class or None.
     """
+    # Built-in quick items (do not require DB presence)
+    if item_id in ("hand_lamp", "lamp"):
+        try:
+            return Lamp(None)
+        except Exception:
+            # fallback to generic Item if Lamp construction fails
+            pass
+
     from database.GP_database import Gp_database 
     
     db = Gp_database()

@@ -235,7 +235,7 @@ class Game(State):
         self.DUSK_START = 16 * 3600
         self.NIGHT_START = 18 * 3600
         self.DAWN_START = 4 * 3600
-        self.NIGHT_BRIGHTNESS = 0.4
+        self.NIGHT_BRIGHTNESS = 0.15
 
         self.enemy_profiles = {
             "brute": {
@@ -505,6 +505,7 @@ class Game(State):
             create_item("dull_sword"),
             create_item("wooden_bow"),
             create_item("apple"),
+            create_item("hand_lamp"),
             create_item("small_health_potion"),
             create_item("large_health_potion"),
             create_item("large_health_potion"),
@@ -699,17 +700,24 @@ class Game(State):
 
     def _update_game_time(self, dt: float):
         self.game_time_seconds = (self.game_time_seconds + dt * self.GAME_SECONDS_PER_REAL_SECOND) % self.GAME_DAY_SECONDS
+        # Smooth brightness interpolation across dawn/dusk and compute a tint color
+        def lerp_color(a: tuple[int, int, int], b: tuple[int, int, int], t: float) -> tuple[int, int, int]:
+            return (int(a[0] + (b[0] - a[0]) * t), int(a[1] + (b[1] - a[1]) * t), int(a[2] + (b[2] - a[2]) * t))
 
         if self.DUSK_START <= self.game_time_seconds < self.NIGHT_START:
             t = (self.game_time_seconds - self.DUSK_START) / (self.NIGHT_START - self.DUSK_START)
             cfg.ENVIRONMENT_BRIGHTNESS = 1.0 - t * (1.0 - self.NIGHT_BRIGHTNESS)
+            cfg.ENVIRONMENT_TINT = lerp_color(cfg.ENVIRONMENT_DAY_COLOR, cfg.ENVIRONMENT_NIGHT_COLOR, t)
         elif self.NIGHT_START <= self.game_time_seconds or self.game_time_seconds < self.DAWN_START:
             cfg.ENVIRONMENT_BRIGHTNESS = self.NIGHT_BRIGHTNESS
+            cfg.ENVIRONMENT_TINT = cfg.ENVIRONMENT_NIGHT_COLOR
         elif self.DAWN_START <= self.game_time_seconds < self.DAY_START:
             t = (self.game_time_seconds - self.DAWN_START) / (self.DAY_START - self.DAWN_START)
             cfg.ENVIRONMENT_BRIGHTNESS = self.NIGHT_BRIGHTNESS + t * (1.0 - self.NIGHT_BRIGHTNESS)
+            cfg.ENVIRONMENT_TINT = lerp_color(cfg.ENVIRONMENT_NIGHT_COLOR, cfg.ENVIRONMENT_DAY_COLOR, t)
         else:
             cfg.ENVIRONMENT_BRIGHTNESS = 1.0
+            cfg.ENVIRONMENT_TINT = cfg.ENVIRONMENT_DAY_COLOR
 
         self.app.profiler.set_gauge("game_time", self._format_game_time())
 
@@ -758,6 +766,39 @@ class Game(State):
             (center.x + radius, center.y + radius),
             (center.x - radius, center.y + radius),
         ]
+
+    def get_light_sources(self) -> list:
+        """Return a list of light sources in screen coordinates.
+
+        Each source is a dict: { 'pos': (x,y), 'radius': int, 'intensity': float }
+        The Game computes camera offset and converts world positions to screen space.
+        """
+        lights = []
+        try:
+            camera = self._get_camera_offset()
+            # Player light: if player has an active lamp, use it
+            player_center = self.character.get_center()
+            if getattr(self.character, 'active_lamp', None) and getattr(self.character.active_lamp, 'lit', False):
+                lamp = self.character.active_lamp
+                screen_pos = (int(player_center.x - camera.x), int(player_center.y - camera.y))
+                lights.append({
+                    'pos': screen_pos,
+                    'radius': int(lamp.light_radius),
+                    'intensity': float(lamp.intensity)
+                })
+
+            # Optional: existing dropped items that emit light
+            for it in getattr(self, 'items', []):
+                try:
+                    if getattr(it, 'emits_light', False):
+                        world_pos = pygame.Vector2(getattr(it, 'pos', it.get('pos', pygame.Vector2(0,0))))
+                        screen_pos = (int(world_pos.x - camera.x), int(world_pos.y - camera.y))
+                        lights.append({'pos': screen_pos, 'radius': int(getattr(it, 'light_radius', 120)), 'intensity': float(getattr(it, 'intensity', 0.8))})
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        return lights
 
     def _create_enemy(self, x: float, y: float, profile: str | None = None) -> Enemy:
         profile_name = profile or random.choice(self.enemy_profile_names)
