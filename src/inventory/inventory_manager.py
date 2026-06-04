@@ -353,6 +353,10 @@ class INVENTORY_manager:
     def toggle_inventory(self, pl_inv, equip_inv):
         self.player_inventory_opened = not self.player_inventory_opened
         if self.player_inventory_opened:
+            pl_inv.pos_x = cfg.MAIN_INV_pos_x
+            pl_inv.pos_y = cfg.MAIN_INV_pos_y
+            equip_inv.pos_x = cfg.MAIN_INV_equipment_pos_x
+            equip_inv.pos_y = cfg.MAIN_INV_equipment_pos_y
             self.add_active_inventory(pl_inv)
             self.add_active_inventory(equip_inv)
         else:
@@ -363,6 +367,7 @@ class INVENTORY_manager:
                 self.remove_active_inventory(self.current_shop_inv)
                 self.current_shop_inv = None
                 pl_inv.pos_x = cfg.MAIN_INV_pos_x
+                equip_inv.pos_x = cfg.MAIN_INV_equipment_pos_x
 
     def _return_held_item(self):
         if self.selected_item and self._held_source:
