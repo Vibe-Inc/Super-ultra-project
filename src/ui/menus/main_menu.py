@@ -15,6 +15,7 @@ from src.ui.effects import (
 )
 import src.config as cfg
 from src.core.logger import logger
+from src.core.save_manager import SaveManager
 
 if TYPE_CHECKING:
     from src.app import App
@@ -521,6 +522,7 @@ class MainMenu(Menu):
 
     def exit_game(self):
         logger.info("Exit requested from MainMenu")
+        SaveManager.save_settings(self.app)
         pygame.quit()
         sys.exit()
 

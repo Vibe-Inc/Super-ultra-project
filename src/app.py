@@ -3,6 +3,7 @@ import sys
 
 from src.core.logger import logger
 from src.core.state_manager import StateManager
+from src.core.save_manager import SaveManager
 from src.core.profiling import FrameProfiler, FpsCounter
 from src.inventory.inventory_manager import INVENTORY_manager
 from src.items.items import create_item
@@ -239,10 +240,11 @@ class App:
 
     def music_play(self):
         pygame.mixer.music.load('sounds/LIFE (Instrumental).wav')
-        pygame.mixer.music.set_volume(0.3 if self.audio == "on" else 0.0)
+        pygame.mixer.music.set_volume(cfg.MUSIC_VOLUME if self.audio == "on" else 0.0)
         pygame.mixer.music.play(-1)
 
     def run(self):
+        SaveManager.load_settings(self)
         self.manager.set_state("main")
         self.music_play()
 
@@ -300,6 +302,7 @@ class App:
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
+                    SaveManager.save_settings(self)
                     running = False
                     pygame.quit()
                     sys.exit()

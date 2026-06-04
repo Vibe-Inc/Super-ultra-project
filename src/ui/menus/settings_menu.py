@@ -99,11 +99,13 @@ class SettingsMenu(Menu):
                    on_click=self.back_to_main, shape='shield'),
         ]
 
-        initial_volume = pygame.mixer.music.get_volume() if pygame.mixer.get_init() else 0.3
-
         def set_brightness(v):
             cfg.USER_SCREEN_BRIGHTNESS = max(0.3, v)
             cfg.update_brightness()
+
+        def set_volume(v):
+            cfg.MUSIC_VOLUME = v
+            pygame.mixer.music.set_volume(v)
 
         track_len = max(50, int(340 * scale))
         sh2 = max(10, int(44 * scale))
@@ -118,8 +120,8 @@ class SettingsMenu(Menu):
             0, 0, sh2, max(3, int(6 * scale)),
             (0, 0, 0), (255, 255, 255),
             max(10, int(22 * scale)), max(10, int(22 * scale)),
-            track_len, value=initial_volume,
-            action=lambda v: pygame.mixer.music.set_volume(v), style='gold',
+            track_len, value=cfg.MUSIC_VOLUME,
+            action=set_volume, style='gold',
         )
 
         self._label_font = cfg.get_font(max(12, int(28 * scale)))
@@ -157,6 +159,8 @@ class SettingsMenu(Menu):
         self._launch_phase = 0.0
         self._bursts.clear()
         self._sparkles.clear()
+        self.audio_slider.value = cfg.MUSIC_VOLUME
+        self.brightness_slider.value = cfg.USER_SCREEN_BRIGHTNESS
         sw, sh = cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT
 
         if not self._stars:
