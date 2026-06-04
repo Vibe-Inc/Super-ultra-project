@@ -206,6 +206,8 @@ class ArcaneBolt:
         self.trail = []
         self.trail_length = 12
         self.animation_time = 0.0
+        self.sparkle_particles = []
+        self.sigil_angle = 0.0
 
     def _size(self):
         if abs(self.direction.x) >= abs(self.direction.y):
@@ -232,6 +234,22 @@ class ArcaneBolt:
         if len(self.trail) > self.trail_length:
             self.trail.pop(0)
 
+        self.sigil_angle += dt * 4.0
+
+        self.sparkle_particles.append({
+            "pos": pygame.Vector2(self.pos) + pygame.Vector2(random.uniform(-4, 4), random.uniform(-4, 4)),
+            "vel": pygame.Vector2(random.uniform(-3, 3), random.uniform(-3, 3)),
+            "life": random.uniform(0.2, 0.5),
+            "max_life": random.uniform(0.2, 0.5),
+            "size": random.uniform(1.0, 2.5),
+        })
+        for sp in self.sparkle_particles[:]:
+            sp["pos"] += sp["vel"] * dt
+            sp["vel"] *= 0.95
+            sp["life"] -= dt
+            if sp["life"] <= 0:
+                self.sparkle_particles.remove(sp)
+
         rect = self.get_rect()
         for wall in obstacles:
             if rect.colliderect(wall):
@@ -255,30 +273,89 @@ class ArcaneBolt:
         if camera_offset is None:
             camera_offset = pygame.Vector2(0, 0)
 
-        # Draw trail
-        for i, pos in enumerate(self.trail):
-            alpha = int(150 * (i / len(self.trail)))
-            radius = int(2 + 4 * (i / len(self.trail)))
-            t_surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
-            pygame.draw.circle(t_surf, (*self.color, alpha), (radius, radius), radius)
-            screen.blit(t_surf, (pos.x - radius - camera_offset.x, pos.y - radius - camera_offset.y))
+        cx = int(self.pos.x - camera_offset.x)
+        cy = int(self.pos.y - camera_offset.y)
+        t = self.animation_time
 
-        rect = self.get_rect()
-        rect.x -= int(camera_offset.x)
-        rect.y -= int(camera_offset.y)
-        
-        # Outer glow
-        pulse = (math.sin(self.animation_time * 15) + 1.0) * 0.5
-        glow_surf = pygame.Surface((rect.width + 12, rect.height + 12), pygame.SRCALPHA)
-        pygame.draw.ellipse(glow_surf, (*self.color, int(40 + 20 * pulse)), glow_surf.get_rect())
-        screen.blit(glow_surf, (rect.centerx - glow_surf.get_width()//2, rect.centery - glow_surf.get_height()//2))
-        
-        # Main body
-        pygame.draw.ellipse(screen, self.color, rect)
-        
-        # Core
-        core_rect = rect.inflate(-6, -4)
-        pygame.draw.ellipse(screen, (200, 220, 255), core_rect)
+        pulse = (math.sin(t * 12) + 1.0) * 0.5
+        hue_shift = (math.sin(t * 3.0) + 1.0) * 0.5
+
+        r = int(70 + 60 * hue_shift)
+        g = int(140 + 60 * (1 - hue_shift))
+        b = int(255 - 60 * hue_shift)
+        current_color = (r, g, b)
+
+        core_r_val = int(200 + 40 * (1 - hue_shift))
+        core_g_val = int(220 + 30 * (1 - hue_shift))
+        core_b_val = 255
+        core_color = (core_r_val, core_g_val, core_b_val)
+
+        for i, pos in enumerate(self.trail):
+            ratio = i / len(self.trail) if len(self.trail) > 0 else 0
+            if ratio <= 0:
+                continue
+            wobble = math.sin(t * 8 + i * 1.2) * 3
+            alpha = int(100 * ratio)
+            radius = int(2 + 5 * ratio)
+            tx = int(pos.x - camera_offset.x) + int(wobble)
+            ty = int(pos.y - camera_offset.y) + int(wobble * 0.5)
+            t_surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+            tr = int(r * (0.3 + 0.7 * ratio))
+            tg = int(g * (0.3 + 0.7 * ratio))
+            tb = int(b * (0.3 + 0.7 * ratio))
+            pygame.draw.circle(t_surf, (tr, tg, tb, alpha), (radius, radius), radius)
+            screen.blit(t_surf, (tx - radius, ty - radius))
+
+        for sp in self.sparkle_particles:
+            life_r = sp["life"] / sp["max_life"] if sp["max_life"] > 0 else 0
+            if life_r <= 0:
+                continue
+            alpha = int(180 * life_r)
+            size = max(1, int(sp["size"] * life_r))
+            sx = int(sp["pos"].x - camera_offset.x)
+            sy = int(sp["pos"].y - camera_offset.y)
+            glow_sz = size * 4
+            g_surf = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+            pygame.draw.circle(g_surf, (*core_color, alpha // 2), (glow_sz, glow_sz), glow_sz)
+            screen.blit(g_surf, (sx - glow_sz, sy - glow_sz))
+            pygame.draw.circle(screen, core_color, (sx, sy), size)
+
+        glow_size = int(14 + 6 * pulse)
+        glow_surf = pygame.Surface((glow_size * 2, glow_size * 2), pygame.SRCALPHA)
+        pygame.draw.circle(glow_surf, (*current_color, int(30 + 25 * pulse)), (glow_size, glow_size), glow_size)
+        screen.blit(glow_surf, (cx - glow_size, cy - glow_size))
+
+        ring_r = int(10 + 4 * pulse)
+        ring_a = int(40 + 30 * pulse)
+        pygame.draw.circle(screen, (*current_color, ring_a), (cx, cy), ring_r, 2)
+
+        sigil_count = 2
+        for i in range(sigil_count):
+            angle = self.sigil_angle + i * math.pi
+            s_dist = 12 + 3 * math.sin(t * 2 + i * 1.5)
+            sx = cx + int(math.cos(angle) * s_dist)
+            sy = cy + int(math.sin(angle) * s_dist)
+            s_size = 3
+            s_alpha = int(120 + 80 * math.sin(t * 5 + i * 2))
+            s_surf = pygame.Surface((s_size * 4, s_size * 4), pygame.SRCALPHA)
+            sr = (r + 255) // 2
+            sg = (g + 255) // 2
+            sb = (b + 255) // 2
+            points = [
+                (s_size * 2, 0),
+                (s_size * 2 + s_size, s_size * 2),
+                (s_size * 2, s_size * 4),
+                (s_size * 2 - s_size, s_size * 2),
+            ]
+            pygame.draw.polygon(s_surf, (sr, sg, sb, s_alpha), points)
+            screen.blit(s_surf, (sx - s_size * 2, sy - s_size * 2))
+
+        body_r = 7
+        pygame.draw.circle(screen, current_color, (cx, cy), body_r)
+        inner_r = max(1, int(body_r * 0.6))
+        pygame.draw.circle(screen, core_color, (cx, cy), inner_r)
+        core_r2 = max(1, int(inner_r * 0.5))
+        pygame.draw.circle(screen, (240, 245, 255), (cx, cy), core_r2)
 
 
 class Bomb:
@@ -370,6 +447,9 @@ class Bomb:
         self.explosion_timer = 0.0
         self.damage_applied = False
         self.animation_time = 0.0
+        self.spark_particles = []
+        self.smoke_particles = []
+        self.shrapnel_particles = []
 
     def _size(self):
         return 14, 14
@@ -386,6 +466,18 @@ class Bomb:
         self.exploding = True
         self.explosion_timer = 0.0
         self.damage_applied = False
+        self.shrapnel_particles = []
+        for _ in range(12):
+            angle = random.uniform(0, math.pi * 2)
+            speed = random.uniform(60, 200)
+            self.shrapnel_particles.append({
+                "pos": pygame.Vector2(self.pos),
+                "vel": pygame.Vector2(math.cos(angle), math.sin(angle)) * speed,
+                "size": random.uniform(2, 5),
+                "color": random.choice([(100, 85, 70), (140, 120, 100), (170, 150, 120)]),
+                "life": random.uniform(0.3, 0.6),
+                "max_life": random.uniform(0.3, 0.6),
+            })
 
     def _player_center(self, player):
         if player is None:
@@ -416,6 +508,15 @@ class Bomb:
                                 direction = pygame.Vector2(1, 0)
                             player.pos += direction.normalize() * self.knockback_force
                 self.damage_applied = True
+
+            for sp in self.shrapnel_particles[:]:
+                sp["pos"] += sp["vel"] * dt
+                sp["vel"] *= 0.9
+                sp["size"] *= 0.98
+                sp["life"] -= dt
+                if sp["life"] <= 0:
+                    self.shrapnel_particles.remove(sp)
+
             if self.explosion_timer >= self.explosion_duration:
                 self.alive = False
             return
@@ -424,6 +525,37 @@ class Bomb:
         self.pos += movement
         self.traveled += movement.length()
         self.timer += dt
+
+        self.spark_particles.append({
+            "pos": pygame.Vector2(self.pos) + pygame.Vector2(random.uniform(-3, 3), -random.uniform(3, 7)),
+            "vel": pygame.Vector2(random.uniform(-12, 12), -random.uniform(8, 25)),
+            "life": random.uniform(0.12, 0.3),
+            "max_life": random.uniform(0.12, 0.3),
+            "size": random.uniform(1.0, 2.5),
+            "color": random.choice([(255, 200, 50), (255, 140, 30), (255, 100, 20)]),
+        })
+        if random.random() < 0.25:
+            self.smoke_particles.append({
+                "pos": pygame.Vector2(self.pos) + pygame.Vector2(random.uniform(-2, 2), -2),
+                "vel": pygame.Vector2(random.uniform(-4, 4), -random.uniform(5, 12)),
+                "life": random.uniform(0.25, 0.5),
+                "max_life": random.uniform(0.25, 0.5),
+                "size": random.uniform(2.0, 4.0),
+            })
+
+        for p in self.spark_particles[:]:
+            p["pos"] += p["vel"] * dt
+            p["vel"] *= 0.9
+            p["life"] -= dt
+            if p["life"] <= 0:
+                self.spark_particles.remove(p)
+
+        for p in self.smoke_particles[:]:
+            p["pos"] += p["vel"] * dt
+            p["vel"] *= 0.95
+            p["life"] -= dt
+            if p["life"] <= 0:
+                self.smoke_particles.remove(p)
 
         rect = self.get_rect()
         for wall in obstacles:
@@ -440,45 +572,111 @@ class Bomb:
         if camera_offset is None:
             camera_offset = pygame.Vector2(0, 0)
 
+        cx = int(self.pos.x - camera_offset.x)
+        cy = int(self.pos.y - camera_offset.y)
+        t = self.animation_time
+
         if not self.exploding:
-            rect = self.get_rect()
-            rect.x -= int(camera_offset.x)
-            rect.y -= int(camera_offset.y)
-            
-            # Fuse glow
-            pulse = (math.sin(self.animation_time * 20) + 1.0) * 0.5
-            fuse_size = int(4 + 3 * pulse)
-            fuse_surf = pygame.Surface((fuse_size * 2, fuse_size * 2), pygame.SRCALPHA)
-            pygame.draw.circle(fuse_surf, (255, 50, 0, 200), (fuse_size, fuse_size), fuse_size)
-            screen.blit(fuse_surf, (rect.centerx - fuse_size, rect.top - fuse_size - 2))
-            
-            # Bomb body
-            pygame.draw.circle(screen, self.color, rect.center, rect.width // 2)
-            # Metal band
-            pygame.draw.rect(screen, (80, 80, 90), rect.inflate(-4, -4), border_radius=4)
-            # Highlight
-            pygame.draw.circle(screen, (255, 255, 255), (rect.centerx - 2, rect.centery - 2), 2)
+            body_r = 7
+
+            for p in self.smoke_particles:
+                life_r = p["life"] / p["max_life"] if p["max_life"] > 0 else 0
+                if life_r <= 0:
+                    continue
+                alpha = int(60 * life_r)
+                size = int(p["size"] * (1.0 + 0.5 * (1 - life_r)))
+                sx = int(p["pos"].x - camera_offset.x)
+                sy = int(p["pos"].y - camera_offset.y)
+                s_surf = pygame.Surface((size * 2, size * 2), pygame.SRCALPHA)
+                pygame.draw.circle(s_surf, (100, 95, 90, alpha), (size, size), size)
+                screen.blit(s_surf, (sx - size, sy - size))
+
+            for p in self.spark_particles:
+                life_r = p["life"] / p["max_life"] if p["max_life"] > 0 else 0
+                if life_r <= 0:
+                    continue
+                alpha = int(200 * life_r)
+                size = max(1, int(p["size"] * life_r))
+                sx = int(p["pos"].x - camera_offset.x)
+                sy = int(p["pos"].y - camera_offset.y)
+                glow = size * 3
+                g_surf = pygame.Surface((glow * 2, glow * 2), pygame.SRCALPHA)
+                r, gb, b = p["color"]
+                pygame.draw.circle(g_surf, (r, gb, b, alpha // 3), (glow, glow), glow)
+                screen.blit(g_surf, (sx - glow, sy - glow))
+                pygame.draw.circle(screen, p["color"], (sx, sy), size)
+
+            fuse_y = cy - body_r - 2
+            fuse_pulse = (math.sin(t * 25) + 1.0) * 0.5
+            glow_size = int(4 + 4 * fuse_pulse)
+            fg_surf = pygame.Surface((glow_size * 2, glow_size * 2), pygame.SRCALPHA)
+            pygame.draw.circle(fg_surf, (255, 120, 20, int(80 + 120 * fuse_pulse)), (glow_size, glow_size), glow_size)
+            screen.blit(fg_surf, (cx - glow_size, fuse_y - glow_size))
+            pygame.draw.line(screen, (70, 55, 40), (cx, cy - body_r), (cx, fuse_y), 2)
+
+            rot_off = math.cos(t * 4) * body_r * 0.35
+            pygame.draw.circle(screen, (55, 38, 22), (cx, cy), body_r)
+            pygame.draw.circle(screen, (85, 58, 35), (cx + int(rot_off * 0.5), cy), int(body_r * 0.8))
+            hx = cx + int(rot_off)
+            pygame.draw.circle(screen, (130, 90, 55), (hx, cy), int(body_r * 0.45))
+            pygame.draw.circle(screen, (180, 140, 95), (hx, cy), int(body_r * 0.2))
+
+            band_h = 3
+            band_rect = pygame.Rect(cx - body_r, cy - band_h // 2, body_r * 2, band_h)
+            pygame.draw.rect(screen, (95, 95, 105), band_rect, border_radius=1)
+            pygame.draw.rect(screen, (130, 130, 140), band_rect, 1, border_radius=1)
+
+            for i in range(3):
+                rx = cx + int((i - 1) * body_r * 0.55)
+                pygame.draw.circle(screen, (70, 70, 80), (rx, cy), 1)
+                pygame.draw.circle(screen, (150, 150, 160), (rx - 1, cy - 1), 1)
+
+            flame_y = fuse_y - 2
+            flame_r = max(1, int(2 + 1.5 * (0.5 + 0.5 * math.sin(t * 30 + 1))))
+            pygame.draw.circle(screen, (255, 220, 80), (cx, flame_y), flame_r)
+            pygame.draw.circle(screen, (255, 255, 220), (cx, flame_y), max(1, flame_r - 1))
             return
 
         progress = min(1.0, self.explosion_timer / self.explosion_duration)
         radius = int(self.blast_radius * progress)
         if radius <= 0:
             return
-            
-        # Outer smoke ring
-        smoke_alpha = int(100 * (1 - progress))
-        pygame.draw.circle(screen, (100, 100, 100, smoke_alpha), (int(self.pos.x - camera_offset.x), int(self.pos.y - camera_offset.y)), radius + 10, 5)
-        
-        # Main explosion
-        surface = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
-        # Outer orange
-        pygame.draw.circle(surface, (255, 150, 50, 150), (radius, radius), radius)
-        # Inner yellow
-        pygame.draw.circle(surface, (255, 220, 100, 200), (radius, radius), max(1, int(radius * 0.6)))
-        # Core white
-        pygame.draw.circle(surface, (255, 255, 240, 220), (radius, radius), max(1, int(radius * 0.2)))
-        
-        screen.blit(surface, (self.pos.x - radius - camera_offset.x, self.pos.y - radius - camera_offset.y))
+
+        smoke_r = radius + 12
+        smoke_alpha = int(60 * (1 - progress))
+        if smoke_alpha > 0:
+            smoke_surf = pygame.Surface((smoke_r * 2, smoke_r * 2), pygame.SRCALPHA)
+            pygame.draw.circle(smoke_surf, (90, 85, 80, smoke_alpha), (smoke_r, smoke_r), smoke_r, 5)
+            screen.blit(smoke_surf, (cx - smoke_r, cy - smoke_r))
+
+        ring_w = max(1, int(5 * (1 - progress)))
+        ring_a = int(200 * (1 - progress))
+        pygame.draw.circle(screen, (255, 180, 60, ring_a), (cx, cy), radius, ring_w)
+
+        exp_surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+        pygame.draw.circle(exp_surf, (255, 100, 20, int(160 * (1 - progress * 0.3))), (radius, radius), radius)
+        mid_r = max(1, int(radius * 0.65))
+        pygame.draw.circle(exp_surf, (255, 190, 50, int(200 * (1 - progress * 0.2))), (radius, radius), mid_r)
+        inner_r = max(1, int(radius * 0.35))
+        pygame.draw.circle(exp_surf, (255, 240, 140, int(230 * (1 - progress * 0.1))), (radius, radius), inner_r)
+        core_r = max(1, int(radius * 0.15))
+        pygame.draw.circle(exp_surf, (255, 255, 255, 240), (radius, radius), core_r)
+        screen.blit(exp_surf, (cx - radius, cy - radius))
+
+        for sp in self.shrapnel_particles:
+            life_r = sp["life"] / sp["max_life"] if sp["max_life"] > 0 else 0
+            if life_r <= 0:
+                continue
+            alpha = int(200 * life_r)
+            sx = int(sp["pos"].x - camera_offset.x)
+            sy = int(sp["pos"].y - camera_offset.y)
+            sz = max(1, int(sp["size"] * life_r))
+            sp_surf = pygame.Surface((sz * 2, sz * 2))
+            sp_surf.set_colorkey((0, 0, 0))
+            points = [(sz, 0), (sz * 2, sz), (sz, sz * 2), (0, sz)]
+            pygame.draw.polygon(sp_surf, sp["color"], points)
+            sp_surf.set_alpha(alpha)
+            screen.blit(sp_surf, (sx - sz, sy - sz))
 
 
 class Fireball:
