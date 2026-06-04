@@ -10,6 +10,7 @@ from src.items.items import create_item
 from database.item_db.weapons_db import seed_weapons
 from database.item_db.consumables_db import seed_consumables
 from database.item_db.armor_db import seed_armor
+from database.item_db.tools_db import seed_tools
 from database.crafting_recepies_db import seed_recipes
 from database.GP_database import Gp_database
 import src.config as cfg
@@ -102,6 +103,7 @@ class App:
         seed_weapons(db)
         seed_consumables(db)
         seed_armor(db)
+        seed_tools(db)
         seed_recipes(db)
         db.close()
 
@@ -127,6 +129,7 @@ class App:
         add_item(2, 1, "longbow")
         add_item(3, 1, "crossbow")
         add_item(4, 1, "throwing_dagger")
+        add_item(5, 1, "fishing_rod")
 
         # Row 2 — Potions
         add_item(0, 2, "small_health_potion", 3)

@@ -2,7 +2,7 @@ def seed_tools(db):
     db.add_tool(
         item_id="fishing_rod",
         name="Fishing Rod",
-        image_path="assets/minigames/fishing/fishing_rod-Photoroom.png",
+        image_path="assets/minigames/fishing/FishingRod.png",
         tool_type="fishing",
         durability=100,
         power=10,
