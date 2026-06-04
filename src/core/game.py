@@ -1,5 +1,12 @@
 import math
 import pygame
+import os
+import sys
+# Ensure project root is on sys.path if this module is executed directly
+_project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
 from typing import TYPE_CHECKING
 import random
 
@@ -504,6 +511,7 @@ class Game(State):
             create_item("iron_boots"),
             create_item("defense_charm"),
             create_item("leather_gloves"),
+            create_item("fishing_rod"),
             ]
 
         self.shop_inv = ShopInventory(self.app, shop_items)
