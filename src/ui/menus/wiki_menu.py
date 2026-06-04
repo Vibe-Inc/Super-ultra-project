@@ -160,33 +160,9 @@ def _draw_ornate_border(surf, rect, theme, scale):
         pygame.draw.line(surf, border, (r.right - int(18 * scale), y), (r.right - int(10 * scale), y), w)
 
 
-# ─── Shimmer text (cached per time bucket) ──────────────────
+# ─── Plain text (no shimmer) ────────────────────────────────
 def _render_shimmer_text(font, text, base_color, t, intensity=0.15):
-    """Render text with base_color and a subtle animated highlight pass (no mask)."""
-    tb = int(t * 6)
-    ck = (id(font), text, base_color, tb)
-    if ck in _shimmer_cache:
-        return _shimmer_cache[ck]
-    result = font.render(text, True, base_color)
-    if intensity <= 0:
-        return result
-    w, h = result.get_size()
-    # Draw a soft vertical highlight band that scrolls across
-    shimmer_w = max(1, int(w * 0.2))
-    band = pygame.Surface((shimmer_w, h), pygame.SRCALPHA)
-    for sx in range(shimmer_w):
-        ratio = 1.0 - abs(sx - shimmer_w // 2) / (shimmer_w // 2 + 1)
-        a = int(50 * ratio * intensity / 0.15)
-        pygame.draw.line(band, (*GOLD_BRIGHT, max(0, min(120, a))), (sx, 0), (sx, h))
-    # Position band based on time
-    band_x = int((t * 150) % (w + shimmer_w)) - shimmer_w
-    # Blit only within text bounds
-    clip = result.get_clip()
-    result.blit(band, (band_x, 0), special_flags=pygame.BLEND_RGBA_ADD)
-    if len(_shimmer_cache) > 30:
-        _shimmer_cache.clear()
-    _shimmer_cache[ck] = result
-    return result
+    return font.render(text, True, base_color)
 
 
 # ─── Ambient Particle (simplified — single circle) ──────────
