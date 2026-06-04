@@ -1049,6 +1049,8 @@ class Game(State):
                 self.card_npc.pos = pygame.Vector2(-5000, -5000)
                 logger.info(f"No card NPC spawn for map {switched_map_path}; hiding card NPC")
 
+        self.map.update_animation(dt)
+
         # Enemy Spawning Logic
         self._update_game_time(dt)
 
