@@ -3261,24 +3261,31 @@ class Character:
     # ─── Chrono Shift helpers ─────────────────────────────────────────
 
     def _update_chrono_shift_particles(self, dt):
-        import random
         if self.chrono_shift_active:
-            spawn_count = max(1, int(20 * dt))
+            spawn_count = max(1, int(25 * dt))
             for _ in range(spawn_count):
                 angle = random.uniform(0, math.pi * 2)
-                dist = random.uniform(15, 70)
+                dist = random.uniform(10, 75)
+                ml = random.uniform(0.2, 0.5)
+                ptype = random.choices(
+                    ["orbit", "spark", "dust"],
+                    weights=[0.5, 0.3, 0.2],
+                )[0]
                 self.chrono_shift_particles.append({
                     "angle": angle,
                     "dist": dist,
-                    "life": random.uniform(0.15, 0.4),
-                    "max_life": random.uniform(0.15, 0.4),
-                    "size": random.uniform(1.5, 3.5),
-                    "drift": random.uniform(-40, -10),
+                    "life": ml,
+                    "max_life": ml,
+                    "size": random.uniform(1.5, 4.5),
+                    "drift": random.uniform(-80, -15),
+                    "type": ptype,
+                    "base_alpha": random.randint(150, 255),
                     "color": random.choice([
-                        (180, 220, 255),
-                        (140, 200, 240),
-                        (200, 235, 255),
-                        (160, 210, 250),
+                        (255, 215, 0),
+                        (255, 230, 80),
+                        (255, 200, 40),
+                        (255, 245, 200),
+                        (255, 180, 20),
                     ]),
                 })
         for p in self.chrono_shift_particles[:]:
@@ -3290,89 +3297,177 @@ class Character:
             p["dist"] += 20 * dt
 
     def _draw_chrono_shift(self, screen, camera_offset):
-        import random
         center = self.get_center()
         cx = center.x - camera_offset.x
         cy = center.y - camera_offset.y
         t = pygame.time.get_ticks() / 1000.0
 
         radius = 90.0
-
-        # ── Outer time distortion ring ──
         pulse = 0.5 + 0.5 * math.sin(t * 5.0)
-        glow_radius = radius * (0.85 + 0.15 * pulse)
-        glow_surf = pygame.Surface((int(glow_radius * 2) + 4, int(glow_radius * 2) + 4), pygame.SRCALPHA)
-        glow_a = int(30 + 20 * pulse)
-        pygame.draw.circle(glow_surf, (80, 160, 220, glow_a),
-                           (int(glow_radius) + 2, int(glow_radius) + 2),
-                           int(glow_radius))
-        inner_r = int(glow_radius * 0.5)
-        inner_a = int(20 + 15 * pulse)
-        pygame.draw.circle(glow_surf, (140, 210, 255, inner_a),
-                           (int(glow_radius) + 2, int(glow_radius) + 2),
-                           inner_r)
-        screen.blit(glow_surf, (int(cx - glow_radius - 2), int(cy - glow_radius - 2)))
 
-        # ── Rotating clock hand ring ──
-        ring_r = radius
-        ring_a = int(60 + 40 * math.sin(t * 8.0))
-        ring_surf = pygame.Surface((int(ring_r * 2) + 4, int(ring_r * 2) + 4), pygame.SRCALPHA)
-        pygame.draw.circle(ring_surf, (160, 210, 255, ring_a),
-                           (int(ring_r) + 2, int(ring_r) + 2),
-                           int(ring_r), max(1, int(2 * (0.5 + 0.5 * pulse))))
-        screen.blit(ring_surf, (int(cx - ring_r - 2), int(cy - ring_r - 2)))
+        # ── Radiant gold light beams ──
+        for bi in range(8):
+            ba = t * 0.3 + bi * math.pi / 4
+            ba_a = int(8 + 6 * math.sin(t * 2 + bi * 1.3))
+            for bj in range(3):
+                bd = radius * (0.3 + bj * 0.3)
+                bx = cx + math.cos(ba) * bd
+                by = cy + math.sin(ba) * bd
+                bs = 3 + bj * 3
+                pygame.draw.circle(screen, (255, 220, 100, ba_a), (int(bx), int(by)), bs)
 
-        # ── Clock ticks ──
-        tick_count = 12
-        for i in range(tick_count):
-            tick_angle = t * 0.6 + i * (math.pi * 2 / tick_count)
-            tick_dist = radius * 0.85
-            tx = cx + math.cos(tick_angle) * tick_dist
-            ty = cy + math.sin(tick_angle) * tick_dist
-            tick_len = 4 + 3 * math.sin(t * 4.0 + i)
-            tick_alpha = int(100 + 80 * math.sin(t * 6.0 + i * 1.3))
-            pygame.draw.line(screen, (160, 210, 255, tick_alpha),
-                             (tx - math.cos(tick_angle) * tick_len,
-                              ty - math.sin(tick_angle) * tick_len),
-                             (tx + math.cos(tick_angle) * tick_len,
-                              ty + math.sin(tick_angle) * tick_len), 2)
+        # ── Golden time ripple waves ──
+        for ri in range(3):
+            rp = (t * 1.5 + ri * 1.2) % 1.8
+            rr = rp * radius * 1.3
+            ra = int(50 * (1 - rp / 1.8))
+            if ra > 0:
+                rs = pygame.Surface((int(rr * 2) + 4, int(rr * 2) + 4), pygame.SRCALPHA)
+                rc = rs.get_width() // 2
+                pygame.draw.circle(rs, (255, 200, 50, ra), (rc, rc), int(rr), 1)
+                pygame.draw.circle(rs, (255, 230, 150, ra // 2), (rc, rc), int(rr * 0.7), 1)
+                screen.blit(rs, (cx - rc, cy - rc))
 
-        # ── Clock hands ──
-        hand_angle = t * 2.0
-        for hand_len, hand_width, hand_color in [
-            (radius * 0.5, 3, (180, 220, 255)),
-            (radius * 0.7, 2, (140, 200, 240)),
+        # ── Golden ground clock face ──
+        face_surf = pygame.Surface((int(radius * 2.6), int(radius * 2.6)), pygame.SRCALPHA)
+        fc = face_surf.get_width() // 2
+        pygame.draw.circle(face_surf, (80, 60, 10, 20), (fc, fc), int(radius * 1.15))
+        pygame.draw.circle(face_surf, (120, 90, 20, 15), (fc, fc), int(radius * 0.9))
+        pygame.draw.circle(face_surf, (200, 160, 30, 8), (fc, fc), int(radius * 0.65))
+        screen.blit(face_surf, (cx - fc, cy - fc))
+
+        # ── 3 Concentric gold gear rings ──
+        ring_data = [
+            (radius * 0.95, t * 0.4, 120, 255, 200, 50),
+            (radius * 0.70, t * -0.6, 100, 255, 220, 80),
+            (radius * 0.45, t * 0.8, 80, 255, 230, 120),
+        ]
+        for rr, rspeed, ra, *rgb in ring_data:
+            ring_a = int(ra + 50 * math.sin(t * 6.0 + rspeed * 10))
+            if ring_a <= 0:
+                continue
+            rs = pygame.Surface((int(rr * 2) + 8, int(rr * 2) + 8), pygame.SRCALPHA)
+            rcx = rs.get_width() // 2
+            rcy = rs.get_height() // 2
+            pygame.draw.circle(rs, (*rgb, ring_a), (rcx, rcy), int(rr), max(1, int(2 + pulse)))
+            for gi in range(20):
+                ga = rspeed + gi * math.pi / 10
+                gd = rr
+                gx = rcx + math.cos(ga) * gd
+                gy = rcy + math.sin(ga) * gd
+                gs = 2 + (gi % 4)
+                pygame.draw.circle(rs, (*rgb, ring_a), (int(gx), int(gy)), gs)
+            screen.blit(rs, (cx - rcx, cy - rcy))
+
+        # ── Outer gold gear teeth ──
+        gear_a = int(70 + 40 * math.sin(t * 7.0))
+        for gi in range(30):
+            ga = t * 0.5 + gi * math.pi / 15
+            gd = radius * 1.05
+            inner_d = radius * 0.90
+            gx1 = cx + math.cos(ga) * inner_d
+            gy1 = cy + math.sin(ga) * inner_d
+            gx2 = cx + math.cos(ga) * gd
+            gy2 = cy + math.sin(ga) * gd
+            gx3 = cx + math.cos(ga + 0.06) * gd
+            gy3 = cy + math.sin(ga + 0.06) * gd
+            tw = 2 if gi % 4 == 0 else 1
+            pygame.draw.line(screen, (255, 200, 50, gear_a), (gx1, gy1), (gx2, gy2), tw)
+            if gi % 2 == 0:
+                pygame.draw.line(screen, (255, 230, 120, gear_a), (gx2, gy2), (gx3, gy3), 1)
+
+        # ── Golden clock hands with glow trail ──
+        for hand_len, hand_width, hand_color, speed in [
+            (radius * 0.55, 3, (255, 215, 0), 2.0),
+            (radius * 0.80, 2, (255, 200, 60), 1.2),
+            (radius * 0.35, 2, (255, 240, 150), 4.0),
         ]:
-            hx = cx + math.cos(hand_angle) * hand_len
-            hy = cy + math.sin(hand_angle) * hand_len
-            pygame.draw.line(screen, hand_color, (cx, cy), (hx, hy), hand_width)
+            ha = t * speed
+            hx = cx + math.cos(ha) * hand_len
+            hy = cy + math.sin(ha) * hand_len
+            for ti in range(4):
+                ta = ha - 0.015 * (ti + 1)
+                tax = cx + math.cos(ta) * hand_len * 0.85
+                tay = cy + math.sin(ta) * hand_len * 0.85
+                ta_a = 70 - ti * 15
+                pygame.draw.line(screen, (*hand_color, ta_a), (cx, cy), (tax, tay), hand_width)
+            pygame.draw.line(screen, hand_color, (cx, cy), (hx, hy), hand_width + 1)
+            cap_size = 5 + hand_width
+            pygame.draw.circle(screen, (255, 215, 0), (int(cx), int(cy)), cap_size)
+            pygame.draw.circle(screen, (255, 245, 200), (int(cx), int(cy)), cap_size - 2)
 
-        # ── Time particles ──
+        # ── Golden clock markers (12 outer + inner) ──
+        for i in range(12):
+            ma = t * 0.3 + i * math.pi / 6
+            outer_dist = radius * 0.88
+            inner_dist = radius * 0.60
+            mxo = cx + math.cos(ma) * outer_dist
+            myo = cy + math.sin(ma) * outer_dist
+            mxi = cx + math.cos(ma) * inner_dist
+            myi = cy + math.sin(ma) * inner_dist
+            ma_a = int(150 + 70 * math.sin(t * 3 + i * 0.5))
+            mw = 3 if i % 3 == 0 else 1
+            ml = 8 if i % 3 == 0 else 4
+            mo = math.cos(ma)
+            ms = math.sin(ma)
+            pygame.draw.line(screen, (255, 215, 0, ma_a),
+                             (mxo - mo * ml, myo - ms * ml),
+                             (mxo + mo * ml, myo + ms * ml), mw)
+            if i % 3 == 0:
+                pygame.draw.line(screen, (255, 240, 150, ma_a // 2),
+                                 (mxi - mo * 2, myi - ms * 2),
+                                 (mxi + mo * 2, myi + ms * 2), 1)
+
+        # ── Golden time particles ──
         for p in self.chrono_shift_particles:
             life_ratio = p["life"] / p["max_life"] if p["max_life"] > 0 else 0
             if life_ratio <= 0:
                 continue
             px = cx + math.cos(p["angle"]) * p["dist"]
             py = cy + math.sin(p["angle"]) * p["dist"]
-            alpha = int(180 * life_ratio)
+            alpha = int(p.get("base_alpha", 180) * life_ratio)
             size = max(1, int(p["size"] * life_ratio))
             r, g, b = p["color"]
-            glow_sz = size * 3
-            glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
-            pygame.draw.circle(glow, (r, g, b, alpha // 3),
-                               (glow_sz, glow_sz), glow_sz)
-            screen.blit(glow, (int(px - glow_sz), int(py - glow_sz)))
-            if alpha > 20:
+            ptype = p.get("type", "orbit")
+
+            if ptype == "spark":
+                # Star-spark shape
+                for spi in range(4):
+                    sa = p["angle"] * 3 + spi * math.pi / 2
+                    sd = size * 1.5
+                    spx = px + math.cos(sa) * sd
+                    spy = py + math.sin(sa) * sd
+                    pygame.draw.line(screen, (r, g, b, alpha),
+                                     (int(px), int(py)),
+                                     (int(spx), int(spy)), 1)
+                pygame.draw.circle(screen, (r, g, b, alpha), (int(px), int(py)), size)
+            elif ptype == "dust":
+                # Tiny golden dust mote
+                pygame.draw.circle(screen, (r, g, b, alpha // 2), (int(px), int(py)), size)
+                if size > 1:
+                    pygame.draw.circle(screen, (255, 255, 200, alpha // 3),
+                                       (int(px), int(py)), size * 2)
+            else:
+                # Orbit glow
+                glow_sz = size * 3
+                glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+                pygame.draw.circle(glow, (r, g, b, alpha // 3),
+                                   (glow_sz, glow_sz), glow_sz)
+                screen.blit(glow, (int(px - glow_sz), int(py - glow_sz)))
                 pygame.draw.circle(screen, (min(255, r + 40), min(255, g + 30), min(255, b + 10)),
                                    (int(px), int(py)), size)
 
-        # ── Time sparkles ──
+        # ── Golden sparkles ──
         if self.chrono_shift_active:
-            for _ in range(4):
+            for _ in range(6):
                 sp_angle = random.uniform(0, math.pi * 2)
-                sp_dist = random.uniform(0, radius * 0.6)
-                sp_x = cx + math.cos(sp_angle) * sp_dist
-                sp_y = cy + random.uniform(-15, 15)
-                sp_size = random.randint(1, 2)
-                sp_color = random.choice([(200, 235, 255), (160, 210, 255), (220, 240, 255)])
+                sp_dist = random.uniform(0, radius * 0.7)
+                sp_x = cx + math.cos(sp_angle) * sp_dist + random.uniform(-3, 3)
+                sp_y = cy + random.uniform(-25, 25)
+                sp_size = random.randint(1, 3)
+                sp_color = random.choice([(255, 215, 0), (255, 240, 150), (255, 200, 40)])
                 pygame.draw.circle(screen, sp_color, (int(sp_x), int(sp_y)), sp_size)
+                # Tiny glow
+                if sp_size > 1:
+                    pygame.draw.circle(screen, (255, 255, 200, 40),
+                                       (int(sp_x), int(sp_y)), sp_size + 2)
