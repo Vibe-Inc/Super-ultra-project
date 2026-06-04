@@ -2554,17 +2554,17 @@ class Character:
     # ─── Berserker's Rage helpers ─────────────────────────────────────
 
     def _update_berserkers_rage_particles(self, dt):
-        import random
         if self.berserkers_rage_active:
             spawn_count = max(1, int(30 * dt))
             for _ in range(spawn_count):
                 angle = random.uniform(0, math.pi * 2)
                 dist = random.uniform(10, 80)
+                ml = random.uniform(0.2, 0.6)
                 self.berserkers_rage_particles.append({
                     "angle": angle,
                     "dist": dist,
-                    "life": random.uniform(0.2, 0.6),
-                    "max_life": random.uniform(0.2, 0.6),
+                    "life": ml,
+                    "max_life": ml,
                     "size": random.uniform(2.0, 5.0),
                     "drift": random.uniform(30, 90),
                     "color": random.choice([
@@ -2583,7 +2583,6 @@ class Character:
             p["angle"] += 1.5 * dt
 
     def _draw_berserkers_rage(self, screen, camera_offset):
-        import random
         center = self.get_center()
         cx = center.x - camera_offset.x
         cy = center.y - camera_offset.y
@@ -2594,45 +2593,58 @@ class Character:
 
         # ── Outer rage aura ──
         aura_radius = radius * (0.9 + 0.15 * pulse)
-        aura_surf = pygame.Surface((int(aura_radius * 2) + 4, int(aura_radius * 2) + 4), pygame.SRCALPHA)
-        aura_a = int(40 + 30 * pulse)
-        pygame.draw.circle(aura_surf, (220, 50, 20, aura_a),
-                           (int(aura_radius) + 2, int(aura_radius) + 2),
-                           int(aura_radius))
-        inner_a = int(30 + 20 * pulse)
-        pygame.draw.circle(aura_surf, (255, 100, 30, inner_a),
-                           (int(aura_radius) + 2, int(aura_radius) + 2),
-                           int(aura_radius * 0.6))
-        screen.blit(aura_surf, (int(cx - aura_radius - 2), int(cy - aura_radius - 2)))
+        aura_surf = pygame.Surface((int(aura_radius * 2) + 8, int(aura_radius * 2) + 8), pygame.SRCALPHA)
+        a_cx = int(aura_radius) + 4
+        a_cy = int(aura_radius) + 4
+        aura_a = int(50 + 40 * pulse)
+        pygame.draw.circle(aura_surf, (220, 40, 10, aura_a), (a_cx, a_cy), int(aura_radius))
+        inner_a = int(40 + 30 * pulse)
+        pygame.draw.circle(aura_surf, (255, 80, 20, inner_a), (a_cx, a_cy), int(aura_radius * 0.6))
+        core_a = int(25 + 20 * pulse)
+        pygame.draw.circle(aura_surf, (255, 160, 40, core_a), (a_cx, a_cy), int(aura_radius * 0.3))
+        screen.blit(aura_surf, (int(cx - aura_radius - 4), int(cy - aura_radius - 4)))
+
+        # ── Ground rage rune (rotating star) ──
+        rune_pts = []
+        rune_outer = radius * 0.5
+        rune_inner = radius * 0.2
+        for ri in range(8):
+            ra = t * 1.2 + ri * math.pi / 4
+            rr = rune_outer if ri % 2 == 0 else rune_inner
+            rune_pts.append((cx + math.cos(ra) * rr, cy + math.sin(ra) * rr))
+        rune_alpha = int(30 + 20 * math.sin(t * 3))
+        pygame.draw.polygon(screen, (200, 60, 20, rune_alpha), rune_pts, 2)
 
         # ── Rage ring ──
         ring_r = radius * 0.8
         ring_a = int(80 + 50 * math.sin(t * 9.0))
-        ring_surf = pygame.Surface((int(ring_r * 2) + 4, int(ring_r * 2) + 4), pygame.SRCALPHA)
+        ring_surf = pygame.Surface((int(ring_r * 2) + 8, int(ring_r * 2) + 8), pygame.SRCALPHA)
+        rc_x = int(ring_r) + 4
+        rc_y = int(ring_r) + 4
         for i in range(3):
             r = int(ring_r * (0.85 + 0.05 * (i + 1)))
             offset_phase = t * 4.0 + i * 1.0
             rr = r * (0.98 + 0.04 * math.sin(offset_phase))
             pygame.draw.circle(ring_surf,
                                (200, 60 + i * 30, 10 + i * 10, ring_a // (i + 1)),
-                               (int(ring_r) + 2, int(ring_r) + 2), int(rr),
+                               (rc_x, rc_y), int(rr),
                                max(1, 3 - i))
-        screen.blit(ring_surf, (int(cx - ring_r - 2), int(cy - ring_r - 2)))
+        screen.blit(ring_surf, (int(cx - ring_r - 4), int(cy - ring_r - 4)))
 
         # ── Rage spikes ──
-        spike_count = 8
+        spike_count = 14
         for i in range(spike_count):
             spike_angle = t * 2.5 + i * (math.pi * 2 / spike_count)
-            spike_len = 18 + 12 * math.sin(t * 7.0 + i * 2.0)
-            inner_dist = radius * 0.75 + 8 * math.sin(t * 5.0 + i * 1.5)
+            spike_len = 15 + 15 * (0.3 + 0.7 * ((i % 3) / 2.0)) * (0.5 + 0.5 * math.sin(t * 7.0 + i * 2.0))
+            inner_dist = radius * (0.7 + 0.1 * ((i % 3) / 2.0)) + 6 * math.sin(t * 5.0 + i * 1.5)
             sx1 = cx + math.cos(spike_angle) * inner_dist
             sy1 = cy + math.sin(spike_angle) * inner_dist
             sx2 = cx + math.cos(spike_angle) * (inner_dist + spike_len)
             sy2 = cy + math.sin(spike_angle) * (inner_dist + spike_len)
             spike_alpha = int(140 + 80 * math.sin(t * 8.0 + i * 1.7))
-            pygame.draw.line(screen, (220, 80 + i * 12, 10 + i * 5, spike_alpha),
-                             (sx1, sy1), (sx2, sy2),
-                             max(1, int(3 + 2 * math.sin(t * 4.0 + i))))
+            sw = max(1, int(2 + 3 * (i % 3) / 2.0 * math.sin(t * 4.0 + i)))
+            pygame.draw.line(screen, (220, 60 + i * 8, 10 + i * 4, spike_alpha),
+                             (sx1, sy1), (sx2, sy2), sw)
 
         # ── Rage particles ──
         for p in self.berserkers_rage_particles:
@@ -2655,14 +2667,29 @@ class Character:
 
         # ── Rising sparkles ──
         if self.berserkers_rage_active:
-            for _ in range(3):
+            for _ in range(4):
                 sp_angle = random.uniform(0, math.pi * 2)
-                sp_dist = random.uniform(0, radius * 0.4)
-                sp_x = cx + math.cos(sp_angle) * sp_dist
-                sp_y = cy + random.uniform(-25, 0)
-                sp_size = random.randint(1, 2)
+                sp_dist = random.uniform(0, radius * 0.45)
+                sp_x = cx + math.cos(sp_angle) * sp_dist + random.uniform(-3, 3)
+                sp_y = cy + random.uniform(-30, 5)
+                sp_size = random.randint(1, 3)
                 sp_color = random.choice([(255, 200, 80), (255, 140, 40), (255, 255, 120)])
                 pygame.draw.circle(screen, sp_color, (int(sp_x), int(sp_y)), sp_size)
+
+        # ── Ground fire bursts ──
+        if self.berserkers_rage_active:
+            for fi in range(3):
+                fa = t * 8.0 + fi * math.pi * 2 / 3
+                fd = radius * 0.5 + 20 * math.sin(t * 6 + fi * 1.5)
+                fx = cx + math.cos(fa) * fd
+                fy = cy + math.sin(fa) * fd
+                fh = 10 + 8 * math.sin(t * 10 + fi * 2.3)
+                fw = max(1, int(3 + 2 * math.sin(t * 7 + fi * 1.8)))
+                f_alpha = int(100 + 80 * math.sin(t * 9 + fi * 2.0))
+                pygame.draw.line(screen, (255, 120 + fi * 20, 30, f_alpha),
+                                 (fx, fy), (fx, fy - fh), fw)
+                pygame.draw.line(screen, (255, 200, 80, f_alpha // 2),
+                                 (fx, fy), (fx, fy - fh // 2), fw - 1)
 
     # ─── Flame Shield helpers ───────────────────────────────────────────
 
@@ -2867,28 +2894,26 @@ class Character:
 
     def _update_ice_armor_particles(self, dt):
         """Spawn, move, and cull ice particles around the character."""
-        import random
-
         if self.ice_armor_active:
-            spawn_count = max(1, int(15 * dt))
+            spawn_count = max(1, int(18 * dt))
             for _ in range(spawn_count):
                 angle = random.uniform(0, math.pi * 2)
                 dist = random.uniform(self.ice_armor_slow_radius * 0.3, self.ice_armor_slow_radius)
                 speed = random.uniform(20, 50)
+                is_snow = random.random() < 0.3
                 self.ice_armor_particles.append({
                     "angle": angle,
                     "dist": dist,
-                    "life": random.uniform(0.4, 0.8),
-                    "max_life": random.uniform(0.4, 0.8),
+                    "max_life": (ml := random.uniform(0.4, 0.8)),
+                    "life": ml,
                     "size": random.uniform(2.0, 5.0),
                     "drift": random.uniform(-10, 10),
                     "vertical_speed": -speed,
+                    "is_snow": is_snow,
                     "color": random.choice([
-                        (180, 220, 255),
-                        (200, 235, 255),
-                        (160, 200, 255),
-                        (220, 240, 255),
-                        (140, 190, 255),
+                        (180, 220, 255), (200, 235, 255),
+                        (160, 200, 255), (220, 240, 255),
+                        (140, 190, 255), (255, 255, 255),
                     ]),
                 })
 
@@ -2903,49 +2928,74 @@ class Character:
 
     def _draw_ice_armor(self, screen, camera_offset):
         """Draw the ice armor aura and particles."""
-        import random
         center = self.get_center()
         cx = center.x - camera_offset.x
         cy = center.y - camera_offset.y
         t = pygame.time.get_ticks() / 1000.0
 
-        visual_radius = self.ice_armor_slow_radius
+        vr = self.ice_armor_slow_radius
+        pulse = 0.5 + 0.5 * math.sin(t * 4.0)
+        fast_pulse = 0.5 + 0.5 * math.sin(t * 10.0)
+
+        # ── Hexagonal ice crystal shell ──
+        hex_pts = []
+        for i in range(6):
+            ha = t * 0.3 + i * (math.pi * 2 / 6)
+            hr = vr * (0.85 + 0.15 * pulse)
+            hx = cx + math.cos(ha) * hr
+            hy = cy + math.sin(ha) * hr
+            hex_pts.append((hx, hy))
+
+        hex_surf = pygame.Surface((int(vr * 2.2), int(vr * 2.2)), pygame.SRCALPHA)
+        hoff = int(vr * 1.1)
+        hex_glow_a = int(30 + 20 * pulse)
+        rel_hex = [(p[0] - cx + hoff, p[1] - cy + hoff) for p in hex_pts]
+        pygame.draw.polygon(hex_surf, (80, 160, 255, hex_glow_a), rel_hex)
+        pygame.draw.polygon(hex_surf, (140, 200, 255, int(hex_glow_a * 1.5)), rel_hex,
+                            max(1, int(2 + fast_pulse * 2)))
+        screen.blit(hex_surf, (cx - hoff, cy - hoff))
 
         # ── Inner frost glow ring ──
-        pulse = 0.5 + 0.5 * math.sin(t * 4.0)
-        glow_radius = visual_radius * (0.8 + 0.2 * pulse)
+        glow_radius = vr * (0.7 + 0.3 * pulse)
         glow_surf = pygame.Surface((int(glow_radius * 2) + 4, int(glow_radius * 2) + 4), pygame.SRCALPHA)
-        glow_a = int(30 + 20 * pulse)
+        glow_a = int(35 + 25 * pulse)
         pygame.draw.circle(glow_surf, (60, 140, 255, glow_a),
-                           (int(glow_radius) + 2, int(glow_radius) + 2),
-                           int(glow_radius))
+                           (int(glow_radius) + 2, int(glow_radius) + 2), int(glow_radius))
         inner_r = int(glow_radius * 0.5)
-        inner_a = int(20 + 15 * pulse)
+        inner_a = int(25 + 20 * pulse)
         pygame.draw.circle(glow_surf, (140, 200, 255, inner_a),
-                           (int(glow_radius) + 2, int(glow_radius) + 2),
-                           inner_r)
+                           (int(glow_radius) + 2, int(glow_radius) + 2), inner_r)
         screen.blit(glow_surf, (int(cx - glow_radius - 2), int(cy - glow_radius - 2)))
 
         # ── Outer frost ring ──
-        ring_r = visual_radius
-        ring_a = int(60 + 40 * math.sin(t * 7.0))
+        ring_r = vr
+        ring_a = int(70 + 50 * math.sin(t * 7.0))
         ring_surf = pygame.Surface((int(ring_r * 2) + 4, int(ring_r * 2) + 4), pygame.SRCALPHA)
         pygame.draw.circle(ring_surf, (100, 180, 255, ring_a),
                            (int(ring_r) + 2, int(ring_r) + 2),
-                           int(ring_r), max(1, int(2 * pulse)))
+                           int(ring_r), max(1, int(2 + fast_pulse)))
         screen.blit(ring_surf, (int(cx - ring_r - 2), int(cy - ring_r - 2)))
 
-        # ── Ice crystal shield overlay ──
-        shard_count = 8
+        # ── Connecting facet lines (center to hex vertices) ──
+        for i in range(6):
+            ha = t * 0.3 + i * (math.pi * 2 / 6)
+            hr = vr * (0.85 + 0.15 * pulse)
+            hx = cx + math.cos(ha) * hr
+            hy = cy + math.sin(ha) * hr
+            line_alpha = int(50 + 40 * math.sin(t * 3.0 + i * 1.2))
+            pygame.draw.line(screen, (140, 200, 255, line_alpha), (cx, cy), (hx, hy),
+                             max(1, int(1 + fast_pulse)))
+
+        # ── Ice crystal shards orbiting ──
+        shard_count = 10
         for i in range(shard_count):
-            shard_angle = t * 0.5 + i * (math.pi * 2 / shard_count)
-            shard_dist = visual_radius * 0.7 + 10 * math.sin(t * 3.0 + i)
+            shard_angle = t * 0.6 + i * (math.pi * 2 / shard_count)
+            shard_dist = vr * (0.5 + 0.2 * math.sin(t * 2.0 + i * 1.5))
             sx = cx + math.cos(shard_angle) * shard_dist
             sy = cy + math.sin(shard_angle) * shard_dist
-            shard_size = max(2, int(4 + 2 * math.sin(t * 2.0 + i * 1.5)))
-            shard_alpha = int(100 + 80 * math.sin(t * 5.0 + i * 2.0))
+            shard_size = max(2, int(4 + 2 * math.sin(t * 3.0 + i * 2.0)))
+            shard_alpha = int(120 + 80 * math.sin(t * 5.0 + i * 2.5))
             shard_color = (180, 220, 255, shard_alpha)
-            # Draw shard as small diamond
             pts = [
                 (sx, sy - shard_size),
                 (sx + shard_size * 0.6, sy),
@@ -2955,46 +3005,63 @@ class Character:
             pygame.draw.polygon(screen, shard_color[:3], pts)
             pygame.draw.polygon(screen, (220, 240, 255), pts, 1)
 
+        # ── Falling snow particles ──
+        if self.ice_armor_active:
+            for _ in range(2):
+                sn_angle = random.uniform(0, math.pi * 2)
+                sn_dist = random.uniform(0, vr * 0.6)
+                sn_x = cx + math.cos(sn_angle) * sn_dist
+                sn_y = cy - vr * 0.5 + random.uniform(0, vr)
+                sn_size = random.randint(1, 2)
+                sn_alpha = int(100 + 80 * random.random())
+                pygame.draw.circle(screen, (220, 240, 255, sn_alpha), (int(sn_x), int(sn_y)), sn_size)
+
         # ── Ice particles ──
         for p in self.ice_armor_particles:
-            life_ratio = p["life"] / p["max_life"] if p["max_life"] > 0 else 0
+            life_ratio = min(1.0, p["life"] / p["max_life"]) if p["max_life"] > 0 else 0
             if life_ratio <= 0:
                 continue
-
             px = cx + math.cos(p["angle"]) * p["dist"]
             py = cy + math.sin(p["angle"]) * p["dist"] + p["vertical_speed"] * (1 - life_ratio) * 0.3
-
             alpha = int(200 * life_ratio)
             size = max(1, int(p["size"] * life_ratio))
             r, g, b = p["color"]
 
-            glow_sz = size * 3
-            glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
-            pygame.draw.circle(glow, (r, g, b, alpha // 3),
-                               (glow_sz, glow_sz), glow_sz)
-            screen.blit(glow, (int(px - glow_sz), int(py - glow_sz)))
-
-            if alpha > 20:
-                pygame.draw.circle(screen, (min(255, r + 40), min(255, g + 30), min(255, b + 10)),
-                                   (int(px), int(py)), size)
+            if p.get("is_snow"):
+                # Snowflake (cross shape)
+                pygame.draw.line(screen, (r, g, b, alpha), (px - size, py), (px + size, py), 1)
+                pygame.draw.line(screen, (r, g, b, alpha), (px, py - size), (px, py + size), 1)
+            else:
+                # Frost particle (circular with glow)
+                glow_sz = size * 3
+                glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+                pygame.draw.circle(glow, (r, g, b, alpha // 3), (glow_sz, glow_sz), glow_sz)
+                screen.blit(glow, (int(px - glow_sz), int(py - glow_sz)))
+                if alpha > 20:
+                    pygame.draw.circle(screen, (min(255, r + 40), min(255, g + 30), min(255, b + 10)),
+                                       (int(px), int(py)), size)
 
         # ── Shield health indicator (frost cracks at edges) ──
         absorb_ratio = self.ice_armor_remaining_absorption / self.ice_armor_max_absorption
         if absorb_ratio < 0.5:
             crack_alpha = int(150 * (1.0 - absorb_ratio * 2))
-            for _ in range(3):
+            for _ in range(int(3 + 3 * (1 - absorb_ratio * 2))):
                 crack_angle = random.uniform(0, math.pi * 2)
-                crack_dist = visual_radius
+                crack_dist = vr
                 cpx = cx + math.cos(crack_angle) * crack_dist
                 cpy = cy + math.sin(crack_angle) * crack_dist
+                # Longer cracks when more damaged
+                crack_len = 2 + 4 * (1 - absorb_ratio * 2)
                 pygame.draw.line(screen, (200, 220, 255, crack_alpha),
-                                 (cpx - 3, cpy - 3), (cpx + 3, cpy + 3), 2)
+                                 (cpx - crack_len, cpy - crack_len),
+                                 (cpx + crack_len, cpy + crack_len),
+                                 max(1, int(1 + (1 - absorb_ratio * 2) * 2)))
 
         # ── Frost sparkles ──
         if self.ice_armor_active:
-            for _ in range(2):
+            for _ in range(3):
                 sp_angle = random.uniform(0, math.pi * 2)
-                sp_dist = random.uniform(0, visual_radius * 0.4)
+                sp_dist = random.uniform(0, vr * 0.4)
                 sp_x = cx + math.cos(sp_angle) * sp_dist
                 sp_y = cy + random.uniform(-15, 15)
                 sp_size = random.randint(1, 2)
