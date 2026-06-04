@@ -628,6 +628,9 @@ class Game(State):
         self.hotbar.slot_size = int(cfg.BASE_INV_slot_size * hotbar_scale)
         self.hotbar.border = border
 
+        self.app.INV_manager.crafting_system.rescale()
+        self.shop_inv.rescale()
+
         if self.app.INV_manager.current_shop_inv:
             self.MAIN_player_inv.pos_x = cfg.SCREEN_WIDTH // 2 - int(500 * scale)
             self.app.INV_manager.current_shop_inv.pos_x = cfg.SCREEN_WIDTH // 2 + int(100 * scale)
