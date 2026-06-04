@@ -23,6 +23,7 @@ public classes and methods are documented below.
 
 import math
 import random
+import pytmx
 import pygame
 from dataclasses import dataclass
 from typing import Optional, List
@@ -452,71 +453,38 @@ class FishingController:
                 FishType(id="fish_rare", name="Rare Fish", weight=30, difficulty=0.7, speed=1.6, reward_item_id="fish_raw"),
             ]
 
-    def _get_fishing_zones(self):
-        """Read fishing zones from the current TMX map.
+    def _is_fishable_tile(self, world_pos: pygame.Vector2) -> bool:
+        """Check whether the tile at ``world_pos`` has the
+        ``fishable`` custom property.
 
         Returns:
-            list[dict]: Each dict has ``x``, ``y``, ``width``,
-            ``height``, and ``quality`` keys. Returns an empty
-            list when no zone data is found or on any error.
+            bool: ``True`` if the tile at the given world position
+            has ``fishable`` set to ``True``.
         """
-        zones = []
         try:
-            tmx = None
-            if getattr(self.game, "map", None) and getattr(self.game.map, "current_map", None):
-                tmx_map = self.game.map.current_map
-                tmx = getattr(tmx_map, "tmxdata", None) or getattr(tmx_map, "get_tmx_data", lambda: None)()
+            if not getattr(self.game, "map", None) or not getattr(self.game.map, "current_map", None):
+                return False
+            tmx_map = self.game.map.current_map
+            tmx = getattr(tmx_map, "tmxdata", None) or getattr(tmx_map, "get_tmx_data", lambda: None)()
             if not tmx:
-                return zones
-            objs = getattr(tmx, "objects", None)
-            if objs is None:
+                return False
+            tile_x = int(world_pos.x // tmx.tilewidth)
+            tile_y = int(world_pos.y // tmx.tileheight)
+            for layer in tmx.layers:
+                if not isinstance(layer, pytmx.TiledTileLayer):
+                    continue
                 try:
-                    for layer in getattr(tmx, "layers", []):
-                        if getattr(layer, "name", "") == "FishingZones":
-                            for obj in getattr(layer, "objects", []):
-                                zones.append({
-                                    "x": obj.x, "y": obj.y,
-                                    "width": obj.width, "height": obj.height,
-                                    "quality": float(getattr(obj, "properties", {}).get("quality", 0.5)),
-                                })
-                except Exception:
-                    pass
-                return zones
-            for obj in objs:
-                if getattr(obj, "groupname", "") == "FishingZones" or getattr(obj, "name", "") == "FishingZone":
-                    zones.append({
-                        "x": obj.x, "y": obj.y,
-                        "width": obj.width, "height": obj.height,
-                        "quality": float(getattr(obj, "properties", {}).get("quality", 0.5)),
-                    })
+                    gid = layer.data[tile_y][tile_x]
+                except (IndexError, TypeError):
+                    continue
+                if not gid:
+                    continue
+                tile_properties = tmx.get_tile_properties_by_gid(gid)
+                if tile_properties and tile_properties.get("fishable"):
+                    return True
         except Exception:
             pass
-        return zones
-
-    def _player_near_zone(self) -> Optional[dict]:
-        """Find the closest fishing zone to the player.
-
-        Returns:
-            Optional[dict]: The nearest zone dict, or ``None`` when
-            no zones are loaded.
-        """
-        try:
-            zones = self._get_fishing_zones()
-            if not zones:
-                return None
-            player_center = self.game.character.get_center()
-            best = None
-            best_dist = float("inf")
-            for z in zones:
-                zx = z["x"] + z.get("width", 0) / 2
-                zy = z["y"] + z.get("height", 0) / 2
-                dist = (pygame.Vector2(zx, zy) - player_center).length_squared()
-                if dist < best_dist:
-                    best_dist = dist
-                    best = z
-            return best
-        except Exception:
-            return None
+        return False
 
     def _can_fish(self) -> bool:
         """Check whether the player can currently cast.
@@ -567,6 +535,8 @@ class FishingController:
         if dir_vec.length() > max_range:
             dir_vec.scale_to_length(max_range)
         bob_pos = player_center + dir_vec
+        if not self._is_fishable_tile(bob_pos):
+            return
         self.bobber = Bobber(bob_pos.x, bob_pos.y)
         self.state = "casting"
         self.bobber_timer = 0.0
@@ -597,7 +567,7 @@ class FishingController:
         (mouse position, keyboard, mouse buttons) and updates the
         progress meter. The state machine transitions are:
 
-        * ``idle``/``ready`` -- based on the nearest fishing zone.
+        * ``idle``/``ready`` -- based on whether the fishing rod is equipped.
         * ``casting`` -- rolls for a bite every
           ``self.seek_interval`` seconds.
         * ``bite`` -- transitions to ``active`` once the
@@ -614,14 +584,10 @@ class FishingController:
         if self.bobber:
             self.bobber.update(dt)
 
-        zone = self._player_near_zone()
-        if zone:
-            self.current_zone_quality = zone.get("quality", 0.5)
+        if self._can_fish():
             if self.state == "idle":
-                if self._can_fish():
-                    self.state = "ready"
+                self.state = "ready"
         else:
-            self.current_zone_quality = 0.2
             if self.state == "ready":
                 self.state = "idle"
 
