@@ -74,6 +74,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.state_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">StateManager</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.save_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">SaveManager</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.profiling</span><span class="w"> </span><span class="kn">import</span> <span class="n">FrameProfiler</span><span class="p">,</span> <span class="n">FpsCounter</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.inventory.inventory_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">INVENTORY_manager</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.items.items</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_item</span>
@@ -92,25 +93,44 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Main application class for the Super Ultra Project game.</span>
 
-<span class="sd">    This class initializes the game window, manages global state, handles language and audio, and runs the main game loop.</span>
+<span class="sd">    Initializes the game window, manages global state, handles language and audio,</span>
+<span class="sd">    and runs the main game loop.</span>
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        screen (pygame.Surface):</span>
 <span class="sd">            The main display surface.</span>
 <span class="sd">        icon (pygame.Surface):</span>
 <span class="sd">            The window icon image.</span>
+<span class="sd">        windowed_size (tuple[int, int]):</span>
+<span class="sd">            Size of the windowed-mode display.</span>
+<span class="sd">        is_fullscreen (bool):</span>
+<span class="sd">            Fullscreen mode state.</span>
 <span class="sd">        INV_manager (INVENTORY_manager):</span>
 <span class="sd">            The inventory manager instance.</span>
 <span class="sd">        MAIN_INV_items (list[list[tuple[Item, int] | None]]):</span>
 <span class="sd">            2D list of main inventory items (item object, count) or None.</span>
+<span class="sd">        money (int):</span>
+<span class="sd">            Player currency amount.</span>
+<span class="sd">        current_dialog (Dialog | None):</span>
+<span class="sd">            Currently active dialog, or None.</span>
+<span class="sd">        last_talked_npc (NPC | None):</span>
+<span class="sd">            The last NPC the player interacted with.</span>
 <span class="sd">        audio (str):</span>
 <span class="sd">            Audio state (&quot;on&quot; or &quot;off&quot;).</span>
-<span class="sd">        is_fullscreen (bool):</span>
-<span class="sd">            Fullscreen mode state.</span>
 <span class="sd">        clock (pygame.time.Clock):</span>
 <span class="sd">            Clock object for controlling frame rate.</span>
+<span class="sd">        _brightness_overlay (pygame.Surface | None):</span>
+<span class="sd">            Cached dimming overlay surface.</span>
+<span class="sd">        profiler (FrameProfiler):</span>
+<span class="sd">            Frame profiling utility.</span>
+<span class="sd">        fps_counter (FpsCounter):</span>
+<span class="sd">            FPS counter display.</span>
 <span class="sd">        manager (StateManager):</span>
 <span class="sd">            The state management system controlling game/menu flow.</span>
+<span class="sd">        text_logo (pygame.Surface):</span>
+<span class="sd">            Rendered logo text surface.</span>
+<span class="sd">        text_rect (pygame.Rect):</span>
+<span class="sd">            Rectangle positioning the logo text.</span>
 
 <span class="sd">    Methods:</span>
 <span class="sd">        __init__():</span>
@@ -119,12 +139,22 @@
 <span class="sd">            Render and position the main logo text.</span>
 <span class="sd">        update_language(lang_code):</span>
 <span class="sd">            Change the application language and update fonts/UI.</span>
-<span class="sd">            Args:</span>
-<span class="sd">                lang_code (str): Language code to switch to (e.g., &#39;en&#39;, &#39;ua&#39;).</span>
+<span class="sd">        set_profiler_enabled(enabled):</span>
+<span class="sd">            Enable or disable the frame profiler.</span>
+<span class="sd">        toggle_profiler():</span>
+<span class="sd">            Toggle the profiler on/off.</span>
+<span class="sd">        _get_fullscreen_size():</span>
+<span class="sd">            Get the native desktop resolution.</span>
+<span class="sd">        _apply_display_mode(fullscreen, update_windowed_size=True):</span>
+<span class="sd">            Apply fullscreen or windowed display mode.</span>
+<span class="sd">        toggle_display_mode():</span>
+<span class="sd">            Toggle between fullscreen and windowed mode.</span>
+<span class="sd">        sync_display_size(width, height):</span>
+<span class="sd">            Update window size from a resize event.</span>
 <span class="sd">        music_play():</span>
-<span class="sd">            Load and start the background music, setting the volume based on the audio attribute.</span>
+<span class="sd">            Load and start the background music.</span>
 <span class="sd">        run():</span>
-<span class="sd">            Main loop of the application. Handles rendering, event processing, clock ticking, and state management logic.</span>
+<span class="sd">            Main loop of the application.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="App.__init__">
@@ -250,6 +280,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">set_profiler_enabled</span><span class="p">(</span><span class="ow">not</span> <span class="n">cfg</span><span class="o">.</span><span class="n">PROFILER_ENABLED</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="App._get_fullscreen_size">
+<a class="viewcode-back" href="../../src.html#src.app.App._get_fullscreen_size">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_fullscreen_size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">desktop_sizes</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">get_desktop_sizes</span><span class="p">()</span>
@@ -259,8 +291,11 @@
             <span class="k">pass</span>
 
         <span class="n">info</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">Info</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">info</span><span class="o">.</span><span class="n">current_w</span> <span class="ow">or</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span><span class="p">,</span> <span class="n">info</span><span class="o">.</span><span class="n">current_h</span> <span class="ow">or</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span>
+        <span class="k">return</span> <span class="n">info</span><span class="o">.</span><span class="n">current_w</span> <span class="ow">or</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span><span class="p">,</span> <span class="n">info</span><span class="o">.</span><span class="n">current_h</span> <span class="ow">or</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span></div>
 
+
+<div class="viewcode-block" id="App._apply_display_mode">
+<a class="viewcode-back" href="../../src.html#src.app.App._apply_display_mode">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_apply_display_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fullscreen</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">update_windowed_size</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">update_windowed_size</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_fullscreen</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">windowed_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">screen</span><span class="o">.</span><span class="n">get_size</span><span class="p">()</span>
@@ -278,7 +313,8 @@
 
         <span class="n">gameplay_state</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="p">,</span> <span class="s2">&quot;states&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gameplay&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;manager&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">gameplay_state</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">gameplay_state</span><span class="p">,</span> <span class="s2">&quot;reinit_ui&quot;</span><span class="p">):</span>
-            <span class="n">gameplay_state</span><span class="o">.</span><span class="n">reinit_ui</span><span class="p">()</span>
+            <span class="n">gameplay_state</span><span class="o">.</span><span class="n">reinit_ui</span><span class="p">()</span></div>
+
 
 <div class="viewcode-block" id="App.toggle_display_mode">
 <a class="viewcode-back" href="../../src.html#src.app.App.toggle_display_mode">[docs]</a>
@@ -308,13 +344,14 @@
 <a class="viewcode-back" href="../../src.html#src.app.App.music_play">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">music_play</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">music</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;sounds/LIFE (Instrumental).wav&#39;</span><span class="p">)</span>
-        <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">music</span><span class="o">.</span><span class="n">set_volume</span><span class="p">(</span><span class="mf">0.3</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio</span> <span class="o">==</span> <span class="s2">&quot;on&quot;</span> <span class="k">else</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">music</span><span class="o">.</span><span class="n">set_volume</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">MUSIC_VOLUME</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio</span> <span class="o">==</span> <span class="s2">&quot;on&quot;</span> <span class="k">else</span> <span class="mf">0.0</span><span class="p">)</span>
         <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">music</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="App.run">
 <a class="viewcode-back" href="../../src.html#src.app.App.run">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">SaveManager</span><span class="o">.</span><span class="n">load_settings</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;main&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">music_play</span><span class="p">()</span>
 
@@ -372,6 +409,7 @@
 
             <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
                 <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">QUIT</span><span class="p">:</span>
+                    <span class="n">SaveManager</span><span class="o">.</span><span class="n">save_settings</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
                     <span class="n">running</span> <span class="o">=</span> <span class="kc">False</span>
                     <span class="n">pygame</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
                     <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>

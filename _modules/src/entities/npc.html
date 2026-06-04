@@ -88,13 +88,35 @@
 <span class="sd">            Distance within which the player can interact with the NPC.</span>
 <span class="sd">        is_interactable (bool):</span>
 <span class="sd">            Whether the player is currently close enough to interact.</span>
-<span class="sd">        </span>
+<span class="sd">        dialog_lines (list[str]):</span>
+<span class="sd">            Lines of dialogue the NPC can say.</span>
+<span class="sd">        is_merchant (bool):</span>
+<span class="sd">            Whether this NPC can open a shop.</span>
+<span class="sd">        gender (str):</span>
+<span class="sd">            Gender of the NPC (&#39;male&#39; or &#39;female&#39;).</span>
+<span class="sd">        was_talked (bool):</span>
+<span class="sd">            Whether the player has already talked to this NPC.</span>
+<span class="sd">        rect (pygame.Rect):</span>
+<span class="sd">            Bounding rect for the NPC.</span>
+<span class="sd">        font (pygame.font.Font):</span>
+<span class="sd">            Font used for the interaction prompt.</span>
+<span class="sd">        prompt_text (pygame.Surface):</span>
+<span class="sd">            Rendered prompt key indicator.</span>
+<span class="sd">        prompt_bg_color (tuple):</span>
+<span class="sd">            Background color for the prompt.</span>
+
 <span class="sd">    Methods:</span>
+<span class="sd">        __init__(x, y, sprite_set, dialog_lines, is_merchant, gender):</span>
+<span class="sd">            Initialize the NPC with position and appearance.</span>
 <span class="sd">        update(player_pos):</span>
 <span class="sd">            Check distance to player and update interaction status.</span>
-<span class="sd">        draw(screen):</span>
+<span class="sd">        get_rect():</span>
+<span class="sd">            Return an updated collision rect for the NPC.</span>
+<span class="sd">        draw(screen, camera_offset=None):</span>
 <span class="sd">            Draw the NPC and the interaction prompt if applicable.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="NPC.__init__">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.npc.NPC.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sprite_set</span><span class="o">=</span><span class="s2">&quot;MenHuman1&quot;</span><span class="p">,</span> <span class="n">dialog_lines</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_merchant</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">gender</span><span class="o">=</span><span class="s1">&#39;male&#39;</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">interaction_range</span> <span class="o">=</span> <span class="mf">100.0</span>
@@ -125,7 +147,8 @@
         <span class="c1"># Interaction prompt (e.g., &quot;E&quot; key)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">font</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get_font</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="mi">20</span> <span class="o">*</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">())))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prompt_text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="s2">&quot;E&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">prompt_bg_color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prompt_bg_color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="NPC.update">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.npc.NPC.update">[docs]</a>

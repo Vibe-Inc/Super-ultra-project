@@ -87,11 +87,102 @@
 <a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.SkillbarMenu">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SkillbarMenu</span><span class="p">(</span><span class="n">Menu</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Skillbar editor with a single-skill book and a 6-slot active bar.</span>
-<span class="sd">    Redesigned with stunning animations: glowing neon borders, particle effects,</span>
-<span class="sd">    smooth hover animations, gradient cards, and pulsing active slots.</span>
+<span class="sd">    Skillbar editor with a skill book and a 6-slot active bar.</span>
+
+<span class="sd">    Features glowing neon borders, particle effects, smooth hover animations,</span>
+<span class="sd">    gradient cards, and pulsing active slot indicators.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        app (App):</span>
+<span class="sd">            The main application instance.</span>
+<span class="sd">        bar_slots_count (int):</span>
+<span class="sd">            Number of active skill bar slots (6).</span>
+<span class="sd">        storage_slots_count (int):</span>
+<span class="sd">            Number of skill storage slots (1).</span>
+<span class="sd">        panel_margin (int):</span>
+<span class="sd">            Margin around the panel.</span>
+<span class="sd">        grid_gap (int):</span>
+<span class="sd">            Gap between grid elements.</span>
+<span class="sd">        sidebar_width (int):</span>
+<span class="sd">            Width of the sidebar panel.</span>
+<span class="sd">        slot_size (int):</span>
+<span class="sd">            Size of each skill slot in pixels.</span>
+<span class="sd">        sidebar_rect (pygame.Rect):</span>
+<span class="sd">            Rectangle for the sidebar area.</span>
+<span class="sd">        storage_grid_rect (pygame.Rect):</span>
+<span class="sd">            Rectangle for the storage grid.</span>
+<span class="sd">        bar_rect (pygame.Rect):</span>
+<span class="sd">            Rectangle for the active bar.</span>
+<span class="sd">        storage_slot_rects (list[pygame.Rect]):</span>
+<span class="sd">            List of storage slot rectangles.</span>
+<span class="sd">        bar_slot_rects (list[pygame.Rect]):</span>
+<span class="sd">            List of active bar slot rectangles.</span>
+<span class="sd">        title_font (pygame.font.Font):</span>
+<span class="sd">            Font for the title.</span>
+<span class="sd">        section_font (pygame.font.Font):</span>
+<span class="sd">            Font for section headers.</span>
+<span class="sd">        small_font (pygame.font.Font):</span>
+<span class="sd">            Small font for descriptions.</span>
+<span class="sd">        exit_button (Button):</span>
+<span class="sd">            Button to exit the skillbar editor.</span>
+<span class="sd">        buttons (list[Button]):</span>
+<span class="sd">            List of UI buttons.</span>
+<span class="sd">        animation_time (float):</span>
+<span class="sd">            Accumulated time for animations.</span>
+<span class="sd">        particles (list):</span>
+<span class="sd">            Background particle effects.</span>
+<span class="sd">        _layout_size (tuple | None):</span>
+<span class="sd">            Cached screen size for layout recalculation.</span>
+<span class="sd">        _hovered_slot (int | None):</span>
+<span class="sd">            Index of the currently hovered slot.</span>
+<span class="sd">        _dragging_from (int | None):</span>
+<span class="sd">            Index of the slot being dragged from.</span>
+<span class="sd">        _drag_source (str):</span>
+<span class="sd">            Source area of the drag (&#39;bar&#39; or &#39;storage&#39;).</span>
+<span class="sd">        _drag_offset (pygame.Vector2):</span>
+<span class="sd">            Offset within the dragged slot.</span>
+<span class="sd">        tooltip (str | None):</span>
+<span class="sd">            Current tooltip text.</span>
+<span class="sd">        tooltip_timer (float):</span>
+<span class="sd">            Timer before tooltip appears.</span>
+<span class="sd">        tooltip_rect (pygame.Rect | None):</span>
+<span class="sd">            Rectangle for the tooltip.</span>
+<span class="sd">        NEON_THEMES (dict):</span>
+<span class="sd">            Color themes for skill elements.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(app):</span>
+<span class="sd">            Initialize the skillbar menu.</span>
+<span class="sd">        _recalc_layout(screen_width, screen_height):</span>
+<span class="sd">            Recalculate layout based on screen size.</span>
+<span class="sd">        _ensure_layout(screen_width, screen_height):</span>
+<span class="sd">            Ensure layout is recalculated.</span>
+<span class="sd">        _get_skill_theme(skill):</span>
+<span class="sd">            Get the neon color theme for a skill.</span>
+<span class="sd">        _get_skill_at(screen_x, screen_y):</span>
+<span class="sd">            Get the skill at a screen position.</span>
+<span class="sd">        handle_event(event):</span>
+<span class="sd">            Handle input events.</span>
+<span class="sd">        update(dt):</span>
+<span class="sd">            Update animations.</span>
+<span class="sd">        _update_particles(dt):</span>
+<span class="sd">            Update background particle effects.</span>
+<span class="sd">        _draw_skill_icon(surface, rect, skill, theme):</span>
+<span class="sd">            Draw an individual skill slot icon.</span>
+<span class="sd">        _draw_background(surface):</span>
+<span class="sd">            Draw the background effects.</span>
+<span class="sd">        _draw_panel(surface):</span>
+<span class="sd">            Draw the sidebar panel.</span>
+<span class="sd">        _draw_bar(surface):</span>
+<span class="sd">            Draw the active skill bar.</span>
+<span class="sd">        _draw_tooltip(surface):</span>
+<span class="sd">            Draw the tooltip overlay.</span>
+<span class="sd">        draw(screen):</span>
+<span class="sd">            Render the skillbar menu.</span>
+<span class="sd">        exit_menu():</span>
+<span class="sd">            Close the skillbar menu.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    
+
     <span class="c1"># Neon color themes for skill elements</span>
     <span class="n">NEON_THEMES</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;fire&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;primary&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">40</span><span class="p">),</span> <span class="s2">&quot;glow&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">120</span><span class="p">,</span> <span class="mi">60</span><span class="p">),</span> <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">100</span><span class="p">)},</span>
@@ -103,6 +194,8 @@
         <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;primary&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">140</span><span class="p">,</span> <span class="mi">200</span><span class="p">),</span> <span class="s2">&quot;glow&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">140</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="mi">240</span><span class="p">),</span> <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">220</span><span class="p">,</span> <span class="mi">255</span><span class="p">)},</span>
     <span class="p">}</span>
     
+<div class="viewcode-block" id="SkillbarMenu.__init__">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.SkillbarMenu.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="s2">&quot;App&quot;</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bar_slots_count</span> <span class="o">=</span> <span class="mi">6</span>
@@ -167,7 +260,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">hovered_skill</span> <span class="o">=</span> <span class="kc">None</span>
         
         <span class="c1"># Cached gradient surfaces</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_gradient_cache</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_gradient_cache</span> <span class="o">=</span> <span class="p">{}</span></div>
+
     
     <span class="k">def</span><span class="w"> </span><span class="nf">_init_particles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize floating particles for ambient background effect.&quot;&quot;&quot;</span>
@@ -269,6 +363,8 @@
             <span class="k">if</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">drag_trail</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">drag_trail</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
+<div class="viewcode-block" id="SkillbarMenu._get_skill_theme">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.SkillbarMenu._get_skill_theme">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_skill_theme</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skill</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the neon theme for a skill based on its properties.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">skill</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -294,7 +390,8 @@
                 <span class="n">best_score</span> <span class="o">=</span> <span class="n">score</span>
                 <span class="n">best_match</span> <span class="o">=</span> <span class="n">theme_name</span>
         
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">NEON_THEMES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">best_match</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">NEON_THEMES</span><span class="p">[</span><span class="s2">&quot;default&quot;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">NEON_THEMES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">best_match</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">NEON_THEMES</span><span class="p">[</span><span class="s2">&quot;default&quot;</span><span class="p">])</span></div>
+
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_draw_glowing_rect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">surface</span><span class="p">,</span> <span class="n">rect</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">glow_color</span><span class="p">,</span> <span class="n">glow_intensity</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">border_radius</span><span class="o">=</span><span class="mi">12</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Draw a rectangle with animated neon glow effect.&quot;&quot;&quot;</span>
@@ -551,7 +648,6 @@
 <div class="viewcode-block" id="SkillbarMenu.exit_menu">
 <a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.SkillbarMenu.exit_menu">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">exit_menu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c1"># Ensure any open player inventory windows are properly removed</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">_return_held_item</span><span class="p">()</span>
             <span class="c1"># mark as closed</span>
@@ -561,11 +657,11 @@
             <span class="n">gameplay</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;manager&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="s2">&quot;states&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gameplay&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">gameplay</span><span class="p">:</span>
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">remove_active_inventory</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">gameplay</span><span class="p">,</span> <span class="s2">&quot;MAIN_player_inv&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">add_active_inventory</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">gameplay</span><span class="p">,</span> <span class="s2">&quot;MAIN_player_inv&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
                 <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                     <span class="k">pass</span>
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">remove_active_inventory</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">gameplay</span><span class="p">,</span> <span class="s2">&quot;PLAYER_inventory_equipment&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">add_active_inventory</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">gameplay</span><span class="p">,</span> <span class="s2">&quot;PLAYER_inventory_equipment&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
                 <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                     <span class="k">pass</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>

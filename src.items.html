@@ -137,8 +137,21 @@
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">__init__(row</span></span></dt>
+<dd><p>dict):
+Initialize armor properties from a database row.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="src.items.items.Armor.get_tooltip_text">
 <span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Armor.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.Armor.get_tooltip_text" title="Link to this definition"></a></dt>
+<dd><p>Return formatted tooltip text including armor type and defense.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Armor.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -172,13 +185,33 @@ or apply temporary effects to the target.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">__init__(row</span></span></dt>
+<dd><p>dict):
+Initialize consumable properties from a database row.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="src.items.items.Consumable.get_tooltip_text">
 <span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Consumable.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.Consumable.get_tooltip_text" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Return formatted tooltip text including heal and effects info.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.items.items.Consumable.use">
 <span class="sig-name descname"><span class="pre">use</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Consumable.use"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.Consumable.use" title="Link to this definition"></a></dt>
+<dd><p>Apply the consumable’s effects to the target. Returns True if at
+least one effect was applied.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Consumable.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">use</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Consumable.use"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
 <dd><p>Apply the consumable’s effects to the target.</p>
 <p>Returns True when at least one effect was applied (HP, mana, or
 a status effect), False otherwise.</p>
@@ -305,18 +338,18 @@ a status effect), False otherwise.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="id0">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">description</span></span><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id3">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">description</span></span><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id1">
-<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Item.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Item.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="id2">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id5">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -325,8 +358,8 @@ a status effect), False otherwise.</p>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id3">
-<span class="sig-name descname"><span class="pre">use</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Item.use"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id6">
+<span class="sig-name descname"><span class="pre">use</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Item.use"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -365,8 +398,21 @@ a status effect), False otherwise.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">__init__(row</span></span></dt>
+<dd><p>dict):
+Initialize melee weapon properties from a database row.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="src.items.items.MeleeWeapon.get_tooltip_text">
 <span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#MeleeWeapon.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.MeleeWeapon.get_tooltip_text" title="Link to this definition"></a></dt>
+<dd><p>Return formatted tooltip text including range and combat style.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id7">
+<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#MeleeWeapon.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -376,9 +422,66 @@ a status effect), False otherwise.</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.items.items.</span></span><span class="sig-name descname"><span class="pre">RangedWeapon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">row</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#RangedWeapon"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.RangedWeapon" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#src.items.items.Weapon" title="src.items.items.Weapon"><code class="xref py py-class docutils literal notranslate"><span class="pre">Weapon</span></code></a></p>
 <p>Represents a ranged combat weapon.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.RangedWeapon.range">
+<span class="sig-name descname"><span class="pre">range</span></span><a class="headerlink" href="#src.items.items.RangedWeapon.range" title="Link to this definition"></a></dt>
+<dd><p>Effective attack range in pixels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.RangedWeapon.projectile_speed">
+<span class="sig-name descname"><span class="pre">projectile_speed</span></span><a class="headerlink" href="#src.items.items.RangedWeapon.projectile_speed" title="Link to this definition"></a></dt>
+<dd><p>Speed of the fired projectile.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.RangedWeapon.cone_degrees">
+<span class="sig-name descname"><span class="pre">cone_degrees</span></span><a class="headerlink" href="#src.items.items.RangedWeapon.cone_degrees" title="Link to this definition"></a></dt>
+<dd><p>Total cone angle in degrees for spread.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.RangedWeapon.spread_degrees">
+<span class="sig-name descname"><span class="pre">spread_degrees</span></span><a class="headerlink" href="#src.items.items.RangedWeapon.spread_degrees" title="Link to this definition"></a></dt>
+<dd><p>Random spread angle per shot in degrees.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">__init__(row</span></span></dt>
+<dd><p>dict):
+Initialize ranged weapon properties from a database row.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="src.items.items.RangedWeapon.get_tooltip_text">
 <span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#RangedWeapon.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.RangedWeapon.get_tooltip_text" title="Link to this definition"></a></dt>
+<dd><p>Return formatted tooltip text including range and projectile speed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id8">
+<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#RangedWeapon.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -443,6 +546,19 @@ BurnEffect).</p>
 <dd class="field-odd"><p>list</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">__init__(row</span></span></dt>
+<dd><p>dict):
+Initialize weapon properties from a database row.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.items.items.Weapon._get_base_stats_text">
+<span class="sig-name descname"><span class="pre">_get_base_stats_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Weapon._get_base_stats_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.Weapon._get_base_stats_text" title="Link to this definition"></a></dt>
+<dd><p>Return formatted base stats text (type, damage, durability).</p>
 </dd></dl>
 
 </dd></dl>

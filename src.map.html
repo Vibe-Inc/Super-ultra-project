@@ -149,6 +149,17 @@
 </dl>
 </dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.map.map.LocalMap.map_transitions">
+<span class="sig-name descname"><span class="pre">map_transitions</span></span><a class="headerlink" href="#src.map.map.LocalMap.map_transitions" title="Link to this definition"></a></dt>
+<dd><p>Dictionary mapping source map paths to directional transitions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="src.map.map.LocalMap.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">map_file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#LocalMap.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.LocalMap.__init__" title="Link to this definition"></a></dt>
@@ -157,33 +168,44 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.map.map.LocalMap.draw">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#LocalMap.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.LocalMap.draw" title="Link to this definition"></a></dt>
-<dd><p>Draw the current map onto the given Pygame surface.
-:param screen: The surface to draw the map on.
-:type screen: pygame.Surface</p>
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#LocalMap.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.LocalMap.draw" title="Link to this definition"></a></dt>
+<dd><p>Draw the current map onto the given Pygame surface.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.map.map.LocalMap.draw_fringe_overlay">
+<span class="sig-name descname"><span class="pre">draw_fringe_overlay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">player</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#LocalMap.draw_fringe_overlay"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.LocalMap.draw_fringe_overlay" title="Link to this definition"></a></dt>
+<dd><p>Draw the current map’s fringe overlay.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.map.map.LocalMap.get_obstacles">
+<span class="sig-name descname"><span class="pre">get_obstacles</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#LocalMap.get_obstacles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.LocalMap.get_obstacles" title="Link to this definition"></a></dt>
+<dd><p>Return the current map’s obstacle rects.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.map.map.LocalMap.update">
 <span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">player</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#LocalMap.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.LocalMap.update" title="Link to this definition"></a></dt>
-<dd><p>Update map logic and handle transitions based on player position.
-:param player: The player object (must have pos and image/rect attributes).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Path to the new map if switched, else None.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>str | None</p>
-</dd>
-</dl>
+<dd><p>Update map logic and handle transitions based on player position.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.map.map.LocalMap.switch_map">
 <span class="sig-name descname"><span class="pre">switch_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_map_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#LocalMap.switch_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.LocalMap.switch_map" title="Link to this definition"></a></dt>
-<dd><p>Switch to a new map by file path.
-:param new_map_path: Path to the new map file.
-:type new_map_path: str</p>
+<dd><p>Switch to a new map by file path.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.map.map.LocalMap._player_overlaps_any_tile">
+<span class="sig-name descname"><span class="pre">_player_overlaps_any_tile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">player_rect</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tile_width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tile_height</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tile_positions</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#LocalMap._player_overlaps_any_tile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.LocalMap._player_overlaps_any_tile" title="Link to this definition"></a></dt>
+<dd><p>Check if the player overlaps any of the given tile positions.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.map.map.LocalMap._teleport_player_to_tile">
+<span class="sig-name descname"><span class="pre">_teleport_player_to_tile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">player</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tile_x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tile_y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tile_width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tile_height</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#LocalMap._teleport_player_to_tile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.LocalMap._teleport_player_to_tile" title="Link to this definition"></a></dt>
+<dd><p>Teleport the player to a specific tile position.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -192,23 +214,23 @@
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.map.map.LocalMap.draw_fringe_overlay">
-<span class="sig-name descname"><span class="pre">draw_fringe_overlay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">player</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#LocalMap.draw_fringe_overlay"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.LocalMap.draw_fringe_overlay" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.map.map.LocalMap.get_obstacles">
-<span class="sig-name descname"><span class="pre">get_obstacles</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#LocalMap.get_obstacles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.LocalMap.get_obstacles" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="id1">
-<span class="sig-name descname"><span class="pre">switch_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_map_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#LocalMap.switch_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">draw_fringe_overlay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">player</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#LocalMap.draw_fringe_overlay"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id2">
-<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">player</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#LocalMap.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_obstacles</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#LocalMap.get_obstacles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">switch_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_map_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#LocalMap.switch_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">player</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#LocalMap.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
 <dd><p>Updates map logic and handles transitions based on player position.
 Returns: string (path to new map) if switch happened, else None.</p>
 </dd></dl>
@@ -223,7 +245,29 @@ Returns: string (path to new map) if switch happened, else None.</p>
 <dt class="sig sig-object py" id="src.map.map.Map.FRINGE_LAYER_FADE_ALPHA">
 <span class="sig-name descname"><span class="pre">FRINGE_LAYER_FADE_ALPHA</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">110</span></em><a class="headerlink" href="#src.map.map.Map.FRINGE_LAYER_FADE_ALPHA" title="Link to this definition"></a></dt>
 <dd><p>Represents a tile-based game map loaded from a Tiled map file.</p>
-<p>This class handles loading and drawing of the map using pytmx and pygame.</p>
+<p>This class handles loading, caching, and drawing of the map using pytmx and pygame.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.map.map.Map.FRINGE_LAYER_NAME">
+<span class="sig-name descname"><span class="pre">FRINGE_LAYER_NAME</span></span><a class="headerlink" href="#src.map.map.Map.FRINGE_LAYER_NAME" title="Link to this definition"></a></dt>
+<dd><p>Name of the fringe tile layer.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">FRINGE_LAYER_FADE_ALPHA</span></span><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
+<dd><p>Alpha value for fading fringe tiles.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="src.map.map.Map.map_file">
 <span class="sig-name descname"><span class="pre">map_file</span></span><a class="headerlink" href="#src.map.map.Map.map_file" title="Link to this definition"></a></dt>
@@ -268,6 +312,28 @@ Returns: string (path to new map) if switch happened, else None.</p>
 </dl>
 </dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.map.map.Map._base_render_cache">
+<span class="sig-name descname"><span class="pre">_base_render_cache</span></span><a class="headerlink" href="#src.map.map.Map._base_render_cache" title="Link to this definition"></a></dt>
+<dd><p>Cached composite surface for base layers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.Surface | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.map.map.Map._fringe_components">
+<span class="sig-name descname"><span class="pre">_fringe_components</span></span><a class="headerlink" href="#src.map.map.Map._fringe_components" title="Link to this definition"></a></dt>
+<dd><p>Cached fringe layer components with surfaces and tile rects.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[dict]</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="src.map.map.Map.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">map_file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#Map.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.Map.__init__" title="Link to this definition"></a></dt>
@@ -275,43 +341,89 @@ Returns: string (path to new map) if switch happened, else None.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="src.map.map.Map.ensure_loaded">
+<span class="sig-name descname"><span class="pre">ensure_loaded</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#Map.ensure_loaded"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.Map.ensure_loaded" title="Link to this definition"></a></dt>
+<dd><p>Load the map file if not already loaded.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.map.map.Map._is_fringe_layer">
+<span class="sig-name descname"><span class="pre">_is_fringe_layer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layer</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#Map._is_fringe_layer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.Map._is_fringe_layer" title="Link to this definition"></a></dt>
+<dd><p>Check if a layer is the fringe overlay layer.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.map.map.Map._build_fringe_components">
+<span class="sig-name descname"><span class="pre">_build_fringe_components</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layer</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#Map._build_fringe_components"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.Map._build_fringe_components" title="Link to this definition"></a></dt>
+<dd><p>Build grouped fringe surfaces for efficient drawing.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.map.map.Map._build_render_cache">
+<span class="sig-name descname"><span class="pre">_build_render_cache</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#Map._build_render_cache"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.Map._build_render_cache" title="Link to this definition"></a></dt>
+<dd><p>Pre-render all non-fringe layers into a cached surface.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.map.map.Map.get_tmx_data">
+<span class="sig-name descname"><span class="pre">get_tmx_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#Map.get_tmx_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.Map.get_tmx_data" title="Link to this definition"></a></dt>
+<dd><p>Return the loaded TMX data, loading if needed.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="src.map.map.Map.draw">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#Map.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.Map.draw" title="Link to this definition"></a></dt>
-<dd><p>Draw the map layers onto the given Pygame surface.
-:param screen: The surface to draw the map on.
-:type screen: pygame.Surface</p>
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#Map.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.Map.draw" title="Link to this definition"></a></dt>
+<dd><p>Draw the base map layers onto the given Pygame surface.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.map.map.Map.draw_fringe_overlay">
+<span class="sig-name descname"><span class="pre">draw_fringe_overlay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">player</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#Map.draw_fringe_overlay"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.Map.draw_fringe_overlay" title="Link to this definition"></a></dt>
+<dd><p>Draw the fringe overlay with optional player fade.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.map.map.Map._should_fade_component">
+<span class="sig-name descname"><span class="pre">_should_fade_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">player_rect</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tile_rects</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#Map._should_fade_component"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.Map._should_fade_component" title="Link to this definition"></a></dt>
+<dd><p>Determine whether a fringe component should fade.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.map.map.Map.get_obstacles">
+<span class="sig-name descname"><span class="pre">get_obstacles</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#Map.get_obstacles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.Map.get_obstacles" title="Link to this definition"></a></dt>
+<dd><p>Collect all collidable rects from the map.</p>
 </dd></dl>
 
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="src.map.map.Map.FRINGE_LAYER_NAME">
-<span class="sig-name descname"><span class="pre">FRINGE_LAYER_NAME</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'details</span> <span class="pre">fringe</span> <span class="pre">layer'</span></em><a class="headerlink" href="#src.map.map.Map.FRINGE_LAYER_NAME" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id6">
+<span class="sig-name descname"><span class="pre">FRINGE_LAYER_NAME</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'details</span> <span class="pre">fringe</span> <span class="pre">layer'</span></em><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id3">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#Map.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id7">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#Map.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.map.map.Map.draw_fringe_overlay">
-<span class="sig-name descname"><span class="pre">draw_fringe_overlay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">player</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#Map.draw_fringe_overlay"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.Map.draw_fringe_overlay" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id8">
+<span class="sig-name descname"><span class="pre">draw_fringe_overlay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">player</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#Map.draw_fringe_overlay"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.map.map.Map.ensure_loaded">
-<span class="sig-name descname"><span class="pre">ensure_loaded</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/src/map/map.html#Map.ensure_loaded"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.Map.ensure_loaded" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id9">
+<span class="sig-name descname"><span class="pre">ensure_loaded</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/src/map/map.html#Map.ensure_loaded"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.map.map.Map.get_obstacles">
-<span class="sig-name descname"><span class="pre">get_obstacles</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#Map.get_obstacles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.Map.get_obstacles" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id10">
+<span class="sig-name descname"><span class="pre">get_obstacles</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#Map.get_obstacles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.map.map.Map.get_tmx_data">
-<span class="sig-name descname"><span class="pre">get_tmx_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#Map.get_tmx_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.Map.get_tmx_data" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id11">
+<span class="sig-name descname"><span class="pre">get_tmx_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#Map.get_tmx_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id11" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>

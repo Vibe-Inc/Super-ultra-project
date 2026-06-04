@@ -719,6 +719,12 @@ subsystems (HUD, inventory, combat, dialogs).</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="src.core.game.Game._debug_apply_effect">
+<span class="sig-name descname"><span class="pre">_debug_apply_effect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">effect_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duration</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/game.html#Game._debug_apply_effect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.game.Game._debug_apply_effect" title="Link to this definition"></a></dt>
+<dd><p>Apply a debug effect to the player for testing.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="src.core.game.Game._get_drop_chance_for_enemy">
 <span class="sig-name descname"><span class="pre">_get_drop_chance_for_enemy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">enemy</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/game.html#Game._get_drop_chance_for_enemy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.game.Game._get_drop_chance_for_enemy" title="Link to this definition"></a></dt>
 <dd><p>Look up the drop table for a given enemy.</p>
@@ -728,6 +734,30 @@ subsystems (HUD, inventory, combat, dialogs).</p>
 <dt class="sig sig-object py" id="src.core.game.Game._drop_enemy_loot">
 <span class="sig-name descname"><span class="pre">_drop_enemy_loot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">enemy</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/game.html#Game._drop_enemy_loot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.game.Game._drop_enemy_loot" title="Link to this definition"></a></dt>
 <dd><p>Roll and spawn drops for a defeated enemy (no JSON).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.core.game.Game._apply_ice_armor_slow">
+<span class="sig-name descname"><span class="pre">_apply_ice_armor_slow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/game.html#Game._apply_ice_armor_slow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.game.Game._apply_ice_armor_slow" title="Link to this definition"></a></dt>
+<dd><p>Apply slowing effect to nearby enemies when Ice Armor is active.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.core.game.Game._apply_flame_shield_damage">
+<span class="sig-name descname"><span class="pre">_apply_flame_shield_damage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/game.html#Game._apply_flame_shield_damage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.game.Game._apply_flame_shield_damage" title="Link to this definition"></a></dt>
+<dd><p>Apply fire damage to nearby enemies when Flame Shield is active.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.core.game.Game._apply_regeneration">
+<span class="sig-name descname"><span class="pre">_apply_regeneration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/game.html#Game._apply_regeneration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.game.Game._apply_regeneration" title="Link to this definition"></a></dt>
+<dd><p>Apply passive health regeneration from effects.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.core.game.Game._update_spirits">
+<span class="sig-name descname"><span class="pre">_update_spirits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/game.html#Game._update_spirits"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.game.Game._update_spirits" title="Link to this definition"></a></dt>
+<dd><p>Update summoned spirit entities.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -940,6 +970,17 @@ subsystems (HUD, inventory, combat, dialogs).</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="src.core.save_manager.SaveManager.load_settings">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load_settings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/save_manager.html#SaveManager.load_settings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.save_manager.SaveManager.load_settings" title="Link to this definition"></a></dt>
+<dd><p>Restore previously persisted user settings into the application.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>app</strong> (<a class="reference internal" href="src.html#src.app.App" title="src.app.App"><em>App</em></a>) – The main application instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="id16">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">save_game</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slot_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/save_manager.html#SaveManager.save_game"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id16" title="Link to this definition"></a></dt>
 <dd><p>Save the current game state to a JSON file.</p>
@@ -949,6 +990,18 @@ subsystems (HUD, inventory, combat, dialogs).</p>
 <li><p><strong>app</strong> (<a class="reference internal" href="src.html#src.app.App" title="src.app.App"><em>App</em></a>) – The main application instance containing the game state.</p></li>
 <li><p><strong>slot_name</strong> (<em>str</em>) – The name of the save slot (filename without extension).</p></li>
 </ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.core.save_manager.SaveManager.save_settings">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">save_settings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/save_manager.html#SaveManager.save_settings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.save_manager.SaveManager.save_settings" title="Link to this definition"></a></dt>
+<dd><p>Persist current user settings (language, display mode, brightness, volume)
+to a JSON file so they survive application restarts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>app</strong> (<a class="reference internal" href="src.html#src.app.App" title="src.app.App"><em>App</em></a>) – The main application instance.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -983,6 +1036,12 @@ Each state can handle events, draw itself, and update its logic.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="src.core.state.State.on_enter">
+<span class="sig-name descname"><span class="pre">on_enter</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state.html#State.on_enter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.state.State.on_enter" title="Link to this definition"></a></dt>
+<dd><p>Called when this state becomes the active state.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="src.core.state.State.handle_event">
 <span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state.html#State.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.state.State.handle_event" title="Link to this definition"></a></dt>
 <dd><p>Handle input events specific to the state.</p>
@@ -1013,14 +1072,14 @@ Each state can handle events, draw itself, and update its logic.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.core.state.State.on_enter">
-<span class="sig-name descname"><span class="pre">on_enter</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state.html#State.on_enter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.state.State.on_enter" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id19">
+<span class="sig-name descname"><span class="pre">on_enter</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state.html#State.on_enter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id19" title="Link to this definition"></a></dt>
 <dd><p>Called when this state becomes the active state.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id19">
-<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state.html#State.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id19" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id20">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state.html#State.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id20" title="Link to this definition"></a></dt>
 <dd><p>Updates the state’s logic.</p>
 </dd></dl>
 
@@ -1094,28 +1153,28 @@ Each state can handle events, draw itself, and update its logic.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id20">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id20" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="id21">
-<span class="sig-name descname"><span class="pre">get_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.get_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id21" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id21" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id22">
-<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id22" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.get_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id22" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id23">
-<span class="sig-name descname"><span class="pre">reinit_states</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.reinit_states"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id23" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id23" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id24">
-<span class="sig-name descname"><span class="pre">set_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.set_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id24" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">reinit_states</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.reinit_states"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id24" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id25">
+<span class="sig-name descname"><span class="pre">set_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.set_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id25" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>

@@ -88,10 +88,189 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">SkillTreeMenu</span><span class="p">(</span><span class="n">Menu</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Enhanced skill tree screen inspired by Path of Exile with visual wow effects.</span>
-<span class="sd">    Features: animated glowing nodes, particle background, gradient links, </span>
+
+<span class="sd">    Features animated glowing nodes, particle background, gradient links,</span>
 <span class="sd">    pulsing selection, branch color themes, and expanded node count.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        app (App):</span>
+<span class="sd">            The main application instance.</span>
+<span class="sd">        title_font (pygame.font.Font):</span>
+<span class="sd">            Font used for the title.</span>
+<span class="sd">        section_font (pygame.font.Font):</span>
+<span class="sd">            Font used for section headers.</span>
+<span class="sd">        small_font (pygame.font.Font):</span>
+<span class="sd">            Small font for descriptions.</span>
+<span class="sd">        exit_button (Button):</span>
+<span class="sd">            Button to exit the skill tree.</span>
+<span class="sd">        unlock_button (Button):</span>
+<span class="sd">            Button to unlock the selected node.</span>
+<span class="sd">        buttons (list[Button]):</span>
+<span class="sd">            List of sidebar buttons.</span>
+<span class="sd">        zoom (float):</span>
+<span class="sd">            Current zoom level of the tree view.</span>
+<span class="sd">        min_zoom (float):</span>
+<span class="sd">            Minimum zoom limit.</span>
+<span class="sd">        max_zoom (float):</span>
+<span class="sd">            Maximum zoom limit.</span>
+<span class="sd">        pan_offset (pygame.Vector2):</span>
+<span class="sd">            Current panning offset for the tree view.</span>
+<span class="sd">        dragging_view (bool):</span>
+<span class="sd">            Whether the user is dragging the view.</span>
+<span class="sd">        drag_origin (pygame.Vector2):</span>
+<span class="sd">            Mouse position where drag started.</span>
+<span class="sd">        drag_start_offset (pygame.Vector2):</span>
+<span class="sd">            Pan offset at drag start.</span>
+<span class="sd">        animation_time (float):</span>
+<span class="sd">            Accumulated time for animation effects.</span>
+<span class="sd">        particles (list):</span>
+<span class="sd">            Background particle effects.</span>
+<span class="sd">        unlock_effects (list):</span>
+<span class="sd">            Active unlock animations.</span>
+<span class="sd">        screen_flash_alpha (int):</span>
+<span class="sd">            Alpha value for screen flash effect.</span>
+<span class="sd">        screen_flash_timer (int):</span>
+<span class="sd">            Timer for screen flash duration.</span>
+<span class="sd">        entrance_active (bool):</span>
+<span class="sd">            Whether the entrance animation is playing.</span>
+<span class="sd">        entrance_progress (float):</span>
+<span class="sd">            Entrance animation progress (0.0 to 1.0).</span>
+<span class="sd">        entrance_sparks (list):</span>
+<span class="sd">            Converging spark particles for entrance.</span>
+<span class="sd">        entrance_glow (int):</span>
+<span class="sd">            Glow intensity during entrance.</span>
+<span class="sd">        _entrance_triggered (bool):</span>
+<span class="sd">            Prevents re-triggering entrance.</span>
+<span class="sd">        _entrance_animation_played (bool):</span>
+<span class="sd">            Whether entrance has played before.</span>
+<span class="sd">        entrance_phase (int):</span>
+<span class="sd">            Current phase of the multi-phase entrance.</span>
+<span class="sd">        entrance_phase_time (float):</span>
+<span class="sd">            Time spent in current entrance phase.</span>
+<span class="sd">        entrance_total_time (float):</span>
+<span class="sd">            Total elapsed entrance time.</span>
+<span class="sd">        core_ignition_flash (float):</span>
+<span class="sd">            Flash intensity for core ignition.</span>
+<span class="sd">        core_ignition_rings (list):</span>
+<span class="sd">            Expanding energy rings from the core.</span>
+<span class="sd">        core_ignition_particles (list):</span>
+<span class="sd">            Particles bursting from the core.</span>
+<span class="sd">        entrance_revealed_nodes (set):</span>
+<span class="sd">            Node IDs that have lit up during entrance.</span>
+<span class="sd">        entrance_revealed_links (set):</span>
+<span class="sd">            Link tuples that have lit up during entrance.</span>
+<span class="sd">        entrance_growth_frontier (list):</span>
+<span class="sd">            BFS growth frontier during entrance.</span>
+<span class="sd">        entrance_link_travels (list):</span>
+<span class="sd">            Visual energy traveling along links.</span>
+<span class="sd">        entrance_star_alpha (float):</span>
+<span class="sd">            Alpha for background star fade-in.</span>
+<span class="sd">        entrance_vortex (list):</span>
+<span class="sd">            Swirling convergence vortex particles.</span>
+<span class="sd">        entrance_anticipation_lights (list):</span>
+<span class="sd">            Shimmer lights before stars appear.</span>
+<span class="sd">        entrance_star_bloom (float):</span>
+<span class="sd">            Star bloom multiplier.</span>
+<span class="sd">        entrance_shake_offset (pygame.Vector2):</span>
+<span class="sd">            Screen shake offset during entrance.</span>
+<span class="sd">        entrance_shake_intensity (float):</span>
+<span class="sd">            Screen shake intensity.</span>
+<span class="sd">        entrance_energy_pulses (list):</span>
+<span class="sd">            Energy after-wave pulses.</span>
+<span class="sd">        _pulse_waves_spawned (bool):</span>
+<span class="sd">            Whether pulse waves have been spawned.</span>
+<span class="sd">        entrance_growth_timer (float):</span>
+<span class="sd">            Continuous BFS growth timer.</span>
+<span class="sd">        core_pulse_timer (float):</span>
+<span class="sd">            Timer for periodic core pulse wave.</span>
+<span class="sd">        core_pulse_interval (float):</span>
+<span class="sd">            Interval between core pulse waves.</span>
+<span class="sd">        core_pulse_rings (list):</span>
+<span class="sd">            Expanding rings from core pulse.</span>
+<span class="sd">        core_pulse_flash (float):</span>
+<span class="sd">            Flash from core pulse.</span>
+<span class="sd">        node_sparkles (list):</span>
+<span class="sd">            Ambient sparkle effects on nodes.</span>
+<span class="sd">        idle_breathe (float):</span>
+<span class="sd">            Idle breathing animation timer.</span>
+<span class="sd">        breathe_scale (float):</span>
+<span class="sd">            Scale factor for breathing effect.</span>
+<span class="sd">        nodes (list[dict]):</span>
+<span class="sd">            List of skill tree nodes.</span>
+<span class="sd">        links (list[tuple]):</span>
+<span class="sd">            List of connections between nodes.</span>
+<span class="sd">        nodes_by_id (dict):</span>
+<span class="sd">            Dictionary mapping node IDs to node data.</span>
+<span class="sd">        selected_node_id (int | None):</span>
+<span class="sd">            Currently selected node ID.</span>
+<span class="sd">        hovered_node_id (int | None):</span>
+<span class="sd">            Currently hovered node ID.</span>
+<span class="sd">        background_points (list):</span>
+<span class="sd">            Background decorative points.</span>
+<span class="sd">        tree_rect (pygame.Rect):</span>
+<span class="sd">            Rectangle for the tree display area.</span>
+<span class="sd">        sidebar_rect (pygame.Rect):</span>
+<span class="sd">            Rectangle for the sidebar.</span>
+<span class="sd">        _layout_size (tuple | None):</span>
+<span class="sd">            Cached screen size for layout recalculation.</span>
+<span class="sd">        BRANCH_THEMES (dict):</span>
+<span class="sd">            Color themes for each branch of the tree.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(app):</span>
+<span class="sd">            Initialize the skill tree menu.</span>
+<span class="sd">        _init_particles():</span>
+<span class="sd">            Initialize background particle effects.</span>
+<span class="sd">        _build_tree():</span>
+<span class="sd">            Build the skill tree data structure.</span>
+<span class="sd">        _build_background_points():</span>
+<span class="sd">            Build background decorative points.</span>
+<span class="sd">        _recalc_layout(screen_width, screen_height):</span>
+<span class="sd">            Recalculate layout based on screen dimensions.</span>
+<span class="sd">        _ensure_layout(screen_width, screen_height):</span>
+<span class="sd">            Ensure layout is up to date.</span>
+<span class="sd">        exit_menu():</span>
+<span class="sd">            Close the skill tree menu.</span>
+<span class="sd">        _get_node_theme(node):</span>
+<span class="sd">            Get the color theme for a specific node.</span>
+<span class="sd">        _get_skill_node_description(node):</span>
+<span class="sd">            Get the description text for a skill node.</span>
+<span class="sd">        _update_entrance(dt):</span>
+<span class="sd">            Update the multi-phase entrance animation.</span>
+<span class="sd">        _draw_entrance(surface):</span>
+<span class="sd">            Draw the entrance animation effects.</span>
+<span class="sd">        _update_core_pulse(dt):</span>
+<span class="sd">            Update the periodic core pulse effect.</span>
+<span class="sd">        _draw_core_pulse(surface):</span>
+<span class="sd">            Draw the core pulse rings.</span>
+<span class="sd">        _update_idle_effects(dt):</span>
+<span class="sd">            Update idle breathing and sparkle effects.</span>
+<span class="sd">        _draw_idle_effects(surface):</span>
+<span class="sd">            Draw idle breathing and sparkle effects.</span>
+<span class="sd">        _update_particles(dt):</span>
+<span class="sd">            Update background particles.</span>
+<span class="sd">        _draw_particles(surface):</span>
+<span class="sd">            Draw background particles.</span>
+<span class="sd">        _draw_tree(surface):</span>
+<span class="sd">            Draw the skill tree nodes and links.</span>
+<span class="sd">        _draw_node(surface, node, theme, is_selected, is_hovered):</span>
+<span class="sd">            Draw an individual skill tree node.</span>
+<span class="sd">        _draw_link(surface, a, b, theme, progress):</span>
+<span class="sd">            Draw a connection link between two nodes.</span>
+<span class="sd">        _draw_sidebar(surface):</span>
+<span class="sd">            Draw the sidebar with buttons and node info.</span>
+<span class="sd">        _draw_unlock_effects(surface):</span>
+<span class="sd">            Draw unlock animation effects.</span>
+<span class="sd">        _unlock_selected():</span>
+<span class="sd">            Unlock the currently selected skill node.</span>
+<span class="sd">        handle_event(event):</span>
+<span class="sd">            Handle input events for the skill tree.</span>
+<span class="sd">        update(dt):</span>
+<span class="sd">            Update the skill tree animations.</span>
+<span class="sd">        draw(screen):</span>
+<span class="sd">            Render the skill tree menu.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    
+
     <span class="c1"># Branch color themes for different areas of the tree</span>
     <span class="n">BRANCH_THEMES</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;fire&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;primary&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">180</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">30</span><span class="p">),</span> <span class="s2">&quot;secondary&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">120</span><span class="p">,</span> <span class="mi">50</span><span class="p">),</span> <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span> <span class="s2">&quot;glow&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">20</span><span class="p">)},</span>
@@ -102,6 +281,8 @@
         <span class="s2">&quot;arcane&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;primary&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">140</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">120</span><span class="p">),</span> <span class="s2">&quot;secondary&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">220</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">),</span> <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="mi">240</span><span class="p">),</span> <span class="s2">&quot;glow&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">180</span><span class="p">)},</span>
     <span class="p">}</span>
     
+<div class="viewcode-block" id="SkillTreeMenu.__init__">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.SkillTreeMenu.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="s2">&quot;App&quot;</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
         <span class="n">scale</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">()</span>
@@ -226,7 +407,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">target_zoom</span> <span class="o">=</span> <span class="mf">1.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">target_pan_offset</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_nebula_cache</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_gradient_cache</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_gradient_cache</span> <span class="o">=</span> <span class="p">{}</span></div>
+
         
 <div class="viewcode-block" id="SkillTreeMenu.on_enter">
 <a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.SkillTreeMenu.on_enter">[docs]</a>
@@ -252,6 +434,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">entrance_revealed_nodes</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">}</span></div>
 
 
+<div class="viewcode-block" id="SkillTreeMenu._init_particles">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.SkillTreeMenu._init_particles">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_init_particles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize floating particles for ambient background effect.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">particles</span> <span class="o">=</span> <span class="p">[]</span>
@@ -283,7 +467,8 @@
                 <span class="s2">&quot;pulse_speed&quot;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">),</span>
                 <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">branch_colors</span><span class="p">),</span>
                 <span class="s2">&quot;pulse_offset&quot;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="mi">2</span><span class="p">),</span>
-            <span class="p">})</span>
+            <span class="p">})</span></div>
+
 
 <div class="viewcode-block" id="SkillTreeMenu.trigger_entrance_animation">
 <a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.SkillTreeMenu.trigger_entrance_animation">[docs]</a>
@@ -410,6 +595,8 @@
         <span class="n">rng</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entrance_sparks</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="SkillTreeMenu._update_entrance">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.SkillTreeMenu._update_entrance">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_update_entrance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the multi-phase cinematic entrance animation.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">entrance_active</span><span class="p">:</span>
@@ -639,7 +826,8 @@
         <span class="c1"># ─── Continuous BFS branch growth (phase-independent, runs from core ignition onward) ───</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">entrance_active</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">entrance_phase</span> <span class="o">&gt;=</span> <span class="mi">3</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">entrance_phase</span> <span class="o">&lt;</span> <span class="mi">6</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">entrance_growth_timer</span> <span class="o">+=</span> <span class="n">dt</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_process_branch_growth</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="n">growth_speed</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_process_branch_growth</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="n">growth_speed</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span></div>
+
     
     <span class="k">def</span><span class="w"> </span><span class="nf">_update_entrance_sparks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the converging spark particles during entrance.&quot;&quot;&quot;</span>
@@ -1013,6 +1201,8 @@
             <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="n">unlocked</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="n">unlocked</span><span class="p">)</span>
 
+<div class="viewcode-block" id="SkillTreeMenu._build_tree">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.SkillTreeMenu._build_tree">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_build_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">nodes</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">links</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1395,8 +1585,11 @@
             <span class="n">next_bridge</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">6</span> <span class="o">+</span> <span class="mi">1</span>
             <span class="n">add_link</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;bridge_</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;cluster_</span><span class="si">{</span><span class="n">next_bridge</span><span class="si">}</span><span class="s2">_1&quot;</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">links</span>
+        <span class="k">return</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">links</span></div>
 
+
+<div class="viewcode-block" id="SkillTreeMenu._build_background_points">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.SkillTreeMenu._build_background_points">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_build_background_points</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Build twinkling star background.&quot;&quot;&quot;</span>
         <span class="n">rng</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">Random</span><span class="p">(</span><span class="mi">23</span><span class="p">)</span>
@@ -1411,7 +1604,8 @@
                 <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">),</span>
                 <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
             <span class="p">))</span>
-        <span class="k">return</span> <span class="n">points</span>
+        <span class="k">return</span> <span class="n">points</span></div>
+
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_node_screen_pos</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
         <span class="n">origin</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tree_rect</span><span class="o">.</span><span class="n">center</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">pan_offset</span>
@@ -1463,11 +1657,11 @@
             <span class="n">gameplay</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;manager&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="s2">&quot;states&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gameplay&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">gameplay</span><span class="p">:</span>
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">remove_active_inventory</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">gameplay</span><span class="p">,</span> <span class="s2">&quot;MAIN_player_inv&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">add_active_inventory</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">gameplay</span><span class="p">,</span> <span class="s2">&quot;MAIN_player_inv&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
                 <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                     <span class="k">pass</span>
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">remove_active_inventory</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">gameplay</span><span class="p">,</span> <span class="s2">&quot;PLAYER_inventory_equipment&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">add_active_inventory</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">gameplay</span><span class="p">,</span> <span class="s2">&quot;PLAYER_inventory_equipment&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
                 <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                     <span class="k">pass</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -1497,6 +1691,8 @@
         <span class="n">adjacent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_adjacent_nodes</span><span class="p">(</span><span class="n">node_id</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">adjacent</span> <span class="o">&amp;</span> <span class="n">unlocked</span><span class="p">)</span>
 
+<div class="viewcode-block" id="SkillTreeMenu._unlock_selected">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.SkillTreeMenu._unlock_selected">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_unlock_selected</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">selected</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes_by_id</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">selected_node_id</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">selected</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1791,7 +1987,8 @@
             <span class="n">character</span><span class="o">.</span><span class="n">thunderstrike_damage</span> <span class="o">+=</span> <span class="mi">3</span>
 
         <span class="c1"># Trigger unlock animation</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_spawn_unlock_effect</span><span class="p">(</span><span class="n">node_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_spawn_unlock_effect</span><span class="p">(</span><span class="n">node_id</span><span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="SkillTreeMenu.layout">
 <a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.SkillTreeMenu.layout">[docs]</a>
@@ -2148,6 +2345,8 @@
         <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">colorsys</span><span class="o">.</span><span class="n">hsv_to_rgb</span><span class="p">(</span><span class="n">h</span> <span class="o">/</span> <span class="mf">360.0</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
         <span class="k">return</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">r</span> <span class="o">*</span> <span class="mi">255</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">g</span> <span class="o">*</span> <span class="mi">255</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">b</span> <span class="o">*</span> <span class="mi">255</span><span class="p">))</span>
     
+<div class="viewcode-block" id="SkillTreeMenu._update_particles">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.SkillTreeMenu._update_particles">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_update_particles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Update floating particle positions for ambient effect.&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">:</span>
@@ -2240,7 +2439,8 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">node_sparkles</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">sp</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_unlock_effects</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_update_entrance</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_entrance</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span></div>
+
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_update_unlock_effects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Update all active unlock animation effects.&quot;&quot;&quot;</span>
@@ -2336,6 +2536,8 @@
             <span class="k">if</span> <span class="n">effect</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">unlock_effects</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">unlock_effects</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">effect</span><span class="p">)</span>
     
+<div class="viewcode-block" id="SkillTreeMenu._draw_unlock_effects">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.SkillTreeMenu._draw_unlock_effects">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_draw_unlock_effects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">surface</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Draw all active unlock animation effects.&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">effect</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">unlock_effects</span><span class="p">:</span>
@@ -2472,7 +2674,8 @@
             <span class="n">flash</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">(</span><span class="n">surface</span><span class="o">.</span><span class="n">get_size</span><span class="p">(),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
             <span class="n">alpha_val</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">255</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">screen_flash_alpha</span><span class="p">)</span>
             <span class="n">flash</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="n">alpha_val</span><span class="p">))</span>
-            <span class="n">surface</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">flash</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+            <span class="n">surface</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">flash</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span></div>
+
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_draw_tree_background</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">surface</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Draw enhanced background with nebula clouds, twinkling stars, and particles.&quot;&quot;&quot;</span>
@@ -2913,6 +3116,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_gradient_cache</span><span class="p">[</span><span class="n">cache_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp</span>
         <span class="n">surface</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">temp</span><span class="p">,</span> <span class="n">rect</span><span class="p">)</span>
 
+<div class="viewcode-block" id="SkillTreeMenu._draw_sidebar">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.SkillTreeMenu._draw_sidebar">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_draw_sidebar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">,</span> <span class="n">selected_node</span><span class="p">):</span>
         <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sidebar_rect</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">animation_time</span>
@@ -3079,7 +3284,8 @@
             <span class="k">if</span> <span class="n">selected_node</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">unlocked</span> <span class="ow">or</span> <span class="n">cost</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">unlock_button</span><span class="o">.</span><span class="n">set_text</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">&quot;✓ Unlocked&quot;</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">unlock_button</span><span class="o">.</span><span class="n">set_text</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Unlock&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> ◆ </span><span class="si">{</span><span class="n">cost</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">unlock_button</span><span class="o">.</span><span class="n">set_text</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Unlock&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> ◆ </span><span class="si">{</span><span class="n">cost</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="SkillTreeMenu.draw">
 <a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.SkillTreeMenu.draw">[docs]</a>

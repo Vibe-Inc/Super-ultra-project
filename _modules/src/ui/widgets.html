@@ -81,6 +81,58 @@
 <div class="viewcode-block" id="Button">
 <a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Button">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Button</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Customizable UI button with rect or shield shape, hover animations, and click handling.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        rect (pygame.Rect):</span>
+<span class="sd">            Bounding rectangle for the button.</span>
+<span class="sd">        text (str):</span>
+<span class="sd">            Label text displayed on the button.</span>
+<span class="sd">        color (tuple[int, int, int]):</span>
+<span class="sd">            Default background RGB color.</span>
+<span class="sd">        hover_color (tuple[int, int, int]):</span>
+<span class="sd">            Background RGB color when hovered.</span>
+<span class="sd">        font (pygame.font.Font):</span>
+<span class="sd">            Font used for the label text.</span>
+<span class="sd">        font_color (tuple[int, int, int]):</span>
+<span class="sd">            RGB color of the label text.</span>
+<span class="sd">        corner_width (int):</span>
+<span class="sd">            Border radius for rounded corners.</span>
+<span class="sd">        on_click (Callable[[], None]):</span>
+<span class="sd">            Callback triggered when the button is clicked.</span>
+<span class="sd">        shape (str):</span>
+<span class="sd">            Visual shape — &#39;rect&#39; or &#39;shield&#39;.</span>
+<span class="sd">        _hover_progress (float):</span>
+<span class="sd">            Normalized hover animation progress (0.0 to 1.0).</span>
+<span class="sd">        _hover_particles (list):</span>
+<span class="sd">            List of active hover sparkle particles.</span>
+<span class="sd">        text_surf (pygame.Surface):</span>
+<span class="sd">            Rendered text surface.</span>
+<span class="sd">        text_rect (pygame.Rect):</span>
+<span class="sd">            Centered position of the text surface.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(rect, text, color, hover_color, font, font_color, corner_width, on_click, shape=&#39;rect&#39;):</span>
+<span class="sd">            Initialize the button.</span>
+<span class="sd">        _update_text_surface():</span>
+<span class="sd">            Render and scale the text to fit within the button.</span>
+<span class="sd">        set_text(text):</span>
+<span class="sd">            Change the button label and re-render.</span>
+<span class="sd">        draw(screen):</span>
+<span class="sd">            Render the button on the given surface.</span>
+<span class="sd">        _build_button_surface(w, h, base_color, cw, is_hovered):</span>
+<span class="sd">            Build a cached button surface with decorative pattern.</span>
+<span class="sd">        _draw_shield_button(screen, r, base_color, cw, is_hovered, eased):</span>
+<span class="sd">            Draw the shield-shaped variant.</span>
+<span class="sd">        _adjust_color_brightness(color, factor):</span>
+<span class="sd">            Adjust color brightness by a multiplier.</span>
+<span class="sd">        _shield_points(w, h):</span>
+<span class="sd">            Compute polygon points for a shield shape.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Button.__init__">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Button.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rect</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">hover_color</span><span class="p">,</span> <span class="n">font</span><span class="p">,</span> <span class="n">font_color</span><span class="p">,</span> <span class="n">corner_width</span><span class="p">,</span> <span class="n">on_click</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="s1">&#39;rect&#39;</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span> <span class="o">=</span> <span class="n">rect</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">text</span>
@@ -93,8 +145,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">shape</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_hover_progress</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_hover_particles</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_update_text_surface</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_text_surface</span><span class="p">()</span></div>
 
+
+<div class="viewcode-block" id="Button._update_text_surface">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Button._update_text_surface">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_update_text_surface</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">text_surf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">font_color</span><span class="p">)</span>
 
@@ -105,7 +160,8 @@
             <span class="n">new_height</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">text_surf</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span> <span class="o">*</span> <span class="n">scale_factor</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">text_surf</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">smoothscale</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">text_surf</span><span class="p">,</span> <span class="p">(</span><span class="n">new_width</span><span class="p">,</span> <span class="n">new_height</span><span class="p">))</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">text_rect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">text_surf</span><span class="o">.</span><span class="n">get_rect</span><span class="p">(</span><span class="n">center</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">center</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text_rect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">text_surf</span><span class="o">.</span><span class="n">get_rect</span><span class="p">(</span><span class="n">center</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">center</span><span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="Button.set_text">
 <a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Button.set_text">[docs]</a>
@@ -116,9 +172,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_text_surface</span><span class="p">()</span></div>
 
 
+<div class="viewcode-block" id="Button._adjust_color_brightness">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Button._adjust_color_brightness">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_adjust_color_brightness</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">factor</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">c</span> <span class="o">*</span> <span class="n">factor</span><span class="p">)))</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">color</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">c</span> <span class="o">*</span> <span class="n">factor</span><span class="p">)))</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">color</span><span class="p">)</span></div>
 
+
+<div class="viewcode-block" id="Button._shield_points">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Button._shield_points">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_shield_points</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">):</span>
         <span class="n">cx</span> <span class="o">=</span> <span class="n">w</span> <span class="o">//</span> <span class="mi">2</span>
@@ -132,8 +193,11 @@
             <span class="p">(</span><span class="n">cx</span><span class="p">,</span> <span class="n">h</span><span class="p">),</span>
             <span class="p">(</span><span class="n">inset_x</span> <span class="o">*</span> <span class="mf">0.7</span><span class="p">,</span> <span class="n">h</span> <span class="o">*</span> <span class="mf">0.68</span><span class="p">),</span>
             <span class="p">(</span><span class="n">inset_x</span> <span class="o">*</span> <span class="mf">0.3</span><span class="p">,</span> <span class="n">h</span> <span class="o">*</span> <span class="mf">0.42</span><span class="p">),</span>
-        <span class="p">]</span>
+        <span class="p">]</span></div>
 
+
+<div class="viewcode-block" id="Button._draw_shield_button">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Button._draw_shield_button">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_draw_shield_button</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">base_color</span><span class="p">,</span> <span class="n">cw</span><span class="p">,</span> <span class="n">is_hovered</span><span class="p">,</span> <span class="n">eased</span><span class="p">):</span>
         <span class="n">w</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">height</span>
         <span class="n">pts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shield_points</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
@@ -180,7 +244,8 @@
             <span class="n">dp</span> <span class="o">=</span> <span class="p">[(</span><span class="n">dx</span><span class="p">,</span> <span class="n">dy</span> <span class="o">-</span> <span class="n">ds</span><span class="p">),</span> <span class="p">(</span><span class="n">dx</span> <span class="o">+</span> <span class="n">ds</span><span class="p">,</span> <span class="n">dy</span><span class="p">),</span> <span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="n">dy</span> <span class="o">+</span> <span class="n">ds</span><span class="p">),</span> <span class="p">(</span><span class="n">dx</span> <span class="o">-</span> <span class="n">ds</span><span class="p">,</span> <span class="n">dy</span><span class="p">)]</span>
             <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">polygon</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">gold_bright</span><span class="p">,</span> <span class="n">dp</span><span class="p">)</span>
 
-        <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">topleft</span><span class="p">)</span>
+        <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">topleft</span><span class="p">)</span></div>
+
 
     <span class="n">_pattern_cache</span> <span class="o">=</span> <span class="p">{}</span>
 
@@ -264,6 +329,8 @@
         <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">tr</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="Button._build_button_surface">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Button._build_button_surface">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_build_button_surface</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">base_color</span><span class="p">,</span> <span class="n">cw</span><span class="p">,</span> <span class="n">is_hovered</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Build a single button surface with decorative pattern, cached.&quot;&quot;&quot;</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">math</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_m</span>
@@ -335,6 +402,7 @@
             <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">circle</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">dot_c</span><span class="p">,</span> <span class="p">(</span><span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">),</span> <span class="n">dot_r</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">surf</span></div>
+</div>
 
 
 
@@ -611,9 +679,53 @@
 <a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Dialog">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Dialog</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Simple modal dialog with text lines and an OK button.</span>
-<span class="sd">    Supports optional Shop and Play Cards action buttons.</span>
+<span class="sd">    Simple modal dialog with text lines and action buttons.</span>
+
+<span class="sd">    Supports an OK button plus optional Shop and Play Cards action buttons.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        app (App):</span>
+<span class="sd">            The main application instance.</span>
+<span class="sd">        lines (list[str]):</span>
+<span class="sd">            Lines of text to display in the dialog.</span>
+<span class="sd">        on_close (callable | None):</span>
+<span class="sd">            Callback invoked when the dialog is closed.</span>
+<span class="sd">        on_shop (callable | None):</span>
+<span class="sd">            Callback invoked when the Shop button is clicked.</span>
+<span class="sd">        show_shop (bool):</span>
+<span class="sd">            Whether to show the Shop button.</span>
+<span class="sd">        on_play_cards (callable | None):</span>
+<span class="sd">            Callback invoked when the Play Cards button is clicked.</span>
+<span class="sd">        show_play_cards (bool):</span>
+<span class="sd">            Whether to show the Play Cards button.</span>
+<span class="sd">        rect (pygame.Rect):</span>
+<span class="sd">            Bounding rectangle of the dialog.</span>
+<span class="sd">        font (pygame.font.Font):</span>
+<span class="sd">            Font used for dialog text.</span>
+<span class="sd">        ok_button (Button):</span>
+<span class="sd">            The CLOSE button.</span>
+<span class="sd">        shop_button (Button | None):</span>
+<span class="sd">            The SHOP button, or None if not shown.</span>
+<span class="sd">        play_cards_button (Button | None):</span>
+<span class="sd">            The PLAY CARDS button, or None if not shown.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(app, lines, on_close=None, on_shop=None, show_shop=False, on_play_cards=None, show_play_cards=False):</span>
+<span class="sd">            Initialize the dialog.</span>
+<span class="sd">        _close():</span>
+<span class="sd">            Close the dialog and invoke close callback.</span>
+<span class="sd">        handle_event(event):</span>
+<span class="sd">            Handle mouse and keyboard events for the dialog buttons.</span>
+<span class="sd">        _shop():</span>
+<span class="sd">            Open the shop and close the dialog.</span>
+<span class="sd">        _play_cards_action():</span>
+<span class="sd">            Start the card game and close the dialog.</span>
+<span class="sd">        draw(surface):</span>
+<span class="sd">            Render the dialog overlay, text, and buttons.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Dialog.__init__">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Dialog.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">,</span> <span class="n">lines</span><span class="p">,</span> <span class="n">on_close</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_shop</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_shop</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                  <span class="n">on_play_cards</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_play_cards</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="o">=</span> <span class="n">app</span>
@@ -655,8 +767,11 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">play_cards_button</span> <span class="o">=</span> <span class="n">Button</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">btn_x</span><span class="p">,</span> <span class="n">btn_y</span><span class="p">,</span> <span class="n">btn_w</span><span class="p">,</span> <span class="n">btn_h</span><span class="p">),</span> <span class="n">label</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">hover</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="p">,</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span><span class="mi">255</span><span class="p">,</span><span class="mi">255</span><span class="p">),</span> <span class="mi">6</span><span class="p">,</span> <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_play_cards_action</span><span class="p">)</span>
             <span class="n">btn_x</span> <span class="o">+=</span> <span class="n">btn_w</span> <span class="o">+</span> <span class="n">gap</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">ok_button</span> <span class="o">=</span> <span class="n">Button</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">btn_x</span><span class="p">,</span> <span class="n">btn_y</span><span class="p">,</span> <span class="n">btn_w</span><span class="p">,</span> <span class="n">btn_h</span><span class="p">),</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;CLOSE&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">100</span><span class="p">,</span><span class="mi">100</span><span class="p">,</span><span class="mi">100</span><span class="p">),</span> <span class="p">(</span><span class="mi">150</span><span class="p">,</span><span class="mi">150</span><span class="p">,</span><span class="mi">150</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="p">,</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span><span class="mi">255</span><span class="p">,</span><span class="mi">255</span><span class="p">),</span> <span class="mi">6</span><span class="p">,</span> <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_close</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ok_button</span> <span class="o">=</span> <span class="n">Button</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">btn_x</span><span class="p">,</span> <span class="n">btn_y</span><span class="p">,</span> <span class="n">btn_w</span><span class="p">,</span> <span class="n">btn_h</span><span class="p">),</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;CLOSE&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">100</span><span class="p">,</span><span class="mi">100</span><span class="p">,</span><span class="mi">100</span><span class="p">),</span> <span class="p">(</span><span class="mi">150</span><span class="p">,</span><span class="mi">150</span><span class="p">,</span><span class="mi">150</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="p">,</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span><span class="mi">255</span><span class="p">,</span><span class="mi">255</span><span class="p">),</span> <span class="mi">6</span><span class="p">,</span> <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_close</span><span class="p">)</span></div>
 
+
+<div class="viewcode-block" id="Dialog._close">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Dialog._close">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">on_close</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
@@ -667,7 +782,8 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">current_dialog</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-            <span class="k">pass</span>
+            <span class="k">pass</span></div>
+
 
 <div class="viewcode-block" id="Dialog.handle_event">
 <a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Dialog.handle_event">[docs]</a>
@@ -687,6 +803,8 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_close</span><span class="p">()</span></div>
 
 
+<div class="viewcode-block" id="Dialog._shop">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Dialog._shop">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_shop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">on_shop</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
@@ -694,8 +812,11 @@
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="k">pass</span>
         <span class="c1"># close dialog after opening shop</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_close</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_close</span><span class="p">()</span></div>
 
+
+<div class="viewcode-block" id="Dialog._play_cards_action">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Dialog._play_cards_action">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_play_cards_action</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">on_play_cards</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
@@ -703,7 +824,8 @@
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="k">pass</span>
         <span class="c1"># close dialog after starting card game</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_close</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_close</span><span class="p">()</span></div>
+
 
 <div class="viewcode-block" id="Dialog.draw">
 <a class="viewcode-back" href="../../../src.ui.html#src.ui.widgets.Dialog.draw">[docs]</a>
@@ -899,7 +1021,17 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">Inventory_slider</span><span class="p">(</span><span class="n">Slider</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Slider specialized for inventory UI, inherits from the generic Slider class.</span>
+
+<span class="sd">    Provides no additional functionality beyond Slider; exists as a dedicated</span>
+<span class="sd">    type for inventory scrollbar use.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        Inherits all attributes from Slider.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        Inherits all methods from Slider.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">track_thickness</span><span class="p">,</span> <span class="n">track_colour</span><span class="p">,</span> <span class="n">knob_colour</span><span class="p">,</span>
                  <span class="n">knob_width</span><span class="p">,</span> <span class="n">knob_height</span><span class="p">,</span> <span class="n">track_length</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">dragging</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">smooth_speed</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">track_thickness</span><span class="p">,</span> <span class="n">track_colour</span><span class="p">,</span> <span class="n">knob_colour</span><span class="p">,</span>

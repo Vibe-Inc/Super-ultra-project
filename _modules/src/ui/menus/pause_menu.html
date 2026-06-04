@@ -101,6 +101,64 @@
 <div class="viewcode-block" id="PauseMenu">
 <a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.PauseMenu">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">PauseMenu</span><span class="p">(</span><span class="n">Menu</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Pause overlay with save, wiki, resume, and return-to-main-menu options.</span>
+
+<span class="sd">    Features animated background effects and color-coded shield buttons.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        app (App):</span>
+<span class="sd">            The main application instance.</span>
+<span class="sd">        _btn_w (int):</span>
+<span class="sd">            Button width.</span>
+<span class="sd">        _btn_h (int):</span>
+<span class="sd">            Button height.</span>
+<span class="sd">        _title_font (pygame.font.Font):</span>
+<span class="sd">            Large font for the title.</span>
+<span class="sd">        buttons (list[Button]):</span>
+<span class="sd">            List of pause menu buttons (SAVE, WIKI, RESUME, MAIN MENU).</span>
+<span class="sd">        _surf_cache (dict):</span>
+<span class="sd">            Cache of rendered surfaces.</span>
+<span class="sd">        _anim_time (float):</span>
+<span class="sd">            Accumulated animation time.</span>
+<span class="sd">        _launch_phase (float):</span>
+<span class="sd">            Phase of the launch animation.</span>
+<span class="sd">        _particles (list):</span>
+<span class="sd">            Decorative ambient particles.</span>
+<span class="sd">        _stars (list):</span>
+<span class="sd">            Background star effects.</span>
+<span class="sd">        _light_rays (list):</span>
+<span class="sd">            Light ray effects.</span>
+<span class="sd">        _embers (list):</span>
+<span class="sd">            Ambient ember particles.</span>
+<span class="sd">        _bursts (list):</span>
+<span class="sd">            Launch burst effects.</span>
+<span class="sd">        _sparkles (list):</span>
+<span class="sd">            Title sparkle effects.</span>
+<span class="sd">        _panel_rect (pygame.Rect):</span>
+<span class="sd">            Rectangle for the central panel.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(app):</span>
+<span class="sd">            Initialize the pause menu.</span>
+<span class="sd">        open_save_menu():</span>
+<span class="sd">            Open the save menu.</span>
+<span class="sd">        open_wiki():</span>
+<span class="sd">            Open the wiki menu.</span>
+<span class="sd">        resume_game():</span>
+<span class="sd">            Resume gameplay and close the pause menu.</span>
+<span class="sd">        back_to_main():</span>
+<span class="sd">            Return to the main menu.</span>
+<span class="sd">        handle_event(event):</span>
+<span class="sd">            Handle input events.</span>
+<span class="sd">        update(dt):</span>
+<span class="sd">            Update animations and effects.</span>
+<span class="sd">        draw(screen):</span>
+<span class="sd">            Render the pause menu.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="PauseMenu.__init__">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.PauseMenu.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="s2">&quot;App&quot;</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
         <span class="n">scale</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">()</span>
@@ -139,7 +197,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_light_rays</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_embers</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_bursts</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_sparkles</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sparkles</span> <span class="o">=</span> <span class="p">[]</span></div>
+
 
 <div class="viewcode-block" id="PauseMenu.on_enter">
 <a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.PauseMenu.on_enter">[docs]</a>

@@ -538,11 +538,16 @@
 <span class="sd">    charm, gloves, ring, belt in column 0). Only Armor items with matching</span>
 <span class="sd">    slot_type may be placed in each slot.</span>
 
+<span class="sd">    Attributes:</span>
+<span class="sd">        app (App): Reference to the main application instance.</span>
+
 <span class="sd">    Methods:</span>
 <span class="sd">        __init__(app):</span>
 <span class="sd">            Initialize the equipment inventory grid based on config dimensions.</span>
 <span class="sd">        get_slot_type(col, row):</span>
 <span class="sd">            Return the slot type string for the given grid position.</span>
+<span class="sd">        get_total_defense():</span>
+<span class="sd">            Sum the defense_value of all equipped Armor items.</span>
 <span class="sd">        inventory_interactions(event, manager):</span>
 <span class="sd">            Validate slot type before allowing item placement.</span>
 <span class="sd">        sync_character_defense(character):</span>

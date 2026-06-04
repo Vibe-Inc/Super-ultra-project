@@ -103,238 +103,735 @@
 <dt class="sig sig-object py" id="src.entities.character.Character">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.entities.character.</span></span><span class="sig-name descname"><span class="pre">Character</span></span><a class="reference internal" href="_modules/src/entities/character.html#Character"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Represents the player character with animated movement in four directions.</p>
-<p>This class handles player movement, animation, health, and respawn logic.</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.entities.character.Character.animations">
-<span class="sig-name descname"><span class="pre">animations</span></span><a class="headerlink" href="#src.entities.character.Character.animations" title="Link to this definition"></a></dt>
-<dd><p>Dictionary containing lists of Pygame surfaces for each direction (“up”, “down”, “side”).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>dict[str, list[pygame.Surface]]</p>
+<p>Represents the player character with animated movement, combat, skill system,
+resource management, and visual effects.</p>
+<p>Attributes grouped by category:</p>
+<dl class="simple">
+<dt>— Animations &amp; Sprites —</dt><dd><p>sprite_set (str): Name of the character sprite set.
+animations (dict[str, list[pygame.Surface]]): Animation frames per direction.
+animations_flipped (dict[str, list[pygame.Surface]]): Horizontally flipped side frames.
+direction (str): Current direction (“up”, “down”, “side”).
+image (pygame.Surface): Current animation frame to draw.
+frame_index (int): Current animation frame index.
+animation_speed (float): Frames per second for animation.
+time_accumulator (float): Accumulated time for frame switching.
+flip (bool): Whether to flip the sprite horizontally.
+moving (bool): Whether the character is currently in motion.</p>
+</dd>
+<dt>— Position &amp; Movement —</dt><dd><p>pos (pygame.Vector2): World position.
+spawn_point (pygame.Vector2): Respawn point.
+rect (pygame.Rect): Collision/drawing rectangle.
+velocity (pygame.Vector2): Normalized movement direction.
+base_speed (float): Base movement speed in px/s.
+speed_multiplier (float): Multiplier applied to base speed.
+speed (float): Effective movement speed.
+sprint_multiplier (float): Speed multiplier while sprinting.
+is_sprinting (bool): Whether sprinting is active.
+can_sprint (bool): Whether the character can sprint.</p>
+</dd>
+<dt>— Health &amp; Death —</dt><dd><p>max_hp (int): Maximum health points.
+hp (int): Current health points.
+death_count (int): Number of deaths.
+death_sound (pygame.mixer.Sound): Sound played on death.
+invulnerable (bool): Whether the character is temporarily invulnerable.
+invulnerability_timer (float): Elapsed invulnerability time.
+invulnerability_duration (float): Duration of invulnerability after hit.</p>
+</dd>
+<dt>— Resources —</dt><dd><p>max_stamina (int): Maximum stamina.
+stamina (int): Current stamina.
+stamina_drain_rate (int): Stamina drained per second while sprinting.
+stamina_regen_rate (int): Stamina regenerated per second.
+max_mana (int): Maximum mana.
+mana (int): Current mana.
+mana_drain_rate (float): Mana drained per second while casting.
+mana_regen_rate (float): Mana regenerated per second.
+energy (float): Alias for stamina for compatibility.</p>
+</dd>
+<dt>— Leveling &amp; XP —</dt><dd><p>xp (int): Current experience points.
+level (int): Current level.
+xp_to_next_level (int): XP required for next level.</p>
+</dd>
+<dt>— Combat Stats —</dt><dd><p>base_attack_damage (int): Base melee damage.
+base_attack_range (int): Base melee range in pixels.
+base_attack_cooldown (int): Base melee cooldown in ms.
+attack_damage (int): Effective attack damage.
+attack_range (int): Effective attack range.
+attack_cooldown (int): Effective attack cooldown (modified by __getattribute__).
+attack_cooldown_mult (float): Cooldown multiplier (&lt;1 = faster).
+last_attack_time (int): Timestamp of last attack.
+is_attacking (bool): Whether currently attacking.
+last_attack_dir (pygame.Vector2): Direction of last attack.
+melee_origin_offset (float): Offset from character center for melee origin.
+melee_slash_distance (float): Forward reach of melee attacks.
+damage_bonus (int): Flat bonus damage added to all attacks.
+cooldown_multiplier (float): Global skill cooldown multiplier.
+shield (float): Damage absorption before HP loss.
+defense (int): Flat damage reduction from armor.</p>
+</dd>
+<dt>— Skill System —</dt><dd><p>skillbook (list): Learned skills (dicts with skill_id, name, description, etc.).
+skillbar (list): 6-slot skill hotbar (skill dicts or None).
+skill_tree_points (int): Available skill tree points.
+skill_tree_unlocked (set): Unlocked skill tree node IDs.</p>
+</dd>
+<dt>— Status Effects —</dt><dd><p>effects (list): Active status effect instances.
+confused (bool): Whether movement is inverted.
+dizzy (bool): Whether the character is staggered.
+resistances (dict): Resistance values per effect name (0.0-1.0).
+floating_texts (list): Active damage/heal floating text popups.</p>
+</dd>
+<dt>— Passive / Keystone Attributes —</dt><dd><p>static_field (bool): Static Field passive active.
+static_field_proc_chance (float): Proc chance for Static Field.
+static_field_damage (int): Static Field damage.
+regeneration (bool): Regeneration passive active.
+regeneration_hp_per_sec (float): HP regenerated per second.
+regeneration_acc (float): Accumulator for regen tick.
+pyromancers_fury (bool): Pyromancer’s Fury passive active.
+pyromancers_fury_damage_mult (float): Fire damage multiplier.
+pyromancers_fury_area_mult (float): Fire area multiplier.
+poison_blade (bool): Poison Blade passive active.
+poison_blade_damage_per_sec (float): Poison DPS.
+poison_blade_duration (float): Poison duration in seconds.
+mana_flow (bool): Mana Flow passive active.
+eternal_fortress (bool): Eternal Fortress keystone active.
+soul_harvest (bool): Soul Harvest keystone active.
+soul_harvest_stacks (list): Current Soul Harvest kill stacks.
+soul_harvest_duration (float): Stack duration.
+soul_harvest_hp_per_kill (int): HP restored per kill.
+soul_harvest_damage_per_stack (float): Damage bonus per stack.
+void_walker (bool): Void Walker keystone active.
+void_walker_dodge_chance (float): Dodge chance.
+void_walker_teleport_range (float): Teleport range.
+void_walker_afterimage_damage (int): Afterimage damage.
+elemental_mastery (bool): Elemental Mastery keystone active.
+elemental_damage_mult (float): Elemental damage multiplier.
+last_elemental_skill (str or None): ID of last used elemental skill.
+last_elemental_time (float): Timestamp of last elemental skill.
+combo_window (float): Window in seconds for element combo.
+elemental_damage_attrs (frozenset): Attribute names affected by elemental mastery.</p>
+</dd>
+<dt>— Skill Cooldowns &amp; Config —</dt><dd><p>fireball_speed (float): Fireball projectile speed.
+fireball_range (float): Fireball max range.
+fireball_damage (int): Fireball damage.
+fireball_blast_radius (float): Fireball explosion radius.
+fireball_fuse_time (float): Fireball fuse duration.
+fireball_cooldown (int): Fireball cooldown in ms.
+fireball_last_used (int): Last fireball use timestamp.
+fireball_knockback (float): Fireball knockback force.
+game_state (object or None): Reference to game state.
+flame_shield_duration (float): Flame Shield active duration.
+flame_shield_cooldown (int): Flame Shield cooldown in ms.
+flame_shield_last_used (int): Last Flame Shield timestamp.
+flame_shield_active (bool): Whether Flame Shield is active.
+flame_shield_active_time (float): Remaining active time.
+flame_shield_damage_per_sec (float): Flame Shield DPS.
+flame_shield_radius (float): Flame Shield radius.
+flame_shield_particles (list): Flame Shield visual particles.
+flame_shield_damage_acc (float): Accumulated fractional damage.
+frost_nova_radius (float): Frost Nova radius.
+frost_nova_freeze_duration (float): Freeze duration.
+frost_nova_damage (int): Frost Nova damage.
+frost_nova_cooldown (int): Frost Nova cooldown.
+frost_nova_last_used (int): Last Frost Nova timestamp.
+ice_armor_duration (float): Ice Armor active duration.
+ice_armor_cooldown (int): Ice Armor cooldown.
+ice_armor_last_used (int): Last Ice Armor timestamp.
+ice_armor_active (bool): Whether Ice Armor is active.
+ice_armor_active_time (float): Remaining active time.
+ice_armor_remaining_absorption (float): Remaining damage absorption.
+ice_armor_max_absorption (float): Max absorption capacity.
+ice_armor_slow_radius (float): Slow aura radius.
+ice_armor_slow_factor (float): Slow movement multiplier.
+ice_armor_particles (list): Ice Armor visual particles.
+glacial_cascade_speed (float): Cascade projectile speed.
+glacial_cascade_range (float): Cascade max range.
+glacial_cascade_damage (int): Cascade damage.
+glacial_cascade_freeze_duration (float): Cascade freeze duration.
+glacial_cascade_cooldown (int): Cascade cooldown.
+glacial_cascade_last_used (int): Last Cascade timestamp.
+glacial_cascade_width (float): Cascade fan base width.
+chain_lightning_speed (float): Lightning bolt speed.
+chain_lightning_range (float): Lightning max range.
+chain_lightning_damage (int): Lightning damage per hit.
+chain_lightning_chain_range (float): Chain jump range.
+chain_lightning_max_targets (int): Max chain targets.
+chain_lightning_cooldown (int): Lightning cooldown.
+chain_lightning_last_used (int): Last Lightning timestamp.
+thunderstrike_damage (int): Thunderstrike damage.
+thunderstrike_radius (float): Thunderstrike radius.
+thunderstrike_range (float): Thunderstrike cast range.
+thunderstrike_cooldown (int): Thunderstrike cooldown.
+thunderstrike_last_used (int): Last Thunderstrike timestamp.
+entangling_roots_speed (float): Root projectile speed.
+entangling_roots_range (float): Root max range.
+entangling_roots_radius (float): Root burst radius.
+entangling_roots_root_duration (float): Root immobilize duration.
+entangling_roots_damage (int): Root burst damage.
+entangling_roots_cooldown (int): Roots cooldown.
+entangling_roots_last_used (int): Last Roots timestamp.
+summon_spirit_damage (int): Spirit attack damage.
+summon_spirit_duration (float): Spirit lifetime.
+summon_spirit_cooldown (int): Spirit summon cooldown.
+summon_spirit_last_used (int): Last summon timestamp.
+summon_spirit_particles (list): Summon visual particles.
+shadow_step_range (float): Shadow Step teleport range.
+shadow_step_cooldown (int): Shadow Step cooldown.
+shadow_step_last_used (int): Last Shadow Step timestamp.
+shadow_step_invuln_duration (float): Invulnerability after step.
+shadow_step_effect (object or None): Current shadow effect object.
+shadow_step_particles (list): Shadow Step visual particles.
+dark_pact_hp_cost_percent (float): HP cost as fraction of max HP.
+dark_pact_damage (int): Dark Pact damage.
+dark_pact_radius (float): Dark Pact radius.
+dark_pact_cooldown (int): Dark Pact cooldown.
+dark_pact_last_used (int): Last Dark Pact timestamp.
+arcane_missiles_speed (float): Missile speed.
+arcane_missiles_range (float): Missile max range.
+arcane_missiles_damage (int): Missile damage per bolt.
+arcane_missiles_count (int): Number of missiles per cast.
+arcane_missiles_cooldown (int): Missiles cooldown.
+arcane_missiles_last_used (int): Last Missiles timestamp.
+mystic_barrier_duration (float): Barrier active duration.
+mystic_barrier_cooldown (int): Barrier cooldown.
+mystic_barrier_last_used (int): Last Barrier timestamp.
+mystic_barrier_active (bool): Whether barrier is active.
+mystic_barrier_active_time (float): Remaining active time.
+mystic_barrier_reflect_pct (float): Damage reflect percentage.
+mystic_barrier_particles (list): Barrier visual particles.</p>
+</dd>
+<dt>— Keystone Skills —</dt><dd><p>berserkers_rage_active (bool): Whether Rage is active.
+berserkers_rage_duration (float): Rage duration.
+berserkers_rage_active_time (float): Remaining Rage time.
+berserkers_rage_cooldown (int): Rage cooldown.
+berserkers_rage_last_used (int): Last Rage timestamp.
+berserkers_rage_particles (list): Rage visual particles.
+chrono_shift_active (bool): Whether Chrono Shift is active.
+chrono_shift_duration (float): Chrono Shift duration.
+chrono_shift_active_time (float): Remaining active time.
+chrono_shift_cooldown (int): Chrono Shift cooldown.
+chrono_shift_last_used (int): Last Chrono Shift timestamp.
+chrono_shift_particles (list): Chrono Shift visual particles.</p>
+</dd>
+<dt>— Dash —</dt><dd><p>dash_speed_multiplier (float): Dash speed boost multiplier.
+dash_duration (float): Dash duration in seconds.
+dash_cooldown (int): Dash cooldown in ms.
+dash_active_time (float): Remaining dash time.
+dash_last_used (int): Last dash timestamp.
+dash_direction (pygame.Vector2): Dash direction.
+dash_trail (list): Dash visual trail points.
+_dash_trail_timer (float): Dash trail spawn accumulator.</p>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initialize all character attributes, skills, and resources.</p>
 </dd></dl>
 
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.entities.character.Character.direction">
-<span class="sig-name descname"><span class="pre">direction</span></span><a class="headerlink" href="#src.entities.character.Character.direction" title="Link to this definition"></a></dt>
-<dd><p>Current movement direction of the character (“up”, “down”, “side”).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.__getattribute__">
+<span class="sig-name descname"><span class="pre">__getattribute__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.__getattribute__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.__getattribute__" title="Link to this definition"></a></dt>
+<dd><p>Apply dynamic modifiers to cooldown, damage, and attack_cooldown attributes.</p>
 </dd></dl>
 
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.entities.character.Character.image">
-<span class="sig-name descname"><span class="pre">image</span></span><a class="headerlink" href="#src.entities.character.Character.image" title="Link to this definition"></a></dt>
-<dd><p>Current frame of the character to be drawn.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pygame.Surface</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.entities.character.Character.pos">
-<span class="sig-name descname"><span class="pre">pos</span></span><a class="headerlink" href="#src.entities.character.Character.pos" title="Link to this definition"></a></dt>
-<dd><p>Position of the character on the screen.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pygame.Vector2</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.entities.character.Character.spawn_point">
-<span class="sig-name descname"><span class="pre">spawn_point</span></span><a class="headerlink" href="#src.entities.character.Character.spawn_point" title="Link to this definition"></a></dt>
-<dd><p>The respawn point for the character.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pygame.Vector2</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.entities.character.Character.speed">
-<span class="sig-name descname"><span class="pre">speed</span></span><a class="headerlink" href="#src.entities.character.Character.speed" title="Link to this definition"></a></dt>
-<dd><p>Movement speed of the character in pixels per second.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
+<dl class="py method">
 <dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">#</span> <span class="pre">New</span> <span class="pre">attributes</span> <span class="pre">for</span> <span class="pre">CollisionSystem</span></span></dt>
+<span class="sig-name descname"><span class="pre">#</span> <span class="pre">Skill</span> <span class="pre">Learning</span></span></dt>
 <dd></dd></dl>
 
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.entities.character.Character.rect">
-<span class="sig-name descname"><span class="pre">rect</span></span><a class="headerlink" href="#src.entities.character.Character.rect" title="Link to this definition"></a></dt>
-<dd><p>Collision and drawing rectangle (for integer coordinates).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pygame.Rect</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.entities.character.Character.velocity">
-<span class="sig-name descname"><span class="pre">velocity</span></span><a class="headerlink" href="#src.entities.character.Character.velocity" title="Link to this definition"></a></dt>
-<dd><p>Normalized vector representing the desired movement direction.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pygame.Vector2</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.entities.character.Character.frame_index">
-<span class="sig-name descname"><span class="pre">frame_index</span></span><a class="headerlink" href="#src.entities.character.Character.frame_index" title="Link to this definition"></a></dt>
-<dd><p>Current frame index for animation.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.entities.character.Character.animation_speed">
-<span class="sig-name descname"><span class="pre">animation_speed</span></span><a class="headerlink" href="#src.entities.character.Character.animation_speed" title="Link to this definition"></a></dt>
-<dd><p>Number of frames per second for animation.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.entities.character.Character.time_accumulator">
-<span class="sig-name descname"><span class="pre">time_accumulator</span></span><a class="headerlink" href="#src.entities.character.Character.time_accumulator" title="Link to this definition"></a></dt>
-<dd><p>Accumulates time to control animation frame switching.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.entities.character.Character.flip">
-<span class="sig-name descname"><span class="pre">flip</span></span><a class="headerlink" href="#src.entities.character.Character.flip" title="Link to this definition"></a></dt>
-<dd><p>Whether to flip the character horizontally (used for left/right movement).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>bool</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.entities.character.Character.moving">
-<span class="sig-name descname"><span class="pre">moving</span></span><a class="headerlink" href="#src.entities.character.Character.moving" title="Link to this definition"></a></dt>
-<dd><p>Whether the character is currently moving.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>bool</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.entities.character.Character.hp">
-<span class="sig-name descname"><span class="pre">hp</span></span><a class="headerlink" href="#src.entities.character.Character.hp" title="Link to this definition"></a></dt>
-<dd><p>Current health points of the character.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.entities.character.Character.death_count">
-<span class="sig-name descname"><span class="pre">death_count</span></span><a class="headerlink" href="#src.entities.character.Character.death_count" title="Link to this definition"></a></dt>
-<dd><p>Number of times the character has died.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.entities.character.Character.death_sound">
-<span class="sig-name descname"><span class="pre">death_sound</span></span><a class="headerlink" href="#src.entities.character.Character.death_sound" title="Link to this definition"></a></dt>
-<dd><p>Sound effect played on death.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pygame.mixer.Sound</p>
-</dd>
-</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character._build_skillbook">
+<span class="sig-name descname"><span class="pre">_build_skillbook</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character._build_skillbook"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character._build_skillbook" title="Link to this definition"></a></dt>
+<dd><p>Build and return the initial skillbook (includes dash).</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.get_rect">
-<span class="sig-name descname"><span class="pre">get_rect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_rect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.get_rect" title="Link to this definition"></a></dt>
-<dd><p>Returns the collision rectangle, updated to the current float position.</p>
+<dt class="sig sig-object py" id="src.entities.character.Character.learn_fireball">
+<span class="sig-name descname"><span class="pre">learn_fireball</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_fireball"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_fireball" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.learn_flame_shield">
+<span class="sig-name descname"><span class="pre">learn_flame_shield</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_flame_shield"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_flame_shield" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.learn_pyromancers_fury">
+<span class="sig-name descname"><span class="pre">learn_pyromancers_fury</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_pyromancers_fury"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_pyromancers_fury" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.learn_frost_nova">
+<span class="sig-name descname"><span class="pre">learn_frost_nova</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_frost_nova"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_frost_nova" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.learn_ice_armor">
+<span class="sig-name descname"><span class="pre">learn_ice_armor</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_ice_armor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_ice_armor" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.learn_glacial_cascade">
+<span class="sig-name descname"><span class="pre">learn_glacial_cascade</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_glacial_cascade"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_glacial_cascade" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.learn_chain_lightning">
+<span class="sig-name descname"><span class="pre">learn_chain_lightning</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_chain_lightning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_chain_lightning" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.learn_static_field">
+<span class="sig-name descname"><span class="pre">learn_static_field</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_static_field"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_static_field" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.learn_thunderstrike">
+<span class="sig-name descname"><span class="pre">learn_thunderstrike</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_thunderstrike"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_thunderstrike" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.learn_entangling_roots">
+<span class="sig-name descname"><span class="pre">learn_entangling_roots</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_entangling_roots"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_entangling_roots" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.learn_regeneration">
+<span class="sig-name descname"><span class="pre">learn_regeneration</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_regeneration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_regeneration" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.learn_summon_spirit">
+<span class="sig-name descname"><span class="pre">learn_summon_spirit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_summon_spirit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_summon_spirit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.learn_shadow_step">
+<span class="sig-name descname"><span class="pre">learn_shadow_step</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_shadow_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_shadow_step" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.learn_poison_blade">
+<span class="sig-name descname"><span class="pre">learn_poison_blade</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_poison_blade"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_poison_blade" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.learn_dark_pact">
+<span class="sig-name descname"><span class="pre">learn_dark_pact</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_dark_pact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_dark_pact" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.learn_arcane_missiles">
+<span class="sig-name descname"><span class="pre">learn_arcane_missiles</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_arcane_missiles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_arcane_missiles" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.learn_mana_flow">
+<span class="sig-name descname"><span class="pre">learn_mana_flow</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_mana_flow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_mana_flow" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.learn_mystic_barrier">
+<span class="sig-name descname"><span class="pre">learn_mystic_barrier</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_mystic_barrier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_mystic_barrier" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.learn_berserkers_rage">
+<span class="sig-name descname"><span class="pre">learn_berserkers_rage</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_berserkers_rage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_berserkers_rage" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.learn_eternal_fortress">
+<span class="sig-name descname"><span class="pre">learn_eternal_fortress</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_eternal_fortress"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_eternal_fortress" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.learn_soul_harvest">
+<span class="sig-name descname"><span class="pre">learn_soul_harvest</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_soul_harvest"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_soul_harvest" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.learn_void_walker">
+<span class="sig-name descname"><span class="pre">learn_void_walker</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_void_walker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_void_walker" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.learn_elemental_mastery">
+<span class="sig-name descname"><span class="pre">learn_elemental_mastery</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_elemental_mastery"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_elemental_mastery" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.learn_chrono_shift">
+<span class="sig-name descname"><span class="pre">learn_chrono_shift</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_chrono_shift"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_chrono_shift" title="Link to this definition"></a></dt>
+<dd><p>Add the named skill/passive/keystone to the skillbook.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.update">
-<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collision_system</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obstacles</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.update" title="Link to this definition"></a></dt>
-<dd><p>Update the character’s position and animation based on keyboard input.
-:param dt: Time elapsed since the last frame in seconds.
-:type dt: float
-:param collision_system: The external collision handler instance.
-:type collision_system: CollisionSystem
-:param obstacles: List of static collision boxes (walls).
-:type obstacles: list[pygame.Rect]</p>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">#</span> <span class="pre">Skill</span> <span class="pre">Usage</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.get_skill_in_slot">
+<span class="sig-name descname"><span class="pre">get_skill_in_slot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slot_index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_skill_in_slot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.get_skill_in_slot" title="Link to this definition"></a></dt>
+<dd><p>Return the skill dict in the given hotbar slot.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character._set_velocity">
-<span class="sig-name descname"><span class="pre">_set_velocity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character._set_velocity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character._set_velocity" title="Link to this definition"></a></dt>
-<dd><p>Calculates the desired movement vector (velocity) based on keyboard input.</p>
+<dt class="sig sig-object py" id="src.entities.character.Character.use_skill_from_slot">
+<span class="sig-name descname"><span class="pre">use_skill_from_slot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slot_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aim_direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.use_skill_from_slot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.use_skill_from_slot" title="Link to this definition"></a></dt>
+<dd><p>Use the skill in the given hotbar slot.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.take_damage">
-<span class="sig-name descname"><span class="pre">take_damage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.take_damage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.take_damage" title="Link to this definition"></a></dt>
-<dd><p>Reduce the character’s health by the given amount and handle death.
-:param amount: Amount of damage to take.
-:type amount: int</p>
+<dt class="sig sig-object py" id="src.entities.character.Character.get_skill_cooldown_percent">
+<span class="sig-name descname"><span class="pre">get_skill_cooldown_percent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">skill</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_skill_cooldown_percent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.get_skill_cooldown_percent" title="Link to this definition"></a></dt>
+<dd><p>Return cooldown progress (0.0-1.0) for a skill.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.die">
-<span class="sig-name descname"><span class="pre">die</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.die"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.die" title="Link to this definition"></a></dt>
-<dd><p>Handle character death, play sound, increment death count, reset health and position.</p>
+<dt class="sig sig-object py" id="src.entities.character.Character.is_skill_ready">
+<span class="sig-name descname"><span class="pre">is_skill_ready</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">skill</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.is_skill_ready"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.is_skill_ready" title="Link to this definition"></a></dt>
+<dd><p>Return True if the skill is off cooldown.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.draw">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.draw" title="Link to this definition"></a></dt>
-<dd><p>Draw the character’s current frame to the given Pygame surface.
-:param screen: The surface to draw the character on.
-:type screen: pygame.Surface</p>
+<dt class="sig sig-object py" id="src.entities.character.Character.use_skill">
+<span class="sig-name descname"><span class="pre">use_skill</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">skill</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aim_direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.use_skill"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.use_skill" title="Link to this definition"></a></dt>
+<dd><p>Execute a skill by its dict, spawning the appropriate projectile/effect.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">#</span> <span class="pre">Combat</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.can_attack">
+<span class="sig-name descname"><span class="pre">can_attack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.can_attack"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.can_attack" title="Link to this definition"></a></dt>
+<dd><p>Return True if melee attack cooldown has elapsed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.start_attack">
+<span class="sig-name descname"><span class="pre">start_attack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_slash</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.start_attack"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.start_attack" title="Link to this definition"></a></dt>
+<dd><p>Begin a melee attack animation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.get_effective_attack_damage">
+<span class="sig-name descname"><span class="pre">get_effective_attack_damage</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_effective_attack_damage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.get_effective_attack_damage" title="Link to this definition"></a></dt>
+<dd><p>Return attack damage including bonuses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.get_forward_direction">
+<span class="sig-name descname"><span class="pre">get_forward_direction</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_forward_direction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.get_forward_direction" title="Link to this definition"></a></dt>
+<dd><p>Return the forward Vector2 based on current direction.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.get_center">
+<span class="sig-name descname"><span class="pre">get_center</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_center"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.get_center" title="Link to this definition"></a></dt>
+<dd><p>Return the center position as Vector2.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.get_melee_anchor">
+<span class="sig-name descname"><span class="pre">get_melee_anchor</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_melee_anchor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.get_melee_anchor" title="Link to this definition"></a></dt>
+<dd><p>Return the origin point for melee slash.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.attack">
+<span class="sig-name descname"><span class="pre">attack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">enemies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aim_direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cone_degrees</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">90.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.attack"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.attack" title="Link to this definition"></a></dt>
+<dd><p>Perform a standard melee attack (sword style).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character._apply_weapon_enchantments">
+<span class="sig-name descname"><span class="pre">_apply_weapon_enchantments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">enemy</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character._apply_weapon_enchantments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character._apply_weapon_enchantments" title="Link to this definition"></a></dt>
+<dd><p>Apply on-hit weapon effects to the given enemy.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.attack_mace">
+<span class="sig-name descname"><span class="pre">attack_mace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">enemies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aim_direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.attack_mace"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.attack_mace" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.attack_axe">
+<span class="sig-name descname"><span class="pre">attack_axe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">enemies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aim_direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.attack_axe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.attack_axe" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.attack_spear">
+<span class="sig-name descname"><span class="pre">attack_spear</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">enemies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aim_direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.attack_spear"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.attack_spear" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.attack_war_hammer">
+<span class="sig-name descname"><span class="pre">attack_war_hammer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">enemies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aim_direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.attack_war_hammer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.attack_war_hammer" title="Link to this definition"></a></dt>
+<dd><p>Perform weapon-class-specific melee attacks.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">#</span> <span class="pre">Resource</span> <span class="pre">Management</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.consume_stamina">
+<span class="sig-name descname"><span class="pre">consume_stamina</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.consume_stamina"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.consume_stamina" title="Link to this definition"></a></dt>
+<dd><p>Deduct stamina, clamped to 0.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.restore_stamina">
+<span class="sig-name descname"><span class="pre">restore_stamina</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.restore_stamina"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.restore_stamina" title="Link to this definition"></a></dt>
+<dd><p>Restore stamina, clamped to max.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.consume_mana">
+<span class="sig-name descname"><span class="pre">consume_mana</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.consume_mana"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.consume_mana" title="Link to this definition"></a></dt>
+<dd><p>Deduct mana, clamped to 0.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.restore_mana">
+<span class="sig-name descname"><span class="pre">restore_mana</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.restore_mana"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.restore_mana" title="Link to this definition"></a></dt>
+<dd><p>Restore mana, clamped to max.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.heal">
+<span class="sig-name descname"><span class="pre">heal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.heal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.heal" title="Link to this definition"></a></dt>
+<dd><p>Restore HP, clamped to max_hp.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.use_item">
+<span class="sig-name descname"><span class="pre">use_item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.use_item"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.use_item" title="Link to this definition"></a></dt>
+<dd><p>Use a consumable item from inventory.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">#</span> <span class="pre">Status</span> <span class="pre">Effects</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.get_resistance">
+<span class="sig-name descname"><span class="pre">get_resistance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">effect_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_resistance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.get_resistance" title="Link to this definition"></a></dt>
+<dd><p>Return resistance value (0.0-1.0) for the given effect.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.is_immune">
+<span class="sig-name descname"><span class="pre">is_immune</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">effect_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.is_immune"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.is_immune" title="Link to this definition"></a></dt>
+<dd><p>Return True if resistance &gt;= 1.0 for the effect.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.entities.character.Character.add_effect">
 <span class="sig-name descname"><span class="pre">add_effect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">effect</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.add_effect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.add_effect" title="Link to this definition"></a></dt>
+<dd><p>Add a status effect to the character.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.strength_metric">
+<span class="sig-name descname"><span class="pre">strength_metric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.entities.character.Character.strength_metric" title="Link to this definition"></a></dt>
+<dd><p>Placeholder metric for sorting/filtering effects.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">#</span> <span class="pre">Core</span> <span class="pre">Loop</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.get_rect">
+<span class="sig-name descname"><span class="pre">get_rect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_rect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.get_rect" title="Link to this definition"></a></dt>
+<dd><p>Return the collision rectangle at current position.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character._set_velocity">
+<span class="sig-name descname"><span class="pre">_set_velocity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character._set_velocity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character._set_velocity" title="Link to this definition"></a></dt>
+<dd><p>Calculate movement velocity from keyboard input.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collision_system</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obstacles</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.update" title="Link to this definition"></a></dt>
+<dd><p>Update movement, resources, cooldowns, effects, and skill particles.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.take_damage">
+<span class="sig-name descname"><span class="pre">take_damage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_invulnerability</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.take_damage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.take_damage" title="Link to this definition"></a></dt>
+<dd><p>Apply damage, factoring invulnerability, shield, and armor.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.die">
+<span class="sig-name descname"><span class="pre">die</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.die"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.die" title="Link to this definition"></a></dt>
+<dd><p>Handle death: play sound, reset HP and position.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.draw">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.draw" title="Link to this definition"></a></dt>
+<dd><p>Render the character and all active skill/passive visual effects.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.gain_xp">
+<span class="sig-name descname"><span class="pre">gain_xp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.gain_xp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.gain_xp" title="Link to this definition"></a></dt>
+<dd><p>Add XP and trigger level-up if threshold reached.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.level_up">
+<span class="sig-name descname"><span class="pre">level_up</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.level_up"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.level_up" title="Link to this definition"></a></dt>
+<dd><p>Increase level, update next XP threshold.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">#</span> <span class="pre">Floating</span> <span class="pre">Text</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.add_floating_text">
+<span class="sig-name descname"><span class="pre">add_floating_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.add_floating_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.add_floating_text" title="Link to this definition"></a></dt>
+<dd><p>Queue a floating damage/heal text popup.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character._update_floating_texts">
+<span class="sig-name descname"><span class="pre">_update_floating_texts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character._update_floating_texts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character._update_floating_texts" title="Link to this definition"></a></dt>
+<dd><p>Update floating text lifetimes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character._draw_floating_texts">
+<span class="sig-name descname"><span class="pre">_draw_floating_texts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_offset</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character._draw_floating_texts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character._draw_floating_texts" title="Link to this definition"></a></dt>
+<dd><p>Render all active floating texts.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">#</span> <span class="pre">Skill</span> <span class="pre">Visual</span> <span class="pre">Effects</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character._spawn_shadow_step_effect">
+<span class="sig-name descname"><span class="pre">_spawn_shadow_step_effect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_pos</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character._spawn_shadow_step_effect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character._spawn_shadow_step_effect" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character._update_shadow_step_particles">
+<span class="sig-name descname"><span class="pre">_update_shadow_step_particles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character._update_shadow_step_particles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character._update_shadow_step_particles" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character._draw_shadow_step">
+<span class="sig-name descname"><span class="pre">_draw_shadow_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_offset</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character._draw_shadow_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character._draw_shadow_step" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character._spawn_summon_effect">
+<span class="sig-name descname"><span class="pre">_spawn_summon_effect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character._spawn_summon_effect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character._spawn_summon_effect" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character._update_summon_spirit_particles">
+<span class="sig-name descname"><span class="pre">_update_summon_spirit_particles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character._update_summon_spirit_particles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character._update_summon_spirit_particles" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character._draw_summon_spirit">
+<span class="sig-name descname"><span class="pre">_draw_summon_spirit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_offset</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character._draw_summon_spirit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character._draw_summon_spirit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character._update_berserkers_rage_particles">
+<span class="sig-name descname"><span class="pre">_update_berserkers_rage_particles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character._update_berserkers_rage_particles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character._update_berserkers_rage_particles" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character._draw_berserkers_rage">
+<span class="sig-name descname"><span class="pre">_draw_berserkers_rage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_offset</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character._draw_berserkers_rage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character._draw_berserkers_rage" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character._update_flame_shield_particles">
+<span class="sig-name descname"><span class="pre">_update_flame_shield_particles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character._update_flame_shield_particles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character._update_flame_shield_particles" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character._draw_flame_shield">
+<span class="sig-name descname"><span class="pre">_draw_flame_shield</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_offset</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character._draw_flame_shield"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character._draw_flame_shield" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character._update_ice_armor_particles">
+<span class="sig-name descname"><span class="pre">_update_ice_armor_particles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character._update_ice_armor_particles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character._update_ice_armor_particles" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character._draw_ice_armor">
+<span class="sig-name descname"><span class="pre">_draw_ice_armor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_offset</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character._draw_ice_armor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character._draw_ice_armor" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character._update_mystic_barrier_particles">
+<span class="sig-name descname"><span class="pre">_update_mystic_barrier_particles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character._update_mystic_barrier_particles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character._update_mystic_barrier_particles" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character._draw_mystic_barrier">
+<span class="sig-name descname"><span class="pre">_draw_mystic_barrier</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_offset</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character._draw_mystic_barrier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character._draw_mystic_barrier" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character._update_chrono_shift_particles">
+<span class="sig-name descname"><span class="pre">_update_chrono_shift_particles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character._update_chrono_shift_particles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character._update_chrono_shift_particles" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character._draw_chrono_shift">
+<span class="sig-name descname"><span class="pre">_draw_chrono_shift</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_offset</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character._draw_chrono_shift"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character._draw_chrono_shift" title="Link to this definition"></a></dt>
+<dd><p>Update and render skill/passive visual particle effects.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">#</span> <span class="pre">Visual</span> <span class="pre">Helpers</span> <span class="pre">(defined</span> <span class="pre">inside</span> <span class="pre">draw)</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.swoosh">
+<span class="sig-name descname"><span class="pre">swoosh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">center</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angle_deg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arc_total</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.entities.character.Character.swoosh" title="Link to this definition"></a></dt>
+<dd><p>Draw a melee swoosh arc.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.gust_line">
+<span class="sig-name descname"><span class="pre">gust_line</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.entities.character.Character.gust_line" title="Link to this definition"></a></dt>
+<dd><p>Draw a single gust arc line.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.dot">
+<span class="sig-name descname"><span class="pre">dot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">center</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.entities.character.Character.dot" title="Link to this definition"></a></dt>
+<dd><p>Draw a single dot for melee effects.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">add_effect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">effect</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.add_effect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
 <dd><p>Add an effect, applying resistances and simple stacking rules:
 - Immunity (resistance &gt;= 1.0) blocks the effect.
 - Partial resistance scales magnitude and duration.
@@ -342,108 +839,108 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.add_floating_text">
-<span class="sig-name descname"><span class="pre">add_floating_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(255,</span> <span class="pre">255,</span> <span class="pre">255)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duration</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.add_floating_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.add_floating_text" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.attack">
-<span class="sig-name descname"><span class="pre">attack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">enemies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aim_direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cone_degrees</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">90.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.attack"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.attack" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.attack_axe">
-<span class="sig-name descname"><span class="pre">attack_axe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">enemies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aim_direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.attack_axe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.attack_axe" title="Link to this definition"></a></dt>
-<dd><p>Full 360° spinning sweep. Hits all enemies within range regardless of direction.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.attack_mace">
-<span class="sig-name descname"><span class="pre">attack_mace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">enemies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aim_direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.attack_mace"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.attack_mace" title="Link to this definition"></a></dt>
-<dd><p>Circle AoE centered at the impact point. Hits all enemies in a radius.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.attack_spear">
-<span class="sig-name descname"><span class="pre">attack_spear</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">enemies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aim_direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.attack_spear"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.attack_spear" title="Link to this definition"></a></dt>
-<dd><p>Long narrow piercing line. Hits enemies in a thin rectangle extending forward.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.attack_war_hammer">
-<span class="sig-name descname"><span class="pre">attack_war_hammer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">enemies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aim_direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.attack_war_hammer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.attack_war_hammer" title="Link to this definition"></a></dt>
-<dd><p>Heavy slam with small AoE. Deals high damage and stuns enemies in a radius.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.can_attack">
-<span class="sig-name descname"><span class="pre">can_attack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.can_attack"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.can_attack" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.consume_mana">
-<span class="sig-name descname"><span class="pre">consume_mana</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.consume_mana"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.consume_mana" title="Link to this definition"></a></dt>
-<dd><p>Attempt to consume mana. Returns True if enough mana was available.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.consume_stamina">
-<span class="sig-name descname"><span class="pre">consume_stamina</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.consume_stamina"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.consume_stamina" title="Link to this definition"></a></dt>
-<dd><p>Attempt to consume stamina. Returns True if enough stamina was available.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id0">
-<span class="sig-name descname"><span class="pre">die</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.die"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="id1">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.gain_xp">
-<span class="sig-name descname"><span class="pre">gain_xp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.gain_xp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.gain_xp" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.get_center">
-<span class="sig-name descname"><span class="pre">get_center</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_center"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.get_center" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.get_effective_attack_damage">
-<span class="sig-name descname"><span class="pre">get_effective_attack_damage</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_effective_attack_damage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.get_effective_attack_damage" title="Link to this definition"></a></dt>
-<dd><p>Compute the final damage of an attack, factoring in weapon + damage_bonus buff.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.get_forward_direction">
-<span class="sig-name descname"><span class="pre">get_forward_direction</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_forward_direction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.get_forward_direction" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.get_melee_anchor">
-<span class="sig-name descname"><span class="pre">get_melee_anchor</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_melee_anchor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.get_melee_anchor" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">add_floating_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(255,</span> <span class="pre">255,</span> <span class="pre">255)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duration</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.add_floating_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id2">
-<span class="sig-name descname"><span class="pre">get_rect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_rect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">attack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">enemies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aim_direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cone_degrees</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">90.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.attack"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">attack_axe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">enemies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aim_direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.attack_axe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
+<dd><p>Full 360° spinning sweep. Hits all enemies within range regardless of direction.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">attack_mace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">enemies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aim_direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.attack_mace"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
+<dd><p>Circle AoE centered at the impact point. Hits all enemies in a radius.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">attack_spear</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">enemies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aim_direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.attack_spear"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
+<dd><p>Long narrow piercing line. Hits enemies in a thin rectangle extending forward.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id6">
+<span class="sig-name descname"><span class="pre">attack_war_hammer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">enemies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aim_direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.attack_war_hammer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
+<dd><p>Heavy slam with small AoE. Deals high damage and stuns enemies in a radius.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id7">
+<span class="sig-name descname"><span class="pre">can_attack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.can_attack"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id8">
+<span class="sig-name descname"><span class="pre">consume_mana</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.consume_mana"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
+<dd><p>Attempt to consume mana. Returns True if enough mana was available.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id9">
+<span class="sig-name descname"><span class="pre">consume_stamina</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.consume_stamina"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
+<dd><p>Attempt to consume stamina. Returns True if enough stamina was available.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id10">
+<span class="sig-name descname"><span class="pre">die</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.die"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id11">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id11" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id12">
+<span class="sig-name descname"><span class="pre">gain_xp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.gain_xp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id12" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id13">
+<span class="sig-name descname"><span class="pre">get_center</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_center"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id13" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id14">
+<span class="sig-name descname"><span class="pre">get_effective_attack_damage</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_effective_attack_damage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id14" title="Link to this definition"></a></dt>
+<dd><p>Compute the final damage of an attack, factoring in weapon + damage_bonus buff.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id15">
+<span class="sig-name descname"><span class="pre">get_forward_direction</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_forward_direction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id15" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id16">
+<span class="sig-name descname"><span class="pre">get_melee_anchor</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_melee_anchor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id16" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id17">
+<span class="sig-name descname"><span class="pre">get_rect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_rect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id17" title="Link to this definition"></a></dt>
 <dd><p>Returns the collision rectangle (hitbox), updated to the current float position.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.get_resistance">
-<span class="sig-name descname"><span class="pre">get_resistance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">effect_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_resistance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.get_resistance" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id18">
+<span class="sig-name descname"><span class="pre">get_resistance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">effect_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_resistance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id18" title="Link to this definition"></a></dt>
 <dd><p>Return resistance in range [0.0, 1.0] for given effect name.
 1.0 means immune.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.get_skill_cooldown_percent">
-<span class="sig-name descname"><span class="pre">get_skill_cooldown_percent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">skill</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_skill_cooldown_percent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.get_skill_cooldown_percent" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id19">
+<span class="sig-name descname"><span class="pre">get_skill_cooldown_percent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">skill</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_skill_cooldown_percent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id19" title="Link to this definition"></a></dt>
 <dd><p>Get the cooldown progress for a skill (0.0 = ready, 1.0 = just used).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -459,24 +956,24 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.get_skill_in_slot">
-<span class="sig-name descname"><span class="pre">get_skill_in_slot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slot_index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_skill_in_slot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.get_skill_in_slot" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id20">
+<span class="sig-name descname"><span class="pre">get_skill_in_slot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slot_index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_skill_in_slot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id20" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.heal">
-<span class="sig-name descname"><span class="pre">heal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.heal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.heal" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id21">
+<span class="sig-name descname"><span class="pre">heal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.heal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id21" title="Link to this definition"></a></dt>
 <dd><p>Restore HP by the specified amount, clamped to max_hp.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.is_immune">
-<span class="sig-name descname"><span class="pre">is_immune</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">effect_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/src/entities/character.html#Character.is_immune"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.is_immune" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id22">
+<span class="sig-name descname"><span class="pre">is_immune</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">effect_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/src/entities/character.html#Character.is_immune"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id22" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.is_skill_ready">
-<span class="sig-name descname"><span class="pre">is_skill_ready</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">skill</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.is_skill_ready"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.is_skill_ready" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id23">
+<span class="sig-name descname"><span class="pre">is_skill_ready</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">skill</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.is_skill_ready"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id23" title="Link to this definition"></a></dt>
 <dd><p>Check if a skill is ready to use (cooldown expired).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -492,179 +989,179 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.learn_arcane_missiles">
-<span class="sig-name descname"><span class="pre">learn_arcane_missiles</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_arcane_missiles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_arcane_missiles" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id24">
+<span class="sig-name descname"><span class="pre">learn_arcane_missiles</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_arcane_missiles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id24" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.learn_berserkers_rage">
-<span class="sig-name descname"><span class="pre">learn_berserkers_rage</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_berserkers_rage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_berserkers_rage" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id25">
+<span class="sig-name descname"><span class="pre">learn_berserkers_rage</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_berserkers_rage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id25" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.learn_chain_lightning">
-<span class="sig-name descname"><span class="pre">learn_chain_lightning</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_chain_lightning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_chain_lightning" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id26">
+<span class="sig-name descname"><span class="pre">learn_chain_lightning</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_chain_lightning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id26" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.learn_chrono_shift">
-<span class="sig-name descname"><span class="pre">learn_chrono_shift</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_chrono_shift"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_chrono_shift" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id27">
+<span class="sig-name descname"><span class="pre">learn_chrono_shift</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_chrono_shift"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id27" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.learn_dark_pact">
-<span class="sig-name descname"><span class="pre">learn_dark_pact</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_dark_pact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_dark_pact" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id28">
+<span class="sig-name descname"><span class="pre">learn_dark_pact</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_dark_pact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id28" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.learn_elemental_mastery">
-<span class="sig-name descname"><span class="pre">learn_elemental_mastery</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_elemental_mastery"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_elemental_mastery" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id29">
+<span class="sig-name descname"><span class="pre">learn_elemental_mastery</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_elemental_mastery"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id29" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.learn_entangling_roots">
-<span class="sig-name descname"><span class="pre">learn_entangling_roots</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_entangling_roots"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_entangling_roots" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id30">
+<span class="sig-name descname"><span class="pre">learn_entangling_roots</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_entangling_roots"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id30" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.learn_eternal_fortress">
-<span class="sig-name descname"><span class="pre">learn_eternal_fortress</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_eternal_fortress"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_eternal_fortress" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id31">
+<span class="sig-name descname"><span class="pre">learn_eternal_fortress</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_eternal_fortress"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id31" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.learn_fireball">
-<span class="sig-name descname"><span class="pre">learn_fireball</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_fireball"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_fireball" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id32">
+<span class="sig-name descname"><span class="pre">learn_fireball</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_fireball"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id32" title="Link to this definition"></a></dt>
 <dd><p>Add the fireball skill to the skillbook if not already present.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.learn_flame_shield">
-<span class="sig-name descname"><span class="pre">learn_flame_shield</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_flame_shield"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_flame_shield" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id33">
+<span class="sig-name descname"><span class="pre">learn_flame_shield</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_flame_shield"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id33" title="Link to this definition"></a></dt>
 <dd><p>Add the Flame Shield skill to the skillbook if not already present.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.learn_frost_nova">
-<span class="sig-name descname"><span class="pre">learn_frost_nova</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_frost_nova"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_frost_nova" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id34">
+<span class="sig-name descname"><span class="pre">learn_frost_nova</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_frost_nova"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id34" title="Link to this definition"></a></dt>
 <dd><p>Add the Frost Nova skill to the skillbook if not already present.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.learn_glacial_cascade">
-<span class="sig-name descname"><span class="pre">learn_glacial_cascade</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_glacial_cascade"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_glacial_cascade" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id35">
+<span class="sig-name descname"><span class="pre">learn_glacial_cascade</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_glacial_cascade"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id35" title="Link to this definition"></a></dt>
 <dd><p>Add the Glacial Cascade skill to the skillbook if not already present.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.learn_ice_armor">
-<span class="sig-name descname"><span class="pre">learn_ice_armor</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_ice_armor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_ice_armor" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id36">
+<span class="sig-name descname"><span class="pre">learn_ice_armor</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_ice_armor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id36" title="Link to this definition"></a></dt>
 <dd><p>Add the Ice Armor skill to the skillbook if not already present.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.learn_mana_flow">
-<span class="sig-name descname"><span class="pre">learn_mana_flow</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_mana_flow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_mana_flow" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id37">
+<span class="sig-name descname"><span class="pre">learn_mana_flow</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_mana_flow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id37" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.learn_mystic_barrier">
-<span class="sig-name descname"><span class="pre">learn_mystic_barrier</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_mystic_barrier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_mystic_barrier" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id38">
+<span class="sig-name descname"><span class="pre">learn_mystic_barrier</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_mystic_barrier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id38" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.learn_poison_blade">
-<span class="sig-name descname"><span class="pre">learn_poison_blade</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_poison_blade"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_poison_blade" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id39">
+<span class="sig-name descname"><span class="pre">learn_poison_blade</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_poison_blade"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id39" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.learn_pyromancers_fury">
-<span class="sig-name descname"><span class="pre">learn_pyromancers_fury</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_pyromancers_fury"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_pyromancers_fury" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id40">
+<span class="sig-name descname"><span class="pre">learn_pyromancers_fury</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_pyromancers_fury"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id40" title="Link to this definition"></a></dt>
 <dd><p>Activate the Pyromancer’s Fury passive: fire skills deal 25% more damage and have 15% larger area.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.learn_regeneration">
-<span class="sig-name descname"><span class="pre">learn_regeneration</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_regeneration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_regeneration" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id41">
+<span class="sig-name descname"><span class="pre">learn_regeneration</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_regeneration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id41" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.learn_shadow_step">
-<span class="sig-name descname"><span class="pre">learn_shadow_step</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_shadow_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_shadow_step" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id42">
+<span class="sig-name descname"><span class="pre">learn_shadow_step</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_shadow_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id42" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.learn_soul_harvest">
-<span class="sig-name descname"><span class="pre">learn_soul_harvest</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_soul_harvest"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_soul_harvest" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id43">
+<span class="sig-name descname"><span class="pre">learn_soul_harvest</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_soul_harvest"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id43" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.learn_static_field">
-<span class="sig-name descname"><span class="pre">learn_static_field</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_static_field"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_static_field" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id44">
+<span class="sig-name descname"><span class="pre">learn_static_field</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_static_field"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id44" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.learn_summon_spirit">
-<span class="sig-name descname"><span class="pre">learn_summon_spirit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_summon_spirit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_summon_spirit" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id45">
+<span class="sig-name descname"><span class="pre">learn_summon_spirit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_summon_spirit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id45" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.learn_thunderstrike">
-<span class="sig-name descname"><span class="pre">learn_thunderstrike</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_thunderstrike"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_thunderstrike" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id46">
+<span class="sig-name descname"><span class="pre">learn_thunderstrike</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_thunderstrike"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id46" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.learn_void_walker">
-<span class="sig-name descname"><span class="pre">learn_void_walker</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_void_walker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.learn_void_walker" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id47">
+<span class="sig-name descname"><span class="pre">learn_void_walker</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.learn_void_walker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id47" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.level_up">
-<span class="sig-name descname"><span class="pre">level_up</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.level_up"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.level_up" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id48">
+<span class="sig-name descname"><span class="pre">level_up</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.level_up"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id48" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.restore_mana">
-<span class="sig-name descname"><span class="pre">restore_mana</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.restore_mana"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.restore_mana" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id49">
+<span class="sig-name descname"><span class="pre">restore_mana</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.restore_mana"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id49" title="Link to this definition"></a></dt>
 <dd><p>Restore mana (clamped to max_mana).</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.restore_stamina">
-<span class="sig-name descname"><span class="pre">restore_stamina</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.restore_stamina"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.restore_stamina" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id50">
+<span class="sig-name descname"><span class="pre">restore_stamina</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.restore_stamina"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id50" title="Link to this definition"></a></dt>
 <dd><p>Restore stamina (clamped to max_stamina).</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.start_attack">
-<span class="sig-name descname"><span class="pre">start_attack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_slash</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.start_attack"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.start_attack" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id51">
+<span class="sig-name descname"><span class="pre">start_attack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_slash</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.start_attack"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id51" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id3">
-<span class="sig-name descname"><span class="pre">take_damage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_invulnerability</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.take_damage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id52">
+<span class="sig-name descname"><span class="pre">take_damage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_invulnerability</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.take_damage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id52" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id4">
-<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collision_system</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obstacles</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id53">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collision_system</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obstacles</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id53" title="Link to this definition"></a></dt>
 <dd><p>Updates the character’s state, sets desired movement, and applies movement
 using the external collision system.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.use_item">
-<span class="sig-name descname"><span class="pre">use_item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.use_item"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.use_item" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id54">
+<span class="sig-name descname"><span class="pre">use_item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.use_item"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id54" title="Link to this definition"></a></dt>
 <dd><p>Use an Item instance on the player. Returns True if item was consumed/used.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.use_skill">
-<span class="sig-name descname"><span class="pre">use_skill</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">skill</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aim_direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.use_skill"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.use_skill" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id55">
+<span class="sig-name descname"><span class="pre">use_skill</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">skill</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aim_direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.use_skill"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id55" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.character.Character.use_skill_from_slot">
-<span class="sig-name descname"><span class="pre">use_skill_from_slot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slot_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aim_direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.use_skill_from_slot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.use_skill_from_slot" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id56">
+<span class="sig-name descname"><span class="pre">use_skill_from_slot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slot_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aim_direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.use_skill_from_slot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id56" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -1056,33 +1553,33 @@ using the external collision system.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id5">
-<span class="sig-name descname"><span class="pre">add_effect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">effect</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/enemy.html#Enemy.add_effect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id57">
+<span class="sig-name descname"><span class="pre">add_effect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">effect</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/enemy.html#Enemy.add_effect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id57" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id6">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/enemy.html#Enemy.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id58">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/enemy.html#Enemy.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id58" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id7">
-<span class="sig-name descname"><span class="pre">get_rect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/enemy.html#Enemy.get_rect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id59">
+<span class="sig-name descname"><span class="pre">get_rect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/enemy.html#Enemy.get_rect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id59" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id8">
-<span class="sig-name descname"><span class="pre">is_dead</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/src/entities/enemy.html#Enemy.is_dead"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id60">
+<span class="sig-name descname"><span class="pre">is_dead</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/src/entities/enemy.html#Enemy.is_dead"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id60" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id9">
-<span class="sig-name descname"><span class="pre">take_damage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_invulnerability</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/src/entities/enemy.html#Enemy.take_damage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id61">
+<span class="sig-name descname"><span class="pre">take_damage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_invulnerability</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/src/entities/enemy.html#Enemy.take_damage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id61" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id10">
-<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collision_system</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obstacles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nav_grid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attack_context</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">active</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/enemy.html#Enemy.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id62">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collision_system</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obstacles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nav_grid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attack_context</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">active</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/enemy.html#Enemy.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id62" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -1139,6 +1636,100 @@ using the external collision system.</p>
 </dl>
 </dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.entities.npc.NPC.dialog_lines">
+<span class="sig-name descname"><span class="pre">dialog_lines</span></span><a class="headerlink" href="#src.entities.npc.NPC.dialog_lines" title="Link to this definition"></a></dt>
+<dd><p>Lines of dialogue the NPC can say.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.entities.npc.NPC.is_merchant">
+<span class="sig-name descname"><span class="pre">is_merchant</span></span><a class="headerlink" href="#src.entities.npc.NPC.is_merchant" title="Link to this definition"></a></dt>
+<dd><p>Whether this NPC can open a shop.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.entities.npc.NPC.gender">
+<span class="sig-name descname"><span class="pre">gender</span></span><a class="headerlink" href="#src.entities.npc.NPC.gender" title="Link to this definition"></a></dt>
+<dd><p>Gender of the NPC (‘male’ or ‘female’).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.entities.npc.NPC.was_talked">
+<span class="sig-name descname"><span class="pre">was_talked</span></span><a class="headerlink" href="#src.entities.npc.NPC.was_talked" title="Link to this definition"></a></dt>
+<dd><p>Whether the player has already talked to this NPC.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.entities.npc.NPC.rect">
+<span class="sig-name descname"><span class="pre">rect</span></span><a class="headerlink" href="#src.entities.npc.NPC.rect" title="Link to this definition"></a></dt>
+<dd><p>Bounding rect for the NPC.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.Rect</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.entities.npc.NPC.font">
+<span class="sig-name descname"><span class="pre">font</span></span><a class="headerlink" href="#src.entities.npc.NPC.font" title="Link to this definition"></a></dt>
+<dd><p>Font used for the interaction prompt.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.font.Font</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.entities.npc.NPC.prompt_text">
+<span class="sig-name descname"><span class="pre">prompt_text</span></span><a class="headerlink" href="#src.entities.npc.NPC.prompt_text" title="Link to this definition"></a></dt>
+<dd><p>Rendered prompt key indicator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pygame.Surface</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.entities.npc.NPC.prompt_bg_color">
+<span class="sig-name descname"><span class="pre">prompt_bg_color</span></span><a class="headerlink" href="#src.entities.npc.NPC.prompt_bg_color" title="Link to this definition"></a></dt>
+<dd><p>Background color for the prompt.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.npc.NPC.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sprite_set</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dialog_lines</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_merchant</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gender</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/npc.html#NPC.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.npc.NPC.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initialize the NPC with position and appearance.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="src.entities.npc.NPC.update">
 <span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">player_pos</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/npc.html#NPC.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.npc.NPC.update" title="Link to this definition"></a></dt>
@@ -1146,25 +1737,31 @@ using the external collision system.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="src.entities.npc.NPC.get_rect">
+<span class="sig-name descname"><span class="pre">get_rect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/npc.html#NPC.get_rect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.npc.NPC.get_rect" title="Link to this definition"></a></dt>
+<dd><p>Return an updated collision rect for the NPC.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="src.entities.npc.NPC.draw">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/npc.html#NPC.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.npc.NPC.draw" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/npc.html#NPC.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.npc.NPC.draw" title="Link to this definition"></a></dt>
 <dd><p>Draw the NPC and the interaction prompt if applicable.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id11">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/npc.html#NPC.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id11" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id63">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/npc.html#NPC.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id63" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.entities.npc.NPC.get_rect">
-<span class="sig-name descname"><span class="pre">get_rect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/npc.html#NPC.get_rect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.npc.NPC.get_rect" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id64">
+<span class="sig-name descname"><span class="pre">get_rect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/npc.html#NPC.get_rect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id64" title="Link to this definition"></a></dt>
 <dd><p>Return an updated collision rect for the NPC (used by visibility checks).</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id12">
-<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">player_pos</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Vector2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/npc.html#NPC.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id12" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id65">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">player_pos</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Vector2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/npc.html#NPC.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id65" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>

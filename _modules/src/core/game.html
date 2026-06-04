@@ -243,10 +243,20 @@
 <span class="sd">            Try to spawn a random enemy somewhere on the current map.</span>
 <span class="sd">        _debug_spawn_enemy(profile_name):</span>
 <span class="sd">            Spawn an enemy of a given profile next to the player.</span>
+<span class="sd">        _debug_apply_effect(effect_name, duration):</span>
+<span class="sd">            Apply a debug effect to the player for testing.</span>
 <span class="sd">        _get_drop_chance_for_enemy(enemy):</span>
 <span class="sd">            Look up the drop table for a given enemy.</span>
 <span class="sd">        _drop_enemy_loot(enemy):</span>
 <span class="sd">            Roll and spawn drops for a defeated enemy (no JSON).</span>
+<span class="sd">        _apply_ice_armor_slow(dt):</span>
+<span class="sd">            Apply slowing effect to nearby enemies when Ice Armor is active.</span>
+<span class="sd">        _apply_flame_shield_damage(dt):</span>
+<span class="sd">            Apply fire damage to nearby enemies when Flame Shield is active.</span>
+<span class="sd">        _apply_regeneration(dt):</span>
+<span class="sd">            Apply passive health regeneration from effects.</span>
+<span class="sd">        _update_spirits(dt):</span>
+<span class="sd">            Update summoned spirit entities.</span>
 <span class="sd">        update(dt):</span>
 <span class="sd">            Per-frame state update (input, AI, physics, time, spawning).</span>
 <span class="sd">        draw_scene(screen):</span>
@@ -964,6 +974,8 @@
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[DEBUG] Spawned </span><span class="si">{</span><span class="n">profile_name</span><span class="si">}</span><span class="s2"> at (</span><span class="si">{</span><span class="n">spawn_x</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">spawn_y</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="Game._debug_apply_effect">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game._debug_apply_effect">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_debug_apply_effect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">effect_name</span><span class="p">,</span> <span class="n">duration</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instantiate an effect by name and attach it to the player character.</span>
@@ -992,7 +1004,8 @@
             <span class="c1"># last resort: create active_effects container</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">active_effects</span> <span class="o">=</span> <span class="p">[</span><span class="n">eff</span><span class="p">]</span>
 
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[DEBUG] Applied effect </span><span class="si">{</span><span class="n">effect_name</span><span class="si">}</span><span class="s2"> duration=</span><span class="si">{</span><span class="n">duration</span><span class="si">}</span><span class="s2">s to player&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[DEBUG] Applied effect </span><span class="si">{</span><span class="n">effect_name</span><span class="si">}</span><span class="s2"> duration=</span><span class="si">{</span><span class="n">duration</span><span class="si">}</span><span class="s2">s to player&quot;</span><span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="Game._get_drop_chance_for_enemy">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game._get_drop_chance_for_enemy">[docs]</a>
@@ -1262,6 +1275,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">set_gauge</span><span class="p">(</span><span class="s2">&quot;spirits&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spirits</span><span class="p">))</span></div>
 
 
+<div class="viewcode-block" id="Game._apply_ice_armor_slow">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game._apply_ice_armor_slow">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_apply_ice_armor_slow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Slow enemies near the player while Ice Armor is active.&quot;&quot;&quot;</span>
         <span class="n">center</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">get_center</span><span class="p">()</span>
@@ -1276,8 +1291,11 @@
             <span class="n">enemy_center</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">enemy_rect</span><span class="o">.</span><span class="n">centerx</span><span class="p">,</span> <span class="n">enemy_rect</span><span class="o">.</span><span class="n">centery</span><span class="p">)</span>
             <span class="n">dist_sq</span> <span class="o">=</span> <span class="p">(</span><span class="n">enemy_center</span> <span class="o">-</span> <span class="n">center</span><span class="p">)</span><span class="o">.</span><span class="n">length_squared</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">dist_sq</span> <span class="o">&lt;=</span> <span class="n">radius_sq</span><span class="p">:</span>
-                <span class="n">enemy</span><span class="o">.</span><span class="n">add_effect</span><span class="p">(</span><span class="n">SlowEffect</span><span class="p">(</span><span class="n">slow_duration</span><span class="p">,</span> <span class="n">slow_factor</span><span class="p">))</span>
+                <span class="n">enemy</span><span class="o">.</span><span class="n">add_effect</span><span class="p">(</span><span class="n">SlowEffect</span><span class="p">(</span><span class="n">slow_duration</span><span class="p">,</span> <span class="n">slow_factor</span><span class="p">))</span></div>
 
+
+<div class="viewcode-block" id="Game._apply_flame_shield_damage">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game._apply_flame_shield_damage">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_apply_flame_shield_damage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Deal flame shield damage to enemies within the flame shield radius.&quot;&quot;&quot;</span>
         <span class="n">center</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">get_center</span><span class="p">()</span>
@@ -1309,8 +1327,11 @@
                 <span class="c1"># Apply slight knockback pushing enemy away from player</span>
                 <span class="k">if</span> <span class="n">dist_sq</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="n">push_dir</span> <span class="o">=</span> <span class="p">(</span><span class="n">enemy_center</span> <span class="o">-</span> <span class="n">center</span><span class="p">)</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span>
-                    <span class="n">enemy</span><span class="o">.</span><span class="n">pos</span> <span class="o">+=</span> <span class="n">push_dir</span> <span class="o">*</span> <span class="mi">8</span> <span class="o">*</span> <span class="n">dt</span>
+                    <span class="n">enemy</span><span class="o">.</span><span class="n">pos</span> <span class="o">+=</span> <span class="n">push_dir</span> <span class="o">*</span> <span class="mi">8</span> <span class="o">*</span> <span class="n">dt</span></div>
 
+
+<div class="viewcode-block" id="Game._apply_regeneration">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game._apply_regeneration">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_apply_regeneration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
         <span class="n">acc</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">,</span> <span class="s2">&quot;regeneration_acc&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
         <span class="n">acc</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">regeneration_hp_per_sec</span> <span class="o">*</span> <span class="n">dt</span>
@@ -1321,12 +1342,16 @@
             <span class="n">acc</span> <span class="o">-=</span> <span class="n">heal</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">hp</span> <span class="o">&gt;</span> <span class="n">old_hp</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Regeneration healed </span><span class="si">{</span><span class="n">heal</span><span class="si">}</span><span class="s2"> HP.&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">regeneration_acc</span> <span class="o">=</span> <span class="n">acc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">regeneration_acc</span> <span class="o">=</span> <span class="n">acc</span></div>
 
+
+<div class="viewcode-block" id="Game._update_spirits">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game._update_spirits">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_update_spirits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">spirit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">spirits</span><span class="p">[:]:</span>
             <span class="n">spirit</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">spirits</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">spirits</span> <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">alive</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spirits</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">spirits</span> <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">alive</span><span class="p">]</span></div>
+
 
 <div class="viewcode-block" id="Game.draw_scene">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.draw_scene">[docs]</a>

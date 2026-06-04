@@ -100,6 +100,78 @@
 <div class="viewcode-block" id="SaveLoadMenu">
 <a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.SaveLoadMenu">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SaveLoadMenu</span><span class="p">(</span><span class="n">Menu</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Save/Load screen with multiple save slots and delete functionality.</span>
+
+<span class="sd">    Features animated background effects and color-coded slot buttons.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        app (App):</span>
+<span class="sd">            The main application instance.</span>
+<span class="sd">        mode (str):</span>
+<span class="sd">            Current mode (&#39;save&#39; or &#39;load&#39;).</span>
+<span class="sd">        slots (list[str]):</span>
+<span class="sd">            List of save slot identifiers.</span>
+<span class="sd">        buttons (list[Button]):</span>
+<span class="sd">            List of slot buttons and control buttons.</span>
+<span class="sd">        _panel_rect (pygame.Rect):</span>
+<span class="sd">            Rectangle for the central panel.</span>
+<span class="sd">        _anim_time (float):</span>
+<span class="sd">            Accumulated animation time.</span>
+<span class="sd">        _launch_phase (float):</span>
+<span class="sd">            Phase of the launch animation.</span>
+<span class="sd">        _surf_cache (dict):</span>
+<span class="sd">            Cache of rendered surfaces.</span>
+<span class="sd">        _particles (list):</span>
+<span class="sd">            Decorative ambient particles.</span>
+<span class="sd">        _stars (list):</span>
+<span class="sd">            Background star effects.</span>
+<span class="sd">        _light_rays (list):</span>
+<span class="sd">            Light ray effects.</span>
+<span class="sd">        _embers (list):</span>
+<span class="sd">            Ambient ember particles.</span>
+<span class="sd">        _bursts (list):</span>
+<span class="sd">            Launch burst effects.</span>
+<span class="sd">        _sparkles (list):</span>
+<span class="sd">            Title sparkle effects.</span>
+<span class="sd">        _btn_w (int):</span>
+<span class="sd">            Slot button width.</span>
+<span class="sd">        _btn_h (int):</span>
+<span class="sd">            Slot button height.</span>
+<span class="sd">        _del_w (int):</span>
+<span class="sd">            Delete button width.</span>
+<span class="sd">        _back_w (int):</span>
+<span class="sd">            Back button width.</span>
+<span class="sd">        _title_font (pygame.font.Font):</span>
+<span class="sd">            Large font for the title.</span>
+<span class="sd">        _hint_font (pygame.font.Font):</span>
+<span class="sd">            Font for hints.</span>
+<span class="sd">        _slot_btn_indices (list[int]):</span>
+<span class="sd">            Indices of slot buttons in the buttons list.</span>
+<span class="sd">        _del_btn_indices (list[int]):</span>
+<span class="sd">            Indices of delete buttons in the buttons list.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(app):</span>
+<span class="sd">            Initialize the save/load menu.</span>
+<span class="sd">        refresh_saves():</span>
+<span class="sd">            Refresh the save slot list and button states.</span>
+<span class="sd">        set_mode(mode):</span>
+<span class="sd">            Set the menu mode to &#39;save&#39; or &#39;load&#39;.</span>
+<span class="sd">        handle_event(event):</span>
+<span class="sd">            Handle input events.</span>
+<span class="sd">        update(dt):</span>
+<span class="sd">            Update animations and effects.</span>
+<span class="sd">        draw(screen):</span>
+<span class="sd">            Render the save/load menu.</span>
+<span class="sd">        back_to_main():</span>
+<span class="sd">            Return to the previous menu.</span>
+<span class="sd">        _delete_slot(slot_index):</span>
+<span class="sd">            Delete a save slot.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SaveLoadMenu.__init__">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.SaveLoadMenu.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="s2">&quot;App&quot;</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="s2">&quot;save&quot;</span>
@@ -116,7 +188,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_light_rays</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_embers</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_bursts</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_sparkles</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sparkles</span> <span class="o">=</span> <span class="p">[]</span></div>
+
 
 <div class="viewcode-block" id="SaveLoadMenu.refresh_saves">
 <a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.SaveLoadMenu.refresh_saves">[docs]</a>

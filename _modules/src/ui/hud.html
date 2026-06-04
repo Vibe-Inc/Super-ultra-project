@@ -89,6 +89,95 @@
 <div class="viewcode-block" id="HUD">
 <a class="viewcode-back" href="../../../src.ui.html#src.ui.hud.HUD">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">HUD</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Head-Up Display (HUD) for player status and UI controls.</span>
+
+<span class="sd">    This class is responsible for rendering player health, lives, stamina, XP,</span>
+<span class="sd">    money, skill hotbar, and the inventory button, as well as handling related UI events.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        character (Character):</span>
+<span class="sd">            The character object whose state is being displayed.</span>
+<span class="sd">        app (App):</span>
+<span class="sd">            The main application object for accessing managers (e.g., INV_manager).</span>
+<span class="sd">        toggle_inventory_callback (callable | None):</span>
+<span class="sd">            Optional callback to toggle inventory state.</span>
+<span class="sd">        use_skill_callback (callable | None):</span>
+<span class="sd">            Optional callback to use a skill from a slot.</span>
+<span class="sd">        open_shop_callback (callable | None):</span>
+<span class="sd">            Optional callback to open the shop.</span>
+<span class="sd">        font (pygame.font.Font):</span>
+<span class="sd">            The font used for rendering text.</span>
+<span class="sd">        stamina_font (pygame.font.Font):</span>
+<span class="sd">            Font used for stamina label.</span>
+<span class="sd">        stamina_label (pygame.Surface):</span>
+<span class="sd">            Rendered &quot;STAMINA&quot; label surface.</span>
+<span class="sd">        hp_icon (pygame.Surface):</span>
+<span class="sd">            The icon representing health (a heart).</span>
+<span class="sd">        life_icon (pygame.Surface):</span>
+<span class="sd">            The icon representing the number of lives (a skull).</span>
+<span class="sd">        inv_button (Button):</span>
+<span class="sd">            The button to open/close the inventory.</span>
+<span class="sd">        coin_icon (pygame.Surface):</span>
+<span class="sd">            The coin icon surface used for money display.</span>
+<span class="sd">        skill_slot_size (int):</span>
+<span class="sd">            Size of each skill slot in pixels.</span>
+<span class="sd">        skill_slot_padding (int):</span>
+<span class="sd">            Padding between skill slots.</span>
+<span class="sd">        skill_slots_count (int):</span>
+<span class="sd">            Number of skill hotbar slots.</span>
+<span class="sd">        skill_panel_margin (int):</span>
+<span class="sd">            Margin around the skill panel.</span>
+<span class="sd">        skill_panel_width (int):</span>
+<span class="sd">            Width of the skill panel.</span>
+<span class="sd">        skill_total_slots_height (int):</span>
+<span class="sd">            Total height of all skill slots combined.</span>
+<span class="sd">        skill_panel_x (int):</span>
+<span class="sd">            X position of the skill panel.</span>
+<span class="sd">        skill_panel_y (int):</span>
+<span class="sd">            Y position of the skill panel.</span>
+<span class="sd">        animation_time (float):</span>
+<span class="sd">            Accumulated time for animation effects.</span>
+<span class="sd">        hp_icon_pos (tuple[int, int]):</span>
+<span class="sd">            Screen position of the HP icon.</span>
+<span class="sd">        life_icon_pos (tuple[int, int]):</span>
+<span class="sd">            Screen position of the life icon.</span>
+<span class="sd">        hp_bar_rect (pygame.Rect):</span>
+<span class="sd">            Rectangle for the HP bar.</span>
+<span class="sd">        xp_bar_rect (pygame.Rect):</span>
+<span class="sd">            Rectangle for the XP bar.</span>
+<span class="sd">        stamina_bar_rect (pygame.Rect):</span>
+<span class="sd">            Rectangle for the stamina bar.</span>
+<span class="sd">        money_pos (tuple[int, int]):</span>
+<span class="sd">            Screen position for the money display.</span>
+<span class="sd">        _layout_size (tuple[int, int] | None):</span>
+<span class="sd">            Cached screen size for layout recalc.</span>
+<span class="sd">        skill_slot_rects (list[pygame.Rect]):</span>
+<span class="sd">            List of rectangles for each skill slot.</span>
+<span class="sd">        NEON_THEMES (dict):</span>
+<span class="sd">            Color themes for skill elements.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(character, app, toggle_inventory_callback=None, use_skill_callback=None, open_shop_callback=None):</span>
+<span class="sd">            Initialize the HUD with player character, app, and callbacks.</span>
+<span class="sd">        _recalc_layout(screen_width, screen_height):</span>
+<span class="sd">            Recalculate HUD positions based on the current screen size.</span>
+<span class="sd">        _ensure_layout(screen_width, screen_height):</span>
+<span class="sd">            Ensure layout is recalculated if screen size changed.</span>
+<span class="sd">        toggle_inventory():</span>
+<span class="sd">            Toggle the inventory open/closed, using callback if provided.</span>
+<span class="sd">        handle_event(event):</span>
+<span class="sd">            Handle mouse events for the inventory button and skill slots.</span>
+<span class="sd">        _get_skill_theme(skill):</span>
+<span class="sd">            Get the neon color theme for a skill based on its properties.</span>
+<span class="sd">        _draw_hud_skill_slot(surface, rect, skill, idx):</span>
+<span class="sd">            Draw an individual skill slot with glow and cooldown effects.</span>
+<span class="sd">        _on_shop_clicked():</span>
+<span class="sd">            Handle shop button click, using callback or fallback.</span>
+<span class="sd">        draw(screen):</span>
+<span class="sd">            Draw all HUD elements (health, stamina, XP, money, skill hotbar, inventory button).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">NEON_THEMES</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;fire&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;primary&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">40</span><span class="p">),</span> <span class="s2">&quot;glow&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">120</span><span class="p">,</span> <span class="mi">60</span><span class="p">),</span> <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">100</span><span class="p">)},</span>
         <span class="s2">&quot;ice&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;primary&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="mi">140</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span> <span class="s2">&quot;glow&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span> <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">180</span><span class="p">,</span> <span class="mi">220</span><span class="p">,</span> <span class="mi">255</span><span class="p">)},</span>
@@ -98,42 +187,6 @@
         <span class="s2">&quot;arcane&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;primary&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">220</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">180</span><span class="p">),</span> <span class="s2">&quot;glow&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">120</span><span class="p">,</span> <span class="mi">220</span><span class="p">),</span> <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="mi">240</span><span class="p">)},</span>
         <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;primary&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">140</span><span class="p">,</span> <span class="mi">200</span><span class="p">),</span> <span class="s2">&quot;glow&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">140</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="mi">240</span><span class="p">),</span> <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">220</span><span class="p">,</span> <span class="mi">255</span><span class="p">)},</span>
     <span class="p">}</span>
-
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Head-Up Display (HUD) for player status and UI controls.</span>
-
-<span class="sd">    This class is responsible for rendering player health, lives, and the inventory button, as well as handling related UI events.</span>
-
-<span class="sd">    Attributes:</span>
-<span class="sd">        character (Character):</span>
-<span class="sd">            The character object whose state is being displayed.</span>
-<span class="sd">        app (App):</span>
-<span class="sd">            The main application object for accessing managers (e.g., INV_manager).</span>
-<span class="sd">        font (pygame.font.Font):</span>
-<span class="sd">            The font used for rendering text.</span>
-<span class="sd">        hp_icon (pygame.Surface):</span>
-<span class="sd">            The icon representing health (a heart).</span>
-<span class="sd">        life_icon (pygame.Surface):</span>
-<span class="sd">            The icon representing the number of lives (a skull).</span>
-<span class="sd">        inv_button (Button):</span>
-<span class="sd">            The button to open/close the inventory.</span>
-<span class="sd">        toggle_inventory_callback (callable | None):</span>
-<span class="sd">            Optional callback to toggle inventory state.</span>
-
-<span class="sd">    Methods:</span>
-<span class="sd">        __init__(character, app, toggle_inventory_callback=None):</span>
-<span class="sd">            Initialize the HUD with player character, app, and optional inventory toggle callback.</span>
-<span class="sd">        toggle_inventory():</span>
-<span class="sd">            Toggle the inventory open/closed, using callback if provided.</span>
-<span class="sd">        handle_event(event):</span>
-<span class="sd">            Handle mouse events for the inventory button.</span>
-<span class="sd">            Args:</span>
-<span class="sd">                event (pygame.event.Event): The Pygame event to process.</span>
-<span class="sd">        draw(screen):</span>
-<span class="sd">            Draw the HUD elements (health bar, lives, inventory button) on the screen.</span>
-<span class="sd">            Args:</span>
-<span class="sd">                screen (pygame.Surface): The surface to draw the HUD on.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="HUD.__init__">
 <a class="viewcode-back" href="../../../src.ui.html#src.ui.hud.HUD.__init__">[docs]</a>
@@ -205,6 +258,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">skill_slot_rects</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span></div>
 
 
+<div class="viewcode-block" id="HUD._recalc_layout">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.hud.HUD._recalc_layout">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_recalc_layout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen_width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">screen_height</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Recalculate HUD positions based on the current screen size.&quot;&quot;&quot;</span>
         <span class="n">left_margin</span> <span class="o">=</span> <span class="mi">20</span>
@@ -250,15 +305,19 @@
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">skill_slots_count</span><span class="p">):</span>
             <span class="n">sx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">skill_panel_x</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">skill_slot_padding</span>
             <span class="n">sy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">skill_panel_y</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">skill_slot_padding</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">skill_slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">skill_slot_padding</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">skill_slot_rects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">sx</span><span class="p">,</span> <span class="n">sy</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">skill_slot_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">skill_slot_size</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">skill_slot_rects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">sx</span><span class="p">,</span> <span class="n">sy</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">skill_slot_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">skill_slot_size</span><span class="p">))</span></div>
+
 
         <span class="c1"># top skillbar removed from layout</span>
 
+<div class="viewcode-block" id="HUD._ensure_layout">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.hud.HUD._ensure_layout">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_ensure_layout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen_width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">screen_height</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
         <span class="n">size</span> <span class="o">=</span> <span class="p">(</span><span class="n">screen_width</span><span class="p">,</span> <span class="n">screen_height</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_layout_size</span> <span class="o">!=</span> <span class="n">size</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_layout_size</span> <span class="o">=</span> <span class="n">size</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_recalc_layout</span><span class="p">(</span><span class="n">screen_width</span><span class="p">,</span> <span class="n">screen_height</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_recalc_layout</span><span class="p">(</span><span class="n">screen_width</span><span class="p">,</span> <span class="n">screen_height</span><span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="HUD.toggle_inventory">
 <a class="viewcode-back" href="../../../src.ui.html#src.ui.hud.HUD.toggle_inventory">[docs]</a>
@@ -294,6 +353,8 @@
                         <span class="k">break</span></div>
 
 
+<div class="viewcode-block" id="HUD._get_skill_theme">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.hud.HUD._get_skill_theme">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_skill_theme</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skill</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">skill</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">NEON_THEMES</span><span class="p">[</span><span class="s2">&quot;default&quot;</span><span class="p">]</span>
@@ -313,8 +374,11 @@
             <span class="k">if</span> <span class="n">score</span> <span class="o">&lt;</span> <span class="n">best_score</span> <span class="ow">or</span> <span class="n">best_score</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">best_score</span> <span class="o">=</span> <span class="n">score</span>
                 <span class="n">best_match</span> <span class="o">=</span> <span class="n">theme_name</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">NEON_THEMES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">best_match</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">NEON_THEMES</span><span class="p">[</span><span class="s2">&quot;default&quot;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">NEON_THEMES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">best_match</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">NEON_THEMES</span><span class="p">[</span><span class="s2">&quot;default&quot;</span><span class="p">])</span></div>
 
+
+<div class="viewcode-block" id="HUD._draw_hud_skill_slot">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.hud.HUD._draw_hud_skill_slot">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_draw_hud_skill_slot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">surface</span><span class="p">,</span> <span class="n">rect</span><span class="p">,</span> <span class="n">skill</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">animation_time</span>
         <span class="n">theme</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_skill_theme</span><span class="p">(</span><span class="n">skill</span><span class="p">)</span>
@@ -378,12 +442,14 @@
                     <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">COOLDOWN_BAR_FILL_COLOR</span><span class="p">,</span> <span class="n">fill_rect</span><span class="p">,</span> <span class="n">border_radius</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
                 
                 <span class="c1"># Display cooldown time remaining</span>
-                <span class="n">cooldown_time</span> <span class="o">=</span> <span class="mf">0.0</span>
                 <span class="n">skill_id</span> <span class="o">=</span> <span class="n">skill</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;skill_id&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">skill_id</span> <span class="o">==</span> <span class="s2">&quot;dash&quot;</span><span class="p">:</span>
-                    <span class="n">cooldown_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">dash_cooldown</span> <span class="o">/</span> <span class="mf">1000.0</span>
-                <span class="k">elif</span> <span class="n">skill_id</span> <span class="o">==</span> <span class="s2">&quot;fireball&quot;</span><span class="p">:</span>
-                    <span class="n">cooldown_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">fireball_cooldown</span> <span class="o">/</span> <span class="mf">1000.0</span>
+                <span class="k">if</span> <span class="n">skill_id</span> <span class="o">==</span> <span class="s2">&quot;berserkers_rage&quot;</span><span class="p">:</span>
+                    <span class="n">cooldown</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">berserkers_rage_cooldown</span> <span class="o">+</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">,</span> <span class="s2">&quot;berserkers_rage_cooldown_bonus&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">skill_id</span> <span class="o">==</span> <span class="s2">&quot;chrono_shift&quot;</span><span class="p">:</span>
+                    <span class="n">cooldown</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">chrono_shift_cooldown</span> <span class="o">+</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">,</span> <span class="s2">&quot;chrono_shift_cooldown_bonus&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">cooldown</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">skill_id</span><span class="si">}</span><span class="s2">_cooldown&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">cooldown_time</span> <span class="o">=</span> <span class="n">cooldown</span> <span class="o">/</span> <span class="mf">1000.0</span>
                 
                 <span class="n">remaining_time</span> <span class="o">=</span> <span class="n">cooldown_time</span> <span class="o">*</span> <span class="n">cooldown_percent</span>
                 <span class="k">if</span> <span class="n">remaining_time</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
@@ -408,8 +474,11 @@
             <span class="n">surface</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">name</span><span class="o">.</span><span class="n">get_rect</span><span class="p">(</span><span class="n">center</span><span class="o">=</span><span class="p">(</span><span class="n">rect</span><span class="o">.</span><span class="n">centerx</span><span class="p">,</span> <span class="n">rect</span><span class="o">.</span><span class="n">centery</span> <span class="o">-</span> <span class="mi">4</span><span class="p">)))</span>
             
             <span class="n">ident</span> <span class="o">=</span> <span class="n">small_font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="kc">True</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">INV_ITEM_TEXT_COLOR</span><span class="p">)</span>
-            <span class="n">surface</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">ident</span><span class="p">,</span> <span class="n">ident</span><span class="o">.</span><span class="n">get_rect</span><span class="p">(</span><span class="n">bottomright</span><span class="o">=</span><span class="p">(</span><span class="n">rect</span><span class="o">.</span><span class="n">right</span> <span class="o">-</span> <span class="mi">6</span><span class="p">,</span> <span class="n">rect</span><span class="o">.</span><span class="n">bottom</span> <span class="o">-</span> <span class="mi">6</span><span class="p">)))</span>
+            <span class="n">surface</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">ident</span><span class="p">,</span> <span class="n">ident</span><span class="o">.</span><span class="n">get_rect</span><span class="p">(</span><span class="n">bottomright</span><span class="o">=</span><span class="p">(</span><span class="n">rect</span><span class="o">.</span><span class="n">right</span> <span class="o">-</span> <span class="mi">6</span><span class="p">,</span> <span class="n">rect</span><span class="o">.</span><span class="n">bottom</span> <span class="o">-</span> <span class="mi">6</span><span class="p">)))</span></div>
 
+
+<div class="viewcode-block" id="HUD._on_shop_clicked">
+<a class="viewcode-back" href="../../../src.ui.html#src.ui.hud.HUD._on_shop_clicked">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_on_shop_clicked</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">open_shop_callback</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
@@ -423,7 +492,8 @@
                 <span class="k">if</span> <span class="n">game_state</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">game_state</span><span class="p">,</span> <span class="s1">&#39;open_shop&#39;</span><span class="p">):</span>
                     <span class="n">game_state</span><span class="o">.</span><span class="n">open_shop</span><span class="p">()</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-                <span class="k">pass</span>
+                <span class="k">pass</span></div>
+
 
 <div class="viewcode-block" id="HUD.draw">
 <a class="viewcode-back" href="../../../src.ui.html#src.ui.hud.HUD.draw">[docs]</a>

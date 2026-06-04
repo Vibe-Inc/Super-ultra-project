@@ -86,6 +86,7 @@
 <span class="p">)</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">src.config</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cfg</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.save_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">SaveManager</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">src.app</span><span class="w"> </span><span class="kn">import</span> <span class="n">App</span>
@@ -94,6 +95,68 @@
 <div class="viewcode-block" id="MainMenu">
 <a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.MainMenu">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MainMenu</span><span class="p">(</span><span class="n">Menu</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Main menu screen with start, load, settings, credits, and exit options.</span>
+
+<span class="sd">    Features animated background effects, decorative particles, and shield-shaped buttons.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        app (App):</span>
+<span class="sd">            The main application instance.</span>
+<span class="sd">        buttons (list[Button]):</span>
+<span class="sd">            List of main menu buttons (START, LOAD, EXIT, SETTINGS, CREDITS).</span>
+<span class="sd">        beta_logo_img (pygame.Surface):</span>
+<span class="sd">            The beta logo image.</span>
+<span class="sd">        _label_font (pygame.font.Font):</span>
+<span class="sd">            Font for labels.</span>
+<span class="sd">        _title_font (pygame.font.Font):</span>
+<span class="sd">            Large font for the title.</span>
+<span class="sd">        font_small (pygame.font.Font):</span>
+<span class="sd">            Small font for captions.</span>
+<span class="sd">        _anim_time (float):</span>
+<span class="sd">            Accumulated animation time.</span>
+<span class="sd">        _launch_phase (float):</span>
+<span class="sd">            Phase of the launch animation.</span>
+<span class="sd">        _particles (list):</span>
+<span class="sd">            Decorative ambient particles.</span>
+<span class="sd">        _stars (list):</span>
+<span class="sd">            Background star effects.</span>
+<span class="sd">        _light_rays (list):</span>
+<span class="sd">            Light ray effects.</span>
+<span class="sd">        _embers (list):</span>
+<span class="sd">            Ambient ember particles.</span>
+<span class="sd">        _bursts (list):</span>
+<span class="sd">            Launch burst effects.</span>
+<span class="sd">        _sparkles (list):</span>
+<span class="sd">            Title sparkle effects.</span>
+<span class="sd">        _panel_rect (pygame.Rect):</span>
+<span class="sd">            Rectangle for the central panel.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(app):</span>
+<span class="sd">            Initialize the main menu.</span>
+<span class="sd">        start_game():</span>
+<span class="sd">            Start a new game.</span>
+<span class="sd">        exit_game():</span>
+<span class="sd">            Exit the application.</span>
+<span class="sd">        open_settings():</span>
+<span class="sd">            Open the settings menu.</span>
+<span class="sd">        open_load_menu():</span>
+<span class="sd">            Open the save/load menu.</span>
+<span class="sd">        open_credits():</span>
+<span class="sd">            Open the credits menu.</span>
+<span class="sd">        back_to_main():</span>
+<span class="sd">            Return to the main menu screen (inherited).</span>
+<span class="sd">        handle_event(event):</span>
+<span class="sd">            Handle input events.</span>
+<span class="sd">        update(dt):</span>
+<span class="sd">            Update animations and effects.</span>
+<span class="sd">        draw(screen):</span>
+<span class="sd">            Render the main menu.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="MainMenu.__init__">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.MainMenu.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="s2">&quot;App&quot;</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
 
@@ -164,7 +227,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_cached_chars</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_cached_title_chars</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_orn_cache</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_orn_key</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_orn_key</span> <span class="o">=</span> <span class="kc">None</span></div>
+
 
 <div class="viewcode-block" id="MainMenu.on_enter">
 <a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.MainMenu.on_enter">[docs]</a>
@@ -551,6 +615,7 @@
 <a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.MainMenu.exit_game">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">exit_game</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Exit requested from MainMenu&quot;</span><span class="p">)</span>
+        <span class="n">SaveManager</span><span class="o">.</span><span class="n">save_settings</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">)</span>
         <span class="n">pygame</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
         <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span></div>
 

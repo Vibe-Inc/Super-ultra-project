@@ -82,9 +82,11 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Represents a tile-based game map loaded from a Tiled map file.</span>
 
-<span class="sd">    This class handles loading and drawing of the map using pytmx and pygame.</span>
+<span class="sd">    This class handles loading, caching, and drawing of the map using pytmx and pygame.</span>
 
 <span class="sd">    Attributes:</span>
+<span class="sd">        FRINGE_LAYER_NAME (str): Name of the fringe tile layer.</span>
+<span class="sd">        FRINGE_LAYER_FADE_ALPHA (int): Alpha value for fading fringe tiles.</span>
 <span class="sd">        map_file (str):</span>
 <span class="sd">            Path to the Tiled map (.tmx) file.</span>
 <span class="sd">        game_map (pytmx.TiledMap | None):</span>
@@ -93,14 +95,32 @@
 <span class="sd">            Width of the map in pixels.</span>
 <span class="sd">        pixel_height (int):</span>
 <span class="sd">            Height of the map in pixels.</span>
+<span class="sd">        _base_render_cache (pygame.Surface | None):</span>
+<span class="sd">            Cached composite surface for base layers.</span>
+<span class="sd">        _fringe_components (list[dict]):</span>
+<span class="sd">            Cached fringe layer components with surfaces and tile rects.</span>
 
 <span class="sd">    Methods:</span>
 <span class="sd">        __init__(map_file):</span>
 <span class="sd">            Initialize the map with the given file path.</span>
-<span class="sd">        draw(screen):</span>
-<span class="sd">            Draw the map layers onto the given Pygame surface.</span>
-<span class="sd">            Args:</span>
-<span class="sd">                screen (pygame.Surface): The surface to draw the map on.</span>
+<span class="sd">        ensure_loaded():</span>
+<span class="sd">            Load the map file if not already loaded.</span>
+<span class="sd">        _is_fringe_layer(layer):</span>
+<span class="sd">            Check if a layer is the fringe overlay layer.</span>
+<span class="sd">        _build_fringe_components(layer):</span>
+<span class="sd">            Build grouped fringe surfaces for efficient drawing.</span>
+<span class="sd">        _build_render_cache():</span>
+<span class="sd">            Pre-render all non-fringe layers into a cached surface.</span>
+<span class="sd">        get_tmx_data():</span>
+<span class="sd">            Return the loaded TMX data, loading if needed.</span>
+<span class="sd">        draw(screen, camera_offset=None):</span>
+<span class="sd">            Draw the base map layers onto the given Pygame surface.</span>
+<span class="sd">        draw_fringe_overlay(screen, camera_offset=None, player=None):</span>
+<span class="sd">            Draw the fringe overlay with optional player fade.</span>
+<span class="sd">        _should_fade_component(player_rect, tile_rects):</span>
+<span class="sd">            Determine whether a fringe component should fade.</span>
+<span class="sd">        get_obstacles():</span>
+<span class="sd">            Collect all collidable rects from the map.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="Map.__init__">
@@ -132,9 +152,14 @@
         <span class="k">return</span> <span class="kc">True</span></div>
 
 
+<div class="viewcode-block" id="Map._is_fringe_layer">
+<a class="viewcode-back" href="../../../src.map.html#src.map.map.Map._is_fringe_layer">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_is_fringe_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-        <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">pytmx</span><span class="o">.</span><span class="n">TiledTileLayer</span><span class="p">)</span> <span class="ow">and</span> <span class="n">layer</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">FRINGE_LAYER_NAME</span>
+        <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">pytmx</span><span class="o">.</span><span class="n">TiledTileLayer</span><span class="p">)</span> <span class="ow">and</span> <span class="n">layer</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">FRINGE_LAYER_NAME</span></div>
 
+
+<div class="viewcode-block" id="Map._build_fringe_components">
+<a class="viewcode-back" href="../../../src.map.html#src.map.map.Map._build_fringe_components">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_build_fringe_components</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer</span><span class="p">):</span>
         <span class="n">tile_width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">tilewidth</span>
         <span class="n">tile_height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">tileheight</span>
@@ -199,8 +224,11 @@
                 <span class="p">}</span>
             <span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">components</span>
+        <span class="k">return</span> <span class="n">components</span></div>
 
+
+<div class="viewcode-block" id="Map._build_render_cache">
+<a class="viewcode-back" href="../../../src.map.html#src.map.map.Map._build_render_cache">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_build_render_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_base_render_cache</span> <span class="o">=</span> <span class="kc">None</span>
@@ -219,7 +247,8 @@
                     <span class="k">if</span> <span class="n">tile</span><span class="p">:</span>
                         <span class="n">surface</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">tile</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">tilewidth</span><span class="p">,</span> <span class="n">y</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">tileheight</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_base_render_cache</span> <span class="o">=</span> <span class="n">surface</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_fringe_components</span> <span class="o">=</span> <span class="n">fringe_components</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fringe_components</span> <span class="o">=</span> <span class="n">fringe_components</span></div>
+
 
 <div class="viewcode-block" id="Map.get_tmx_data">
 <a class="viewcode-back" href="../../../src.map.html#src.map.map.Map.get_tmx_data">[docs]</a>
@@ -282,6 +311,8 @@
             <span class="n">surface</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="Map._should_fade_component">
+<a class="viewcode-back" href="../../../src.map.html#src.map.map.Map._should_fade_component">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_should_fade_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">player_rect</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">,</span> <span class="n">tile_rects</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">tile_rects</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
@@ -296,7 +327,8 @@
             <span class="k">if</span> <span class="n">overlap_rect</span><span class="o">.</span><span class="n">width</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">overlap_rect</span><span class="o">.</span><span class="n">height</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">overlap_rect</span><span class="o">.</span><span class="n">width</span> <span class="o">*</span> <span class="n">overlap_rect</span><span class="o">.</span><span class="n">height</span> <span class="o">&gt;</span> <span class="n">fade_threshold</span><span class="p">:</span>
                     <span class="k">return</span> <span class="kc">True</span>
-        <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
 
 <div class="viewcode-block" id="Map.get_obstacles">
 <a class="viewcode-back" href="../../../src.map.html#src.map.map.Map.get_obstacles">[docs]</a>
@@ -372,24 +404,26 @@
 <span class="sd">            Path to the currently active map file.</span>
 <span class="sd">        transition_buffer (int):</span>
 <span class="sd">            Distance from the map edge at which a transition is triggered.</span>
+<span class="sd">        map_transitions (dict):</span>
+<span class="sd">            Dictionary mapping source map paths to directional transitions.</span>
 
 <span class="sd">    Methods:</span>
 <span class="sd">        __init__(name, map_file):</span>
 <span class="sd">            Initialize the local map manager with a name and starting map file.</span>
-<span class="sd">        draw(screen):</span>
+<span class="sd">        draw(screen, camera_offset=None):</span>
 <span class="sd">            Draw the current map onto the given Pygame surface.</span>
-<span class="sd">            Args:</span>
-<span class="sd">                screen (pygame.Surface): The surface to draw the map on.</span>
+<span class="sd">        draw_fringe_overlay(screen, camera_offset=None, player=None):</span>
+<span class="sd">            Draw the current map&#39;s fringe overlay.</span>
+<span class="sd">        get_obstacles():</span>
+<span class="sd">            Return the current map&#39;s obstacle rects.</span>
 <span class="sd">        update(player):</span>
 <span class="sd">            Update map logic and handle transitions based on player position.</span>
-<span class="sd">            Args:</span>
-<span class="sd">                player: The player object (must have pos and image/rect attributes).</span>
-<span class="sd">            Returns:</span>
-<span class="sd">                str | None: Path to the new map if switched, else None.</span>
 <span class="sd">        switch_map(new_map_path):</span>
 <span class="sd">            Switch to a new map by file path.</span>
-<span class="sd">            Args:</span>
-<span class="sd">                new_map_path (str): Path to the new map file.</span>
+<span class="sd">        _player_overlaps_any_tile(player_rect, tile_width, tile_height, tile_positions):</span>
+<span class="sd">            Check if the player overlaps any of the given tile positions.</span>
+<span class="sd">        _teleport_player_to_tile(player, tile_x, tile_y, tile_width, tile_height):</span>
+<span class="sd">            Teleport the player to a specific tile position.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="LocalMap.__init__">
 <a class="viewcode-back" href="../../../src.map.html#src.map.map.LocalMap.__init__">[docs]</a>
@@ -632,13 +666,18 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="o">=</span> <span class="n">new_map_path</span></div>
 
 
+<div class="viewcode-block" id="LocalMap._player_overlaps_any_tile">
+<a class="viewcode-back" href="../../../src.map.html#src.map.map.LocalMap._player_overlaps_any_tile">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_player_overlaps_any_tile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">player_rect</span><span class="p">,</span> <span class="n">tile_width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">tile_height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">tile_positions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">tile_x</span><span class="p">,</span> <span class="n">tile_y</span> <span class="ow">in</span> <span class="n">tile_positions</span><span class="p">:</span>
             <span class="n">tile_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">tile_x</span> <span class="o">*</span> <span class="n">tile_width</span><span class="p">,</span> <span class="n">tile_y</span> <span class="o">*</span> <span class="n">tile_height</span><span class="p">,</span> <span class="n">tile_width</span><span class="p">,</span> <span class="n">tile_height</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">player_rect</span><span class="o">.</span><span class="n">colliderect</span><span class="p">(</span><span class="n">tile_rect</span><span class="p">):</span>
                 <span class="k">return</span> <span class="kc">True</span>
-        <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
 
+
+<div class="viewcode-block" id="LocalMap._teleport_player_to_tile">
+<a class="viewcode-back" href="../../../src.map.html#src.map.map.LocalMap._teleport_player_to_tile">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_teleport_player_to_tile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">player</span><span class="p">,</span> <span class="n">tile_x</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">tile_y</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">tile_width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">tile_height</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
         <span class="n">player_rect</span> <span class="o">=</span> <span class="n">player</span><span class="o">.</span><span class="n">get_rect</span><span class="p">()</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">player</span><span class="p">,</span> <span class="s2">&quot;get_rect&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="n">player</span><span class="o">.</span><span class="n">rect</span>
         <span class="n">offset_x</span> <span class="o">=</span> <span class="n">player_rect</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span>
@@ -646,6 +685,7 @@
 
         <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">tile_x</span> <span class="o">*</span> <span class="n">tile_width</span> <span class="o">-</span> <span class="n">offset_x</span>
         <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">tile_y</span> <span class="o">*</span> <span class="n">tile_height</span> <span class="o">-</span> <span class="n">offset_y</span></div>
+</div>
 
 </pre></div>
 

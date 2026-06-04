@@ -640,6 +640,17 @@ navigation buttons to switch to the skill or talent tree menus.</p>
 Each slot position is typed (helmet, chestplate, leggings, boots in column 1;
 charm, gloves, ring, belt in column 0). Only Armor items with matching
 slot_type may be placed in each slot.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.MAIN_player_inventory_equipment.app">
+<span class="sig-name descname"><span class="pre">app</span></span><a class="headerlink" href="#src.inventory.system.MAIN_player_inventory_equipment.app" title="Link to this definition"></a></dt>
+<dd><p>Reference to the main application instance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="src.html#src.app.App" title="src.app.App">App</a></p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="src.inventory.system.MAIN_player_inventory_equipment.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_inventory_equipment.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.MAIN_player_inventory_equipment.__init__" title="Link to this definition"></a></dt>
@@ -650,6 +661,12 @@ slot_type may be placed in each slot.</p>
 <dt class="sig sig-object py" id="src.inventory.system.MAIN_player_inventory_equipment.get_slot_type">
 <span class="sig-name descname"><span class="pre">get_slot_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_inventory_equipment.get_slot_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.MAIN_player_inventory_equipment.get_slot_type" title="Link to this definition"></a></dt>
 <dd><p>Return the slot type string for the given grid position.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.MAIN_player_inventory_equipment.get_total_defense">
+<span class="sig-name descname"><span class="pre">get_total_defense</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_inventory_equipment.get_total_defense"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.MAIN_player_inventory_equipment.get_total_defense" title="Link to this definition"></a></dt>
+<dd><p>Sum the defense_value of all equipped Armor items.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -671,19 +688,19 @@ slot_type may be placed in each slot.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.inventory.system.MAIN_player_inventory_equipment.get_total_defense">
-<span class="sig-name descname"><span class="pre">get_total_defense</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_inventory_equipment.get_total_defense"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.MAIN_player_inventory_equipment.get_total_defense" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id17">
+<span class="sig-name descname"><span class="pre">get_total_defense</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_inventory_equipment.get_total_defense"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id17" title="Link to this definition"></a></dt>
 <dd><p>Sum the defense_value of all equipped Armor items.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id17">
-<span class="sig-name descname"><span class="pre">inventory_interactions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_inventory_equipment.inventory_interactions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id17" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id18">
+<span class="sig-name descname"><span class="pre">inventory_interactions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_inventory_equipment.inventory_interactions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id18" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id18">
-<span class="sig-name descname"><span class="pre">sync_character_defense</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">character</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_inventory_equipment.sync_character_defense"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id18" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id19">
+<span class="sig-name descname"><span class="pre">sync_character_defense</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">character</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_inventory_equipment.sync_character_defense"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id19" title="Link to this definition"></a></dt>
 <dd><p>Recalculate character.defense from all equipped armor.</p>
 </dd></dl>
 
@@ -737,8 +754,8 @@ automatic money deductions, and a dedicated UI button for closing the shop.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id19">
-<span class="sig-name descname"><span class="pre">inventory_interactions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#ShopInventory.inventory_interactions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id19" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id20">
+<span class="sig-name descname"><span class="pre">inventory_interactions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#ShopInventory.inventory_interactions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id20" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>

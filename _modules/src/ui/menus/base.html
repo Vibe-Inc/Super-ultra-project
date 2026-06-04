@@ -94,35 +94,48 @@
 <span class="sd">            List of Tooltip objects for button tooltips.</span>
 
 <span class="sd">    Methods:</span>
+<span class="sd">        __init__(app):</span>
+<span class="sd">            Initialize the menu with an app reference.</span>
+<span class="sd">        _apply_button_size(button, rect):</span>
+<span class="sd">            Assign a rect to a button and refresh its text surface.</span>
+<span class="sd">        _screen_size(screen=None):</span>
+<span class="sd">            Return the current screen dimensions.</span>
 <span class="sd">        draw(screen):</span>
 <span class="sd">            Draw all buttons and tooltips onto the provided screen surface.</span>
-<span class="sd">            Args:</span>
-<span class="sd">                screen (pygame.Surface): The surface to draw the menu on.</span>
+<span class="sd">        layout(screen):</span>
+<span class="sd">            Placeholder layout method; subclasses override.</span>
 <span class="sd">        handle_event(event):</span>
 <span class="sd">            Handle Pygame events, triggering button actions when clicked.</span>
-<span class="sd">            Args:</span>
-<span class="sd">                event (pygame.event.Event): The Pygame event to process.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     
+<div class="viewcode-block" id="Menu.__init__">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.Menu.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="s2">&quot;App&quot;</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="o">=</span> <span class="n">app</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Button</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tooltips</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Tooltip</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tooltips</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Tooltip</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span></div>
 
+
+<div class="viewcode-block" id="Menu._apply_button_size">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.Menu._apply_button_size">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_apply_button_size</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">button</span><span class="p">:</span> <span class="n">Button</span><span class="p">,</span> <span class="n">rect</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">):</span>
         <span class="n">button</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">rect</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">button</span><span class="o">.</span><span class="n">_update_text_surface</span><span class="p">()</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-            <span class="k">pass</span>
+            <span class="k">pass</span></div>
 
+
+<div class="viewcode-block" id="Menu._screen_size">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.Menu._screen_size">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_screen_size</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
         <span class="k">if</span> <span class="n">screen</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">screen</span><span class="o">.</span><span class="n">get_width</span><span class="p">(),</span> <span class="n">screen</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">screen</span><span class="o">.</span><span class="n">get_width</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">screen</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span>
+            <span class="k">return</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span></div>
+
 
 <div class="viewcode-block" id="Menu.draw">
 <a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.Menu.draw">[docs]</a>

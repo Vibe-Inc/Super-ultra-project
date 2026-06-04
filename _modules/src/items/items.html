@@ -153,6 +153,12 @@
 <span class="sd">        on_hit_effects (list): Optional list of effect dicts applied to a</span>
 <span class="sd">            target each time the weapon lands a hit (e.g. Flaming Sword -&gt;</span>
 <span class="sd">            BurnEffect).</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(row: dict):</span>
+<span class="sd">            Initialize weapon properties from a database row.</span>
+<span class="sd">        _get_base_stats_text():</span>
+<span class="sd">            Return formatted base stats text (type, damage, durability).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
@@ -175,6 +181,8 @@
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw_on_hit</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">on_hit_effects</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">raw_on_hit</span><span class="p">)</span>
 
+<div class="viewcode-block" id="Weapon._get_base_stats_text">
+<a class="viewcode-back" href="../../../src.items.html#src.items.items.Weapon._get_base_stats_text">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_base_stats_text</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">weapon_label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Weapon&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">weapon_class</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span><span class="si">}</span><span class="s2">)&quot;</span>
         <span class="k">return</span> <span class="p">(</span>
@@ -182,6 +190,7 @@
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Damage&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">damage</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Durability&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">durability</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
         <span class="p">)</span></div>
+</div>
 
 
 
@@ -200,6 +209,12 @@
 <span class="sd">            &#39;spear&#39; - long narrow piercing line,</span>
 <span class="sd">            &#39;dagger&#39; - quick short multi-strike,</span>
 <span class="sd">            &#39;war_hammer&#39; - heavy slam with small AoE stun.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(row: dict):</span>
+<span class="sd">            Initialize melee weapon properties from a database row.</span>
+<span class="sd">        get_tooltip_text():</span>
+<span class="sd">            Return formatted tooltip text including range and combat style.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
@@ -227,6 +242,18 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">RangedWeapon</span><span class="p">(</span><span class="n">Weapon</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Represents a ranged combat weapon.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        range (int): Effective attack range in pixels.</span>
+<span class="sd">        projectile_speed (int): Speed of the fired projectile.</span>
+<span class="sd">        cone_degrees (int): Total cone angle in degrees for spread.</span>
+<span class="sd">        spread_degrees (int): Random spread angle per shot in degrees.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(row: dict):</span>
+<span class="sd">            Initialize ranged weapon properties from a database row.</span>
+<span class="sd">        get_tooltip_text():</span>
+<span class="sd">            Return formatted tooltip text including range and projectile speed.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
@@ -260,6 +287,15 @@
 <span class="sd">    Attributes:</span>
 <span class="sd">        heal_amount (int): Points of HP restored or lost.</span>
 <span class="sd">        effects_list (list): Configuration for applying dynamic effects.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(row: dict):</span>
+<span class="sd">            Initialize consumable properties from a database row.</span>
+<span class="sd">        get_tooltip_text():</span>
+<span class="sd">            Return formatted tooltip text including heal and effects info.</span>
+<span class="sd">        use(target):</span>
+<span class="sd">            Apply the consumable&#39;s effects to the target. Returns True if at</span>
+<span class="sd">            least one effect was applied.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
@@ -327,6 +363,12 @@
 <span class="sd">                         (&quot;helmet&quot;, &quot;chestplate&quot;, &quot;leggings&quot;, &quot;boots&quot;,</span>
 <span class="sd">                          &quot;charm&quot;, &quot;gloves&quot;, &quot;ring&quot;, &quot;belt&quot;).</span>
 <span class="sd">        defense_value (int): Flat damage reduction this armor provides.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(row: dict):</span>
+<span class="sd">            Initialize armor properties from a database row.</span>
+<span class="sd">        get_tooltip_text():</span>
+<span class="sd">            Return formatted tooltip text including armor type and defense.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>

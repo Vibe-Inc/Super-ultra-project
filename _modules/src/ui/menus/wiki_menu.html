@@ -231,37 +231,53 @@
         <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">border</span><span class="p">,</span> <span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">right</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="mi">18</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span> <span class="n">y</span><span class="p">),</span> <span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">right</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span> <span class="n">y</span><span class="p">),</span> <span class="n">w</span><span class="p">)</span>
 
 
-<span class="c1"># ─── Shimmer text (cached per time bucket) ──────────────────</span>
+<span class="c1"># ─── Plain text (no shimmer) ────────────────────────────────</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_render_shimmer_text</span><span class="p">(</span><span class="n">font</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">base_color</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">intensity</span><span class="o">=</span><span class="mf">0.15</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Render text with base_color and a subtle animated highlight pass (no mask).&quot;&quot;&quot;</span>
-    <span class="n">tb</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">t</span> <span class="o">*</span> <span class="mi">6</span><span class="p">)</span>
-    <span class="n">ck</span> <span class="o">=</span> <span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">font</span><span class="p">),</span> <span class="n">text</span><span class="p">,</span> <span class="n">base_color</span><span class="p">,</span> <span class="n">tb</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">ck</span> <span class="ow">in</span> <span class="n">_shimmer_cache</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">_shimmer_cache</span><span class="p">[</span><span class="n">ck</span><span class="p">]</span>
-    <span class="n">result</span> <span class="o">=</span> <span class="n">font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">base_color</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">intensity</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">result</span>
-    <span class="n">w</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get_size</span><span class="p">()</span>
-    <span class="c1"># Draw a soft vertical highlight band that scrolls across</span>
-    <span class="n">shimmer_w</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">w</span> <span class="o">*</span> <span class="mf">0.2</span><span class="p">))</span>
-    <span class="n">band</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">shimmer_w</span><span class="p">,</span> <span class="n">h</span><span class="p">),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">sx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">shimmer_w</span><span class="p">):</span>
-        <span class="n">ratio</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="nb">abs</span><span class="p">(</span><span class="n">sx</span> <span class="o">-</span> <span class="n">shimmer_w</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">shimmer_w</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="n">a</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">50</span> <span class="o">*</span> <span class="n">ratio</span> <span class="o">*</span> <span class="n">intensity</span> <span class="o">/</span> <span class="mf">0.15</span><span class="p">)</span>
-        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">band</span><span class="p">,</span> <span class="p">(</span><span class="o">*</span><span class="n">GOLD_BRIGHT</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mi">120</span><span class="p">,</span> <span class="n">a</span><span class="p">))),</span> <span class="p">(</span><span class="n">sx</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="n">sx</span><span class="p">,</span> <span class="n">h</span><span class="p">))</span>
-    <span class="c1"># Position band based on time</span>
-    <span class="n">band_x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">t</span> <span class="o">*</span> <span class="mi">150</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="n">w</span> <span class="o">+</span> <span class="n">shimmer_w</span><span class="p">))</span> <span class="o">-</span> <span class="n">shimmer_w</span>
-    <span class="c1"># Blit only within text bounds</span>
-    <span class="n">clip</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get_clip</span><span class="p">()</span>
-    <span class="n">result</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">band</span><span class="p">,</span> <span class="p">(</span><span class="n">band_x</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">special_flags</span><span class="o">=</span><span class="n">pygame</span><span class="o">.</span><span class="n">BLEND_RGBA_ADD</span><span class="p">)</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">_shimmer_cache</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">30</span><span class="p">:</span>
-        <span class="n">_shimmer_cache</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
-    <span class="n">_shimmer_cache</span><span class="p">[</span><span class="n">ck</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span>
-    <span class="k">return</span> <span class="n">result</span>
+    <span class="k">return</span> <span class="n">font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">base_color</span><span class="p">)</span>
 
 
 <span class="c1"># ─── Ambient Particle (simplified — single circle) ──────────</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">AmbientParticle</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Simple floating ambient particle used for background atmosphere.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        sw (int):</span>
+<span class="sd">            Screen width boundary.</span>
+<span class="sd">        sh (int):</span>
+<span class="sd">            Screen height boundary.</span>
+<span class="sd">        x (float):</span>
+<span class="sd">            Current x position.</span>
+<span class="sd">        y (float):</span>
+<span class="sd">            Current y position.</span>
+<span class="sd">        vx (float):</span>
+<span class="sd">            Horizontal velocity.</span>
+<span class="sd">        vy (float):</span>
+<span class="sd">            Vertical velocity.</span>
+<span class="sd">        sz (int):</span>
+<span class="sd">            Particle radius in pixels.</span>
+<span class="sd">        brightness (int):</span>
+<span class="sd">            Brightness value for the particle color.</span>
+<span class="sd">        alpha (int):</span>
+<span class="sd">            Alpha transparency value.</span>
+<span class="sd">        phase (float):</span>
+<span class="sd">            Phase offset for oscillation.</span>
+<span class="sd">        freq (float):</span>
+<span class="sd">            Frequency of horizontal oscillation.</span>
+<span class="sd">        _surf (pygame.Surface | None):</span>
+<span class="sd">            Cached surface (may be None).</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(sw, sh):</span>
+<span class="sd">            Initialize the particle with random properties.</span>
+<span class="sd">        _reset(init=False):</span>
+<span class="sd">            Reset particle position and properties.</span>
+<span class="sd">        update(dt, t):</span>
+<span class="sd">            Update particle position and check bounds.</span>
+<span class="sd">        draw(surf, t):</span>
+<span class="sd">            Draw the particle with oscillating alpha.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sw</span><span class="p">,</span> <span class="n">sh</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sw</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sh</span> <span class="o">=</span> <span class="n">sw</span><span class="p">,</span> <span class="n">sh</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_reset</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
@@ -298,6 +314,40 @@
 
 <span class="c1"># ─── Burst Particle ─────────────────────────────────────────</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">WikiParticle</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Burst particle for wiki menu visual effects, supporting glow and star shapes.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        x (float):</span>
+<span class="sd">            Current x position.</span>
+<span class="sd">        y (float):</span>
+<span class="sd">            Current y position.</span>
+<span class="sd">        vx (float):</span>
+<span class="sd">            Horizontal velocity.</span>
+<span class="sd">        vy (float):</span>
+<span class="sd">            Vertical velocity (gravity applied each frame).</span>
+<span class="sd">        lt (float):</span>
+<span class="sd">            Remaining lifetime in seconds.</span>
+<span class="sd">        max_lt (float):</span>
+<span class="sd">            Maximum lifetime for alpha scaling.</span>
+<span class="sd">        color (tuple):</span>
+<span class="sd">            RGB(A) color of the particle.</span>
+<span class="sd">        size (int):</span>
+<span class="sd">            Base size of the particle.</span>
+<span class="sd">        glow (bool):</span>
+<span class="sd">            Whether this particle has a glow effect.</span>
+<span class="sd">        star (bool):</span>
+<span class="sd">            Whether this particle is drawn as a star shape.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(x, y, vx, vy, lt, color, size, glow=False, star=False):</span>
+<span class="sd">            Initialize the burst particle.</span>
+<span class="sd">        update(dt):</span>
+<span class="sd">            Update position and lifetime.</span>
+<span class="sd">        draw(surf):</span>
+<span class="sd">            Draw the particle with fading alpha.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">vx</span><span class="p">,</span> <span class="n">vy</span><span class="p">,</span> <span class="n">lt</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">glow</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">star</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vy</span> <span class="o">=</span> <span class="n">vx</span><span class="p">,</span> <span class="n">vy</span>
@@ -388,6 +438,135 @@
 <div class="viewcode-block" id="WikiMenu">
 <a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.WikiMenu">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">WikiMenu</span><span class="p">(</span><span class="n">Menu</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    In-game wiki / compendium (Codex Arcanum) with bestiary, magic, effects, and guide sections.</span>
+
+<span class="sd">    Features ornate parchment-styled backgrounds, section cards, table of contents,</span>
+<span class="sd">    content pages with monster portraits, and transition animations.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        app (App):</span>
+<span class="sd">            The main application instance.</span>
+<span class="sd">        _page (str):</span>
+<span class="sd">            Current page identifier (&#39;main&#39;, &#39;bestiary&#39;, &#39;magic&#39;, &#39;effects&#39;, &#39;guide&#39;).</span>
+<span class="sd">        _sub_page (int):</span>
+<span class="sd">            Current sub-page index within a section.</span>
+<span class="sd">        _show_toc (bool):</span>
+<span class="sd">            Whether the table of contents is currently displayed.</span>
+<span class="sd">        font_ornate (pygame.font.Font):</span>
+<span class="sd">            Large ornate font for icons.</span>
+<span class="sd">        font_large (pygame.font.Font):</span>
+<span class="sd">            Large font for the main title.</span>
+<span class="sd">        font_title (pygame.font.Font):</span>
+<span class="sd">            Title font for section headers.</span>
+<span class="sd">        font_subtitle (pygame.font.Font):</span>
+<span class="sd">            Subtitle font for section cards.</span>
+<span class="sd">        font_body (pygame.font.Font):</span>
+<span class="sd">            Body text font for content pages.</span>
+<span class="sd">        font_small (pygame.font.Font):</span>
+<span class="sd">            Small font for captions and page numbers.</span>
+<span class="sd">        font_toc (pygame.font.Font):</span>
+<span class="sd">            Font for table of contents entries.</span>
+<span class="sd">        ink_color (tuple):</span>
+<span class="sd">            Primary ink color for text.</span>
+<span class="sd">        ink_light (tuple):</span>
+<span class="sd">            Lighter ink color for subtler text.</span>
+<span class="sd">        particles (list[WikiParticle]):</span>
+<span class="sd">            Active burst particles.</span>
+<span class="sd">        ambient_particles (list[AmbientParticle]):</span>
+<span class="sd">            Active ambient background particles.</span>
+<span class="sd">        _anim_time (float):</span>
+<span class="sd">            Accumulated animation time.</span>
+<span class="sd">        _page_enter_time (int):</span>
+<span class="sd">            Timestamp of the last page entry (ms).</span>
+<span class="sd">        _transition_progress (float):</span>
+<span class="sd">            Normalized page transition progress (0.0 to 1.0).</span>
+<span class="sd">        _transition_from (str):</span>
+<span class="sd">            Page being transitioned from.</span>
+<span class="sd">        _hover_glow (dict):</span>
+<span class="sd">            Hover glow progress per section card index.</span>
+<span class="sd">        buttons (list[Button]):</span>
+<span class="sd">            List of control buttons.</span>
+<span class="sd">        back_btn (Button):</span>
+<span class="sd">            Back button.</span>
+<span class="sd">        prev_btn (Button):</span>
+<span class="sd">            Previous page button.</span>
+<span class="sd">        next_btn (Button):</span>
+<span class="sd">            Next page button.</span>
+<span class="sd">        toc_btn (Button):</span>
+<span class="sd">            Table of contents toggle button.</span>
+<span class="sd">        section_buttons (list):</span>
+<span class="sd">            Main page section card buttons.</span>
+<span class="sd">        section_button_data (list[tuple]):</span>
+<span class="sd">            Data for main page section cards.</span>
+<span class="sd">        _toc_hover (int):</span>
+<span class="sd">            Index of the hovered TOC entry.</span>
+<span class="sd">        _toc_entry_rects (list[tuple[pygame.Rect, int]]):</span>
+<span class="sd">            List of (rect, page_index) for TOC hit detection.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(app):</span>
+<span class="sd">            Initialize the wiki menu.</span>
+<span class="sd">        on_enter():</span>
+<span class="sd">            Reset animations and spawn ambient particles on entry.</span>
+<span class="sd">        _build_main_page():</span>
+<span class="sd">            Build the main page with section cards.</span>
+<span class="sd">        _open_bestiary():</span>
+<span class="sd">            Open the bestiary section.</span>
+<span class="sd">        _open_magic():</span>
+<span class="sd">            Open the magic section.</span>
+<span class="sd">        _open_effects():</span>
+<span class="sd">            Open the effects section.</span>
+<span class="sd">        _open_guide():</span>
+<span class="sd">            Open the guide section.</span>
+<span class="sd">        _emit_particles(theme):</span>
+<span class="sd">            Spawn burst particles with the given theme colors.</span>
+<span class="sd">        _go_back():</span>
+<span class="sd">            Navigate back through sub-pages or to the main page.</span>
+<span class="sd">        _toggle_toc():</span>
+<span class="sd">            Toggle the table of contents display.</span>
+<span class="sd">        _prev_page():</span>
+<span class="sd">            Go to the previous sub-page.</span>
+<span class="sd">        _next_page():</span>
+<span class="sd">            Go to the next sub-page.</span>
+<span class="sd">        _get_max_subpages():</span>
+<span class="sd">            Get the maximum sub-page index for the current section.</span>
+<span class="sd">        _theme():</span>
+<span class="sd">            Get the current section&#39;s color theme.</span>
+<span class="sd">        _get_content():</span>
+<span class="sd">            Get the content pages for the current section.</span>
+<span class="sd">        _get_meta():</span>
+<span class="sd">            Get the metadata for the current section.</span>
+<span class="sd">        _bestiary_pages():</span>
+<span class="sd">            Build bestiary content pages.</span>
+<span class="sd">        _magic_pages():</span>
+<span class="sd">            Build magic content pages.</span>
+<span class="sd">        _effects_pages():</span>
+<span class="sd">            Build effects content pages.</span>
+<span class="sd">        _guide_pages():</span>
+<span class="sd">            Build guide content pages.</span>
+<span class="sd">        layout(screen):</span>
+<span class="sd">            Position buttons based on screen size and current page.</span>
+<span class="sd">        update(dt):</span>
+<span class="sd">            Update animations and particles.</span>
+<span class="sd">        draw(screen):</span>
+<span class="sd">            Render the wiki menu.</span>
+<span class="sd">        _draw_main(screen, sw, sh, scale):</span>
+<span class="sd">            Draw the main page with section cards.</span>
+<span class="sd">        _draw_toc(screen, sw, sh, scale):</span>
+<span class="sd">            Draw the table of contents.</span>
+<span class="sd">        _draw_content(screen, sw, sh, scale):</span>
+<span class="sd">            Draw a content page with title, body, and optional portrait.</span>
+<span class="sd">        handle_event(event):</span>
+<span class="sd">            Handle input events.</span>
+<span class="sd">        _handle_main_click(event):</span>
+<span class="sd">            Handle clicks on the main page section cards.</span>
+<span class="sd">        _handle_toc_click(event):</span>
+<span class="sd">            Handle clicks on table of contents entries.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="WikiMenu.__init__">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.WikiMenu.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="s2">&quot;App&quot;</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_page</span> <span class="o">=</span> <span class="s2">&quot;main&quot;</span>
@@ -427,7 +606,8 @@
             <span class="n">cfg</span><span class="o">.</span><span class="n">button_font</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">text_color</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">corner_radius</span><span class="p">,</span> <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_toggle_toc</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">section_buttons</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_build_main_page</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_toc_hover</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_toc_hover</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span></div>
+
 
 <div class="viewcode-block" id="WikiMenu.on_enter">
 <a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.WikiMenu.on_enter">[docs]</a>
@@ -441,6 +621,8 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">ambient_particles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">AmbientParticle</span><span class="p">(</span><span class="n">sw</span><span class="p">,</span> <span class="n">sh</span><span class="p">))</span></div>
 
 
+<div class="viewcode-block" id="WikiMenu._build_main_page">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.WikiMenu._build_main_page">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_build_main_page</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_transition_from</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_page</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_page</span> <span class="o">=</span> <span class="s2">&quot;main&quot;</span>
@@ -454,28 +636,43 @@
             <span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">&quot;Magic&quot;</span><span class="p">),</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Spells of Power&quot;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_open_magic</span><span class="p">,</span> <span class="n">SECTION_THEMES</span><span class="p">[</span><span class="s2">&quot;magic&quot;</span><span class="p">]),</span>
             <span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">&quot;Alterations&quot;</span><span class="p">),</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Curse &amp; Blessing&quot;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_open_effects</span><span class="p">,</span> <span class="n">SECTION_THEMES</span><span class="p">[</span><span class="s2">&quot;effects&quot;</span><span class="p">]),</span>
             <span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">&quot;Guide&quot;</span><span class="p">),</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Adventurer&#39;s Handbook&quot;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_open_guide</span><span class="p">,</span> <span class="n">SECTION_THEMES</span><span class="p">[</span><span class="s2">&quot;guide&quot;</span><span class="p">]),</span>
-        <span class="p">]</span>
+        <span class="p">]</span></div>
 
+
+<div class="viewcode-block" id="WikiMenu._open_bestiary">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.WikiMenu._open_bestiary">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_open_bestiary</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_transition_from</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_page</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_page</span> <span class="o">=</span> <span class="s2">&quot;bestiary&quot;</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sub_page</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_show_toc</span> <span class="o">=</span> <span class="kc">True</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_page_enter_time</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_transition_progress</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_emit_particles</span><span class="p">(</span><span class="n">SECTION_THEMES</span><span class="p">[</span><span class="s2">&quot;bestiary&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_transition_progress</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_emit_particles</span><span class="p">(</span><span class="n">SECTION_THEMES</span><span class="p">[</span><span class="s2">&quot;bestiary&quot;</span><span class="p">])</span></div>
 
+
+<div class="viewcode-block" id="WikiMenu._open_magic">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.WikiMenu._open_magic">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_open_magic</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_transition_from</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_page</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_page</span> <span class="o">=</span> <span class="s2">&quot;magic&quot;</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sub_page</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_show_toc</span> <span class="o">=</span> <span class="kc">True</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_page_enter_time</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_transition_progress</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_emit_particles</span><span class="p">(</span><span class="n">SECTION_THEMES</span><span class="p">[</span><span class="s2">&quot;magic&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_transition_progress</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_emit_particles</span><span class="p">(</span><span class="n">SECTION_THEMES</span><span class="p">[</span><span class="s2">&quot;magic&quot;</span><span class="p">])</span></div>
 
+
+<div class="viewcode-block" id="WikiMenu._open_effects">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.WikiMenu._open_effects">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_open_effects</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_transition_from</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_page</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_page</span> <span class="o">=</span> <span class="s2">&quot;effects&quot;</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sub_page</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_show_toc</span> <span class="o">=</span> <span class="kc">True</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_page_enter_time</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_transition_progress</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_emit_particles</span><span class="p">(</span><span class="n">SECTION_THEMES</span><span class="p">[</span><span class="s2">&quot;effects&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_transition_progress</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_emit_particles</span><span class="p">(</span><span class="n">SECTION_THEMES</span><span class="p">[</span><span class="s2">&quot;effects&quot;</span><span class="p">])</span></div>
 
+
+<div class="viewcode-block" id="WikiMenu._open_guide">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.WikiMenu._open_guide">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_open_guide</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_transition_from</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_page</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_page</span> <span class="o">=</span> <span class="s2">&quot;guide&quot;</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sub_page</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_show_toc</span> <span class="o">=</span> <span class="kc">True</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_page_enter_time</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_transition_progress</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_emit_particles</span><span class="p">(</span><span class="n">SECTION_THEMES</span><span class="p">[</span><span class="s2">&quot;guide&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_transition_progress</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_emit_particles</span><span class="p">(</span><span class="n">SECTION_THEMES</span><span class="p">[</span><span class="s2">&quot;guide&quot;</span><span class="p">])</span></div>
 
+
+<div class="viewcode-block" id="WikiMenu._emit_particles">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.WikiMenu._emit_particles">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_emit_particles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theme</span><span class="p">):</span>
         <span class="n">sw</span><span class="p">,</span> <span class="n">sh</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span>
         <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">40</span><span class="p">):</span>
@@ -483,8 +680,11 @@
                 <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">sw</span><span class="p">),</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">sh</span><span class="p">),</span>
                 <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">120</span><span class="p">,</span> <span class="mi">120</span><span class="p">),</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">280</span><span class="p">,</span> <span class="o">-</span><span class="mi">40</span><span class="p">),</span>
                 <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">1.8</span><span class="p">),</span> <span class="n">theme</span><span class="p">[</span><span class="s2">&quot;accent&quot;</span><span class="p">],</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
-                <span class="n">glow</span><span class="o">=</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">0.3</span><span class="p">,</span> <span class="n">star</span><span class="o">=</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">0.15</span><span class="p">))</span>
+                <span class="n">glow</span><span class="o">=</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">0.3</span><span class="p">,</span> <span class="n">star</span><span class="o">=</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">0.15</span><span class="p">))</span></div>
 
+
+<div class="viewcode-block" id="WikiMenu._go_back">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.WikiMenu._go_back">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_go_back</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_show_toc</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sub_page</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_show_toc</span> <span class="o">=</span> <span class="kc">False</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sub_page</span> <span class="o">=</span> <span class="mi">0</span>
@@ -492,38 +692,62 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_page</span> <span class="o">!=</span> <span class="s2">&quot;main&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_build_main_page</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;pause&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;pause&quot;</span><span class="p">)</span></div>
 
+
+<div class="viewcode-block" id="WikiMenu._toggle_toc">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.WikiMenu._toggle_toc">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_toggle_toc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_show_toc</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_show_toc</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_show_toc</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sub_page</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_page_enter_time</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">();</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transition_progress</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_page_enter_time</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">();</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transition_progress</span> <span class="o">=</span> <span class="mf">0.0</span></div>
 
+
+<div class="viewcode-block" id="WikiMenu._prev_page">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.WikiMenu._prev_page">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_prev_page</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sub_page</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_sub_page</span> <span class="o">-=</span> <span class="mi">1</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_show_toc</span> <span class="o">=</span> <span class="kc">False</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_page_enter_time</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">();</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transition_progress</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_page_enter_time</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">();</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transition_progress</span> <span class="o">=</span> <span class="mf">0.0</span></div>
 
+
+<div class="viewcode-block" id="WikiMenu._next_page">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.WikiMenu._next_page">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_next_page</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">mp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_max_subpages</span><span class="p">()</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sub_page</span> <span class="o">&lt;</span> <span class="n">mp</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_sub_page</span> <span class="o">+=</span> <span class="mi">1</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_show_toc</span> <span class="o">=</span> <span class="kc">False</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_page_enter_time</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">();</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transition_progress</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_page_enter_time</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">();</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transition_progress</span> <span class="o">=</span> <span class="mf">0.0</span></div>
 
+
+<div class="viewcode-block" id="WikiMenu._get_max_subpages">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.WikiMenu._get_max_subpages">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_max_subpages</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_content</span><span class="p">())</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_content</span><span class="p">())</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span></div>
 
+
+<div class="viewcode-block" id="WikiMenu._theme">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.WikiMenu._theme">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_theme</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">SECTION_THEMES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_page</span><span class="p">,</span> <span class="n">SECTION_THEMES</span><span class="p">[</span><span class="s2">&quot;main&quot;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">SECTION_THEMES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_page</span><span class="p">,</span> <span class="n">SECTION_THEMES</span><span class="p">[</span><span class="s2">&quot;main&quot;</span><span class="p">])</span></div>
 
+
+<div class="viewcode-block" id="WikiMenu._get_content">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.WikiMenu._get_content">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_content</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">fn</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;bestiary&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bestiary_pages</span><span class="p">,</span> <span class="s2">&quot;magic&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_magic_pages</span><span class="p">,</span>
               <span class="s2">&quot;effects&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_effects_pages</span><span class="p">,</span> <span class="s2">&quot;guide&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_guide_pages</span><span class="p">}</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_page</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">fn</span><span class="p">()</span> <span class="k">if</span> <span class="n">fn</span> <span class="k">else</span> <span class="p">[]</span>
+        <span class="k">return</span> <span class="n">fn</span><span class="p">()</span> <span class="k">if</span> <span class="n">fn</span> <span class="k">else</span> <span class="p">[]</span></div>
 
+
+<div class="viewcode-block" id="WikiMenu._get_meta">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.WikiMenu._get_meta">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_meta</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">SECTIONS_META</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_page</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="k">return</span> <span class="n">SECTIONS_META</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_page</span><span class="p">,</span> <span class="p">{})</span></div>
 
+
+<div class="viewcode-block" id="WikiMenu._bestiary_pages">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.WikiMenu._bestiary_pages">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_bestiary_pages</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Brute&quot;</span><span class="p">),</span> <span class="s2">&quot;portrait&quot;</span><span class="p">:</span> <span class="s2">&quot;brute&quot;</span><span class="p">,</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
@@ -547,8 +771,11 @@
                 <span class="s2">&quot;Where there is fire, there is the Bomber. These mad engineers carry satchels of volatile concoctions.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
                 <span class="s2">&quot;They keep their distance, lobbing timed bombs that arc through the air with deceptive grace.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
                 <span class="s2">&quot;Abilities: Timed Bomb (95 blast radius, 80 knockback, 0.9s fuse). Health: 125. Speed: 105.&quot;</span><span class="p">)},</span>
-        <span class="p">]</span>
+        <span class="p">]</span></div>
 
+
+<div class="viewcode-block" id="WikiMenu._magic_pages">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.WikiMenu._magic_pages">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_magic_pages</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Fireball&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
@@ -599,8 +826,11 @@
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Dash&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
                 <span class="s2">&quot;Propels the user forward in a burst of speed.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
                 <span class="s2">&quot;Distance is safety. Speed is life.&quot;</span><span class="p">)},</span>
-        <span class="p">]</span>
+        <span class="p">]</span></div>
 
+
+<div class="viewcode-block" id="WikiMenu._effects_pages">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.WikiMenu._effects_pages">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_effects_pages</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Boon: Regeneration&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
@@ -624,8 +854,11 @@
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Bane: Freeze &amp; Root&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
                 <span class="s2">&quot;Two faces of the same cursed coin. Both leave you unable to act.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
                 <span class="s2">&quot;A frozen or rooted fighter is a dead fighter.&quot;</span><span class="p">)},</span>
-        <span class="p">]</span>
+        <span class="p">]</span></div>
 
+
+<div class="viewcode-block" id="WikiMenu._guide_pages">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.WikiMenu._guide_pages">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_guide_pages</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;1. Movement &amp; Navigation&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
@@ -659,7 +892,8 @@
                 <span class="s2">&quot;The road ahead is long and lined with peril. You will fall. You will rise.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
                 <span class="s2">&quot;Their mistakes are your lessons. Their triumphs are your inheritance.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
                 <span class="s2">&quot;Now go. The realm awaits.&quot;</span><span class="p">)},</span>
-        <span class="p">]</span>
+        <span class="p">]</span></div>
+
 
     <span class="c1"># ─── Layout ─────────────────────────────────────────────</span>
 <div class="viewcode-block" id="WikiMenu.layout">
@@ -725,6 +959,8 @@
 
 
     <span class="c1"># ─── Main Page ──────────────────────────────────────────</span>
+<div class="viewcode-block" id="WikiMenu._draw_main">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.WikiMenu._draw_main">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_draw_main</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">,</span> <span class="n">sw</span><span class="p">,</span> <span class="n">sh</span><span class="p">,</span> <span class="n">scale</span><span class="p">):</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_anim_time</span>
         <span class="n">theme</span> <span class="o">=</span> <span class="n">SECTION_THEMES</span><span class="p">[</span><span class="s2">&quot;main&quot;</span><span class="p">]</span>
@@ -827,9 +1063,12 @@
         <span class="n">vs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">font_small</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">&quot;Codex Arcanum </span><span class="se">\u2014</span><span class="s2"> First Edition&quot;</span><span class="p">),</span> <span class="kc">True</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ink_light</span><span class="p">)</span>
         <span class="n">vs</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mi">140</span> <span class="o">+</span> <span class="mi">50</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">t</span> <span class="o">*</span> <span class="mf">0.7</span><span class="p">)))</span>
         <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">vs</span><span class="p">,</span> <span class="p">((</span><span class="n">sw</span> <span class="o">-</span> <span class="n">vs</span><span class="o">.</span><span class="n">get_width</span><span class="p">())</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">sh</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="mi">42</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">back_btn</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">back_btn</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span></div>
+
 
     <span class="c1"># ─── TOC Page ───────────────────────────────────────────</span>
+<div class="viewcode-block" id="WikiMenu._draw_toc">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.WikiMenu._draw_toc">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_draw_toc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">,</span> <span class="n">sw</span><span class="p">,</span> <span class="n">sh</span><span class="p">,</span> <span class="n">scale</span><span class="p">):</span>
         <span class="n">theme</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_theme</span><span class="p">()</span>
         <span class="n">meta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_meta</span><span class="p">()</span>
@@ -903,9 +1142,12 @@
         <span class="n">hs</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mi">140</span> <span class="o">+</span> <span class="mi">60</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">t</span> <span class="o">*</span> <span class="mf">0.8</span><span class="p">)))</span>
         <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">hs</span><span class="p">,</span> <span class="p">(</span><span class="n">inner</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="p">(</span><span class="n">inner</span><span class="o">.</span><span class="n">width</span> <span class="o">-</span> <span class="n">hs</span><span class="o">.</span><span class="n">get_width</span><span class="p">())</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span>
                          <span class="n">inner</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">inner</span><span class="o">.</span><span class="n">height</span> <span class="o">-</span> <span class="n">hs</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span> <span class="o">-</span> <span class="mi">10</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">back_btn</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">back_btn</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span></div>
+
 
     <span class="c1"># ─── Content Page ───────────────────────────────────────</span>
+<div class="viewcode-block" id="WikiMenu._draw_content">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.WikiMenu._draw_content">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_draw_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">,</span> <span class="n">sw</span><span class="p">,</span> <span class="n">sh</span><span class="p">,</span> <span class="n">scale</span><span class="p">):</span>
         <span class="n">theme</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_theme</span><span class="p">()</span>
         <span class="n">pages</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_content</span><span class="p">()</span>
@@ -1015,7 +1257,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">toc_btn</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">mp</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sub_page</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">prev_btn</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sub_page</span> <span class="o">&lt;</span> <span class="n">mp</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_btn</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sub_page</span> <span class="o">&lt;</span> <span class="n">mp</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_btn</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span></div>
+
 
     <span class="c1"># ─── Events ─────────────────────────────────────────────</span>
 <div class="viewcode-block" id="WikiMenu.handle_event">
@@ -1059,6 +1302,8 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_toggle_toc</span><span class="p">();</span> <span class="k">return</span></div>
 
 
+<div class="viewcode-block" id="WikiMenu._handle_main_click">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.WikiMenu._handle_main_click">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_handle_main_click</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="n">scale</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">()</span>
         <span class="n">sw</span><span class="p">,</span> <span class="n">sh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_screen_size</span><span class="p">()</span>
@@ -1083,8 +1328,11 @@
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">MOUSEBUTTONDOWN</span> <span class="ow">and</span> <span class="n">br</span><span class="o">.</span><span class="n">collidepoint</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pos</span><span class="p">):</span>
                 <span class="n">cb</span><span class="p">();</span> <span class="k">return</span>
         <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">MOUSEBUTTONDOWN</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">back_btn</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">collidepoint</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pos</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">back_btn</span><span class="o">.</span><span class="n">on_click</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">back_btn</span><span class="o">.</span><span class="n">on_click</span><span class="p">()</span></div>
 
+
+<div class="viewcode-block" id="WikiMenu._handle_toc_click">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.WikiMenu._handle_toc_click">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_handle_toc_click</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_toc_entry_rects&#39;</span><span class="p">):</span> <span class="k">return</span>
         <span class="k">for</span> <span class="n">er</span><span class="p">,</span> <span class="n">pi</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_toc_entry_rects</span><span class="p">:</span>
@@ -1092,6 +1340,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_sub_page</span> <span class="o">=</span> <span class="n">pi</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_show_toc</span> <span class="o">=</span> <span class="kc">False</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_page_enter_time</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_transition_progress</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span> <span class="k">return</span></div>
+</div>
 
 </pre></div>
 

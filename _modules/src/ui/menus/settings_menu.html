@@ -92,6 +92,66 @@
 <div class="viewcode-block" id="SettingsMenu">
 <a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.SettingsMenu">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SettingsMenu</span><span class="p">(</span><span class="n">Menu</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Settings screen for display mode, language, brightness, and audio volume.</span>
+
+<span class="sd">    Features animated background effects and gold-styled sliders.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        app (App):</span>
+<span class="sd">            The main application instance.</span>
+<span class="sd">        buttons (list[Button]):</span>
+<span class="sd">            List of setting buttons (display mode, language, back).</span>
+<span class="sd">        brightness_slider (Slider):</span>
+<span class="sd">            Slider control for screen brightness.</span>
+<span class="sd">        audio_slider (Slider):</span>
+<span class="sd">            Slider control for audio volume.</span>
+<span class="sd">        _label_font (pygame.font.Font):</span>
+<span class="sd">            Font for setting labels.</span>
+<span class="sd">        _title_font (pygame.font.Font):</span>
+<span class="sd">            Large font for the title.</span>
+<span class="sd">        font_small (pygame.font.Font):</span>
+<span class="sd">            Small font for captions.</span>
+<span class="sd">        _anim_time (float):</span>
+<span class="sd">            Accumulated animation time.</span>
+<span class="sd">        _launch_phase (float):</span>
+<span class="sd">            Phase of the launch animation.</span>
+<span class="sd">        _particles (list):</span>
+<span class="sd">            Decorative ambient particles.</span>
+<span class="sd">        _stars (list):</span>
+<span class="sd">            Background star effects.</span>
+<span class="sd">        _light_rays (list):</span>
+<span class="sd">            Light ray effects.</span>
+<span class="sd">        _embers (list):</span>
+<span class="sd">            Ambient ember particles.</span>
+<span class="sd">        _bursts (list):</span>
+<span class="sd">            Launch burst effects.</span>
+<span class="sd">        _sparkles (list):</span>
+<span class="sd">            Title sparkle effects.</span>
+<span class="sd">        _panel_rect (pygame.Rect):</span>
+<span class="sd">            Rectangle for the central panel.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(app):</span>
+<span class="sd">            Initialize the settings menu.</span>
+<span class="sd">        _display_mode_label():</span>
+<span class="sd">            Get the label for the current display mode.</span>
+<span class="sd">        toggle_display_mode():</span>
+<span class="sd">            Toggle between fullscreen and windowed mode.</span>
+<span class="sd">        toggle_language():</span>
+<span class="sd">            Cycle through available languages.</span>
+<span class="sd">        back_to_main():</span>
+<span class="sd">            Return to the main menu.</span>
+<span class="sd">        handle_event(event):</span>
+<span class="sd">            Handle input events.</span>
+<span class="sd">        update(dt):</span>
+<span class="sd">            Update animations and effects.</span>
+<span class="sd">        draw(screen):</span>
+<span class="sd">            Render the settings menu.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SettingsMenu.__init__">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.SettingsMenu.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="s2">&quot;App&quot;</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
         <span class="n">scale</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">()</span>
@@ -114,11 +174,13 @@
                    <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">back_to_main</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="s1">&#39;shield&#39;</span><span class="p">),</span>
         <span class="p">]</span>
 
-        <span class="n">initial_volume</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">music</span><span class="o">.</span><span class="n">get_volume</span><span class="p">()</span> <span class="k">if</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">get_init</span><span class="p">()</span> <span class="k">else</span> <span class="mf">0.3</span>
-
         <span class="k">def</span><span class="w"> </span><span class="nf">set_brightness</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
             <span class="n">cfg</span><span class="o">.</span><span class="n">USER_SCREEN_BRIGHTNESS</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
             <span class="n">cfg</span><span class="o">.</span><span class="n">update_brightness</span><span class="p">()</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">set_volume</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+            <span class="n">cfg</span><span class="o">.</span><span class="n">MUSIC_VOLUME</span> <span class="o">=</span> <span class="n">v</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">music</span><span class="o">.</span><span class="n">set_volume</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
 
         <span class="n">track_len</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">340</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
         <span class="n">sh2</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">44</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
@@ -133,8 +195,8 @@
             <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">sh2</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">6</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)),</span>
             <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
             <span class="nb">max</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">22</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)),</span> <span class="nb">max</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">22</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)),</span>
-            <span class="n">track_len</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">initial_volume</span><span class="p">,</span>
-            <span class="n">action</span><span class="o">=</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">music</span><span class="o">.</span><span class="n">set_volume</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">style</span><span class="o">=</span><span class="s1">&#39;gold&#39;</span><span class="p">,</span>
+            <span class="n">track_len</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">MUSIC_VOLUME</span><span class="p">,</span>
+            <span class="n">action</span><span class="o">=</span><span class="n">set_volume</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="s1">&#39;gold&#39;</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_label_font</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get_font</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">28</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)))</span>
@@ -152,7 +214,8 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_panel_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_label_positions</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_surf_cache</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_surf_cache</span> <span class="o">=</span> <span class="p">{}</span></div>
+
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_surf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">sw</span><span class="p">,</span> <span class="n">sh</span><span class="p">):</span>
         <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">sw</span><span class="p">,</span> <span class="n">sh</span><span class="p">)</span>
@@ -164,8 +227,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_surf_cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">surf</span>
         <span class="k">return</span> <span class="n">surf</span>
 
+<div class="viewcode-block" id="SettingsMenu._display_mode_label">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.SettingsMenu._display_mode_label">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_display_mode_label</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;MODE: </span><span class="si">{</span><span class="s1">&#39;FULLSCREEN&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">is_fullscreen</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;WINDOW&#39;</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;MODE: </span><span class="si">{</span><span class="s1">&#39;FULLSCREEN&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">is_fullscreen</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;WINDOW&#39;</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
 
 <div class="viewcode-block" id="SettingsMenu.on_enter">
 <a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.SettingsMenu.on_enter">[docs]</a>
@@ -174,6 +240,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_launch_phase</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_bursts</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sparkles</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">audio_slider</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">MUSIC_VOLUME</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">brightness_slider</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">USER_SCREEN_BRIGHTNESS</span>
         <span class="n">sw</span><span class="p">,</span> <span class="n">sh</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_WIDTH</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">SCREEN_HEIGHT</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stars</span><span class="p">:</span>
