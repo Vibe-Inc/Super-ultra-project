@@ -1350,7 +1350,10 @@ class Game(State):
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
-                self.app.manager.set_state("pause")
+                if self.app.INV_manager.player_inventory_opened:
+                    self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
+                else:
+                    self.app.manager.set_state("pause")
                 
             if event.key == pygame.K_q:
                 # Q-drop priority (no longer drops a held/dragged item):
