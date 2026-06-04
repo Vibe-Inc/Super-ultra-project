@@ -294,7 +294,8 @@ def _draw_portrait_frame(surf, x, y, size, theme, scale, pulse):
 
 SECTIONS_META = {
     "bestiary": {"subtitle": _("Foes of the Realm"), "icon": "\u2694", "entries": [
-        _("The Brute"), _("The Venomous"), _("The Arcanist"), _("The Trickster"), _("The Bomber")]},
+        _("The Brute"), _("The Venomous"), _("The Arcanist"), _("The Trickster"), _("The Bomber"),
+        _("The Stalker"), _("The Skirmisher"), _("The Guardian")]},
     "magic": {"subtitle": _("Spells of Power"), "icon": "\u2726", "entries": [
         _("Fireball"), _("Flame Shield"), _("Frost Nova"), _("Ice Armor"),
         _("Glacial Cascade"), _("Chain Lightning"), _("Thunderstrike"),
@@ -471,6 +472,18 @@ class WikiMenu(Menu):
                 "A hiss of steam, a flicker of arc-light\u2014the Bomber lumbers in on riveted peg legs.\n\n"
                 "Brass-plated and pressure-sealed, these wandering automatons keep their distance while lobbing timed bombs that arc through the air with deceptive grace.\n\n"
                 "Abilities: Timed Bomb (95 blast radius, 80 knockback, 0.9s fuse). Health: 125. Speed: 105.")},
+            {"title": _("The Stalker"), "portrait": "stalker", "body": _(
+                "Where shadow pools deep and torchlight fails, the Stalker waits\u2014patient, silent, and unseen.\n\n"
+                "Cloaked and masked, these grim assassins favor the blade over brute strength. They remember your last position long after you've broken line of sight, and they are quick to re-pick a fresh path when cut off.\n\n"
+                "Abilities: Blade Strike (40 range), Memory Trail (3s pursuit after losing sight), Repath (0.5s). Health: 110. Speed: 120.")},
+            {"title": _("The Skirmisher"), "portrait": "skirmisher", "body": _(
+                "Swift as the raptor it resembles, the Skirmisher darts across the battlefield with javelin raised and crest fluttering.\n\n"
+                "These winged hunters prefer to keep their distance\u2014harrying from the fringes, circling, striking, and vanishing before the counter-blow can land. Tribal warpaint marks the kills they've claimed.\n\n"
+                "Abilities: Javelin Toss (35 range), Orbit (preferred 80\u2013170, radius 130). Health: 85. Speed: 140.")},
+            {"title": _("The Guardian"), "portrait": "guardian", "body": _(
+                "Forged in the fires of a forgotten forge, the Guardian is a hulking iron sentinel bound to a place of power.\n\n"
+                "Steam hisses from brass-banded joints and copper pistons pump with every ponderous step. It will not stray far from its post\u2014but woe to any intruder that crosses the threshold it defends.\n\n"
+                "Abilities: Heavy Slam (45 range, knockback), Guard Post (radius 320, leash 90), Patrol Wait (0.8s). Health: 140. Speed: 100.")},
         ]
 
     def _magic_pages(self):

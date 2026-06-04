@@ -113,12 +113,26 @@ def _palette_for(style: str) -> dict:
             "shadow": (0, 0, 0, 48),
         },
         "guardian": {
-            "armor": (138, 133, 122), "armor_light": (175, 170, 155), "armor_dark": (62, 60, 68),
-            "armor_mid": (155, 150, 138), "accent": (210, 190, 82), "accent_dark": (165, 145, 55),
-            "eye_white": (242, 242, 248), "eye_pupil": (82, 82, 92),
-            "shield": (160, 150, 130), "shield_light": (185, 175, 155), "shield_dark": (115, 108, 92),
-            "crest": (215, 185, 62), "crest_dark": (175, 145, 40),
-            "plume": (195, 65, 55), "plume_light": (225, 95, 85), "plume_dark": (145, 38, 30), "shadow": (0, 0, 0, 48),
+            # iron / steel body shell (warm, weathered)
+            "iron": (132, 122, 110), "iron_light": (172, 160, 145), "iron_dark": (62, 55, 48),
+            "iron_mid": (102, 92, 80),
+            # brass plating / rivets / bolts
+            "brass": (200, 165, 80), "brass_light": (235, 205, 130), "brass_dark": (140, 110, 45),
+            "brass_mid": (170, 135, 65),
+            # copper pipes / accents
+            "copper": (192, 110, 60), "copper_light": (225, 150, 100), "copper_dark": (130, 65, 30),
+            # furnace glow (ember / boiler heat)
+            "ember": (255, 175, 60), "ember_dark": (200, 95, 30), "ember_glow": (255, 215, 130),
+            "eye_white": (255, 220, 150), "eye_pupil": (200, 95, 30),
+            "eye_glow": (255, 175, 60, 110),
+            # dark bolts and rivets
+            "rivet": (50, 42, 35), "rivet_light": (115, 100, 85),
+            # shield plating (iron with brass trim)
+            "shield": (108, 98, 88), "shield_light": (148, 135, 120), "shield_dark": (62, 55, 48),
+            "shield_trim": (200, 165, 80), "shield_trim_dark": (140, 110, 45),
+            # steam / smoke
+            "steam": (220, 220, 225, 90), "smoke": (90, 80, 75, 110),
+            "shadow": (0, 0, 0, 48),
         },
     }
     return palettes.get(style, palettes["brute"])
@@ -1230,46 +1244,382 @@ def _draw_skirmisher(s, w, h, cx, cy, p, dir, bob, frame):
 
 
 # ============================================================
-# GUARDIAN — heavy knight with armor, shield, plume
+# GUARDIAN — large industrial robot: iron chassis, exposed gears, steam
 # ============================================================
 def _draw_guardian(s, w, h, cx, cy, p, dir, bob, frame):
-    _draw_shadow(s, cx, h, p, bob)
+    # -- heavy ground shadow --
+    sh_surf = pygame.Surface((w, h), pygame.SRCALPHA)
+    pygame.draw.ellipse(sh_surf, p["shadow"], (cx - 20, h - 8 + bob, 40, 12))
+    s.blit(sh_surf, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
     lo, ro, la, ra = _walk_offset(frame)
-    clank = [0, 0, -1, 0][frame]
-    _draw_leg_pair(s, cx, int(h * 0.62), bob, 12, 18, p, lo, ro, "armor_dark", "armor")
-    bw = int(w * 0.62); bh = int(h * 0.44)
-    bx = cx - bw // 2; by = int(h * 0.30) + bob + clank
-    pygame.draw.rect(s, p["armor_dark"], (bx, by, bw, bh), border_radius=8)
-    pygame.draw.rect(s, p["armor"], (bx + 3, by + 3, bw - 6, bh - 6), border_radius=7)
-    pygame.draw.rect(s, p["armor_light"], (bx + 6, by + 6, bw - 12, bh - 12), border_radius=6)
-    for rvy in (by + 8, by + bh - 8):
-        for rvx in (bx + 8, bx + bw - 8):
-            pygame.draw.circle(s, p["accent_dark"], (rvx, rvy), 2)
-            pygame.draw.circle(s, p["accent"], (rvx, rvy), 1)
-    er = 7; ey = by + int(bh * 0.48)
-    pygame.draw.circle(s, p["crest_dark"], (cx, ey), er)
-    pygame.draw.circle(s, p["crest"], (cx, ey), er - 1)
-    pygame.draw.circle(s, p["accent"], (cx, ey), er - 3)
-    pygame.draw.line(s, p["crest_dark"], (cx, ey - 4), (cx, ey + 4), 2)
-    pygame.draw.line(s, p["crest_dark"], (cx - 4, ey), (cx + 4, ey), 2)
-    for sdx in (bx - 7, bx + bw - 3):
-        pygame.draw.ellipse(s, p["armor"], (sdx, by - 2, 14, 12))
-        pygame.draw.ellipse(s, p["armor_light"], (sdx + 2, by, 10, 8))
-    _draw_arm_pair(s, bx, bw, by, bob, 8, int(h * 0.26), p, la, ra, "armor_dark", "armor", 4)
+    clank = [0, -1, 0, 1][frame]  # weighty body shift
+
+    # -- mechanical legs: heavy iron limbs with brass knee gears and rivets --
+    leg_top = int(h * 0.66) + bob + clank // 2
+    leg_bottom = h - 8 + bob
+    for side, off in [(-1, lo), (1, ro)]:
+        lx = cx + side * 11 + off // 2
+        # dark outline
+        pygame.draw.rect(s, p["iron_dark"], (lx - 5, leg_top, 10, leg_bottom - leg_top), border_radius=2)
+        pygame.draw.rect(s, p["iron"], (lx - 4, leg_top + 1, 8, leg_bottom - leg_top - 2), border_radius=2)
+        pygame.draw.line(s, p["iron_light"], (lx - 2, leg_top + 2), (lx - 2, leg_bottom - 2), 1)
+        pygame.draw.line(s, p["iron_dark"], (lx + 3, leg_top + 2), (lx + 3, leg_bottom - 2), 1)
+        # brass knee band with rivets
+        ky = (leg_top + leg_bottom) // 2
+        pygame.draw.rect(s, p["brass_dark"], (lx - 5, ky - 3, 10, 6))
+        pygame.draw.rect(s, p["brass"], (lx - 4, ky - 2, 8, 4))
+        pygame.draw.line(s, p["brass_light"], (lx - 3, ky - 1), (lx + 3, ky - 1), 1)
+        pygame.draw.circle(s, p["rivet"], (lx - 2, ky), 1)
+        pygame.draw.circle(s, p["rivet"], (lx + 2, ky), 1)
+        # copper piston rod visible on the side
+        pygame.draw.line(s, p["copper_dark"], (lx + side * 4, ky - 3), (lx + side * 4, ky + 3), 1)
+        pygame.draw.line(s, p["copper"], (lx + side * 4, ky - 2), (lx + side * 4, ky + 2), 1)
+        # foot (brass-banded iron disc)
+        fy = leg_bottom
+        pygame.draw.ellipse(s, p["iron_dark"], (lx - 7, fy - 2, 14, 6))
+        pygame.draw.ellipse(s, p["iron"], (lx - 6, fy - 2, 12, 5))
+        pygame.draw.ellipse(s, p["brass"], (lx - 6, fy - 1, 12, 1))
+        pygame.draw.line(s, p["iron_light"], (lx - 4, fy - 1), (lx + 1, fy - 1), 1)
+        # steam vent on foot
+        pygame.draw.circle(s, p["copper_dark"], (lx, fy - 3), 1)
+
+    # -- steam puff from under feet (ambient atmosphere) --
+    steam_surf = pygame.Surface((w, h), pygame.SRCALPHA)
+    for i, (sx, sy_off) in enumerate([(cx - 14, -2), (cx + 12, -1)]):
+        sy = h - 12 + bob + sy_off
+        sxs = sx + [0, -1, 1, 0][frame]
+        sys = sy - [0, 2, 4, 6][frame]
+        for k, (dx, dy, r) in enumerate([(0, 0, 3), (-2, -2, 2), (2, -1, 2)]):
+            alpha = [70, 50, 30][k]
+            pygame.draw.circle(steam_surf, (*p["steam"][:3], alpha),
+                               (sxs + dx, sys + dy), r)
+    s.blit(steam_surf, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # -- body: large boxy iron torso with rivets and copper piping --
+    bw = int(w * 0.70)
+    bh = int(h * 0.50)
+    bx = cx - bw // 2
+    by = int(h * 0.26) + bob + clank
+    # back outline
+    pygame.draw.rect(s, p["iron_dark"], (bx - 1, by, bw + 2, bh + 1), border_radius=3)
+    # main iron shell
+    pygame.draw.rect(s, p["iron"], (bx, by + 1, bw, bh - 2), border_radius=2)
+    # top highlight
+    pygame.draw.rect(s, p["iron_light"], (bx + 3, by + 1, bw - 6, 2))
+    # bottom shadow
+    pygame.draw.rect(s, p["iron_dark"], (bx + 3, by + bh - 4, bw - 6, 2))
+    # left/right edges
+    pygame.draw.line(s, p["iron_light"], (bx + 1, by + 3), (bx + 1, by + bh - 4), 1)
+    pygame.draw.line(s, p["iron_dark"], (bx + bw - 2, by + 3), (bx + bw - 2, by + bh - 4), 1)
+    # brass seam rivets along edges
+    for rvy in range(by + 5, by + bh - 4, 5):
+        pygame.draw.circle(s, p["rivet"], (bx + 3, rvy), 1)
+        pygame.draw.circle(s, p["rivet"], (bx + bw - 4, rvy), 1)
+    # horizontal brass band across middle
+    band_y = by + bh // 3
+    pygame.draw.rect(s, p["brass_dark"], (bx + 2, band_y, bw - 4, 4))
+    pygame.draw.rect(s, p["brass"], (bx + 3, band_y, bw - 6, 3))
+    pygame.draw.line(s, p["brass_light"], (bx + 3, band_y), (bx + bw - 4, band_y), 1)
+    pygame.draw.circle(s, p["rivet"], (bx + 5, band_y + 1), 1)
+    pygame.draw.circle(s, p["rivet"], (bx + bw - 6, band_y + 1), 1)
+    # copper pipe running vertically on the right side
+    pipe_x = bx + bw - 6
+    pygame.draw.line(s, p["copper_dark"], (pipe_x, by + 2), (pipe_x, by + bh - 3), 2)
+    pygame.draw.line(s, p["copper"], (pipe_x, by + 2), (pipe_x, by + bh - 3), 1)
+    pygame.draw.line(s, p["copper_light"], (pipe_x - 1, by + 3), (pipe_x - 1, by + bh - 4), 1)
+    # pipe joint valves
+    for vj_y in (by + 8, by + bh - 8):
+        pygame.draw.rect(s, p["brass_dark"], (pipe_x - 2, vj_y - 1, 5, 3))
+        pygame.draw.rect(s, p["brass"], (pipe_x - 1, vj_y, 3, 1))
+
+    # -- exposed gear cavity (chest) with rotating gear --
+    gear_cx = cx - 4
+    gear_cy = by + int(bh * 0.65)
+    gear_r = 7
+    # cavity plate (dark recess)
+    pygame.draw.circle(s, p["iron_dark"], (gear_cx, gear_cy), gear_r + 2)
+    pygame.draw.circle(s, p["iron_mid"], (gear_cx, gear_cy), gear_r + 1)
+    # gear teeth (rotating with frame)
+    teeth = 8
+    gear_angle = frame * (math.pi / (teeth * 2))  # rotates between frames
+    for i in range(teeth):
+        a = gear_angle + i * (2 * math.pi / teeth)
+        tx1 = gear_cx + int((gear_r - 1) * math.cos(a))
+        ty1 = gear_cy + int((gear_r - 1) * math.sin(a))
+        tx2 = gear_cx + int((gear_r + 1) * math.cos(a))
+        ty2 = gear_cy + int((gear_r + 1) * math.sin(a))
+        pygame.draw.line(s, p["brass_dark"], (gear_cx, gear_cy), (tx2, ty2), 2)
+        pygame.draw.line(s, p["brass"], (gear_cx, gear_cy), (tx1, ty1), 1)
+    # gear body
+    pygame.draw.circle(s, p["brass"], (gear_cx, gear_cy), gear_r - 1)
+    pygame.draw.circle(s, p["brass_dark"], (gear_cx, gear_cy), gear_r - 1, 1)
+    pygame.draw.circle(s, p["brass_mid"], (gear_cx, gear_cy), gear_r - 2)
+    # gear hub
+    pygame.draw.circle(s, p["iron_dark"], (gear_cx, gear_cy), 2)
+    pygame.draw.circle(s, p["copper"], (gear_cx, gear_cy), 1)
+    # second smaller gear interlocking
+    gear2_cx = gear_cx + gear_r + 3
+    gear2_cy = gear_cy - 2
+    gear2_r = 4
+    gear2_angle = -gear_angle * 1.6  # counter-rotation
+    for i in range(6):
+        a = gear2_angle + i * (2 * math.pi / 6)
+        tx1 = gear2_cx + int((gear2_r - 1) * math.cos(a))
+        ty1 = gear2_cy + int((gear2_r - 1) * math.sin(a))
+        tx2 = gear2_cx + int((gear2_r + 1) * math.cos(a))
+        ty2 = gear2_cy + int((gear2_r + 1) * math.sin(a))
+        pygame.draw.line(s, p["copper_dark"], (gear2_cx, gear2_cy), (tx2, ty2), 2)
+        pygame.draw.line(s, p["copper"], (gear2_cx, gear2_cy), (tx1, ty1), 1)
+    pygame.draw.circle(s, p["copper"], (gear2_cx, gear2_cy), gear2_r - 1)
+    pygame.draw.circle(s, p["copper_dark"], (gear2_cx, gear2_cy), 1)
+
+    # -- pressure gauge (next to the gear cavity) --
+    gauge_cx = cx + 10
+    gauge_cy = by + int(bh * 0.65)
+    pygame.draw.circle(s, p["brass_dark"], (gauge_cx, gauge_cy), 4)
+    pygame.draw.circle(s, p["brass"], (gauge_cx, gauge_cy), 3)
+    pygame.draw.circle(s, p["iron_mid"], (gauge_cx, gauge_cy), 2)
+    # gauge needle (wiggles)
+    needle = [(-2, 1), (-1, -2), (1, -2), (2, 1)][frame]
+    pygame.draw.line(s, p["ember_dark"], (gauge_cx, gauge_cy),
+                     (gauge_cx + needle[0], gauge_cy + needle[1]), 1)
+    pygame.draw.circle(s, p["rivet"], (gauge_cx, gauge_cy), 1)
+
+    # -- shoulder pauldrons with small gear caps --
+    for sdx in (bx - 7, bx + bw - 5):
+        pygame.draw.rect(s, p["iron_dark"], (sdx, by - 2, 12, 11), border_radius=3)
+        pygame.draw.rect(s, p["iron"], (sdx + 1, by - 1, 10, 9), border_radius=2)
+        pygame.draw.line(s, p["iron_light"], (sdx + 2, by), (sdx + 2, by + 7), 1)
+        pygame.draw.circle(s, p["rivet"], (sdx + 3, by + 1), 1)
+        pygame.draw.circle(s, p["rivet"], (sdx + 8, by + 1), 1)
+        # brass band on pauldron
+        pygame.draw.line(s, p["brass"], (sdx + 2, by + 5), (sdx + 9, by + 5), 1)
+        # small gear cap on top
+        cap_gx = sdx + 5
+        cap_gy = by - 4
+        cap_ang = -frame * math.pi / 4
+        for i in range(5):
+            a = cap_ang + i * (2 * math.pi / 5)
+            tx1 = cap_gx + int(2 * math.cos(a))
+            ty1 = cap_gy + int(2 * math.sin(a))
+            tx2 = cap_gx + int(3 * math.cos(a))
+            ty2 = cap_gy + int(3 * math.sin(a))
+            pygame.draw.line(s, p["brass_dark"], (cap_gx, cap_gy), (tx2, ty2), 1)
+        pygame.draw.circle(s, p["brass"], (cap_gx, cap_gy), 2)
+        pygame.draw.circle(s, p["rivet"], (cap_gx, cap_gy), 1)
+
+    # -- mechanical arms (pistons with brass joints and copper rods) --
+    shoulder_y = by + 3
+    elbow_y = by + int(bh * 0.50)
+    hand_y = by + bh + int(h * 0.05)
+    for side, swing in [(-1, la), (1, ra)]:
+        sx = cx + side * (bw // 2 - 1)
+        ex = sx + side * 3 + swing // 3
+        wx = sx + side * 5 + swing
+        # shoulder brass cap
+        pygame.draw.circle(s, p["iron_dark"], (sx, shoulder_y + 2), 3)
+        pygame.draw.circle(s, p["brass"], (sx, shoulder_y + 2), 2)
+        pygame.draw.circle(s, p["brass_light"], (sx - 1, shoulder_y + 1), 1)
+        # upper arm piston (iron)
+        pygame.draw.line(s, p["iron_dark"], (sx, shoulder_y + 3), (ex, elbow_y), 4)
+        pygame.draw.line(s, p["iron"], (sx, shoulder_y + 3), (ex, elbow_y), 2)
+        # copper rod alongside
+        rod_off = side * 3
+        pygame.draw.line(s, p["copper_dark"], (sx + rod_off, shoulder_y + 3),
+                         (ex + rod_off, elbow_y), 1)
+        pygame.draw.line(s, p["copper"], (sx + rod_off, shoulder_y + 4),
+                         (ex + rod_off, elbow_y - 1), 1)
+        # elbow brass joint
+        pygame.draw.circle(s, p["iron_dark"], (ex, elbow_y), 3)
+        pygame.draw.circle(s, p["brass"], (ex, elbow_y), 2)
+        pygame.draw.circle(s, p["brass_light"], (ex - 1, elbow_y - 1), 1)
+        # forearm piston
+        pygame.draw.line(s, p["iron_dark"], (ex, elbow_y), (wx, hand_y), 4)
+        pygame.draw.line(s, p["iron"], (ex, elbow_y), (wx, hand_y), 2)
+        pygame.draw.line(s, p["copper_dark"], (ex + rod_off, elbow_y),
+                         (wx + rod_off, hand_y), 1)
+        pygame.draw.line(s, p["copper"], (ex + rod_off, elbow_y + 1),
+                         (wx + rod_off, hand_y - 1), 1)
+        # brass-banded claw hand
+        pygame.draw.circle(s, p["iron_dark"], (wx, hand_y), 4)
+        pygame.draw.circle(s, p["iron"], (wx, hand_y), 3)
+        pygame.draw.circle(s, p["brass"], (wx, hand_y), 1)
+        pygame.draw.line(s, p["iron_dark"], (wx, hand_y), (wx + side * 2, hand_y + 3), 2)
+        pygame.draw.line(s, p["iron_dark"], (wx, hand_y), (wx - side * 1, hand_y + 3), 2)
+
+    # -- neck (segmented iron collar with brass ring) --
+    hr = int(w * 0.18)
+    hx = cx
+    hy = int(h * 0.20) + bob
+    head_bob = [0, -1, 0, 1][frame]
+    hy += head_bob
+    pygame.draw.rect(s, p["iron_dark"], (hx - 5, hy + hr - 3, 10, 6))
+    pygame.draw.rect(s, p["iron"], (hx - 4, hy + hr - 2, 8, 4))
+    pygame.draw.line(s, p["brass"], (hx - 4, hy + hr - 1), (hx + 4, hy + hr - 1), 1)
+    pygame.draw.line(s, p["iron_dark"], (hx - 4, hy + hr + 1), (hx + 4, hy + hr + 1), 1)
+    pygame.draw.circle(s, p["rivet"], (hx - 3, hy + hr), 1)
+    pygame.draw.circle(s, p["rivet"], (hx + 3, hy + hr), 1)
+
+    # -- head: domed iron boiler with rivets and brass plates --
+    # dome
+    pygame.draw.ellipse(s, p["iron_dark"], (hx - hr - 1, hy - hr - 2, hr * 2 + 2, hr * 2 + 3))
+    pygame.draw.ellipse(s, p["iron"], (hx - hr, hy - hr - 1, hr * 2, hr * 2 + 1))
+    # dome highlight
+    pygame.draw.arc(s, p["iron_light"], (hx - hr + 1, hy - hr, hr * 2 - 2, hr * 2 - 1), 2.0, 2.7, 2)
+    # brass plate at jaw
+    pygame.draw.rect(s, p["brass_dark"], (hx - hr + 3, hy + 1, hr * 2 - 6, 6), border_radius=1)
+    pygame.draw.rect(s, p["brass"], (hx - hr + 4, hy + 1, hr * 2 - 8, 4), border_radius=1)
+    pygame.draw.line(s, p["brass_light"], (hx - hr + 4, hy + 1), (hx + hr - 4, hy + 1), 1)
+    # rivets on the dome
+    for r_pos in [(hx - hr + 3, hy - 2), (hx - 4, hy - hr + 3),
+                  (hx + 4, hy - hr + 3), (hx + hr - 4, hy - 2),
+                  (hx - hr + 5, hy + 2), (hx + hr - 5, hy + 2)]:
+        pygame.draw.circle(s, p["rivet"], r_pos, 1)
+    pygame.draw.circle(s, p["rivet_light"], (hx - 4, hy - hr + 3), 1)
+    # side ear / gauge vents
+    for side in (-1, 1):
+        ex2 = hx + side * (hr - 1)
+        pygame.draw.rect(s, p["brass_dark"], (ex2 - 1, hy - 1, 2, 4))
+        pygame.draw.line(s, p["brass_light"], (ex2, hy), (ex2, hy + 2), 1)
+
+    # -- furnace eye (warm ember glow, no futuristic crosshair) --
+    eye_y = hy + 1
+    eye_x = hx + (2 if dir == "side" else 0)
+    # glow aura
+    eg = pygame.Surface((18, 18), pygame.SRCALPHA)
+    pygame.draw.circle(eg, p["eye_glow"], (9, 9), 8)
+    s.blit(eg, (eye_x - 9, eye_y - 9), special_flags=pygame.BLEND_ALPHA_SDL2)
+    # outer iron bezel
+    pygame.draw.circle(s, p["iron_dark"], (eye_x, eye_y), 7)
+    pygame.draw.circle(s, p["iron"], (eye_x, eye_y), 6)
+    pygame.draw.circle(s, p["brass"], (eye_x, eye_y), 5, 1)
+    # furnace interior
+    pygame.draw.circle(s, p["ember_dark"], (eye_x, eye_y), 4)
+    pygame.draw.circle(s, p["ember"], (eye_x, eye_y), 3)
+    # bright ember center
+    pygame.draw.circle(s, p["ember_glow"], (eye_x, eye_y), 2)
+    pygame.draw.circle(s, (255, 240, 200), (eye_x, eye_y), 1)
+    # aperture slats (industrial)
+    for slat_off in (-2, 0, 2):
+        pygame.draw.line(s, p["iron_dark"], (eye_x - 3, eye_y + slat_off),
+                         (eye_x + 3, eye_y + slat_off), 1)
+
+    # -- smokestack on top of dome (with rising steam) --
+    stack_x = hx + 2
+    stack_y = hy - hr - 1
+    # stack base
+    pygame.draw.rect(s, p["iron_dark"], (stack_x - 3, stack_y - 5, 6, 5))
+    pygame.draw.rect(s, p["iron"], (stack_x - 2, stack_y - 4, 4, 4))
+    pygame.draw.line(s, p["iron_light"], (stack_x - 1, stack_y - 3), (stack_x - 1, stack_y - 1), 1)
+    pygame.draw.circle(s, p["rivet"], (stack_x - 1, stack_y - 2), 1)
+    pygame.draw.circle(s, p["rivet"], (stack_x + 1, stack_y - 2), 1)
+    # stack top
+    pygame.draw.rect(s, p["iron_dark"], (stack_x - 3, stack_y - 8, 6, 3))
+    pygame.draw.rect(s, p["brass_dark"], (stack_x - 3, stack_y - 9, 6, 1))
+    # rising steam puffs
+    steam_top = pygame.Surface((w, h), pygame.SRCALPHA)
+    for k, (dx, dy) in enumerate([(0, -1), (-2, -3), (2, -2), (-1, -5), (1, -4)]):
+        rx = stack_x + dx + [0, -1, 1, 0, -1][frame]
+        ry = stack_y - 9 + dy - (frame + k) % 3 - 4
+        r = [2, 3, 2, 3, 2][k]
+        alpha = [110, 80, 60, 40, 25][k]
+        pygame.draw.circle(steam_top, (*p["steam"][:3], alpha), (rx, ry), r)
+    s.blit(steam_top, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # -- SHIELD (drawn last so it sits in front of the arm) --
     if dir == "side":
-        sh = [(bx - 10, by + 2), (bx - 4, by - 4), (bx - 4, by + int(bh * 0.7)), (bx - 10, by + int(bh * 0.65))]
-        pygame.draw.polygon(s, p["shield"], sh)
-        pygame.draw.polygon(s, p["armor_light"], [(p2[0] + 2, p2[1] + 2) for p2 in sh], 1)
-    hr = int(w * 0.17); hx, hy = cx, int(h * 0.20) + bob
-    pygame.draw.circle(s, p["armor"], (hx, hy), hr)
-    visor = [(hx - hr + 2, hy - 2), (hx + hr - 2, hy - 2), (hx + hr - 6, hy + 6), (hx - hr + 6, hy + 6)]
-    pygame.draw.polygon(s, p["armor_light"], visor)
-    esp = 6 if dir != "side" else 5; so = 2 if dir == "side" else 0
-    _draw_eye_pair(s, hx, hy + 1, esp, p, so)
-    py5 = hy - hr - 4
-    pl = [(hx - 6, py5), (hx, py5 - 10), (hx + 6, py5)]
-    pygame.draw.polygon(s, p["plume"], pl)
-    pygame.draw.polygon(s, p["plume_light"], [(hx - 3, py5 - 2), (hx, py5 - 7), (hx + 3, py5 - 2)])
+        # prominent heater-style iron shield on the right (leading edge)
+        sh_cx = cx + bw // 2 - 1
+        sh_cy = by + int(bh * 0.5)
+        sw_out = int(w * 0.30)
+        sh_h = int(h * 0.58)
+        sh_pts = [
+            (sh_cx, sh_cy - sh_h // 2),
+            (sh_cx + sw_out // 2, sh_cy - sh_h // 4),
+            (sh_cx + sw_out // 2, sh_cy + sh_h // 4),
+            (sh_cx, sh_cy + sh_h // 2),
+            (sh_cx - sw_out // 2, sh_cy + sh_h // 4),
+            (sh_cx - sw_out // 2, sh_cy - sh_h // 4),
+        ]
+        pygame.draw.polygon(s, p["shield_dark"], sh_pts)
+        sh_inner = [
+            (sh_cx, sh_cy - sh_h // 2 + 1),
+            (sh_cx + sw_out // 2 - 1, sh_cy - sh_h // 4 + 1),
+            (sh_cx + sw_out // 2 - 1, sh_cy + sh_h // 4 - 1),
+            (sh_cx, sh_cy + sh_h // 2 - 1),
+            (sh_cx - sw_out // 2 + 1, sh_cy + sh_h // 4 - 1),
+            (sh_cx - sw_out // 2 + 1, sh_cy - sh_h // 4 + 1),
+        ]
+        pygame.draw.polygon(s, p["shield"], sh_inner)
+        # brass trim border
+        for i in range(len(sh_inner) - 1):
+            pygame.draw.line(s, p["shield_trim"], sh_inner[i], sh_inner[i + 1], 1)
+        pygame.draw.line(s, p["shield_trim"], sh_inner[5], sh_inner[0], 1)
+        pygame.draw.line(s, p["shield_trim_dark"], sh_inner[3], sh_inner[4], 1)
+        # left edge highlight
+        pygame.draw.line(s, p["shield_light"], sh_inner[4], sh_inner[5], 1)
+        # brass rivets on shield
+        for riv_pos in [
+            (sh_inner[0][0] - 1, sh_inner[0][1] + 3),
+            (sh_inner[1][0] - 2, sh_inner[1][1] + 1),
+            (sh_inner[2][0] - 2, sh_inner[2][1] - 1),
+            (sh_inner[3][0] + 1, sh_inner[3][1] - 3),
+            (sh_inner[5][0] + 1, sh_inner[5][1] + 1),
+        ]:
+            pygame.draw.circle(s, p["brass_dark"], riv_pos, 1)
+        # central rotating gear emblem
+        emb_cx = sh_cx + 1
+        emb_cy = sh_cy
+        emb_ang = -frame * math.pi / 5
+        for i in range(6):
+            a = emb_ang + i * (2 * math.pi / 6)
+            tx1 = emb_cx + int(3 * math.cos(a))
+            ty1 = emb_cy + int(3 * math.sin(a))
+            tx2 = emb_cx + int(4 * math.cos(a))
+            ty2 = emb_cy + int(4 * math.sin(a))
+            pygame.draw.line(s, p["brass_dark"], (emb_cx, emb_cy), (tx2, ty2), 1)
+        pygame.draw.circle(s, p["brass"], (emb_cx, emb_cy), 3)
+        pygame.draw.circle(s, p["brass_mid"], (emb_cx, emb_cy), 2)
+        pygame.draw.circle(s, p["iron_dark"], (emb_cx, emb_cy), 1)
+    else:
+        # down/up view: compact hex shield held to the side
+        sh_cx = cx + bw // 2 + 5
+        sh_cy = by + int(bh * 0.5)
+        sw_out = int(w * 0.22)
+        sh_h = int(h * 0.44)
+        sh_pts = [
+            (sh_cx, sh_cy - sh_h // 2),
+            (sh_cx + sw_out // 2, sh_cy - sh_h // 4),
+            (sh_cx + sw_out // 2, sh_cy + sh_h // 4),
+            (sh_cx, sh_cy + sh_h // 2),
+            (sh_cx - sw_out // 2, sh_cy + sh_h // 4),
+            (sh_cx - sw_out // 2, sh_cy - sh_h // 4),
+        ]
+        pygame.draw.polygon(s, p["shield_dark"], sh_pts)
+        sh_inner = [
+            (sh_cx, sh_cy - sh_h // 2 + 1),
+            (sh_cx + sw_out // 2 - 1, sh_cy - sh_h // 4 + 1),
+            (sh_cx + sw_out // 2 - 1, sh_cy + sh_h // 4 - 1),
+            (sh_cx, sh_cy + sh_h // 2 - 1),
+            (sh_cx - sw_out // 2 + 1, sh_cy + sh_h // 4 - 1),
+            (sh_cx - sw_out // 2 + 1, sh_cy - sh_h // 4 + 1),
+        ]
+        pygame.draw.polygon(s, p["shield"], sh_inner)
+        pygame.draw.line(s, p["shield_trim"], sh_inner[3], sh_inner[4], 1)
+        pygame.draw.line(s, p["shield_trim"], sh_inner[4], sh_inner[5], 1)
+        pygame.draw.line(s, p["shield_light"], sh_inner[4], sh_inner[5], 1)
+        # small gear emblem
+        emb_ang = frame * math.pi / 6
+        for i in range(5):
+            a = emb_ang + i * (2 * math.pi / 5)
+            tx1 = sh_cx + int(2 * math.cos(a))
+            ty1 = sh_cy + int(2 * math.sin(a))
+            tx2 = sh_cx + int(3 * math.cos(a))
+            ty2 = sh_cy + int(3 * math.sin(a))
+            pygame.draw.line(s, p["brass_dark"], (sh_cx, sh_cy), (tx2, ty2), 1)
+        pygame.draw.circle(s, p["brass"], (sh_cx, sh_cy), 2)
+        pygame.draw.circle(s, p["iron_dark"], (sh_cx, sh_cy), 1)
 
 
 DRAW_FUNCS = {
