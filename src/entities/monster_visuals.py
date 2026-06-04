@@ -76,12 +76,28 @@ def _palette_for(style: str) -> dict:
             "metal": (170, 160, 150), "metal_dark": (130, 120, 110), "shadow": (0, 0, 0, 48),
         },
         "skirmisher": {
-            "skin": (72, 128, 118), "skin_light": (118, 178, 165), "skin_dark": (40, 78, 68),
-            "skin_mid": (92, 150, 138), "accent": (210, 190, 105), "accent_dark": (165, 145, 65),
-            "eye_white": (242, 248, 232), "eye_pupil": (92, 142, 132),
-            "feather": (190, 150, 92), "feather_light": (215, 175, 120), "feather_dark": (155, 118, 72),
-            "crest": (210, 170, 98), "crest_light": (230, 195, 130),
-            "beak": (225, 195, 125), "beak_dark": (185, 155, 90), "warpaint": (200, 130, 60), "shadow": (0, 0, 0, 48),
+            # base teal skin/plumage (raptor-like)
+            "skin": (62, 122, 112), "skin_light": (118, 178, 162), "skin_dark": (32, 72, 64),
+            "skin_mid": (88, 148, 132),
+            # body feathers (darker, layered wing/back plumage)
+            "feather": (38, 88, 78), "feather_light": (78, 138, 122), "feather_dark": (22, 52, 46),
+            # chest/belly plumage (lighter, contrasting)
+            "belly": (172, 210, 192), "belly_light": (208, 232, 215),
+            # crest (gold-yellow feather fan on head)
+            "crest": (220, 175, 78), "crest_light": (245, 210, 125), "crest_dark": (175, 130, 50),
+            # beak (yellow with darker hooked tip)
+            "beak": (232, 200, 110), "beak_dark": (175, 140, 60), "beak_tip": (90, 60, 30),
+            # warpaint (fierce red tribal stripes)
+            "warpaint": (210, 70, 58), "warpaint_dark": (140, 32, 28),
+            # talons (dark claws)
+            "talon": (60, 50, 45), "talon_dark": (30, 25, 22),
+            # javelin weapon
+            "wood": (138, 96, 58), "wood_dark": (92, 62, 36), "wood_light": (175, 130, 85),
+            "metal": (190, 192, 200), "metal_dark": (122, 125, 135), "metal_light": (225, 228, 235),
+            # eyes (amber, fierce predator)
+            "eye_white": (255, 240, 180), "eye_pupil": (38, 22, 18),
+            "eye_glow": (255, 200, 100, 80),
+            "shadow": (0, 0, 0, 48),
         },
         "guardian": {
             "armor": (138, 133, 122), "armor_light": (175, 170, 155), "armor_dark": (62, 60, 68),
@@ -635,52 +651,429 @@ def _draw_stalker(s, w, h, cx, cy, p, dir, bob, frame):
 
 
 # ============================================================
-# SKIRMISHER — bird-like scout with crest, beak, warpaint
+# SKIRMISHER — raptor-scout with feathered crest, hooked beak, tribal warpaint
 # ============================================================
 def _draw_skirmisher(s, w, h, cx, cy, p, dir, bob, frame):
+    # -- ground shadow --
     _draw_shadow(s, cx, h, p, bob)
-    bc = [0, -1, 0, 1][frame]; bo = [0, 2, 0, -2][frame]
-    _draw_leg_pair(s, cx, int(h * 0.62), bob, 9, 18, p, bo // 2, bo // 2, "skin_dark", "skin")
-    bw = int(w * 0.46); bh = int(h * 0.38)
-    bx = cx - bw // 2; by = int(h * 0.34) + bob
-    pygame.draw.rect(s, p["skin"], (bx, by, bw, bh), border_radius=10)
-    pygame.draw.rect(s, p["skin_light"], (bx + 4, by + 4, bw - 8, bh - 8), border_radius=8)
-    for fy2 in range(by + 8, by + bh - 4, 6):
-        pygame.draw.polygon(s, p["feather"], [(cx, fy2), (cx - 6, fy2 + 4), (cx, fy2 + 2), (cx + 6, fy2 + 4)])
-        pygame.draw.polygon(s, p["feather_light"], [(cx, fy2 + 1), (cx - 3, fy2 + 3), (cx, fy2 + 1), (cx + 3, fy2 + 3)])
-    ws = [0, 2, 0, -2][frame]
-    for wx, fl in [(bx - 4, -1), (bx + bw - 2, 1)]:
-        pygame.draw.rect(s, p["feather_dark"], (wx + ws, by + 6 + bob, 7, int(h * 0.24)), border_radius=3)
-        pygame.draw.rect(s, p["feather"], (wx + 1 + ws, by + 8 + bob, 5, int(h * 0.24) - 4), border_radius=2)
-        for fi in range(3):
-            fx = wx + ws + fi * 2
-            fy2 = by + int(h * 0.24) + 2 + bob
-            pygame.draw.line(s, p["feather_light"], (fx, fy2), (fx - fl * 2, fy2 + 5), 2)
-    hr = int(w * 0.17); hx, hy = cx, int(h * 0.22) + bob + bc // 2
-    pygame.draw.circle(s, p["skin"], (hx, hy), hr)
-    pygame.draw.circle(s, p["skin_light"], (hx, hy), hr - 2)
-    for i, (cx2, cy2) in enumerate([(hx - 9, hy - hr - 3), (hx, hy - hr - 8), (hx + 9, hy - hr - 3)]):
-        cpt = [(cx2, cy2 + bc), (cx2 - 4 + i * 3, cy2 - 8 + bc), (cx2 + 2 - i, cy2 - 5 + bc)]
-        pygame.draw.polygon(s, p["crest"], cpt)
-        cpt2 = [(cx2, cy2 + 1 + bc), (cx2 - 2 + i * 2, cy2 - 5 + bc), (cx2 + 1 - i, cy2 - 3 + bc)]
-        pygame.draw.polygon(s, p["crest_light"], cpt2)
-    esp = 6 if dir != "side" else 5; so = 2 if dir == "side" else 0
-    for ex in (hx - esp + so, hx + esp + so):
-        pygame.draw.circle(s, p["eye_white"], (ex, hy - 1), 4)
-        pygame.draw.circle(s, p["accent_dark"], (ex, hy - 1), 4, 1)
-    _draw_pupils(s, hx, hy - 1, esp, p["eye_pupil"], so)
-    _draw_glint(s, hx, hy - 1, esp, so)
+
+    # -- animation offsets --
+    bc = [0, -1, 0, 1][frame]            # head counter-bob
+    lo, ro, la, ra = _walk_offset(frame)  # leg/arm walk
+    ft = [0, 1, 0, -1][frame]             # feather flutter
+    crest_sway = [0, -2, 0, 2][frame]     # crest wind sway
+    tail_sway = [-1, 1, 2, -1][frame]     # tail movement
+    leg_off_y = [0, 2, 0, -2][frame]      # leg step lift
+
+    # ============================================================
+    # LAYER 1 — TAIL FEATHERS (behind body, visible from up/side)
+    # ============================================================
+    if dir != "down":
+        tail_cy = int(h * 0.58) + bob
+        tail_x_off = 2 if dir == "side" else 0
+        for i in range(5):
+            spread = (i - 2) * 3 + tail_sway
+            f_len = 22 - abs(i - 2) * 2
+            fpx = cx + spread + tail_x_off
+            fpy = tail_cy + abs(i - 2)
+            # dark outline
+            pygame.draw.polygon(s, p["feather_dark"], [
+                (fpx - 3, fpy + 1), (fpx, fpy - 1),
+                (fpx + 1, fpy + f_len), (fpx + 4, fpy + 1)
+            ])
+            # main feather
+            pygame.draw.polygon(s, p["feather"], [
+                (fpx - 2, fpy + 1), (fpx, fpy),
+                (fpx + 1, fpy + f_len - 1), (fpx + 3, fpy + 1)
+            ])
+            # shaft highlight
+            pygame.draw.line(s, p["feather_light"], (fpx, fpy + 2), (fpx, fpy + f_len - 3), 1)
+            # sub-vanes detail
+            for vy in range(fpy + 5, fpy + f_len - 2, 3):
+                pygame.draw.line(s, p["feather_dark"], (fpx - 1, vy), (fpx + 1, vy + 1), 1)
+
+    # ============================================================
+    # LAYER 2 — LEGS / TALONS
+    # ============================================================
+    leg_top = int(h * 0.62)
+    for lx, off in [(cx - 10 + lo, lo), (cx + 2 + ro, ro)]:
+        # thigh (feathered)
+        pygame.draw.rect(s, p["feather_dark"], (lx - 1, leg_top + bob, 11, 11), border_radius=3)
+        pygame.draw.rect(s, p["feather"], (lx, leg_top + bob + 1, 9, 9), border_radius=2)
+        pygame.draw.rect(s, p["feather_light"], (lx + 1, leg_top + bob + 2, 4, 6), border_radius=1)
+        # thigh feather scallops
+        for fy in range(leg_top + 1, leg_top + 10, 3):
+            pygame.draw.line(s, p["feather_dark"], (lx, fy + bob), (lx + 9, fy + bob), 1)
+        # shin (thin scaled)
+        pygame.draw.rect(s, p["skin_dark"], (lx + 3, leg_top + 11 + bob + off // 2, 5, 12), border_radius=1)
+        pygame.draw.rect(s, p["skin"], (lx + 4, leg_top + 12 + bob + off // 2, 3, 10), border_radius=1)
+        # scale bands
+        for sy in range(leg_top + 14, leg_top + 22, 3):
+            pygame.draw.line(s, p["skin_dark"],
+                             (lx + 3, sy + bob + off // 2),
+                             (lx + 8, sy + bob + off // 2), 1)
+        # ankle joint
+        pygame.draw.circle(s, p["skin_dark"], (lx + 5, leg_top + 23 + bob + off // 2), 3)
+        pygame.draw.circle(s, p["skin_mid"], (lx + 5, leg_top + 23 + bob + off // 2), 2)
+        # 3-toe taloned foot
+        for tdx in (-4, 0, 4):
+            talon_y = leg_top + 25 + bob + off // 2
+            tx_end = lx + 5 + tdx
+            pygame.draw.line(s, p["talon_dark"], (lx + 5, talon_y), (tx_end, talon_y + 5), 2)
+            pygame.draw.line(s, p["talon"], (lx + 5, talon_y - 1), (tx_end, talon_y + 4), 1)
+            pygame.draw.circle(s, p["talon_dark"], (tx_end, talon_y + 5), 1)
+        # back claw (hallux) sticking up behind
+        pygame.draw.line(s, p["talon_dark"], (lx + 5, leg_top + 22 + bob + off // 2),
+                         (lx + 3, leg_top + 18 + bob + off // 2), 2)
+
+    # ============================================================
+    # LAYER 3 — BODY (feathered torso with belly)
+    # ============================================================
+    bw = int(w * 0.52)
+    bh = int(h * 0.36)
+    bx = cx - bw // 2
+    by = int(h * 0.32) + bob
+
+    # body silhouette (slightly tapered, bird-like posture)
+    pygame.draw.polygon(s, p["feather_dark"], [
+        (bx + 4, by), (bx + bw - 4, by),
+        (bx + bw - 1, by + bh - 4),
+        (bx + bw - 7, by + bh),
+        (bx + 7, by + bh),
+        (bx + 1, by + bh - 4),
+    ])
+    # main body
+    pygame.draw.polygon(s, p["feather"], [
+        (bx + 6, by + 1), (bx + bw - 6, by + 1),
+        (bx + bw - 3, by + bh - 5),
+        (bx + bw - 8, by + bh - 1),
+        (bx + 8, by + bh - 1),
+        (bx + 3, by + bh - 5),
+    ])
+    # inner highlight
+    pygame.draw.polygon(s, p["feather_light"], [
+        (bx + 9, by + 3), (bx + bw - 9, by + 3),
+        (bx + bw - 10, by + bh - 5),
+        (bx + 10, by + bh - 5),
+    ])
+
+    # belly/chest (lighter plumage)
+    belly_w = int(bw * 0.50)
+    belly_h = int(bh * 0.75)
+    belly_x = cx - belly_w // 2
+    belly_y = by + 4
+    pygame.draw.polygon(s, p["belly"], [
+        (belly_x, belly_y), (belly_x + belly_w, belly_y),
+        (belly_x + belly_w - 5, belly_y + belly_h),
+        (belly_x + 5, belly_y + belly_h),
+    ])
+    # belly highlight
+    pygame.draw.polygon(s, p["belly_light"], [
+        (belly_x + 4, belly_y + 3), (belly_x + belly_w - 4, belly_y + 3),
+        (belly_x + belly_w - 8, belly_y + belly_h - 5),
+        (belly_x + 8, belly_y + belly_h - 5),
+    ])
+    # belly centerline feathering (V pattern)
+    for vy in range(belly_y + 6, belly_y + belly_h - 4, 4):
+        pygame.draw.line(s, p["belly_light"], (cx - 4, vy), (cx, vy + 2), 1)
+        pygame.draw.line(s, p["belly_light"], (cx + 4, vy), (cx, vy + 2), 1)
+
+    # scalloped feather rows on the body sides (the dark plumage)
+    for row in range(3):
+        ry = by + 6 + row * 7
+        for col in range(3):
+            rx = bx + 5 + col * 4
+            if rx < belly_x - 1 or rx > belly_x + belly_w:
+                pygame.draw.polygon(s, p["feather_dark"], [
+                    (rx, ry), (rx - 2, ry + 4), (rx, ry + 5), (rx + 2, ry + 4)
+                ])
+                pygame.draw.polygon(s, p["feather_light"], [
+                    (rx, ry + 1), (rx - 1, ry + 3), (rx, ry + 4), (rx + 1, ry + 3)
+                ])
+
+    # ============================================================
+    # LAYER 4 — WINGS (folded, with primary flight feathers)
+    # ============================================================
     if dir == "side":
-        pygame.draw.polygon(s, p["beak"], [(hx + hr - 2, hy + 1), (hx + hr + 10, hy + 4), (hx + hr - 2, hy + 8)])
-        pygame.draw.polygon(s, p["beak_dark"], [(hx + hr, hy + 3), (hx + hr + 6, hy + 4), (hx + hr, hy + 6)])
-        pygame.draw.circle(s, p["beak_dark"], (hx + hr + 5, hy + 3), 1)
+        # single wing visible on the far side
+        wx = bx + bw - 1
+        wy = by + 2
+        # main wing shape
+        pygame.draw.polygon(s, p["feather_dark"], [
+            (wx, wy), (wx + 8, wy + 4), (wx + 10, wy + int(bh * 0.6)),
+            (wx + 3, wy + int(bh * 0.55))
+        ])
+        pygame.draw.polygon(s, p["feather"], [
+            (wx + 1, wy + 1), (wx + 7, wy + 5), (wx + 8, wy + int(bh * 0.55)),
+            (wx + 4, wy + int(bh * 0.5))
+        ])
+        # wing covert scallops
+        for cov_y in range(wy + 3, wy + int(bh * 0.5), 4):
+            pygame.draw.line(s, p["feather_light"], (wx + 3, cov_y), (wx + 7, cov_y + 2), 1)
+        # primary flight feathers (4 long, staggered)
+        for fi in range(4):
+            fpx = wx + 2 + fi * 2
+            fpy = wy + int(bh * 0.45)
+            pygame.draw.polygon(s, p["feather_dark"], [
+                (fpx, fpy), (fpx + 4, fpy + 2),
+                (fpx + 5, fpy + 14 + ft), (fpx + 1, fpy + 12 + ft)
+            ])
+            pygame.draw.polygon(s, p["feather"], [
+                (fpx + 1, fpy + 1), (fpx + 4, fpy + 3),
+                (fpx + 4, fpy + 12 + ft), (fpx + 2, fpy + 10 + ft)
+            ])
+            pygame.draw.line(s, p["feather_light"], (fpx + 1, fpy + 2), (fpx + 3, fpy + 10 + ft), 1)
+    elif dir == "up":
+        # back view - both wings fanning out
+        for wx, fl in [(bx - 5, -1), (bx + bw, 1)]:
+            pygame.draw.polygon(s, p["feather_dark"], [
+                (wx, by + 1), (wx + fl * 10, by + 5), (wx + fl * 8, by + int(bh * 0.7)),
+                (wx - fl * 2, by + int(bh * 0.6))
+            ])
+            pygame.draw.polygon(s, p["feather"], [
+                (wx + fl * 1, by + 2), (wx + fl * 8, by + 6), (wx + fl * 6, by + int(bh * 0.65)),
+                (wx, by + int(bh * 0.55))
+            ])
+            # covert detail
+            for cov_y in range(by + 6, by + int(bh * 0.55), 4):
+                pygame.draw.line(s, p["feather_light"],
+                                 (wx + fl * 2, cov_y),
+                                 (wx + fl * 6, cov_y + 2), 1)
+            # primary feathers
+            for fi in range(3):
+                fpx = wx + fl * 1
+                fpy = by + int(bh * 0.5) + fi * 3
+                pygame.draw.polygon(s, p["feather_dark"], [
+                    (fpx, fpy), (fpx + fl * 6, fpy + 2),
+                    (fpx + fl * 5, fpy + 10), (fpx - fl * 1, fpy + 7)
+                ])
+                pygame.draw.polygon(s, p["feather"], [
+                    (fpx + fl * 1, fpy + 1), (fpx + fl * 5, fpy + 2),
+                    (fpx + fl * 4, fpy + 9), (fpx, fpy + 6)
+                ])
+    else:  # "down" - wings folded against body, primaries peeking
+        for wx, fl in [(bx - 1, -1), (bx + bw - 5, 1)]:
+            # main wing (smaller, folded tight)
+            pygame.draw.polygon(s, p["feather_dark"], [
+                (wx, by + 2), (wx + fl * 4, by + 2),
+                (wx + fl * 6, by + int(bh * 0.55)), (wx - fl * 1, by + int(bh * 0.5))
+            ])
+            pygame.draw.polygon(s, p["feather"], [
+                (wx + fl * 1, by + 3), (wx + fl * 3, by + 3),
+                (wx + fl * 5, by + int(bh * 0.5)), (wx, by + int(bh * 0.45))
+            ])
+            # covert detail
+            for cov_y in range(by + 5, by + int(bh * 0.45), 4):
+                pygame.draw.line(s, p["feather_light"],
+                                 (wx + fl * 1, cov_y),
+                                 (wx + fl * 4, cov_y + 2), 1)
+            # primary feathers (3 peeking out)
+            for fi in range(3):
+                fpx = wx + fl * 1
+                fpy = by + int(bh * 0.4) + fi * 3
+                pygame.draw.polygon(s, p["feather_dark"], [
+                    (fpx, fpy), (fpx + fl * 5, fpy + 1),
+                    (fpx + fl * 4, fpy + 9 + ft), (fpx - fl * 1, fpy + 7)
+                ])
+                pygame.draw.polygon(s, p["feather"], [
+                    (fpx + fl * 1, fpy + 1), (fpx + fl * 4, fpy + 2),
+                    (fpx + fl * 3, fpy + 8 + ft), (fpx, fpy + 6)
+                ])
+
+    # ============================================================
+    # LAYER 5 — JAVELIN (skirmisher's signature weapon, side view)
+    # ============================================================
+    if dir == "side":
+        j_top_x, j_top_y = bx + bw + 6, by - 4
+        j_bot_x, j_bot_y = bx + bw - 10, by + int(bh * 0.85)
+        # shaft outline
+        pygame.draw.line(s, p["wood_dark"], (j_top_x, j_top_y), (j_bot_x, j_bot_y), 3)
+        # shaft body
+        pygame.draw.line(s, p["wood"], (j_top_x, j_top_y - 1), (j_bot_x, j_bot_y - 1), 1)
+        # shaft highlight
+        pygame.draw.line(s, p["wood_light"], (j_top_x - 1, j_top_y - 1), (j_bot_x - 1, j_bot_y - 1), 1)
+        # metal tip
+        pygame.draw.polygon(s, p["metal_dark"], [
+            (j_top_x, j_top_y), (j_top_x + 7, j_top_y - 7), (j_top_x + 3, j_top_y + 1)
+        ])
+        pygame.draw.polygon(s, p["metal"], [
+            (j_top_x + 1, j_top_y), (j_top_x + 6, j_top_y - 6), (j_top_x + 3, j_top_y)
+        ])
+        pygame.draw.line(s, p["metal_light"], (j_top_x + 1, j_top_y - 1), (j_top_x + 5, j_top_y - 5), 1)
+        # fletching (red feathers at base)
+        pygame.draw.polygon(s, p["warpaint_dark"], [
+            (j_bot_x - 1, j_bot_y), (j_bot_x - 7, j_bot_y + 4), (j_bot_x, j_bot_y + 2)
+        ])
+        pygame.draw.polygon(s, p["warpaint"], [
+            (j_bot_x - 1, j_bot_y - 1), (j_bot_x - 6, j_bot_y + 3), (j_bot_x, j_bot_y + 1)
+        ])
+
+    # ============================================================
+    # LAYER 6 — NECK COLLAR (feathered band where head meets body)
+    # ============================================================
+    neck_y = by - 2
+    pygame.draw.ellipse(s, p["feather_dark"], (cx - 13, neck_y - 1, 26, 8))
+    pygame.draw.ellipse(s, p["feather"], (cx - 12, neck_y, 24, 6))
+    # collar accent beads
+    for bx_b in (cx - 7, cx, cx + 7):
+        pygame.draw.circle(s, p["warpaint"], (bx_b, neck_y + 3), 2)
+        pygame.draw.circle(s, p["warpaint_dark"], (bx_b, neck_y + 3), 2, 1)
+        pygame.draw.circle(s, p["warpaint"], (bx_b - 1, neck_y + 2), 1)
+
+    # ============================================================
+    # LAYER 7 — HEAD
+    # ============================================================
+    hr = int(w * 0.18)
+    hx = cx
+    hy = int(h * 0.20) + bob + bc // 2
+
+    if dir == "up":
+        # back of head - feathered nape
+        pygame.draw.circle(s, p["feather_dark"], (hx, hy), hr + 1)
+        pygame.draw.circle(s, p["feather"], (hx, hy), hr)
+        pygame.draw.circle(s, p["feather_light"], (hx, hy), hr - 4)
+        # nape feather chevrons
+        for fy in range(hy - hr + 5, hy + hr - 6, 5):
+            for fx in (hx - 4, hx, hx + 4):
+                pygame.draw.line(s, p["feather_dark"], (fx - 2, fy + 2), (fx, fy), 1)
+                pygame.draw.line(s, p["feather_dark"], (fx + 2, fy + 2), (fx, fy), 1)
     else:
-        pygame.draw.polygon(s, p["beak"], [(hx - 4, hy + 3), (hx, hy + 11), (hx + 4, hy + 3)])
-        pygame.draw.polygon(s, p["beak_dark"], [(hx - 2, hy + 4), (hx, hy + 8), (hx + 2, hy + 4)])
-        pygame.draw.circle(s, p["beak_dark"], (hx, hy + 3), 1)
-    py4 = hy + 6; pww = 10 if dir == "side" else 14
-    pygame.draw.line(s, p["warpaint"], (hx - pww // 2, py4), (hx + pww // 2, py4), 3)
-    pygame.draw.line(s, p["accent"], (hx - pww // 2 + 1, py4), (hx + pww // 2 - 1, py4), 1)
+        # front/side head
+        pygame.draw.circle(s, p["skin_dark"], (hx, hy), hr + 1)
+        pygame.draw.circle(s, p["skin"], (hx, hy), hr)
+        pygame.draw.circle(s, p["skin_light"], (hx, hy), hr - 3)
+        # cheek/jaw
+        pygame.draw.circle(s, p["skin_mid"], (hx, hy + 4), hr - 5)
+        # brow ridge
+        brow_y = hy - 4
+        if dir == "down":
+            for brx in (hx - 8, hx + 8):
+                pygame.draw.polygon(s, p["feather_dark"], [
+                    (brx - 4, brow_y), (brx + 4, brow_y),
+                    (brx + 2, brow_y - 3), (brx - 2, brow_y - 3)
+                ])
+        else:
+            pygame.draw.arc(s, p["feather_dark"], (hx - 5, hy - hr + 2, hr + 4, 6), 3.14, 0, 2)
+
+    # ============================================================
+    # LAYER 8 — CREST (tall feather fan)
+    # ============================================================
+    crest_count = 7 if dir != "side" else 5
+    crest_base_x = hx - 1
+    crest_base_y = hy - hr + 2 + bc // 2
+    for i in range(crest_count):
+        spread = (i - (crest_count - 1) / 2) * 3
+        f_len = 20 - abs(i - (crest_count - 1) / 2) * 1.4
+        fpx = crest_base_x + int(spread) + crest_sway
+        fpy = crest_base_y - abs(int(i - (crest_count - 1) / 2))
+        # main feather
+        pygame.draw.polygon(s, p["crest_dark"], [
+            (fpx - 2, fpy + 2), (fpx, fpy - int(f_len)), (fpx + 2, fpy + 2)
+        ])
+        pygame.draw.polygon(s, p["crest"], [
+            (fpx - 1, fpy + 1), (fpx, fpy - int(f_len) + 1), (fpx + 1, fpy + 1)
+        ])
+        # highlight shaft
+        pygame.draw.line(s, p["crest_light"], (fpx, fpy - 2), (fpx, fpy - int(f_len) + 4), 1)
+        # sub-vanes
+        for vy in range(fpy - int(f_len) + 4, fpy - 2, 2):
+            pygame.draw.line(s, p["crest_dark"], (fpx - 1, vy), (fpx, vy + 1), 1)
+
+    # ============================================================
+    # LAYER 9 — FACE (eyes, beak, warpaint)
+    # ============================================================
+    if dir == "side":
+        # one eye visible
+        ex, ey = hx + 4, hy - 1
+        # amber eye glow
+        eg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(eg, p["eye_glow"], (ex, ey), 7)
+        s.blit(eg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+        # eye
+        pygame.draw.circle(s, p["eye_white"], (ex, ey), 4)
+        pygame.draw.circle(s, p["eye_pupil"], (ex, ey), 2)
+        pygame.draw.circle(s, (255, 255, 255, 220), (ex - 1, ey - 1), 1)
+
+        # hooked beak (side profile)
+        pygame.draw.polygon(s, p["beak_dark"], [
+            (hx + hr - 1, hy - 2), (hx + hr + 12, hy + 1),
+            (hx + hr + 4, hy + 4), (hx + hr - 1, hy + 5)
+        ])
+        pygame.draw.polygon(s, p["beak"], [
+            (hx + hr, hy - 1), (hx + hr + 10, hy + 1),
+            (hx + hr + 3, hy + 3), (hx + hr, hy + 4)
+        ])
+        # beak tip (darker hooked point)
+        pygame.draw.polygon(s, p["beak_tip"], [
+            (hx + hr + 7, hy + 1), (hx + hr + 12, hy + 1), (hx + hr + 5, hy + 3)
+        ])
+        # beak top highlight
+        pygame.draw.line(s, p["crest_light"], (hx + hr + 1, hy), (hx + hr + 8, hy + 1), 1)
+        # nostril
+        pygame.draw.circle(s, p["beak_tip"], (hx + hr + 3, hy), 1)
+
+        # warpaint - diagonal slash through eye + cheek stripe
+        pygame.draw.line(s, p["warpaint_dark"], (ex - 8, ey - 1), (ex + 5, ey - 3), 2)
+        pygame.draw.line(s, p["warpaint"], (ex - 7, ey - 1), (ex + 4, ey - 3), 1)
+        # cheek stripe (3 marks)
+        for cdy in (5, 8, 11):
+            pygame.draw.line(s, p["warpaint"], (hx - 4, hy + cdy), (hx - 6, hy + cdy + 1), 2)
+        # jaw dot
+        pygame.draw.circle(s, p["warpaint"], (hx - 2, hy + 14), 1)
+
+    elif dir == "down":
+        esp = 7
+        for ex in (hx - esp, hx + esp):
+            # amber eye glow
+            eg = pygame.Surface((w, h), pygame.SRCALPHA)
+            pygame.draw.circle(eg, p["eye_glow"], (ex, hy - 1), 8)
+            s.blit(eg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+            # eye
+            pygame.draw.circle(s, p["eye_white"], (ex, hy - 1), 4)
+            pygame.draw.circle(s, p["eye_pupil"], (ex, hy - 1), 2)
+            pygame.draw.circle(s, (255, 255, 255, 220), (ex - 1, hy - 2), 1)
+
+        # hooked beak (front view)
+        pygame.draw.polygon(s, p["beak_dark"], [
+            (hx - 3, hy + 2), (hx + 3, hy + 2),
+            (hx + 5, hy + 8), (hx + 1, hy + 13),
+            (hx - 1, hy + 13), (hx - 5, hy + 8)
+        ])
+        pygame.draw.polygon(s, p["beak"], [
+            (hx - 2, hy + 3), (hx + 2, hy + 3),
+            (hx + 3, hy + 7), (hx, hy + 11),
+            (hx, hy + 11), (hx - 3, hy + 7)
+        ])
+        # central ridge highlight
+        pygame.draw.line(s, p["crest_light"], (hx, hy + 4), (hx, hy + 10), 1)
+        # hooked tip
+        pygame.draw.polygon(s, p["beak_tip"], [
+            (hx - 2, hy + 9), (hx + 2, hy + 9), (hx, hy + 13)
+        ])
+        # nostrils
+        pygame.draw.circle(s, p["beak_tip"], (hx - 2, hy + 4), 1)
+        pygame.draw.circle(s, p["beak_tip"], (hx + 2, hy + 4), 1)
+
+        # warpaint - twin diagonal slashes through both eyes
+        for ex in (hx - esp, hx + esp):
+            pygame.draw.line(s, p["warpaint_dark"], (ex - 6, hy - 5), (ex + 6, hy + 1), 2)
+            pygame.draw.line(s, p["warpaint"], (ex - 5, hy - 5), (ex + 5, hy + 1), 1)
+        # forehead diamond
+        pygame.draw.polygon(s, p["warpaint_dark"], [
+            (hx, hy - 8), (hx + 4, hy - 4), (hx, hy), (hx - 4, hy - 4)
+        ])
+        pygame.draw.polygon(s, p["warpaint"], [
+            (hx, hy - 7), (hx + 3, hy - 4), (hx, hy - 1), (hx - 3, hy - 4)
+        ])
+        # cheek stripes (angled down and out)
+        pygame.draw.line(s, p["warpaint_dark"], (hx - 9, hy + 5), (hx - 12, hy + 12), 2)
+        pygame.draw.line(s, p["warpaint"], (hx - 9, hy + 5), (hx - 11, hy + 11), 1)
+        pygame.draw.line(s, p["warpaint_dark"], (hx + 9, hy + 5), (hx + 12, hy + 12), 2)
+        pygame.draw.line(s, p["warpaint"], (hx + 9, hy + 5), (hx + 11, hy + 11), 1)
+        # jaw dot trio
+        pygame.draw.circle(s, p["warpaint"], (hx - 4, hy + 15), 1)
+        pygame.draw.circle(s, p["warpaint"], (hx, hy + 16), 1)
+        pygame.draw.circle(s, p["warpaint"], (hx + 4, hy + 15), 1)
 
 
 # ============================================================
