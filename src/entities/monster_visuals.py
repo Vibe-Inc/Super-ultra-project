@@ -93,8 +93,9 @@ def _walk_offset(frame_idx: int) -> tuple:
     return [(0, 0, 0, 0), (-2, 2, 3, -3), (0, 0, 0, 0), (2, -2, -3, 3)][frame_idx % 4]
 
 
-def _draw_shadow(surface, cx, width, palette):
-    pygame.draw.ellipse(surface, palette["shadow"], (cx - 15, width - 7, 30, 10))
+def _draw_shadow(surface, cx, height, palette, bob=0):
+    y = height - 8 + bob
+    pygame.draw.ellipse(surface, palette["shadow"], (cx - 15, y, 30, 10))
 
 
 def _draw_pupils(surface, cx, ey, spacing, pupil_c, side_off=0):
@@ -121,7 +122,8 @@ def _draw_arm_pair(surface, bx, bw, by, bob, arm_w, arm_h, palette,
 
 
 def _draw_leg_pair(surface, cx, leg_y, bob, leg_w, leg_h, palette, ll_off, rl_off, dark_key, light_key):
-    for lx, lw, off in [(cx - 11 + ll_off, leg_w, ll_off), (cx + 7 + rl_off, leg_w, rl_off)]:
+    leg_h += 8
+    for lx, lw, off in [(cx - 15 + ll_off, leg_w, ll_off), (cx + 2 + rl_off, leg_w, rl_off)]:
         pygame.draw.rect(surface, palette[dark_key], (lx, leg_y + bob, lw, leg_h), border_radius=3)
         pygame.draw.rect(surface, palette[light_key],
                          (lx + 1, leg_y + bob + 2, lw - 2, leg_h - 4), border_radius=2)
@@ -138,7 +140,7 @@ def _draw_eye_pair(surface, cx, ey, spacing, palette, side_off=0):
 # BRUTE — hulking beast with horns, tusks, spikes
 # ============================================================
 def _draw_brute(s, w, h, cx, cy, p, dir, bob, frame):
-    _draw_shadow(s, cx, h, p)
+    _draw_shadow(s, cx, h, p, bob)
     lo, ro, la, ra = _walk_offset(frame)
     bw = int(w * 0.74); bh = int(h * 0.44)
     bx = cx - bw // 2; by = int(h * 0.30) + bob
@@ -180,11 +182,11 @@ def _draw_brute(s, w, h, cx, cy, p, dir, bob, frame):
 # VENOMOUS — serpentine with scales, cobra hood, fangs
 # ============================================================
 def _draw_venomous(s, w, h, cx, cy, p, dir, bob, frame):
-    _draw_shadow(s, cx, h, p)
+    _draw_shadow(s, cx, h, p, bob)
     sway = [0, 1, 0, -1][frame]
     ty = int(h * 0.64) + bob
-    pygame.draw.polygon(s, p["skin_dark"], [(cx - 5 + sway, ty), (cx + sway, ty + 16), (cx + 5 + sway, ty)])
-    pygame.draw.polygon(s, p["accent"], [(cx - 4 + sway, ty + 12), (cx + sway, ty + 22), (cx + 4 + sway, ty + 12)])
+    pygame.draw.polygon(s, p["skin_dark"], [(cx - 5 + sway, ty), (cx + sway, ty + 24), (cx + 5 + sway, ty)])
+    pygame.draw.polygon(s, p["accent"], [(cx - 4 + sway, ty + 18), (cx + sway, ty + 30), (cx + 4 + sway, ty + 18)])
     bw = int(w * 0.46); bh = int(h * 0.48)
     bx = cx - bw // 2; by = int(h * 0.30) + bob
     pygame.draw.rect(s, p["skin"], (bx + sway // 2, by, bw, bh), border_radius=8)
@@ -232,7 +234,7 @@ def _draw_venomous(s, w, h, cx, cy, p, dir, bob, frame):
 # ARCANIST — floating mage with robe, hat, runes, aura
 # ============================================================
 def _draw_arcanist(s, w, h, cx, cy, p, dir, bob, frame):
-    _draw_shadow(s, cx, h, p)
+    _draw_shadow(s, cx, h, p, bob)
     pulse = [0, 3, 0, -3][frame]
     aura = pygame.Surface((w, h), pygame.SRCALPHA)
     pygame.draw.circle(aura, p["glow"], (cx, int(h * 0.38) + bob), int(w * 0.42))
@@ -240,7 +242,7 @@ def _draw_arcanist(s, w, h, cx, cy, p, dir, bob, frame):
     for wx, wo in [(cx - 7, -1), (cx + 7, 1)]:
         wy = int(h * 0.60) + bob
         pygame.draw.polygon(s, p["robe_dark"],
-            [(wx + wo * pulse // 2, wy), (wx + wo * pulse // 2 - 3, wy + 16), (wx + wo * pulse // 2 + 3, wy + 16)])
+            [(wx + wo * pulse // 2, wy), (wx + wo * pulse // 2 - 3, wy + 26), (wx + wo * pulse // 2 + 3, wy + 26)])
     bw = int(w * 0.50); bh = int(h * 0.44)
     bx = cx - bw // 2; by = int(h * 0.28) + bob
     pygame.draw.polygon(s, p["robe"], [(bx + 6, by), (bx + bw - 6, by), (bx + bw + 6, by + bh), (bx - 6, by + bh)])
@@ -286,7 +288,7 @@ def _draw_arcanist(s, w, h, cx, cy, p, dir, bob, frame):
 # TRICKSTER — agile jester with hood, grin, daggers
 # ============================================================
 def _draw_trickster(s, w, h, cx, cy, p, dir, bob, frame):
-    _draw_shadow(s, cx, h, p)
+    _draw_shadow(s, cx, h, p, bob)
     lo, ro, la, ra = _walk_offset(frame)
     _draw_leg_pair(s, cx, int(h * 0.62), bob, 9, 18, p, lo, ro, "cloth_dark", "cloth")
     bw = int(w * 0.48); bh = int(h * 0.38)
@@ -329,7 +331,7 @@ def _draw_trickster(s, w, h, cx, cy, p, dir, bob, frame):
 # BOMBER — barrel-body with goggles, fuse, patches
 # ============================================================
 def _draw_bomber(s, w, h, cx, cy, p, dir, bob, frame):
-    _draw_shadow(s, cx, h, p)
+    _draw_shadow(s, cx, h, p, bob)
     lo, ro, la, ra = _walk_offset(frame)
     wob = [0, 1, 0, -1][frame]
     _draw_leg_pair(s, cx, int(h * 0.64), bob, 11, 14, p, lo, ro, "metal_dark", "metal")
@@ -393,7 +395,7 @@ def _draw_bomber(s, w, h, cx, cy, p, dir, bob, frame):
 # STALKER — dark assassin with cloak, mask, blade
 # ============================================================
 def _draw_stalker(s, w, h, cx, cy, p, dir, bob, frame):
-    _draw_shadow(s, cx, h, p)
+    _draw_shadow(s, cx, h, p, bob)
     glide = [0, 1, 0, -1][frame]
     _draw_leg_pair(s, cx, int(h * 0.62), bob, 10, 18, p, 0, 0, "cloth_dark", "cloth")
     bw = int(w * 0.52); bh = int(h * 0.42)
@@ -443,7 +445,7 @@ def _draw_stalker(s, w, h, cx, cy, p, dir, bob, frame):
 # SKIRMISHER — bird-like scout with crest, beak, warpaint
 # ============================================================
 def _draw_skirmisher(s, w, h, cx, cy, p, dir, bob, frame):
-    _draw_shadow(s, cx, h, p)
+    _draw_shadow(s, cx, h, p, bob)
     bc = [0, -1, 0, 1][frame]; bo = [0, 2, 0, -2][frame]
     _draw_leg_pair(s, cx, int(h * 0.62), bob, 9, 18, p, bo // 2, bo // 2, "skin_dark", "skin")
     bw = int(w * 0.46); bh = int(h * 0.38)
@@ -492,7 +494,7 @@ def _draw_skirmisher(s, w, h, cx, cy, p, dir, bob, frame):
 # GUARDIAN — heavy knight with armor, shield, plume
 # ============================================================
 def _draw_guardian(s, w, h, cx, cy, p, dir, bob, frame):
-    _draw_shadow(s, cx, h, p)
+    _draw_shadow(s, cx, h, p, bob)
     lo, ro, la, ra = _walk_offset(frame)
     clank = [0, 0, -1, 0][frame]
     _draw_leg_pair(s, cx, int(h * 0.62), bob, 12, 18, p, lo, ro, "armor_dark", "armor")
