@@ -68,6 +68,12 @@ class Weapon(Item):
         on_hit_effects (list): Optional list of effect dicts applied to a
             target each time the weapon lands a hit (e.g. Flaming Sword ->
             BurnEffect).
+
+    Methods:
+        __init__(row: dict):
+            Initialize weapon properties from a database row.
+        _get_base_stats_text():
+            Return formatted base stats text (type, damage, durability).
     """
     def __init__(self, row: dict):
         super().__init__(row)
@@ -112,6 +118,12 @@ class MeleeWeapon(Weapon):
             'spear' - long narrow piercing line,
             'dagger' - quick short multi-strike,
             'war_hammer' - heavy slam with small AoE stun.
+
+    Methods:
+        __init__(row: dict):
+            Initialize melee weapon properties from a database row.
+        get_tooltip_text():
+            Return formatted tooltip text including range and combat style.
     """
     def __init__(self, row: dict):
         super().__init__(row)
@@ -133,6 +145,18 @@ class MeleeWeapon(Weapon):
 class RangedWeapon(Weapon):
     """
     Represents a ranged combat weapon.
+
+    Attributes:
+        range (int): Effective attack range in pixels.
+        projectile_speed (int): Speed of the fired projectile.
+        cone_degrees (int): Total cone angle in degrees for spread.
+        spread_degrees (int): Random spread angle per shot in degrees.
+
+    Methods:
+        __init__(row: dict):
+            Initialize ranged weapon properties from a database row.
+        get_tooltip_text():
+            Return formatted tooltip text including range and projectile speed.
     """
     def __init__(self, row: dict):
         super().__init__(row)
@@ -160,6 +184,15 @@ class Consumable(Item):
     Attributes:
         heal_amount (int): Points of HP restored or lost.
         effects_list (list): Configuration for applying dynamic effects.
+
+    Methods:
+        __init__(row: dict):
+            Initialize consumable properties from a database row.
+        get_tooltip_text():
+            Return formatted tooltip text including heal and effects info.
+        use(target):
+            Apply the consumable's effects to the target. Returns True if at
+            least one effect was applied.
     """
     def __init__(self, row: dict):
         super().__init__(row)
@@ -218,6 +251,12 @@ class Armor(Item):
                          ("helmet", "chestplate", "leggings", "boots",
                           "charm", "gloves", "ring", "belt").
         defense_value (int): Flat damage reduction this armor provides.
+
+    Methods:
+        __init__(row: dict):
+            Initialize armor properties from a database row.
+        get_tooltip_text():
+            Return formatted tooltip text including armor type and defense.
     """
     def __init__(self, row: dict):
         super().__init__(row)

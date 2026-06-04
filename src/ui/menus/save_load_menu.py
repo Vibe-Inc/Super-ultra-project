@@ -27,6 +27,76 @@ DEL_BTN_HOVER = (170, 35, 35)
 
 
 class SaveLoadMenu(Menu):
+    """
+    Save/Load screen with multiple save slots and delete functionality.
+
+    Features animated background effects and color-coded slot buttons.
+
+    Attributes:
+        app (App):
+            The main application instance.
+        mode (str):
+            Current mode ('save' or 'load').
+        slots (list[str]):
+            List of save slot identifiers.
+        buttons (list[Button]):
+            List of slot buttons and control buttons.
+        _panel_rect (pygame.Rect):
+            Rectangle for the central panel.
+        _anim_time (float):
+            Accumulated animation time.
+        _launch_phase (float):
+            Phase of the launch animation.
+        _surf_cache (dict):
+            Cache of rendered surfaces.
+        _particles (list):
+            Decorative ambient particles.
+        _stars (list):
+            Background star effects.
+        _light_rays (list):
+            Light ray effects.
+        _embers (list):
+            Ambient ember particles.
+        _bursts (list):
+            Launch burst effects.
+        _sparkles (list):
+            Title sparkle effects.
+        _btn_w (int):
+            Slot button width.
+        _btn_h (int):
+            Slot button height.
+        _del_w (int):
+            Delete button width.
+        _back_w (int):
+            Back button width.
+        _title_font (pygame.font.Font):
+            Large font for the title.
+        _hint_font (pygame.font.Font):
+            Font for hints.
+        _slot_btn_indices (list[int]):
+            Indices of slot buttons in the buttons list.
+        _del_btn_indices (list[int]):
+            Indices of delete buttons in the buttons list.
+
+    Methods:
+        __init__(app):
+            Initialize the save/load menu.
+        refresh_saves():
+            Refresh the save slot list and button states.
+        set_mode(mode):
+            Set the menu mode to 'save' or 'load'.
+        handle_event(event):
+            Handle input events.
+        update(dt):
+            Update animations and effects.
+        draw(screen):
+            Render the save/load menu.
+        back_to_main():
+            Return to the previous menu.
+        _delete_slot(slot_index):
+            Delete a save slot.
+    """
+
     def __init__(self, app: "App"):
         super().__init__(app)
         self.mode = "save"

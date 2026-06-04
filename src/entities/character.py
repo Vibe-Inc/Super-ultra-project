@@ -9,69 +9,382 @@ from src.entities.nature_spirit import NatureSpirit
 
 class Character:
     """
-    Represents the player character with animated movement in four directions.
+    Represents the player character with animated movement, combat, skill system,
+    resource management, and visual effects.
 
-    This class handles player movement, animation, health, and respawn logic.
+    Attributes grouped by category:
 
-    Attributes:
-        animations (dict[str, list[pygame.Surface]]):
-            Dictionary containing lists of Pygame surfaces for each direction ("up", "down", "side").
-        direction (str):
-            Current movement direction of the character ("up", "down", "side").
-        image (pygame.Surface):
-            Current frame of the character to be drawn.
-        pos (pygame.Vector2):
-            Position of the character on the screen.
-        spawn_point (pygame.Vector2):
-            The respawn point for the character.
-        speed (float):
-            Movement speed of the character in pixels per second.
-        
-        # New attributes for CollisionSystem
-        rect (pygame.Rect): Collision and drawing rectangle (for integer coordinates).
-        velocity (pygame.Vector2): Normalized vector representing the desired movement direction.
+    --- Animations & Sprites ---
+        sprite_set (str): Name of the character sprite set.
+        animations (dict[str, list[pygame.Surface]]): Animation frames per direction.
+        animations_flipped (dict[str, list[pygame.Surface]]): Horizontally flipped side frames.
+        direction (str): Current direction ("up", "down", "side").
+        image (pygame.Surface): Current animation frame to draw.
+        frame_index (int): Current animation frame index.
+        animation_speed (float): Frames per second for animation.
+        time_accumulator (float): Accumulated time for frame switching.
+        flip (bool): Whether to flip the sprite horizontally.
+        moving (bool): Whether the character is currently in motion.
 
-        frame_index (int):
-            Current frame index for animation.
-        animation_speed (float):
-            Number of frames per second for animation.
-        time_accumulator (float):
-            Accumulates time to control animation frame switching.
-        flip (bool):
-            Whether to flip the character horizontally (used for left/right movement).
-        moving (bool):
-            Whether the character is currently moving.
-        hp (int):
-            Current health points of the character.
-        death_count (int):
-            Number of times the character has died.
-        death_sound (pygame.mixer.Sound):
-            Sound effect played on death.
+    --- Position & Movement ---
+        pos (pygame.Vector2): World position.
+        spawn_point (pygame.Vector2): Respawn point.
+        rect (pygame.Rect): Collision/drawing rectangle.
+        velocity (pygame.Vector2): Normalized movement direction.
+        base_speed (float): Base movement speed in px/s.
+        speed_multiplier (float): Multiplier applied to base speed.
+        speed (float): Effective movement speed.
+        sprint_multiplier (float): Speed multiplier while sprinting.
+        is_sprinting (bool): Whether sprinting is active.
+        can_sprint (bool): Whether the character can sprint.
+
+    --- Health & Death ---
+        max_hp (int): Maximum health points.
+        hp (int): Current health points.
+        death_count (int): Number of deaths.
+        death_sound (pygame.mixer.Sound): Sound played on death.
+        invulnerable (bool): Whether the character is temporarily invulnerable.
+        invulnerability_timer (float): Elapsed invulnerability time.
+        invulnerability_duration (float): Duration of invulnerability after hit.
+
+    --- Resources ---
+        max_stamina (int): Maximum stamina.
+        stamina (int): Current stamina.
+        stamina_drain_rate (int): Stamina drained per second while sprinting.
+        stamina_regen_rate (int): Stamina regenerated per second.
+        max_mana (int): Maximum mana.
+        mana (int): Current mana.
+        mana_drain_rate (float): Mana drained per second while casting.
+        mana_regen_rate (float): Mana regenerated per second.
+        energy (float): Alias for stamina for compatibility.
+
+    --- Leveling & XP ---
+        xp (int): Current experience points.
+        level (int): Current level.
+        xp_to_next_level (int): XP required for next level.
+
+    --- Combat Stats ---
+        base_attack_damage (int): Base melee damage.
+        base_attack_range (int): Base melee range in pixels.
+        base_attack_cooldown (int): Base melee cooldown in ms.
+        attack_damage (int): Effective attack damage.
+        attack_range (int): Effective attack range.
+        attack_cooldown (int): Effective attack cooldown (modified by __getattribute__).
+        attack_cooldown_mult (float): Cooldown multiplier (<1 = faster).
+        last_attack_time (int): Timestamp of last attack.
+        is_attacking (bool): Whether currently attacking.
+        last_attack_dir (pygame.Vector2): Direction of last attack.
+        melee_origin_offset (float): Offset from character center for melee origin.
+        melee_slash_distance (float): Forward reach of melee attacks.
+        damage_bonus (int): Flat bonus damage added to all attacks.
+        cooldown_multiplier (float): Global skill cooldown multiplier.
+        shield (float): Damage absorption before HP loss.
+        defense (int): Flat damage reduction from armor.
+
+    --- Skill System ---
+        skillbook (list): Learned skills (dicts with skill_id, name, description, etc.).
+        skillbar (list): 6-slot skill hotbar (skill dicts or None).
+        skill_tree_points (int): Available skill tree points.
+        skill_tree_unlocked (set): Unlocked skill tree node IDs.
+
+    --- Status Effects ---
+        effects (list): Active status effect instances.
+        confused (bool): Whether movement is inverted.
+        dizzy (bool): Whether the character is staggered.
+        resistances (dict): Resistance values per effect name (0.0-1.0).
+        floating_texts (list): Active damage/heal floating text popups.
+
+    --- Passive / Keystone Attributes ---
+        static_field (bool): Static Field passive active.
+        static_field_proc_chance (float): Proc chance for Static Field.
+        static_field_damage (int): Static Field damage.
+        regeneration (bool): Regeneration passive active.
+        regeneration_hp_per_sec (float): HP regenerated per second.
+        regeneration_acc (float): Accumulator for regen tick.
+        pyromancers_fury (bool): Pyromancer's Fury passive active.
+        pyromancers_fury_damage_mult (float): Fire damage multiplier.
+        pyromancers_fury_area_mult (float): Fire area multiplier.
+        poison_blade (bool): Poison Blade passive active.
+        poison_blade_damage_per_sec (float): Poison DPS.
+        poison_blade_duration (float): Poison duration in seconds.
+        mana_flow (bool): Mana Flow passive active.
+        eternal_fortress (bool): Eternal Fortress keystone active.
+        soul_harvest (bool): Soul Harvest keystone active.
+        soul_harvest_stacks (list): Current Soul Harvest kill stacks.
+        soul_harvest_duration (float): Stack duration.
+        soul_harvest_hp_per_kill (int): HP restored per kill.
+        soul_harvest_damage_per_stack (float): Damage bonus per stack.
+        void_walker (bool): Void Walker keystone active.
+        void_walker_dodge_chance (float): Dodge chance.
+        void_walker_teleport_range (float): Teleport range.
+        void_walker_afterimage_damage (int): Afterimage damage.
+        elemental_mastery (bool): Elemental Mastery keystone active.
+        elemental_damage_mult (float): Elemental damage multiplier.
+        last_elemental_skill (str or None): ID of last used elemental skill.
+        last_elemental_time (float): Timestamp of last elemental skill.
+        combo_window (float): Window in seconds for element combo.
+        elemental_damage_attrs (frozenset): Attribute names affected by elemental mastery.
+
+    --- Skill Cooldowns & Config ---
+        fireball_speed (float): Fireball projectile speed.
+        fireball_range (float): Fireball max range.
+        fireball_damage (int): Fireball damage.
+        fireball_blast_radius (float): Fireball explosion radius.
+        fireball_fuse_time (float): Fireball fuse duration.
+        fireball_cooldown (int): Fireball cooldown in ms.
+        fireball_last_used (int): Last fireball use timestamp.
+        fireball_knockback (float): Fireball knockback force.
+        game_state (object or None): Reference to game state.
+        flame_shield_duration (float): Flame Shield active duration.
+        flame_shield_cooldown (int): Flame Shield cooldown in ms.
+        flame_shield_last_used (int): Last Flame Shield timestamp.
+        flame_shield_active (bool): Whether Flame Shield is active.
+        flame_shield_active_time (float): Remaining active time.
+        flame_shield_damage_per_sec (float): Flame Shield DPS.
+        flame_shield_radius (float): Flame Shield radius.
+        flame_shield_particles (list): Flame Shield visual particles.
+        flame_shield_damage_acc (float): Accumulated fractional damage.
+        frost_nova_radius (float): Frost Nova radius.
+        frost_nova_freeze_duration (float): Freeze duration.
+        frost_nova_damage (int): Frost Nova damage.
+        frost_nova_cooldown (int): Frost Nova cooldown.
+        frost_nova_last_used (int): Last Frost Nova timestamp.
+        ice_armor_duration (float): Ice Armor active duration.
+        ice_armor_cooldown (int): Ice Armor cooldown.
+        ice_armor_last_used (int): Last Ice Armor timestamp.
+        ice_armor_active (bool): Whether Ice Armor is active.
+        ice_armor_active_time (float): Remaining active time.
+        ice_armor_remaining_absorption (float): Remaining damage absorption.
+        ice_armor_max_absorption (float): Max absorption capacity.
+        ice_armor_slow_radius (float): Slow aura radius.
+        ice_armor_slow_factor (float): Slow movement multiplier.
+        ice_armor_particles (list): Ice Armor visual particles.
+        glacial_cascade_speed (float): Cascade projectile speed.
+        glacial_cascade_range (float): Cascade max range.
+        glacial_cascade_damage (int): Cascade damage.
+        glacial_cascade_freeze_duration (float): Cascade freeze duration.
+        glacial_cascade_cooldown (int): Cascade cooldown.
+        glacial_cascade_last_used (int): Last Cascade timestamp.
+        glacial_cascade_width (float): Cascade fan base width.
+        chain_lightning_speed (float): Lightning bolt speed.
+        chain_lightning_range (float): Lightning max range.
+        chain_lightning_damage (int): Lightning damage per hit.
+        chain_lightning_chain_range (float): Chain jump range.
+        chain_lightning_max_targets (int): Max chain targets.
+        chain_lightning_cooldown (int): Lightning cooldown.
+        chain_lightning_last_used (int): Last Lightning timestamp.
+        thunderstrike_damage (int): Thunderstrike damage.
+        thunderstrike_radius (float): Thunderstrike radius.
+        thunderstrike_range (float): Thunderstrike cast range.
+        thunderstrike_cooldown (int): Thunderstrike cooldown.
+        thunderstrike_last_used (int): Last Thunderstrike timestamp.
+        entangling_roots_speed (float): Root projectile speed.
+        entangling_roots_range (float): Root max range.
+        entangling_roots_radius (float): Root burst radius.
+        entangling_roots_root_duration (float): Root immobilize duration.
+        entangling_roots_damage (int): Root burst damage.
+        entangling_roots_cooldown (int): Roots cooldown.
+        entangling_roots_last_used (int): Last Roots timestamp.
+        summon_spirit_damage (int): Spirit attack damage.
+        summon_spirit_duration (float): Spirit lifetime.
+        summon_spirit_cooldown (int): Spirit summon cooldown.
+        summon_spirit_last_used (int): Last summon timestamp.
+        summon_spirit_particles (list): Summon visual particles.
+        shadow_step_range (float): Shadow Step teleport range.
+        shadow_step_cooldown (int): Shadow Step cooldown.
+        shadow_step_last_used (int): Last Shadow Step timestamp.
+        shadow_step_invuln_duration (float): Invulnerability after step.
+        shadow_step_effect (object or None): Current shadow effect object.
+        shadow_step_particles (list): Shadow Step visual particles.
+        dark_pact_hp_cost_percent (float): HP cost as fraction of max HP.
+        dark_pact_damage (int): Dark Pact damage.
+        dark_pact_radius (float): Dark Pact radius.
+        dark_pact_cooldown (int): Dark Pact cooldown.
+        dark_pact_last_used (int): Last Dark Pact timestamp.
+        arcane_missiles_speed (float): Missile speed.
+        arcane_missiles_range (float): Missile max range.
+        arcane_missiles_damage (int): Missile damage per bolt.
+        arcane_missiles_count (int): Number of missiles per cast.
+        arcane_missiles_cooldown (int): Missiles cooldown.
+        arcane_missiles_last_used (int): Last Missiles timestamp.
+        mystic_barrier_duration (float): Barrier active duration.
+        mystic_barrier_cooldown (int): Barrier cooldown.
+        mystic_barrier_last_used (int): Last Barrier timestamp.
+        mystic_barrier_active (bool): Whether barrier is active.
+        mystic_barrier_active_time (float): Remaining active time.
+        mystic_barrier_reflect_pct (float): Damage reflect percentage.
+        mystic_barrier_particles (list): Barrier visual particles.
+
+    --- Keystone Skills ---
+        berserkers_rage_active (bool): Whether Rage is active.
+        berserkers_rage_duration (float): Rage duration.
+        berserkers_rage_active_time (float): Remaining Rage time.
+        berserkers_rage_cooldown (int): Rage cooldown.
+        berserkers_rage_last_used (int): Last Rage timestamp.
+        berserkers_rage_particles (list): Rage visual particles.
+        chrono_shift_active (bool): Whether Chrono Shift is active.
+        chrono_shift_duration (float): Chrono Shift duration.
+        chrono_shift_active_time (float): Remaining active time.
+        chrono_shift_cooldown (int): Chrono Shift cooldown.
+        chrono_shift_last_used (int): Last Chrono Shift timestamp.
+        chrono_shift_particles (list): Chrono Shift visual particles.
+
+    --- Dash ---
+        dash_speed_multiplier (float): Dash speed boost multiplier.
+        dash_duration (float): Dash duration in seconds.
+        dash_cooldown (int): Dash cooldown in ms.
+        dash_active_time (float): Remaining dash time.
+        dash_last_used (int): Last dash timestamp.
+        dash_direction (pygame.Vector2): Dash direction.
+        dash_trail (list): Dash visual trail points.
+        _dash_trail_timer (float): Dash trail spawn accumulator.
 
     Methods:
+        __init__():
+            Initialize all character attributes, skills, and resources.
+        __getattribute__(name):
+            Apply dynamic modifiers to cooldown, damage, and attack_cooldown attributes.
+
+        # Skill Learning
+        _build_skillbook():
+            Build and return the initial skillbook (includes dash).
+        learn_fireball():
+        learn_flame_shield():
+        learn_pyromancers_fury():
+        learn_frost_nova():
+        learn_ice_armor():
+        learn_glacial_cascade():
+        learn_chain_lightning():
+        learn_static_field():
+        learn_thunderstrike():
+        learn_entangling_roots():
+        learn_regeneration():
+        learn_summon_spirit():
+        learn_shadow_step():
+        learn_poison_blade():
+        learn_dark_pact():
+        learn_arcane_missiles():
+        learn_mana_flow():
+        learn_mystic_barrier():
+        learn_berserkers_rage():
+        learn_eternal_fortress():
+        learn_soul_harvest():
+        learn_void_walker():
+        learn_elemental_mastery():
+        learn_chrono_shift():
+            Add the named skill/passive/keystone to the skillbook.
+
+        # Skill Usage
+        get_skill_in_slot(slot_index):
+            Return the skill dict in the given hotbar slot.
+        use_skill_from_slot(slot_index, aim_direction=None):
+            Use the skill in the given hotbar slot.
+        get_skill_cooldown_percent(skill):
+            Return cooldown progress (0.0-1.0) for a skill.
+        is_skill_ready(skill):
+            Return True if the skill is off cooldown.
+        use_skill(skill, aim_direction=None):
+            Execute a skill by its dict, spawning the appropriate projectile/effect.
+
+        # Combat
+        can_attack(current_time=None):
+            Return True if melee attack cooldown has elapsed.
+        start_attack(current_time=None, show_slash=True):
+            Begin a melee attack animation.
+        get_effective_attack_damage():
+            Return attack damage including bonuses.
+        get_forward_direction():
+            Return the forward Vector2 based on current direction.
+        get_center():
+            Return the center position as Vector2.
+        get_melee_anchor():
+            Return the origin point for melee slash.
+        attack(enemies, aim_direction=None, cone_degrees=90.0):
+            Perform a standard melee attack (sword style).
+        _apply_weapon_enchantments(enemy):
+            Apply on-hit weapon effects to the given enemy.
+        attack_mace(enemies, aim_direction=None):
+        attack_axe(enemies, aim_direction=None):
+        attack_spear(enemies, aim_direction=None):
+        attack_war_hammer(enemies, aim_direction=None):
+            Perform weapon-class-specific melee attacks.
+
+        # Resource Management
+        consume_stamina(amount):
+            Deduct stamina, clamped to 0.
+        restore_stamina(amount):
+            Restore stamina, clamped to max.
+        consume_mana(amount):
+            Deduct mana, clamped to 0.
+        restore_mana(amount):
+            Restore mana, clamped to max.
+        heal(amount):
+            Restore HP, clamped to max_hp.
+        use_item(item):
+            Use a consumable item from inventory.
+
+        # Status Effects
+        get_resistance(effect_name):
+            Return resistance value (0.0-1.0) for the given effect.
+        is_immune(effect_name):
+            Return True if resistance >= 1.0 for the effect.
+        add_effect(effect):
+            Add a status effect to the character.
+        strength_metric(x):
+            Placeholder metric for sorting/filtering effects.
+
+        # Core Loop
         get_rect():
-            Returns the collision rectangle, updated to the current float position.
-
-        update(dt, collision_system, obstacles):
-            Update the character's position and animation based on keyboard input.
-            Args:
-                dt (float): Time elapsed since the last frame in seconds.
-                collision_system (CollisionSystem): The external collision handler instance.
-                obstacles (list[pygame.Rect]): List of static collision boxes (walls).
-        
+            Return the collision rectangle at current position.
         _set_velocity():
-            Calculates the desired movement vector (velocity) based on keyboard input.
-
-        take_damage(amount):
-            Reduce the character's health by the given amount and handle death.
-            Args:
-                amount (int): Amount of damage to take.
+            Calculate movement velocity from keyboard input.
+        update(dt, collision_system, obstacles):
+            Update movement, resources, cooldowns, effects, and skill particles.
+        take_damage(amount, ignore_invulnerability=False):
+            Apply damage, factoring invulnerability, shield, and armor.
         die():
-            Handle character death, play sound, increment death count, reset health and position.
-        draw(screen):
-            Draw the character's current frame to the given Pygame surface.
-            Args:
-                screen (pygame.Surface): The surface to draw the character on.
+            Handle death: play sound, reset HP and position.
+        draw(screen, camera_offset=None):
+            Render the character and all active skill/passive visual effects.
+        gain_xp(amount):
+            Add XP and trigger level-up if threshold reached.
+        level_up():
+            Increase level, update next XP threshold.
+
+        # Floating Text
+        add_floating_text(text, x, y, color, duration, size):
+            Queue a floating damage/heal text popup.
+        _update_floating_texts(dt):
+            Update floating text lifetimes.
+        _draw_floating_texts(screen, camera_offset):
+            Render all active floating texts.
+
+        # Skill Visual Effects
+        _spawn_shadow_step_effect(start_pos, end_pos):
+        _update_shadow_step_particles(dt):
+        _draw_shadow_step(screen, camera_offset):
+        _spawn_summon_effect(pos):
+        _update_summon_spirit_particles(dt):
+        _draw_summon_spirit(screen, camera_offset):
+        _update_berserkers_rage_particles(dt):
+        _draw_berserkers_rage(screen, camera_offset):
+        _update_flame_shield_particles(dt):
+        _draw_flame_shield(screen, camera_offset):
+        _update_ice_armor_particles(dt):
+        _draw_ice_armor(screen, camera_offset):
+        _update_mystic_barrier_particles(dt):
+        _draw_mystic_barrier(screen, camera_offset):
+        _update_chrono_shift_particles(dt):
+        _draw_chrono_shift(screen, camera_offset):
+            Update and render skill/passive visual particle effects.
+
+        # Visual Helpers (defined inside draw)
+        swoosh(center, angle_deg, arc_total, radius, color, width, alpha, layers=3):
+            Draw a melee swoosh arc.
+        gust_line(start, end, color, alpha, width):
+            Draw a single gust arc line.
+        dot(center, color, alpha, radius):
+            Draw a single dot for melee effects.
     """
     def __init__(self):
         self.sprite_set = "WomanHuman1(Recolor)"

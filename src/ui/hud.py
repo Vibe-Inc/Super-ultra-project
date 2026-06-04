@@ -16,6 +16,95 @@ if TYPE_CHECKING:
     from src.app import App
 
 class HUD:
+    """
+    Head-Up Display (HUD) for player status and UI controls.
+
+    This class is responsible for rendering player health, lives, stamina, XP,
+    money, skill hotbar, and the inventory button, as well as handling related UI events.
+
+    Attributes:
+        character (Character):
+            The character object whose state is being displayed.
+        app (App):
+            The main application object for accessing managers (e.g., INV_manager).
+        toggle_inventory_callback (callable | None):
+            Optional callback to toggle inventory state.
+        use_skill_callback (callable | None):
+            Optional callback to use a skill from a slot.
+        open_shop_callback (callable | None):
+            Optional callback to open the shop.
+        font (pygame.font.Font):
+            The font used for rendering text.
+        stamina_font (pygame.font.Font):
+            Font used for stamina label.
+        stamina_label (pygame.Surface):
+            Rendered "STAMINA" label surface.
+        hp_icon (pygame.Surface):
+            The icon representing health (a heart).
+        life_icon (pygame.Surface):
+            The icon representing the number of lives (a skull).
+        inv_button (Button):
+            The button to open/close the inventory.
+        coin_icon (pygame.Surface):
+            The coin icon surface used for money display.
+        skill_slot_size (int):
+            Size of each skill slot in pixels.
+        skill_slot_padding (int):
+            Padding between skill slots.
+        skill_slots_count (int):
+            Number of skill hotbar slots.
+        skill_panel_margin (int):
+            Margin around the skill panel.
+        skill_panel_width (int):
+            Width of the skill panel.
+        skill_total_slots_height (int):
+            Total height of all skill slots combined.
+        skill_panel_x (int):
+            X position of the skill panel.
+        skill_panel_y (int):
+            Y position of the skill panel.
+        animation_time (float):
+            Accumulated time for animation effects.
+        hp_icon_pos (tuple[int, int]):
+            Screen position of the HP icon.
+        life_icon_pos (tuple[int, int]):
+            Screen position of the life icon.
+        hp_bar_rect (pygame.Rect):
+            Rectangle for the HP bar.
+        xp_bar_rect (pygame.Rect):
+            Rectangle for the XP bar.
+        stamina_bar_rect (pygame.Rect):
+            Rectangle for the stamina bar.
+        money_pos (tuple[int, int]):
+            Screen position for the money display.
+        _layout_size (tuple[int, int] | None):
+            Cached screen size for layout recalc.
+        skill_slot_rects (list[pygame.Rect]):
+            List of rectangles for each skill slot.
+        NEON_THEMES (dict):
+            Color themes for skill elements.
+
+    Methods:
+        __init__(character, app, toggle_inventory_callback=None, use_skill_callback=None, open_shop_callback=None):
+            Initialize the HUD with player character, app, and callbacks.
+        _recalc_layout(screen_width, screen_height):
+            Recalculate HUD positions based on the current screen size.
+        _ensure_layout(screen_width, screen_height):
+            Ensure layout is recalculated if screen size changed.
+        toggle_inventory():
+            Toggle the inventory open/closed, using callback if provided.
+        handle_event(event):
+            Handle mouse events for the inventory button and skill slots.
+        _get_skill_theme(skill):
+            Get the neon color theme for a skill based on its properties.
+        _draw_hud_skill_slot(surface, rect, skill, idx):
+            Draw an individual skill slot with glow and cooldown effects.
+        _on_shop_clicked():
+            Handle shop button click, using callback or fallback.
+        draw(screen):
+            Draw all HUD elements (health, stamina, XP, money, skill hotbar, inventory button).
+    """
+
     NEON_THEMES = {
         "fire": {"primary": (255, 80, 40), "glow": (255, 120, 60), "accent": (255, 200, 100)},
         "ice": {"primary": (60, 140, 255), "glow": (100, 180, 255), "accent": (180, 220, 255)},
@@ -25,42 +114,6 @@ class HUD:
         "arcane": {"primary": (220, 80, 180), "glow": (255, 120, 220), "accent": (255, 180, 240)},
         "default": {"primary": (100, 140, 200), "glow": (140, 180, 240), "accent": (200, 220, 255)},
     }
-
-    """
-    Head-Up Display (HUD) for player status and UI controls.
-
-    This class is responsible for rendering player health, lives, and the inventory button, as well as handling related UI events.
-
-    Attributes:
-        character (Character):
-            The character object whose state is being displayed.
-        app (App):
-            The main application object for accessing managers (e.g., INV_manager).
-        font (pygame.font.Font):
-            The font used for rendering text.
-        hp_icon (pygame.Surface):
-            The icon representing health (a heart).
-        life_icon (pygame.Surface):
-            The icon representing the number of lives (a skull).
-        inv_button (Button):
-            The button to open/close the inventory.
-        toggle_inventory_callback (callable | None):
-            Optional callback to toggle inventory state.
-
-    Methods:
-        __init__(character, app, toggle_inventory_callback=None):
-            Initialize the HUD with player character, app, and optional inventory toggle callback.
-        toggle_inventory():
-            Toggle the inventory open/closed, using callback if provided.
-        handle_event(event):
-            Handle mouse events for the inventory button.
-            Args:
-                event (pygame.event.Event): The Pygame event to process.
-        draw(screen):
-            Draw the HUD elements (health bar, lives, inventory button) on the screen.
-            Args:
-                screen (pygame.Surface): The surface to draw the HUD on.
-    """
 
     def __init__(self, character: Character, app: "App", toggle_inventory_callback=None, use_skill_callback=None, open_shop_callback=None):
         self.character = character

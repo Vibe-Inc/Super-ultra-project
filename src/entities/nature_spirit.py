@@ -21,6 +21,30 @@ class NatureSpirit:
         attack_timer (float): Cooldown tracker.
         animation_time (float): Visual timer.
         target (Enemy or None): Current attack target.
+        speed (float): Movement speed of the spirit.
+        trail (list): Visual trail position history.
+        trail_length (int): Maximum number of trail points.
+        glow_pulse (float): Current glow pulse value (0-1).
+        orbit_angle (float): Current orbit angle around player.
+        orbit_particles (list): Orbiting leaf particle effects.
+
+    Methods:
+        __init__(pos, player, damage=15, duration=10.0, attack_range=300.0, follow_distance=60.0, attack_cooldown=1.2):
+            Initialize the nature spirit.
+        get_rect():
+            Return the spirit's collision rectangle.
+        get_center():
+            Return the spirit's center position.
+        update(dt, enemies):
+            Update movement, target acquisition, attacks, and particles.
+        _update_orbit_particles(dt):
+            Spawn and update orbiting leaf particles.
+        _attack(target, enemies):
+            Attack the target enemy and spawn visual effects.
+        _spawn_attack_visuals(target_pos, enemies):
+            Spawn a NatureBolt visual projectile toward the target.
+        draw(screen, camera_offset=None):
+            Render the spirit and its visual effects.
     """
     def __init__(self, pos, player, damage=15, duration=10.0, attack_range=300.0,
                  follow_distance=60.0, attack_cooldown=1.2):

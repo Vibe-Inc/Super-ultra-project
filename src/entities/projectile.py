@@ -26,6 +26,10 @@ class Arrow:
             Render color for the projectile.
         alive (bool):
             Whether the projectile should continue updating.
+        trail (list):
+            Position history for the visual trail effect.
+        trail_length (int):
+            Maximum number of trail points stored.
 
     Methods:
         __init__(pos, direction, speed, max_range, damage, color=(210, 180, 120)):
@@ -164,6 +168,16 @@ class ArcaneBolt:
             Render color for the projectile.
         alive (bool):
             Whether the projectile should continue updating.
+        trail (list):
+            Position history for the visual trail effect.
+        trail_length (int):
+            Maximum number of trail points stored.
+        animation_time (float):
+            Accumulated time for visual animations.
+        sparkle_particles (list):
+            Sparkle particle effects emitted during flight.
+        sigil_angle (float):
+            Current rotation angle for the orbiting sigil effect.
 
     Methods:
         __init__(pos, direction, speed, max_range, damage, burn_duration, burn_dps, color=(90, 150, 255)):
@@ -395,6 +409,14 @@ class Bomb:
             Time spent in the explosion state.
         damage_applied (bool):
             Whether explosion damage has already been applied.
+        animation_time (float):
+            Accumulated time for visual animations.
+        spark_particles (list):
+            Fuse spark particle effects.
+        smoke_particles (list):
+            Smoke particle effects during explosion.
+        shrapnel_particles (list):
+            Shrapnel debris particles during explosion.
 
     Methods:
         __init__(pos, direction, speed, max_range, damage, blast_radius, fuse_time, knockback_force=0.0, explosion_duration=0.35, color=(220, 150, 60)):
@@ -684,6 +706,45 @@ class Fireball:
     Player fireball projectile that explodes on impact or after a short fuse.
 
     The explosion damages enemies in an area and can optionally knock them back.
+
+    Attributes:
+        pos (pygame.Vector2): Current position in world space.
+        direction (pygame.Vector2): Normalized movement direction.
+        speed (float): Movement speed in pixels per second.
+        max_range (float): Maximum travel distance before self-destruction.
+        damage (int): Damage dealt to enemies in the explosion.
+        blast_radius (float): Radius of the area-of-effect explosion.
+        fuse_time (float): Seconds before the fireball explodes automatically.
+        knockback_force (float): Force applied to enemies hit by the explosion.
+        explosion_duration (float): Duration of the explosion visual in seconds.
+        traveled (float): Distance the fireball has traveled so far.
+        timer (float): Elapsed time since creation.
+        color (tuple): RGB color of the fireball.
+        alive (bool): Whether the projectile is still active.
+        exploding (bool): Whether the explosion sequence has started.
+        explosion_timer (float): Elapsed time within the explosion phase.
+        damage_applied (bool): Whether explosion damage has already been applied.
+        animation_time (float): Accumulated time for visual animations.
+        trail (list): Position history for the visual trail effect.
+        trail_length (int): Maximum number of trail points stored.
+        ember_particles (list): Ember particle effects emitted during flight.
+        ember_spawn_timer (float): Accumulator controlling ember spawn rate.
+
+    Methods:
+        __init__(pos, direction, speed, max_range, damage, blast_radius, fuse_time, knockback_force=0.0, explosion_duration=0.35, color=(255, 120, 40)):
+            Initialize the fireball projectile with position, direction, and stats.
+        _size():
+            Return the visual base dimensions (width, height).
+        get_rect():
+            Return a collision rectangle centered on the current position.
+        _trigger_explosion():
+            Begin the explosion sequence.
+        _entity_center(entity):
+            Return the center position of a given entity.
+        update(dt, obstacles, enemies):
+            Update movement, trail, ember particles, obstacle collisions, and explosion logic.
+        draw(screen, camera_offset=None):
+            Render the fireball with trail, ember particles, and explosion effects.
     """
     def __init__(
         self,
@@ -989,6 +1050,22 @@ class FrostNova:
         expansion_time (float): Current expansion time.
         expansion_duration (float): How long the visual expansion lasts.
         current_radius (float): Current visual radius.
+        damage_applied (bool): Whether damage and freeze have been applied.
+        animation_time (float): Accumulated time for visual animations.
+        shards (list): Ice shard particles for the visual effect.
+        mist (list): Frost mist particles for the visual effect.
+
+    Methods:
+        __init__(pos, radius, freeze_duration, damage=0, expansion_duration=0.5):
+            Initialize the frost nova with position, radius, and freeze parameters.
+        get_rect():
+            Return a rectangle encompassing the full nova radius.
+        _spawn_burst_particles():
+            Spawn ice shard and mist particles at burst time.
+        update(dt, obstacles, enemies):
+            Expand the nova, damage and freeze enemies, update particles.
+        draw(screen, camera_offset=None):
+            Render the frost nova with ice ring, shards, mist, and sparkles.
     """
     def __init__(self, pos, radius, freeze_duration, damage=0, expansion_duration=0.5):
         self.pos = pygame.Vector2(pos)
@@ -1184,6 +1261,40 @@ class GlacialCascade:
     A wide ice wave that cascades forward in a spreading fan, damaging and freezing
     all enemies it passes through. The wave grows wider as it travels, with visuals
     of multiple ice shards, frost mist, and a ground frost trail.
+
+    Attributes:
+        pos (pygame.Vector2): Current position in world space.
+        direction (pygame.Vector2): Normalized movement direction.
+        speed (float): Movement speed in pixels per second.
+        max_range (float): Maximum travel distance before destruction.
+        damage (int): Damage dealt to enemies on hit.
+        freeze_duration (float): How long enemies stay frozen.
+        base_width (float): Base width of the cascade fan.
+        color (tuple): RGB color of the ice effect.
+        alive (bool): Whether the cascade is still active.
+        traveled (float): Distance traveled so far.
+        animation_time (float): Accumulated time for visual animations.
+        hit_cooldowns (dict): Per-enemy ID cooldown timers for repeated hits.
+        frost_particles (list): Frost mist particle effects emitted by the wave.
+        ground_trail (list): Ground frost trail hexagonal shapes.
+        ice_splinters (list): Ice splinter particles flung from the leading edge.
+
+    Methods:
+        __init__(pos, direction, speed, max_range, damage, freeze_duration, cascade_width=80.0, color=(80, 180, 255)):
+            Initialize the glacial cascade with position, direction, and stats.
+        cascade_width (property):
+            Current width of the cascade fan based on travel progress.
+        _get_wedge_points():
+            Return the three corner points (tip, back-left, back-right) of the cascade wedge.
+        get_rect():
+            Return a bounding rectangle of the cascade wedge.
+        update(dt, obstacles, enemies):
+            Move the cascade, spawn frost particles, ice splinters, and ground trail, and
+            damage/freeze enemies within the wedge area.
+        _damage_enemies(enemies):
+            Apply damage and freeze effect to enemies within the cascade wedge.
+        draw(screen, camera_offset=None):
+            Render the cascade with ice shards, frost mist, ground trail, and wedge outline.
     """
     def __init__(self, pos, direction, speed, max_range, damage, freeze_duration,
                  cascade_width=80.0, color=(80, 180, 255)):
@@ -1501,13 +1612,39 @@ class ChainLightning:
         damage (int): Damage per hit.
         chain_range (float): Max distance to chain to next target.
         max_targets (int): Max number of enemies to chain to.
+        color (tuple): RGB color of the lightning.
         alive (bool): Whether the projectile is active.
         traveled (float): Distance traveled.
+        animation_time (float): Visual animation timer.
+        trail (list): Visual trail points.
+        trail_length (int): Maximum number of trail points.
         hit_enemies (list): Enemies already hit (prevents re-hits).
         chaining (bool): Whether currently chaining between targets.
         chain_targets (list): Remaining targets to chain to.
-        animation_time (float): Visual animation timer.
-        trail (list): Visual trail points.
+        chain_timer (float): Elapsed time during chain phase.
+        chain_delay (float): Delay between chain jumps.
+        chain_index (int): Current chain jump index.
+        arc_points (list): Lightning arc visual points for the current chain.
+        sparks (list): Spark particle effects.
+        chain_flash (float): Flash intensity during chain jumps.
+
+    Methods:
+        __init__(pos, direction, speed, max_range, damage, chain_range, max_targets=5, color=(255, 220, 50)):
+            Initialize the chain lightning projectile.
+        _size():
+            Return the visual base dimensions (width, height).
+        get_rect():
+            Return a collision rectangle centered on the current position.
+        _find_chain_target(from_pos, enemies):
+            Find the nearest unhit enemy within chain range.
+        _spawn_spark_burst(pos, count=12):
+            Spawn spark particles at the given position.
+        update(dt, obstacles, enemies):
+            Fly forward, then chain between targets, damaging each enemy.
+        _draw_lightning_arc(screen, start, end, time_offset, camera_offset):
+            Draw a jagged lightning arc between two positions.
+        draw(screen, camera_offset=None):
+            Render the lightning bolt with trails, arcs, and sparks.
     """
     def __init__(self, pos, direction, speed, max_range, damage, chain_range, max_targets=5,
                  color=(255, 220, 50)):
@@ -1820,6 +1957,22 @@ class Thunderstrike:
         timer (float): Current time elapsed.
         struck (bool): Whether damage has been applied.
         animation_time (float): Visual animation timer.
+        flash_alpha (int): Current flash overlay alpha for the strike.
+        particles (list): Impact particle effects.
+
+    Methods:
+        __init__(pos, damage, radius=100.0, delay=0.5):
+            Initialize the thunderstrike at the target position.
+        get_rect():
+            Return a rectangle covering the strike radius.
+        update(dt, obstacles, enemies):
+            Wait for delay, then damage enemies and spawn visuals.
+        _spawn_impact_particles():
+            Spawn spark particles at the strike center.
+        _draw_bolt(screen, cx, cy, alpha, camera_offset):
+            Draw a branched lightning bolt from above to the strike center.
+        draw(screen, camera_offset=None):
+            Render the telegraph circle, lightning bolt, impact particles, and flash.
     """
     def __init__(self, pos, damage, radius=100.0, delay=0.5):
         self.pos = pygame.Vector2(pos)
@@ -2063,6 +2216,39 @@ class EntanglingRoots:
     Two phases:
       1. Flying phase — a seed/sprout projectile travels in a direction.
       2. Burst phase — on impact or max range, roots explode outward.
+
+    Attributes:
+        pos (pygame.Vector2): Current position in world space.
+        direction (pygame.Vector2): Normalized movement direction.
+        speed (float): Travel speed in pixels per second.
+        max_range (float): Maximum travel distance before bursting.
+        radius (float): Burst radius for root immobilization.
+        root_duration (float): How long enemies stay rooted.
+        damage (int): Damage dealt to enemies on burst.
+        alive (bool): Whether the projectile is still active.
+        traveled (float): Distance traveled so far.
+        timer (float): Elapsed time (phase-dependent).
+        expansion_duration (float): Duration of the burst expansion animation.
+        damage_applied (bool): Whether burst damage has been applied.
+        animation_time (float): Accumulated time for visual animations.
+        vine_points (list): Root vine visual control points.
+        bursting (bool): Whether the burst phase is active.
+        trail (list): Position history for the visual trail.
+        trail_length (int): Maximum number of trail points stored.
+        root_particles (list): Root branch particle data.
+        leaf_particles (list): Leaf particle effects burst from the seed.
+
+    Methods:
+        __init__(pos, direction, speed, max_range, radius, root_duration, damage=0, expansion_duration=0.5):
+            Initialize the entangling roots projectile.
+        get_rect():
+            Return a bounding rectangle depending on the current phase.
+        _trigger_burst():
+            Enter the burst phase and spawn initial leaf particles.
+        update(dt, obstacles, enemies):
+            Fly toward the target, then burst to root and damage enemies.
+        draw(screen, camera_offset=None):
+            Render the seed, trail, root branches, aura, leaf particles, and vine tendrils.
     """
     def __init__(self, pos, direction, speed, max_range, radius, root_duration, damage=0,
                  expansion_duration=0.5):
@@ -2339,6 +2525,33 @@ class NatureBolt:
     A nature bolt projectile fired by the Nature Spirit.
 
     Flies toward a target position with green visuals.
+
+    Attributes:
+        pos (pygame.Vector2): Current position in world space.
+        direction (pygame.Vector2): Normalized movement direction.
+        speed (float): Travel speed in pixels per second.
+        max_range (float): Maximum travel distance before despawning.
+        damage (int): Damage dealt to enemies on hit.
+        color (tuple): RGB color of the nature bolt.
+        alive (bool): Whether the projectile is still active.
+        traveled (float): Distance traveled so far.
+        animation_time (float): Accumulated time for visual animations.
+        trail (list): Position history for the visual trail.
+        trail_length (int): Maximum number of trail points stored.
+        target_pos (pygame.Vector2 or None): Optional target position for homing.
+        leaf_particles (list): Leaf particle effects emitted during flight.
+
+    Methods:
+        __init__(pos, direction, speed, max_range, damage, target_pos=None, color=(80, 220, 80)):
+            Initialize the nature bolt projectile.
+        _size():
+            Return the visual base dimensions (width, height).
+        get_rect():
+            Return a collision rectangle centered on the current position.
+        update(dt, obstacles, enemies):
+            Move the bolt, update leaf particles, check collisions and range.
+        draw(screen, camera_offset=None):
+            Render the bolt with leaf particles, trail, glow, and vine tendrils.
     """
     def __init__(self, pos, direction, speed, max_range, damage, target_pos=None, color=(80, 220, 80)):
         self.pos = pygame.Vector2(pos)
@@ -2475,6 +2688,39 @@ class ArcaneMissile:
     """
     Homing arcane missile that seeks the nearest enemy.
     Crystal shard with orbiting sigils and a spiral trail.
+
+    Attributes:
+        pos (pygame.Vector2): Current position in world space.
+        direction (pygame.Vector2): Normalized movement direction.
+        speed (float): Travel speed in pixels per second.
+        max_range (float): Maximum travel distance before despawning.
+        damage (int): Damage dealt to enemies on hit.
+        homing_strength (float): Turn rate toward the target (0-1).
+        alive (bool): Whether the projectile is still active.
+        traveled (float): Distance traveled so far.
+        animation_time (float): Accumulated time for visual animations.
+        target (Enemy or None): Currently tracked enemy.
+        trail (list): Position history for the visual trail.
+        trail_length (int): Maximum number of trail points stored.
+        arcane_sparks (list): Sparkle particle effects.
+        orbit_angle (float): Current angle for orbiting sigil visuals.
+        hit_effect (pygame.Surface or None): Cached hit visual effect surface.
+
+    Methods:
+        __init__(pos, direction, speed, max_range, damage, homing_strength=0.15):
+            Initialize the homing arcane missile.
+        _size():
+            Return the visual base dimensions (width, height).
+        get_rect():
+            Return a collision rectangle centered on the current position.
+        _acquire_target(enemies):
+            Find and set the nearest enemy as the homing target.
+        _spawn_hit_effect():
+            Spawn a bright hit visual at the current position.
+        update(dt, obstacles, enemies):
+            Home toward the target, move, update sparks, and check collisions.
+        draw(screen, camera_offset=None):
+            Render the missile with trail, sigils, arcane sparks, and crystals.
     """
     def __init__(self, pos, direction, speed, max_range, damage, homing_strength=0.15):
         self.pos = pygame.Vector2(pos)
@@ -2793,6 +3039,19 @@ class DarkPact:
         expansion_time (float): Current expansion time.
         expansion_duration (float): How long the visual expansion lasts.
         current_radius (float): Current visual radius.
+        damage_applied (bool): Whether damage has already been applied.
+        animation_time (float): Accumulated time for visual animations.
+        smoke_particles (list): Rising shadow smoke particle effects.
+
+    Methods:
+        __init__(pos, damage, radius=150.0, expansion_duration=0.5):
+            Initialize the dark pact shadow burst.
+        get_rect():
+            Return a rectangle covering the burst radius.
+        update(dt, obstacles, enemies):
+            Expand the burst, damage enemies, and spawn smoke particles.
+        draw(screen, camera_offset=None):
+            Render the dark burst with smoke rings, particles, and tendrils.
     """
     def __init__(self, pos, damage, radius=150.0, expansion_duration=0.5):
         self.pos = pygame.Vector2(pos)
@@ -2960,6 +3219,27 @@ class Afterimage:
     """
     Short-lived afterimage left by Void Walker dodge.
     Deals 18 damage once in a small area at the player's previous position.
+
+    Attributes:
+        pos (pygame.Vector2): Center position of the afterimage.
+        damage (int): Damage dealt to enemies in range.
+        radius (float): Effect radius for damage.
+        alive (bool): Whether the effect is still active.
+        life (float): Current elapsed lifetime.
+        max_life (float): Maximum lifetime before despawn.
+        damage_applied (bool): Whether damage has already been applied.
+        angle (float): Current rotation angle for visual sigil.
+        rot_speed (float): Rotation speed for the sigil.
+
+    Methods:
+        __init__(pos, damage=18, radius=70.0, duration=0.7):
+            Initialize the afterimage at the given position.
+        get_rect():
+            Return a rectangle covering the effect area.
+        update(dt, obstacles, enemies):
+            Apply damage after a short delay and fade out.
+        draw(screen, camera_offset=None):
+            Render the player silhouette, ghostly ring, glow, sigil, and sparkles.
     """
     def __init__(self, pos, damage=18, radius=70.0, duration=0.7):
         import random
@@ -3059,6 +3339,25 @@ class ElementalBurst:
     """
     Burst of elemental energy triggered by a dual-element combo.
     Deals damage in an area with a colorful elemental visual.
+
+    Attributes:
+        pos (pygame.Vector2): Center position of the burst.
+        damage (int): Damage dealt to enemies in range.
+        radius (float): Maximum expansion radius.
+        alive (bool): Whether the effect is still active.
+        life (float): Current elapsed lifetime.
+        max_life (float): Maximum lifetime before despawn.
+        damage_applied (bool): Whether damage has already been applied.
+
+    Methods:
+        __init__(pos, damage, radius=180.0, duration=0.8):
+            Initialize the elemental burst.
+        get_rect():
+            Return a rectangle covering the burst radius.
+        update(dt, obstacles, enemies):
+            Apply damage after a short delay and animate the vortex.
+        draw(screen, camera_offset=None):
+            Render the vortex glow, spiral arms, particles, core, and energy wisps.
     """
     def __init__(self, pos, damage, radius=180.0, duration=0.8):
         self.pos = pygame.Vector2(pos)
