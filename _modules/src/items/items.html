@@ -395,6 +395,49 @@
 
 
 
+<div class="viewcode-block" id="Tool">
+<a class="viewcode-back" href="../../../src.items.html#src.items.items.Tool">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Tool</span><span class="p">(</span><span class="n">Item</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents a utility tool used to perform a specific in-world action</span>
+<span class="sd">    (fishing, mining, woodcutting, etc.). Tools are not weapons, not</span>
+<span class="sd">    consumables, and usually do not stack.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        tool_type (str): Sub-category of the tool</span>
+<span class="sd">            (e.g. &quot;fishing&quot;, &quot;pickaxe&quot;, &quot;axe&quot;).</span>
+<span class="sd">        durability (int): Current durability points.</span>
+<span class="sd">        power (int): Generic effectiveness multiplier (e.g. catch power</span>
+<span class="sd">            bonus for a fishing rod, mining speed for a pickaxe).</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(row: dict):</span>
+<span class="sd">            Initialize tool properties from a database row.</span>
+<span class="sd">        get_tooltip_text():</span>
+<span class="sd">            Return formatted tooltip text including tool type and power.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tool_type</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tool_type&quot;</span><span class="p">,</span> <span class="s2">&quot;generic&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;generic&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">durability</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tool_durability&quot;</span><span class="p">,</span>
+                                  <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;durability&quot;</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span> <span class="ow">or</span> <span class="mi">100</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">power</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;power&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="Tool.get_tooltip_text">
+<a class="viewcode-back" href="../../../src.items.html#src.items.items.Tool.get_tooltip_text">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_tooltip_text</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">type_label</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tool_type</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">title</span><span class="p">()</span>
+        <span class="n">stats</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Type&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Tool&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">type_label</span><span class="si">}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Durability&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">durability</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Power&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: +</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">power</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Price: $</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">price</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">stats</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span></div>
+</div>
+
+
+
 <div class="viewcode-block" id="create_item">
 <a class="viewcode-back" href="../../../src.items.html#src.items.items.create_item">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">create_item</span><span class="p">(</span><span class="n">item_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
@@ -429,6 +472,8 @@
         <span class="k">return</span> <span class="n">Consumable</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">item_type</span> <span class="o">==</span> <span class="s2">&quot;armor&quot;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">Armor</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">item_type</span> <span class="o">==</span> <span class="s2">&quot;tool&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Tool</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown item type &#39;</span><span class="si">{</span><span class="n">item_type</span><span class="si">}</span><span class="s2">&#39; for &#39;</span><span class="si">{</span><span class="n">item_id</span><span class="si">}</span><span class="s2">&#39;. Defaulting to generic Item.&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">Item</span><span class="p">(</span><span class="n">row</span><span class="p">)</span></div>

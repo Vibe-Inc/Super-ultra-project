@@ -81,6 +81,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">database.item_db.weapons_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_weapons</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">database.item_db.consumables_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_consumables</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">database.item_db.armor_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_armor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">database.item_db.tools_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_tools</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">database.crafting_recepies_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_recipes</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">database.GP_database</span><span class="w"> </span><span class="kn">import</span> <span class="n">Gp_database</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">src.config</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cfg</span>
@@ -177,6 +178,7 @@
         <span class="n">seed_weapons</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
         <span class="n">seed_consumables</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
         <span class="n">seed_armor</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
+        <span class="n">seed_tools</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
         <span class="n">seed_recipes</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
         <span class="n">db</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
@@ -202,6 +204,7 @@
         <span class="n">add_item</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;longbow&quot;</span><span class="p">)</span>
         <span class="n">add_item</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;crossbow&quot;</span><span class="p">)</span>
         <span class="n">add_item</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;throwing_dagger&quot;</span><span class="p">)</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;fishing_rod&quot;</span><span class="p">)</span>
 
         <span class="c1"># Row 2 — Potions</span>
         <span class="n">add_item</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;small_health_potion&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
