@@ -311,12 +311,14 @@ class HUD:
                     pygame.draw.rect(surface, cfg.COOLDOWN_BAR_FILL_COLOR, fill_rect, border_radius=2)
                 
                 # Display cooldown time remaining
-                cooldown_time = 0.0
                 skill_id = skill.get("skill_id", "")
-                if skill_id == "dash":
-                    cooldown_time = self.character.dash_cooldown / 1000.0
-                elif skill_id == "fireball":
-                    cooldown_time = self.character.fireball_cooldown / 1000.0
+                if skill_id == "berserkers_rage":
+                    cooldown = self.character.berserkers_rage_cooldown + getattr(self.character, "berserkers_rage_cooldown_bonus", 0)
+                elif skill_id == "chrono_shift":
+                    cooldown = self.character.chrono_shift_cooldown + getattr(self.character, "chrono_shift_cooldown_bonus", 0)
+                else:
+                    cooldown = getattr(self.character, f"{skill_id}_cooldown", 0)
+                cooldown_time = cooldown / 1000.0
                 
                 remaining_time = cooldown_time * cooldown_percent
                 if remaining_time > 0.0:

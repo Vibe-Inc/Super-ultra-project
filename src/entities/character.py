@@ -173,6 +173,7 @@ class Character:
         self.fireball_blast_radius = 110.0
         self.fireball_fuse_time = 0.9
         self.fireball_cooldown = 1300
+        self.fireball_last_used = -self.fireball_cooldown
         self.fireball_knockback = 18.0
         self.game_state = None
 
@@ -706,22 +707,30 @@ class Character:
             return 0.0
         
         skill_id = skill.get("skill_id", "")
+        if not skill_id:
+            return 0.0
+        
         current_time = pygame.time.get_ticks()
         
-        if skill_id == "dash":
-            elapsed = current_time - self.dash_last_used
-            if elapsed >= self.dash_cooldown:
-                return 0.0
-            return 1.0 - (elapsed / self.dash_cooldown)
+        last_used = getattr(self, f"{skill_id}_last_used", None)
+        if last_used is None:
+            return 0.0
         
-        if skill_id == "fireball":
-            last_used = getattr(self, "fireball_last_used", -self.fireball_cooldown)
-            elapsed = current_time - last_used
-            if elapsed >= self.fireball_cooldown:
-                return 0.0
-            return 1.0 - (elapsed / self.fireball_cooldown)
+        # Skills with dynamic cooldown (may include cooldown reduction bonuses)
+        if skill_id == "berserkers_rage":
+            cooldown = self.berserkers_rage_cooldown + getattr(self, "berserkers_rage_cooldown_bonus", 0)
+        elif skill_id == "chrono_shift":
+            cooldown = self.chrono_shift_cooldown + getattr(self, "chrono_shift_cooldown_bonus", 0)
+        else:
+            cooldown = getattr(self, f"{skill_id}_cooldown", 0)
         
-        return 0.0
+        if cooldown <= 0:
+            return 0.0
+        
+        elapsed = current_time - last_used
+        if elapsed >= cooldown:
+            return 0.0
+        return 1.0 - (elapsed / cooldown)
 
     def is_skill_ready(self, skill):
         """
