@@ -177,19 +177,7 @@ class HUD:
         self.hp_bar_rect = pygame.Rect(0, 0, 0, 0)
         self.xp_bar_rect = pygame.Rect(0, 0, 0, 0)
         self.stamina_bar_rect = pygame.Rect(0, 0, 0, 0)
-        self.money_pos = (0, 0)
         self._layout_size = None
-
-        # Create coin icon (gold circle)
-        coin_size = max(8, int(28 * cfg.ui_scale()))
-        self.coin_icon = pygame.Surface((coin_size, coin_size), pygame.SRCALPHA)
-        pygame.draw.circle(self.coin_icon, (212, 175, 55), (coin_size // 2, coin_size // 2), coin_size // 2)
-        pygame.draw.circle(self.coin_icon, (255, 215, 0), (coin_size // 2, coin_size // 2), coin_size // 2 - 2)
-        # Add a "G" letter in the center for "Gold"
-        coin_font = cfg.get_font(max(8, int(14 * cfg.ui_scale())))
-        g_surf = coin_font.render("G", True, (139, 119, 42))
-        g_rect = g_surf.get_rect(center=(coin_size // 2, coin_size // 2))
-        self.coin_icon.blit(g_surf, g_rect)
 
         # slot rects (populated/updated per-frame or on-event)
         self.skill_slot_rects: list[pygame.Rect] = []
@@ -233,9 +221,6 @@ class HUD:
 
         self.skill_panel_x = screen_width - self.skill_panel_width - right_margin
         self.skill_panel_y = (screen_height - self.skill_total_slots_height) // 2
-
-        # Money display position (below lives icon, left side)
-        self.money_pos = (left_margin, top_margin + 110)
 
         # rebuild rects
         self.skill_slot_rects = []
@@ -494,14 +479,6 @@ class HUD:
         
         death_text = self.font.render(death_str, True, (220, 50, 50))
         screen.blit(death_text, (lives_icon_x + 60, lives_icon_y + 5))
-
-        # ---- Money display with coin icon ----
-        money_x, money_y = self.money_pos
-        screen.blit(self.coin_icon, (money_x, money_y))
-        money_font = cfg.get_font(max(8, int(24 * cfg.ui_scale())))
-        money_text = money_font.render(f"{self.app.money}", True, (255, 215, 0))
-        coin_size = self.coin_icon.get_width()
-        screen.blit(money_text, (money_x + coin_size + 8, money_y + (coin_size - money_text.get_height()) // 2))
 
         # XP Bar
         xp_bar_x = self.xp_bar_rect.x

@@ -1556,7 +1556,8 @@ class SkillTreeMenu(Menu):
 
     def exit_menu(self):
         try:
-            self.app.INV_manager.player_inventory_opened = True
+            self.app.INV_manager._return_held_item()
+            self.app.INV_manager.player_inventory_opened = False
             gameplay = getattr(getattr(self.app, "manager", None), "states", {}).get("gameplay")
             if gameplay:
                 try:
