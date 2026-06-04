@@ -759,6 +759,7 @@ class Character:
             "description": "Launch an explosive fireball dealing 28 damage with area effect and knockback.",
             "color": (188, 82, 35),
             "accent": (255, 214, 120),
+            "manaCost": 20,
         })
         logger.info("Player learned Fireball!")
 
@@ -773,6 +774,7 @@ class Character:
             "description": "Surrounds you with flames, dealing 8 damage/sec to nearby enemies.",
             "color": (220, 80, 20),
             "accent": (255, 180, 60),
+            "manaCost": 15,
         })
         logger.info("Player learned Flame Shield!")
 
@@ -792,6 +794,7 @@ class Character:
             "description": "Freeze all enemies within radius for 3 seconds.",
             "color": (60, 140, 255),
             "accent": (180, 220, 255),
+            "manaCost": 25,
         })
         logger.info("Player learned Frost Nova!")
 
@@ -806,6 +809,7 @@ class Character:
             "description": "Grants a shield of ice absorbing 30 damage and slowing attackers.",
             "color": (40, 100, 220),
             "accent": (140, 200, 255),
+            "manaCost": 30,
         })
         logger.info("Player learned Ice Armor!")
 
@@ -820,6 +824,7 @@ class Character:
             "description": "Ice shards cascade outward dealing 35 damage and freezing enemies.",
             "color": (80, 160, 240),
             "accent": (200, 230, 255),
+            "manaCost": 22,
         })
         logger.info("Player learned Glacial Cascade!")
 
@@ -833,6 +838,7 @@ class Character:
             "description": "Fires a lightning bolt that jumps between up to 5 enemies.",
             "color": (255, 220, 50),
             "accent": (255, 255, 180),
+            "manaCost": 18,
         })
         logger.info("Player learned Chain Lightning!")
 
@@ -850,6 +856,7 @@ class Character:
             "description": "Call down lightning from above for 55 damage in a column.",
             "color": (200, 180, 255),
             "accent": (255, 230, 255),
+            "manaCost": 28,
         })
         logger.info("Player learned Thunderstrike!")
 
@@ -863,6 +870,7 @@ class Character:
             "description": "Unleash roots that immobilize enemies for 4 seconds.",
             "color": (60, 180, 60),
             "accent": (160, 255, 140),
+            "manaCost": 22,
         })
         logger.info("Player learned Entangling Roots!")
 
@@ -880,6 +888,7 @@ class Character:
             "description": "Summon a nature spirit that attacks for 15 damage.",
             "color": (100, 220, 120),
             "accent": (200, 255, 200),
+            "manaCost": 35,
         })
         logger.info("Player learned Summon Spirit!")
 
@@ -893,6 +902,7 @@ class Character:
             "description": "Teleport through shadows, becoming invulnerable briefly.",
             "color": (100, 50, 140),
             "accent": (200, 160, 255),
+            "manaCost": 20,
         })
         logger.info("Player learned Shadow Step!")
 
@@ -910,6 +920,7 @@ class Character:
             "description": "Sacrifice 10% HP to deal 60 shadow damage to all nearby enemies.",
             "color": (140, 60, 180),
             "accent": (220, 160, 255),
+            "manaCost": 25,
         })
         logger.info("Player learned Dark Pact!")
 
@@ -923,6 +934,7 @@ class Character:
             "description": "Fire homing arcane missiles dealing 22 damage each.",
             "color": (140, 60, 120),
             "accent": (255, 180, 240),
+            "manaCost": 24,
         })
         logger.info("Player learned Arcane Missiles!")
 
@@ -940,6 +952,7 @@ class Character:
             "description": "Creates a barrier that reflects 30% of incoming damage.",
             "color": (180, 80, 160),
             "accent": (255, 200, 240),
+            "manaCost": 25,
         })
         logger.info("Player learned Mystic Barrier!")
 
@@ -953,6 +966,7 @@ class Character:
             "description": "+50% damage dealt, +20% damage taken. The fury consumes you.",
             "color": (200, 50, 30),
             "accent": (255, 160, 60),
+            "manaCost": 30,
         })
         logger.info("Player learned Berserker's Rage!")
 
@@ -994,6 +1008,7 @@ class Character:
             "description": "Slow time for 3 seconds. +25% attack speed. Cooldown: 30s.",
             "color": (100, 160, 220),
             "accent": (200, 230, 255),
+            "manaCost": 40,
         })
         logger.info("Player learned Chrono Shift!")
 
@@ -1059,12 +1074,60 @@ class Character:
         """
         return self.get_skill_cooldown_percent(skill) == 0.0
 
+    def get_skill_mana_cost(self, skill):
+        """
+        Return the mana cost of a skill (read from the skill dict's ``manaCost`` key).
+
+        Falls back to 0 for skills that don't define one (e.g., passives, dash).
+
+        Args:
+            skill (dict): The skill dictionary with a ``manaCost`` field.
+
+        Returns:
+            int: Mana required to cast the skill (>= 0).
+        """
+        if skill is None:
+            return 0
+        try:
+            return int(skill.get("manaCost", 0) or 0)
+        except (TypeError, ValueError):
+            return 0
+
     def use_skill(self, skill, aim_direction=None):
         if skill is None:
             return False
 
         skill_id = skill.get("skill_id", "")
         current_time = pygame.time.get_ticks()
+
+        # ─── ManaSystem integration ────────────────────────────────────
+        # Gate every active skill cast on the player's current mana.
+        # Passive/toggle skills that have no mana cost (cost 0) bypass this.
+        mana_cost = self.get_skill_mana_cost(skill)
+        if mana_cost > 0 and not self.mana_system.has_enough_mana(mana_cost):
+            logger.info(
+                f"Cannot cast '{skill_id}': not enough mana "
+                f"(need {mana_cost}, have {int(self.mana_system.current_mana)})."
+            )
+            # Inform the player via a floating text popup (e.g. "Not enough mana!")
+            try:
+                self.add_floating_text(
+                    "Not enough mana!",
+                    self.pos.x,
+                    self.pos.y - 50,
+                    (180, 120, 255),
+                    1.2,
+                    20,
+                )
+            except Exception:
+                pass
+            return False
+        # Mana is sufficient (or the skill is free); deduct it now so the
+        # cast below is committed. If the skill ends up no-op'ing (e.g. on
+        # cooldown) the mana is still consumed, matching typical ARPG design.
+        if mana_cost > 0:
+            self.consume_mana(mana_cost)
+        # ───────────────────────────────────────────────────────────────
 
         # Elemental Mastery: dual-element combo tracking
         if self.elemental_mastery:
