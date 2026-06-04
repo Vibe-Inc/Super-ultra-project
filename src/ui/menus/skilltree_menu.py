@@ -1377,15 +1377,15 @@ class SkillTreeMenu(Menu):
 
     def exit_menu(self):
         try:
-            self.app.INV_manager.player_inventory_opened = False
+            self.app.INV_manager.player_inventory_opened = True
             gameplay = getattr(getattr(self.app, "manager", None), "states", {}).get("gameplay")
             if gameplay:
                 try:
-                    self.app.INV_manager.remove_active_inventory(getattr(gameplay, "MAIN_player_inv", None))
+                    self.app.INV_manager.add_active_inventory(getattr(gameplay, "MAIN_player_inv", None))
                 except Exception:
                     pass
                 try:
-                    self.app.INV_manager.remove_active_inventory(getattr(gameplay, "PLAYER_inventory_equipment", None))
+                    self.app.INV_manager.add_active_inventory(getattr(gameplay, "PLAYER_inventory_equipment", None))
                 except Exception:
                     pass
         except Exception:

@@ -476,20 +476,16 @@ class SkillbarMenu(Menu):
             skillbar[target_index] = source_skill
 
     def exit_menu(self):
-        # Ensure any open player inventory windows are properly removed
         try:
-            # mark as closed
-            self.app.INV_manager.player_inventory_opened = False
-
-            # If the gameplay state exists, remove its inventory panels from active list
+            self.app.INV_manager.player_inventory_opened = True
             gameplay = getattr(getattr(self.app, "manager", None), "states", {}).get("gameplay")
             if gameplay:
                 try:
-                    self.app.INV_manager.remove_active_inventory(getattr(gameplay, "MAIN_player_inv", None))
+                    self.app.INV_manager.add_active_inventory(getattr(gameplay, "MAIN_player_inv", None))
                 except Exception:
                     pass
                 try:
-                    self.app.INV_manager.remove_active_inventory(getattr(gameplay, "PLAYER_inventory_equipment", None))
+                    self.app.INV_manager.add_active_inventory(getattr(gameplay, "PLAYER_inventory_equipment", None))
                 except Exception:
                     pass
         except Exception:
