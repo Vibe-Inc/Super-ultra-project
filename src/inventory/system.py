@@ -408,17 +408,29 @@ class MAIN_player_inventory(Inventory):
         
         self.open_skillbar_btn = Button(
             rect=pygame.Rect(0, 0, btn_w, btn_h),
-            text=_("SKILLS & MAGIC"), color=cfg.INV_SKILLBAR_BTN_COLOR, 
+            text=_("SKILLS & MAGIC"), color=cfg.INV_SKILLBAR_BTN_COLOR,
             hover_color=cfg.INV_SKILLBAR_BTN_HOVER_COLOR,
             font=cfg.get_font(max(10, int(22 * scale))), font_color=cfg.INV_SKILLBAR_BTN_FONT_COLOR,
             corner_width=max(2, int(8 * scale)), on_click=None
         )
         self.open_skilltree_btn = Button(
             rect=pygame.Rect(0, 0, btn_w, btn_h),
-            text=_("TALENT TREE"), color=cfg.INV_SKILLTREE_BTN_COLOR, 
+            text=_("TALENT TREE"), color=cfg.INV_SKILLTREE_BTN_COLOR,
             hover_color=cfg.INV_SKILLTREE_BTN_HOVER_COLOR,
             font=cfg.get_font(max(10, int(22 * scale))), font_color=cfg.INV_SKILLTREE_BTN_FONT_COLOR,
             corner_width=max(2, int(8 * scale)), on_click=None
+        )
+        # Magical ARCANE QUESTS button (gold & purple theme) — opens the new
+        # ArcaneQuestMenu (registered in StateManager as the "arcane_quest" state).
+        self.open_arcane_quest_btn = Button(
+            rect=pygame.Rect(0, 0, btn_w, btn_h),
+            text=_("ARCANE QUESTS"),
+            color=cfg.INV_ARCANEQUEST_BTN_COLOR,
+            hover_color=cfg.INV_ARCANEQUEST_BTN_HOVER_COLOR,
+            font=cfg.get_font(max(10, int(22 * scale))),
+            font_color=cfg.INV_ARCANEQUEST_BTN_FONT_COLOR,
+            corner_width=max(2, int(8 * scale)),
+            on_click=None,
         )
 
     def inventory_interactions(self, event, manager):
@@ -431,6 +443,10 @@ class MAIN_player_inventory(Inventory):
                     return
                 if hasattr(self, 'open_skillbar_btn') and self.open_skillbar_btn.rect.collidepoint(mouse_pos):
                     try: self.app.manager.set_state("skillbar")
+                    except Exception: pass
+                    return
+                if hasattr(self, 'open_arcane_quest_btn') and self.open_arcane_quest_btn.rect.collidepoint(mouse_pos):
+                    try: self.app.manager.set_state("arcane_quest")
                     except Exception: pass
                     return
         return super().inventory_interactions(event, manager)

@@ -445,7 +445,9 @@ class Character:
         self.can_sprint = True
 
         # Mana system (using ManaSystem component)
-        self.mana_system = ManaSystem(max_mana=100, mana_regen_rate=10.0)
+        # Regen rate reduced 4x (10.0 -> 2.5) so mana regenerates much
+        # more slowly and the magical crumble animation has time to play out.
+        self.mana_system = ManaSystem(max_mana=100, mana_regen_rate=2.5)
         self.max_mana = self.mana_system.max_mana
         self.mana = self.mana_system.current_mana
         self.mana_drain_rate = 20.0

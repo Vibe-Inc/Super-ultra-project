@@ -5,6 +5,7 @@ from src.entities.character import Character
 from src.ui.widgets import Button
 import src.config as cfg
 from src.core.logger import logger
+from src.mana.mana_system import CONSUME_ANIM_DURATION
 
 # Ensure _ is available for gettext translations
 try:
@@ -414,6 +415,163 @@ class HUD:
             except Exception:
                 pass
 
+    # ─── Mana Crumble Animation helpers ────────────────────────────────
+
+    def _draw_mana_crumble_segment(
+        self,
+        screen: pygame.Surface,
+        bar_x: int,
+        bar_y: int,
+        bar_width: int,
+        bar_height: int,
+        seg,
+    ) -> None:
+        """Render a single crumbling, dust-emitting segment of the mana bar.
+
+        The segment is described by a normalized [start_norm, end_norm] range
+        over the bar.  This function draws:
+
+        1. A faded "ghost" of the lost mana section that smoothly dissolves
+           away over ``CONSUME_ANIM_DURATION`` seconds.
+        2. A few darker crumble blocks along the right edge of the segment,
+           receding as the animation progresses.
+        3. Each dust particle defined in ``seg.dust`` (rising and fading).
+
+        Args:
+            screen: Target pygame surface.
+            bar_x: X position of the mana bar in screen coordinates.
+            bar_y: Y position of the mana bar in screen coordinates.
+            bar_width: Width of the mana bar in pixels.
+            bar_height: Height of the mana bar in pixels.
+            seg: A ``_ConsumeSegment`` with ``start_norm``, ``end_norm``,
+                ``progress`` (0..1) and a ``dust`` list of particle dicts.
+        """
+        progress = float(getattr(seg, "progress", 0.0))
+        if progress >= 1.0:
+            return
+
+        # Convert normalized range to pixel coordinates on the bar.
+        seg_x0 = int(bar_x + seg.start_norm * bar_width)
+        seg_x1 = int(bar_x + seg.end_norm * bar_width)
+        seg_w = max(1, seg_x1 - seg_x0)
+        seg_h = bar_height
+
+        # The right edge "eats" inward a little as the animation progresses,
+        # so the segment visually shrinks from the right (the part that was
+        # just spent is the part that disappears first).
+        right_eat = int(seg_w * 0.25 * progress)
+        draw_x0 = seg_x0
+        draw_x1 = max(seg_x0 + 1, seg_x1 - right_eat)
+        draw_w = max(1, draw_x1 - draw_x0)
+
+        # ── 1. Faded ghost of the spent section ──
+        ghost_alpha = int(180 * (1.0 - progress))
+        if ghost_alpha > 0 and draw_w > 0:
+            ghost = pygame.Surface((draw_w, seg_h), pygame.SRCALPHA)
+            # Pale lavender fill with a soft vertical gradient
+            for y in range(seg_h):
+                fade = y / max(1, seg_h - 1)
+                r = int(150 + 50 * (1 - fade))
+                g = int(110 + 60 * (1 - fade))
+                b = int(220 - 20 * fade)
+                pygame.draw.line(ghost, (r, g, b, ghost_alpha), (0, y), (draw_w, y))
+            # Add a few sparkly highlight stripes that crackle through the
+            # segment as it dissolves.
+            crackle_t = self.animation_time
+            for ci in range(3):
+                stripe_x = int((crackle_t * 35 + ci * 37 + seg.start_norm * 17) % draw_w)
+                stripe_alpha = int(60 * (1.0 - progress) * (0.4 + 0.6 * math.sin(crackle_t * 6 + ci)))
+                if stripe_alpha > 0:
+                    pygame.draw.line(ghost, (255, 240, 255, stripe_alpha),
+                                     (stripe_x, 0), (stripe_x, seg_h - 1), 1)
+            # Top and bottom subtle "disintegrating" borders
+            pygame.draw.line(ghost, (220, 200, 255, ghost_alpha // 2), (0, 0), (draw_w, 0), 1)
+            pygame.draw.line(ghost, (200, 180, 240, ghost_alpha // 2), (0, seg_h - 1), (draw_w, seg_h - 1), 1)
+            screen.blit(ghost, (draw_x0, bar_y))
+
+        # ── 2. Crumble noise blocks along the right (draining) edge ──
+        # A row of small chunks that get smaller and sparser over time.
+        if draw_w > 2 and seg_h > 3:
+            chunk_count = max(2, int(draw_w / 6))
+            chunk_layer = pygame.Surface((draw_w, seg_h), pygame.SRCALPHA)
+            for ci in range(chunk_count):
+                # Each chunk has a stable seed-like offset based on its index
+                # and the segment so the same chunk pattern is reproducible.
+                seed_t = ci * 0.31 + (seg.start_norm * 5.7)
+                wobble = (math.sin(seed_t * 11.1 + self.animation_time * 2.0) * 0.5 + 0.5)
+                shrink = progress  # 0..1
+                chunk_w = max(1, int(3 * (1.0 - shrink * 0.8) * (0.5 + 0.5 * wobble)))
+                chunk_h = max(1, int(seg_h * (0.35 + 0.5 * wobble) * (1.0 - shrink * 0.5)))
+                if chunk_w <= 0 or chunk_h <= 0:
+                    continue
+                # Position chunks in a slightly irregular row near the right
+                cx = draw_w - 1 - int((ci + 0.5) * (draw_w / chunk_count))
+                if cx < 0 or cx >= draw_w:
+                    continue
+                cy = (seg_h - chunk_h) // 2 + int(2 * math.sin(seed_t * 7.3 + self.animation_time * 3))
+                cy = max(0, min(seg_h - chunk_h, cy))
+                chunk_alpha = int(220 * (1.0 - shrink) * (0.5 + 0.5 * wobble))
+                if chunk_alpha <= 0:
+                    continue
+                chunk_color = (180, 150, 240, chunk_alpha)
+                pygame.draw.rect(chunk_layer, chunk_color,
+                                 (cx - chunk_w // 2, cy, chunk_w, chunk_h))
+            screen.blit(chunk_layer, (draw_x0, bar_y))
+
+        # ── 3. Dust particles (drifting upward and out) ──
+        for p in seg.dust:
+            lt = p.get("lt", 0.0)
+            # Each particle stores its starting lifetime; recompute on the
+            # fly as 0.55..0.95 (matches _make_dust's spawn range) so we
+            # don't have to also persist ``max_lt``.
+            max_lt = p.get("max_lt", 0.0)
+            if max_lt <= 0.0:
+                # Fallback: estimate from spawn range.  This is only used
+                # for legacy particles; new ones always set max_lt.
+                max_lt = 0.75
+            life_ratio = max(0.0, min(1.0, lt / max_lt))
+            if life_ratio <= 0.0:
+                continue
+
+            # Particle local X is normalized 0..1 across the segment's
+            # width.  If a particle has drifted out of the segment via
+            # horizontal velocity, skip it (it floats off the bar's edge).
+            local_x = p.get("local_x_norm", 0.5)
+            local_x = max(0.0, min(1.0, local_x))
+            # Y is normalized 0..1 across the *bar height* (not the
+            # segment height) and drifts upward.  Skip particles that
+            # have flown well above the bar.
+            y_norm = p.get("y_norm", 0.5)
+            if y_norm < -0.6 or y_norm > 1.4:
+                continue
+            px = draw_x0 + int(local_x * draw_w)
+            y_offset_px = y_norm * seg_h
+            py = bar_y + int(y_offset_px)
+            # Apply an extra upward drift based on remaining life so
+            # dust feels like it lifts off the bar and floats away.
+            drift = (1.0 - life_ratio) * 18.0
+            py = int(py - drift)
+
+            size = max(0.6, p.get("size", 1.0) * (0.4 + 0.6 * life_ratio))
+            r, g, b = p.get("color", (200, 160, 255))
+            base_alpha = 220
+            alpha = int(base_alpha * life_ratio)
+            if alpha <= 0:
+                continue
+
+            # Soft glow
+            glow_sz = max(1, int(size * 3.5))
+            glow_surf = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+            pygame.draw.circle(glow_surf, (r, g, b, alpha // 4),
+                               (glow_sz, glow_sz), glow_sz)
+            screen.blit(glow_surf, (int(px) - glow_sz, py - glow_sz))
+            # Core
+            pygame.draw.circle(screen, (r, g, b, alpha), (int(px), py), max(1, int(size)))
+            # Bright center for the freshest dust
+            if life_ratio > 0.6 and size > 1.0:
+                pygame.draw.circle(screen, (255, 240, 255, int(alpha * 0.7)),
+                                   (int(px), py), max(1, int(size * 0.55)))
+
     def draw(self, screen: pygame.Surface):
         # Update animation time using the game clock for smooth animations
         try:
@@ -584,6 +742,26 @@ class HUD:
             pygame.draw.rect(clip_surf, (255, 255, 255, 255), clip_surf.get_rect(), border_radius=fill_radius)
             mana_fill_surf.blit(clip_surf, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
             screen.blit(mana_fill_surf, (mana_bar_x, mana_bar_y))
+
+        # ─── Magical Crumble Overlay ──────────────────────────────────
+        # The just-spent section turns faded and dissolves into dust.
+        # The ManaSystem exposes these as normalized [start_norm, end_norm]
+        # ranges on the bar.  We render them as:
+        #   1) a fading purple/lavender "ghost" fill that loses opacity
+        #   2) crumbling noise blocks along the right (draining) edge
+        #   3) drifting dust particles that float upward and out
+        mana_system = getattr(self.character, "mana_system", None)
+        if mana_system is not None and mana_bar_width > 0 and mana_bar_height > 0:
+            segments = mana_system.get_consume_segments()
+            for seg in segments:
+                self._draw_mana_crumble_segment(
+                    screen,
+                    mana_bar_x,
+                    mana_bar_y,
+                    mana_bar_width,
+                    mana_bar_height,
+                    seg,
+                )
 
         # Gold Trim Border (Double layer for richness)
         gold_outer = (212, 175, 55)

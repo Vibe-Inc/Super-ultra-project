@@ -282,6 +282,12 @@ INV_SKILLTREE_BTN_COLOR = (55, 45, 75)
 INV_SKILLTREE_BTN_HOVER_COLOR = (80, 65, 105)
 INV_SKILLTREE_BTN_FONT_COLOR = (240, 230, 255)
 
+# ============== ARCANE QUESTS BUTTON (right-side, below Talent Tree) ==============
+# Gold & purple magical theme on a near-black base.
+INV_ARCANEQUEST_BTN_COLOR        = (38, 22, 60)
+INV_ARCANEQUEST_BTN_HOVER_COLOR  = (62, 38, 100)
+INV_ARCANEQUEST_BTN_FONT_COLOR   = (255, 220, 140)
+
 # ============== INVENTORY OVERLAY AND SELECTED ITEM ==============
 INV_OVERLAY_ALPHA = 160
 INV_OVERLAY_COLOR = (5, 8, 12)

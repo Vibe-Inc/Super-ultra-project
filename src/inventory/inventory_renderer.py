@@ -284,24 +284,45 @@ class InventoryRenderer:
         screen.blit(shadow_surf, (text_pos_x + 1, text_pos_y + 1))
         screen.blit(text_surf, (text_pos_x, text_pos_y))
 
-        # ─── Right-side majestic skillbar & talent tree buttons ───
+        # ─── Right-side majestic skillbar & talent tree & arcane quest buttons ───
         if not getattr(inv.app.INV_manager, 'current_shop_inv', None):
             gap = int(cfg.INV_PLAYER_RIGHT_BTN_GAP * sc)
-            
+
             btn_x = portrait_bg.right + int(cfg.INV_PLAYER_RIGHT_BTN_MARGIN_X * sc) + int(120 * sc)
-            stack_height = inv.open_skillbar_btn.rect.height + inv.open_skilltree_btn.rect.height + gap
+            # Include the new ARCANE QUESTS button in the stack
+            has_arcane = hasattr(inv, 'open_arcane_quest_btn')
+            stack_count = 3 if has_arcane else 2
+            stack_height = (
+                inv.open_skillbar_btn.rect.height
+                + inv.open_skilltree_btn.rect.height
+                + (inv.open_arcane_quest_btn.rect.height if has_arcane else 0)
+                + gap * (stack_count - 1)
+            )
             btn_y = portrait_bg.centery - stack_height // 2 + int(100 * sc)
 
             inv.open_skillbar_btn.rect.topleft = (btn_x, btn_y)
-            inv.open_skilltree_btn.rect.topleft = (btn_x, btn_y + inv.open_skillbar_btn.rect.height + gap)
-            
+            inv.open_skilltree_btn.rect.topleft = (
+                btn_x, btn_y + inv.open_skillbar_btn.rect.height + gap
+            )
+            if has_arcane:
+                inv.open_arcane_quest_btn.rect.topleft = (
+                    btn_x,
+                    btn_y + inv.open_skillbar_btn.rect.height + gap
+                          + inv.open_skilltree_btn.rect.height + gap,
+                )
+
             try: inv.open_skillbar_btn._update_text_surface()
             except Exception: pass
             try: inv.open_skilltree_btn._update_text_surface()
             except Exception: pass
-            
+            if has_arcane:
+                try: inv.open_arcane_quest_btn._update_text_surface()
+                except Exception: pass
+
             self._draw_majestic_skill_button(screen, inv.open_skillbar_btn, is_skillbar=True, pulse_offset=0.0)
             self._draw_majestic_skill_button(screen, inv.open_skilltree_btn, is_skillbar=False, pulse_offset=2.0)
+            if has_arcane:
+                self._draw_majestic_arcane_quest_button(screen, inv.open_arcane_quest_btn, pulse_offset=4.0)
 
         self.draw_base_inventory(screen, inv)
 
@@ -494,6 +515,163 @@ class InventoryRenderer:
             screen.blit(dot_surf, (sx - dot_s * 2, sy - dot_s * 2))
 
         # ── Hover border glow ──
+        if is_hovered:
+            hw = max(1, int(3 * scale))
+            hover_pulse = (math.sin(t * 0.008 + pulse_offset) + 1) * 0.3 + 0.4
+            hc = tuple(min(255, int(c * hover_pulse)) for c in gold_light)
+            pygame.draw.rect(screen, hc, rect, width=hw, border_radius=int(8 * scale))
+
+    def _draw_majestic_arcane_quest_button(self, screen, button, pulse_offset=4.0):
+        """Render the ARCANE QUESTS button with a magical gold/purple aura.
+
+        Visually echoes the Arcane Quest menu's title bar: gold & purple
+        accents on a near-black base, with a soft pulsing aura.
+        """
+        rect = button.rect
+        t = pygame.time.get_ticks() / 1000.0
+        pulse = (math.sin(t * 0.004 + pulse_offset) + 1) / 2
+        scale = cfg.ui_scale()
+        is_hovered = rect.collidepoint(pygame.mouse.get_pos())
+
+        gold = (212, 175, 55)
+        gold_light = (240, 210, 100)
+        gold_dark = (150, 120, 50)
+        purple_bright = (200, 130, 255)
+        purple = (140, 80, 220)
+        theme_glow = purple_bright
+        theme_bg = (28, 14, 50)
+        hover_boost = 0.3 if is_hovered else 0.0
+
+        # ── Magical aura (gold + purple blend) ──
+        aura_size = int(rect.width * 2.2)
+        aura_surf = pygame.Surface((aura_size, aura_size), pygame.SRCALPHA)
+        aura_alpha = int(40 + pulse * 35 + hover_boost * 40)
+        for r in range(aura_size // 2, 0, -1):
+            a = int(aura_alpha * (1.0 - r / (aura_size // 2)))
+            if a > 0:
+                t_r = r / (aura_size // 2)
+                c = (
+                    int(gold_light[0] * (1 - t_r) + purple_bright[0] * t_r),
+                    int(gold_light[1] * (1 - t_r) + purple_bright[1] * t_r),
+                    int(gold_light[2] * (1 - t_r) + purple_bright[2] * t_r),
+                )
+                pygame.draw.circle(aura_surf, (*c, a), (aura_size // 2, aura_size // 2), r)
+        screen.blit(aura_surf, (rect.centerx - aura_size // 2, rect.centery - aura_size // 2))
+
+        # ── Outer ornate triple-frame (gold, gold-dark, purple) ──
+        pad = int(6 * scale)
+        frame_rect = pygame.Rect(rect.x - pad, rect.y - pad, rect.width + pad * 2, rect.height + pad * 2)
+        for fi in range(3):
+            frect = pygame.Rect(frame_rect.x - fi, frame_rect.y - fi,
+                                frame_rect.width + fi * 2, frame_rect.height + fi * 2)
+            fc = [gold_light, gold, purple][fi]
+            bw = max(1, int(2.5 * scale - fi * 0.4 + hover_boost))
+            pygame.draw.rect(screen, fc, frect, width=bw,
+                             border_radius=int(10 * scale - fi * 2))
+
+        # ── Corner gems (gold, purple, gold, purple) ──
+        gem_size = max(1, int(4 * scale + pulse * 1.5 + hover_boost * 2))
+        gem_colors = [gold, purple_bright, gold, purple_bright]
+        for gi, (gx, gy) in enumerate([
+            (frame_rect.x, frame_rect.y), (frame_rect.right, frame_rect.y),
+            (frame_rect.x, frame_rect.bottom), (frame_rect.right, frame_rect.bottom)
+        ]):
+            gc = gem_colors[gi]
+            lighter = tuple(min(255, c + 60) for c in gc)
+            darker = tuple(max(0, c - 40) for c in gc)
+            pts_top = [(gx, gy - gem_size), (gx - gem_size, gy), (gx + gem_size, gy)]
+            pts_bot = [(gx - gem_size, gy), (gx + gem_size, gy), (gx, gy + gem_size)]
+            pygame.draw.polygon(screen, lighter, pts_top)
+            pygame.draw.polygon(screen, darker, pts_bot)
+            spark_sz = max(1, gem_size // 2)
+            spark_surf = pygame.Surface((spark_sz * 4, spark_sz * 4), pygame.SRCALPHA)
+            spark_alpha = int(180 * pulse)
+            pygame.draw.circle(spark_surf, (255, 255, 255, spark_alpha), (spark_sz * 2, spark_sz * 2), spark_sz)
+            screen.blit(spark_surf, (gx - spark_sz * 2, gy - spark_sz * 2))
+
+        # ── Button background (dark purple-black) ──
+        if is_hovered:
+            bg = tuple(min(255, c + 18) for c in theme_bg)
+        else:
+            bg = theme_bg
+        pygame.draw.rect(screen, bg, rect, border_radius=int(8 * scale))
+
+        # Inner glowing purple border
+        inner_border = rect.inflate(-int(3 * scale), -int(3 * scale))
+        ib_pulse = (math.sin(t * 0.005 + pulse_offset + 1) + 1) * 0.3 + 0.4
+        ib_color = tuple(min(255, int(c * ib_pulse)) for c in purple)
+        pygame.draw.rect(screen, ib_color, inner_border, width=max(1, int(2 * scale)),
+                         border_radius=int(6 * scale))
+
+        # ── Icon: a magical scroll with a star above ──
+        icon_cx = rect.left + int(rect.width * 0.2)
+        icon_cy = rect.centery
+
+        # Scroll body
+        sw = int(rect.width * 0.22)
+        sh = int(rect.height * 0.55)
+        scroll_rect = pygame.Rect(icon_cx - sw // 2, icon_cy - sh // 2, sw, sh)
+        pygame.draw.rect(screen, gold_dark, scroll_rect, border_radius=int(2 * scale))
+        pygame.draw.rect(screen, gold, scroll_rect, width=max(1, int(1 * scale)),
+                         border_radius=int(2 * scale))
+        # Parchment inside
+        page_rect = scroll_rect.inflate(-int(3 * scale), -int(3 * scale))
+        pygame.draw.rect(screen, (245, 230, 200), page_rect, border_radius=int(1 * scale))
+        # A purple star above the scroll
+        star_cy = scroll_rect.top - max(2, int(3 * scale))
+        sp = [(icon_cx, star_cy - int(5 * scale)),
+              (icon_cx + int(3 * scale), star_cy - int(1 * scale)),
+              (icon_cx + int(5 * scale), star_cy),
+              (icon_cx + int(3 * scale), star_cy + int(1 * scale)),
+              (icon_cx, star_cy + int(5 * scale)),
+              (icon_cx - int(3 * scale), star_cy + int(1 * scale)),
+              (icon_cx - int(5 * scale), star_cy),
+              (icon_cx - int(3 * scale), star_cy - int(1 * scale))]
+        pygame.draw.polygon(screen, purple_bright, sp)
+        glow = pygame.Surface((int(20 * scale), int(20 * scale)), pygame.SRCALPHA)
+        pygame.draw.circle(glow, (*purple_bright, int(120 * pulse)),
+                           (int(10 * scale), int(10 * scale)), int(8 * scale))
+        screen.blit(glow, (icon_cx - int(10 * scale), star_cy - int(10 * scale)))
+
+        # ── Text in gold with purple glow ──
+        text_x = rect.left + int(rect.width * 0.4)
+        text_w = rect.width - (text_x - rect.x) - 8
+        text_surf = button.font.render(button.text, True, gold_light)
+        if text_surf.get_width() > text_w:
+            text_surf = pygame.transform.smoothscale(text_surf,
+                (int(text_w), int(text_surf.get_height() * text_w / text_surf.get_width())))
+        shadow_surf = button.font.render(button.text, True, (0, 0, 0))
+        if shadow_surf.get_width() > text_w:
+            shadow_surf = pygame.transform.smoothscale(shadow_surf,
+                (int(text_w), int(shadow_surf.get_height() * text_w / shadow_surf.get_width())))
+
+        txt_rect = text_surf.get_rect(midleft=(text_x, rect.centery))
+        shd_rect = shadow_surf.get_rect(midleft=(text_x + 1, rect.centery + 1))
+
+        glow_txt = pygame.Surface((text_surf.get_width() + 20, text_surf.get_height() + 20), pygame.SRCALPHA)
+        glow_alpha = int(50 + 30 * pulse)
+        glow_txt.fill((*theme_glow, glow_alpha))
+        glow_center = pygame.Rect(6, 6, text_surf.get_width() + 8, text_surf.get_height() + 8)
+        pygame.draw.rect(glow_txt, (*theme_glow, 0), glow_center)
+        screen.blit(glow_txt, (txt_rect.x - 10, txt_rect.y - 10))
+
+        screen.blit(shadow_surf, shd_rect)
+        screen.blit(text_surf, txt_rect)
+
+        # Sparkle dots around the button
+        for si in range(4):
+            angle = si * 1.57 + t * 0.5 + pulse_offset
+            dist = rect.width * 0.68
+            sx = rect.centerx + int(math.cos(angle) * dist)
+            sy = rect.centery + int(math.sin(angle) * dist)
+            dot_s = max(1, int(1.5 * scale + pulse * 0.8))
+            da = int(150 + 105 * pulse)
+            col = gold_light if si % 2 == 0 else purple_bright
+            dot_surf = pygame.Surface((dot_s * 4, dot_s * 4), pygame.SRCALPHA)
+            pygame.draw.circle(dot_surf, (*col, da), (dot_s * 2, dot_s * 2), dot_s)
+            screen.blit(dot_surf, (sx - dot_s * 2, sy - dot_s * 2))
+
+        # Hover border glow
         if is_hovered:
             hw = max(1, int(3 * scale))
             hover_pulse = (math.sin(t * 0.008 + pulse_offset) + 1) * 0.3 + 0.4
