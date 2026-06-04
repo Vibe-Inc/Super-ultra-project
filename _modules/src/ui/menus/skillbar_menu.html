@@ -553,6 +553,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">exit_menu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># Ensure any open player inventory windows are properly removed</span>
         <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">_return_held_item</span><span class="p">()</span>
             <span class="c1"># mark as closed</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">player_inventory_opened</span> <span class="o">=</span> <span class="kc">False</span>
 
