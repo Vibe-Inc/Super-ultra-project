@@ -55,8 +55,7 @@ class MainMenu(Menu):
                    cfg.button_hover_color_CREDITS, cfg.button_font,
                    cfg.text_color, cfg.corner_radius, on_click=self.open_credits, shape=shield),
         ]
-
-        self.beta_logo_img = pygame.image.load("assets/beta_logo.png")
+        self.beta_logo_img = pygame.image.load("assets/ui/beta_logo.png")
         logo_size = max(8, int(280 * cfg.ui_scale()))
         self.beta_logo_img = pygame.transform.scale(self.beta_logo_img, (logo_size, logo_size))
         self.beta_logo_rect = self.beta_logo_img.get_rect()

@@ -118,8 +118,8 @@ class PoisonEffect(Effect):
         if self.accumulator >= 1:
             dmg = int(self.accumulator)
             target.take_damage(dmg, ignore_invulnerability=True)
-            logger.debug(f"Poison dealt {dmg} damage to {getattr(target, 'id', type(target))}")
             self.accumulator -= dmg
+            logger.debug(f"Poison dealt {dmg} damage to {getattr(target, 'id', type(target))}")
 
 class BurnEffect(Effect):
     """
@@ -303,30 +303,6 @@ class RadiantFortitude(Effect):
             target.damage_taken_mult = getattr(target, "damage_taken_mult", 1.0) / self.damage_mult
         logger.debug(f"RadiantFortitude ended on {getattr(target,'id',type(target))}")
 
-class Haste(Effect):
-    """
-    Buff: increases movement speed and reduces attack cooldown.
-    """
-    def __init__(self, duration=10.0, speed_mult=1.3, cooldown_mult=0.7):
-        super().__init__(duration)
-        self.speed_mult = speed_mult
-        self.cooldown_mult = cooldown_mult
-        self.started = False
-
-    def apply(self, dt, target):
-        if not self.started:
-            self._prev_speed = getattr(target, "speed_multiplier", 1.0)
-            self._prev_cd_mult = getattr(target, "attack_cooldown_mult", 1.0)
-            target.speed_multiplier = self._prev_speed * self.speed_mult
-            target.attack_cooldown_mult = self._prev_cd_mult * self.cooldown_mult
-            self.started = True
-            logger.debug(f"Applied Haste to {getattr(target,'id',type(target))}")
-
-    def on_end(self, target):
-        target.speed_multiplier = getattr(target, "speed_multiplier", 1.0) / self.speed_mult
-        target.attack_cooldown_mult = getattr(target, "attack_cooldown_mult", 1.0) / self.cooldown_mult
-        logger.debug(f"Haste ended on {getattr(target,'id',type(target))}")
-
 class VampiricEdge(Effect):
     """
     Buff: attacks heal the caster for a percentage of damage dealt.
@@ -347,26 +323,6 @@ class VampiricEdge(Effect):
         target.vampiric_pct = max(0.0, getattr(target, "vampiric_pct", 0.0) - self.vampiric_pct)
         logger.debug(f"VampiricEdge ended on {getattr(target,'id',type(target))}")
 
-class ArcaneShield(Effect):
-    """
-    Shield: grants flat absorption that is consumed before HP.
-    """
-    def __init__(self, duration=60.0, absorption=150.0):
-        super().__init__(duration)
-        self.absorption = float(absorption)
-        self.started = False
-
-    def apply(self, dt, target):
-        if not self.started:
-            target.shield_absorption = getattr(target, "shield_absorption", 0.0) + self.absorption
-            self.started = True
-            logger.debug(f"ArcaneShield applied {self.absorption} to {getattr(target,'id',type(target))}")
-
-    def on_end(self, target):
-        # remove the shield portion granted by this instance
-        target.shield_absorption = max(0.0, getattr(target, "shield_absorption", 0.0) - self.absorption)
-        logger.debug(f"ArcaneShield expired on {getattr(target,'id',type(target))}")
-
 class KeenInsight(Effect):
     """
     Buff: increases critical chance for duration.
@@ -385,6 +341,54 @@ class KeenInsight(Effect):
     def on_end(self, target):
         target.crit_chance_bonus = max(0.0, getattr(target, "crit_chance_bonus", 0.0) - self.crit_bonus)
         logger.debug(f"KeenInsight ended on {getattr(target,'id',type(target))}")
+
+# =====================================================================
+# New effects added to support the new WIP_TEXTURE items.
+# =====================================================================
+
+class BleedEffect(Effect):
+    """
+    Deals physical-style damage over time.
+
+    Attributes:
+        damage_per_sec (float): Bleed damage per second.
+        accumulator (float): Accumulates fractional damage.
+    """
+    def __init__(self, duration, damage_per_sec):
+        super().__init__(duration)
+        self.damage_per_sec = damage_per_sec
+        self.accumulator = 0.0
+
+    def apply(self, dt, target):
+        self.accumulator += self.damage_per_sec * dt
+        if self.accumulator >= 1:
+            dmg = int(self.accumulator)
+            target.take_damage(dmg, ignore_invulnerability=True)
+            self.accumulator -= dmg
+            logger.debug(f"Bleed dealt {dmg} damage to {getattr(target, 'id', type(target))}")
+
+
+class StrengthEffect(Effect):
+    """
+    Adds a flat damage bonus to attacks for a duration.
+
+    Attributes:
+        damage_bonus (int): Flat damage added to every attack.
+    """
+    def __init__(self, duration, damage_bonus):
+        super().__init__(duration)
+        self.damage_bonus = int(damage_bonus)
+        self.started = False
+
+    def apply(self, dt, target):
+        if not self.started:
+            target.damage_bonus = getattr(target, "damage_bonus", 0) + self.damage_bonus
+            self.started = True
+            logger.debug(f"StrengthEffect applied to {getattr(target,'id',type(target))}")
+
+    def on_end(self, target):
+        target.damage_bonus = max(0, getattr(target, "damage_bonus", 0) - self.damage_bonus)
+        logger.debug(f"StrengthEffect ended on {getattr(target, 'id', type(target))}")
 
 class Momentum(Effect):
     """
@@ -429,6 +433,33 @@ class BlindEffect(Effect):
         target.accuracy_mult = getattr(target, "accuracy_mult", 1.0) / self.accuracy_mult
         logger.debug(f"BlindEffect ended on {getattr(target,'id',type(target))}")
 
+
+class HasteEffect(Effect):
+    """
+    Reduces attack cooldown and increases movement speed for a duration.
+
+    Attributes:
+        cooldown_multiplier (float): Multiplier applied to attack cooldown (e.g. 0.7 = 30% faster).
+        speed_multiplier (float): Multiplier applied to base speed (e.g. 1.3 = 30% faster).
+    """
+    def __init__(self, duration, cooldown_multiplier=0.7, speed_multiplier=1.3):
+        super().__init__(duration)
+        self.cooldown_multiplier = float(cooldown_multiplier)
+        self.speed_multiplier = float(speed_multiplier)
+        self.started = False
+
+    def apply(self, dt, target):
+        if not self.started:
+            target.cooldown_multiplier = min(getattr(target, "cooldown_multiplier", 1.0), self.cooldown_multiplier)
+            target.speed_multiplier = max(getattr(target, "speed_multiplier", 1.0), self.speed_multiplier)
+            self.started = True
+            logger.debug(f"HasteEffect applied to {getattr(target,'id',type(target))}")
+
+    def on_end(self, target):
+        target.cooldown_multiplier = 1.0
+        target.speed_multiplier = 1.0
+        logger.debug(f"HasteEffect ended on {getattr(target, 'id', type(target))}")
+
 class WeakenEffect(Effect):
     """
     Reduces damage dealt by the target for duration.
@@ -448,6 +479,30 @@ class WeakenEffect(Effect):
     def on_end(self, target):
         target.damage_dealt_mult = getattr(target, "damage_dealt_mult", 1.0) / self.damage_mult
         logger.debug(f"WeakenEffect ended on {getattr(target,'id',type(target))}")
+
+
+class ShieldEffect(Effect):
+    """
+    Absorbs incoming damage up to a configured amount.
+
+    Attributes:
+        absorb_amount (float): Total damage this shield can absorb.
+        remaining (float): How much absorption is left after starts.
+    """
+    def __init__(self, duration, absorb_amount):
+        super().__init__(duration)
+        self.absorb_amount = float(absorb_amount)
+        self.remaining = float(absorb_amount)
+        self.started = False
+
+    def apply(self, dt, target):
+        if not self.started:
+            target.shield = getattr(target, "shield", 0.0) + self.remaining
+            self.started = True
+
+    def on_end(self, target):
+        target.shield = max(0.0, getattr(target, "shield", 0.0) - self.remaining)
+        logger.debug(f"ShieldEffect ended on {getattr(target, 'id', type(target))}")
 
 class CurseEffect(Effect):
     """
@@ -478,7 +533,33 @@ class CurseEffect(Effect):
         for k, v in self._prev_resists.items():
             target.resistances[k] = v
         logger.debug(f"CurseEffect ended on {getattr(target,'id',type(target))}")
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+class LethargyEffect(Effect):
+    """
+    Slows the target and increases their attack cooldown (debuff).
+
+    Attributes:
+        speed_multiplier (float): Multiplier applied to base speed.
+        cooldown_multiplier (float): Multiplier applied to attack cooldown.
+    """
+    def __init__(self, duration, speed_multiplier=0.7, cooldown_multiplier=1.4):
+        super().__init__(duration)
+        self.speed_multiplier = float(speed_multiplier)
+        self.cooldown_multiplier = float(cooldown_multiplier)
+        self.started = False
+
+    def apply(self, dt, target):
+        if not self.started:
+            target.speed_multiplier = min(getattr(target, "speed_multiplier", 1.0), self.speed_multiplier)
+            target.cooldown_multiplier = max(getattr(target, "cooldown_multiplier", 1.0), self.cooldown_multiplier)
+            self.started = True
+
+    def on_end(self, target):
+        target.speed_multiplier = 1.0
+        target.cooldown_multiplier = 1.0
+        logger.debug(f"LethargyEffect ended on {getattr(target, 'id', type(target))}")
+
 
 Effect_list = {
     "regeneration": RegenerationEffect,
@@ -490,14 +571,18 @@ Effect_list = {
     "freeze": FreezeEffect,
     "root": RootEffect,
     "radiant_fortitude": RadiantFortitude,
-    "haste": Haste,
     "vampiric_edge": VampiricEdge,
-    "arcane_shield": ArcaneShield,
     "keen_insight": KeenInsight,
     "momentum": Momentum,
     "blind": BlindEffect,
     "weaken": WeakenEffect,
     "curse": CurseEffect,
+    # New effects below
+    "bleed": BleedEffect,
+    "strength": StrengthEffect,
+    "haste": HasteEffect,
+    "shield": ShieldEffect,
+    "lethargy": LethargyEffect,
 }
 
 def create_effect(effect_data: dict):
@@ -511,7 +596,7 @@ def create_effect(effect_data: dict):
         Effect | None: The created effect instance, or None if type is invalid.
     """
     data = effect_data.copy()
-    effect_type = data.pop("type", None) 
+    effect_type = data.pop("type", None)
     effect_class = Effect_list.get(effect_type)
     if effect_class:
         return effect_class(**data)

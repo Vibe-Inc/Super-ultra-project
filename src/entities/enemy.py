@@ -58,7 +58,7 @@ class Enemy:
             Base movement speed before modifiers.
         speed_multiplier (float):
             Multiplier applied to base speed.
-        
+
         # New attributes for CollisionSystem
         rect (pygame.Rect): Collision and drawing rectangle.
         velocity (pygame.Vector2): Normalized vector representing desired movement direction.
@@ -107,18 +107,20 @@ class Enemy:
             Distance within which the enemy detects the player.
         attack_range (float):
             Distance within which the enemy initiates an attack.
+        effects (list):
+            Active status effects (burn, poison, etc.) on this enemy.
+        max_hp (int):
+            Maximum HP used for the HP bar.
 
     Methods:
         get_rect():
             Returns the collision rectangle, updated to the current float position.
         update(dt, collision_system, obstacles, nav_grid=None, attack_context=None):
             Update the enemy's AI state, set velocity, and apply movement via collision system.
-            Args:
-                dt (float): Time elapsed since the last frame in seconds.
-                collision_system (CollisionSystem): The external collision handler.
-                obstacles (list[pygame.Rect]): List of static walls.
-                nav_grid (NavGrid | None): Optional navigation grid for pathfinding.
-            attack_context (AttackContext | None): Optional combat context for special attacks.
+        add_effect(effect):
+            Attach a status effect (matches the player's API so weapons can apply burn, etc.).
+        _tick_effects(dt):
+            Update all active effects and remove finished ones.
         take_damage(amount):
             Reduce the enemy's health by the given amount.
         is_dead():
@@ -192,22 +194,48 @@ class Enemy:
         self._ai_context = AIContext(dt=0.0, nav_grid=None, obstacles=[], player=None)
 
         self.effects = []
+        # Status effect container (matches the player's API so weapons
+        # can apply burn / poison / etc. by calling enemy.add_effect()).
+        self.effects: list = []
+        self.cooldown_multiplier = 1.0
+        self.damage_bonus = 0
+        self.shield = 0.0
+        self.dizzy = False
+        self.confused = False
+
         self._flash_overlay = pygame.Surface(animation_size, pygame.SRCALPHA)
         self._flash_overlay.fill((255, 50, 50, 100))
         self._animation_size = animation_size
         self._lod_distance = 800.0
         logger.info(f"Spawned enemy {getattr(self, 'ai_profile', 'unknown')} at ({x}, {y})")
 
+    def add_effect(self, effect):
+        """Attach a status effect to this enemy. Same contract as Character."""
+        for e in self.effects:
+            if type(e) == type(effect):
+                self.effects.remove(e)
+                self.effects.append(effect)
+                return
+        self.effects.append(effect)
+
+    def _tick_effects(self, dt: float):
+        if not self.effects:
+            return
+        for effect in self.effects[:]:
+            effect.update(dt, self)
+            if effect.is_finished:
+                self.effects.remove(effect)
+
     def get_rect(self):
         sprite_width = self.image.get_width()
         sprite_height = self.image.get_height()
-        
+
         hitbox_width = min(self.hitbox_width, sprite_width)
         hitbox_height = min(self.hitbox_height, sprite_height)
 
         offset_x = (sprite_width - hitbox_width) // 2
         offset_y = sprite_height - hitbox_height
-        
+
         self.rect = pygame.Rect(int(self.pos.x + offset_x), int(self.pos.y + offset_y), hitbox_width, hitbox_height)
         return self.rect
 
@@ -228,6 +256,9 @@ class Enemy:
             effect.update(dt, self)
             if effect.is_finished:
                 self.effects.remove(effect)
+        # Tick status effects first so debuffs can modify speed_multiplier
+        # before the movement code below consumes it.
+        self._tick_effects(dt)
 
         if not active:
             self.time_accumulator += dt * 0.2
@@ -267,7 +298,7 @@ class Enemy:
 
         if self.target:
             direction_vector = self.target - self.pos
-            
+
             if direction_vector.length_squared() > 1.0:
 
                 self.velocity = direction_vector.normalize()

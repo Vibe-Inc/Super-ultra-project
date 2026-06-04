@@ -205,6 +205,7 @@ class Game(State):
 
         self.MAIN_player_inv = MAIN_player_inventory(app)
         self.PLAYER_inventory_equipment = MAIN_player_inventory_equipment(app)
+        self.PLAYER_inventory_equipment.sync_character_defense(self.character)
         self.hotbar = MAIN_player_hotbar(app)
         self.app.INV_manager.hotbar = self.hotbar
         self.app.INV_manager.add_active_inventory(self.hotbar)
@@ -496,7 +497,13 @@ class Game(State):
             create_item("large_health_potion"),
             create_item("large_health_potion"),
             create_item("potion_of_confusion"),
-            create_item("moldy_bread")
+            create_item("moldy_bread"),
+            create_item("iron_helmet"),
+            create_item("iron_chestplate"),
+            create_item("iron_leggings"),
+            create_item("iron_boots"),
+            create_item("defense_charm"),
+            create_item("leather_gloves"),
             ]
 
         self.shop_inv = ShopInventory(self.app, shop_items)
