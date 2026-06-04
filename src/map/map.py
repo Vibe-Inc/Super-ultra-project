@@ -1,3 +1,4 @@
+import os
 import pytmx
 import pygame
 from src.core.logger import logger
@@ -5,6 +6,15 @@ from src.core.logger import logger
 class Map:
     FRINGE_LAYER_NAME = "details fringe layer"
     FRINGE_LAYER_FADE_ALPHA = 110
+
+    ANIMATION_SPEED = 0.2
+
+    TILESET_ANIMATIONS = {
+        "smoke": {
+            "frame_step": 6,
+            "frame_count": 6,
+        },
+    }
 
     """
     Represents a tile-based game map loaded from a Tiled map file.
@@ -57,6 +67,9 @@ class Map:
         self.pixel_height = 0
         self._base_render_cache = None
         self._fringe_components = []
+        self._animated_tiles = {"base": [], "fringe": []}
+        self._anim_firstgid_map = {}
+        self._anim_elapsed = 0.0
 
     def ensure_loaded(self) -> bool:
         if self.game_map is None:
@@ -75,6 +88,46 @@ class Map:
 
     def _is_fringe_layer(self, layer) -> bool:
         return isinstance(layer, pytmx.TiledTileLayer) and layer.name.strip().lower() == self.FRINGE_LAYER_NAME
+
+    def _get_anim_config_for_gid(self, gid):
+        if not self._anim_firstgid_map:
+            return None
+        tiled_gid = self.game_map.tiledgidmap.get(gid, gid)
+        for firstgid, config in self._anim_firstgid_map.items():
+            if firstgid <= tiled_gid < firstgid + config["tilecount"]:
+                return (firstgid, config, tiled_gid)
+        return None
+
+    def _register_animated_tiles(self):
+        for ts in self.game_map.tilesets:
+            config = self.TILESET_ANIMATIONS.get(ts.name)
+            if config is None:
+                continue
+            path = os.path.join(os.path.dirname(self.map_file), ts.source)
+            if not os.path.exists(path):
+                logger.warning(f"Tileset image not found: {path}")
+                continue
+            colorkey = getattr(ts, "trans", None)
+            if colorkey:
+                colorkey = pygame.Color(f"#{colorkey}")
+            full_image = pygame.image.load(path)
+            for local_id in range(ts.tilecount):
+                tiled_gid = ts.firstgid + local_id
+                gid_entries = self.game_map.gidmap.get(tiled_gid)
+                if not gid_entries:
+                    pytmx_gid = self.game_map.register_gid(tiled_gid)
+                    col = local_id % ts.columns
+                    row = local_id // ts.columns
+                    x = ts.margin + col * (ts.tilewidth + ts.spacing)
+                    y = ts.margin + row * (ts.tileheight + ts.spacing)
+                    rect = (x, y, ts.tilewidth, ts.tileheight)
+                    from pytmx.util_pygame import smart_convert
+                    tile = full_image.subsurface(rect)
+                    tile = smart_convert(tile, colorkey, pixelalpha=True)
+                    if pytmx_gid >= len(self.game_map.images):
+                        self.game_map.images.extend([None] * (pytmx_gid - len(self.game_map.images) + 1))
+                    self.game_map.images[pytmx_gid] = tile
+            full_image = None
 
     def _build_fringe_components(self, layer):
         tile_width = self.game_map.tilewidth
@@ -117,6 +170,21 @@ class Map:
             tile_rects = []
             for cell_x, cell_y in cells:
                 gid = occupied_tiles[(cell_x, cell_y)]
+                anim_info = self._get_anim_config_for_gid(gid)
+                if anim_info:
+                    firstgid, config, tiled_gid = anim_info
+                    local_id = tiled_gid - firstgid
+                    stride = config["frame_step"] * config["frame_count"]
+                    anim_base = (local_id // stride) * stride + (local_id % config["frame_step"])
+                    self._animated_tiles["fringe"].append({
+                        "x": cell_x,
+                        "y": cell_y,
+                        "firstgid": firstgid,
+                        "anim_base": anim_base,
+                        "frame_count": config["frame_count"],
+                        "frame_step": config["frame_step"],
+                    })
+                    continue
                 tile = self.game_map.get_tile_image_by_gid(gid)
                 if tile:
                     surface.blit(
@@ -131,6 +199,9 @@ class Map:
                         tile_height,
                     )
                 )
+
+            if not tile_rects:
+                continue
 
             components.append(
                 {
@@ -148,17 +219,47 @@ class Map:
             self._fringe_components = []
             return
 
+        self._anim_firstgid_map = {}
+        for ts in self.game_map.tilesets:
+            config = self.TILESET_ANIMATIONS.get(ts.name)
+            if config:
+                self._anim_firstgid_map[ts.firstgid] = {
+                    **config,
+                    "tilecount": ts.tilecount,
+                    "_tileset": ts,
+                }
+        self._register_animated_tiles()
+
+        self._animated_tiles = {"base": [], "fringe": []}
+
         surface = pygame.Surface((self.pixel_width, self.pixel_height), pygame.SRCALPHA)
         fringe_components = []
+        tilewidth = self.game_map.tilewidth
+        tileheight = self.game_map.tileheight
         for layer in self.game_map.visible_layers:
             if isinstance(layer, pytmx.TiledTileLayer):
                 if self._is_fringe_layer(layer):
                     fringe_components.extend(self._build_fringe_components(layer))
                     continue
                 for x, y, gid in layer:
+                    anim_info = self._get_anim_config_for_gid(gid)
+                    if anim_info:
+                        firstgid, config, tiled_gid = anim_info
+                        local_id = tiled_gid - firstgid
+                        stride = config["frame_step"] * config["frame_count"]
+                        anim_base = (local_id // stride) * stride + (local_id % config["frame_step"])
+                        self._animated_tiles["base"].append({
+                            "x": x,
+                            "y": y,
+                            "firstgid": firstgid,
+                            "anim_base": anim_base,
+                            "frame_count": config["frame_count"],
+                            "frame_step": config["frame_step"],
+                        })
+                        continue
                     tile = self.game_map.get_tile_image_by_gid(gid)
                     if tile:
-                        surface.blit(tile, (x * self.game_map.tilewidth, y * self.game_map.tileheight))
+                        surface.blit(tile, (x * tilewidth, y * tileheight))
         self._base_render_cache = surface
         self._fringe_components = fringe_components
 
@@ -166,6 +267,42 @@ class Map:
         if self.ensure_loaded():
             return self.game_map
         return None
+
+    def _get_animated_gid(self, info, frame_index):
+        return info["firstgid"] + info["anim_base"] + frame_index * info["frame_step"]
+
+    def _draw_animated_tiles(self, screen, camera_offset, tile_list, fade_alpha=None):
+        if not tile_list:
+            return
+        frame_index = int(self._anim_elapsed / self.ANIMATION_SPEED) % max(
+            (info["frame_count"] for info in tile_list), default=1
+        )
+        tilewidth = self.game_map.tilewidth
+        tileheight = self.game_map.tileheight
+        for info in tile_list:
+            tiled_gid = self._get_animated_gid(info, frame_index % info["frame_count"])
+            gid_entries = self.game_map.gidmap.get(tiled_gid)
+            if not gid_entries:
+                continue
+            pytmx_gid = gid_entries[0][0]
+            tile = self.game_map.get_tile_image_by_gid(pytmx_gid)
+            if tile:
+                px = info["x"] * tilewidth
+                py = info["y"] * tileheight
+                if camera_offset is None:
+                    draw_pos = (px, py)
+                else:
+                    draw_pos = (px - int(camera_offset.x), py - int(camera_offset.y))
+
+                if fade_alpha is not None:
+                    tile_copy = tile.copy()
+                    tile_copy.set_alpha(fade_alpha)
+                    screen.blit(tile_copy, draw_pos)
+                else:
+                    screen.blit(tile, draw_pos)
+
+    def update_animation(self, dt):
+        self._anim_elapsed += dt
 
     def draw(self, screen, camera_offset=None):
         if not self.ensure_loaded():
@@ -178,6 +315,7 @@ class Map:
                 screen.blit(self._base_render_cache, (0, 0))
             else:
                 screen.blit(self._base_render_cache, (-int(camera_offset.x), -int(camera_offset.y)))
+        self._draw_animated_tiles(screen, camera_offset, self._animated_tiles["base"])
 
     def draw_fringe_overlay(self, screen, camera_offset=None, player=None):
         if not self.ensure_loaded():
@@ -186,18 +324,17 @@ class Map:
         if self._base_render_cache is None:
             self._build_render_cache()
 
-        if not self._fringe_components:
-            return
-
         player_rect = None
         if player is not None:
             player_rect = pygame.Rect(int(player.pos.x), int(player.pos.y), player.image.get_width(), player.image.get_height())
 
+        fringe_should_fade = False
         for component in self._fringe_components:
             surface = component["surface"]
             alpha = 255
             if player_rect is not None and self._should_fade_component(player_rect, component["tile_rects"]):
                 alpha = self.FRINGE_LAYER_FADE_ALPHA
+                fringe_should_fade = True
 
             surface.set_alpha(alpha)
             origin_x = int(component["origin"].x)
@@ -213,6 +350,11 @@ class Map:
                     ),
                 )
             surface.set_alpha(None)
+
+        if fringe_should_fade:
+            self._draw_animated_tiles(screen, camera_offset, self._animated_tiles["fringe"], fade_alpha=self.FRINGE_LAYER_FADE_ALPHA)
+        else:
+            self._draw_animated_tiles(screen, camera_offset, self._animated_tiles["fringe"])
 
     def _should_fade_component(self, player_rect: pygame.Rect, tile_rects: list[pygame.Rect]) -> bool:
         if not tile_rects:
@@ -352,6 +494,10 @@ class LocalMap:
 
     def get_obstacles(self):
         return self.current_map.get_obstacles()
+
+    def update_animation(self, dt):
+        if self.current_map:
+            self.current_map.update_animation(dt)
 
     def update(self, player):
         """
