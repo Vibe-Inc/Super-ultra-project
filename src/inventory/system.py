@@ -93,6 +93,50 @@ class Inventory:
                         self.items[x][y] = None
                         manager._held_source = {'inv': self, 'col': x, 'row': y}
 
+            elif event.button == 2:
+                from src.inventory.inventory_manager import Split_popup_model
+                if slot and not manager.selected_item and slot[1] > 1:
+                    rect = pygame.Rect(
+                        self.pos_x + (self.slot_size + self.border) * x + self.border,
+                        self.pos_y + (self.slot_size + self.border) * y + self.border,
+                        self.slot_size, self.slot_size
+                    )
+                    manager.active_split_popup = Split_popup_model(manager, slot, rect)
+
+            elif event.button == 3 and slot and not manager.selected_item:
+                item, count = slot
+                if isinstance(item, Consumable):
+                    game_state = getattr(manager.app.manager.states.get("gameplay"), 'character', None)
+                    if game_state and item.use(game_state):
+                        slot[1] -= 1
+                        if slot[1] <= 0:
+                            self.items[x][y] = None
+                elif isinstance(item, Armor):
+                    from src.inventory.system import MAIN_player_inventory_equipment
+                    equip_inv = None
+                    for inv in manager.active_inventories:
+                        if isinstance(inv, MAIN_player_inventory_equipment):
+                            equip_inv = inv
+                            break
+                    if equip_inv is None:
+                        gs = manager.app.manager.states.get("gameplay")
+                        if gs and hasattr(gs, 'PLAYER_inventory_equipment'):
+                            equip_inv = gs.PLAYER_inventory_equipment
+                    if equip_inv:
+                        for ex in range(equip_inv.columns):
+                            for ey in range(equip_inv.rows):
+                                if equip_inv.get_slot_type(ex, ey) == item.slot_type:
+                                    existing = equip_inv.items[ex][ey]
+                                    if existing:
+                                        equip_inv.items[ex][ey], self.items[x][y] = slot, existing
+                                    else:
+                                        equip_inv.items[ex][ey] = slot
+                                        self.items[x][y] = None
+                                    char = getattr(manager.app.manager.states.get("gameplay"), 'character', None)
+                                    if char:
+                                        equip_inv.sync_character_defense(char)
+                                    return
+
     def _quick_move_slot(self, col, row, slot, manager):
         from src.inventory.system import MAIN_player_hotbar, MAIN_player_inventory, MAIN_player_inventory_equipment
 
@@ -120,7 +164,50 @@ class Inventory:
                         self.items[col][row] = None
                         return
 
-        elif isinstance(self, (MAIN_player_inventory, MAIN_player_inventory_equipment)):
+        elif isinstance(self, MAIN_player_inventory_equipment):
+            target_inv = None
+            for inv in manager.active_inventories:
+                if isinstance(inv, MAIN_player_inventory):
+                    target_inv = inv
+                    break
+            if not target_inv:
+                return
+            for tx in range(target_inv.columns):
+                for ty in range(target_inv.rows):
+                    existing = target_inv.items[tx][ty]
+                    if existing and existing[0].id == item.id:
+                        existing[1] += count
+                        self.items[col][row] = None
+                        return
+            for tx in range(target_inv.columns):
+                for ty in range(target_inv.rows):
+                    if target_inv.items[tx][ty] is None:
+                        target_inv.items[tx][ty] = slot
+                        self.items[col][row] = None
+                        return
+
+        elif isinstance(self, MAIN_player_inventory):
+            if isinstance(item, Armor) and hasattr(item, 'slot_type'):
+                equip_inv = None
+                for inv in manager.active_inventories:
+                    if isinstance(inv, MAIN_player_inventory_equipment):
+                        equip_inv = inv
+                        break
+                if equip_inv:
+                    for ex in range(equip_inv.columns):
+                        for ey in range(equip_inv.rows):
+                            if equip_inv.get_slot_type(ex, ey) == item.slot_type:
+                                existing = equip_inv.items[ex][ey]
+                                if existing:
+                                    equip_inv.items[ex][ey], self.items[col][row] = slot, existing
+                                else:
+                                    equip_inv.items[ex][ey] = slot
+                                    self.items[col][row] = None
+                                char = getattr(manager.app.manager.states.get("gameplay"), 'character', None)
+                                if char:
+                                    equip_inv.sync_character_defense(char)
+                                return
+
             target_inv = manager.hotbar
             if not target_inv:
                 return
@@ -370,6 +457,12 @@ class MAIN_player_inventory_equipment(Inventory):
         slot = self.items[x][y]
 
         if event.button == 1:
+            shift_held = pygame.key.get_mods() & pygame.KMOD_SHIFT
+
+            if shift_held and slot and not manager.selected_item:
+                self._quick_move_slot(x, y, slot, manager)
+                return
+
             if manager.selected_item:
                 dragged_item = manager.selected_item[0]
                 slot_type = self.get_slot_type(x, y)
@@ -408,6 +501,31 @@ class MAIN_player_inventory_equipment(Inventory):
                     slot[1] -= 1
                     if slot[1] <= 0:
                         self.items[x][y] = None
+            elif isinstance(item, Armor):
+                hb = manager.hotbar
+                if hb:
+                    for hx in range(hb.columns):
+                        for hy in range(hb.rows):
+                            existing = hb.items[hx][hy]
+                            if existing and existing[0].id == item.id:
+                                existing[1] += count
+                                self.items[x][y] = None
+                                char = getattr(manager.app.manager.states.get("gameplay"), 'character', None)
+                                if char: self.sync_character_defense(char)
+                                return
+                    for hx in range(hb.columns):
+                        for hy in range(hb.rows):
+                            if hb.items[hx][hy] is None:
+                                hb.items[hx][hy] = slot
+                                self.items[x][y] = None
+                                char = getattr(manager.app.manager.states.get("gameplay"), 'character', None)
+                                if char: self.sync_character_defense(char)
+                                return
+                    hb_active = hb.items[hb.active_slot_index][0]
+                    hb.items[hb.active_slot_index][0] = slot
+                    self.items[x][y] = hb_active
+                    char = getattr(manager.app.manager.states.get("gameplay"), 'character', None)
+                    if char: self.sync_character_defense(char)
 
 class MAIN_player_hotbar(Inventory):
     """
@@ -490,6 +608,27 @@ class MAIN_player_hotbar(Inventory):
             if game_state and slot[0].use(game_state.character):
                 slot[1] -= 1
                 if slot[1] <= 0: self.items[col][0] = None
+        elif slot and isinstance(slot[0], Armor):
+            from src.inventory.system import MAIN_player_inventory_equipment
+            game_state = self.app.manager.states.get("gameplay")
+            if not game_state:
+                return
+            equip_inv = game_state.PLAYER_inventory_equipment
+            if equip_inv:
+                item = slot[0]
+                for ex in range(equip_inv.columns):
+                    for ey in range(equip_inv.rows):
+                        if equip_inv.get_slot_type(ex, ey) == item.slot_type:
+                            existing = equip_inv.items[ex][ey]
+                            if existing:
+                                equip_inv.items[ex][ey], self.items[col][0] = slot, existing
+                            else:
+                                equip_inv.items[ex][ey] = slot
+                                self.items[col][0] = None
+                            char = getattr(game_state, 'character', None)
+                            if char:
+                                equip_inv.sync_character_defense(char)
+                            return
 
 class Inventory_slider(Slider):
     """
