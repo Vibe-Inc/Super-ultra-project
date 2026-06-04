@@ -96,32 +96,45 @@ class FishingUI:
             screen.blit(txt, (screen.get_width() // 2 - txt.get_width() // 2, screen.get_height() // 2 - 80))
 
         if self.ctrl.state == "active":
-            # Halved all dimensions (2x smaller)
-            w = 14
             h = 100
-            # Position the catch bar to the right of the character in screen space
+            # Position both bars to the right of the character in screen space
             player_screen = self.ctrl.game.character.get_center() - camera_offset
-            bar_x = int(player_screen.x + 20)
-            bar_y = int(player_screen.y - h // 2)
 
-            pygame.draw.rect(screen, (30, 30, 30), (bar_x - 4, bar_y - 4, w + 8, h + 8), border_radius=2)
-            pygame.draw.rect(screen, (40, 40, 40), (bar_x, bar_y, w, h))
+            # --- Left bar: Catching bar (fish + catcher) ---
+            catch_w = 14
+            catch_x = int(player_screen.x + 20)
+            catch_y = int(player_screen.y - h // 2)
 
-            fill_h = int((self.ctrl.catch_fill / self.ctrl.catch_fill_max) * h)
-            pygame.draw.rect(screen, (80, 200, 80), (bar_x, bar_y + h - fill_h, w, fill_h))
+            pygame.draw.rect(screen, (30, 30, 30), (catch_x - 4, catch_y - 4, catch_w + 8, h + 8), border_radius=2)
+            pygame.draw.rect(screen, (40, 40, 40), (catch_x, catch_y, catch_w, h))
 
+            # Catcher (yellow rectangle)
             catcher_h = 9
             catcher_norm = getattr(self.ctrl, "active_bobber_norm", 0.5)
-            catcher_y = int(bar_y + catcher_norm * h - catcher_h / 2)
+            catcher_y = int(catch_y + catcher_norm * h - catcher_h / 2)
             catcher_color = (240, 240, 80) if getattr(self.ctrl, "active_overlap", False) else (200, 200, 80)
-            pygame.draw.rect(screen, catcher_color, (bar_x - 2, catcher_y, w + 4, catcher_h), border_radius=2)
+            pygame.draw.rect(screen, catcher_color, (catch_x - 2, catcher_y, catch_w + 4, catcher_h), border_radius=2)
 
+            # Fish (red line)
             fish_pos_norm = getattr(self.ctrl, "active_fish_pos_norm", 0.5)
-            fish_y = int(bar_y + fish_pos_norm * h)
-            pygame.draw.line(screen, (220, 80, 80), (bar_x - 4, fish_y), (bar_x + w + 4, fish_y), 2)
+            fish_y = int(catch_y + fish_pos_norm * h)
+            pygame.draw.line(screen, (220, 80, 80), (catch_x - 4, fish_y), (catch_x + catch_w + 4, fish_y), 2)
+
+            # --- Right bar: Progress bar (fill meter) ---
+            prog_w = 10
+            prog_gap = 6
+            prog_x = catch_x + catch_w + prog_gap
+            prog_y = catch_y
+
+            pygame.draw.rect(screen, (30, 30, 30), (prog_x - 2, prog_y - 2, prog_w + 4, h + 4), border_radius=2)
+            pygame.draw.rect(screen, (25, 25, 25), (prog_x, prog_y, prog_w, h), border_radius=1)
+
+            fill_h = int((self.ctrl.catch_fill / self.ctrl.catch_fill_max) * h)
+            # Fill from bottom to top
+            pygame.draw.rect(screen, (60, 200, 60), (prog_x, prog_y + h - fill_h, prog_w, fill_h), border_radius=1)
 
             hint = self.hint_font.render("Hold Space / Left Mouse to reel", True, (220, 220, 220))
-            screen.blit(hint, (bar_x - hint.get_width() // 2 + w // 2, bar_y + h + 8))
+            screen.blit(hint, (prog_x - hint.get_width() // 2 + prog_w // 2, prog_y + h + 8))
 
 
 class FishingController:
