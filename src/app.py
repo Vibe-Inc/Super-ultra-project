@@ -121,12 +121,13 @@ class App:
         add_item(4, 0, "war_hammer")
         add_item(5, 0, "mace")
         add_item(6, 0, "spear")
-        # Row 1 — Ranged weapons + food
+        # Row 1 — Ranged weapons + accessories
         add_item(0, 1, "wooden_bow")
         add_item(1, 1, "hunting_bow")
         add_item(2, 1, "longbow")
         add_item(3, 1, "crossbow")
         add_item(4, 1, "throwing_dagger")
+        add_item(5, 1, "light_ring")
 
         # Row 2 — Potions
         add_item(0, 2, "small_health_potion", 3)
@@ -138,7 +139,7 @@ class App:
         add_item(6, 2, "potion_of_haste")
         add_item(7, 2, "potion_of_shield")
 
-        # Row 4 — Armor
+        # Row 3 — Armor
         add_item(0, 3, "iron_helmet")
         add_item(1, 3, "iron_chestplate")
         add_item(2, 3, "iron_leggings")

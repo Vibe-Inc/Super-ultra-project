@@ -9,7 +9,7 @@ from src.core.state import State
 from src.entities.character import Character
 from src.map.map import LocalMap
 from src.inventory.system import MAIN_player_inventory, MAIN_player_inventory_equipment, ShopInventory, MAIN_player_hotbar
-from src.items.items import create_item
+from src.items.items import create_item, LightRing
 from database.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, DizzinessEffect, SlowEffect
 from src.entities.enemy import Enemy
 from src.entities.npc import NPC
@@ -796,12 +796,49 @@ class Game(State):
                     if slot_data:
                         held_item = slot_data[0] if isinstance(slot_data, (list, tuple)) else slot_data
                         if getattr(held_item, 'emits_light', False):
+                            radius = getattr(held_item, 'light_radius', 160)
+                            intensity = getattr(held_item, 'intensity', 0.9)
+
+                            # Check if a LightRing is equipped in the ring slot
+                            try:
+                                eq = getattr(self, 'PLAYER_inventory_equipment', None)
+                                if eq:
+                                    for ex in range(eq.columns):
+                                        for ey in range(eq.rows):
+                                            eq_slot = eq.items[ex][ey]
+                                            if eq_slot:
+                                                eq_item = eq_slot[0] if isinstance(eq_slot, (list, tuple)) else eq_slot
+                                                if isinstance(eq_item, LightRing):
+                                                    radius += getattr(eq_item, 'light_radius_bonus', 0)
+                                                    intensity += getattr(eq_item, 'light_intensity_bonus', 0)
+                            except Exception:
+                                pass
+
                             screen_pos = (int(player_center.x - camera.x), int(player_center.y - camera.y))
                             lights.append({
                                 'pos': screen_pos,
-                                'radius': int(getattr(held_item, 'light_radius', 160)),
-                                'intensity': float(getattr(held_item, 'intensity', 0.9)),
+                                'radius': int(radius),
+                                'intensity': float(min(intensity, 2.0)),
                             })
+            except Exception:
+                pass
+
+            # LightRing: emits its own light when equipped in ring slot
+            try:
+                eq = getattr(self, 'PLAYER_inventory_equipment', None)
+                if eq:
+                    for ex in range(eq.columns):
+                        for ey in range(eq.rows):
+                            eq_slot = eq.items[ex][ey]
+                            if eq_slot:
+                                eq_item = eq_slot[0] if isinstance(eq_slot, (list, tuple)) else eq_slot
+                                if isinstance(eq_item, LightRing) and getattr(eq_item, 'emits_light', False):
+                                    screen_pos = (int(player_center.x - camera.x), int(player_center.y - camera.y))
+                                    lights.append({
+                                        'pos': screen_pos,
+                                        'radius': int(getattr(eq_item, 'light_radius', 160)),
+                                        'intensity': float(getattr(eq_item, 'light_intensity', 0.6)),
+                                    })
             except Exception:
                 pass
 

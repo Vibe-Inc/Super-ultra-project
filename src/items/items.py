@@ -333,13 +333,50 @@ class Lantern(Item):
             }
         super().__init__(row)
         self.light_radius = 200   # pixels – soft warm glow
-        self.intensity = 0.7      # gentle intensity for a natural look
+        self.intensity = 1.4      # strong intensity for clear illumination
         self.emits_light = True   # flag checked by Game.get_light_sources()
 
     def get_tooltip_text(self):
         stats = (
             f"{_('Type')}: {_('Misc')}\n"
             f"{_('Light Radius')}: {self.light_radius}px\n"
+            f"Price: ${self.price}"
+        )
+        return f"{self.name}\n{stats}\n{self.description}"
+
+
+class LightRing(Armor):
+    """Enchanted ring that amplifies the lantern's glow when worn.
+
+    Equip this ring in the ring slot to increase both the light radius and
+    intensity of any light-emitting item held in the hotbar (Lantern, Lamp).
+    """
+    def __init__(self, row: dict | None = None, *, image_path: str = "assets/items/accessories/Light_ring.png"):
+        if row is None:
+            row = {
+                "id": "light_ring",
+                "name": "Light Ring",
+                "type": "armor",
+                "max_stack": 1,
+                "price": 120,
+                "description": "An enchanted ring that emits a soft glow and amplifies any light source you carry.",
+                "image_path": image_path,
+                "slot_type": "ring",
+                "defense_value": 0,
+            }
+        super().__init__(row)
+        self.light_radius = 260   # bigger radius than the lantern (200)
+        self.light_intensity = 1.6  # strong illumination
+        self.emits_light = True   # same flag the lantern uses
+        self.light_radius_bonus = 80   # extra pixels added to lantern radius
+        self.light_intensity_bonus = 0.3  # extra intensity added to lantern
+
+    def get_tooltip_text(self):
+        stats = (
+            f"{_('Type')}: {_('Armor')} ({_('Ring')})\n"
+            f"{_('Defense')}: +{self.defense_value}\n"
+            f"+{self.light_radius_bonus} {_('Light Radius')}\n"
+            f"+{self.light_intensity_bonus} {_('Light Intensity')}\n"
             f"Price: ${self.price}"
         )
         return f"{self.name}\n{stats}\n{self.description}"
@@ -366,6 +403,12 @@ def create_item(item_id: str):
     if item_id == "lantern":
         try:
             return Lantern(None)
+        except Exception:
+            pass
+
+    if item_id == "light_ring":
+        try:
+            return LightRing(None)
         except Exception:
             pass
 
