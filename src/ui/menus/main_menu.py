@@ -15,12 +15,73 @@ from src.ui.effects import (
 )
 import src.config as cfg
 from src.core.logger import logger
+from src.core.save_manager import SaveManager
 
 if TYPE_CHECKING:
     from src.app import App
 
 
 class MainMenu(Menu):
+    """
+    Main menu screen with start, load, settings, credits, and exit options.
+
+    Features animated background effects, decorative particles, and shield-shaped buttons.
+
+    Attributes:
+        app (App):
+            The main application instance.
+        buttons (list[Button]):
+            List of main menu buttons (START, LOAD, EXIT, SETTINGS, CREDITS).
+        beta_logo_img (pygame.Surface):
+            The beta logo image.
+        _label_font (pygame.font.Font):
+            Font for labels.
+        _title_font (pygame.font.Font):
+            Large font for the title.
+        font_small (pygame.font.Font):
+            Small font for captions.
+        _anim_time (float):
+            Accumulated animation time.
+        _launch_phase (float):
+            Phase of the launch animation.
+        _particles (list):
+            Decorative ambient particles.
+        _stars (list):
+            Background star effects.
+        _light_rays (list):
+            Light ray effects.
+        _embers (list):
+            Ambient ember particles.
+        _bursts (list):
+            Launch burst effects.
+        _sparkles (list):
+            Title sparkle effects.
+        _panel_rect (pygame.Rect):
+            Rectangle for the central panel.
+
+    Methods:
+        __init__(app):
+            Initialize the main menu.
+        start_game():
+            Start a new game.
+        exit_game():
+            Exit the application.
+        open_settings():
+            Open the settings menu.
+        open_load_menu():
+            Open the save/load menu.
+        open_credits():
+            Open the credits menu.
+        back_to_main():
+            Return to the main menu screen (inherited).
+        handle_event(event):
+            Handle input events.
+        update(dt):
+            Update animations and effects.
+        draw(screen):
+            Render the main menu.
+    """
+
     def __init__(self, app: "App"):
         super().__init__(app)
 
@@ -461,6 +522,7 @@ class MainMenu(Menu):
 
     def exit_game(self):
         logger.info("Exit requested from MainMenu")
+        SaveManager.save_settings(self.app)
         pygame.quit()
         sys.exit()
 

@@ -15,10 +15,189 @@ if TYPE_CHECKING:
 class SkillTreeMenu(Menu):
     """
     Enhanced skill tree screen inspired by Path of Exile with visual wow effects.
-    Features: animated glowing nodes, particle background, gradient links, 
+
+    Features animated glowing nodes, particle background, gradient links,
     pulsing selection, branch color themes, and expanded node count.
+
+    Attributes:
+        app (App):
+            The main application instance.
+        title_font (pygame.font.Font):
+            Font used for the title.
+        section_font (pygame.font.Font):
+            Font used for section headers.
+        small_font (pygame.font.Font):
+            Small font for descriptions.
+        exit_button (Button):
+            Button to exit the skill tree.
+        unlock_button (Button):
+            Button to unlock the selected node.
+        buttons (list[Button]):
+            List of sidebar buttons.
+        zoom (float):
+            Current zoom level of the tree view.
+        min_zoom (float):
+            Minimum zoom limit.
+        max_zoom (float):
+            Maximum zoom limit.
+        pan_offset (pygame.Vector2):
+            Current panning offset for the tree view.
+        dragging_view (bool):
+            Whether the user is dragging the view.
+        drag_origin (pygame.Vector2):
+            Mouse position where drag started.
+        drag_start_offset (pygame.Vector2):
+            Pan offset at drag start.
+        animation_time (float):
+            Accumulated time for animation effects.
+        particles (list):
+            Background particle effects.
+        unlock_effects (list):
+            Active unlock animations.
+        screen_flash_alpha (int):
+            Alpha value for screen flash effect.
+        screen_flash_timer (int):
+            Timer for screen flash duration.
+        entrance_active (bool):
+            Whether the entrance animation is playing.
+        entrance_progress (float):
+            Entrance animation progress (0.0 to 1.0).
+        entrance_sparks (list):
+            Converging spark particles for entrance.
+        entrance_glow (int):
+            Glow intensity during entrance.
+        _entrance_triggered (bool):
+            Prevents re-triggering entrance.
+        _entrance_animation_played (bool):
+            Whether entrance has played before.
+        entrance_phase (int):
+            Current phase of the multi-phase entrance.
+        entrance_phase_time (float):
+            Time spent in current entrance phase.
+        entrance_total_time (float):
+            Total elapsed entrance time.
+        core_ignition_flash (float):
+            Flash intensity for core ignition.
+        core_ignition_rings (list):
+            Expanding energy rings from the core.
+        core_ignition_particles (list):
+            Particles bursting from the core.
+        entrance_revealed_nodes (set):
+            Node IDs that have lit up during entrance.
+        entrance_revealed_links (set):
+            Link tuples that have lit up during entrance.
+        entrance_growth_frontier (list):
+            BFS growth frontier during entrance.
+        entrance_link_travels (list):
+            Visual energy traveling along links.
+        entrance_star_alpha (float):
+            Alpha for background star fade-in.
+        entrance_vortex (list):
+            Swirling convergence vortex particles.
+        entrance_anticipation_lights (list):
+            Shimmer lights before stars appear.
+        entrance_star_bloom (float):
+            Star bloom multiplier.
+        entrance_shake_offset (pygame.Vector2):
+            Screen shake offset during entrance.
+        entrance_shake_intensity (float):
+            Screen shake intensity.
+        entrance_energy_pulses (list):
+            Energy after-wave pulses.
+        _pulse_waves_spawned (bool):
+            Whether pulse waves have been spawned.
+        entrance_growth_timer (float):
+            Continuous BFS growth timer.
+        core_pulse_timer (float):
+            Timer for periodic core pulse wave.
+        core_pulse_interval (float):
+            Interval between core pulse waves.
+        core_pulse_rings (list):
+            Expanding rings from core pulse.
+        core_pulse_flash (float):
+            Flash from core pulse.
+        node_sparkles (list):
+            Ambient sparkle effects on nodes.
+        idle_breathe (float):
+            Idle breathing animation timer.
+        breathe_scale (float):
+            Scale factor for breathing effect.
+        nodes (list[dict]):
+            List of skill tree nodes.
+        links (list[tuple]):
+            List of connections between nodes.
+        nodes_by_id (dict):
+            Dictionary mapping node IDs to node data.
+        selected_node_id (int | None):
+            Currently selected node ID.
+        hovered_node_id (int | None):
+            Currently hovered node ID.
+        background_points (list):
+            Background decorative points.
+        tree_rect (pygame.Rect):
+            Rectangle for the tree display area.
+        sidebar_rect (pygame.Rect):
+            Rectangle for the sidebar.
+        _layout_size (tuple | None):
+            Cached screen size for layout recalculation.
+        BRANCH_THEMES (dict):
+            Color themes for each branch of the tree.
+
+    Methods:
+        __init__(app):
+            Initialize the skill tree menu.
+        _init_particles():
+            Initialize background particle effects.
+        _build_tree():
+            Build the skill tree data structure.
+        _build_background_points():
+            Build background decorative points.
+        _recalc_layout(screen_width, screen_height):
+            Recalculate layout based on screen dimensions.
+        _ensure_layout(screen_width, screen_height):
+            Ensure layout is up to date.
+        exit_menu():
+            Close the skill tree menu.
+        _get_node_theme(node):
+            Get the color theme for a specific node.
+        _get_skill_node_description(node):
+            Get the description text for a skill node.
+        _update_entrance(dt):
+            Update the multi-phase entrance animation.
+        _draw_entrance(surface):
+            Draw the entrance animation effects.
+        _update_core_pulse(dt):
+            Update the periodic core pulse effect.
+        _draw_core_pulse(surface):
+            Draw the core pulse rings.
+        _update_idle_effects(dt):
+            Update idle breathing and sparkle effects.
+        _draw_idle_effects(surface):
+            Draw idle breathing and sparkle effects.
+        _update_particles(dt):
+            Update background particles.
+        _draw_particles(surface):
+            Draw background particles.
+        _draw_tree(surface):
+            Draw the skill tree nodes and links.
+        _draw_node(surface, node, theme, is_selected, is_hovered):
+            Draw an individual skill tree node.
+        _draw_link(surface, a, b, theme, progress):
+            Draw a connection link between two nodes.
+        _draw_sidebar(surface):
+            Draw the sidebar with buttons and node info.
+        _draw_unlock_effects(surface):
+            Draw unlock animation effects.
+        _unlock_selected():
+            Unlock the currently selected skill node.
+        handle_event(event):
+            Handle input events for the skill tree.
+        update(dt):
+            Update the skill tree animations.
+        draw(screen):
+            Render the skill tree menu.
     """
-    
+
     # Branch color themes for different areas of the tree
     BRANCH_THEMES = {
         "fire": {"primary": (180, 60, 30), "secondary": (255, 120, 50), "accent": (255, 200, 100), "glow": (255, 80, 20)},
@@ -1378,17 +1557,6 @@ class SkillTreeMenu(Menu):
     def exit_menu(self):
         try:
             self.app.INV_manager._return_held_item()
-            self.app.INV_manager.player_inventory_opened = False
-            gameplay = getattr(getattr(self.app, "manager", None), "states", {}).get("gameplay")
-            if gameplay:
-                try:
-                    self.app.INV_manager.remove_active_inventory(getattr(gameplay, "MAIN_player_inv", None))
-                except Exception:
-                    pass
-                try:
-                    self.app.INV_manager.remove_active_inventory(getattr(gameplay, "PLAYER_inventory_equipment", None))
-                except Exception:
-                    pass
         except Exception:
             pass
 

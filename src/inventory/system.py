@@ -432,11 +432,16 @@ class MAIN_player_inventory_equipment(Inventory):
     charm, gloves, ring, belt in column 0). Only Armor items with matching
     slot_type may be placed in each slot.
 
+    Attributes:
+        app (App): Reference to the main application instance.
+
     Methods:
         __init__(app):
             Initialize the equipment inventory grid based on config dimensions.
         get_slot_type(col, row):
             Return the slot type string for the given grid position.
+        get_total_defense():
+            Sum the defense_value of all equipped Armor items.
         inventory_interactions(event, manager):
             Validate slot type before allowing item placement.
         sync_character_defense(character):

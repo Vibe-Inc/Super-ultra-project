@@ -170,10 +170,20 @@ class Game(State):
             Try to spawn a random enemy somewhere on the current map.
         _debug_spawn_enemy(profile_name):
             Spawn an enemy of a given profile next to the player.
+        _debug_apply_effect(effect_name, duration):
+            Apply a debug effect to the player for testing.
         _get_drop_chance_for_enemy(enemy):
             Look up the drop table for a given enemy.
         _drop_enemy_loot(enemy):
             Roll and spawn drops for a defeated enemy (no JSON).
+        _apply_ice_armor_slow(dt):
+            Apply slowing effect to nearby enemies when Ice Armor is active.
+        _apply_flame_shield_damage(dt):
+            Apply fire damage to nearby enemies when Flame Shield is active.
+        _apply_regeneration(dt):
+            Apply passive health regeneration from effects.
+        _update_spirits(dt):
+            Update summoned spirit entities.
         update(dt):
             Per-frame state update (input, AI, physics, time, spawning).
         draw_scene(screen):

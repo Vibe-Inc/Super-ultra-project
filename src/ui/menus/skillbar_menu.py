@@ -14,11 +14,102 @@ if TYPE_CHECKING:
 
 class SkillbarMenu(Menu):
     """
-    Skillbar editor with a single-skill book and a 6-slot active bar.
-    Redesigned with stunning animations: glowing neon borders, particle effects,
-    smooth hover animations, gradient cards, and pulsing active slots.
+    Skillbar editor with a skill book and a 6-slot active bar.
+
+    Features glowing neon borders, particle effects, smooth hover animations,
+    gradient cards, and pulsing active slot indicators.
+
+    Attributes:
+        app (App):
+            The main application instance.
+        bar_slots_count (int):
+            Number of active skill bar slots (6).
+        storage_slots_count (int):
+            Number of skill storage slots (1).
+        panel_margin (int):
+            Margin around the panel.
+        grid_gap (int):
+            Gap between grid elements.
+        sidebar_width (int):
+            Width of the sidebar panel.
+        slot_size (int):
+            Size of each skill slot in pixels.
+        sidebar_rect (pygame.Rect):
+            Rectangle for the sidebar area.
+        storage_grid_rect (pygame.Rect):
+            Rectangle for the storage grid.
+        bar_rect (pygame.Rect):
+            Rectangle for the active bar.
+        storage_slot_rects (list[pygame.Rect]):
+            List of storage slot rectangles.
+        bar_slot_rects (list[pygame.Rect]):
+            List of active bar slot rectangles.
+        title_font (pygame.font.Font):
+            Font for the title.
+        section_font (pygame.font.Font):
+            Font for section headers.
+        small_font (pygame.font.Font):
+            Small font for descriptions.
+        exit_button (Button):
+            Button to exit the skillbar editor.
+        buttons (list[Button]):
+            List of UI buttons.
+        animation_time (float):
+            Accumulated time for animations.
+        particles (list):
+            Background particle effects.
+        _layout_size (tuple | None):
+            Cached screen size for layout recalculation.
+        _hovered_slot (int | None):
+            Index of the currently hovered slot.
+        _dragging_from (int | None):
+            Index of the slot being dragged from.
+        _drag_source (str):
+            Source area of the drag ('bar' or 'storage').
+        _drag_offset (pygame.Vector2):
+            Offset within the dragged slot.
+        tooltip (str | None):
+            Current tooltip text.
+        tooltip_timer (float):
+            Timer before tooltip appears.
+        tooltip_rect (pygame.Rect | None):
+            Rectangle for the tooltip.
+        NEON_THEMES (dict):
+            Color themes for skill elements.
+
+    Methods:
+        __init__(app):
+            Initialize the skillbar menu.
+        _recalc_layout(screen_width, screen_height):
+            Recalculate layout based on screen size.
+        _ensure_layout(screen_width, screen_height):
+            Ensure layout is recalculated.
+        _get_skill_theme(skill):
+            Get the neon color theme for a skill.
+        _get_skill_at(screen_x, screen_y):
+            Get the skill at a screen position.
+        handle_event(event):
+            Handle input events.
+        update(dt):
+            Update animations.
+        _update_particles(dt):
+            Update background particle effects.
+        _draw_skill_icon(surface, rect, skill, theme):
+            Draw an individual skill slot icon.
+        _draw_background(surface):
+            Draw the background effects.
+        _draw_panel(surface):
+            Draw the sidebar panel.
+        _draw_bar(surface):
+            Draw the active skill bar.
+        _draw_tooltip(surface):
+            Draw the tooltip overlay.
+        draw(screen):
+            Render the skillbar menu.
+        exit_menu():
+            Close the skillbar menu.
     """
-    
+
     # Neon color themes for skill elements
     NEON_THEMES = {
         "fire": {"primary": (255, 80, 40), "glow": (255, 120, 60), "accent": (255, 200, 100)},
@@ -476,23 +567,8 @@ class SkillbarMenu(Menu):
             skillbar[target_index] = source_skill
 
     def exit_menu(self):
-        # Ensure any open player inventory windows are properly removed
         try:
             self.app.INV_manager._return_held_item()
-            # mark as closed
-            self.app.INV_manager.player_inventory_opened = False
-
-            # If the gameplay state exists, remove its inventory panels from active list
-            gameplay = getattr(getattr(self.app, "manager", None), "states", {}).get("gameplay")
-            if gameplay:
-                try:
-                    self.app.INV_manager.remove_active_inventory(getattr(gameplay, "MAIN_player_inv", None))
-                except Exception:
-                    pass
-                try:
-                    self.app.INV_manager.remove_active_inventory(getattr(gameplay, "PLAYER_inventory_equipment", None))
-                except Exception:
-                    pass
         except Exception:
             pass
 
