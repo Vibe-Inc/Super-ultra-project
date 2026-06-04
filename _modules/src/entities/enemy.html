@@ -75,6 +75,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.ai.monster_ai</span><span class="w"> </span><span class="kn">import</span> <span class="n">AIContext</span><span class="p">,</span> <span class="n">build_brain</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.monster_attack_visuals</span><span class="w"> </span><span class="kn">import</span> <span class="n">draw_attack_animation</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.character</span><span class="w"> </span><span class="kn">import</span> <span class="n">Character</span>
@@ -220,6 +221,7 @@
         <span class="n">animations</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">attack_controller</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">contact_damage</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">visual_style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">base_speed</span> <span class="o">=</span> <span class="n">speed</span>
@@ -256,6 +258,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">hit_flash_timer</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">target_entity</span><span class="p">:</span> <span class="n">Character</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ai_profile</span> <span class="o">=</span> <span class="n">ai_profile</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">visual_style</span> <span class="o">=</span> <span class="p">(</span><span class="n">visual_style</span> <span class="ow">or</span> <span class="n">ai_profile</span> <span class="ow">or</span> <span class="s2">&quot;stalker&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ai_state</span> <span class="o">=</span> <span class="s2">&quot;idle&quot;</span>  <span class="c1"># idle, patrol, chase, attack</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">brain</span> <span class="o">=</span> <span class="n">build_brain</span><span class="p">(</span><span class="n">ai_profile</span><span class="p">,</span> <span class="n">ai_config</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attack_controller</span> <span class="o">=</span> <span class="n">attack_controller</span>
@@ -265,6 +268,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">detection_range</span> <span class="o">=</span> <span class="n">detection_range</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attack_range</span> <span class="o">=</span> <span class="n">attack_range</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ai_context</span> <span class="o">=</span> <span class="n">AIContext</span><span class="p">(</span><span class="n">dt</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">nav_grid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">obstacles</span><span class="o">=</span><span class="p">[],</span> <span class="n">player</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+        <span class="c1"># Attack animation state (procedural close-range strike VFX)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attack_anim_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attack_anim_elapsed</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attack_anim_duration</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attack_anim_dir</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attack_anim_origin</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attack_anim_strength</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">effects</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="c1"># Status effect container (matches the player&#39;s API so weapons</span>
@@ -323,6 +334,57 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">effect</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="Enemy.trigger_attack_anim">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.enemy.Enemy.trigger_attack_anim">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">trigger_attack_anim</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">anim_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">duration</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">direction</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">origin</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">strength</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Start a close-range attack animation overlay.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            anim_type: Visual style key (e.g. &#39;brute_slam&#39;, &#39;stalker_slash&#39;).</span>
+<span class="sd">            duration: Total length of the animation in seconds.</span>
+<span class="sd">            direction: Facing direction of the strike; defaults to current facing.</span>
+<span class="sd">            origin: World position the effect is anchored to; defaults to enemy center.</span>
+<span class="sd">            strength: Multiplier for visual intensity (size, particle count, alpha).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attack_anim_type</span> <span class="o">=</span> <span class="n">anim_type</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attack_anim_duration</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.05</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">duration</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attack_anim_elapsed</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attack_anim_strength</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">strength</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">direction</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">direction</span><span class="o">.</span><span class="n">length_squared</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">direction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_facing_vector</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attack_anim_dir</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">direction</span><span class="p">)</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">origin</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">rect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rect</span><span class="p">()</span>
+            <span class="n">origin</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">rect</span><span class="o">.</span><span class="n">centerx</span><span class="p">,</span> <span class="n">rect</span><span class="o">.</span><span class="n">centery</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attack_anim_origin</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">origin</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_facing_vector</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;up&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;down&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;side&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">flip</span> <span class="k">else</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_tick_attack_anim</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">attack_anim_type</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attack_anim_elapsed</span> <span class="o">+=</span> <span class="n">dt</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attack_anim_elapsed</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attack_anim_duration</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">attack_anim_type</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">attack_anim_elapsed</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">attack_anim_duration</span> <span class="o">=</span> <span class="mf">0.0</span>
+
 <div class="viewcode-block" id="Enemy.update">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.enemy.Enemy.update">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">collision_system</span><span class="p">,</span> <span class="n">obstacles</span><span class="p">,</span> <span class="n">nav_grid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">attack_context</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">active</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
@@ -337,6 +399,9 @@
         <span class="c1"># Tick status effects first so debuffs can modify speed_multiplier</span>
         <span class="c1"># before the movement code below consumes it.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_tick_effects</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+
+        <span class="c1"># Advance any active close-range attack animation overlay.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tick_attack_anim</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">active</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">time_accumulator</span> <span class="o">+=</span> <span class="n">dt</span> <span class="o">*</span> <span class="mf">0.2</span>
@@ -432,6 +497,10 @@
         <span class="n">draw_pos</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">camera_offset</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">camera_offset</span><span class="o">.</span><span class="n">y</span><span class="p">))</span>
         <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">draw_pos</span><span class="p">)</span>
         <span class="c1"># hit flash overlay removed</span>
+
+        <span class="c1"># Procedural close-range attack animation overlay</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attack_anim_type</span><span class="p">:</span>
+            <span class="n">draw_attack_animation</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
 
         <span class="n">bar_width</span> <span class="o">=</span> <span class="mi">40</span>
         <span class="n">bar_height</span> <span class="o">=</span> <span class="mi">5</span>
