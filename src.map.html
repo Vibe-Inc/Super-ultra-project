@@ -235,6 +235,11 @@
 Returns: string (path to new map) if switch happened, else None.</p>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="src.map.map.LocalMap.update_animation">
+<span class="sig-name descname"><span class="pre">update_animation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#LocalMap.update_animation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.LocalMap.update_animation" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -242,13 +247,28 @@ Returns: string (path to new map) if switch happened, else None.</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.map.map.</span></span><span class="sig-name descname"><span class="pre">Map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">map_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#Map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.Map" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <dl class="py attribute">
+<dt class="sig sig-object py" id="src.map.map.Map.ANIMATION_SPEED">
+<span class="sig-name descname"><span class="pre">ANIMATION_SPEED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.2</span></em><a class="headerlink" href="#src.map.map.Map.ANIMATION_SPEED" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="src.map.map.Map.FRINGE_LAYER_FADE_ALPHA">
 <span class="sig-name descname"><span class="pre">FRINGE_LAYER_FADE_ALPHA</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">110</span></em><a class="headerlink" href="#src.map.map.Map.FRINGE_LAYER_FADE_ALPHA" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.map.map.Map.FRINGE_LAYER_NAME">
+<span class="sig-name descname"><span class="pre">FRINGE_LAYER_NAME</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'details</span> <span class="pre">fringe</span> <span class="pre">layer'</span></em><a class="headerlink" href="#src.map.map.Map.FRINGE_LAYER_NAME" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.map.map.Map.TILESET_ANIMATIONS">
+<span class="sig-name descname"><span class="pre">TILESET_ANIMATIONS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'Water</span> <span class="pre">+</span> <span class="pre">terrain':</span> <span class="pre">{'frame_count':</span> <span class="pre">8,</span> <span class="pre">'frame_step':</span> <span class="pre">1,</span> <span class="pre">'seq_start':</span> <span class="pre">29},</span> <span class="pre">'smoke':</span> <span class="pre">{'frame_count':</span> <span class="pre">6,</span> <span class="pre">'frame_step':</span> <span class="pre">6}}</span></em><a class="headerlink" href="#src.map.map.Map.TILESET_ANIMATIONS" title="Link to this definition"></a></dt>
 <dd><p>Represents a tile-based game map loaded from a Tiled map file.</p>
 <p>This class handles loading, caching, and drawing of the map using pytmx and pygame.</p>
 <dl class="py attribute">
-<dt class="sig sig-object py" id="src.map.map.Map.FRINGE_LAYER_NAME">
-<span class="sig-name descname"><span class="pre">FRINGE_LAYER_NAME</span></span><a class="headerlink" href="#src.map.map.Map.FRINGE_LAYER_NAME" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">FRINGE_LAYER_NAME</span></span><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
 <dd><p>Name of the fringe tile layer.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -258,8 +278,8 @@ Returns: string (path to new map) if switch happened, else None.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="id5">
-<span class="sig-name descname"><span class="pre">FRINGE_LAYER_FADE_ALPHA</span></span><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id6">
+<span class="sig-name descname"><span class="pre">FRINGE_LAYER_FADE_ALPHA</span></span><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
 <dd><p>Alpha value for fading fringe tiles.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -396,11 +416,6 @@ Returns: string (path to new map) if switch happened, else None.</p>
 
 </dd></dl>
 
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id6">
-<span class="sig-name descname"><span class="pre">FRINGE_LAYER_NAME</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'details</span> <span class="pre">fringe</span> <span class="pre">layer'</span></em><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="id7">
 <span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#Map.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
@@ -424,6 +439,11 @@ Returns: string (path to new map) if switch happened, else None.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="id11">
 <span class="sig-name descname"><span class="pre">get_tmx_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#Map.get_tmx_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id11" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.map.map.Map.update_animation">
+<span class="sig-name descname"><span class="pre">update_animation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/map/map.html#Map.update_animation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.map.map.Map.update_animation" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>

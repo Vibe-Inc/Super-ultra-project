@@ -1187,6 +1187,8 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="o">-</span><span class="mi">5000</span><span class="p">)</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No card NPC spawn for map </span><span class="si">{</span><span class="n">switched_map_path</span><span class="si">}</span><span class="s2">; hiding card NPC&quot;</span><span class="p">)</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">update_animation</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+
         <span class="c1"># Enemy Spawning Logic</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_game_time</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
 
