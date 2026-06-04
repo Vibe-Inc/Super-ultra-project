@@ -70,6 +70,12 @@ class Inventory:
         if 0 <= x < self.columns and 0 <= y < self.rows:
             slot = self.items[x][y]
             if event.button == 1:
+                shift_held = pygame.key.get_mods() & pygame.KMOD_SHIFT
+
+                if shift_held and slot and not manager.selected_item:
+                    self._quick_move_slot(x, y, slot, manager)
+                    return
+
                 if manager.selected_item:
                     if slot:
                         if slot[0].id == manager.selected_item[0].id:
@@ -77,6 +83,7 @@ class Inventory:
                             manager.selected_item = None
                         else:
                             self.items[x][y], manager.selected_item = manager.selected_item, self.items[x][y]
+                            manager._held_source = {'inv': self, 'col': x, 'row': y}
                     else:
                         self.items[x][y] = manager.selected_item
                         manager.selected_item = None
@@ -84,25 +91,52 @@ class Inventory:
                     if slot:
                         manager.selected_item = slot
                         self.items[x][y] = None
+                        manager._held_source = {'inv': self, 'col': x, 'row': y}
 
-            elif event.button == 2:
-                from src.inventory.inventory_manager import Split_popup_model
-                if slot and not manager.selected_item and slot[1] > 1:
-                    rect = pygame.Rect(
-                        self.pos_x + (self.slot_size + self.border) * x + self.border,
-                        self.pos_y + (self.slot_size + self.border) * y + self.border,
-                        self.slot_size, self.slot_size
-                    )
-                    manager.active_split_popup = Split_popup_model(manager, slot, rect)
-                    
-            elif event.button == 3 and slot and not manager.selected_item:
-                item, count = slot
-                if isinstance(item, Consumable):
-                    game_state = getattr(manager.app.manager.states.get("gameplay"), 'character', None)
-                    if game_state and item.use(game_state):
-                        slot[1] -= 1
-                        if slot[1] <= 0:
-                            self.items[x][y] = None            
+    def _quick_move_slot(self, col, row, slot, manager):
+        from src.inventory.system import MAIN_player_hotbar, MAIN_player_inventory, MAIN_player_inventory_equipment
+
+        item, count = slot
+
+        if isinstance(self, MAIN_player_hotbar):
+            target_inv = None
+            for inv in manager.active_inventories:
+                if isinstance(inv, MAIN_player_inventory):
+                    target_inv = inv
+                    break
+            if not target_inv:
+                return
+            for tx in range(target_inv.columns):
+                for ty in range(target_inv.rows):
+                    existing = target_inv.items[tx][ty]
+                    if existing and existing[0].id == item.id:
+                        existing[1] += count
+                        self.items[col][row] = None
+                        return
+            for tx in range(target_inv.columns):
+                for ty in range(target_inv.rows):
+                    if target_inv.items[tx][ty] is None:
+                        target_inv.items[tx][ty] = slot
+                        self.items[col][row] = None
+                        return
+
+        elif isinstance(self, (MAIN_player_inventory, MAIN_player_inventory_equipment)):
+            target_inv = manager.hotbar
+            if not target_inv:
+                return
+            for tx in range(target_inv.columns):
+                for ty in range(target_inv.rows):
+                    existing = target_inv.items[tx][ty]
+                    if existing and existing[0].id == item.id:
+                        existing[1] += count
+                        self.items[col][row] = None
+                        return
+            for tx in range(target_inv.columns):
+                for ty in range(target_inv.rows):
+                    if target_inv.items[tx][ty] is None:
+                        target_inv.items[tx][ty] = slot
+                        self.items[col][row] = None
+                        return
 
     def get_slot_under_mouse(self):
         mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -348,15 +382,18 @@ class MAIN_player_inventory_equipment(Inventory):
                             manager.selected_item = None
                         else:
                             self.items[x][y], manager.selected_item = manager.selected_item, self.items[x][y]
+                            manager._held_source = {'inv': self, 'col': x, 'row': y}
                     else:
                         self.items[x][y] = manager.selected_item
                         manager.selected_item = None
                 elif slot and slot[0] is dragged_item:
                     self.items[x][y], manager.selected_item = manager.selected_item, self.items[x][y]
+                    manager._held_source = {'inv': self, 'col': x, 'row': y}
             else:
                 if slot:
                     manager.selected_item = slot
                     self.items[x][y] = None
+                    manager._held_source = {'inv': self, 'col': x, 'row': y}
 
             # Sync character defense after any equipment change
             game_state = manager.app.manager.states.get("gameplay")
