@@ -266,6 +266,8 @@ class Character:
         self.shadow_step_cooldown = 6000
         self.shadow_step_last_used = -self.shadow_step_cooldown
         self.shadow_step_invuln_duration = 0.5
+        self.shadow_step_effect = None
+        self.shadow_step_particles = []
 
         # Passive: Poison Blade
         self.poison_blade = False
@@ -985,11 +987,16 @@ class Character:
             if direction.length_squared() == 0:
                 direction = pygame.Vector2(1, 0)
 
+            start_pos = self.get_center()
             teleport_offset = direction.normalize() * self.shadow_step_range
             self.pos += teleport_offset
+            end_pos = self.get_center()
+
             self.invulnerable = True
             self.invulnerability_timer = self.shadow_step_invuln_duration
             self.shadow_step_last_used = current_time
+
+            self._spawn_shadow_step_effect(start_pos, end_pos)
             logger.info("Player used Shadow Step.")
             return True
 
@@ -1714,6 +1721,9 @@ class Character:
         # Update floating texts
         self._update_floating_texts(dt)
 
+        # Update Shadow Step particles
+        self._update_shadow_step_particles(dt)
+
         # Update invulnerability
         if self.invulnerable:
             self.invulnerability_timer -= dt
@@ -2313,6 +2323,9 @@ class Character:
         if self.berserkers_rage_active:
             self._draw_berserkers_rage(screen, camera_offset)
 
+        # Draw Shadow Step visual effect (always draw if active, even during other effects)
+        self._draw_shadow_step(screen, camera_offset)
+
         # Draw floating texts
         self._draw_floating_texts(screen, camera_offset)
 
@@ -2354,6 +2367,136 @@ class Character:
             shadow_surf.set_alpha(alpha // 2)
             screen.blit(shadow_surf, (text_rect.x + 2, text_rect.y + 2))
             screen.blit(text_surf, text_rect)
+
+    # ─── Shadow Step helpers ─────────────────────────────────────────
+
+    def _spawn_shadow_step_effect(self, start_pos, end_pos):
+        """Create vanish/appear particles and trail for Shadow Step teleport."""
+        self.shadow_step_effect = {
+            "start": pygame.Vector2(start_pos),
+            "end": pygame.Vector2(end_pos),
+            "life": 0.5,
+            "max_life": 0.5,
+        }
+        # Vanish particles at start
+        for _ in range(20):
+            angle = random.uniform(0, math.pi * 2)
+            speed = random.uniform(40, 120)
+            self.shadow_step_particles.append({
+                "pos": pygame.Vector2(start_pos),
+                "vel": pygame.Vector2(math.cos(angle), math.sin(angle)) * speed,
+                "max_life": (ml := random.uniform(0.2, 0.4)),
+                "life": ml,
+                "size": random.uniform(2.0, 5.0),
+                "phase": "vanish",
+                "color": random.choice([
+                    (80, 40, 140),
+                    (120, 60, 180),
+                    (160, 100, 220),
+                ]),
+            })
+        # Appear particles at end
+        for _ in range(25):
+            angle = random.uniform(0, math.pi * 2)
+            speed = random.uniform(20, 80)
+            self.shadow_step_particles.append({
+                "pos": pygame.Vector2(end_pos),
+                "vel": pygame.Vector2(math.cos(angle), math.sin(angle)) * speed,
+                "max_life": (ml := random.uniform(0.3, 0.5)),
+                "life": ml,
+                "size": random.uniform(3.0, 6.0),
+                "phase": "appear",
+                "color": random.choice([
+                    (80, 40, 160),
+                    (140, 80, 220),
+                    (180, 120, 255),
+                ]),
+            })
+        # Trail particles along the path
+        steps = 10
+        for i in range(steps):
+            t = i / steps
+            trail_pos = start_pos.lerp(end_pos, t)
+            self.shadow_step_particles.append({
+                "pos": pygame.Vector2(trail_pos),
+                "vel": pygame.Vector2(random.uniform(-10, 10), random.uniform(-10, 10)),
+                "max_life": (ml := random.uniform(0.15, 0.35)),
+                "life": ml,
+                "size": random.uniform(1.5, 3.5),
+                "phase": "trail",
+                "color": random.choice([
+                    (60, 30, 120),
+                    (100, 50, 160),
+                    (140, 70, 200),
+                ]),
+            })
+
+    def _update_shadow_step_particles(self, dt):
+        if self.shadow_step_effect is not None:
+            self.shadow_step_effect["life"] -= dt
+            if self.shadow_step_effect["life"] <= 0:
+                self.shadow_step_effect = None
+
+        for p in self.shadow_step_particles[:]:
+            p["pos"] += p["vel"] * dt
+            p["vel"] *= 0.92
+            p["life"] -= dt
+            if p["life"] <= 0:
+                self.shadow_step_particles.remove(p)
+
+    def _draw_shadow_step(self, screen, camera_offset):
+        if not self.shadow_step_particles:
+            return
+
+        # Draw shadow trail line between start and end
+        if self.shadow_step_effect is not None:
+            progress = 1.0 - self.shadow_step_effect["life"] / self.shadow_step_effect["max_life"]
+            start_screen = self.shadow_step_effect["start"] - camera_offset
+            end_screen = self.shadow_step_effect["end"] - camera_offset
+            trail_alpha = int(100 * (1 - progress))
+            # Draw shadowy path line
+            line_surf = pygame.Surface((800, 600), pygame.SRCALPHA)
+            for w in range(3):
+                offset = pygame.Vector2(random.uniform(-3, 3), random.uniform(-3, 3))
+                pygame.draw.line(line_surf, (60, 30, 120, trail_alpha // (w + 1)),
+                                 (int(start_screen.x + offset.x), int(start_screen.y + offset.y)),
+                                 (int(end_screen.x + offset.x), int(end_screen.y + offset.y)),
+                                 max(1, 3 - w))
+            screen.blit(line_surf, (0, 0))
+
+        # Draw particles
+        for p in self.shadow_step_particles:
+            life_r = min(1.0, p["life"] / p["max_life"]) if p["max_life"] > 0 else 0
+            if life_r <= 0:
+                continue
+            px = int(p["pos"].x - camera_offset.x)
+            py = int(p["pos"].y - camera_offset.y)
+            alpha = int(220 * life_r)
+            size = max(1, int(p["size"] * life_r))
+            r, g, b = p["color"]
+
+            phase = p.get("phase", "vanish")
+            if phase == "appear":
+                # Diamond-like burst shape
+                pts = [
+                    (px, py - size * 2),
+                    (px + size, py),
+                    (px, py + size * 2),
+                    (px - size, py),
+                ]
+                p_surf = pygame.Surface((size * 4, size * 4), pygame.SRCALPHA)
+                soff = size * 2
+                rel_pts = [(p[0] - px + soff, p[1] - py + soff) for p in pts]
+                pygame.draw.polygon(p_surf, (r, g, b, alpha), rel_pts)
+                pygame.draw.polygon(p_surf, (min(255, r + 60), min(255, g + 60), min(255, b + 60), alpha), rel_pts, 1)
+                screen.blit(p_surf, (px - soff, py - soff))
+            else:
+                # Dark mist circle for vanish/trail
+                g_sz = size * 2
+                g_surf = pygame.Surface((g_sz * 2, g_sz * 2), pygame.SRCALPHA)
+                pygame.draw.circle(g_surf, (r, g, b, alpha // 2), (g_sz, g_sz), g_sz)
+                screen.blit(g_surf, (px - g_sz, py - g_sz))
+                pygame.draw.circle(screen, (r, g, b, alpha), (px, py), size)
 
     # ─── Berserker's Rage helpers ─────────────────────────────────────
 

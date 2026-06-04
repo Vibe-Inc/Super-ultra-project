@@ -2079,6 +2079,7 @@ class DarkPact:
         self.current_radius = 0.0
         self.damage_applied = False
         self.animation_time = 0.0
+        self.smoke_particles = []
 
     def get_rect(self):
         size = int(self.radius * 2)
@@ -2105,6 +2106,32 @@ class DarkPact:
                     enemy.take_damage(self.damage)
             self.damage_applied = True
 
+        # Spawn rising smoke particles
+        spawn_count = max(1, int(15 * dt * (1 - progress * 0.5)))
+        for _ in range(spawn_count):
+            angle = random.uniform(0, math.pi * 2)
+            dist = random.uniform(0, self.current_radius)
+            self.smoke_particles.append({
+                "pos": pygame.Vector2(self.pos) + pygame.Vector2(math.cos(angle), math.sin(angle)) * dist,
+                "vel": pygame.Vector2(random.uniform(-8, 8), random.uniform(-30, -10)),
+                "max_life": (ml := random.uniform(0.3, 0.7)),
+                "life": ml,
+                "size": random.uniform(3.0, 7.0),
+                "color": random.choice([
+                    (60, 20, 100),
+                    (100, 50, 160),
+                    (140, 80, 200),
+                    (40, 10, 80),
+                ]),
+            })
+
+        for p in self.smoke_particles[:]:
+            p["pos"] += p["vel"] * dt
+            p["vel"] *= 0.96
+            p["life"] -= dt
+            if p["life"] <= 0:
+                self.smoke_particles.remove(p)
+
         if self.expansion_time >= self.expansion_duration:
             self.alive = False
 
@@ -2120,6 +2147,37 @@ class DarkPact:
         if radius <= 0:
             return
 
+        t = self.animation_time
+
+        # ── Shadow tendrils reaching outward ──
+        tendril_count = int(6 + 4 * (1 - progress))
+        for i in range(tendril_count):
+            t_angle = t * 2.0 + i * (math.pi * 2 / tendril_count)
+            tendril_len = int(radius * (0.6 + 0.4 * math.sin(t * 4.0 + i * 1.5)))
+            end_x = cx + math.cos(t_angle) * tendril_len
+            end_y = cy + math.sin(t_angle) * tendril_len
+            tendril_alpha = int(80 * (1 - progress))
+            # Jagged tendril (3 segments)
+            pts = [(cx, cy)]
+            for seg in range(1, 4):
+                frac = seg / 3
+                jitter = random.uniform(-4, 4) * frac
+                seg_x = cx + math.cos(t_angle + jitter * 0.05) * tendril_len * frac
+                seg_y = cy + math.sin(t_angle + jitter * 0.05) * tendril_len * frac
+                pts.append((seg_x, seg_y))
+            if len(pts) >= 2:
+                for j in range(len(pts) - 1):
+                    pygame.draw.line(screen, (80, 30, 140, tendril_alpha),
+                                     pts[j], pts[j + 1], max(1, int(2 - progress * 1.5)))
+
+        # ── Pulsing shadow rings ──
+        ring_count = 3
+        for i in range(ring_count):
+            ring_r = int(radius * (0.2 + 0.8 * ((i + 1) / ring_count)))
+            ring_phase = (t * 3.0 + i * 1.2) % 1.0
+            ring_pulse = int(40 + 30 * math.sin(t * 5.0 + i * 2.0))
+            pygame.draw.circle(screen, (100, 40, 160, ring_pulse), (cx, cy), ring_r, max(1, int(2 - progress)))
+
         # ── Outer shadow ring ──
         ring_alpha = int(180 * (1 - progress))
         pygame.draw.circle(screen, (80, 40, 120, ring_alpha), (cx, cy), radius, max(2, int(3 * (1 - progress) + 1)))
@@ -2134,11 +2192,27 @@ class DarkPact:
         inner_r = max(1, int(radius * 0.3))
         inner_alpha = int(180 * (1 - progress * 0.2))
         pygame.draw.circle(surface, (160, 80, 220, inner_alpha), (radius, radius), inner_r)
+        # Void center
+        void_r = max(1, int(radius * 0.15))
+        pygame.draw.circle(surface, (20, 5, 50, 200), (radius, radius), void_r)
 
         screen.blit(surface, (cx - radius, cy - radius))
 
+        # ── Rising smoke particles ──
+        for p in self.smoke_particles:
+            life_r = min(1.0, p["life"] / p["max_life"]) if p["max_life"] > 0 else 0
+            if life_r <= 0:
+                continue
+            px = int(p["pos"].x - camera_offset.x)
+            py = int(p["pos"].y - camera_offset.y)
+            smoke_alpha = int(120 * life_r)
+            smoke_size = max(1, int(p["size"] * (0.5 + 0.5 * life_r)))
+            r, g, b = p["color"]
+            sg = pygame.Surface((smoke_size * 3, smoke_size * 3), pygame.SRCALPHA)
+            pygame.draw.circle(sg, (r, g, b, smoke_alpha), (smoke_size * 1.5, smoke_size * 1.5), smoke_size * 1.5)
+            screen.blit(sg, (px - smoke_size * 1.5, py - smoke_size * 1.5))
+
         # ── Shadow wisps ──
-        import random
         for _ in range(int(8 * (1 - progress) + 2)):
             w_angle = random.uniform(0, math.pi * 2)
             w_dist = random.uniform(0, radius)
