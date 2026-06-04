@@ -31,6 +31,8 @@ from src.entities.monster_attacks import build_attack_controller, AttackContext
 from src.combat.base_player_combat import PlayerCombatController
 from src.minigames.blackjack import BlackjackGame
 from src.minigames.fishing import FishingController
+from src.minigames.gathering import GatheringController
+from src.world.gatherable_nodes import GatherableNodeRegistry
 import inspect
 import database.effects as effects_db
 
@@ -548,6 +550,12 @@ class Game(State):
             create_item("defense_charm"),
             create_item("leather_gloves"),
             create_item("fishing_rod"),
+            create_item("stone_axe"),
+            create_item("iron_axe"),
+            create_item("stone_pickaxe"),
+            create_item("iron_pickaxe"),
+            create_item("stone_hammer"),
+            create_item("iron_hammer"),
             ]
 
         self.shop_inv = ShopInventory(self.app, shop_items)
@@ -620,6 +628,43 @@ class Game(State):
             self.fishing = FishingController(self)
         except Exception:
             self.fishing = None
+
+        # Gathering minigame controller (chop / mine)
+        try:
+            self.gathering = GatheringController(self)
+        except Exception:
+            self.gathering = None
+
+        # Per-map gatherable node registries (coordinate-based trees,
+        # rocks, ore veins -- see src.world.gatherable_nodes).
+        self.gatherables: dict[str, GatherableNodeRegistry] = {}
+        try:
+            self._build_gatherable_registries()
+        except Exception as exc:
+            logger.warning(f"Failed to build gatherable node registries: {exc}")
+
+    def _build_gatherable_registries(self) -> None:
+        """Read :mod:`data.gatherable_nodes` once and group the entries
+        by ``map_path`` into :class:`GatherableNodeRegistry` instances.
+        """
+        try:
+            from data.gatherable_nodes import load_gatherable_node_defs
+        except Exception as exc:
+            logger.warning(f"Could not import data.gatherable_nodes: {exc}")
+            return
+        try:
+            definitions = load_gatherable_node_defs()
+        except Exception as exc:
+            logger.warning(f"load_gatherable_node_defs() failed: {exc}")
+            return
+        for definition in definitions:
+            registry = self.gatherables.get(definition.map_path)
+            if registry is None:
+                registry = GatherableNodeRegistry(definition.map_path)
+                self.gatherables[definition.map_path] = registry
+            registry.add_def(definition)
+        total = sum(len(reg.nodes) for reg in self.gatherables.values())
+        logger.info(f"Loaded {total} gatherable node(s) across {len(self.gatherables)} map(s)")
 
     def reinit_ui(self):
         self.hud = HUD(self.character, self.app, self.toggle_player_inventory, self.use_skill_slot, open_shop_callback=self.open_shop)
@@ -1162,6 +1207,21 @@ class Game(State):
         except Exception:
             pass
 
+        # Update gathering controller
+        try:
+            if getattr(self, 'gathering', None):
+                self.gathering.update(dt)
+        except Exception:
+            pass
+
+        # Tick gatherable node respawn timers for the current map.
+        try:
+            active_registry = self.gatherables.get(self.current_map_path)
+            if active_registry is not None:
+                active_registry.update(dt)
+        except Exception:
+            pass
+
         # Safety: if current map defines an NPC spawn but NPC is far away (not placed), place it
         try:
             if self.current_map_path in self.NPC_SPAWNS and (self.npc.pos.x < -1000 or self.npc.pos.y < -1000):
@@ -1332,6 +1392,21 @@ class Game(State):
                 self.fishing.draw(screen, camera_offset)
         except Exception:
             pass
+
+        # Draw coordinate-based gatherable nodes (trees/rocks/ore veins)
+        # on the current map so they appear in the world.
+        try:
+            active_registry = self.gatherables.get(self.current_map_path)
+            if active_registry is not None:
+                active_registry.draw(screen, camera_offset)
+        except Exception:
+            pass
+
+        try:
+            if getattr(self, 'gathering', None):
+                self.gathering.draw(screen, camera_offset)
+        except Exception:
+            pass
         self.map.draw_fringe_overlay(screen, camera_offset, self.character)
 
         if not self.npc.is_interactable:
@@ -1414,6 +1489,15 @@ class Game(State):
         if getattr(self, 'fishing', None):
             try:
                 handled = self.fishing.handle_event(event)
+                if handled:
+                    return
+            except Exception:
+                pass
+
+        # Route events to gathering controller (G to gather, K to cancel)
+        if getattr(self, 'gathering', None):
+            try:
+                handled = self.gathering.handle_event(event)
                 if handled:
                     return
             except Exception:

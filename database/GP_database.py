@@ -133,6 +133,11 @@ class Gp_database:
             )
         ''')
 
+        # Backwards-compatible column adds for gathering tools.
+        self._ensure_column("tools", "gather_type", "TEXT DEFAULT NULL")
+        self._ensure_column("tools", "gather_yield_min", "INT DEFAULT 1")
+        self._ensure_column("tools", "gather_yield_max", "INT DEFAULT 1")
+
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS consumable_effects (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -379,7 +384,8 @@ class Gp_database:
     def add_tool(self, item_id: str, name: str, image_path: str,
                  tool_type: str = "generic", durability: int = 100,
                  power: int = 0, price: int = 0, max_stack: int = 1,
-                 description: str = "") -> bool:
+                 description: str = "", gather_type: str = None,
+                 gather_yield_min: int = 1, gather_yield_max: int = 1) -> bool:
         """
         Add a tool item to the database.
 
@@ -399,6 +405,16 @@ class Gp_database:
             price (int): Monetary value.
             max_stack (int): Maximum stack size (usually 1).
             description (str): Description text.
+            gather_type (str | None): If set, the resource type this tool
+                gathers ("wood", "stone", "ore", etc.). The GatheringController
+                uses this to match a tool against tile properties such as
+                ``choppable`` (matched by "wood") or ``minable`` (matched by
+                "stone" or "ore"). ``None`` means the tool does not gather
+                (e.g. a fishing rod).
+            gather_yield_min (int): Lower bound of resource items produced
+                per successful gather.
+            gather_yield_max (int): Upper bound of resource items produced
+                per successful gather.
 
         Returns:
             bool: True if successful, False otherwise.
@@ -412,9 +428,11 @@ class Gp_database:
             ''', (item_id, name, image_path, price, max_stack, description))
 
             self.cursor.execute('''
-                INSERT INTO tools (item_id, tool_type, durability, power)
-                VALUES (?, ?, ?, ?)
-            ''', (item_id, tool_type, durability, power))
+                INSERT INTO tools (item_id, tool_type, durability, power,
+                                   gather_type, gather_yield_min, gather_yield_max)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (item_id, tool_type, durability, power,
+                  gather_type, gather_yield_min, gather_yield_max))
 
             self.conn.commit()
             print(f"Tool '{item_id}' added successfully.")
@@ -510,7 +528,8 @@ class Gp_database:
                    weapons.cone_degrees, weapons.on_hit_effects, weapons.combat_style,
                    consumables.heal_amount,
                    armor.slot_type, armor.defense_value,
-                   tools.tool_type, tools.durability AS tool_durability, tools.power
+                   tools.tool_type, tools.durability AS tool_durability, tools.power,
+                   tools.gather_type, tools.gather_yield_min, tools.gather_yield_max
             FROM items
             LEFT JOIN weapons ON items.id = weapons.item_id
             LEFT JOIN consumables ON items.id = consumables.item_id

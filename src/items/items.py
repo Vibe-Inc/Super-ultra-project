@@ -291,12 +291,19 @@ class Tool(Item):
         durability (int): Current durability points.
         power (int): Generic effectiveness multiplier (e.g. catch power
             bonus for a fishing rod, mining speed for a pickaxe).
+        gather_type (str | None): Resource type this tool can gather.
+            ``"wood"`` matches ``choppable`` tiles; ``"stone"`` or
+            ``"ore"`` matches ``minable`` tiles. ``None`` means the
+            tool does not gather (e.g. a fishing rod).
+        gather_yield_min (int): Minimum items produced per gather.
+        gather_yield_max (int): Maximum items produced per gather.
 
     Methods:
         __init__(row: dict):
             Initialize tool properties from a database row.
         get_tooltip_text():
-            Return formatted tooltip text including tool type and power.
+            Return formatted tooltip text including tool type, power,
+            and the resource it gathers (if any).
     """
     def __init__(self, row: dict):
         super().__init__(row)
@@ -304,6 +311,9 @@ class Tool(Item):
         self.durability = row.get("tool_durability",
                                   row.get("durability", 100)) or 100
         self.power = row.get("power", 0) or 0
+        self.gather_type = row.get("gather_type") or None
+        self.gather_yield_min = int(row.get("gather_yield_min") or 1)
+        self.gather_yield_max = int(row.get("gather_yield_max") or self.gather_yield_min)
 
     def get_tooltip_text(self):
         type_label = self.tool_type.replace("_", " ").title()
@@ -311,8 +321,15 @@ class Tool(Item):
             f"{_('Type')}: {_('Tool')} ({type_label})\n"
             f"{_('Durability')}: {self.durability}\n"
             f"{_('Power')}: +{self.power}\n"
-            f"Price: ${self.price}"
         )
+        if self.gather_type:
+            gather_label = self.gather_type.replace("_", " ").title()
+            if self.gather_yield_min == self.gather_yield_max:
+                yield_str = str(self.gather_yield_min)
+            else:
+                yield_str = f"{self.gather_yield_min}-{self.gather_yield_max}"
+            stats += f"{_('Gathers')}: {gather_label} ({yield_str})\n"
+        stats += f"Price: ${self.price}"
         return f"{self.name}\n{stats}\n{self.description}"
 
 
@@ -350,6 +367,8 @@ def create_item(item_id: str):
         return Armor(row)
     elif item_type == "tool":
         return Tool(row)
+    elif item_type == "resource":
+        return Item(row)
     else:
         logger.warning(f"Unknown item type '{item_type}' for '{item_id}'. Defaulting to generic Item.")
         return Item(row)
