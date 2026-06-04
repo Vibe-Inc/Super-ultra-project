@@ -80,6 +80,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">database.item_db.weapons_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_weapons</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">database.item_db.consumables_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_consumables</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">database.item_db.armor_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_armor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">database.crafting_recepies_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_recipes</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">database.GP_database</span><span class="w"> </span><span class="kn">import</span> <span class="n">Gp_database</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">src.config</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cfg</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">src.i18n</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">i18n</span>
@@ -146,6 +147,7 @@
         <span class="n">seed_weapons</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
         <span class="n">seed_consumables</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
         <span class="n">seed_armor</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
+        <span class="n">seed_recipes</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
         <span class="n">db</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">INV_manager</span> <span class="o">=</span> <span class="n">INVENTORY_manager</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
