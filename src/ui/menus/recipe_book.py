@@ -9,6 +9,24 @@ from src.items.items import create_item
 
 
 class Particle:
+    """A single particle used for book page-flip and hover effects.
+
+    Attributes:
+        x (float): Current X position.
+        y (float): Current Y position.
+        vx (float): Horizontal velocity.
+        vy (float): Vertical velocity.
+        lifetime (float): Remaining lifetime in seconds.
+        max_lifetime (float): Initial lifetime in seconds.
+        color (tuple): RGB or RGBA color tuple.
+        size (float): Radius of the particle.
+        star (bool): Whether to draw a star shape instead of a circle.
+        phase (float): Random phase offset for animations.
+
+    Methods:
+        update(dt): Update position, gravity, and lifetime.
+        draw(surf, offset=(0, 0)): Draw the particle onto a surface.
+    """
     def __init__(self, x, y, vx, vy, lifetime, color, size, star=False):
         self.x = x
         self.y = y
@@ -69,6 +87,80 @@ def ease_in_out_cubic(t):
 
 
 class RecipeBookMenu(Menu):
+    """An ornate recipe book interface showing craftable items.
+
+    Attributes:
+        book_magnifier (float): Scale multiplier for the book UI.
+        recipes (list[dict]): All recipes loaded from the database.
+        item_images (dict): Cached item images keyed by item ID.
+        recipes_per_spread (int): Number of recipe cards per spread.
+        current_spread (int): Zero-based index of the current spread.
+        max_spreads (int): Total number of spreads.
+        anim_start_time (int): Timestamp of the opening animation start.
+        anim_duration (int): Duration of the opening animation in ms.
+        is_opening (bool): Whether the book opening animation is active.
+        flip_start_time (int): Timestamp of the page flip start.
+        flip_duration (int): Duration of the flip animation in ms.
+        is_flipping (bool): Whether a page flip animation is active.
+        card_entry_start_time (int): Timestamp for card entry animation.
+        card_entry_duration (int): Duration of card entry animation in ms.
+        hovered_card_index (int): Index of the currently hovered card (-1 if none).
+        card_hover_animations (dict): Per-card hover animation progress.
+        particles (list[Particle]): Active card hover particles.
+        page_particles (list[Particle]): Active page-flip particles.
+        ambient_particles (list[Particle]): Active ambient sparkle particles.
+        star_particles (list[Particle]): Active star-shaped particles.
+        shine_phase (float): Random phase for the golden shine sweep.
+        buttons (list[Button]): Interactive UI buttons (close, prev, next).
+
+    Methods:
+        _render_text(font, text, color):
+            Render text with book magnifier scaling.
+        _setup_buttons():
+            Create or update close, prev, and next page buttons.
+        prev_page():
+            Go to the previous spread.
+        next_page():
+            Go to the next spread.
+        _start_flip_anim():
+            Start the page flip animation and emit particles.
+        _emit_page_particles():
+            Spawn particles for the page flip effect.
+        _emit_golden_burst():
+            Spawn a burst of golden particles.
+        _emit_card_particles(x, y):
+            Spawn particles at a card position on hover.
+        _spawn_ambient_particles(dt):
+            Spawn ambient golden sparkles over the book.
+        _spawn_star_particles(dt):
+            Spawn occasional star-shaped particles.
+        close_menu():
+            Return to the gameplay state.
+        update(dt):
+            Update all particles and hover animations.
+        handle_event(event):
+            Handle keyboard and mouse input.
+        _update_hovered_card(mouse_pos):
+            Determine which recipe card the mouse is over.
+        draw(screen):
+            Render the full recipe book overlay.
+        _draw_book_background(surf, w, h, scale, current_time):
+            Draw the ornate book cover, pages, spine, and decorations.
+        _draw_arabesque(surf, x, y, size, color):
+            Draw a small arabesque corner flourish.
+        _draw_crest(surf, cx, cy, size, color):
+            Draw a small decorative crest/emblem.
+        _draw_gem(surf, cx, cy, size, color, scale):
+            Draw a faceted gem decoration.
+        _draw_elaborate_corner(surf, x, y, size, scale, current_time):
+            Draw an elaborate corner ornament with gems and filigree.
+        _draw_small_flourish(surf, x, y, size, color, angle):
+            Draw a small ornamental flourish.
+        _draw_recipes_for_current_spread(surf, w, h, scale, alpha, current_time):
+            Draw the recipe cards, titles, and page decorations for the current spread.
+        _draw_recipe_card(surf, x, y, w, h, recipe, scale, recipe_idx, current_time):
+            Draw a single recipe card with grid, arrow, and result slot.
+    """
     def __init__(self, app):
         super().__init__(app)
         self.book_magnifier = 1.35

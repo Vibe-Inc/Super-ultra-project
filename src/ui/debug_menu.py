@@ -3,8 +3,39 @@ import src.config as cfg
 
 class SpawnMenu:
     """
-    Simple debug menu for spawning enemies.
+    Simple debug menu for spawning enemies on demand.
+
+    Attributes:
+        profiles (list[str]):
+            List of enemy profile names to choose from.
+        on_spawn (callable):
+            Callback invoked with the selected profile name.
+        on_close (callable):
+            Callback invoked when the menu is closed.
+        visible (bool):
+            Whether the menu is currently shown.
+        selected_index (int):
+            Index of the currently highlighted profile.
+        font (pygame.font.Font):
+            Font used for menu text.
+        width (int):
+            Width of the menu panel.
+        height (int):
+            Height of the menu panel.
+        rect (pygame.Rect):
+            Bounding rectangle of the menu panel.
+
+    Methods:
+        __init__(profiles, on_spawn, on_close):
+            Initialize the spawn menu.
+        toggle():
+            Toggle the menu visibility and reset selection.
+        handle_event(event):
+            Handle keyboard input for navigation and selection.
+        draw(screen):
+            Render the spawn menu overlay.
     """
+
     def __init__(self, profiles: list[str], on_spawn, on_close):
         self.profiles = profiles
         self.on_spawn = on_spawn
@@ -68,12 +99,46 @@ class SpawnMenu:
 class EffectsMenu:
     """
     Debug menu to apply any existing Effect to the player for a chosen duration.
+
     Controls:
       - Up/Down: select effect
       - Left/Right: decrease/increase duration (seconds)
       - Enter: apply effect
       - Esc / F10: close
+
+    Attributes:
+        effects (list[str]):
+            List of effect class names to choose from.
+        on_apply (callable):
+            Callback invoked with (effect_name, duration).
+        on_close (callable):
+            Callback invoked when the menu is closed.
+        visible (bool):
+            Whether the menu is currently shown.
+        selected_index (int):
+            Index of the currently highlighted effect.
+        duration (int):
+            Currently selected duration in seconds.
+        font (pygame.font.Font):
+            Font used for menu text.
+        width (int):
+            Width of the menu panel.
+        height (int):
+            Height of the menu panel.
+        rect (pygame.Rect):
+            Bounding rectangle of the menu panel.
+
+    Methods:
+        __init__(effects, on_apply, on_close):
+            Initialize the effects menu.
+        toggle():
+            Toggle the menu visibility and reset selection/duration.
+        handle_event(event):
+            Handle keyboard input for navigation, duration adjustment, and application.
+        draw(screen):
+            Render the effects menu overlay.
     """
+
     def __init__(self, effects: list[str], on_apply, on_close):
         self.effects = effects
         self.on_apply = on_apply

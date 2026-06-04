@@ -8,13 +8,22 @@ class CollisionSystem:
     Collision helper for movement resolution and interaction checks.
 
     Attributes:
-        None.
+        _obstacle_cache_key (int | None):
+            Cache key for the obstacle spatial index.
+        _obstacle_spatial_index (dict):
+            Spatial hash mapping cell coordinates to obstacle rects.
+        _obstacle_cell_size (int):
+            Cell size in pixels used for spatial indexing.
 
     Methods:
         rect_of(entity):
             Return the collision rectangle for an entity.
         handle_movement_and_collision(entity, dt, obstacles):
             Move an entity and resolve wall collisions.
+        _build_obstacle_index(obstacles):
+            Build the spatial index from a list of obstacle rects.
+        _get_nearby_obstacles(rect, obstacles):
+            Get obstacles near a given rect using the spatial index.
         _resolve_static_collision(entity, obstacles):
             Push an entity out of any remaining overlaps.
         check_interactions(player, enemies, items):

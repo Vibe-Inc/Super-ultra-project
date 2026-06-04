@@ -9,9 +9,11 @@ class Map:
     """
     Represents a tile-based game map loaded from a Tiled map file.
 
-    This class handles loading and drawing of the map using pytmx and pygame.
+    This class handles loading, caching, and drawing of the map using pytmx and pygame.
 
     Attributes:
+        FRINGE_LAYER_NAME (str): Name of the fringe tile layer.
+        FRINGE_LAYER_FADE_ALPHA (int): Alpha value for fading fringe tiles.
         map_file (str):
             Path to the Tiled map (.tmx) file.
         game_map (pytmx.TiledMap | None):
@@ -20,14 +22,32 @@ class Map:
             Width of the map in pixels.
         pixel_height (int):
             Height of the map in pixels.
+        _base_render_cache (pygame.Surface | None):
+            Cached composite surface for base layers.
+        _fringe_components (list[dict]):
+            Cached fringe layer components with surfaces and tile rects.
 
     Methods:
         __init__(map_file):
             Initialize the map with the given file path.
-        draw(screen):
-            Draw the map layers onto the given Pygame surface.
-            Args:
-                screen (pygame.Surface): The surface to draw the map on.
+        ensure_loaded():
+            Load the map file if not already loaded.
+        _is_fringe_layer(layer):
+            Check if a layer is the fringe overlay layer.
+        _build_fringe_components(layer):
+            Build grouped fringe surfaces for efficient drawing.
+        _build_render_cache():
+            Pre-render all non-fringe layers into a cached surface.
+        get_tmx_data():
+            Return the loaded TMX data, loading if needed.
+        draw(screen, camera_offset=None):
+            Draw the base map layers onto the given Pygame surface.
+        draw_fringe_overlay(screen, camera_offset=None, player=None):
+            Draw the fringe overlay with optional player fade.
+        _should_fade_component(player_rect, tile_rects):
+            Determine whether a fringe component should fade.
+        get_obstacles():
+            Collect all collidable rects from the map.
     """
 
     def __init__(self, map_file: str):
@@ -278,24 +298,26 @@ class LocalMap:
             Path to the currently active map file.
         transition_buffer (int):
             Distance from the map edge at which a transition is triggered.
+        map_transitions (dict):
+            Dictionary mapping source map paths to directional transitions.
 
     Methods:
         __init__(name, map_file):
             Initialize the local map manager with a name and starting map file.
-        draw(screen):
+        draw(screen, camera_offset=None):
             Draw the current map onto the given Pygame surface.
-            Args:
-                screen (pygame.Surface): The surface to draw the map on.
+        draw_fringe_overlay(screen, camera_offset=None, player=None):
+            Draw the current map's fringe overlay.
+        get_obstacles():
+            Return the current map's obstacle rects.
         update(player):
             Update map logic and handle transitions based on player position.
-            Args:
-                player: The player object (must have pos and image/rect attributes).
-            Returns:
-                str | None: Path to the new map if switched, else None.
         switch_map(new_map_path):
             Switch to a new map by file path.
-            Args:
-                new_map_path (str): Path to the new map file.
+        _player_overlaps_any_tile(player_rect, tile_width, tile_height, tile_positions):
+            Check if the player overlaps any of the given tile positions.
+        _teleport_player_to_tile(player, tile_x, tile_y, tile_width, tile_height):
+            Teleport the player to a specific tile position.
     """
     def __init__(self, name: str, map_file: str):
         self.name = name

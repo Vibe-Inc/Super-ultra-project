@@ -129,16 +129,76 @@ class BlackjackGame:
     """
     Modal blackjack game overlay with betting.
 
-    Usage::
+    Attributes:
+        PHASE_BETTING (str): Betting phase identifier.
+        PHASE_PLAYER_TURN (str): Player turn phase identifier.
+        PHASE_DEALER_TURN (str): Dealer turn phase identifier.
+        PHASE_RESULT (str): Result phase identifier.
+        app: Reference to the main application instance.
+        on_close (callable | None): Callback invoked when the game closes.
+        player_money (int): Starting money.
+        bet_amount (int): Current bet amount.
+        net_change (int): Cumulative money change across rounds.
+        screen_w (int): Screen width.
+        screen_h (int): Screen height.
+        font_large: Large font for titles.
+        font_medium: Medium font for labels.
+        font_small: Small font for details.
+        table_rect (pygame.Rect): Rect defining the table area.
+        _tablecloth_surf (pygame.Surface): Pre-rendered tablecloth surface.
+        deck (list[dict]): The current deck of cards.
+        player_hand (list[dict]): The player's current hand.
+        dealer_hand (list[dict]): The dealer's current hand.
+        phase (str): Current game phase.
+        result_text (str): Text displayed in the result phase.
+        result_color (tuple): Color of the result text.
+        _round_outcome (str): Outcome of the current round.
+        _btn_hit (pygame.Rect | None): Hit button rect.
+        _btn_stand (pygame.Rect | None): Stand button rect.
+        _btn_play (pygame.Rect | None): Play again button rect.
+        _btn_close (pygame.Rect | None): Close button rect.
+        _btn_deal (pygame.Rect | None): Deal button rect.
+        _chip_rects (list): List of (rect, value) for betting chips.
 
-        game = BlackjackGame(app, player_money=100, on_close=callback)
-        # In the game loop:
-        game.handle_event(event)
-        game.draw(screen)
-
-    The *on_close* callback receives two arguments:
-    ``outcome`` (str) — ``"win"``, ``"lose"``, ``"push"``, or ``"quit"``
-    ``net_change`` (int) — total money won (positive) or lost (negative)
+    Methods:
+        __init__(app, on_close=None, player_money=100):
+            Initialize the blackjack game.
+        _build_tablecloth(w, h):
+            Build a green felt tablecloth surface with subtle pattern.
+        _current_money():
+            Return the player's current money.
+        _can_afford(amount):
+            Check if the player can afford the given bet.
+        _add_bet(amount):
+            Add to the current bet.
+        _clear_bet():
+            Reset bet to minimum.
+        _deal():
+            Start a round with the current bet.
+        _start_round():
+            Shuffle and deal initial cards.
+        _player_hit():
+            Player draws a card.
+        _player_stand():
+            Player stands; dealer plays.
+        _resolve_dealer():
+            Dealer draws until 17, then determine winner.
+        _go_to_betting():
+            Return to betting phase for a new round.
+        _close(outcome):
+            Invoke the on_close callback.
+        handle_event(event):
+            Process a pygame event.
+        _draw_button(surface, rect, text, hovered=False, text_color=None):
+            Draw a styled button.
+        _draw_chip(surface, rect, value, hovered=False):
+            Draw a betting chip.
+        _draw_hand(surface, cards, x_start, y, face_up=True, hide_second=False):
+            Draw a hand of cards with overlap.
+        draw(surface):
+            Draw the full blackjack overlay.
+        _draw_betting_phase(surface, tr, mouse_pos):
+            Draw the betting phase UI.
     """
 
     # Game phases
