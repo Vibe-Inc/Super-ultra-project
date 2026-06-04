@@ -506,6 +506,7 @@ class Game(State):
             create_item("wooden_bow"),
             create_item("apple"),
             create_item("hand_lamp"),
+            create_item("lantern"),
             create_item("small_health_potion"),
             create_item("large_health_potion"),
             create_item("large_health_potion"),
@@ -786,6 +787,23 @@ class Game(State):
                     'radius': int(lamp.light_radius),
                     'intensity': float(lamp.intensity)
                 })
+
+            # Lantern: emit light when the lantern is in the active hotbar slot
+            try:
+                hb = getattr(self, 'hotbar', None)
+                if hb:
+                    slot_data = hb.items[hb.active_slot_index][0]
+                    if slot_data:
+                        held_item = slot_data[0] if isinstance(slot_data, (list, tuple)) else slot_data
+                        if getattr(held_item, 'emits_light', False):
+                            screen_pos = (int(player_center.x - camera.x), int(player_center.y - camera.y))
+                            lights.append({
+                                'pos': screen_pos,
+                                'radius': int(getattr(held_item, 'light_radius', 160)),
+                                'intensity': float(getattr(held_item, 'intensity', 0.9)),
+                            })
+            except Exception:
+                pass
 
             # Optional: existing dropped items that emit light
             for it in getattr(self, 'items', []):

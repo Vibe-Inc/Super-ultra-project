@@ -312,6 +312,39 @@ class Lamp(Item):
         return True
 
 
+class Lantern(Item):
+    """Handheld lantern that illuminates a small radius around the character while held.
+
+    The lantern emits light automatically when it occupies the player's active
+    hotbar slot — no toggling required.  ``Game.get_light_sources`` reads the
+    ``emits_light`` flag and the ``light_radius`` / ``intensity`` attributes to
+    feed the lighting overlay in the renderer.
+    """
+    def __init__(self, row: dict | None = None, *, image_path: str = "assets/items/lantern.png"):
+        if row is None:
+            row = {
+                "id": "lantern",
+                "name": "Lantern",
+                "type": "misc",
+                "max_stack": 1,
+                "price": 25,
+                "description": "A compact lantern that casts a warm glow around you when carried.",
+                "image_path": image_path,
+            }
+        super().__init__(row)
+        self.light_radius = 200   # pixels – soft warm glow
+        self.intensity = 0.7      # gentle intensity for a natural look
+        self.emits_light = True   # flag checked by Game.get_light_sources()
+
+    def get_tooltip_text(self):
+        stats = (
+            f"{_('Type')}: {_('Misc')}\n"
+            f"{_('Light Radius')}: {self.light_radius}px\n"
+            f"Price: ${self.price}"
+        )
+        return f"{self.name}\n{stats}\n{self.description}"
+
+
 def create_item(item_id: str):
     """
     Factory function to instantiate the appropriate item class.
@@ -328,6 +361,12 @@ def create_item(item_id: str):
             return Lamp(None)
         except Exception:
             # fallback to generic Item if Lamp construction fails
+            pass
+
+    if item_id == "lantern":
+        try:
+            return Lantern(None)
+        except Exception:
             pass
 
     from database.GP_database import Gp_database 

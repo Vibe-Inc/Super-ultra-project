@@ -138,7 +138,7 @@ class App:
         add_item(6, 2, "potion_of_haste")
         add_item(7, 2, "potion_of_shield")
 
-        # Row 3 — Armor
+        # Row 4 — Armor
         add_item(0, 3, "iron_helmet")
         add_item(1, 3, "iron_chestplate")
         add_item(2, 3, "iron_leggings")
@@ -149,6 +149,15 @@ class App:
         add_item(7, 3, "steel_boots")
         
         self.money = 100
+
+        # Pre-populate the hotbar with a lantern in the first slot so the
+        # player starts with it "in hand" (lighting is active immediately).
+        _hb_cols = getattr(cfg, 'INV_HOTBAR_COLUMNS', 10)
+        _hb_rows = getattr(cfg, 'INV_HOTBAR_ROWS', 1)
+        self.MAIN_HOTBAR_items = [[None for _ in range(_hb_rows)] for _ in range(_hb_cols)]
+        _lantern = create_item("lantern")
+        if _lantern:
+            self.MAIN_HOTBAR_items[0][0] = [_lantern, 1]
 
         # Dialog state: current active dialog UI and last NPC the player talked to
         self.current_dialog = None
@@ -281,44 +290,77 @@ class App:
                 effective_brightness = cfg.USER_SCREEN_BRIGHTNESS * cfg.ENVIRONMENT_BRIGHTNESS
                 night_tint = cfg.ENVIRONMENT_BRIGHTNESS <= 0.55
 
+            # Collect local light sources (lantern, lamp, etc.)
+            local_lights = []
+            if self.manager.get_state() == "gameplay":
+                gameplay_state = self.manager.states.get("gameplay")
+                try:
+                    local_lights = gameplay_state.get_light_sources() if gameplay_state and hasattr(gameplay_state, 'get_light_sources') else []
+                except Exception:
+                    pass
+
+            # Determine the minimum effective brightness needed so that
+            # local light sources remain visible even during daytime.
+            # When there are active lights, keep a small amount of darkness
+            # so the radial gradients have something to "punch through".
+            has_lights = bool(local_lights)
+            if has_lights and effective_brightness >= 1:
+                effective_brightness = 0.92  # subtle daytime overlay for light glow
+
             if effective_brightness < 1:
-                if self._brightness_overlay is None or self._brightness_overlay.get_size() != (cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT):
-                    self._brightness_overlay = pygame.Surface((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT))
-                self._brightness_overlay.set_alpha(int((1 - effective_brightness) * 255))
+                overlay_alpha = int((1 - effective_brightness) * 255)
                 # Use the environment tint color computed by the game state for dawn/dusk/night
                 if night_tint:
                     tint = cfg.ENVIRONMENT_TINT
                 else:
                     tint = (0, 0, 0)
-                self._brightness_overlay.fill(tint)
 
-                # Apply local light sources (from gameplay state) to reveal areas around lights
-                overlay = self._brightness_overlay.copy()
-                if self.manager.get_state() == "gameplay":
-                    gameplay_state = self.manager.states.get("gameplay")
-                    try:
-                        lights = gameplay_state.get_light_sources() if gameplay_state and hasattr(gameplay_state, 'get_light_sources') else []
-                        for l in lights:
-                            lx, ly = l.get('pos', (0,0))
-                            radius = int(l.get('radius', 120))
-                            intensity = float(l.get('intensity', 1.0))
-                            if radius <= 0:
-                                continue
-                            # build a radial gradient surface
-                            grad = pygame.Surface((radius*2, radius*2), pygame.SRCALPHA)
-                            for r in range(radius, 0, -4):
-                                a = int((1.0 - (r / radius)) * 200 * intensity)
-                                a = max(0, min(255, a))
-                                pygame.draw.circle(grad, (255,255,255,a), (radius, radius), r)
-                            # Blit additive to lighten the overlay where the light is
-                            gx = lx - radius
-                            gy = ly - radius
-                            try:
-                                overlay.blit(grad, (gx, gy), special_flags=pygame.BLEND_RGBA_ADD)
-                            except Exception:
-                                pass
-                    except Exception:
-                        pass
+                if has_lights:
+                    # Per-pixel alpha overlay: light sources make the overlay
+                    # transparent so the original scene shows through (soft glow).
+                    overlay = pygame.Surface(
+                        (cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT), pygame.SRCALPHA
+                    )
+                    overlay.fill((tint[0], tint[1], tint[2], overlay_alpha))
+
+                    for l in local_lights:
+                        lx, ly = l.get('pos', (0, 0))
+                        radius = int(l.get('radius', 120))
+                        intensity = float(l.get('intensity', 1.0))
+                        if radius <= 0:
+                            continue
+                        # Build a soft alpha-reduction gradient.
+                        # Centre is fully transparent (reveals scene),
+                        # edges keep the overlay darkness.
+                        grad = pygame.Surface(
+                            (radius * 2, radius * 2), pygame.SRCALPHA
+                        )
+                        steps = max(1, radius // 3)
+                        for i in range(steps, 0, -1):
+                            frac = i / steps          # 1 at edge, 0 at centre
+                            r = int(frac * radius)
+                            # Alpha to SUBTRACT from the overlay: high at centre
+                            a = int((1.0 - frac) * overlay_alpha * intensity)
+                            a = max(0, min(255, a))
+                            pygame.draw.circle(
+                                grad, (0, 0, 0, a), (radius, radius), r
+                            )
+                        gx = lx - radius
+                        gy = ly - radius
+                        try:
+                            overlay.blit(
+                                grad, (gx, gy),
+                                special_flags=pygame.BLEND_RGBA_SUB,
+                            )
+                        except Exception:
+                            pass
+                else:
+                    # No local lights – simple uniform darkening
+                    if self._brightness_overlay is None or self._brightness_overlay.get_size() != (cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT):
+                        self._brightness_overlay = pygame.Surface((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT))
+                    self._brightness_overlay.set_alpha(overlay_alpha)
+                    self._brightness_overlay.fill(tint)
+                    overlay = self._brightness_overlay
 
                 self.screen.blit(overlay, (0, 0))
             self.profiler.end_section("postfx")
