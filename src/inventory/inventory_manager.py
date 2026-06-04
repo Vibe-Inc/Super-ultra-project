@@ -170,6 +170,7 @@ class INVENTORY_manager:
     def __init__(self, app):
         self.app = app
         self.selected_item = None
+        self._held_source = None
         self.active_split_popup = None
         self.active_inventories = []
         self.player_inventory_opened = False
@@ -352,18 +353,36 @@ class INVENTORY_manager:
     def toggle_inventory(self, pl_inv, equip_inv):
         self.player_inventory_opened = not self.player_inventory_opened
         if self.player_inventory_opened:
+            pl_inv.pos_x = cfg.MAIN_INV_pos_x
+            pl_inv.pos_y = cfg.MAIN_INV_pos_y
+            equip_inv.pos_x = cfg.MAIN_INV_equipment_pos_x
+            equip_inv.pos_y = cfg.MAIN_INV_equipment_pos_y
             self.add_active_inventory(pl_inv)
             self.add_active_inventory(equip_inv)
         else:
+            self._return_held_item()
             self.remove_active_inventory(pl_inv)
             self.remove_active_inventory(equip_inv)
             if self.current_shop_inv:
                 self.remove_active_inventory(self.current_shop_inv)
                 self.current_shop_inv = None
                 pl_inv.pos_x = cfg.MAIN_INV_pos_x
+                equip_inv.pos_x = cfg.MAIN_INV_equipment_pos_x
+
+    def _return_held_item(self):
+        if self.selected_item and self._held_source:
+            src = self._held_source
+            inv = src.get('inv')
+            col, row = src.get('col'), src.get('row')
+            if inv and hasattr(inv, 'items') and 0 <= col < inv.columns and 0 <= row < inv.rows:
+                if inv.items[col][row] is None:
+                    inv.items[col][row] = self.selected_item
+                    self.selected_item = None
+        self._held_source = None
 
     def toggle_trade(self, pl_inv, shop_inv, equip_inv=None):
         if shop_inv in self.active_inventories:
+            self._return_held_item()
             self.remove_active_inventory(shop_inv)
             self.remove_active_inventory(pl_inv)
             if equip_inv:

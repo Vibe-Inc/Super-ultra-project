@@ -19,6 +19,58 @@ if TYPE_CHECKING:
 
 
 class CreditsMenu(Menu):
+    """
+    Credits screen displaying the development team and acknowledgments.
+
+    Features scrolling credit text and animated background effects.
+
+    Attributes:
+        app (App):
+            The main application instance.
+        buttons (list[Button]):
+            List of credits menu buttons (BACK).
+        credits_text (str):
+            Raw credits text content.
+        credits_lines (list[str]):
+            Credits text split into individual lines.
+        _title_font (pygame.font.Font):
+            Large font for the title.
+        _line_font (pygame.font.Font):
+            Font for credit lines.
+        font_small (pygame.font.Font):
+            Small font for captions.
+        _anim_time (float):
+            Accumulated animation time.
+        _launch_phase (float):
+            Phase of the launch animation.
+        _particles (list):
+            Decorative ambient particles.
+        _stars (list):
+            Background star effects.
+        _light_rays (list):
+            Light ray effects.
+        _embers (list):
+            Ambient ember particles.
+        _bursts (list):
+            Launch burst effects.
+        _sparkles (list):
+            Title sparkle effects.
+        _panel_rect (pygame.Rect):
+            Rectangle for the central panel.
+
+    Methods:
+        __init__(app):
+            Initialize the credits menu.
+        back_to_main():
+            Return to the main menu.
+        handle_event(event):
+            Handle input events.
+        update(dt):
+            Update animations and effects.
+        draw(screen):
+            Render the credits menu.
+    """
+
     def __init__(self, app: "App"):
         super().__init__(app)
         scale = cfg.ui_scale()

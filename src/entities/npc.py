@@ -15,11 +15,31 @@ class NPC:
             Distance within which the player can interact with the NPC.
         is_interactable (bool):
             Whether the player is currently close enough to interact.
-        
+        dialog_lines (list[str]):
+            Lines of dialogue the NPC can say.
+        is_merchant (bool):
+            Whether this NPC can open a shop.
+        gender (str):
+            Gender of the NPC ('male' or 'female').
+        was_talked (bool):
+            Whether the player has already talked to this NPC.
+        rect (pygame.Rect):
+            Bounding rect for the NPC.
+        font (pygame.font.Font):
+            Font used for the interaction prompt.
+        prompt_text (pygame.Surface):
+            Rendered prompt key indicator.
+        prompt_bg_color (tuple):
+            Background color for the prompt.
+
     Methods:
+        __init__(x, y, sprite_set, dialog_lines, is_merchant, gender):
+            Initialize the NPC with position and appearance.
         update(player_pos):
             Check distance to player and update interaction status.
-        draw(screen):
+        get_rect():
+            Return an updated collision rect for the NPC.
+        draw(screen, camera_offset=None):
             Draw the NPC and the interaction prompt if applicable.
     """
     def __init__(self, x, y, sprite_set="MenHuman1", dialog_lines=None, is_merchant=False, gender='male'):

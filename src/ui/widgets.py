@@ -8,6 +8,56 @@ import src.config as cfg
 from src.core.logger import logger
 
 class Button:
+    """
+    Customizable UI button with rect or shield shape, hover animations, and click handling.
+
+    Attributes:
+        rect (pygame.Rect):
+            Bounding rectangle for the button.
+        text (str):
+            Label text displayed on the button.
+        color (tuple[int, int, int]):
+            Default background RGB color.
+        hover_color (tuple[int, int, int]):
+            Background RGB color when hovered.
+        font (pygame.font.Font):
+            Font used for the label text.
+        font_color (tuple[int, int, int]):
+            RGB color of the label text.
+        corner_width (int):
+            Border radius for rounded corners.
+        on_click (Callable[[], None]):
+            Callback triggered when the button is clicked.
+        shape (str):
+            Visual shape — 'rect' or 'shield'.
+        _hover_progress (float):
+            Normalized hover animation progress (0.0 to 1.0).
+        _hover_particles (list):
+            List of active hover sparkle particles.
+        text_surf (pygame.Surface):
+            Rendered text surface.
+        text_rect (pygame.Rect):
+            Centered position of the text surface.
+
+    Methods:
+        __init__(rect, text, color, hover_color, font, font_color, corner_width, on_click, shape='rect'):
+            Initialize the button.
+        _update_text_surface():
+            Render and scale the text to fit within the button.
+        set_text(text):
+            Change the button label and re-render.
+        draw(screen):
+            Render the button on the given surface.
+        _build_button_surface(w, h, base_color, cw, is_hovered):
+            Build a cached button surface with decorative pattern.
+        _draw_shield_button(screen, r, base_color, cw, is_hovered, eased):
+            Draw the shield-shaped variant.
+        _adjust_color_brightness(color, factor):
+            Adjust color brightness by a multiplier.
+        _shield_points(w, h):
+            Compute polygon points for a shield shape.
+    """
+
     def __init__(self, rect, text, color, hover_color, font, font_color, corner_width, on_click, shape='rect'):
         self.rect: pygame.Rect = rect
         self.text: str = text
@@ -514,9 +564,51 @@ class Tooltip:
 
 class Dialog:
     """
-    Simple modal dialog with text lines and an OK button.
-    Supports optional Shop and Play Cards action buttons.
+    Simple modal dialog with text lines and action buttons.
+
+    Supports an OK button plus optional Shop and Play Cards action buttons.
+
+    Attributes:
+        app (App):
+            The main application instance.
+        lines (list[str]):
+            Lines of text to display in the dialog.
+        on_close (callable | None):
+            Callback invoked when the dialog is closed.
+        on_shop (callable | None):
+            Callback invoked when the Shop button is clicked.
+        show_shop (bool):
+            Whether to show the Shop button.
+        on_play_cards (callable | None):
+            Callback invoked when the Play Cards button is clicked.
+        show_play_cards (bool):
+            Whether to show the Play Cards button.
+        rect (pygame.Rect):
+            Bounding rectangle of the dialog.
+        font (pygame.font.Font):
+            Font used for dialog text.
+        ok_button (Button):
+            The CLOSE button.
+        shop_button (Button | None):
+            The SHOP button, or None if not shown.
+        play_cards_button (Button | None):
+            The PLAY CARDS button, or None if not shown.
+
+    Methods:
+        __init__(app, lines, on_close=None, on_shop=None, show_shop=False, on_play_cards=None, show_play_cards=False):
+            Initialize the dialog.
+        _close():
+            Close the dialog and invoke close callback.
+        handle_event(event):
+            Handle mouse and keyboard events for the dialog buttons.
+        _shop():
+            Open the shop and close the dialog.
+        _play_cards_action():
+            Start the card game and close the dialog.
+        draw(surface):
+            Render the dialog overlay, text, and buttons.
     """
+
     def __init__(self, app, lines, on_close=None, on_shop=None, show_shop=False,
                  on_play_cards=None, show_play_cards=False):
         self.app = app
@@ -784,7 +876,17 @@ class Slider:
 class Inventory_slider(Slider):
     """
     Slider specialized for inventory UI, inherits from the generic Slider class.
+
+    Provides no additional functionality beyond Slider; exists as a dedicated
+    type for inventory scrollbar use.
+
+    Attributes:
+        Inherits all attributes from Slider.
+
+    Methods:
+        Inherits all methods from Slider.
     """
+
     def __init__(self, x, y, height, track_thickness, track_colour, knob_colour,
                  knob_width, knob_height, track_length, value=0.3, dragging=False, smooth_speed=0.05, action=None):
         super().__init__(x, y, height, track_thickness, track_colour, knob_colour,

@@ -160,37 +160,53 @@ def _draw_ornate_border(surf, rect, theme, scale):
         pygame.draw.line(surf, border, (r.right - int(18 * scale), y), (r.right - int(10 * scale), y), w)
 
 
-# ─── Shimmer text (cached per time bucket) ──────────────────
+# ─── Plain text (no shimmer) ────────────────────────────────
 def _render_shimmer_text(font, text, base_color, t, intensity=0.15):
-    """Render text with base_color and a subtle animated highlight pass (no mask)."""
-    tb = int(t * 6)
-    ck = (id(font), text, base_color, tb)
-    if ck in _shimmer_cache:
-        return _shimmer_cache[ck]
-    result = font.render(text, True, base_color)
-    if intensity <= 0:
-        return result
-    w, h = result.get_size()
-    # Draw a soft vertical highlight band that scrolls across
-    shimmer_w = max(1, int(w * 0.2))
-    band = pygame.Surface((shimmer_w, h), pygame.SRCALPHA)
-    for sx in range(shimmer_w):
-        ratio = 1.0 - abs(sx - shimmer_w // 2) / (shimmer_w // 2 + 1)
-        a = int(50 * ratio * intensity / 0.15)
-        pygame.draw.line(band, (*GOLD_BRIGHT, max(0, min(120, a))), (sx, 0), (sx, h))
-    # Position band based on time
-    band_x = int((t * 150) % (w + shimmer_w)) - shimmer_w
-    # Blit only within text bounds
-    clip = result.get_clip()
-    result.blit(band, (band_x, 0), special_flags=pygame.BLEND_RGBA_ADD)
-    if len(_shimmer_cache) > 30:
-        _shimmer_cache.clear()
-    _shimmer_cache[ck] = result
-    return result
+    return font.render(text, True, base_color)
 
 
 # ─── Ambient Particle (simplified — single circle) ──────────
 class AmbientParticle:
+    """
+    Simple floating ambient particle used for background atmosphere.
+
+    Attributes:
+        sw (int):
+            Screen width boundary.
+        sh (int):
+            Screen height boundary.
+        x (float):
+            Current x position.
+        y (float):
+            Current y position.
+        vx (float):
+            Horizontal velocity.
+        vy (float):
+            Vertical velocity.
+        sz (int):
+            Particle radius in pixels.
+        brightness (int):
+            Brightness value for the particle color.
+        alpha (int):
+            Alpha transparency value.
+        phase (float):
+            Phase offset for oscillation.
+        freq (float):
+            Frequency of horizontal oscillation.
+        _surf (pygame.Surface | None):
+            Cached surface (may be None).
+
+    Methods:
+        __init__(sw, sh):
+            Initialize the particle with random properties.
+        _reset(init=False):
+            Reset particle position and properties.
+        update(dt, t):
+            Update particle position and check bounds.
+        draw(surf, t):
+            Draw the particle with oscillating alpha.
+    """
+
     def __init__(self, sw, sh):
         self.sw, self.sh = sw, sh
         self._reset(True)
@@ -227,6 +243,40 @@ class AmbientParticle:
 
 # ─── Burst Particle ─────────────────────────────────────────
 class WikiParticle:
+    """
+    Burst particle for wiki menu visual effects, supporting glow and star shapes.
+
+    Attributes:
+        x (float):
+            Current x position.
+        y (float):
+            Current y position.
+        vx (float):
+            Horizontal velocity.
+        vy (float):
+            Vertical velocity (gravity applied each frame).
+        lt (float):
+            Remaining lifetime in seconds.
+        max_lt (float):
+            Maximum lifetime for alpha scaling.
+        color (tuple):
+            RGB(A) color of the particle.
+        size (int):
+            Base size of the particle.
+        glow (bool):
+            Whether this particle has a glow effect.
+        star (bool):
+            Whether this particle is drawn as a star shape.
+
+    Methods:
+        __init__(x, y, vx, vy, lt, color, size, glow=False, star=False):
+            Initialize the burst particle.
+        update(dt):
+            Update position and lifetime.
+        draw(surf):
+            Draw the particle with fading alpha.
+    """
+
     def __init__(self, x, y, vx, vy, lt, color, size, glow=False, star=False):
         self.x, self.y = x, y
         self.vx, self.vy = vx, vy
@@ -294,7 +344,8 @@ def _draw_portrait_frame(surf, x, y, size, theme, scale, pulse):
 
 SECTIONS_META = {
     "bestiary": {"subtitle": _("Foes of the Realm"), "icon": "\u2694", "entries": [
-        _("The Brute"), _("The Venomous"), _("The Arcanist"), _("The Trickster"), _("The Bomber")]},
+        _("The Brute"), _("The Venomous"), _("The Arcanist"), _("The Trickster"), _("The Bomber"),
+        _("The Stalker"), _("The Skirmisher"), _("The Guardian")]},
     "magic": {"subtitle": _("Spells of Power"), "icon": "\u2726", "entries": [
         _("Fireball"), _("Flame Shield"), _("Frost Nova"), _("Ice Armor"),
         _("Glacial Cascade"), _("Chain Lightning"), _("Thunderstrike"),
@@ -315,6 +366,133 @@ SECTIONS_META = {
 
 
 class WikiMenu(Menu):
+    """
+    In-game wiki / compendium (Codex Arcanum) with bestiary, magic, effects, and guide sections.
+
+    Features ornate parchment-styled backgrounds, section cards, table of contents,
+    content pages with monster portraits, and transition animations.
+
+    Attributes:
+        app (App):
+            The main application instance.
+        _page (str):
+            Current page identifier ('main', 'bestiary', 'magic', 'effects', 'guide').
+        _sub_page (int):
+            Current sub-page index within a section.
+        _show_toc (bool):
+            Whether the table of contents is currently displayed.
+        font_ornate (pygame.font.Font):
+            Large ornate font for icons.
+        font_large (pygame.font.Font):
+            Large font for the main title.
+        font_title (pygame.font.Font):
+            Title font for section headers.
+        font_subtitle (pygame.font.Font):
+            Subtitle font for section cards.
+        font_body (pygame.font.Font):
+            Body text font for content pages.
+        font_small (pygame.font.Font):
+            Small font for captions and page numbers.
+        font_toc (pygame.font.Font):
+            Font for table of contents entries.
+        ink_color (tuple):
+            Primary ink color for text.
+        ink_light (tuple):
+            Lighter ink color for subtler text.
+        particles (list[WikiParticle]):
+            Active burst particles.
+        ambient_particles (list[AmbientParticle]):
+            Active ambient background particles.
+        _anim_time (float):
+            Accumulated animation time.
+        _page_enter_time (int):
+            Timestamp of the last page entry (ms).
+        _transition_progress (float):
+            Normalized page transition progress (0.0 to 1.0).
+        _transition_from (str):
+            Page being transitioned from.
+        _hover_glow (dict):
+            Hover glow progress per section card index.
+        buttons (list[Button]):
+            List of control buttons.
+        back_btn (Button):
+            Back button.
+        prev_btn (Button):
+            Previous page button.
+        next_btn (Button):
+            Next page button.
+        toc_btn (Button):
+            Table of contents toggle button.
+        section_buttons (list):
+            Main page section card buttons.
+        section_button_data (list[tuple]):
+            Data for main page section cards.
+        _toc_hover (int):
+            Index of the hovered TOC entry.
+        _toc_entry_rects (list[tuple[pygame.Rect, int]]):
+            List of (rect, page_index) for TOC hit detection.
+
+    Methods:
+        __init__(app):
+            Initialize the wiki menu.
+        on_enter():
+            Reset animations and spawn ambient particles on entry.
+        _build_main_page():
+            Build the main page with section cards.
+        _open_bestiary():
+            Open the bestiary section.
+        _open_magic():
+            Open the magic section.
+        _open_effects():
+            Open the effects section.
+        _open_guide():
+            Open the guide section.
+        _emit_particles(theme):
+            Spawn burst particles with the given theme colors.
+        _go_back():
+            Navigate back through sub-pages or to the main page.
+        _toggle_toc():
+            Toggle the table of contents display.
+        _prev_page():
+            Go to the previous sub-page.
+        _next_page():
+            Go to the next sub-page.
+        _get_max_subpages():
+            Get the maximum sub-page index for the current section.
+        _theme():
+            Get the current section's color theme.
+        _get_content():
+            Get the content pages for the current section.
+        _get_meta():
+            Get the metadata for the current section.
+        _bestiary_pages():
+            Build bestiary content pages.
+        _magic_pages():
+            Build magic content pages.
+        _effects_pages():
+            Build effects content pages.
+        _guide_pages():
+            Build guide content pages.
+        layout(screen):
+            Position buttons based on screen size and current page.
+        update(dt):
+            Update animations and particles.
+        draw(screen):
+            Render the wiki menu.
+        _draw_main(screen, sw, sh, scale):
+            Draw the main page with section cards.
+        _draw_toc(screen, sw, sh, scale):
+            Draw the table of contents.
+        _draw_content(screen, sw, sh, scale):
+            Draw a content page with title, body, and optional portrait.
+        handle_event(event):
+            Handle input events.
+        _handle_main_click(event):
+            Handle clicks on the main page section cards.
+        _handle_toc_click(event):
+            Handle clicks on table of contents entries.
+    """
+
     def __init__(self, app: "App"):
         super().__init__(app)
         self._page = "main"
@@ -468,9 +646,21 @@ class WikiMenu(Menu):
                 "Their touch clouds the mind\u2014suddenly left is right, forward is back.\n\n"
                 "Abilities: Blink (240 range), Confuse (2.8s), Dizzy (2.2s). Health: 75. Speed: 150.")},
             {"title": _("The Bomber"), "portrait": "bomber", "body": _(
-                "Where there is fire, there is the Bomber. These mad engineers carry satchels of volatile concoctions.\n\n"
-                "They keep their distance, lobbing timed bombs that arc through the air with deceptive grace.\n\n"
+                "A hiss of steam, a flicker of arc-light\u2014the Bomber lumbers in on riveted peg legs.\n\n"
+                "Brass-plated and pressure-sealed, these wandering automatons keep their distance while lobbing timed bombs that arc through the air with deceptive grace.\n\n"
                 "Abilities: Timed Bomb (95 blast radius, 80 knockback, 0.9s fuse). Health: 125. Speed: 105.")},
+            {"title": _("The Stalker"), "portrait": "stalker", "body": _(
+                "Where shadow pools deep and torchlight fails, the Stalker waits\u2014patient, silent, and unseen.\n\n"
+                "Cloaked and masked, these grim assassins favor the blade over brute strength. They remember your last position long after you've broken line of sight, and they are quick to re-pick a fresh path when cut off.\n\n"
+                "Abilities: Blade Strike (40 range), Memory Trail (3s pursuit after losing sight), Repath (0.5s). Health: 110. Speed: 120.")},
+            {"title": _("The Skirmisher"), "portrait": "skirmisher", "body": _(
+                "Swift as the raptor it resembles, the Skirmisher darts across the battlefield with javelin raised and crest fluttering.\n\n"
+                "These winged hunters prefer to keep their distance\u2014harrying from the fringes, circling, striking, and vanishing before the counter-blow can land. Tribal warpaint marks the kills they've claimed.\n\n"
+                "Abilities: Javelin Toss (35 range), Orbit (preferred 80\u2013170, radius 130). Health: 85. Speed: 140.")},
+            {"title": _("The Guardian"), "portrait": "guardian", "body": _(
+                "Forged in the fires of a forgotten forge, the Guardian is a hulking iron sentinel bound to a place of power.\n\n"
+                "Steam hisses from brass-banded joints and copper pistons pump with every ponderous step. It will not stray far from its post\u2014but woe to any intruder that crosses the threshold it defends.\n\n"
+                "Abilities: Heavy Slam (45 range, knockback), Guard Post (radius 320, leash 90), Patrol Wait (0.8s). Health: 140. Speed: 100.")},
         ]
 
     def _magic_pages(self):

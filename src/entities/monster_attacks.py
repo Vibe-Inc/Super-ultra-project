@@ -51,13 +51,9 @@ def _has_line_of_sight(start: pygame.Vector2, end: pygame.Vector2, obstacles: li
 
 
 def _rect_for_enemy(enemy: object, pos: pygame.Vector2) -> pygame.Rect:
-    hitbox_width = 40
-    hitbox_height = 20
     sprite_width = enemy.image.get_width()
     sprite_height = enemy.image.get_height()
-    offset_x = (sprite_width - hitbox_width) // 2
-    offset_y = sprite_height - hitbox_height
-    return pygame.Rect(int(pos.x + offset_x), int(pos.y + offset_y), hitbox_width, hitbox_height)
+    return pygame.Rect(int(pos.x), int(pos.y), sprite_width, sprite_height)
 
 
 def _is_clear(enemy: object, pos: pygame.Vector2, obstacles: list[pygame.Rect]) -> bool:
@@ -79,6 +75,10 @@ class BaseAttack:
             Minimum delay between attacks.
         last_attack_time (int):
             Timestamp of the most recent attack.
+        is_close_melee (bool):
+            Class flag — True for in-place close-quarters strikes (used by
+            the skirmisher AI to choose orbit distance). Teleport-melee and
+            ranged attacks should leave this False.
 
     Methods:
         __init__(config=None):
@@ -88,6 +88,8 @@ class BaseAttack:
         update(enemy, context):
             Default no-op attack update.
     """
+    is_close_melee: bool = False
+
     def __init__(self, config: dict | None = None):
         self.config = config or {}
         self.cooldown_ms = int(self.config.get("cooldown_ms", 1000))
@@ -123,6 +125,8 @@ class BruteAttack(BaseAttack):
             Duration of the slow effect applied by the slam.
         slow_factor (float):
             Slow multiplier applied to the player.
+        slam_anim_duration (float):
+            Duration of the slam attack animation overlay.
         last_charge_time (int):
             Timestamp of the last charge start.
         charge_timer (float):
@@ -140,6 +144,8 @@ class BruteAttack(BaseAttack):
         _slam(enemy, player, enemy_pos, player_pos, now_ms):
             Apply slam damage, knockback, and slow.
     """
+    is_close_melee = True
+
     def __init__(self, config: dict | None = None):
         super().__init__(config)
         self.charge_cooldown_ms = int(self.config.get("charge_cooldown_ms", 2200))
@@ -151,6 +157,7 @@ class BruteAttack(BaseAttack):
         self.knockback_force = float(self.config.get("knockback_force", 50.0))
         self.slow_duration = float(self.config.get("slow_duration", 1.3))
         self.slow_factor = float(self.config.get("slow_factor", 0.6))
+        self.slam_anim_duration = float(self.config.get("slam_anim_duration", 0.55))
 
         self.last_charge_time = -self.charge_cooldown_ms
         self.charge_timer = 0.0
@@ -207,6 +214,14 @@ class BruteAttack(BaseAttack):
         player.add_effect(SlowEffect(self.slow_duration, self.slow_factor))
         player.pos += direction * self.knockback_force
         self.last_attack_time = now_ms
+        if hasattr(enemy, "trigger_attack_anim"):
+            enemy.trigger_attack_anim(
+                "brute_slam",
+                self.slam_anim_duration,
+                direction=direction,
+                origin=enemy_pos,
+                strength=1.2,
+            )
 
 
 class VenomousAttack(BaseAttack):
@@ -229,12 +244,15 @@ class VenomousAttack(BaseAttack):
         update(enemy, context):
             Apply poison if the player is in range and cooldown allows it.
     """
+    is_close_melee = True
+
     def __init__(self, config: dict | None = None):
         super().__init__(config)
         self.poison_duration = float(self.config.get("poison_duration", 3.5))
         self.poison_dps = float(self.config.get("poison_dps", 4.0))
         self.strike_damage_mult = float(self.config.get("strike_damage_mult", 0.9))
         self.strike_range = float(self.config.get("strike_range", 0.0))
+        self.strike_anim_duration = float(self.config.get("strike_anim_duration", 0.4))
 
     def update(self, enemy: object, context: AttackContext):
         player = context.player
@@ -258,6 +276,17 @@ class VenomousAttack(BaseAttack):
             player.take_damage(damage)
         player.add_effect(PoisonEffect(self.poison_duration, self.poison_dps))
         self.last_attack_time = context.now_ms
+        if hasattr(enemy, "trigger_attack_anim"):
+            direction = player_pos - enemy_pos
+            if direction.length_squared() == 0:
+                direction = pygame.Vector2(1, 0)
+            enemy.trigger_attack_anim(
+                "venomous_strike",
+                self.strike_anim_duration,
+                direction=direction,
+                origin=enemy_pos,
+                strength=1.0,
+            )
 
 
 class ArcanistAttack(BaseAttack):
@@ -374,6 +403,7 @@ class TricksterAttack(BaseAttack):
         self.confuse_duration = float(self.config.get("confuse_duration", 3.0))
         self.dizzy_duration = float(self.config.get("dizzy_duration", 2.0))
         self.damage_mult = float(self.config.get("damage_mult", 0.7))
+        self.strike_anim_duration = float(self.config.get("strike_anim_duration", 0.4))
 
     def update(self, enemy: object, context: AttackContext):
         player = context.player
@@ -414,14 +444,120 @@ class TricksterAttack(BaseAttack):
 
         new_center = _entity_center(enemy)
         ndiff = new_center - player_center
+        struck = False
         if ndiff.length_squared() <= (self.strike_range * self.strike_range):
             damage = int(enemy.damage * self.damage_mult)
             if damage > 0:
                 player.take_damage(damage)
             player.add_effect(ConfusionEffect(self.confuse_duration))
             player.add_effect(DizzinessEffect(self.dizzy_duration))
+            struck = True
 
         self.last_attack_time = context.now_ms
+
+        if hasattr(enemy, "trigger_attack_anim"):
+            strike_dir = player_center - new_center
+            if strike_dir.length_squared() == 0:
+                strike_dir = pygame.Vector2(1, 0)
+            enemy.trigger_attack_anim(
+                "trickster_strike",
+                self.strike_anim_duration,
+                direction=strike_dir,
+                origin=new_center,
+                strength=1.1 if struck else 0.9,
+            )
+
+
+class MeleeAttack(BaseAttack):
+    """
+    Generic melee attack pattern that strikes the player within an attack area.
+
+    Attributes:
+        strike_range (float):
+            Radius of the melee hit area. Falls back to enemy.attack_range when 0.
+        damage_mult (float):
+            Multiplier applied to base damage for the strike.
+        knockback_force (float):
+            Optional knockback distance applied to the player.
+        require_line_of_sight (bool):
+            Whether obstacles between enemy and player block the strike.
+
+    Methods:
+        __init__(config=None):
+            Initialize melee-specific tuning values.
+        update(enemy, context):
+            Damage the player if they stand inside the attack area and cooldown allows.
+    """
+    is_close_melee = True
+
+    def __init__(self, config: dict | None = None):
+        super().__init__(config)
+        self.strike_range = float(self.config.get("strike_range", 0.0))
+        self.damage_mult = float(self.config.get("damage_mult", 1.0))
+        self.knockback_force = float(self.config.get("knockback_force", 0.0))
+        self.require_line_of_sight = bool(self.config.get("require_line_of_sight", False))
+        self.strike_anim_duration = float(self.config.get("strike_anim_duration", 0.35))
+        self.anim_type = str(self.config.get("anim_type", "")).lower()
+        self.anim_strength = float(self.config.get("anim_strength", 1.0))
+
+    def update(self, enemy: object, context: AttackContext):
+        player = context.player
+        if player is None:
+            return
+
+        enemy_pos = _entity_center(enemy)
+        player_pos = _entity_center(player)
+        diff = player_pos - enemy_pos
+        distance_sq = diff.length_squared()
+
+        effective_range = self.strike_range or float(enemy.attack_range)
+        if distance_sq > (effective_range * effective_range):
+            return
+
+        if not self.ready(context.now_ms):
+            return
+
+        if self.require_line_of_sight and not _has_line_of_sight(enemy_pos, player_pos, context.obstacles):
+            return
+
+        damage = max(1, int(enemy.damage * self.damage_mult))
+        player.take_damage(damage)
+
+        direction = player_pos - enemy_pos
+        if direction.length_squared() == 0:
+            direction = pygame.Vector2(1, 0)
+        else:
+            direction = direction.normalize()
+
+        if self.knockback_force > 0:
+            player.pos += direction * self.knockback_force
+
+        self.last_attack_time = context.now_ms
+
+        if hasattr(enemy, "trigger_attack_anim"):
+            anim_type = self.anim_type or self._default_anim_for(enemy)
+            enemy.trigger_attack_anim(
+                anim_type,
+                self.strike_anim_duration,
+                direction=direction,
+                origin=enemy_pos,
+                strength=self.anim_strength,
+            )
+
+    @staticmethod
+    def _default_anim_for(enemy: object) -> str:
+        style = (getattr(enemy, "visual_style", "") or "").lower()
+        mapping = {
+            "stalker": "stalker_slash",
+            "skirmisher": "skirmisher_claw",
+            "guardian": "guardian_smash",
+            "brute": "brute_slam",
+            "venomous": "venomous_strike",
+            "trickster": "trickster_strike",
+            "arcanist": "arcanist_burst",
+            "bomber": "bomber_strike",
+        }
+        return mapping.get(style, "generic_strike")
 
 
 class BomberAttack(BaseAttack):
@@ -521,4 +657,6 @@ def build_attack_controller(profile: str | None, config: dict | None = None) -> 
         return TricksterAttack(config)
     if name == "bomber":
         return BomberAttack(config)
+    if name == "melee":
+        return MeleeAttack(config)
     return None

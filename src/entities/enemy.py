@@ -4,6 +4,7 @@ import pygame
 
 from src.ai.monster_ai import AIContext, build_brain
 from src.core.logger import logger
+from src.entities.monster_attack_visuals import draw_attack_animation
 
 if TYPE_CHECKING:
     from src.entities.character import Character
@@ -147,6 +148,7 @@ class Enemy:
         animations: dict[str, list[pygame.Surface]] | None = None,
         attack_controller=None,
         contact_damage: bool = True,
+        visual_style: str | None = None,
     ):
         self.pos = pygame.Vector2(x, y)
         self.base_speed = speed
@@ -183,6 +185,7 @@ class Enemy:
         self.hit_flash_timer = 0.0
         self.target_entity: Character | None = None
         self.ai_profile = ai_profile
+        self.visual_style = (visual_style or ai_profile or "stalker").lower()
         self.ai_state = "idle"  # idle, patrol, chase, attack
         self.brain = build_brain(ai_profile, ai_config)
         self.attack_controller = attack_controller
@@ -192,6 +195,14 @@ class Enemy:
         self.detection_range = detection_range
         self.attack_range = attack_range
         self._ai_context = AIContext(dt=0.0, nav_grid=None, obstacles=[], player=None)
+
+        # Attack animation state (procedural close-range strike VFX)
+        self.attack_anim_type: str = ""
+        self.attack_anim_elapsed: float = 0.0
+        self.attack_anim_duration: float = 0.0
+        self.attack_anim_dir: pygame.Vector2 = pygame.Vector2(1, 0)
+        self.attack_anim_origin: pygame.Vector2 = pygame.Vector2(0, 0)
+        self.attack_anim_strength: float = 1.0
 
         self.effects = []
         # Status effect container (matches the player's API so weapons
@@ -230,13 +241,7 @@ class Enemy:
         sprite_width = self.image.get_width()
         sprite_height = self.image.get_height()
 
-        hitbox_width = min(self.hitbox_width, sprite_width)
-        hitbox_height = min(self.hitbox_height, sprite_height)
-
-        offset_x = (sprite_width - hitbox_width) // 2
-        offset_y = sprite_height - hitbox_height
-
-        self.rect = pygame.Rect(int(self.pos.x + offset_x), int(self.pos.y + offset_y), hitbox_width, hitbox_height)
+        self.rect = pygame.Rect(int(self.pos.x), int(self.pos.y), sprite_width, sprite_height)
         return self.rect
 
     def add_effect(self, effect):
@@ -246,6 +251,54 @@ class Enemy:
                 self.effects.append(effect)
                 return
         self.effects.append(effect)
+
+    def trigger_attack_anim(
+        self,
+        anim_type: str,
+        duration: float,
+        direction: pygame.Vector2 | None = None,
+        origin: pygame.Vector2 | None = None,
+        strength: float = 1.0,
+    ):
+        """
+        Start a close-range attack animation overlay.
+
+        Args:
+            anim_type: Visual style key (e.g. 'brute_slam', 'stalker_slash').
+            duration: Total length of the animation in seconds.
+            direction: Facing direction of the strike; defaults to current facing.
+            origin: World position the effect is anchored to; defaults to enemy center.
+            strength: Multiplier for visual intensity (size, particle count, alpha).
+        """
+        self.attack_anim_type = anim_type or ""
+        self.attack_anim_duration = max(0.05, float(duration))
+        self.attack_anim_elapsed = 0.0
+        self.attack_anim_strength = max(0.1, float(strength))
+        if direction is None or direction.length_squared() == 0:
+            direction = self._facing_vector()
+        self.attack_anim_dir = pygame.Vector2(direction).normalize()
+        if origin is None:
+            rect = self.get_rect()
+            origin = pygame.Vector2(rect.centerx, rect.centery)
+        self.attack_anim_origin = pygame.Vector2(origin)
+
+    def _facing_vector(self) -> pygame.Vector2:
+        if self.direction == "up":
+            return pygame.Vector2(0, -1)
+        if self.direction == "down":
+            return pygame.Vector2(0, 1)
+        if self.direction == "side":
+            return pygame.Vector2(-1, 0) if self.flip else pygame.Vector2(1, 0)
+        return pygame.Vector2(1, 0)
+
+    def _tick_attack_anim(self, dt: float):
+        if not self.attack_anim_type:
+            return
+        self.attack_anim_elapsed += dt
+        if self.attack_anim_elapsed >= self.attack_anim_duration:
+            self.attack_anim_type = ""
+            self.attack_anim_elapsed = 0.0
+            self.attack_anim_duration = 0.0
 
     def update(self, dt: float, collision_system, obstacles, nav_grid=None, attack_context=None, active: bool = True):
         if self.hit_flash_timer > 0:
@@ -259,6 +312,9 @@ class Enemy:
         # Tick status effects first so debuffs can modify speed_multiplier
         # before the movement code below consumes it.
         self._tick_effects(dt)
+
+        # Advance any active close-range attack animation overlay.
+        self._tick_attack_anim(dt)
 
         if not active:
             self.time_accumulator += dt * 0.2
@@ -345,6 +401,10 @@ class Enemy:
         draw_pos = (int(self.pos.x - camera_offset.x), int(self.pos.y - camera_offset.y))
         screen.blit(img, draw_pos)
         # hit flash overlay removed
+
+        # Procedural close-range attack animation overlay
+        if self.attack_anim_type:
+            draw_attack_animation(screen, self, camera_offset)
 
         bar_width = 40
         bar_height = 5

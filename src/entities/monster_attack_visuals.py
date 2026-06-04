@@ -1,0 +1,757 @@
+from __future__ import annotations
+
+import math
+import random
+import pygame
+
+
+def draw_attack_animation(screen: pygame.Surface, enemy, camera_offset: pygame.Vector2):
+    """
+    Render a close-range attack animation overlay for the given enemy.
+
+    Dispatches to a per-style draw function based on enemy.attack_anim_type
+    (or falls back to the visual_style). Progress is the normalized
+    elapsed/duration in [0, 1].
+    """
+    anim = (enemy.attack_anim_type or "").lower()
+    if not anim:
+        return
+    duration = max(0.0001, enemy.attack_anim_duration)
+    progress = max(0.0, min(1.0, enemy.attack_anim_elapsed / duration))
+
+    origin = pygame.Vector2(enemy.attack_anim_origin)
+    direction = pygame.Vector2(enemy.attack_anim_dir)
+    if direction.length_squared() == 0:
+        direction = pygame.Vector2(1, 0)
+    else:
+        direction = direction.normalize()
+
+    sx = int(origin.x - camera_offset.x)
+    sy = int(origin.y - camera_offset.y)
+    strength = float(enemy.attack_anim_strength)
+
+    handler = _DISPATCH.get(anim, _draw_generic_strike)
+    handler(screen, sx, sy, direction, progress, strength, enemy)
+
+
+# --------------------------------------------------------------------------
+# helpers
+# --------------------------------------------------------------------------
+def _aa_circle(screen, color, center, radius, width=0):
+    if radius < 1:
+        return
+    size = int(radius * 2 + 4)
+    surf = pygame.Surface((size, size), pygame.SRCALPHA)
+    pygame.draw.circle(surf, color, (size // 2, size // 2), int(radius), width)
+    screen.blit(surf, (center[0] - size // 2, center[1] - size // 2),
+                special_flags=pygame.BLEND_ALPHA_SDL2)
+
+
+def _aa_arc(screen, color, center, radius, start_rad, end_rad, width):
+    size = int(radius * 2 + 8)
+    surf = pygame.Surface((size, size), pygame.SRCALPHA)
+    rect = pygame.Rect(2, 2, size - 4, size - 4)
+    pygame.draw.arc(surf, color, rect, start_rad, end_rad, max(1, int(width)))
+    screen.blit(surf, (center[0] - size // 2, center[1] - size // 2),
+                special_flags=pygame.BLEND_ALPHA_SDL2)
+
+
+def _aa_ellipse(screen, color, rect_tuple):
+    x, y, w, h = rect_tuple
+    if w < 1 or h < 1:
+        return
+    surf = pygame.Surface((int(w) + 2, int(h) + 2), pygame.SRCALPHA)
+    pygame.draw.ellipse(surf, color, (1, 1, int(w), int(h)))
+    screen.blit(surf, (int(x), int(y)), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+
+def _aa_polygon(screen, color, points):
+    if not points:
+        return
+    xs = [p[0] for p in points]
+    ys = [p[1] for p in points]
+    minx, miny = min(xs), min(ys)
+    maxx, maxy = max(xs), max(ys)
+    w = max(2, int(maxx - minx) + 4)
+    h = max(2, int(maxy - miny) + 4)
+    surf = pygame.Surface((w, h), pygame.SRCALPHA)
+    offset_pts = [(p[0] - minx + 2, p[1] - miny + 2) for p in points]
+    pygame.draw.polygon(surf, color, offset_pts)
+    screen.blit(surf, (int(minx - 2), int(miny - 2)),
+                special_flags=pygame.BLEND_ALPHA_SDL2)
+
+
+def _aa_line(screen, color, p1, p2, width):
+    pygame.draw.line(screen, color, p1, p2, max(1, int(width)))
+
+
+def _slash_arc(screen, cx, cy, base_angle_deg, sweep_deg, radius, progress, color, width=4, layers=3):
+    """Draw a curved slash trail expanding through the sweep as progress grows."""
+    cur_sweep = sweep_deg * max(0.0, min(1.0, progress))
+    if cur_sweep <= 1:
+        return
+    for layer in range(layers):
+        lf = 1.0 - layer * 0.22
+        r = max(2, radius * (1.0 - layer * 0.08))
+        a = int(color[3] * lf) if len(color) > 3 else int(180 * lf)
+        if a <= 0:
+            continue
+        col = (color[0], color[1], color[2], a)
+        start = math.radians(base_angle_deg - cur_sweep * 0.5)
+        end = math.radians(base_angle_deg + cur_sweep * 0.5)
+        _aa_arc(screen, col, (cx, cy), r, start, end, max(1, int(width * lf)))
+
+
+def _impact_ring(screen, cx, cy, radius, color, width=3):
+    if radius < 1:
+        return
+    size = int(radius * 2 + 8)
+    surf = pygame.Surface((size, size), pygame.SRCALPHA)
+    pygame.draw.circle(surf, color, (size // 2, size // 2), int(radius), max(1, int(width)))
+    screen.blit(surf, (cx - size // 2, cy - size // 2), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+
+def _ground_shockwave(screen, cx, cy, radius, ring_color, fill_color=None, flat=0.45):
+    """Flattened ellipse for a ground-style shockwave (perspective)."""
+    if radius < 1:
+        return
+    w = int(radius * 2)
+    h = max(2, int(radius * 2 * flat))
+    rect = (cx - w // 2, cy - h // 2, w, h)
+    if fill_color is not None:
+        _aa_ellipse(screen, fill_color, rect)
+    surf = pygame.Surface((w + 4, h + 4), pygame.SRCALPHA)
+    pygame.draw.ellipse(surf, ring_color, (2, 2, w, h), 2)
+    screen.blit(surf, (cx - (w + 4) // 2, cy - (h + 4) // 2),
+                special_flags=pygame.BLEND_ALPHA_SDL2)
+
+
+def _seeded(seed_obj, salt: int = 0) -> random.Random:
+    r = random.Random()
+    r.seed(id(seed_obj) ^ (salt * 2654435761))
+    return r
+
+
+def _curve(progress: float, peak: float = 0.5) -> float:
+    """Bell-shaped curve peaking at `peak`, returning 0..1."""
+    if progress <= 0 or progress >= 1:
+        return 0.0
+    if progress < peak:
+        return progress / peak
+    return 1.0 - (progress - peak) / (1.0 - peak)
+
+
+# ============================================================
+# BRUTE — heavy slam: ground shockwave, lava cracks, ember burst
+# ============================================================
+def _draw_brute_slam(screen, cx, cy, direction, progress, strength, enemy):
+    rng = _seeded(enemy, 11)
+    fwd_angle_deg = math.degrees(math.atan2(direction.y, direction.x))
+    base_size = 80 * strength
+
+    # Phase A: wind-up glow & dust cloud puff at feet (0 .. 0.25)
+    if progress < 0.30:
+        p = progress / 0.30
+        glow_r = int(20 * strength + 10 * p)
+        a = int(180 * (1 - p))
+        _aa_circle(screen, (255, 90, 30, a), (cx, cy + int(18 * strength)), glow_r)
+        # rising ember sparks during windup
+        for i in range(6):
+            ang = rng.uniform(0, math.tau)
+            d = 8 + rng.random() * 14 * strength
+            ex = cx + int(math.cos(ang) * d * p)
+            ey = cy + int(20 * strength) - int(p * 18 * strength) + int(math.sin(ang) * 3)
+            _aa_circle(screen, (255, 200, 80, int(220 * (1 - p))), (ex, ey), 2 + int((1 - p) * 2))
+
+    # Phase B: impact strike (0.25 .. 0.55)
+    if 0.25 <= progress < 0.65:
+        p = (progress - 0.25) / 0.40
+        # bright impact flash
+        flash_r = int((40 + 90 * p) * strength)
+        flash_a = int(230 * (1 - p))
+        _aa_circle(screen, (255, 230, 140, flash_a // 2), (cx, cy + int(16 * strength)), flash_r)
+        _aa_circle(screen, (255, 120, 30, flash_a), (cx, cy + int(16 * strength)), flash_r // 2)
+        # core flame
+        _aa_circle(screen, (255, 255, 220, int(255 * (1 - p))), (cx, cy + int(16 * strength)), int(8 * (1 - p) * strength) + 2)
+
+        # forward fist sweep arc
+        sweep_deg = 150
+        _slash_arc(screen, cx, cy, fwd_angle_deg, sweep_deg, int(base_size * 0.7),
+                   p * 1.2, (255, 140, 40, int(220 * (1 - p))), width=8, layers=3)
+        _slash_arc(screen, cx, cy, fwd_angle_deg, sweep_deg, int(base_size * 0.7),
+                   p * 1.2, (255, 220, 120, int(180 * (1 - p))), width=4, layers=2)
+
+    # Phase C: ground shockwave rings + ember rain (0.30 .. 1.0)
+    if progress >= 0.30:
+        p = (progress - 0.30) / 0.70
+        # three expanding ground rings
+        for i in range(3):
+            ri_p = max(0.0, min(1.0, p - i * 0.18))
+            if ri_p <= 0:
+                continue
+            r = int((30 + 120 * ri_p) * strength)
+            a = int(220 * (1 - ri_p))
+            _ground_shockwave(screen, cx, cy + int(22 * strength), r,
+                              (255, 110, 30, a), (255, 60, 20, a // 4))
+        # inner heat haze ellipse
+        haze_r = int((20 + 60 * p) * strength)
+        _ground_shockwave(screen, cx, cy + int(22 * strength), haze_r,
+                          (255, 200, 80, int(120 * (1 - p))))
+
+        # lava crack lines radiating out
+        crack_p = max(0.0, min(1.0, (progress - 0.32) / 0.45))
+        if crack_p > 0:
+            for i in range(8):
+                ang = i * math.tau / 8 + rng.uniform(-0.18, 0.18)
+                rr = int((22 + 90 * crack_p) * strength)
+                ex = cx + int(math.cos(ang) * rr)
+                ey = cy + int(22 * strength) + int(math.sin(ang) * rr * 0.45)
+                _aa_line(screen, (255, 180, 60, int(220 * (1 - crack_p))),
+                         (cx, cy + int(22 * strength)), (ex, ey), max(1, int(3 * (1 - crack_p))))
+                # inner bright crack core
+                _aa_line(screen, (255, 240, 180, int(160 * (1 - crack_p))),
+                         (cx, cy + int(22 * strength)), (ex, ey), 1)
+
+        # flying embers
+        for i in range(14):
+            tp = (p - i * 0.04) * 1.3
+            if tp < 0 or tp > 1:
+                continue
+            ang = rng.uniform(0, math.tau)
+            dist = 12 + tp * 90 * strength
+            ex = cx + int(math.cos(ang) * dist)
+            ey = cy + int(20 * strength) + int(math.sin(ang) * dist * 0.4) - int(tp * 20)
+            er = max(1, int(3 * (1 - tp)))
+            ec = (255, rng.randint(140, 220), rng.randint(40, 110), int(220 * (1 - tp)))
+            _aa_circle(screen, ec, (ex, ey), er)
+
+    # rising heat smoke
+    if progress > 0.45:
+        sp = (progress - 0.45) / 0.55
+        for i in range(4):
+            offset = (i - 1.5) * 8
+            sy_off = cy - int(sp * 30 * strength) + int(8 * math.sin(sp * 6 + i))
+            _aa_circle(screen, (80, 50, 40, int(120 * (1 - sp))),
+                       (cx + int(offset), sy_off + int(10 * strength)),
+                       int((6 + sp * 8) * strength))
+
+
+# ============================================================
+# VENOMOUS — fang strike: green slash + poison splash + drips
+# ============================================================
+def _draw_venomous_strike(screen, cx, cy, direction, progress, strength, enemy):
+    rng = _seeded(enemy, 22)
+    fwd_angle_deg = math.degrees(math.atan2(direction.y, direction.x))
+
+    target_x = cx + int(direction.x * 32 * strength)
+    target_y = cy + int(direction.y * 32 * strength)
+
+    # Phase A: twin fang strike (0 .. 0.4)
+    if progress < 0.45:
+        p = progress / 0.45
+        # twin curved fang trails (X-shape)
+        for sign in (-1, 1):
+            angle = fwd_angle_deg + sign * 35
+            sweep = 80
+            _slash_arc(screen, cx, cy, angle, sweep, int(38 * strength),
+                       p * 1.25,
+                       (180, 240, 110, int(220 * (1 - p))), width=5, layers=3)
+            _slash_arc(screen, cx, cy, angle, sweep, int(38 * strength),
+                       p * 1.25,
+                       (240, 255, 200, int(200 * (1 - p))), width=2, layers=2)
+        # fang tips (twin sharp triangles) advancing forward
+        perp = pygame.Vector2(-direction.y, direction.x)
+        tip_dist = 16 + p * 28 * strength
+        for sign in (-1, 1):
+            tip = pygame.Vector2(direction) * tip_dist + perp * sign * (6 * strength)
+            tx = cx + int(tip.x)
+            ty = cy + int(tip.y)
+            back1 = pygame.Vector2(direction) * (tip_dist - 14) + perp * sign * (10 * strength)
+            back2 = pygame.Vector2(direction) * (tip_dist - 14) + perp * sign * (2 * strength)
+            _aa_polygon(screen, (240, 250, 235, int(220 * (1 - p))),
+                        [(tx, ty), (cx + int(back1.x), cy + int(back1.y)),
+                         (cx + int(back2.x), cy + int(back2.y))])
+            _aa_polygon(screen, (210, 60, 70, int(180 * (1 - p))),
+                        [(tx, ty),
+                         (cx + int(back1.x * 0.7 + back2.x * 0.3),
+                          cy + int(back1.y * 0.7 + back2.y * 0.3)),
+                         (cx + int(back2.x * 0.6),
+                          cy + int(back2.y * 0.6))])
+
+    # Phase B: poison splash burst at impact (0.30 .. 1.0)
+    if progress >= 0.30:
+        p = (progress - 0.30) / 0.70
+        # main green puff cloud (3 layered)
+        for layer in range(3):
+            lf = 1.0 - layer * 0.2
+            r = int((12 + 35 * p) * lf * strength)
+            a = int(180 * (1 - p) * lf)
+            shade = (90 + layer * 18, 200 - layer * 12, 110 + layer * 8, a)
+            _aa_circle(screen, shade, (target_x, target_y), r)
+        # bubbles
+        for i in range(8):
+            bp = (p - i * 0.05) * 1.3
+            if bp < 0 or bp > 1:
+                continue
+            ang = rng.uniform(0, math.tau)
+            d = 10 + bp * 26 * strength
+            bx = target_x + int(math.cos(ang) * d)
+            by = target_y + int(math.sin(ang) * d) - int(bp * 14)
+            br = max(1, int(3 * (1 - bp)))
+            _aa_circle(screen, (180, 250, 140, int(200 * (1 - bp))), (bx, by), br)
+            _aa_circle(screen, (240, 255, 200, int(220 * (1 - bp))), (bx - 1, by - 1), max(1, br - 1))
+        # acid drip splatters around impact
+        for i in range(6):
+            ap = (p - 0.15 - i * 0.08) * 1.5
+            if ap < 0 or ap > 1:
+                continue
+            ang = rng.uniform(math.pi * 0.1, math.pi * 0.9)
+            d = 14 + ap * 24 * strength
+            sx = target_x + int(math.cos(ang) * d * rng.choice([-1, 1]))
+            sy = target_y + int(ap * 22) + int(math.sin(ang) * 4)
+            _aa_polygon(screen, (120, 200, 80, int(200 * (1 - ap))),
+                        [(sx, sy), (sx - 2, sy - 5), (sx + 2, sy - 5)])
+            _aa_circle(screen, (160, 230, 110, int(220 * (1 - ap))), (sx, sy + 2), 2)
+
+    # poison drips dropping straight down at end
+    if progress > 0.55:
+        dp = (progress - 0.55) / 0.45
+        for i in range(5):
+            sd = (i - 2) * 8
+            yd = target_y + int(dp * 28) + i * 2
+            a = int(180 * (1 - dp))
+            _aa_circle(screen, (140, 220, 90, a), (target_x + sd, yd), 2)
+            _aa_polygon(screen, (140, 220, 90, a),
+                        [(target_x + sd, yd - 3),
+                         (target_x + sd - 2, yd + 2),
+                         (target_x + sd + 2, yd + 2)])
+
+
+# ============================================================
+# TRICKSTER — twin dagger X-slash + smoke puff (from blink)
+# ============================================================
+def _draw_trickster_strike(screen, cx, cy, direction, progress, strength, enemy):
+    rng = _seeded(enemy, 33)
+    fwd_angle_deg = math.degrees(math.atan2(direction.y, direction.x))
+
+    # Phase A: smoke puff (from teleport) (0 .. 0.35)
+    if progress < 0.40:
+        p = progress / 0.40
+        for i in range(6):
+            ang = i * math.tau / 6 + p * 0.5
+            r = int((10 + p * 22) * strength)
+            ox = cx + int(math.cos(ang) * r * 0.6)
+            oy = cy + int(math.sin(ang) * r * 0.6)
+            cloud_r = max(2, int((8 + (1 - p) * 6) * strength))
+            shade = rng.randint(60, 110)
+            _aa_circle(screen, (shade, shade - 10, shade + 5, int(200 * (1 - p))),
+                       (ox, oy), cloud_r)
+        # central dark vortex
+        _aa_circle(screen, (35, 30, 45, int(220 * (1 - p))),
+                   (cx, cy), int(6 * strength + 4))
+
+    # Phase B: twin X-slash daggers (0.20 .. 0.7)
+    if 0.20 <= progress < 0.80:
+        p = (progress - 0.20) / 0.60
+        for sign in (-1, 1):
+            slash_angle = fwd_angle_deg + sign * 45
+            sweep = 110
+            _slash_arc(screen, cx, cy, slash_angle, sweep, int(42 * strength),
+                       p * 1.25,
+                       (220, 80, 100, int(220 * (1 - p))), width=6, layers=3)
+            _slash_arc(screen, cx, cy, slash_angle, sweep, int(42 * strength),
+                       p * 1.25,
+                       (255, 200, 220, int(200 * (1 - p))), width=2, layers=2)
+
+        # dagger blade flashes
+        perp = pygame.Vector2(-direction.y, direction.x)
+        dagger_p = max(0.0, min(1.0, p * 1.2))
+        for sign in (-1, 1):
+            t = dagger_p
+            tip = pygame.Vector2(direction) * (20 + t * 28 * strength) + perp * sign * (16 * strength * (1 - t * 0.5))
+            base = pygame.Vector2(direction) * (8 + t * 14 * strength) + perp * sign * (10 * strength)
+            tx, ty = cx + int(tip.x), cy + int(tip.y)
+            bx, by = cx + int(base.x), cy + int(base.y)
+            mid = pygame.Vector2(direction) * (14 + t * 22 * strength) + perp * sign * (13 * strength)
+            mx, my = cx + int(mid.x), cy + int(mid.y)
+            edge = (mx + (sign * 4), my - 4)
+            a = int(220 * (1 - t))
+            _aa_polygon(screen, (190, 200, 215, a), [(tx, ty), (bx, by), edge])
+            _aa_polygon(screen, (230, 235, 245, a), [(tx, ty), (mx, my), edge])
+
+    # Phase C: red sparkle confetti + ribbon trail (0.4 .. 1.0)
+    if progress >= 0.40:
+        p = (progress - 0.40) / 0.60
+        for i in range(14):
+            cp = (p - i * 0.04) * 1.3
+            if cp < 0 or cp > 1:
+                continue
+            ang = rng.uniform(0, math.tau)
+            d = 6 + cp * 50 * strength
+            cx2 = cx + int(math.cos(ang) * d)
+            cy2 = cy + int(math.sin(ang) * d * 0.8) - int(cp * 8)
+            sz = max(1, int(3 * (1 - cp)))
+            col_choice = rng.choice([(255, 80, 90), (255, 170, 60), (255, 220, 120), (220, 80, 130)])
+            col = (col_choice[0], col_choice[1], col_choice[2], int(220 * (1 - cp)))
+            # diamond sparkle
+            _aa_polygon(screen, col,
+                        [(cx2, cy2 - sz), (cx2 + sz, cy2),
+                         (cx2, cy2 + sz), (cx2 - sz, cy2)])
+
+        # cross-flash at impact center
+        flash_p = _curve(p, 0.2)
+        if flash_p > 0:
+            fc = (255, 200, 220, int(220 * flash_p))
+            fl = int(18 * flash_p * strength)
+            _aa_line(screen, fc, (cx - fl, cy), (cx + fl, cy), 3)
+            _aa_line(screen, fc, (cx, cy - fl), (cx, cy + fl), 3)
+            _aa_line(screen, fc, (cx - fl // 2, cy - fl // 2),
+                     (cx + fl // 2, cy + fl // 2), 2)
+            _aa_line(screen, fc, (cx + fl // 2, cy - fl // 2),
+                     (cx - fl // 2, cy + fl // 2), 2)
+
+
+# ============================================================
+# STALKER — dark crescent slash + crimson shadow trail
+# ============================================================
+def _draw_stalker_slash(screen, cx, cy, direction, progress, strength, enemy):
+    rng = _seeded(enemy, 44)
+    fwd_angle_deg = math.degrees(math.atan2(direction.y, direction.x))
+    sweep_deg = 170
+    radius = int(50 * strength)
+
+    # main crescent (multi-layer crimson + dark)
+    # dark outer
+    _slash_arc(screen, cx, cy, fwd_angle_deg, sweep_deg, radius + 6, progress * 1.1,
+               (40, 8, 20, int(220 * (1 - progress))), width=11, layers=2)
+    # blood-red
+    _slash_arc(screen, cx, cy, fwd_angle_deg, sweep_deg, radius, progress * 1.1,
+               (180, 30, 50, int(220 * (1 - progress))), width=7, layers=3)
+    # bright cutting edge
+    _slash_arc(screen, cx, cy, fwd_angle_deg, sweep_deg, radius - 4, progress * 1.1,
+               (255, 200, 210, int(220 * (1 - progress))), width=3, layers=2)
+
+    # blade itself (moving along the arc)
+    blade_p = max(0.0, min(1.0, progress * 1.1))
+    cur_angle = math.radians(fwd_angle_deg - sweep_deg * 0.5 + sweep_deg * blade_p)
+    blade_dir = pygame.Vector2(math.cos(cur_angle), math.sin(cur_angle))
+    blade_perp = pygame.Vector2(-blade_dir.y, blade_dir.x)
+    tip = blade_dir * (radius + 6)
+    base = blade_dir * (radius - 12)
+    edge = blade_dir * radius + blade_perp * 3
+    a = int(220 * (1 - progress))
+    _aa_polygon(screen, (180, 190, 200, a),
+                [(cx + int(tip.x), cy + int(tip.y)),
+                 (cx + int(base.x), cy + int(base.y)),
+                 (cx + int(edge.x), cy + int(edge.y))])
+    _aa_polygon(screen, (230, 235, 245, a),
+                [(cx + int(tip.x), cy + int(tip.y)),
+                 (cx + int(edge.x * 0.8), cy + int(edge.y * 0.8)),
+                 (cx + int(base.x * 0.7), cy + int(base.y * 0.7))])
+    # crimson droplet at blade tip
+    _aa_circle(screen, (180, 30, 50, int(220 * (1 - progress))),
+               (cx + int(tip.x), cy + int(tip.y)), 3)
+
+    # speed lines behind the arc
+    for i in range(7):
+        sp = (progress - i * 0.04) * 1.3
+        if sp < 0 or sp > 1:
+            continue
+        ang = math.radians(fwd_angle_deg - sweep_deg * 0.5 + sweep_deg * sp - 8)
+        ld = pygame.Vector2(math.cos(ang), math.sin(ang))
+        r1 = radius - 14
+        r2 = radius + 4
+        p1 = (cx + int(ld.x * r1), cy + int(ld.y * r1))
+        p2 = (cx + int(ld.x * r2), cy + int(ld.y * r2))
+        _aa_line(screen, (210, 80, 100, int(200 * (1 - sp))), p1, p2, max(1, int(2 * (1 - sp))))
+
+    # shadow tendrils trailing the strike
+    if progress > 0.3:
+        sp = (progress - 0.3) / 0.7
+        for i in range(5):
+            ang = math.radians(fwd_angle_deg - sweep_deg * 0.5 - i * 14 - sp * 30)
+            r = radius + 6 + i * 4
+            tx = cx + int(math.cos(ang) * r)
+            ty = cy + int(math.sin(ang) * r)
+            _aa_circle(screen, (15, 5, 18, int(150 * (1 - sp))), (tx, ty),
+                       max(2, int(6 * (1 - sp))))
+
+    # crimson ember splatter at impact start
+    if progress < 0.4:
+        p = progress / 0.4
+        for i in range(8):
+            ang = rng.uniform(0, math.tau)
+            d = 8 + p * 30 * strength
+            ex = cx + int(math.cos(ang) * d)
+            ey = cy + int(math.sin(ang) * d)
+            _aa_circle(screen, (200, 40, 60, int(220 * (1 - p))), (ex, ey),
+                       max(1, int(3 * (1 - p))))
+
+
+# ============================================================
+# SKIRMISHER — three talon claw rakes + feather burst
+# ============================================================
+def _draw_skirmisher_claw(screen, cx, cy, direction, progress, strength, enemy):
+    rng = _seeded(enemy, 55)
+    fwd_angle_deg = math.degrees(math.atan2(direction.y, direction.x))
+    perp = pygame.Vector2(-direction.y, direction.x)
+
+    # Three parallel talon slashes, offset perpendicular
+    for i, off in enumerate((-12, 0, 12)):
+        delay = i * 0.06
+        p = (progress - delay) / max(0.0001, 0.6 - delay)
+        p = max(0.0, min(1.0, p))
+        if p <= 0:
+            continue
+        ox = perp.x * off * strength * 0.6
+        oy = perp.y * off * strength * 0.6
+        center_x = cx + int(ox)
+        center_y = cy + int(oy)
+
+        sweep_deg = 110
+        radius = int(40 * strength)
+        a = int(220 * (1 - p))
+        # outer dark slash
+        _slash_arc(screen, center_x, center_y, fwd_angle_deg + i * 4 - 4, sweep_deg, radius + 4,
+                   p * 1.1, (60, 30, 25, a), width=5, layers=2)
+        # mid blood-orange
+        _slash_arc(screen, center_x, center_y, fwd_angle_deg + i * 4 - 4, sweep_deg, radius,
+                   p * 1.1, (220, 70, 60, a), width=3, layers=2)
+        # white cutting edge
+        _slash_arc(screen, center_x, center_y, fwd_angle_deg + i * 4 - 4, sweep_deg, radius - 3,
+                   p * 1.1, (245, 230, 200, a), width=1, layers=2)
+
+        # talon tip line
+        blade_p = max(0.0, min(1.0, p * 1.1))
+        cur_angle = math.radians(fwd_angle_deg - sweep_deg * 0.5 + sweep_deg * blade_p)
+        ld = pygame.Vector2(math.cos(cur_angle), math.sin(cur_angle))
+        tip = ld * (radius + 6)
+        base = ld * (radius - 6)
+        _aa_line(screen, (40, 20, 20, a), (center_x + int(base.x), center_y + int(base.y)),
+                 (center_x + int(tip.x), center_y + int(tip.y)), 3)
+        _aa_line(screen, (210, 200, 180, a),
+                 (center_x + int(base.x), center_y + int(base.y)),
+                 (center_x + int(tip.x), center_y + int(tip.y)), 1)
+        # crimson scratch droplet
+        _aa_circle(screen, (200, 50, 50, a),
+                   (center_x + int(tip.x), center_y + int(tip.y)), 2)
+
+    # feather burst (golden crest feathers + dark plume)
+    if progress > 0.20:
+        p = (progress - 0.20) / 0.80
+        for i in range(12):
+            fp = (p - i * 0.05) * 1.3
+            if fp < 0 or fp > 1:
+                continue
+            ang = rng.uniform(0, math.tau)
+            d = 8 + fp * 45 * strength
+            fx = cx + int(math.cos(ang) * d)
+            fy = cy + int(math.sin(ang) * d) - int(fp * 10)
+            length = max(3, int(8 * (1 - fp)))
+            tip_off = pygame.Vector2(math.cos(ang), math.sin(ang)) * length
+            choice = rng.random()
+            if choice < 0.5:
+                col = (220, 175, 78, int(220 * (1 - fp)))   # crest gold
+                edge = (255, 235, 120, int(220 * (1 - fp)))
+            else:
+                col = (38, 88, 78, int(220 * (1 - fp)))     # dark plume
+                edge = (118, 178, 162, int(220 * (1 - fp)))
+            _aa_polygon(screen, col,
+                        [(fx, fy),
+                         (fx + int(tip_off.x), fy + int(tip_off.y)),
+                         (fx + int(tip_off.x * 0.4 - tip_off.y * 0.3),
+                          fy + int(tip_off.y * 0.4 + tip_off.x * 0.3))])
+            _aa_line(screen, edge, (fx, fy),
+                     (fx + int(tip_off.x), fy + int(tip_off.y)), 1)
+
+    # red warpaint flash overlay
+    if progress < 0.30:
+        p = progress / 0.30
+        a = int(150 * (1 - p))
+        _aa_circle(screen, (210, 70, 58, a), (cx, cy), int((18 + p * 18) * strength))
+
+
+# ============================================================
+# GUARDIAN — heavy brass smash: shield bash + steam + sparks
+# ============================================================
+def _draw_guardian_smash(screen, cx, cy, direction, progress, strength, enemy):
+    rng = _seeded(enemy, 66)
+    fwd_angle_deg = math.degrees(math.atan2(direction.y, direction.x))
+
+    # Phase A: steam burst windup (0 .. 0.30)
+    if progress < 0.35:
+        p = progress / 0.35
+        for i in range(5):
+            ang = rng.uniform(-math.pi * 0.4, math.pi * 0.4)
+            d = 6 + p * 16 * strength
+            sx = cx + int(math.cos(ang) * d) - int(direction.x * 14)
+            sy = cy - int(p * 18 * strength) - 6 + int(math.sin(ang) * d * 0.4)
+            r = max(3, int(7 * (1 - p) + 6 * p) * strength)
+            _aa_circle(screen, (220, 220, 225, int(160 * (1 - p))), (sx, sy), int(r * strength))
+
+    # Phase B: brass fist swing arc (0.20 .. 0.65)
+    if 0.20 <= progress < 0.75:
+        p = (progress - 0.20) / 0.55
+        sweep_deg = 130
+        radius = int(46 * strength)
+        # outer dark shadow
+        _slash_arc(screen, cx, cy, fwd_angle_deg, sweep_deg, radius + 6, p * 1.15,
+                   (60, 40, 25, int(220 * (1 - p))), width=10, layers=2)
+        # brass body
+        _slash_arc(screen, cx, cy, fwd_angle_deg, sweep_deg, radius, p * 1.15,
+                   (200, 165, 80, int(220 * (1 - p))), width=7, layers=3)
+        # bright copper edge
+        _slash_arc(screen, cx, cy, fwd_angle_deg, sweep_deg, radius - 4, p * 1.15,
+                   (255, 215, 130, int(200 * (1 - p))), width=3, layers=2)
+
+        # the brass fist sphere itself moving along the arc
+        blade_p = max(0.0, min(1.0, p * 1.15))
+        cur_angle = math.radians(fwd_angle_deg - sweep_deg * 0.5 + sweep_deg * blade_p)
+        ld = pygame.Vector2(math.cos(cur_angle), math.sin(cur_angle))
+        fist_pos = (cx + int(ld.x * radius), cy + int(ld.y * radius))
+        a = int(255 * (1 - p))
+        _aa_circle(screen, (60, 42, 22, a), fist_pos, int(11 * strength))
+        _aa_circle(screen, (200, 165, 80, a), fist_pos, int(9 * strength))
+        _aa_circle(screen, (235, 205, 130, a), fist_pos, int(6 * strength))
+        # rivet on fist
+        _aa_circle(screen, (60, 42, 22, a), (fist_pos[0] - 2, fist_pos[1] - 2), 2)
+        _aa_circle(screen, (255, 235, 180, a), (fist_pos[0] - 3, fist_pos[1] - 3), 1)
+
+    # Phase C: heavy impact + brass spark fireworks + ember rain
+    if progress >= 0.40:
+        p = (progress - 0.40) / 0.60
+        impact_x = cx + int(direction.x * 38 * strength)
+        impact_y = cy + int(direction.y * 38 * strength)
+
+        # bright impact flash
+        flash_p = _curve(p, 0.15)
+        if flash_p > 0:
+            _aa_circle(screen, (255, 240, 180, int(220 * flash_p)),
+                       (impact_x, impact_y), int(22 * flash_p * strength))
+            _aa_circle(screen, (255, 175, 60, int(200 * flash_p)),
+                       (impact_x, impact_y), int(14 * flash_p * strength))
+
+        # expanding brass impact ring
+        ring_r = int((10 + 50 * p) * strength)
+        _impact_ring(screen, impact_x, impact_y, ring_r,
+                     (200, 165, 80, int(220 * (1 - p))), width=3)
+        _impact_ring(screen, impact_x, impact_y, ring_r - 4,
+                     (255, 215, 130, int(180 * (1 - p))), width=2)
+
+        # ground shockwave under impact
+        _ground_shockwave(screen, impact_x, impact_y + int(12 * strength),
+                          int((20 + 70 * p) * strength),
+                          (255, 175, 60, int(200 * (1 - p))),
+                          (255, 215, 130, int(60 * (1 - p))))
+
+        # spinning brass spark streaks
+        for i in range(14):
+            sp = (p - i * 0.035) * 1.35
+            if sp < 0 or sp > 1:
+                continue
+            ang = i * (math.tau / 14) + sp * 1.4
+            d = 4 + sp * 60 * strength
+            ex1 = impact_x + int(math.cos(ang) * d * 0.4)
+            ey1 = impact_y + int(math.sin(ang) * d * 0.4)
+            ex2 = impact_x + int(math.cos(ang) * d)
+            ey2 = impact_y + int(math.sin(ang) * d * 0.7)
+            col = rng.choice([(255, 215, 130), (255, 175, 60), (200, 165, 80)])
+            a = int(220 * (1 - sp))
+            _aa_line(screen, (*col, a), (ex1, ey1), (ex2, ey2), max(1, int(3 * (1 - sp))))
+            # bright tip
+            _aa_circle(screen, (255, 240, 200, a), (ex2, ey2), max(1, int(2 * (1 - sp))))
+
+        # falling embers
+        for i in range(8):
+            ep = (p - i * 0.06) * 1.3
+            if ep < 0 or ep > 1:
+                continue
+            ang = rng.uniform(-math.pi * 0.9, math.pi * 0.1)
+            dist = 10 + ep * 45 * strength
+            ex = impact_x + int(math.cos(ang) * dist)
+            ey = impact_y + int(math.sin(ang) * dist) + int(ep * 20)
+            _aa_circle(screen, (255, 175, 60, int(220 * (1 - ep))),
+                       (ex, ey), max(1, int(2 * (1 - ep))))
+
+
+# ============================================================
+# ARCANIST — arcane self-melee burst (purple ring, runes)
+# ============================================================
+def _draw_arcanist_burst(screen, cx, cy, direction, progress, strength, enemy):
+    rng = _seeded(enemy, 77)
+    p = progress
+
+    # purple glow ring
+    for layer in range(3):
+        lf = 1.0 - layer * 0.22
+        r = int((20 + 40 * p) * strength * lf)
+        a = int(180 * (1 - p) * lf)
+        _aa_circle(screen, (160, 110, 230, a), (cx, cy), r, 2)
+
+    # rotating rune sparkles
+    for i in range(8):
+        ang = i * math.tau / 8 + p * 4.0
+        r = int((22 + 25 * p) * strength)
+        rx = cx + int(math.cos(ang) * r)
+        ry = cy + int(math.sin(ang) * r)
+        _aa_circle(screen, (255, 225, 110, int(220 * (1 - p))), (rx, ry), 3)
+        _aa_circle(screen, (200, 220, 255, int(160 * (1 - p))), (rx, ry), 5, 1)
+
+    # central energy burst
+    if p < 0.5:
+        cp = p / 0.5
+        _aa_circle(screen, (200, 180, 255, int(220 * (1 - cp))),
+                   (cx, cy), int((6 + 18 * cp) * strength))
+
+
+# ============================================================
+# BOMBER — close-range punch fallback (uses generic strike + brass tint)
+# ============================================================
+def _draw_bomber_strike(screen, cx, cy, direction, progress, strength, enemy):
+    fwd_angle_deg = math.degrees(math.atan2(direction.y, direction.x))
+    sweep_deg = 100
+    _slash_arc(screen, cx, cy, fwd_angle_deg, sweep_deg, int(36 * strength),
+               progress * 1.1, (200, 150, 85, int(220 * (1 - progress))), width=5, layers=3)
+    _slash_arc(screen, cx, cy, fwd_angle_deg, sweep_deg, int(36 * strength),
+               progress * 1.1, (255, 220, 150, int(180 * (1 - progress))), width=2, layers=2)
+    if progress > 0.4:
+        p = (progress - 0.4) / 0.6
+        for i in range(6):
+            ang = i * math.tau / 6 + p * 2
+            d = int((10 + 30 * p) * strength)
+            ex = cx + int(direction.x * 28 + math.cos(ang) * d)
+            ey = cy + int(direction.y * 28 + math.sin(ang) * d)
+            _aa_circle(screen, (255, 200, 80, int(220 * (1 - p))), (ex, ey), max(1, int(3 * (1 - p))))
+
+
+# ============================================================
+# GENERIC FALLBACK — basic curved slash
+# ============================================================
+def _draw_generic_strike(screen, cx, cy, direction, progress, strength, enemy):
+    fwd_angle_deg = math.degrees(math.atan2(direction.y, direction.x))
+    sweep_deg = 130
+    radius = int(42 * strength)
+    _slash_arc(screen, cx, cy, fwd_angle_deg, sweep_deg, radius, progress * 1.1,
+               (220, 230, 240, int(220 * (1 - progress))), width=6, layers=3)
+    _slash_arc(screen, cx, cy, fwd_angle_deg, sweep_deg, radius - 4, progress * 1.1,
+               (255, 255, 255, int(200 * (1 - progress))), width=2, layers=2)
+    # impact spark
+    if progress < 0.5:
+        p = progress / 0.5
+        impact_x = cx + int(direction.x * 30 * strength)
+        impact_y = cy + int(direction.y * 30 * strength)
+        _aa_circle(screen, (255, 255, 220, int(220 * (1 - p))),
+                   (impact_x, impact_y), int(8 * (1 - p) * strength) + 2)
+
+
+_DISPATCH = {
+    "brute_slam": _draw_brute_slam,
+    "venomous_strike": _draw_venomous_strike,
+    "trickster_strike": _draw_trickster_strike,
+    "stalker_slash": _draw_stalker_slash,
+    "skirmisher_claw": _draw_skirmisher_claw,
+    "guardian_smash": _draw_guardian_smash,
+    "arcanist_burst": _draw_arcanist_burst,
+    "bomber_strike": _draw_bomber_strike,
+    "generic_strike": _draw_generic_strike,
+}

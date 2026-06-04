@@ -178,10 +178,20 @@ class Game(State):
             Try to spawn a random enemy somewhere on the current map.
         _debug_spawn_enemy(profile_name):
             Spawn an enemy of a given profile next to the player.
+        _debug_apply_effect(effect_name, duration):
+            Apply a debug effect to the player for testing.
         _get_drop_chance_for_enemy(enemy):
             Look up the drop table for a given enemy.
         _drop_enemy_loot(enemy):
             Roll and spawn drops for a defeated enemy (no JSON).
+        _apply_ice_armor_slow(dt):
+            Apply slowing effect to nearby enemies when Ice Armor is active.
+        _apply_flame_shield_damage(dt):
+            Apply fire damage to nearby enemies when Flame Shield is active.
+        _apply_regeneration(dt):
+            Apply passive health regeneration from effects.
+        _update_spirits(dt):
+            Update summoned spirit entities.
         update(dt):
             Per-frame state update (input, AI, physics, time, spawning).
         draw_scene(screen):
@@ -376,6 +386,7 @@ class Game(State):
                 ],
             },
             "stalker": {
+                "visual_style": "stalker",
                 "sprite_set": "MenHuman1(Recolor)",
                 "speed": 120.0,
                 "hp": 110,
@@ -387,11 +398,19 @@ class Game(State):
                     "memory_duration": 3.0,
                     "repath_interval": 0.5,
                 },
+                "attack_profile": "melee",
+                "attack_config": {
+                    "cooldown_ms": 900,
+                    "damage_mult": 1.0,
+                    "strike_range": 55.0,
+                },
+                "contact_damage": False,
                 "drop_chance": [
                     {"item_id": "small_health_potion", "chance": 0.20},
                 ],
             },
             "skirmisher": {
+                "visual_style": "skirmisher",
                 "sprite_set": "WomanHuman1(Recolor)",
                 "speed": 140.0,
                 "hp": 85,
@@ -404,11 +423,19 @@ class Game(State):
                     "preferred_max": 170.0,
                     "orbit_radius": 130.0,
                 },
+                "attack_profile": "melee",
+                "attack_config": {
+                    "cooldown_ms": 800,
+                    "damage_mult": 1.0,
+                    "strike_range": 50.0,
+                },
+                "contact_damage": False,
                 "drop_chance": [
                     {"item_id": "small_health_potion", "chance": 0.25},
                 ],
             },
             "guardian": {
+                "visual_style": "guardian",
                 "sprite_set": "MenHuman1",
                 "speed": 100.0,
                 "hp": 140,
@@ -422,6 +449,14 @@ class Game(State):
                     "leash_slack": 90.0,
                     "patrol_wait": 0.8,
                 },
+                "attack_profile": "melee",
+                "attack_config": {
+                    "cooldown_ms": 1100,
+                    "damage_mult": 1.1,
+                    "strike_range": 60.0,
+                    "knockback_force": 25.0,
+                },
+                "contact_damage": False,
                 "drop_chance": [
                     {"item_id": "small_health_potion", "chance": 0.30},
                     {"item_id": "large_health_potion", "chance": 0.10},
@@ -799,6 +834,7 @@ class Game(State):
             animations=animations,
             attack_controller=attack_controller,
             contact_damage=contact_damage,
+            visual_style=visual_style,
         )
         enemy.target_entity = self.character
         return enemy
@@ -1384,7 +1420,10 @@ class Game(State):
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
-                self.app.manager.set_state("pause")
+                if self.app.INV_manager.player_inventory_opened:
+                    self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
+                else:
+                    self.app.manager.set_state("pause")
                 
             if event.key == pygame.K_q:
                 # Q-drop priority (no longer drops a held/dragged item):

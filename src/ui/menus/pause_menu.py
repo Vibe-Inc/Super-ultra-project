@@ -28,6 +28,62 @@ BTN_EXIT_HOVER = (170, 35, 35)
 
 
 class PauseMenu(Menu):
+    """
+    Pause overlay with save, wiki, resume, and return-to-main-menu options.
+
+    Features animated background effects and color-coded shield buttons.
+
+    Attributes:
+        app (App):
+            The main application instance.
+        _btn_w (int):
+            Button width.
+        _btn_h (int):
+            Button height.
+        _title_font (pygame.font.Font):
+            Large font for the title.
+        buttons (list[Button]):
+            List of pause menu buttons (SAVE, WIKI, RESUME, MAIN MENU).
+        _surf_cache (dict):
+            Cache of rendered surfaces.
+        _anim_time (float):
+            Accumulated animation time.
+        _launch_phase (float):
+            Phase of the launch animation.
+        _particles (list):
+            Decorative ambient particles.
+        _stars (list):
+            Background star effects.
+        _light_rays (list):
+            Light ray effects.
+        _embers (list):
+            Ambient ember particles.
+        _bursts (list):
+            Launch burst effects.
+        _sparkles (list):
+            Title sparkle effects.
+        _panel_rect (pygame.Rect):
+            Rectangle for the central panel.
+
+    Methods:
+        __init__(app):
+            Initialize the pause menu.
+        open_save_menu():
+            Open the save menu.
+        open_wiki():
+            Open the wiki menu.
+        resume_game():
+            Resume gameplay and close the pause menu.
+        back_to_main():
+            Return to the main menu.
+        handle_event(event):
+            Handle input events.
+        update(dt):
+            Update animations and effects.
+        draw(screen):
+            Render the pause menu.
+    """
+
     def __init__(self, app: "App"):
         super().__init__(app)
         scale = cfg.ui_scale()

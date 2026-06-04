@@ -3,6 +3,7 @@ import sys
 
 from src.core.logger import logger
 from src.core.state_manager import StateManager
+from src.core.save_manager import SaveManager
 from src.core.profiling import FrameProfiler, FpsCounter
 from src.inventory.inventory_manager import INVENTORY_manager
 from src.items.items import create_item
@@ -19,25 +20,44 @@ class App:
     """
     Main application class for the Super Ultra Project game.
 
-    This class initializes the game window, manages global state, handles language and audio, and runs the main game loop.
+    Initializes the game window, manages global state, handles language and audio,
+    and runs the main game loop.
 
     Attributes:
         screen (pygame.Surface):
             The main display surface.
         icon (pygame.Surface):
             The window icon image.
+        windowed_size (tuple[int, int]):
+            Size of the windowed-mode display.
+        is_fullscreen (bool):
+            Fullscreen mode state.
         INV_manager (INVENTORY_manager):
             The inventory manager instance.
         MAIN_INV_items (list[list[tuple[Item, int] | None]]):
             2D list of main inventory items (item object, count) or None.
+        money (int):
+            Player currency amount.
+        current_dialog (Dialog | None):
+            Currently active dialog, or None.
+        last_talked_npc (NPC | None):
+            The last NPC the player interacted with.
         audio (str):
             Audio state ("on" or "off").
-        is_fullscreen (bool):
-            Fullscreen mode state.
         clock (pygame.time.Clock):
             Clock object for controlling frame rate.
+        _brightness_overlay (pygame.Surface | None):
+            Cached dimming overlay surface.
+        profiler (FrameProfiler):
+            Frame profiling utility.
+        fps_counter (FpsCounter):
+            FPS counter display.
         manager (StateManager):
             The state management system controlling game/menu flow.
+        text_logo (pygame.Surface):
+            Rendered logo text surface.
+        text_rect (pygame.Rect):
+            Rectangle positioning the logo text.
 
     Methods:
         __init__():
@@ -46,12 +66,22 @@ class App:
             Render and position the main logo text.
         update_language(lang_code):
             Change the application language and update fonts/UI.
-            Args:
-                lang_code (str): Language code to switch to (e.g., 'en', 'ua').
+        set_profiler_enabled(enabled):
+            Enable or disable the frame profiler.
+        toggle_profiler():
+            Toggle the profiler on/off.
+        _get_fullscreen_size():
+            Get the native desktop resolution.
+        _apply_display_mode(fullscreen, update_windowed_size=True):
+            Apply fullscreen or windowed display mode.
+        toggle_display_mode():
+            Toggle between fullscreen and windowed mode.
+        sync_display_size(width, height):
+            Update window size from a resize event.
         music_play():
-            Load and start the background music, setting the volume based on the audio attribute.
+            Load and start the background music.
         run():
-            Main loop of the application. Handles rendering, event processing, clock ticking, and state management logic.
+            Main loop of the application.
     """
 
     def __init__(self):
@@ -212,10 +242,11 @@ class App:
 
     def music_play(self):
         pygame.mixer.music.load('sounds/LIFE (Instrumental).wav')
-        pygame.mixer.music.set_volume(0.3 if self.audio == "on" else 0.0)
+        pygame.mixer.music.set_volume(cfg.MUSIC_VOLUME if self.audio == "on" else 0.0)
         pygame.mixer.music.play(-1)
 
     def run(self):
+        SaveManager.load_settings(self)
         self.manager.set_state("main")
         self.music_play()
 
@@ -273,6 +304,7 @@ class App:
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
+                    SaveManager.save_settings(self)
                     running = False
                     pygame.quit()
                     sys.exit()
