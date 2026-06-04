@@ -213,14 +213,22 @@ class HUD:
         xp_bar_y = top_margin + 10
         self.xp_bar_rect = pygame.Rect(xp_bar_x, xp_bar_y, xp_bar_width, xp_bar_height)
 
-        stamina_bar_width = min(600, max(280, screen_width // 2))
-        stamina_bar_height = 25
-        stamina_bar_x = (screen_width - stamina_bar_width) // 2
-        stamina_bar_y = (screen_height - stamina_bar_height - bottom_margin)-80
-        self.stamina_bar_rect = pygame.Rect(stamina_bar_x, stamina_bar_y, stamina_bar_width, stamina_bar_height)
-
         self.skill_panel_x = screen_width - self.skill_panel_width - right_margin
         self.skill_panel_y = (screen_height - self.skill_total_slots_height) // 2
+
+        # Stamina bar above the hotbar at the bottom of the screen
+        hotbar_scale = cfg.INV_HOTBAR_SCALE * cfg.ui_scale()
+        hotbar_slot_size = int(cfg.BASE_INV_slot_size * hotbar_scale)
+        hotbar_border = cfg.BASE_INV_border
+        hotbar_columns = getattr(cfg, 'INV_HOTBAR_COLUMNS', 10)
+        hotbar_total_width = (hotbar_slot_size + hotbar_border) * hotbar_columns + hotbar_border
+        hotbar_top = screen_height + cfg.INV_HOTBAR_Y_OFFSET - hotbar_slot_size
+
+        stamina_bar_width = hotbar_total_width
+        stamina_bar_height = 12
+        stamina_bar_x = (screen_width - stamina_bar_width) // 2
+        stamina_bar_y = hotbar_top - stamina_bar_height - 10
+        self.stamina_bar_rect = pygame.Rect(stamina_bar_x, stamina_bar_y, stamina_bar_width, stamina_bar_height)
 
         # rebuild rects
         self.skill_slot_rects = []
@@ -512,12 +520,7 @@ class HUD:
         stamina_percent = max(0, self.character.stamina / self.character.max_stamina)
         current_stamina_width = int(stamina_bar_width * stamina_percent)
 
-        if self.character.stamina <= 0:
-            stamina_color = (200, 40, 40)  # Red when depleted
-        elif self.character.is_sprinting:
-            stamina_color = (255, 200, 0)  # Gold while sprinting
-        else:
-            stamina_color = (0, 180, 240)  # Cyan when full/regenerating
+        stamina_color = (50, 200, 50)  # Always green
 
         # Stamina Bar Background (Rounded)
         stam_bg_surf = pygame.Surface((stamina_bar_width, stamina_bar_height), pygame.SRCALPHA)
@@ -533,10 +536,6 @@ class HUD:
 
         # Stamina Bar Border (Rounded)
         pygame.draw.rect(screen, (200, 200, 200), (stamina_bar_x, stamina_bar_y, stamina_bar_width, stamina_bar_height), 1, border_radius=6)
-
-        # Stamina Text Label (Centered in bar)
-        stam_text = cfg.get_font(max(8, int(16 * cfg.ui_scale()))).render(f"{int(self.character.stamina)}/{int(self.character.max_stamina)}", True, (255, 255, 255))
-        screen.blit(stam_text, (stamina_bar_x + stamina_bar_width // 2 - stam_text.get_width() // 2, stamina_bar_y + 4))
 
         # Draw vertical skill hotbar (right side) if no shop is open
         if not getattr(self.app.INV_manager, 'current_shop_inv', None):
