@@ -1,4 +1,3 @@
-import math
 import random
 import pygame
 from dataclasses import dataclass
@@ -120,21 +119,20 @@ class FishingUI:
             fish_y = int(catch_y + fish_pos_norm * h)
             pygame.draw.line(screen, (220, 80, 80), (catch_x - 4, fish_y), (catch_x + catch_w + 4, fish_y), 2)
 
-            # --- Right bar: Progress bar (fill meter) ---
-            prog_w = 10
-            prog_gap = 6
+            # --- Right bar: Progress bar (fill meter, same width) ---
+            prog_gap = 12
             prog_x = catch_x + catch_w + prog_gap
             prog_y = catch_y
 
-            pygame.draw.rect(screen, (30, 30, 30), (prog_x - 2, prog_y - 2, prog_w + 4, h + 4), border_radius=2)
-            pygame.draw.rect(screen, (25, 25, 25), (prog_x, prog_y, prog_w, h), border_radius=1)
+            pygame.draw.rect(screen, (30, 30, 30), (prog_x - 4, prog_y - 4, catch_w + 8, h + 8), border_radius=2)
+            pygame.draw.rect(screen, (25, 25, 25), (prog_x, prog_y, catch_w, h), border_radius=1)
 
             fill_h = int((self.ctrl.catch_fill / self.ctrl.catch_fill_max) * h)
             # Fill from bottom to top
-            pygame.draw.rect(screen, (60, 200, 60), (prog_x, prog_y + h - fill_h, prog_w, fill_h), border_radius=1)
+            pygame.draw.rect(screen, (60, 200, 60), (prog_x, prog_y + h - fill_h, catch_w, fill_h), border_radius=1)
 
             hint = self.hint_font.render("Hold Space / Left Mouse to reel", True, (220, 220, 220))
-            screen.blit(hint, (prog_x - hint.get_width() // 2 + prog_w // 2, prog_y + h + 8))
+            screen.blit(hint, (prog_x - hint.get_width() // 2 + catch_w // 2, prog_y + h + 8))
 
 
 class FishingController:
