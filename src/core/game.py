@@ -390,6 +390,13 @@ class Game(State):
                     "memory_duration": 3.0,
                     "repath_interval": 0.5,
                 },
+                "attack_profile": "melee",
+                "attack_config": {
+                    "cooldown_ms": 900,
+                    "damage_mult": 1.0,
+                    "strike_range": 55.0,
+                },
+                "contact_damage": False,
                 "drop_chance": [
                     {"item_id": "small_health_potion", "chance": 0.20},
                 ],
@@ -408,6 +415,13 @@ class Game(State):
                     "preferred_max": 170.0,
                     "orbit_radius": 130.0,
                 },
+                "attack_profile": "melee",
+                "attack_config": {
+                    "cooldown_ms": 800,
+                    "damage_mult": 1.0,
+                    "strike_range": 50.0,
+                },
+                "contact_damage": False,
                 "drop_chance": [
                     {"item_id": "small_health_potion", "chance": 0.25},
                 ],
@@ -427,6 +441,14 @@ class Game(State):
                     "leash_slack": 90.0,
                     "patrol_wait": 0.8,
                 },
+                "attack_profile": "melee",
+                "attack_config": {
+                    "cooldown_ms": 1100,
+                    "damage_mult": 1.1,
+                    "strike_range": 60.0,
+                    "knockback_force": 25.0,
+                },
+                "contact_damage": False,
                 "drop_chance": [
                     {"item_id": "small_health_potion", "chance": 0.30},
                     {"item_id": "large_health_potion", "chance": 0.10},
@@ -798,6 +820,7 @@ class Game(State):
             animations=animations,
             attack_controller=attack_controller,
             contact_damage=contact_damage,
+            visual_style=visual_style,
         )
         enemy.target_entity = self.character
         return enemy
