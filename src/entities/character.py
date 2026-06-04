@@ -351,6 +351,8 @@ class Character:
         self.dash_active_time = 0.0
         self.dash_last_used = -self.dash_cooldown
         self.dash_direction = pygame.Vector2(1, 0)
+        self.dash_trail = []
+        self._dash_trail_timer = 0.0
 
     def __getattribute__(self, name):
         if name.endswith("_cooldown") and name not in ("attack_cooldown", "base_attack_cooldown"):
@@ -1750,7 +1752,27 @@ class Character:
 
         if self.dash_active_time > 0:
             self.dash_active_time = max(0.0, self.dash_active_time - dt)
-        
+            self._dash_trail_timer += dt
+            # Record afterimage at intervals
+            if self._dash_trail_timer >= 0.025:
+                self._dash_trail_timer = 0.0
+                img = self.image
+                if self.direction == "side" and self.flip:
+                    img = self.animations_flipped["side"][self.frame_index]
+                self.dash_trail.append({
+                    "pos": pygame.Vector2(self.pos),
+                    "image": img,
+                    "life": 0.35,
+                })
+        elif self.dash_trail:
+            self.dash_trail.clear()
+
+        # Update dash trail lifetimes
+        for t in self.dash_trail[:]:
+            t["life"] -= dt
+            if t["life"] <= 0:
+                self.dash_trail.remove(t)
+
         # Reset speed to base speed for next frame logic (if needed elsewhere)
         # Though _set_velocity will overwrite it again next frame.
         self.speed = self.base_speed 
@@ -1774,7 +1796,6 @@ class Character:
 
         # Void Walker: dodge chance
         if self.void_walker and amount > 0 and not ignore_invulnerability:
-            import random
             if random.random() < self.void_walker_dodge_chance:
                 old_center = self.get_center()
                 # Teleport in a random direction
@@ -1958,6 +1979,38 @@ class Character:
     def draw(self, screen, camera_offset=None):
         if camera_offset is None:
             camera_offset = pygame.Vector2(0, 0)
+
+        # ── Dash motion trail ──
+        for t in self.dash_trail:
+            life_ratio = t["life"] / 0.35 if 0.35 > 0 else 0
+            if life_ratio <= 0:
+                continue
+            alpha = int(180 * life_ratio)
+            draw_pos = (int(t["pos"].x - camera_offset.x), int(t["pos"].y - camera_offset.y))
+            trail_img = t["image"].copy()
+            trail_img.set_alpha(alpha)
+            # Blue-tinted afterimage
+            tint = pygame.Surface(trail_img.get_size(), pygame.SRCALPHA)
+            tint.fill((120, 180, 255, int(60 * life_ratio)))
+            trail_img.blit(tint, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
+            screen.blit(trail_img, draw_pos)
+
+        # ── Dash wind lines ──
+        if self.dash_active_time > 0:
+            center = self.get_center()
+            cx = int(center.x - camera_offset.x)
+            cy = int(center.y - camera_offset.y)
+            dash_dir = self.dash_direction
+            perp = pygame.Vector2(-dash_dir.y, dash_dir.x)
+            for i in range(3):
+                offset = perp * (8 + i * 12 - 24)
+                start_pt = (cx + int(offset.x) - int(dash_dir.x * 20),
+                            cy + int(offset.y) - int(dash_dir.y * 20))
+                end_pt = (cx + int(offset.x) - int(dash_dir.x * 60),
+                          cy + int(offset.y) - int(dash_dir.y * 60))
+                wind_alpha = int(100 * (self.dash_active_time / self.dash_duration))
+                pygame.draw.line(screen, (180, 220, 255, wind_alpha), start_pt, end_pt,
+                                 max(1, int(2 - i * 0.5)))
 
         # Blink if invulnerable
         if self.invulnerable and int(pygame.time.get_ticks() / 100) % 2 == 0:
@@ -2423,29 +2476,34 @@ class Character:
 
         # Spawn new particles while active
         if self.flame_shield_active:
-            spawn_count = max(1, int(18 * dt))  # particles per frame
+            effective_radius = self.flame_shield_radius
+            if self.pyromancers_fury:
+                effective_radius *= self.pyromancers_fury_area_mult
+            spawn_count = max(1, int(30 * dt))
             for _ in range(spawn_count):
-                effective_radius = self.flame_shield_radius
-                if self.pyromancers_fury:
-                    effective_radius *= self.pyromancers_fury_area_mult
                 angle = random.uniform(0, math.pi * 2)
-                dist = random.uniform(effective_radius * 0.45, effective_radius)
-                speed = random.uniform(25, 70)  # upward drift speed
+                dist = random.uniform(effective_radius * 0.3, effective_radius)
+                speed = random.uniform(30, 90)
+                is_flame_tongue = random.random() < 0.25
+                max_life = random.uniform(0.3, 0.8)
                 self.flame_shield_particles.append({
                     "angle": angle,
                     "dist": dist,
-                    "life": random.uniform(0.3, 0.7),
-                    "max_life": random.uniform(0.3, 0.7),
-                    "size": random.uniform(2.5, 6.0),
-                    "drift": random.uniform(-15, 15),
+                    "life": max_life,
+                    "max_life": max_life,
+                    "size": random.uniform(3.0, 8.0),
+                    "drift": random.uniform(-20, 20),
                     "vertical_speed": -speed,
                     "color": random.choice([
-                        (255, 120, 20),   # orange
-                        (255, 80, 10),    # deep orange
-                        (255, 180, 40),   # bright yellow
-                        (255, 60, 10),    # red-orange
-                        (255, 200, 80),   # bright yellow
+                        (255, 120, 20),
+                        (255, 80, 10),
+                        (255, 180, 40),
+                        (255, 60, 10),
+                        (255, 200, 80),
                     ]),
+                    "flame_tongue": is_flame_tongue,
+                    "tongue_len": random.uniform(8, 18) if is_flame_tongue else 0,
+                    "tongue_phase": random.uniform(0, math.pi * 2),
                 })
 
         # Update existing particles
@@ -2454,10 +2512,9 @@ class Character:
             if p["life"] <= 0:
                 self.flame_shield_particles.remove(p)
                 continue
-            # Slowly spiral inward and drift upward
             p["angle"] += p["drift"] * dt
-            p["dist"] = max(0, p["dist"] - 8 * dt)
-            p["vertical_speed"] -= 120 * dt  # accelerate upward (negative)
+            p["dist"] = max(0, p["dist"] - 10 * dt)
+            p["vertical_speed"] -= 140 * dt
 
     def _draw_flame_shield(self, screen, camera_offset):
         """Draw the flame shield aura and particles."""
@@ -2466,43 +2523,89 @@ class Character:
         cy = center.y - camera_offset.y
         t = pygame.time.get_ticks() / 1000.0
 
-        # Apply Pyromancer's Fury area buff to visual radius
         visual_radius = self.flame_shield_radius
         if self.pyromancers_fury:
             visual_radius *= self.pyromancers_fury_area_mult
 
+        # ── Heat distortion shimmer (subtle wavy ring) ──
+        shimmer_surf = pygame.Surface((int(visual_radius * 2) + 20, int(visual_radius * 2) + 20), pygame.SRCALPHA)
+        shimmer_a = int(15 + 10 * math.sin(t * 5.0))
+        for i in range(3):
+            r = visual_radius + i * 6 + 4 * math.sin(t * 7.0 + i * 2.0)
+            pygame.draw.circle(shimmer_surf, (255, 180, 80, shimmer_a // (i + 1)),
+                               (int(r) + 10, int(r) + 10), int(r), 1)
+        screen.blit(shimmer_surf, (int(cx - visual_radius - 10), int(cy - visual_radius - 10)))
+
         # ── Inner pulsing glow ring ──
-        pulse = 0.6 + 0.4 * math.sin(t * 6.0)
-        glow_radius = visual_radius * (0.85 + 0.15 * pulse)
-        glow_surf = pygame.Surface((int(glow_radius * 2) + 4, int(glow_radius * 2) + 4), pygame.SRCALPHA)
-        glow_a = int(35 + 25 * pulse)
-        pygame.draw.circle(glow_surf, (255, 100, 20, glow_a),
-                           (int(glow_radius) + 2, int(glow_radius) + 2),
+        pulse_slow = 0.6 + 0.4 * math.sin(t * 4.5)
+        pulse_fast = 0.5 + 0.5 * math.sin(t * 11.0)
+        glow_radius = visual_radius * (0.82 + 0.18 * pulse_slow)
+        glow_surf = pygame.Surface((int(glow_radius * 2) + 8, int(glow_radius * 2) + 8), pygame.SRCALPHA)
+        glow_a = int(45 + 35 * pulse_slow)
+        pygame.draw.circle(glow_surf, (255, 80, 10, glow_a),
+                           (int(glow_radius) + 4, int(glow_radius) + 4),
                            int(glow_radius))
-        # brighter inner core
-        inner_r = int(glow_radius * 0.55)
-        inner_a = int(25 + 20 * pulse)
-        pygame.draw.circle(glow_surf, (255, 160, 40, inner_a),
-                           (int(glow_radius) + 2, int(glow_radius) + 2),
+        mid_r = int(glow_radius * 0.65)
+        mid_a = int(35 + 25 * pulse_slow)
+        pygame.draw.circle(glow_surf, (255, 160, 40, mid_a),
+                           (int(glow_radius) + 4, int(glow_radius) + 4),
+                           mid_r)
+        inner_r = int(glow_radius * 0.35)
+        inner_a = int(25 + 20 * pulse_slow)
+        pygame.draw.circle(glow_surf, (255, 220, 80, inner_a),
+                           (int(glow_radius) + 4, int(glow_radius) + 4),
                            inner_r)
-        screen.blit(glow_surf, (int(cx - glow_radius - 2), int(cy - glow_radius - 2)))
+        screen.blit(glow_surf, (int(cx - glow_radius - 4), int(cy - glow_radius - 4)))
+
+        # ── Flame tongue ring segments ──
+        tongue_count = 12
+        for i in range(tongue_count):
+            angle = i * (math.pi * 2 / tongue_count) + t * 0.8
+            flicker = 0.6 + 0.4 * math.sin(t * 14.0 + i * 1.7)
+            tongue_len = visual_radius * 0.12 * flicker
+            inner = visual_radius * (0.92 + 0.06 * pulse_fast)
+            outer = inner + tongue_len
+            sx = cx + int(math.cos(angle) * inner)
+            sy = cy + int(math.sin(angle) * inner)
+            ex = cx + int(math.cos(angle) * outer)
+            ey = cy + int(math.sin(angle) * outer)
+            t_alpha = int(120 + 100 * flicker * pulse_fast)
+            if t_alpha > 10:
+                tongue_color = (255, 140 + int(60 * flicker), 20 + int(40 * flicker), t_alpha)
+                # Draw tongue as tapered line
+                pygame.draw.line(screen, tongue_color, (sx, sy), (ex, ey), max(1, int(3 + 4 * flicker)))
+                # Wider glow for tongue
+                tg_sz = max(1, int(1 + flicker * 2))
+                for glow_offset in range(3):
+                    tg_x = sx + int((ex - sx) * glow_offset / 3)
+                    tg_y = sy + int((ey - sy) * glow_offset / 3)
+                    tg_r = int(tg_sz * (2 - glow_offset * 0.5))
+                    tg_surf = pygame.Surface((tg_r * 2, tg_r * 2), pygame.SRCALPHA)
+                    tg_a = int(t_alpha * 0.3 * (1 - glow_offset * 0.25))
+                    pygame.draw.circle(tg_surf, (255, 200, 80, tg_a), (tg_r, tg_r), tg_r)
+                    screen.blit(tg_surf, (tg_x - tg_r, tg_y - tg_r))
 
         # ── Outer flickering ring ──
         ring_r = visual_radius
-        ring_a = int(70 + 40 * math.sin(t * 9.0))
+        ring_a = int(80 + 50 * math.sin(t * 9.0))
         ring_surf = pygame.Surface((int(ring_r * 2) + 4, int(ring_r * 2) + 4), pygame.SRCALPHA)
-        pygame.draw.circle(ring_surf, (255, 90, 10, ring_a),
+        ring_width = max(1, int(2 + 2 * pulse_fast))
+        pygame.draw.circle(ring_surf, (255, 80, 5, ring_a),
                            (int(ring_r) + 2, int(ring_r) + 2),
-                           int(ring_r), max(1, int(3 * pulse)))
+                           int(ring_r), ring_width)
+        # Second ring layer
+        if ring_width > 1:
+            pygame.draw.circle(ring_surf, (255, 200, 60, ring_a // 2),
+                               (int(ring_r) + 2, int(ring_r) + 2),
+                               int(ring_r * 0.98), max(1, ring_width - 1))
         screen.blit(ring_surf, (int(cx - ring_r - 2), int(cy - ring_r - 2)))
 
         # ── Flame particles ──
         for p in self.flame_shield_particles:
-            life_ratio = p["life"] / p["max_life"] if p["max_life"] > 0 else 0
+            life_ratio = min(1.0, p["life"] / p["max_life"]) if p["max_life"] > 0 else 0
             if life_ratio <= 0:
                 continue
 
-            # World position from polar around center
             px = cx + math.cos(p["angle"]) * p["dist"]
             py = cy + math.sin(p["angle"]) * p["dist"] + p["vertical_speed"] * (1 - life_ratio) * 0.3
 
@@ -2510,12 +2613,40 @@ class Character:
             size = max(1, int(p["size"] * life_ratio))
             r, g, b = p["color"]
 
-            # Glow layer
-            glow_sz = size * 3
-            glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
-            pygame.draw.circle(glow, (r, g, b, alpha // 3),
-                               (glow_sz, glow_sz), glow_sz)
-            screen.blit(glow, (int(px - glow_sz), int(py - glow_sz)))
+            # Flame tongue particles draw as elongated shapes
+            if p.get("flame_tongue") and p["tongue_len"] > 0:
+                tongue_phase = p.get("tongue_phase", 0)
+                tongue_len = p["tongue_len"] * (0.5 + 0.5 * math.sin(t * 12 + tongue_phase))
+                perp = pygame.Vector2(-math.sin(p["angle"]), math.cos(p["angle"]))
+                base_pt = (px, py)
+                tip_pt = (px + perp.x * tongue_len * 0.3,
+                          py + perp.y * tongue_len * 0.3)
+                t_alpha = int(alpha * 0.6)
+                # Draw glow at midpoint
+                glow_sz = size * 4
+                glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+                pygame.draw.circle(glow, (r, g, b, t_alpha // 3), (glow_sz, glow_sz), glow_sz)
+                screen.blit(glow, (int((base_pt[0] + tip_pt[0]) / 2 - glow_sz),
+                                   int((base_pt[1] + tip_pt[1]) / 2 - glow_sz)))
+                # Draw tongue line on temp SRCALPHA surface
+                min_x = min(base_pt[0], tip_pt[0])
+                min_y = min(base_pt[1], tip_pt[1])
+                surf_w = int(max(base_pt[0], tip_pt[0]) - min_x) + 10
+                surf_h = int(max(base_pt[1], tip_pt[1]) - min_y) + 10
+                if surf_w > 0 and surf_h > 0:
+                    line_surf = pygame.Surface((surf_w, surf_h), pygame.SRCALPHA)
+                    rel_b = (int(base_pt[0] - min_x + 5), int(base_pt[1] - min_y + 5))
+                    rel_t = (int(tip_pt[0] - min_x + 5), int(tip_pt[1] - min_y + 5))
+                    pygame.draw.line(line_surf, (r, g, b, t_alpha), rel_b, rel_t,
+                                     max(1, int(size * 1.5)))
+                    screen.blit(line_surf, (int(min_x - 5), int(min_y - 5)))
+            else:
+                # Standard circular particle
+                glow_sz = size * 3
+                glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+                pygame.draw.circle(glow, (r, g, b, alpha // 3),
+                                   (glow_sz, glow_sz), glow_sz)
+                screen.blit(glow, (int(px - glow_sz), int(py - glow_sz)))
 
             # Core
             if alpha > 20:
@@ -2525,14 +2656,16 @@ class Character:
         # ── Rising ember sparkles ──
         if self.flame_shield_active:
             import random
-            for _ in range(2):
+            for _ in range(3):
                 em_angle = random.uniform(0, math.pi * 2)
-                em_dist = random.uniform(0, visual_radius * 0.3)
+                em_dist = random.uniform(0, visual_radius * 0.4)
                 em_x = cx + math.cos(em_angle) * em_dist
-                em_y = cy + random.uniform(-20, 20)
+                em_y = cy + random.uniform(-visual_radius * 0.2, visual_radius * 0.2)
                 em_size = random.randint(1, 3)
+                em_phase = random.uniform(0, math.pi * 2)
+                drift_x = math.sin(em_phase + t) * 2
                 em_color = random.choice([(255, 220, 100), (255, 180, 60), (255, 255, 140)])
-                pygame.draw.circle(screen, em_color, (int(em_x), int(em_y)), em_size)
+                pygame.draw.circle(screen, em_color, (int(em_x + drift_x), int(em_y)), em_size)
 
     # ─── Ice Armor helpers ───────────────────────────────────────────
 
@@ -2678,23 +2811,29 @@ class Character:
         import random
 
         if self.mystic_barrier_active:
-            spawn_count = max(1, int(12 * dt))
+            spawn_count = max(1, int(18 * dt))
             for _ in range(spawn_count):
                 angle = random.uniform(0, math.pi * 2)
-                dist = random.uniform(30, 100)
+                dist = random.uniform(20, 90)
+                max_life = random.uniform(0.3, 0.8)
+                is_shard = random.random() < 0.4
                 self.mystic_barrier_particles.append({
                     "angle": angle,
                     "dist": dist,
-                    "life": random.uniform(0.3, 0.7),
-                    "max_life": random.uniform(0.3, 0.7),
-                    "size": random.uniform(2.0, 4.0),
-                    "drift": random.uniform(-20, 20),
+                    "life": max_life,
+                    "max_life": max_life,
+                    "size": random.uniform(2.0, 5.0),
+                    "drift": random.uniform(-15, 15),
+                    "radial_vel": random.uniform(15, 50),
+                    "rotation": random.uniform(0, math.pi * 2),
+                    "rot_speed": random.uniform(-3, 3),
+                    "is_shard": is_shard,
                     "color": random.choice([
-                        (200, 140, 255),
-                        (160, 80, 220),
+                        (180, 120, 255),
+                        (120, 80, 240),
                         (220, 180, 255),
-                        (180, 100, 240),
-                        (240, 200, 255),
+                        (100, 200, 255),
+                        (160, 100, 220),
                     ]),
                 })
 
@@ -2704,8 +2843,8 @@ class Character:
                 self.mystic_barrier_particles.remove(p)
                 continue
             p["angle"] += p["drift"] * dt
-            pulse = 1.0 + 0.3 * math.sin(p["life"] * 8.0)
-            p["dist"] *= pulse
+            p["dist"] += p["radial_vel"] * dt
+            p["rotation"] += p["rot_speed"] * dt
 
     def _draw_mystic_barrier(self, screen, camera_offset):
         import random
@@ -2715,79 +2854,146 @@ class Character:
         t = pygame.time.get_ticks() / 1000.0
 
         radius = 85.0
+        pulse = 0.6 + 0.4 * math.sin(t * 4.0)
+        fast_pulse = 0.5 + 0.5 * math.sin(t * 10.0)
 
-        # ── Outer magenta barrier ring ──
-        pulse = 0.6 + 0.4 * math.sin(t * 3.5)
-        glow_radius = radius * (0.9 + 0.1 * pulse)
-        glow_surf = pygame.Surface((int(glow_radius * 2) + 4, int(glow_radius * 2) + 4), pygame.SRCALPHA)
-        glow_a = int(40 + 25 * pulse)
-        pygame.draw.circle(glow_surf, (140, 60, 180, glow_a),
-                           (int(glow_radius) + 2, int(glow_radius) + 2),
-                           int(glow_radius))
-        inner_r = int(glow_radius * 0.55)
+        # ── Crystalline hexagon shell ──
+        hex_pts = []
+        for i in range(6):
+            a = t * 0.4 + i * (math.pi * 2 / 6)
+            hr = radius * (0.85 + 0.15 * pulse)
+            hx = cx + math.cos(a) * hr
+            hy = cy + math.sin(a) * hr
+            hex_pts.append((hx, hy))
+
+        # Outer hexagon glow
+        hex_surf = pygame.Surface((int(radius * 2.4), int(radius * 2.4)), pygame.SRCALPHA)
+        hex_off = int(radius * 1.2)
+        hex_glow_a = int(30 + 20 * pulse)
+        pygame.draw.polygon(hex_surf, (100, 60, 200, hex_glow_a),
+                           [(p[0] - cx + hex_off, p[1] - cy + hex_off) for p in hex_pts])
+        pygame.draw.polygon(hex_surf, (160, 100, 240, int(hex_glow_a * 1.5)),
+                           [(p[0] - cx + hex_off, p[1] - cy + hex_off) for p in hex_pts],
+                           max(1, int(2 + fast_pulse * 2)))
+        screen.blit(hex_surf, (cx - hex_off, cy - hex_off))
+
+        # ── Inner glow hexagon ──
+        inner_hr = radius * 0.65 * (0.9 + 0.1 * pulse)
+        inner_pts = []
+        for i in range(6):
+            a = -t * 0.3 + i * (math.pi * 2 / 6)
+            ix = cx + math.cos(a) * inner_hr
+            iy = cy + math.sin(a) * inner_hr
+            inner_pts.append((ix, iy))
+        inner_surf = pygame.Surface((int(radius * 2), int(radius * 2)), pygame.SRCALPHA)
+        inner_off = int(radius)
         inner_a = int(25 + 20 * pulse)
-        pygame.draw.circle(glow_surf, (200, 120, 240, inner_a),
-                           (int(glow_radius) + 2, int(glow_radius) + 2),
-                           inner_r)
-        screen.blit(glow_surf, (int(cx - glow_radius - 2), int(cy - glow_radius - 2)))
+        pygame.draw.polygon(inner_surf, (180, 140, 255, inner_a),
+                           [(p[0] - cx + inner_off, p[1] - cy + inner_off) for p in inner_pts])
+        screen.blit(inner_surf, (cx - inner_off, cy - inner_off))
 
-        # ── Arcane rune ring ──
-        ring_r = radius
-        ring_a = int(80 + 60 * math.sin(t * 6.0))
-        ring_surf = pygame.Surface((int(ring_r * 2) + 4, int(ring_r * 2) + 4), pygame.SRCALPHA)
-        pygame.draw.circle(ring_surf, (200, 140, 255, ring_a),
-                           (int(ring_r) + 2, int(ring_r) + 2),
-                           int(ring_r), max(1, int(2 * (0.5 + 0.5 * pulse))))
-        screen.blit(ring_surf, (int(cx - ring_r - 2), int(cy - ring_r - 2)))
+        # ── Connecting facet lines (from center to each vertex) ──
+        for i in range(6):
+            a = t * 0.4 + i * (math.pi * 2 / 6)
+            hr = radius * (0.85 + 0.15 * pulse)
+            hx = cx + math.cos(a) * hr
+            hy = cy + math.sin(a) * hr
+            line_alpha = int(60 + 50 * math.sin(t * 3.0 + i * 1.2))
+            pygame.draw.line(screen, (200, 160, 255, line_alpha), (cx, cy), (hx, hy),
+                             max(1, int(1 + fast_pulse)))
 
-        # ── Rotating energy sigils ──
-        sigil_count = 4
-        for i in range(sigil_count):
-            sigil_angle = t * 0.8 + i * (math.pi * 2 / sigil_count)
-            sigil_dist = radius * 0.75 + 8 * math.sin(t * 4.0 + i * 1.2)
-            sx = cx + math.cos(sigil_angle) * sigil_dist
-            sy = cy + math.sin(sigil_angle) * sigil_dist
-            sigil_size = max(2, int(5 + 3 * math.sin(t * 3.0 + i * 1.7)))
-            sigil_alpha = int(120 + 80 * math.sin(t * 5.0 + i * 2.3))
-            sigil_color = (220, 160, 255, sigil_alpha)
-            pts = [
-                (sx, sy - sigil_size),
-                (sx + sigil_size * 0.7, sy),
-                (sx, sy + sigil_size),
-                (sx - sigil_size * 0.7, sy),
-            ]
-            pygame.draw.polygon(screen, sigil_color[:3], pts)
-            pygame.draw.polygon(screen, (240, 210, 255), pts, 1)
+        # ── Hexagon edge connector lines ──
+        for i in range(6):
+            a1 = t * 0.4 + i * (math.pi * 2 / 6)
+            a2 = t * 0.4 + (i + 1) * (math.pi * 2 / 6)
+            hr = radius * (0.85 + 0.15 * pulse)
+            x1 = cx + math.cos(a1) * hr
+            y1 = cy + math.sin(a1) * hr
+            x2 = cx + math.cos(a2) * hr
+            y2 = cy + math.sin(a2) * hr
+            edge_alpha = int(100 + 80 * math.sin(t * 5.0 + i * 1.8))
+            pygame.draw.line(screen, (180, 140, 255, edge_alpha), (x1, y1), (x2, y2),
+                             max(1, int(2 + fast_pulse)))
 
-        # ── Barrier particles ──
+        # ── Rotating arcane glyphs at hex vertices ──
+        for i in range(6):
+            a = -t * 0.6 + i * (math.pi * 2 / 6)
+            glyph_dist = radius * 0.78 + 6 * math.sin(t * 3.0 + i * 1.5)
+            gx = cx + math.cos(a) * glyph_dist
+            gy = cy + math.sin(a) * glyph_dist
+            g_size = max(2, int(4 + 3 * math.sin(t * 4.0 + i * 2.0)))
+            g_alpha = int(130 + 100 * math.sin(t * 5.0 + i * 2.5))
+            # Triangle glyph
+            tri_pts = []
+            for j in range(3):
+                ta = a + j * (math.pi * 2 / 3)
+                tx = gx + math.cos(ta) * g_size
+                ty = gy + math.sin(ta) * g_size
+                tri_pts.append((tx, ty))
+            pygame.draw.polygon(screen, (100, 200, 255, g_alpha), tri_pts)
+            pygame.draw.polygon(screen, (180, 230, 255, g_alpha), tri_pts, 1)
+            # Center dot
+            pygame.draw.circle(screen, (220, 240, 255, g_alpha), (int(gx), int(gy)), max(1, g_size // 3))
+
+        # ── Shard particles ──
         for p in self.mystic_barrier_particles:
-            life_ratio = p["life"] / p["max_life"] if p["max_life"] > 0 else 0
+            life_ratio = min(1.0, p["life"] / p["max_life"]) if p["max_life"] > 0 else 0
             if life_ratio <= 0:
                 continue
             px = cx + math.cos(p["angle"]) * p["dist"]
             py = cy + math.sin(p["angle"]) * p["dist"]
-            alpha = int(200 * life_ratio)
+            alpha = int(220 * life_ratio)
             size = max(1, int(p["size"] * life_ratio))
             r, g, b = p["color"]
-            glow_sz = size * 3
-            glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
-            pygame.draw.circle(glow, (r, g, b, alpha // 3),
-                               (glow_sz, glow_sz), glow_sz)
-            screen.blit(glow, (int(px - glow_sz), int(py - glow_sz)))
-            if alpha > 20:
-                pygame.draw.circle(screen, (min(255, r + 40), min(255, g + 30), min(255, b + 10)),
-                                   (int(px), int(py)), size)
+            rot = p.get("rotation", 0)
 
-        # ── Arcane sparkles ──
+            if p.get("is_shard"):
+                # Draw as diamond shard with rotation
+                pts = []
+                for j in range(4):
+                    sa = rot + j * (math.pi * 2 / 4)
+                    sd = size * (1.5 if j % 2 == 0 else 0.8)
+                    sx = px + math.cos(sa) * sd
+                    sy = py + math.sin(sa) * sd
+                    pts.append((sx, sy))
+                shard_surf = pygame.Surface((int(size * 4), int(size * 4)), pygame.SRCALPHA)
+                soff = size * 2
+                rel_pts = [(p[0] - px + soff, p[1] - py + soff) for p in pts]
+                pygame.draw.polygon(shard_surf, (r, g, b, alpha), rel_pts)
+                pygame.draw.polygon(shard_surf, (min(255, r + 60), min(255, g + 60), min(255, b + 60), alpha), rel_pts, 1)
+                screen.blit(shard_surf, (int(px - soff), int(py - soff)))
+                # Glow
+                g_sz = int(size * 2)
+                g_surf = pygame.Surface((g_sz * 2, g_sz * 2), pygame.SRCALPHA)
+                pygame.draw.circle(g_surf, (r, g, b, alpha // 3), (g_sz, g_sz), g_sz)
+                screen.blit(g_surf, (int(px - g_sz), int(py - g_sz)))
+            else:
+                # Standard circular particle
+                glow_sz = size * 3
+                glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+                pygame.draw.circle(glow, (r, g, b, alpha // 3), (glow_sz, glow_sz), glow_sz)
+                screen.blit(glow, (int(px - glow_sz), int(py - glow_sz)))
+                if alpha > 20:
+                    pygame.draw.circle(screen, (min(255, r + 40), min(255, g + 30), min(255, b + 10)),
+                                       (int(px), int(py)), size)
+
+        # ── Protective glyph flashes ──
         if self.mystic_barrier_active:
-            for _ in range(3):
-                sp_angle = random.uniform(0, math.pi * 2)
-                sp_dist = random.uniform(0, radius * 0.5)
-                sp_x = cx + math.cos(sp_angle) * sp_dist
-                sp_y = cy + random.uniform(-10, 10)
-                sp_size = random.randint(1, 2)
-                sp_color = random.choice([(220, 180, 255), (180, 120, 240), (255, 220, 255)])
-                pygame.draw.circle(screen, sp_color, (int(sp_x), int(sp_y)), sp_size)
+            for _ in range(2):
+                flash_angle = random.uniform(0, math.pi * 2)
+                flash_dist = radius * (0.5 + 0.4 * random.random())
+                fx = cx + math.cos(flash_angle) * flash_dist
+                fy = cy + math.sin(flash_angle) * flash_dist
+                f_size = random.randint(2, 4)
+                f_alpha = int(100 + 100 * random.random())
+                f_color = random.choice([
+                    (180, 230, 255, f_alpha),
+                    (140, 200, 255, f_alpha),
+                    (220, 240, 255, f_alpha),
+                ])
+                # Draw as cross glyph
+                pygame.draw.line(screen, f_color, (fx - f_size, fy), (fx + f_size, fy), 1)
+                pygame.draw.line(screen, f_color, (fx, fy - f_size), (fx, fy + f_size), 1)
 
     # ─── Chrono Shift helpers ─────────────────────────────────────────
 
