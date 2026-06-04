@@ -109,14 +109,46 @@
 <dt class="sig sig-object py" id="src.items.items.Armor">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.items.items.</span></span><span class="sig-name descname"><span class="pre">Armor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">row</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Armor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.Armor" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#src.items.items.Item" title="src.items.items.Item"><code class="xref py py-class docutils literal notranslate"><span class="pre">Item</span></code></a></p>
-<p>Represents an armor item.</p>
+<p>Represents an armor item that can be equipped in a specific equipment slot.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.Armor.slot_type">
+<span class="sig-name descname"><span class="pre">slot_type</span></span><a class="headerlink" href="#src.items.items.Armor.slot_type" title="Link to this definition"></a></dt>
+<dd><p>The equipment slot this armor belongs to
+(“helmet”, “chestplate”, “leggings”, “boots”,</p>
+<blockquote>
+<div><p>“charm”, “gloves”, “ring”, “belt”).</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.Armor.defense_value">
+<span class="sig-name descname"><span class="pre">defense_value</span></span><a class="headerlink" href="#src.items.items.Armor.defense_value" title="Link to this definition"></a></dt>
+<dd><p>Flat damage reduction this armor provides.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.items.items.Armor.get_tooltip_text">
+<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Armor.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.Armor.get_tooltip_text" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="src.items.items.Consumable">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.items.items.</span></span><span class="sig-name descname"><span class="pre">Consumable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">row</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Consumable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.Consumable" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#src.items.items.Item" title="src.items.items.Item"><code class="xref py py-class docutils literal notranslate"><span class="pre">Item</span></code></a></p>
-<p>Represents an item that can be used to restore health or apply effects.</p>
+<p>Represents an item that can be used to restore health
+or apply temporary effects to the target.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="src.items.items.Consumable.heal_amount">
 <span class="sig-name descname"><span class="pre">heal_amount</span></span><a class="headerlink" href="#src.items.items.Consumable.heal_amount" title="Link to this definition"></a></dt>
@@ -147,7 +179,10 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="src.items.items.Consumable.use">
 <span class="sig-name descname"><span class="pre">use</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Consumable.use"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.Consumable.use" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Apply the consumable’s effects to the target.</p>
+<p>Returns True when at least one effect was applied (HP, mana, or
+a status effect), False otherwise.</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -301,6 +336,34 @@
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.items.items.</span></span><span class="sig-name descname"><span class="pre">MeleeWeapon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">row</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#MeleeWeapon"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.MeleeWeapon" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#src.items.items.Weapon" title="src.items.items.Weapon"><code class="xref py py-class docutils literal notranslate"><span class="pre">Weapon</span></code></a></p>
 <p>Represents a melee combat weapon.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.MeleeWeapon.range">
+<span class="sig-name descname"><span class="pre">range</span></span><a class="headerlink" href="#src.items.items.MeleeWeapon.range" title="Link to this definition"></a></dt>
+<dd><p>Effective attack range in pixels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.MeleeWeapon.combat_style">
+<span class="sig-name descname"><span class="pre">combat_style</span></span><a class="headerlink" href="#src.items.items.MeleeWeapon.combat_style" title="Link to this definition"></a></dt>
+<dd><p>Attack pattern identifier:
+‘sword’ - standard cone arc,
+‘mace’  - circular AoE at impact point,
+‘axe’   - full 360° spinning sweep,
+‘spear’ - long narrow piercing line,
+‘dagger’ - quick short multi-strike,
+‘war_hammer’ - heavy slam with small AoE stun.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="src.items.items.MeleeWeapon.get_tooltip_text">
 <span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#MeleeWeapon.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.MeleeWeapon.get_tooltip_text" title="Link to this definition"></a></dt>
@@ -365,6 +428,19 @@
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.Weapon.on_hit_effects">
+<span class="sig-name descname"><span class="pre">on_hit_effects</span></span><a class="headerlink" href="#src.items.items.Weapon.on_hit_effects" title="Link to this definition"></a></dt>
+<dd><p>Optional list of effect dicts applied to a
+target each time the weapon lands a hit (e.g. Flaming Sword -&gt;
+BurnEffect).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
 </dd>
 </dl>
 </dd></dl>

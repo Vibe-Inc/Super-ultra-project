@@ -75,7 +75,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">src.config</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cfg</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.widgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">Slider</span><span class="p">,</span> <span class="n">Button</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">src.items.items</span><span class="w"> </span><span class="kn">import</span> <span class="n">Consumable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.items.items</span><span class="w"> </span><span class="kn">import</span> <span class="n">Consumable</span><span class="p">,</span> <span class="n">Armor</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">database.GP_database</span><span class="w"> </span><span class="kn">import</span> <span class="n">Gp_database</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.items.items</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_item</span>
 
@@ -384,12 +384,20 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Manages the player&#39;s equipment loadout slots.</span>
 
-<span class="sd">    A specialized grid intended strictly for equippable items such as armor, </span>
-<span class="sd">    weapons, and accessories that alter character stats.</span>
+<span class="sd">    A specialized grid intended strictly for equippable armor and accessory items.</span>
+<span class="sd">    Each slot position is typed (helmet, chestplate, leggings, boots in column 1;</span>
+<span class="sd">    charm, gloves, ring, belt in column 0). Only Armor items with matching</span>
+<span class="sd">    slot_type may be placed in each slot.</span>
 
 <span class="sd">    Methods:</span>
 <span class="sd">        __init__(app):</span>
 <span class="sd">            Initialize the equipment inventory grid based on config dimensions.</span>
+<span class="sd">        get_slot_type(col, row):</span>
+<span class="sd">            Return the slot type string for the given grid position.</span>
+<span class="sd">        inventory_interactions(event, manager):</span>
+<span class="sd">            Validate slot type before allowing item placement.</span>
+<span class="sd">        sync_character_defense(character):</span>
+<span class="sd">            Recalculate and apply total defense from equipped armor.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="MAIN_player_inventory_equipment.__init__">
 <a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.MAIN_player_inventory_equipment.__init__">[docs]</a>
@@ -399,7 +407,90 @@
             <span class="n">cfg</span><span class="o">.</span><span class="n">MAIN_INV_equipment_columns</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">MAIN_INV_equipment_rows</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
             <span class="nb">int</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_slot_size</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span> <span class="n">cfg</span><span class="o">.</span><span class="n">MAIN_INV_equipment_pos_x</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">MAIN_INV_equipment_pos_y</span><span class="p">,</span>
             <span class="nb">int</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_border</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
-        <span class="p">)</span></div>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="o">=</span> <span class="n">app</span></div>
+
+
+<div class="viewcode-block" id="MAIN_player_inventory_equipment.get_slot_type">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.MAIN_player_inventory_equipment.get_slot_type">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_slot_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">row</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the slot type for the given grid position.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">col</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">EQUIPMENT_SLOT_TYPES</span><span class="p">)</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">row</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">EQUIPMENT_SLOT_TYPES</span><span class="p">[</span><span class="n">col</span><span class="p">]):</span>
+            <span class="k">return</span> <span class="n">cfg</span><span class="o">.</span><span class="n">EQUIPMENT_SLOT_TYPES</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span>
+        <span class="k">return</span> <span class="s2">&quot;unknown&quot;</span></div>
+
+
+<div class="viewcode-block" id="MAIN_player_inventory_equipment.get_total_defense">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.MAIN_player_inventory_equipment.get_total_defense">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_total_defense</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sum the defense_value of all equipped Armor items.&quot;&quot;&quot;</span>
+        <span class="n">total</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rows</span><span class="p">):</span>
+                <span class="n">slot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">slot</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">slot</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Armor</span><span class="p">):</span>
+                    <span class="n">total</span> <span class="o">+=</span> <span class="n">slot</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">defense_value</span>
+        <span class="k">return</span> <span class="n">total</span></div>
+
+
+<div class="viewcode-block" id="MAIN_player_inventory_equipment.sync_character_defense">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.MAIN_player_inventory_equipment.sync_character_defense">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sync_character_defense</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">character</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Recalculate character.defense from all equipped armor.&quot;&quot;&quot;</span>
+        <span class="n">character</span><span class="o">.</span><span class="n">defense</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_total_defense</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="MAIN_player_inventory_equipment.inventory_interactions">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.MAIN_player_inventory_equipment.inventory_interactions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">inventory_interactions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">manager</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">!=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">MOUSEBUTTONDOWN</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">mouse_x</span><span class="p">,</span> <span class="n">mouse_y</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mouse</span><span class="o">.</span><span class="n">get_pos</span><span class="p">()</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">mouse_x</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_x</span><span class="p">)</span> <span class="o">//</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="p">(</span><span class="n">mouse_y</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_y</span><span class="p">)</span> <span class="o">//</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">border</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">rows</span><span class="p">):</span>
+            <span class="k">return</span>
+
+        <span class="n">slot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">y</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">manager</span><span class="o">.</span><span class="n">selected_item</span><span class="p">:</span>
+                <span class="n">dragged_item</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">selected_item</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">slot_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_slot_type</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+                <span class="c1"># Only allow placing Armor items with matching slot_type</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dragged_item</span><span class="p">,</span> <span class="n">Armor</span><span class="p">)</span> <span class="ow">and</span> <span class="n">dragged_item</span><span class="o">.</span><span class="n">slot_type</span> <span class="o">==</span> <span class="n">slot_type</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">slot</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">slot</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">dragged_item</span><span class="o">.</span><span class="n">id</span><span class="p">:</span>
+                            <span class="n">slot</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">manager</span><span class="o">.</span><span class="n">selected_item</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                            <span class="n">manager</span><span class="o">.</span><span class="n">selected_item</span> <span class="o">=</span> <span class="kc">None</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">y</span><span class="p">],</span> <span class="n">manager</span><span class="o">.</span><span class="n">selected_item</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">selected_item</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">y</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">selected_item</span>
+                        <span class="n">manager</span><span class="o">.</span><span class="n">selected_item</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">elif</span> <span class="n">slot</span> <span class="ow">and</span> <span class="n">slot</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="n">dragged_item</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">y</span><span class="p">],</span> <span class="n">manager</span><span class="o">.</span><span class="n">selected_item</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">selected_item</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">y</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">slot</span><span class="p">:</span>
+                    <span class="n">manager</span><span class="o">.</span><span class="n">selected_item</span> <span class="o">=</span> <span class="n">slot</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="c1"># Sync character defense after any equipment change</span>
+            <span class="n">game_state</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gameplay&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">game_state</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">game_state</span><span class="p">,</span> <span class="s1">&#39;character&#39;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sync_character_defense</span><span class="p">(</span><span class="n">game_state</span><span class="o">.</span><span class="n">character</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">slot</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">manager</span><span class="o">.</span><span class="n">selected_item</span><span class="p">:</span>
+            <span class="n">item</span><span class="p">,</span> <span class="n">count</span> <span class="o">=</span> <span class="n">slot</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">Consumable</span><span class="p">):</span>
+                <span class="n">game_state</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">manager</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gameplay&quot;</span><span class="p">),</span> <span class="s1">&#39;character&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">game_state</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="n">game_state</span><span class="p">):</span>
+                    <span class="n">slot</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+                    <span class="k">if</span> <span class="n">slot</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 </div>
 
 

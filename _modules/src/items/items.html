@@ -150,6 +150,9 @@
 <span class="sd">        durability (int): Current weapon durability points.</span>
 <span class="sd">        cooldown (int): Attack cooldown in milliseconds.</span>
 <span class="sd">        weapon_class (str): Classification (e.g., melee, ranged).</span>
+<span class="sd">        on_hit_effects (list): Optional list of effect dicts applied to a</span>
+<span class="sd">            target each time the weapon lands a hit (e.g. Flaming Sword -&gt;</span>
+<span class="sd">            BurnEffect).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
@@ -157,6 +160,20 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">durability</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;durability&quot;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cooldown</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;cooldown&quot;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">weapon_class</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;weapon_class&quot;</span><span class="p">]</span>
+        <span class="c1"># Per-weapon on-hit effects (list of effect dicts).</span>
+        <span class="c1"># We keep it as a plain attribute even if the column is missing so</span>
+        <span class="c1"># that existing items (with no on-hit effects) keep working.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">on_hit_effects</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">raw_on_hit</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;on_hit_effects&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">raw_on_hit</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw_on_hit</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="kn">import</span><span class="w"> </span><span class="nn">ast</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">on_hit_effects</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="n">raw_on_hit</span><span class="p">)</span>
+                <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">SyntaxError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">on_hit_effects</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw_on_hit</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">on_hit_effects</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">raw_on_hit</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_base_stats_text</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">weapon_label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Weapon&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">weapon_class</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span><span class="si">}</span><span class="s2">)&quot;</span>
@@ -173,18 +190,31 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">MeleeWeapon</span><span class="p">(</span><span class="n">Weapon</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Represents a melee combat weapon.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        range (int): Effective attack range in pixels.</span>
+<span class="sd">        combat_style (str): Attack pattern identifier:</span>
+<span class="sd">            &#39;sword&#39; - standard cone arc,</span>
+<span class="sd">            &#39;mace&#39;  - circular AoE at impact point,</span>
+<span class="sd">            &#39;axe&#39;   - full 360° spinning sweep,</span>
+<span class="sd">            &#39;spear&#39; - long narrow piercing line,</span>
+<span class="sd">            &#39;dagger&#39; - quick short multi-strike,</span>
+<span class="sd">            &#39;war_hammer&#39; - heavy slam with small AoE stun.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">range</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;range&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">combat_style</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;combat_style&quot;</span><span class="p">,</span> <span class="s2">&quot;sword&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="MeleeWeapon.get_tooltip_text">
 <a class="viewcode-back" href="../../../src.items.html#src.items.items.MeleeWeapon.get_tooltip_text">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_tooltip_text</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">base_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_base_stats_text</span><span class="p">()</span>
+        <span class="n">style_label</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">combat_style</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">title</span><span class="p">()</span>
         <span class="n">stats</span> <span class="o">=</span> <span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base_stats</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Range&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">range</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Style&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">style_label</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;Price: $</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">price</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">stats</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span>    </div>
@@ -224,7 +254,8 @@
 <a class="viewcode-back" href="../../../src.items.html#src.items.items.Consumable">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Consumable</span><span class="p">(</span><span class="n">Item</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Represents an item that can be used to restore health or apply effects.</span>
+<span class="sd">    Represents an item that can be used to restore health</span>
+<span class="sd">    or apply temporary effects to the target.</span>
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        heal_amount (int): Points of HP restored or lost.</span>
@@ -234,7 +265,7 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">heal_amount</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;heal_amount&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">effects_list</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;effects&quot;</span><span class="p">,</span> <span class="p">[])</span>
-        
+
 <div class="viewcode-block" id="Consumable.get_tooltip_text">
 <a class="viewcode-back" href="../../../src.items.html#src.items.items.Consumable.get_tooltip_text">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_tooltip_text</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -243,14 +274,13 @@
             <span class="n">stats</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Heal&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: +</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">heal_amount</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;HP&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">heal_amount</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">stats</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Damage&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">heal_amount</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;HP&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
-        
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">effects_list</span><span class="p">:</span>
             <span class="n">stats</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Effects&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">:&quot;</span>
             <span class="k">for</span> <span class="n">effect_data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">effects_list</span><span class="p">:</span>
                 <span class="n">etype</span> <span class="o">=</span> <span class="n">effect_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">)</span>
                 <span class="n">dur</span> <span class="o">=</span> <span class="n">effect_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;duration&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
                 <span class="n">stats</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2"> - </span><span class="si">{</span><span class="n">etype</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">dur</span><span class="si">}</span><span class="s2">s)&quot;</span>
-        
+
         <span class="n">stats</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Price: $</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">price</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">stats</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span></div>
 
@@ -258,13 +288,25 @@
 <div class="viewcode-block" id="Consumable.use">
 <a class="viewcode-back" href="../../../src.items.html#src.items.items.Consumable.use">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">use</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="n">used</span> <span class="o">=</span> <span class="kc">False</span> 
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Apply the consumable&#39;s effects to the target.</span>
+
+<span class="sd">        Returns True when at least one effect was applied (HP, mana, or</span>
+<span class="sd">        a status effect), False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">used</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">heal_amount</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">target</span><span class="o">.</span><span class="n">hp</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">max_hp</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">target</span><span class="o">.</span><span class="n">hp</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">heal_amount</span><span class="p">))</span>
+            <span class="n">new_hp</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">max_hp</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">target</span><span class="o">.</span><span class="n">hp</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">heal_amount</span><span class="p">))</span>
+            <span class="c1"># Special case: very large heal_amount (e.g. Elixir of Life) acts</span>
+            <span class="c1"># as a full restore, no matter the current missing HP.</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">heal_amount</span> <span class="o">&gt;=</span> <span class="n">target</span><span class="o">.</span><span class="n">max_hp</span><span class="p">:</span>
+                <span class="n">target</span><span class="o">.</span><span class="n">hp</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">max_hp</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">target</span><span class="o">.</span><span class="n">hp</span> <span class="o">=</span> <span class="n">new_hp</span>
             <span class="n">used</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">effects_list</span><span class="p">:</span>
-            <span class="n">used</span> <span class="o">=</span> <span class="kc">True</span> 
+            <span class="n">used</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="k">for</span> <span class="n">effect_data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">effects_list</span><span class="p">:</span>
                 <span class="n">effect_obj</span> <span class="o">=</span> <span class="n">create_effect</span><span class="p">(</span><span class="n">effect_data</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">effect_obj</span><span class="p">:</span>
@@ -278,10 +320,36 @@
 <a class="viewcode-back" href="../../../src.items.html#src.items.items.Armor">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Armor</span><span class="p">(</span><span class="n">Item</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Represents an armor item.</span>
+<span class="sd">    Represents an armor item that can be equipped in a specific equipment slot.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        slot_type (str): The equipment slot this armor belongs to</span>
+<span class="sd">                         (&quot;helmet&quot;, &quot;chestplate&quot;, &quot;leggings&quot;, &quot;boots&quot;,</span>
+<span class="sd">                          &quot;charm&quot;, &quot;gloves&quot;, &quot;ring&quot;, &quot;belt&quot;).</span>
+<span class="sd">        defense_value (int): Flat damage reduction this armor provides.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">row</span><span class="p">)</span></div>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">slot_type</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;slot_type&quot;</span><span class="p">,</span> <span class="s2">&quot;helmet&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">defense_value</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;defense_value&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Armor.get_tooltip_text">
+<a class="viewcode-back" href="../../../src.items.html#src.items.items.Armor.get_tooltip_text">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_tooltip_text</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">slot_map</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;helmet&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Helmet&quot;</span><span class="p">),</span> <span class="s2">&quot;chestplate&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Chestplate&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;leggings&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Leggings&quot;</span><span class="p">),</span> <span class="s2">&quot;boots&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Boots&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;charm&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Charm&quot;</span><span class="p">),</span> <span class="s2">&quot;gloves&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Gloves&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;ring&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Ring&quot;</span><span class="p">),</span> <span class="s2">&quot;belt&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Belt&quot;</span><span class="p">),</span>
+        <span class="p">}</span>
+        <span class="n">slot_label</span> <span class="o">=</span> <span class="n">slot_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">slot_type</span><span class="o">.</span><span class="n">capitalize</span><span class="p">())</span>
+        <span class="n">stats</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Type&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Armor&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">slot_label</span><span class="si">}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Defense&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: +</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">defense_value</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Price: $</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">price</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">stats</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span></div>
+</div>
 
 
 

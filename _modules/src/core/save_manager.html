@@ -448,6 +448,9 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">equip_inv</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
+        <span class="c1"># Sync character defense from loaded equipment</span>
+        <span class="n">equip_inv</span><span class="o">.</span><span class="n">sync_character_defense</span><span class="p">(</span><span class="n">char</span><span class="p">)</span>
+
         <span class="c1"># Restore game time and visual state</span>
         <span class="k">if</span> <span class="s2">&quot;game_time_seconds&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
             <span class="n">game_state</span><span class="o">.</span><span class="n">game_time_seconds</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;game_time_seconds&quot;</span><span class="p">])</span>

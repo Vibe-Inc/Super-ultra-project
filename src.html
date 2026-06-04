@@ -289,6 +289,10 @@
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.character.Character.add_effect"><code class="docutils literal notranslate"><span class="pre">Character.add_effect()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.character.Character.add_floating_text"><code class="docutils literal notranslate"><span class="pre">Character.add_floating_text()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.character.Character.attack"><code class="docutils literal notranslate"><span class="pre">Character.attack()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.character.Character.attack_axe"><code class="docutils literal notranslate"><span class="pre">Character.attack_axe()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.character.Character.attack_mace"><code class="docutils literal notranslate"><span class="pre">Character.attack_mace()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.character.Character.attack_spear"><code class="docutils literal notranslate"><span class="pre">Character.attack_spear()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.character.Character.attack_war_hammer"><code class="docutils literal notranslate"><span class="pre">Character.attack_war_hammer()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.character.Character.can_attack"><code class="docutils literal notranslate"><span class="pre">Character.can_attack()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.character.Character.consume_mana"><code class="docutils literal notranslate"><span class="pre">Character.consume_mana()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.character.Character.consume_stamina"><code class="docutils literal notranslate"><span class="pre">Character.consume_stamina()</span></code></a></li>
@@ -296,6 +300,7 @@
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#id1"><code class="docutils literal notranslate"><span class="pre">Character.draw()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.character.Character.gain_xp"><code class="docutils literal notranslate"><span class="pre">Character.gain_xp()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.character.Character.get_center"><code class="docutils literal notranslate"><span class="pre">Character.get_center()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.character.Character.get_effective_attack_damage"><code class="docutils literal notranslate"><span class="pre">Character.get_effective_attack_damage()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.character.Character.get_forward_direction"><code class="docutils literal notranslate"><span class="pre">Character.get_forward_direction()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.character.Character.get_melee_anchor"><code class="docutils literal notranslate"><span class="pre">Character.get_melee_anchor()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#id2"><code class="docutils literal notranslate"><span class="pre">Character.get_rect()</span></code></a></li>
@@ -372,17 +377,21 @@
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.patrol_index"><code class="docutils literal notranslate"><span class="pre">Enemy.patrol_index</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.detection_range"><code class="docutils literal notranslate"><span class="pre">Enemy.detection_range</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.attack_range"><code class="docutils literal notranslate"><span class="pre">Enemy.attack_range</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.effects"><code class="docutils literal notranslate"><span class="pre">Enemy.effects</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.max_hp"><code class="docutils literal notranslate"><span class="pre">Enemy.max_hp</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.get_rect"><code class="docutils literal notranslate"><span class="pre">Enemy.get_rect()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.update"><code class="docutils literal notranslate"><span class="pre">Enemy.update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.add_effect"><code class="docutils literal notranslate"><span class="pre">Enemy.add_effect()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy._tick_effects"><code class="docutils literal notranslate"><span class="pre">Enemy._tick_effects()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.take_damage"><code class="docutils literal notranslate"><span class="pre">Enemy.take_damage()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.is_dead"><code class="docutils literal notranslate"><span class="pre">Enemy.is_dead()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.draw"><code class="docutils literal notranslate"><span class="pre">Enemy.draw()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.enemy.Enemy.add_effect"><code class="docutils literal notranslate"><span class="pre">Enemy.add_effect()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.entities.html#id5"><code class="docutils literal notranslate"><span class="pre">Enemy.draw()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.entities.html#id6"><code class="docutils literal notranslate"><span class="pre">Enemy.get_rect()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.entities.html#id7"><code class="docutils literal notranslate"><span class="pre">Enemy.is_dead()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.entities.html#id8"><code class="docutils literal notranslate"><span class="pre">Enemy.take_damage()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.entities.html#id9"><code class="docutils literal notranslate"><span class="pre">Enemy.update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html#id5"><code class="docutils literal notranslate"><span class="pre">Enemy.add_effect()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html#id6"><code class="docutils literal notranslate"><span class="pre">Enemy.draw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html#id7"><code class="docutils literal notranslate"><span class="pre">Enemy.get_rect()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html#id8"><code class="docutils literal notranslate"><span class="pre">Enemy.is_dead()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html#id9"><code class="docutils literal notranslate"><span class="pre">Enemy.take_damage()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html#id10"><code class="docutils literal notranslate"><span class="pre">Enemy.update()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -395,9 +404,9 @@
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.npc.NPC.is_interactable"><code class="docutils literal notranslate"><span class="pre">NPC.is_interactable</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.npc.NPC.update"><code class="docutils literal notranslate"><span class="pre">NPC.update()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.npc.NPC.draw"><code class="docutils literal notranslate"><span class="pre">NPC.draw()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.entities.html#id10"><code class="docutils literal notranslate"><span class="pre">NPC.draw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html#id11"><code class="docutils literal notranslate"><span class="pre">NPC.draw()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.npc.NPC.get_rect"><code class="docutils literal notranslate"><span class="pre">NPC.get_rect()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.entities.html#id11"><code class="docutils literal notranslate"><span class="pre">NPC.update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html#id12"><code class="docutils literal notranslate"><span class="pre">NPC.update()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -491,6 +500,13 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="src.inventory.html#src.inventory.system.MAIN_player_inventory_equipment"><code class="docutils literal notranslate"><span class="pre">MAIN_player_inventory_equipment</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.MAIN_player_inventory_equipment.__init__"><code class="docutils literal notranslate"><span class="pre">MAIN_player_inventory_equipment.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.MAIN_player_inventory_equipment.get_slot_type"><code class="docutils literal notranslate"><span class="pre">MAIN_player_inventory_equipment.get_slot_type()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.MAIN_player_inventory_equipment.inventory_interactions"><code class="docutils literal notranslate"><span class="pre">MAIN_player_inventory_equipment.inventory_interactions()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.MAIN_player_inventory_equipment.sync_character_defense"><code class="docutils literal notranslate"><span class="pre">MAIN_player_inventory_equipment.sync_character_defense()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#id16"><code class="docutils literal notranslate"><span class="pre">MAIN_player_inventory_equipment.get_slot_type()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.MAIN_player_inventory_equipment.get_total_defense"><code class="docutils literal notranslate"><span class="pre">MAIN_player_inventory_equipment.get_total_defense()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#id17"><code class="docutils literal notranslate"><span class="pre">MAIN_player_inventory_equipment.inventory_interactions()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#id18"><code class="docutils literal notranslate"><span class="pre">MAIN_player_inventory_equipment.sync_character_defense()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="src.inventory.html#src.inventory.system.ShopInventory"><code class="docutils literal notranslate"><span class="pre">ShopInventory</span></code></a><ul>
@@ -499,7 +515,7 @@
 <li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.ShopInventory.__init__"><code class="docutils literal notranslate"><span class="pre">ShopInventory.__init__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.ShopInventory.inventory_interactions"><code class="docutils literal notranslate"><span class="pre">ShopInventory.inventory_interactions()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.inventory.html#src.inventory.system.ShopInventory._close_shop"><code class="docutils literal notranslate"><span class="pre">ShopInventory._close_shop()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#id16"><code class="docutils literal notranslate"><span class="pre">ShopInventory.inventory_interactions()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.inventory.html#id19"><code class="docutils literal notranslate"><span class="pre">ShopInventory.inventory_interactions()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -512,7 +528,12 @@
 <li class="toctree-l2"><a class="reference internal" href="src.items.html#src-items-effects-module">src.items.effects module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="src.items.html#src-items-item-database-module">src.items.item_database module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="src.items.html#module-src.items.items">src.items.items module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="src.items.html#src.items.items.Armor"><code class="docutils literal notranslate"><span class="pre">Armor</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.items.html#src.items.items.Armor"><code class="docutils literal notranslate"><span class="pre">Armor</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.items.Armor.slot_type"><code class="docutils literal notranslate"><span class="pre">Armor.slot_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.items.Armor.defense_value"><code class="docutils literal notranslate"><span class="pre">Armor.defense_value</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.items.Armor.get_tooltip_text"><code class="docutils literal notranslate"><span class="pre">Armor.get_tooltip_text()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="src.items.html#src.items.items.Consumable"><code class="docutils literal notranslate"><span class="pre">Consumable</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.items.Consumable.heal_amount"><code class="docutils literal notranslate"><span class="pre">Consumable.heal_amount</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.items.Consumable.effects_list"><code class="docutils literal notranslate"><span class="pre">Consumable.effects_list</span></code></a></li>
@@ -540,6 +561,8 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="src.items.html#src.items.items.MeleeWeapon"><code class="docutils literal notranslate"><span class="pre">MeleeWeapon</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.items.MeleeWeapon.range"><code class="docutils literal notranslate"><span class="pre">MeleeWeapon.range</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.items.MeleeWeapon.combat_style"><code class="docutils literal notranslate"><span class="pre">MeleeWeapon.combat_style</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.items.MeleeWeapon.get_tooltip_text"><code class="docutils literal notranslate"><span class="pre">MeleeWeapon.get_tooltip_text()</span></code></a></li>
 </ul>
 </li>
@@ -552,6 +575,7 @@
 <li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.items.Weapon.durability"><code class="docutils literal notranslate"><span class="pre">Weapon.durability</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.items.Weapon.cooldown"><code class="docutils literal notranslate"><span class="pre">Weapon.cooldown</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.items.Weapon.weapon_class"><code class="docutils literal notranslate"><span class="pre">Weapon.weapon_class</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.items.Weapon.on_hit_effects"><code class="docutils literal notranslate"><span class="pre">Weapon.on_hit_effects</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="src.items.html#src.items.items.create_item"><code class="docutils literal notranslate"><span class="pre">create_item()</span></code></a></li>

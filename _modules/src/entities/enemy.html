@@ -131,7 +131,7 @@
 <span class="sd">            Base movement speed before modifiers.</span>
 <span class="sd">        speed_multiplier (float):</span>
 <span class="sd">            Multiplier applied to base speed.</span>
-<span class="sd">        </span>
+
 <span class="sd">        # New attributes for CollisionSystem</span>
 <span class="sd">        rect (pygame.Rect): Collision and drawing rectangle.</span>
 <span class="sd">        velocity (pygame.Vector2): Normalized vector representing desired movement direction.</span>
@@ -180,18 +180,20 @@
 <span class="sd">            Distance within which the enemy detects the player.</span>
 <span class="sd">        attack_range (float):</span>
 <span class="sd">            Distance within which the enemy initiates an attack.</span>
+<span class="sd">        effects (list):</span>
+<span class="sd">            Active status effects (burn, poison, etc.) on this enemy.</span>
+<span class="sd">        max_hp (int):</span>
+<span class="sd">            Maximum HP used for the HP bar.</span>
 
 <span class="sd">    Methods:</span>
 <span class="sd">        get_rect():</span>
 <span class="sd">            Returns the collision rectangle, updated to the current float position.</span>
 <span class="sd">        update(dt, collision_system, obstacles, nav_grid=None, attack_context=None):</span>
 <span class="sd">            Update the enemy&#39;s AI state, set velocity, and apply movement via collision system.</span>
-<span class="sd">            Args:</span>
-<span class="sd">                dt (float): Time elapsed since the last frame in seconds.</span>
-<span class="sd">                collision_system (CollisionSystem): The external collision handler.</span>
-<span class="sd">                obstacles (list[pygame.Rect]): List of static walls.</span>
-<span class="sd">                nav_grid (NavGrid | None): Optional navigation grid for pathfinding.</span>
-<span class="sd">            attack_context (AttackContext | None): Optional combat context for special attacks.</span>
+<span class="sd">        add_effect(effect):</span>
+<span class="sd">            Attach a status effect (matches the player&#39;s API so weapons can apply burn, etc.).</span>
+<span class="sd">        _tick_effects(dt):</span>
+<span class="sd">            Update all active effects and remove finished ones.</span>
 <span class="sd">        take_damage(amount):</span>
 <span class="sd">            Reduce the enemy&#39;s health by the given amount.</span>
 <span class="sd">        is_dead():</span>
@@ -265,24 +267,53 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_ai_context</span> <span class="o">=</span> <span class="n">AIContext</span><span class="p">(</span><span class="n">dt</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">nav_grid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">obstacles</span><span class="o">=</span><span class="p">[],</span> <span class="n">player</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">effects</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Status effect container (matches the player&#39;s API so weapons</span>
+        <span class="c1"># can apply burn / poison / etc. by calling enemy.add_effect()).</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cooldown_multiplier</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">damage_bonus</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shield</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dizzy</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">confused</span> <span class="o">=</span> <span class="kc">False</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_flash_overlay</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">(</span><span class="n">animation_size</span><span class="p">,</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_flash_overlay</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="mi">255</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_animation_size</span> <span class="o">=</span> <span class="n">animation_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_lod_distance</span> <span class="o">=</span> <span class="mf">800.0</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Spawned enemy </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;ai_profile&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;unknown&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> at (</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_effect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">effect</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Attach a status effect to this enemy. Same contract as Character.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">effect</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">effect</span><span class="p">)</span>
+                <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">effect</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Enemy._tick_effects">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.enemy.Enemy._tick_effects">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_tick_effects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">for</span> <span class="n">effect</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="p">[:]:</span>
+            <span class="n">effect</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">effect</span><span class="o">.</span><span class="n">is_finished</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">effect</span><span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="Enemy.get_rect">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.enemy.Enemy.get_rect">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_rect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">sprite_width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>
         <span class="n">sprite_height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
-        
+
         <span class="n">hitbox_width</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hitbox_width</span><span class="p">,</span> <span class="n">sprite_width</span><span class="p">)</span>
         <span class="n">hitbox_height</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hitbox_height</span><span class="p">,</span> <span class="n">sprite_height</span><span class="p">)</span>
 
         <span class="n">offset_x</span> <span class="o">=</span> <span class="p">(</span><span class="n">sprite_width</span> <span class="o">-</span> <span class="n">hitbox_width</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
         <span class="n">offset_y</span> <span class="o">=</span> <span class="n">sprite_height</span> <span class="o">-</span> <span class="n">hitbox_height</span>
-        
+
         <span class="bp">self</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">offset_x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">offset_y</span><span class="p">),</span> <span class="n">hitbox_width</span><span class="p">,</span> <span class="n">hitbox_height</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span></div>
 
@@ -309,6 +340,9 @@
             <span class="n">effect</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">effect</span><span class="o">.</span><span class="n">is_finished</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">effect</span><span class="p">)</span>
+        <span class="c1"># Tick status effects first so debuffs can modify speed_multiplier</span>
+        <span class="c1"># before the movement code below consumes it.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tick_effects</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">active</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">time_accumulator</span> <span class="o">+=</span> <span class="n">dt</span> <span class="o">*</span> <span class="mf">0.2</span>
@@ -349,7 +383,7 @@
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">:</span>
             <span class="n">direction_vector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span>
-            
+
             <span class="k">if</span> <span class="n">direction_vector</span><span class="o">.</span><span class="n">length_squared</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">1.0</span><span class="p">:</span>
 
                 <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="n">direction_vector</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span>

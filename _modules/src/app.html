@@ -77,6 +77,10 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.profiling</span><span class="w"> </span><span class="kn">import</span> <span class="n">FrameProfiler</span><span class="p">,</span> <span class="n">FpsCounter</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.inventory.inventory_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">INVENTORY_manager</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.items.items</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_item</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">database.item_db.weapons_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_weapons</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">database.item_db.consumables_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_consumables</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">database.item_db.armor_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_armor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">database.GP_database</span><span class="w"> </span><span class="kn">import</span> <span class="n">Gp_database</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">src.config</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cfg</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">src.i18n</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">i18n</span>
 
@@ -132,17 +136,60 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">is_fullscreen</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">screen</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_mode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">windowed_size</span><span class="p">,</span> <span class="n">pygame</span><span class="o">.</span><span class="n">RESIZABLE</span><span class="p">)</span>
         <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_caption</span><span class="p">(</span><span class="s2">&quot;Codex Arcanum&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">icon</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;assets/smug.png&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">icon</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;assets/ui/smug.png&quot;</span><span class="p">)</span>
         <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_icon</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">icon</span><span class="p">)</span>
 
         <span class="n">i18n</span><span class="o">.</span><span class="n">install_language</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">LANGUAGE</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">create_logo</span><span class="p">()</span>
 
+        <span class="n">db</span> <span class="o">=</span> <span class="n">Gp_database</span><span class="p">()</span>
+        <span class="n">seed_weapons</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
+        <span class="n">seed_consumables</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
+        <span class="n">seed_armor</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">INV_manager</span> <span class="o">=</span> <span class="n">INVENTORY_manager</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">MAIN_INV_items</span> <span class="o">=</span> <span class="p">[[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">MAIN_INV_rows</span><span class="p">)]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">MAIN_INV_columns</span><span class="p">)]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">MAIN_INV_items</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;dull_sword&quot;</span><span class="p">),</span> <span class="mi">1</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">MAIN_INV_items</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;apple&quot;</span><span class="p">),</span> <span class="mi">5</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">MAIN_INV_items</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;wooden_bow&quot;</span><span class="p">),</span> <span class="mi">1</span><span class="p">]</span> <span class="c1">#test purposes nshit</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">add_item</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">item_id</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">item</span> <span class="o">=</span> <span class="n">create_item</span><span class="p">(</span><span class="n">item_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">item</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">MAIN_INV_items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="p">,</span> <span class="n">count</span><span class="p">]</span>
+
+        <span class="c1"># Row 0 — Melee weapons</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;dull_sword&quot;</span><span class="p">)</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;iron_sword&quot;</span><span class="p">)</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;steel_sword&quot;</span><span class="p">)</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;battle_axe&quot;</span><span class="p">)</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;war_hammer&quot;</span><span class="p">)</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;mace&quot;</span><span class="p">)</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;spear&quot;</span><span class="p">)</span>
+        <span class="c1"># Row 1 — Ranged weapons + food</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;wooden_bow&quot;</span><span class="p">)</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;hunting_bow&quot;</span><span class="p">)</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;longbow&quot;</span><span class="p">)</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;crossbow&quot;</span><span class="p">)</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;throwing_dagger&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Row 2 — Potions</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;small_health_potion&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;medium_health_potion&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;large_health_potion&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;greater_health_potion&quot;</span><span class="p">)</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;potion_of_speed&quot;</span><span class="p">)</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;potion_of_strength&quot;</span><span class="p">)</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;potion_of_haste&quot;</span><span class="p">)</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;potion_of_shield&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Row 3 — Armor</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;iron_helmet&quot;</span><span class="p">)</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;iron_chestplate&quot;</span><span class="p">)</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;iron_leggings&quot;</span><span class="p">)</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;iron_boots&quot;</span><span class="p">)</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;steel_helmet&quot;</span><span class="p">)</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;steel_chestplate&quot;</span><span class="p">)</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;steel_leggings&quot;</span><span class="p">)</span>
+        <span class="n">add_item</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;steel_boots&quot;</span><span class="p">)</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">money</span> <span class="o">=</span> <span class="mi">100</span>
 

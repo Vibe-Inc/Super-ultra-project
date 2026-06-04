@@ -280,6 +280,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">MAIN_player_inv</span> <span class="o">=</span> <span class="n">MAIN_player_inventory</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">PLAYER_inventory_equipment</span> <span class="o">=</span> <span class="n">MAIN_player_inventory_equipment</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PLAYER_inventory_equipment</span><span class="o">.</span><span class="n">sync_character_defense</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hotbar</span> <span class="o">=</span> <span class="n">MAIN_player_hotbar</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">hotbar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hotbar</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">add_active_inventory</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hotbar</span><span class="p">)</span>
@@ -571,7 +572,13 @@
             <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;large_health_potion&quot;</span><span class="p">),</span>
             <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;large_health_potion&quot;</span><span class="p">),</span>
             <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;potion_of_confusion&quot;</span><span class="p">),</span>
-            <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;moldy_bread&quot;</span><span class="p">)</span>
+            <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;moldy_bread&quot;</span><span class="p">),</span>
+            <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;iron_helmet&quot;</span><span class="p">),</span>
+            <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;iron_chestplate&quot;</span><span class="p">),</span>
+            <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;iron_leggings&quot;</span><span class="p">),</span>
+            <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;iron_boots&quot;</span><span class="p">),</span>
+            <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;defense_charm&quot;</span><span class="p">),</span>
+            <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;leather_gloves&quot;</span><span class="p">),</span>
             <span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">shop_inv</span> <span class="o">=</span> <span class="n">ShopInventory</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="n">shop_items</span><span class="p">)</span>
