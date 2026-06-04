@@ -304,12 +304,11 @@ class FishingController:
             keys = pygame.key.get_pressed()
             mouse_buttons = pygame.mouse.get_pressed()
             reeling = keys[pygame.K_SPACE] or mouse_buttons[0]
-            raise_speed = 0.7
-            fall_speed = 0.4
+            move_speed = 0.85
             if reeling:
-                self.catch_zone_offset = max(0.0, self.catch_zone_offset - raise_speed * dt)
+                self.catch_zone_offset = max(0.0, self.catch_zone_offset - move_speed * dt)
             else:
-                self.catch_zone_offset = min(1.0, self.catch_zone_offset + fall_speed * dt)
+                self.catch_zone_offset = min(1.0, self.catch_zone_offset + move_speed * dt)
             bobber_norm = self.catch_zone_offset
 
             tolerance = 0.18 + (1.0 - self.active_fish.fish_type.difficulty) * 0.15
