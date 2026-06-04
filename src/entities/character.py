@@ -6,6 +6,7 @@ from database.effects import PoisonEffect
 from src.core.logger import logger
 from src.entities.projectile import Fireball, GlacialCascade, FrostNova, ChainLightning, Thunderstrike, EntanglingRoots, NatureBolt, DarkPact, ArcaneMissile
 from src.entities.nature_spirit import NatureSpirit
+from src.mana.mana_system import ManaSystem
 
 class Character:
     """
@@ -443,11 +444,12 @@ class Character:
         self.is_sprinting = False
         self.can_sprint = True
 
-        # Mana / Energy system
-        self.max_mana = 50
-        self.mana = self.max_mana
+        # Mana system (using ManaSystem component)
+        self.mana_system = ManaSystem(max_mana=100, mana_regen_rate=10.0)
+        self.max_mana = self.mana_system.max_mana
+        self.mana = self.mana_system.current_mana
         self.mana_drain_rate = 20.0
-        self.mana_regen_rate = 10.0
+        self.mana_regen_rate = self.mana_system.mana_regen_rate
         # energy is an alias to support systems that use "energy"
         self.energy = self.stamina
         # Armor / defense system (consumed by Armor items)
@@ -2079,12 +2081,12 @@ class Character:
                 self.stamina = self.max_stamina
                 self.can_sprint = True
 
-        # Mana regeneration
-        if getattr(self, "mana", None) is not None:
-            if self.mana < self.max_mana:
-                self.mana += self.mana_regen_rate * dt
-                if self.mana > self.max_mana:
-                    self.mana = self.max_mana
+        # Mana regeneration (using ManaSystem)
+        if hasattr(self, "mana_system"):
+            self.mana_system.update(dt)
+            # Sync with legacy attributes for compatibility
+            self.mana = self.mana_system.current_mana
+            self.max_mana = self.mana_system.max_mana
 
         # KEY IMPLEMENTATION STEP: Single function call for collision-aware movement
         collision_system.handle_movement_and_collision(self, dt, obstacles)
@@ -2274,9 +2276,16 @@ class Character:
     def consume_mana(self, amount):
         """
         Attempt to consume mana. Returns True if enough mana was available.
+        Uses the ManaSystem component if available.
         """
         if amount <= 0:
             return True
+        if hasattr(self, "mana_system"):
+            result = self.mana_system.consume_mana(amount)
+            # Sync with legacy attributes
+            self.mana = self.mana_system.current_mana
+            return result
+        # Fallback if mana_system not initialized
         if getattr(self, "mana", 0) >= amount:
             self.mana -= amount
             logger.debug(f"Consumed {amount} mana. Mana: {int(self.mana)}/{self.max_mana}")
@@ -2287,9 +2296,16 @@ class Character:
     def restore_mana(self, amount):
         """
         Restore mana (clamped to max_mana).
+        Uses the ManaSystem component if available.
         """
         if amount <= 0:
             return
+        if hasattr(self, "mana_system"):
+            self.mana_system.restore_mana(amount)
+            # Sync with legacy attributes
+            self.mana = self.mana_system.current_mana
+            return
+        # Fallback if mana_system not initialized
         prev = int(getattr(self, "mana", 0))
         self.mana = min(self.max_mana, self.mana + amount)
         logger.info(f"Player restored {int(self.mana) - prev} mana. Mana: {int(self.mana)}/{self.max_mana}")

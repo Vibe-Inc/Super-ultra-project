@@ -177,6 +177,7 @@ class HUD:
         self.hp_bar_rect = pygame.Rect(0, 0, 0, 0)
         self.xp_bar_rect = pygame.Rect(0, 0, 0, 0)
         self.stamina_bar_rect = pygame.Rect(0, 0, 0, 0)
+        self.mana_bar_rect = pygame.Rect(0, 0, 0, 0)
         self._layout_size = None
 
         # slot rects (populated/updated per-frame or on-event)
@@ -229,6 +230,13 @@ class HUD:
         stamina_bar_x = (screen_width - stamina_bar_width) // 2
         stamina_bar_y = hotbar_top - stamina_bar_height - 10
         self.stamina_bar_rect = pygame.Rect(stamina_bar_x, stamina_bar_y, stamina_bar_width, stamina_bar_height)
+
+        # Mana bar above stamina bar
+        mana_bar_width = hotbar_total_width
+        mana_bar_height = 14
+        mana_bar_x = (screen_width - mana_bar_width) // 2
+        mana_bar_y = stamina_bar_y - mana_bar_height - 6
+        self.mana_bar_rect = pygame.Rect(mana_bar_x, mana_bar_y, mana_bar_width, mana_bar_height)
 
         # rebuild rects
         self.skill_slot_rects = []
@@ -536,6 +544,80 @@ class HUD:
 
         # Stamina Bar Border (Rounded)
         pygame.draw.rect(screen, (200, 200, 200), (stamina_bar_x, stamina_bar_y, stamina_bar_width, stamina_bar_height), 1, border_radius=6)
+
+        # ═══════════════════════════════════════════════════════════════
+        # MANA BAR - Magical Purple-Blue with Gold Trim and Stars
+        # ═══════════════════════════════════════════════════════════════
+        mana_bar_x = self.mana_bar_rect.x
+        mana_bar_y = self.mana_bar_rect.y
+        mana_bar_width = self.mana_bar_rect.width
+        mana_bar_height = self.mana_bar_rect.height
+
+        mana_percent = max(0, self.character.mana / self.character.max_mana)
+        current_mana_width = int(mana_bar_width * mana_percent)
+
+        # Mana Bar Background (Dark purple)
+        mana_bg_surf = pygame.Surface((mana_bar_width, mana_bar_height), pygame.SRCALPHA)
+        pygame.draw.rect(mana_bg_surf, (15, 8, 35, 220), mana_bg_surf.get_rect(), border_radius=7)
+        screen.blit(mana_bg_surf, (mana_bar_x, mana_bar_y))
+
+        # Mana Bar Fill (Gradient purple-blue with shimmer)
+        if current_mana_width > 0:
+            fill_radius = min(7, current_mana_width // 2)
+            mana_fill_surf = pygame.Surface((current_mana_width, mana_bar_height), pygame.SRCALPHA)
+            # Base gradient
+            for x in range(current_mana_width):
+                t = x / max(1, current_mana_width)
+                # Purple to blue gradient
+                r = int(80 + 60 * (1 - t))
+                g = int(40 + 80 * t)
+                b = int(180 + 75 * t)
+                pygame.draw.line(mana_fill_surf, (r, g, b, 240), (x, 0), (x, mana_bar_height - 1))
+            # Shimmer highlight
+            shimmer_offset = int((self.animation_time * 40) % (current_mana_width + 60)) - 30
+            for sx in range(max(0, shimmer_offset), min(current_mana_width, shimmer_offset + 30)):
+                shimmer_alpha = int(80 * (1 - abs(sx - shimmer_offset - 15) / 15))
+                if shimmer_alpha > 0 and sx < current_mana_width:
+                    pygame.draw.line(mana_fill_surf, (200, 180, 255, shimmer_alpha), (sx, 1), (sx, 2))
+            # Clip with rounded corners
+            clip_surf = pygame.Surface((current_mana_width, mana_bar_height), pygame.SRCALPHA)
+            pygame.draw.rect(clip_surf, (255, 255, 255, 255), clip_surf.get_rect(), border_radius=fill_radius)
+            mana_fill_surf.blit(clip_surf, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+            screen.blit(mana_fill_surf, (mana_bar_x, mana_bar_y))
+
+        # Gold Trim Border (Double layer for richness)
+        gold_outer = (212, 175, 55)
+        gold_inner = (255, 215, 100)
+        pygame.draw.rect(screen, gold_outer, (mana_bar_x - 1, mana_bar_y - 1, mana_bar_width + 2, mana_bar_height + 2), 2, border_radius=8)
+        pygame.draw.rect(screen, gold_inner, (mana_bar_x, mana_bar_y, mana_bar_width, mana_bar_height), 1, border_radius=7)
+
+        # Magical Stars and Sparkles
+        t = self.animation_time
+        star_positions = [
+            (0.1, 0.3), (0.3, 0.7), (0.5, 0.2), (0.7, 0.8), (0.9, 0.4),
+            (0.15, 0.6), (0.45, 0.5), (0.75, 0.3), (0.85, 0.7)
+        ]
+        for sx_pct, sy_pct in star_positions:
+            sx = mana_bar_x + int(sx_pct * mana_bar_width)
+            sy = mana_bar_y + int(sy_pct * mana_bar_height)
+            # Twinkle effect
+            twinkle = (math.sin(t * 4.0 + sx_pct * 10) + 1.0) * 0.5
+            if twinkle > 0.6:
+                star_alpha = int(200 * (twinkle - 0.6) * 2.5)
+                star_size = 1 + int(twinkle * 2)
+                star_color = (255, 255, 200, star_alpha)
+                # Draw 4-pointed star
+                pygame.draw.line(screen, star_color[:3], (sx - star_size, sy), (sx + star_size, sy), 1)
+                pygame.draw.line(screen, star_color[:3], (sx, sy - star_size), (sx, sy + star_size), 1)
+
+        # Corner gem decorations (magical orbs at edges)
+        gem_glow = int(100 + 60 * math.sin(t * 3.0))
+        for gx, gy in [(mana_bar_x + 4, mana_bar_y + mana_bar_height // 2),
+                       (mana_bar_x + mana_bar_width - 4, mana_bar_y + mana_bar_height // 2)]:
+            gem_surf = pygame.Surface((8, 8), pygame.SRCALPHA)
+            pygame.draw.circle(gem_surf, (120, 80, 200, gem_glow), (4, 4), 4)
+            pygame.draw.circle(gem_surf, (180, 150, 255, gem_glow), (4, 4), 2)
+            screen.blit(gem_surf, (gx - 4, gy - 4))
 
         # Draw vertical skill hotbar (right side) if no shop is open
         if not getattr(self.app.INV_manager, 'current_shop_inv', None):
