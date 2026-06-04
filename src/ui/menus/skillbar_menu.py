@@ -478,6 +478,7 @@ class SkillbarMenu(Menu):
     def exit_menu(self):
         # Ensure any open player inventory windows are properly removed
         try:
+            self.app.INV_manager._return_held_item()
             # mark as closed
             self.app.INV_manager.player_inventory_opened = False
 
