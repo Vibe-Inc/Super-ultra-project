@@ -14,6 +14,11 @@ class Map:
             "frame_step": 6,
             "frame_count": 6,
         },
+        "Water + terrain": {
+            "frame_step": 1,
+            "frame_count": 8,
+            "seq_start": 29,
+        },
     }
 
     """
@@ -174,17 +179,35 @@ class Map:
                 if anim_info:
                     firstgid, config, tiled_gid = anim_info
                     local_id = tiled_gid - firstgid
-                    stride = config["frame_step"] * config["frame_count"]
-                    anim_base = (local_id // stride) * stride + (local_id % config["frame_step"])
-                    self._animated_tiles["fringe"].append({
-                        "x": cell_x,
-                        "y": cell_y,
-                        "firstgid": firstgid,
-                        "anim_base": anim_base,
-                        "frame_count": config["frame_count"],
-                        "frame_step": config["frame_step"],
-                    })
-                    continue
+                    if "seq_start" in config:
+                        if not (config["seq_start"] <= local_id < config["seq_start"] + config["frame_count"]):
+                            # not in the animation sequence — render as static
+                            pass
+                        else:
+                            anim_base = local_id - config["seq_start"]
+                            extra = {"seq_start": config["seq_start"]}
+                            self._animated_tiles["fringe"].append({
+                                "x": cell_x,
+                                "y": cell_y,
+                                "firstgid": firstgid,
+                                "anim_base": anim_base,
+                                "frame_count": config["frame_count"],
+                                "frame_step": config["frame_step"],
+                                **extra,
+                            })
+                            continue
+                    else:
+                        stride = config["frame_step"] * config["frame_count"]
+                        anim_base = (local_id // stride) * stride + (local_id % config["frame_step"])
+                        self._animated_tiles["fringe"].append({
+                            "x": cell_x,
+                            "y": cell_y,
+                            "firstgid": firstgid,
+                            "anim_base": anim_base,
+                            "frame_count": config["frame_count"],
+                            "frame_step": config["frame_step"],
+                        })
+                        continue
                 tile = self.game_map.get_tile_image_by_gid(gid)
                 if tile:
                     surface.blit(
@@ -246,17 +269,34 @@ class Map:
                     if anim_info:
                         firstgid, config, tiled_gid = anim_info
                         local_id = tiled_gid - firstgid
-                        stride = config["frame_step"] * config["frame_count"]
-                        anim_base = (local_id // stride) * stride + (local_id % config["frame_step"])
-                        self._animated_tiles["base"].append({
-                            "x": x,
-                            "y": y,
-                            "firstgid": firstgid,
-                            "anim_base": anim_base,
-                            "frame_count": config["frame_count"],
-                            "frame_step": config["frame_step"],
-                        })
-                        continue
+                        if "seq_start" in config:
+                            if not (config["seq_start"] <= local_id < config["seq_start"] + config["frame_count"]):
+                                pass
+                            else:
+                                anim_base = local_id - config["seq_start"]
+                                extra = {"seq_start": config["seq_start"]}
+                                self._animated_tiles["base"].append({
+                                    "x": x,
+                                    "y": y,
+                                    "firstgid": firstgid,
+                                    "anim_base": anim_base,
+                                    "frame_count": config["frame_count"],
+                                    "frame_step": config["frame_step"],
+                                    **extra,
+                                })
+                                continue
+                        else:
+                            stride = config["frame_step"] * config["frame_count"]
+                            anim_base = (local_id // stride) * stride + (local_id % config["frame_step"])
+                            self._animated_tiles["base"].append({
+                                "x": x,
+                                "y": y,
+                                "firstgid": firstgid,
+                                "anim_base": anim_base,
+                                "frame_count": config["frame_count"],
+                                "frame_step": config["frame_step"],
+                            })
+                            continue
                     tile = self.game_map.get_tile_image_by_gid(gid)
                     if tile:
                         surface.blit(tile, (x * tilewidth, y * tileheight))
@@ -269,6 +309,9 @@ class Map:
         return None
 
     def _get_animated_gid(self, info, frame_index):
+        if "seq_start" in info:
+            offset = (info["anim_base"] + frame_index * info["frame_step"]) % info["frame_count"]
+            return info["firstgid"] + info["seq_start"] + offset
         return info["firstgid"] + info["anim_base"] + frame_index * info["frame_step"]
 
     def _draw_animated_tiles(self, screen, camera_offset, tile_list, fade_alpha=None):
