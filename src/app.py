@@ -150,15 +150,6 @@ class App:
         
         self.money = 100
 
-        # Pre-populate the hotbar with a lantern in the first slot so the
-        # player starts with it "in hand" (lighting is active immediately).
-        _hb_cols = getattr(cfg, 'INV_HOTBAR_COLUMNS', 10)
-        _hb_rows = getattr(cfg, 'INV_HOTBAR_ROWS', 1)
-        self.MAIN_HOTBAR_items = [[None for _ in range(_hb_rows)] for _ in range(_hb_cols)]
-        _lantern = create_item("lantern")
-        if _lantern:
-            self.MAIN_HOTBAR_items[0][0] = [_lantern, 1]
-
         # Dialog state: current active dialog UI and last NPC the player talked to
         self.current_dialog = None
         self.last_talked_npc = None
@@ -173,6 +164,49 @@ class App:
 
         # State manager
         self.manager = StateManager(self)
+
+    def _get_dir_mask(self, radius: int, dir_x: float, dir_y: float) -> "pygame.Surface":
+        """Return a cached hemisphere mask that attenuates light behind the character.
+
+        The mask is a ``(2*radius, 2*radius)`` SRCALPHA surface where pixels
+        in the *facing* direction are fully white (keep light) and pixels
+        behind are dark (suppress light), with a smooth transition on the
+        sides.  Results are cached by ``(radius, dir_x, dir_y)`` so the
+        mask is only built once per unique combination.
+        """
+        if not hasattr(self, '_dir_mask_cache'):
+            self._dir_mask_cache = {}
+        key = (radius, round(dir_x, 4), round(dir_y, 4))
+        if key in self._dir_mask_cache:
+            return self._dir_mask_cache[key]
+
+        size = radius * 2
+        mask = pygame.Surface((size, size), pygame.SRCALPHA)
+        cx = cy = radius
+        # Use a step size that balances quality vs. build time
+        step = max(1, radius // 15)
+        for y in range(0, size, step):
+            for x in range(0, size, step):
+                px = x - cx
+                py = y - cy
+                dist_sq = px * px + py * py
+                if dist_sq > radius * radius:
+                    continue
+                dist = dist_sq ** 0.5
+                if dist < 1:
+                    dot = 0.0
+                else:
+                    dot = (px * dir_x + py * dir_y) / dist
+                # Map dot [-1, 1] → attenuation [0, 1.0]
+                # 0 at the back = no illumination behind the character
+                atten = max(0.0, dot * 0.5 + 0.5)
+                a = int(atten * 255)
+                pygame.draw.rect(mask, (255, 255, 255, a), (x, y, step, step))
+        # Smooth the mask with a cheap down-scale / up-scale blur
+        small = pygame.transform.smoothscale(mask, (size // 4 or 1, size // 4 or 1))
+        mask = pygame.transform.smoothscale(small, (size, size))
+        self._dir_mask_cache[key] = mask
+        return mask
 
     def create_logo(self):
         self.text_logo = cfg.myfont.render(_('Codex Arcanum'), True, (255, 215, 0))
@@ -323,6 +357,22 @@ class App:
                     )
                     overlay.fill((tint[0], tint[1], tint[2], overlay_alpha))
 
+                    # Determine character facing direction for directional light
+                    dir_x, dir_y = 0.0, 1.0  # default: facing down
+                    try:
+                        char = getattr(gameplay_state, 'character', None)
+                        if char:
+                            facing = getattr(char, 'direction', 'down')
+                            flip = getattr(char, 'flip', False)
+                            if facing == 'up':
+                                dir_x, dir_y = 0.0, -1.0
+                            elif facing == 'side':
+                                dir_x = -1.0 if flip else 1.0
+                                dir_y = 0.0
+                            # 'down' stays (0, 1)
+                    except Exception:
+                        pass
+
                     for l in local_lights:
                         lx, ly = l.get('pos', (0, 0))
                         radius = int(l.get('radius', 120))
@@ -335,7 +385,7 @@ class App:
                         grad = pygame.Surface(
                             (radius * 2, radius * 2), pygame.SRCALPHA
                         )
-                        steps = max(1, radius // 3)
+                        steps = max(1, radius // 2)
                         for i in range(steps, 0, -1):
                             frac = i / steps          # 1 at edge, 0 at centre
                             r = int(frac * radius)
@@ -345,6 +395,22 @@ class App:
                             pygame.draw.circle(
                                 grad, (0, 0, 0, a), (radius, radius), r
                             )
+                        # Smooth the gradient to remove concentric banding
+                        small = pygame.transform.smoothscale(
+                            grad, (max(1, radius // 4), max(1, radius // 4))
+                        )
+                        grad = pygame.transform.smoothscale(
+                            small, (radius * 2, radius * 2)
+                        )
+
+                        # Apply directional hemisphere mask so the light
+                        # only illuminates in front and sides, not behind.
+                        mask = self._get_dir_mask(radius, dir_x, dir_y)
+                        grad.blit(
+                            mask, (0, 0),
+                            special_flags=pygame.BLEND_RGBA_MULT,
+                        )
+
                         gx = lx - radius
                         gy = ly - radius
                         try:
