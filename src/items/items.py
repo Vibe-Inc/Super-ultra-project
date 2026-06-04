@@ -279,6 +279,43 @@ class Armor(Item):
         return f"{self.name}\n{stats}\n{self.description}"
 
 
+class Tool(Item):
+    """
+    Represents a utility tool used to perform a specific in-world action
+    (fishing, mining, woodcutting, etc.). Tools are not weapons, not
+    consumables, and usually do not stack.
+
+    Attributes:
+        tool_type (str): Sub-category of the tool
+            (e.g. "fishing", "pickaxe", "axe").
+        durability (int): Current durability points.
+        power (int): Generic effectiveness multiplier (e.g. catch power
+            bonus for a fishing rod, mining speed for a pickaxe).
+
+    Methods:
+        __init__(row: dict):
+            Initialize tool properties from a database row.
+        get_tooltip_text():
+            Return formatted tooltip text including tool type and power.
+    """
+    def __init__(self, row: dict):
+        super().__init__(row)
+        self.tool_type = row.get("tool_type", "generic") or "generic"
+        self.durability = row.get("tool_durability",
+                                  row.get("durability", 100)) or 100
+        self.power = row.get("power", 0) or 0
+
+    def get_tooltip_text(self):
+        type_label = self.tool_type.replace("_", " ").title()
+        stats = (
+            f"{_('Type')}: {_('Tool')} ({type_label})\n"
+            f"{_('Durability')}: {self.durability}\n"
+            f"{_('Power')}: +{self.power}\n"
+            f"Price: ${self.price}"
+        )
+        return f"{self.name}\n{stats}\n{self.description}"
+
+
 def create_item(item_id: str):
     """
     Factory function to instantiate the appropriate item class.
@@ -311,6 +348,8 @@ def create_item(item_id: str):
         return Consumable(row)
     elif item_type == "armor":
         return Armor(row)
+    elif item_type == "tool":
+        return Tool(row)
     else:
         logger.warning(f"Unknown item type '{item_type}' for '{item_id}'. Defaulting to generic Item.")
         return Item(row)
