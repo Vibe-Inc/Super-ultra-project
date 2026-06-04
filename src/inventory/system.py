@@ -311,7 +311,35 @@ class ShopInventory(Inventory):
         
         if 0 <= x < self.columns and 0 <= y < self.rows:
             slot = self.items[x][y]
-            if event.button == 1: 
+            if event.button == 1:
+                shift_held = pygame.key.get_mods() & pygame.KMOD_SHIFT
+
+                if shift_held and slot and not manager.selected_item:
+                    from src.inventory.system import MAIN_player_inventory
+                    shop_item = slot[0]
+                    buy_price = getattr(shop_item, 'price', 0)
+                    if self.app.money >= buy_price:
+                        pl_inv = None
+                        for inv in manager.active_inventories:
+                            if isinstance(inv, MAIN_player_inventory):
+                                pl_inv = inv
+                                break
+                        if pl_inv:
+                            for tx in range(pl_inv.columns):
+                                for ty in range(pl_inv.rows):
+                                    existing = pl_inv.items[tx][ty]
+                                    if existing and existing[0].id == shop_item.id:
+                                        existing[1] += 1
+                                        self.app.money -= buy_price
+                                        return
+                            for tx in range(pl_inv.columns):
+                                for ty in range(pl_inv.rows):
+                                    if pl_inv.items[tx][ty] is None:
+                                        pl_inv.items[tx][ty] = [copy.copy(shop_item), 1]
+                                        self.app.money -= buy_price
+                                        return
+                    return
+
                 if manager.selected_item:
                     item, count = manager.selected_item
                     self.app.money += int(getattr(item, 'price', 0) * 1) * count                
