@@ -1065,14 +1065,63 @@ class Character:
     def is_skill_ready(self, skill):
         """
         Check if a skill is ready to use (cooldown expired).
-        
+
         Args:
             skill (dict): The skill dictionary with skill_id.
-            
+
         Returns:
             bool: True if skill is ready, False if on cooldown.
         """
         return self.get_skill_cooldown_percent(skill) == 0.0
+
+    def _is_skill_on_cooldown(self, skill_id, current_time):
+        """
+        Internal cooldown gate that mirrors the per-skill cooldown logic
+        in ``use_skill``. Returns True when the skill is still on cooldown.
+
+        This lets us reject a cast *before* spending mana, so the player
+        doesn't get penalised for trying to fire a skill they couldn't use.
+
+        Args:
+            skill_id (str): The skill identifier (e.g. "fireball").
+            current_time (int): ``pygame.time.get_ticks()`` value in ms.
+
+        Returns:
+            bool: True if the skill is on cooldown, False if it's ready.
+        """
+        # Skills with dynamic cooldown (may include cooldown reduction bonuses)
+        if skill_id == "berserkers_rage":
+            cooldown = self.berserkers_rage_cooldown + getattr(self, "berserkers_rage_cooldown_bonus", 0)
+        elif skill_id == "chrono_shift":
+            cooldown = self.chrono_shift_cooldown + getattr(self, "chrono_shift_cooldown_bonus", 0)
+        else:
+            cooldown = getattr(self, f"{skill_id}_cooldown", 0)
+
+        if cooldown is None or cooldown <= 0:
+            return False
+
+        last_used = getattr(self, f"{skill_id}_last_used", None)
+        if last_used is None:
+            return False
+        return current_time - last_used < cooldown
+
+    def _is_skill_state_blocked(self, skill_id):
+        """
+        Return True if the skill can't be used due to a non-cooldown state
+        condition (e.g. toggle already active). Mirrors the early ``if ...:
+        return False`` guards inside ``use_skill``.
+        """
+        if skill_id == "flame_shield" and getattr(self, "flame_shield_active", False):
+            return True
+        if skill_id == "ice_armor" and getattr(self, "ice_armor_active", False):
+            return True
+        if skill_id == "mystic_barrier" and getattr(self, "mystic_barrier_active", False):
+            return True
+        if skill_id == "berserkers_rage" and getattr(self, "berserkers_rage_active", False):
+            return True
+        if skill_id == "chrono_shift" and getattr(self, "chrono_shift_active", False):
+            return True
+        return False
 
     def get_skill_mana_cost(self, skill):
         """
@@ -1101,15 +1150,26 @@ class Character:
         current_time = pygame.time.get_ticks()
 
         # ─── ManaSystem integration ────────────────────────────────────
-        # Gate every active skill cast on the player's current mana.
-        # Passive/toggle skills that have no mana cost (cost 0) bypass this.
+        # Cast gating order (matches the inner skill branches' return-False
+        # checks so mana is only spent on a *successful* cast):
+        #   1. Cooldown   — don't penalise the player for trying a skill
+        #                    they can't use yet.
+        #   2. State      — e.g. an already-active Flame Shield / Ice Armor.
+        #   3. Mana       — only checked once we know the cast can actually
+        #                    happen, then deducted at the same time.
+        # Anything that fails steps 1/2 returns ``False`` *without* touching
+        # the player's mana pool.
+        if self._is_skill_on_cooldown(skill_id, current_time):
+            return False
+        if self._is_skill_state_blocked(skill_id):
+            return False
+
         mana_cost = self.get_skill_mana_cost(skill)
         if mana_cost > 0 and not self.mana_system.has_enough_mana(mana_cost):
             logger.info(
                 f"Cannot cast '{skill_id}': not enough mana "
                 f"(need {mana_cost}, have {int(self.mana_system.current_mana)})."
             )
-            # Inform the player via a floating text popup (e.g. "Not enough mana!")
             try:
                 self.add_floating_text(
                     "Not enough mana!",
@@ -1122,9 +1182,12 @@ class Character:
             except Exception:
                 pass
             return False
-        # Mana is sufficient (or the skill is free); deduct it now so the
-        # cast below is committed. If the skill ends up no-op'ing (e.g. on
-        # cooldown) the mana is still consumed, matching typical ARPG design.
+
+        # Mana is sufficient (or the skill is free) and the cooldown/state
+        # gates have passed — deduct it so the inner branch commits. If the
+        # inner branch still bails (e.g. missing game_state, no projectiles
+        # container) the cost is not refunded; this matches typical ARPG
+        # design where paying mana and missing is a player mistake.
         if mana_cost > 0:
             self.consume_mana(mana_cost)
         # ───────────────────────────────────────────────────────────────
