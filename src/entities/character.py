@@ -1842,7 +1842,7 @@ class Character:
                     player_center = self.get_center()
                     reflect_radius = 200.0
                     for enemy in list(game_state.enemies):
-                        enemy_center = enemy.get_center()
+                        enemy_center = enemy.get_rect().center
                         if player_center.distance_to(enemy_center) < reflect_radius:
                             enemy.take_damage(reflect_damage)
                             logger.info(f"Mystic Barrier reflected {reflect_damage} damage to {enemy.__class__.__name__}!")
@@ -1856,7 +1856,7 @@ class Character:
                 if game_state is not None and hasattr(game_state, "enemies"):
                     player_center = self.get_center()
                     for enemy in list(game_state.enemies):
-                        enemy_center = enemy.get_center()
+                        enemy_center = enemy.get_rect().center
                         distance = player_center.distance_to(enemy_center)
                         if distance < 200:
                             enemy.take_damage(self.static_field_damage)
