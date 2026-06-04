@@ -51,13 +51,9 @@ def _has_line_of_sight(start: pygame.Vector2, end: pygame.Vector2, obstacles: li
 
 
 def _rect_for_enemy(enemy: object, pos: pygame.Vector2) -> pygame.Rect:
-    hitbox_width = 40
-    hitbox_height = 20
     sprite_width = enemy.image.get_width()
     sprite_height = enemy.image.get_height()
-    offset_x = (sprite_width - hitbox_width) // 2
-    offset_y = sprite_height - hitbox_height
-    return pygame.Rect(int(pos.x + offset_x), int(pos.y + offset_y), hitbox_width, hitbox_height)
+    return pygame.Rect(int(pos.x), int(pos.y), sprite_width, sprite_height)
 
 
 def _is_clear(enemy: object, pos: pygame.Vector2, obstacles: list[pygame.Rect]) -> bool:

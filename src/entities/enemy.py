@@ -230,13 +230,7 @@ class Enemy:
         sprite_width = self.image.get_width()
         sprite_height = self.image.get_height()
 
-        hitbox_width = min(self.hitbox_width, sprite_width)
-        hitbox_height = min(self.hitbox_height, sprite_height)
-
-        offset_x = (sprite_width - hitbox_width) // 2
-        offset_y = sprite_height - hitbox_height
-
-        self.rect = pygame.Rect(int(self.pos.x + offset_x), int(self.pos.y + offset_y), hitbox_width, hitbox_height)
+        self.rect = pygame.Rect(int(self.pos.x), int(self.pos.y), sprite_width, sprite_height)
         return self.rect
 
     def add_effect(self, effect):
