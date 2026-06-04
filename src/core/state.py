@@ -17,6 +17,8 @@ class State:
     Methods:
         __init__(app):
             Initialize the state with a reference to the main app.
+        on_enter():
+            Called when this state becomes the active state.
         handle_event(event):
             Handle input events specific to the state.
         draw(screen):

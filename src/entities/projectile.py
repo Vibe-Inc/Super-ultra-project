@@ -26,6 +26,10 @@ class Arrow:
             Render color for the projectile.
         alive (bool):
             Whether the projectile should continue updating.
+        trail (list):
+            Position history for the visual trail effect.
+        trail_length (int):
+            Maximum number of trail points stored.
 
     Methods:
         __init__(pos, direction, speed, max_range, damage, color=(210, 180, 120)):
@@ -164,6 +168,16 @@ class ArcaneBolt:
             Render color for the projectile.
         alive (bool):
             Whether the projectile should continue updating.
+        trail (list):
+            Position history for the visual trail effect.
+        trail_length (int):
+            Maximum number of trail points stored.
+        animation_time (float):
+            Accumulated time for visual animations.
+        sparkle_particles (list):
+            Sparkle particle effects emitted during flight.
+        sigil_angle (float):
+            Current rotation angle for the orbiting sigil effect.
 
     Methods:
         __init__(pos, direction, speed, max_range, damage, burn_duration, burn_dps, color=(90, 150, 255)):
@@ -206,6 +220,8 @@ class ArcaneBolt:
         self.trail = []
         self.trail_length = 12
         self.animation_time = 0.0
+        self.sparkle_particles = []
+        self.sigil_angle = 0.0
 
     def _size(self):
         if abs(self.direction.x) >= abs(self.direction.y):
@@ -232,6 +248,22 @@ class ArcaneBolt:
         if len(self.trail) > self.trail_length:
             self.trail.pop(0)
 
+        self.sigil_angle += dt * 4.0
+
+        self.sparkle_particles.append({
+            "pos": pygame.Vector2(self.pos) + pygame.Vector2(random.uniform(-4, 4), random.uniform(-4, 4)),
+            "vel": pygame.Vector2(random.uniform(-3, 3), random.uniform(-3, 3)),
+            "life": random.uniform(0.2, 0.5),
+            "max_life": random.uniform(0.2, 0.5),
+            "size": random.uniform(1.0, 2.5),
+        })
+        for sp in self.sparkle_particles[:]:
+            sp["pos"] += sp["vel"] * dt
+            sp["vel"] *= 0.95
+            sp["life"] -= dt
+            if sp["life"] <= 0:
+                self.sparkle_particles.remove(sp)
+
         rect = self.get_rect()
         for wall in obstacles:
             if rect.colliderect(wall):
@@ -255,30 +287,89 @@ class ArcaneBolt:
         if camera_offset is None:
             camera_offset = pygame.Vector2(0, 0)
 
-        # Draw trail
-        for i, pos in enumerate(self.trail):
-            alpha = int(150 * (i / len(self.trail)))
-            radius = int(2 + 4 * (i / len(self.trail)))
-            t_surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
-            pygame.draw.circle(t_surf, (*self.color, alpha), (radius, radius), radius)
-            screen.blit(t_surf, (pos.x - radius - camera_offset.x, pos.y - radius - camera_offset.y))
+        cx = int(self.pos.x - camera_offset.x)
+        cy = int(self.pos.y - camera_offset.y)
+        t = self.animation_time
 
-        rect = self.get_rect()
-        rect.x -= int(camera_offset.x)
-        rect.y -= int(camera_offset.y)
-        
-        # Outer glow
-        pulse = (math.sin(self.animation_time * 15) + 1.0) * 0.5
-        glow_surf = pygame.Surface((rect.width + 12, rect.height + 12), pygame.SRCALPHA)
-        pygame.draw.ellipse(glow_surf, (*self.color, int(40 + 20 * pulse)), glow_surf.get_rect())
-        screen.blit(glow_surf, (rect.centerx - glow_surf.get_width()//2, rect.centery - glow_surf.get_height()//2))
-        
-        # Main body
-        pygame.draw.ellipse(screen, self.color, rect)
-        
-        # Core
-        core_rect = rect.inflate(-6, -4)
-        pygame.draw.ellipse(screen, (200, 220, 255), core_rect)
+        pulse = (math.sin(t * 12) + 1.0) * 0.5
+        hue_shift = (math.sin(t * 3.0) + 1.0) * 0.5
+
+        r = int(70 + 60 * hue_shift)
+        g = int(140 + 60 * (1 - hue_shift))
+        b = int(255 - 60 * hue_shift)
+        current_color = (r, g, b)
+
+        core_r_val = int(200 + 40 * (1 - hue_shift))
+        core_g_val = int(220 + 30 * (1 - hue_shift))
+        core_b_val = 255
+        core_color = (core_r_val, core_g_val, core_b_val)
+
+        for i, pos in enumerate(self.trail):
+            ratio = i / len(self.trail) if len(self.trail) > 0 else 0
+            if ratio <= 0:
+                continue
+            wobble = math.sin(t * 8 + i * 1.2) * 3
+            alpha = int(100 * ratio)
+            radius = int(2 + 5 * ratio)
+            tx = int(pos.x - camera_offset.x) + int(wobble)
+            ty = int(pos.y - camera_offset.y) + int(wobble * 0.5)
+            t_surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+            tr = int(r * (0.3 + 0.7 * ratio))
+            tg = int(g * (0.3 + 0.7 * ratio))
+            tb = int(b * (0.3 + 0.7 * ratio))
+            pygame.draw.circle(t_surf, (tr, tg, tb, alpha), (radius, radius), radius)
+            screen.blit(t_surf, (tx - radius, ty - radius))
+
+        for sp in self.sparkle_particles:
+            life_r = sp["life"] / sp["max_life"] if sp["max_life"] > 0 else 0
+            if life_r <= 0:
+                continue
+            alpha = int(180 * life_r)
+            size = max(1, int(sp["size"] * life_r))
+            sx = int(sp["pos"].x - camera_offset.x)
+            sy = int(sp["pos"].y - camera_offset.y)
+            glow_sz = size * 4
+            g_surf = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+            pygame.draw.circle(g_surf, (*core_color, alpha // 2), (glow_sz, glow_sz), glow_sz)
+            screen.blit(g_surf, (sx - glow_sz, sy - glow_sz))
+            pygame.draw.circle(screen, core_color, (sx, sy), size)
+
+        glow_size = int(14 + 6 * pulse)
+        glow_surf = pygame.Surface((glow_size * 2, glow_size * 2), pygame.SRCALPHA)
+        pygame.draw.circle(glow_surf, (*current_color, int(30 + 25 * pulse)), (glow_size, glow_size), glow_size)
+        screen.blit(glow_surf, (cx - glow_size, cy - glow_size))
+
+        ring_r = int(10 + 4 * pulse)
+        ring_a = int(40 + 30 * pulse)
+        pygame.draw.circle(screen, (*current_color, ring_a), (cx, cy), ring_r, 2)
+
+        sigil_count = 2
+        for i in range(sigil_count):
+            angle = self.sigil_angle + i * math.pi
+            s_dist = 12 + 3 * math.sin(t * 2 + i * 1.5)
+            sx = cx + int(math.cos(angle) * s_dist)
+            sy = cy + int(math.sin(angle) * s_dist)
+            s_size = 3
+            s_alpha = int(120 + 80 * math.sin(t * 5 + i * 2))
+            s_surf = pygame.Surface((s_size * 4, s_size * 4), pygame.SRCALPHA)
+            sr = (r + 255) // 2
+            sg = (g + 255) // 2
+            sb = (b + 255) // 2
+            points = [
+                (s_size * 2, 0),
+                (s_size * 2 + s_size, s_size * 2),
+                (s_size * 2, s_size * 4),
+                (s_size * 2 - s_size, s_size * 2),
+            ]
+            pygame.draw.polygon(s_surf, (sr, sg, sb, s_alpha), points)
+            screen.blit(s_surf, (sx - s_size * 2, sy - s_size * 2))
+
+        body_r = 7
+        pygame.draw.circle(screen, current_color, (cx, cy), body_r)
+        inner_r = max(1, int(body_r * 0.6))
+        pygame.draw.circle(screen, core_color, (cx, cy), inner_r)
+        core_r2 = max(1, int(inner_r * 0.5))
+        pygame.draw.circle(screen, (240, 245, 255), (cx, cy), core_r2)
 
 
 class Bomb:
@@ -318,6 +409,14 @@ class Bomb:
             Time spent in the explosion state.
         damage_applied (bool):
             Whether explosion damage has already been applied.
+        animation_time (float):
+            Accumulated time for visual animations.
+        spark_particles (list):
+            Fuse spark particle effects.
+        smoke_particles (list):
+            Smoke particle effects during explosion.
+        shrapnel_particles (list):
+            Shrapnel debris particles during explosion.
 
     Methods:
         __init__(pos, direction, speed, max_range, damage, blast_radius, fuse_time, knockback_force=0.0, explosion_duration=0.35, color=(220, 150, 60)):
@@ -370,6 +469,9 @@ class Bomb:
         self.explosion_timer = 0.0
         self.damage_applied = False
         self.animation_time = 0.0
+        self.spark_particles = []
+        self.smoke_particles = []
+        self.shrapnel_particles = []
 
     def _size(self):
         return 14, 14
@@ -386,6 +488,18 @@ class Bomb:
         self.exploding = True
         self.explosion_timer = 0.0
         self.damage_applied = False
+        self.shrapnel_particles = []
+        for _ in range(12):
+            angle = random.uniform(0, math.pi * 2)
+            speed = random.uniform(60, 200)
+            self.shrapnel_particles.append({
+                "pos": pygame.Vector2(self.pos),
+                "vel": pygame.Vector2(math.cos(angle), math.sin(angle)) * speed,
+                "size": random.uniform(2, 5),
+                "color": random.choice([(100, 85, 70), (140, 120, 100), (170, 150, 120)]),
+                "life": random.uniform(0.3, 0.6),
+                "max_life": random.uniform(0.3, 0.6),
+            })
 
     def _player_center(self, player):
         if player is None:
@@ -416,6 +530,15 @@ class Bomb:
                                 direction = pygame.Vector2(1, 0)
                             player.pos += direction.normalize() * self.knockback_force
                 self.damage_applied = True
+
+            for sp in self.shrapnel_particles[:]:
+                sp["pos"] += sp["vel"] * dt
+                sp["vel"] *= 0.9
+                sp["size"] *= 0.98
+                sp["life"] -= dt
+                if sp["life"] <= 0:
+                    self.shrapnel_particles.remove(sp)
+
             if self.explosion_timer >= self.explosion_duration:
                 self.alive = False
             return
@@ -424,6 +547,37 @@ class Bomb:
         self.pos += movement
         self.traveled += movement.length()
         self.timer += dt
+
+        self.spark_particles.append({
+            "pos": pygame.Vector2(self.pos) + pygame.Vector2(random.uniform(-3, 3), -random.uniform(3, 7)),
+            "vel": pygame.Vector2(random.uniform(-12, 12), -random.uniform(8, 25)),
+            "life": random.uniform(0.12, 0.3),
+            "max_life": random.uniform(0.12, 0.3),
+            "size": random.uniform(1.0, 2.5),
+            "color": random.choice([(255, 200, 50), (255, 140, 30), (255, 100, 20)]),
+        })
+        if random.random() < 0.25:
+            self.smoke_particles.append({
+                "pos": pygame.Vector2(self.pos) + pygame.Vector2(random.uniform(-2, 2), -2),
+                "vel": pygame.Vector2(random.uniform(-4, 4), -random.uniform(5, 12)),
+                "life": random.uniform(0.25, 0.5),
+                "max_life": random.uniform(0.25, 0.5),
+                "size": random.uniform(2.0, 4.0),
+            })
+
+        for p in self.spark_particles[:]:
+            p["pos"] += p["vel"] * dt
+            p["vel"] *= 0.9
+            p["life"] -= dt
+            if p["life"] <= 0:
+                self.spark_particles.remove(p)
+
+        for p in self.smoke_particles[:]:
+            p["pos"] += p["vel"] * dt
+            p["vel"] *= 0.95
+            p["life"] -= dt
+            if p["life"] <= 0:
+                self.smoke_particles.remove(p)
 
         rect = self.get_rect()
         for wall in obstacles:
@@ -440,45 +594,111 @@ class Bomb:
         if camera_offset is None:
             camera_offset = pygame.Vector2(0, 0)
 
+        cx = int(self.pos.x - camera_offset.x)
+        cy = int(self.pos.y - camera_offset.y)
+        t = self.animation_time
+
         if not self.exploding:
-            rect = self.get_rect()
-            rect.x -= int(camera_offset.x)
-            rect.y -= int(camera_offset.y)
-            
-            # Fuse glow
-            pulse = (math.sin(self.animation_time * 20) + 1.0) * 0.5
-            fuse_size = int(4 + 3 * pulse)
-            fuse_surf = pygame.Surface((fuse_size * 2, fuse_size * 2), pygame.SRCALPHA)
-            pygame.draw.circle(fuse_surf, (255, 50, 0, 200), (fuse_size, fuse_size), fuse_size)
-            screen.blit(fuse_surf, (rect.centerx - fuse_size, rect.top - fuse_size - 2))
-            
-            # Bomb body
-            pygame.draw.circle(screen, self.color, rect.center, rect.width // 2)
-            # Metal band
-            pygame.draw.rect(screen, (80, 80, 90), rect.inflate(-4, -4), border_radius=4)
-            # Highlight
-            pygame.draw.circle(screen, (255, 255, 255), (rect.centerx - 2, rect.centery - 2), 2)
+            body_r = 7
+
+            for p in self.smoke_particles:
+                life_r = p["life"] / p["max_life"] if p["max_life"] > 0 else 0
+                if life_r <= 0:
+                    continue
+                alpha = int(60 * life_r)
+                size = int(p["size"] * (1.0 + 0.5 * (1 - life_r)))
+                sx = int(p["pos"].x - camera_offset.x)
+                sy = int(p["pos"].y - camera_offset.y)
+                s_surf = pygame.Surface((size * 2, size * 2), pygame.SRCALPHA)
+                pygame.draw.circle(s_surf, (100, 95, 90, alpha), (size, size), size)
+                screen.blit(s_surf, (sx - size, sy - size))
+
+            for p in self.spark_particles:
+                life_r = p["life"] / p["max_life"] if p["max_life"] > 0 else 0
+                if life_r <= 0:
+                    continue
+                alpha = int(200 * life_r)
+                size = max(1, int(p["size"] * life_r))
+                sx = int(p["pos"].x - camera_offset.x)
+                sy = int(p["pos"].y - camera_offset.y)
+                glow = size * 3
+                g_surf = pygame.Surface((glow * 2, glow * 2), pygame.SRCALPHA)
+                r, gb, b = p["color"]
+                pygame.draw.circle(g_surf, (r, gb, b, alpha // 3), (glow, glow), glow)
+                screen.blit(g_surf, (sx - glow, sy - glow))
+                pygame.draw.circle(screen, p["color"], (sx, sy), size)
+
+            fuse_y = cy - body_r - 2
+            fuse_pulse = (math.sin(t * 25) + 1.0) * 0.5
+            glow_size = int(4 + 4 * fuse_pulse)
+            fg_surf = pygame.Surface((glow_size * 2, glow_size * 2), pygame.SRCALPHA)
+            pygame.draw.circle(fg_surf, (255, 120, 20, int(80 + 120 * fuse_pulse)), (glow_size, glow_size), glow_size)
+            screen.blit(fg_surf, (cx - glow_size, fuse_y - glow_size))
+            pygame.draw.line(screen, (70, 55, 40), (cx, cy - body_r), (cx, fuse_y), 2)
+
+            rot_off = math.cos(t * 4) * body_r * 0.35
+            pygame.draw.circle(screen, (55, 38, 22), (cx, cy), body_r)
+            pygame.draw.circle(screen, (85, 58, 35), (cx + int(rot_off * 0.5), cy), int(body_r * 0.8))
+            hx = cx + int(rot_off)
+            pygame.draw.circle(screen, (130, 90, 55), (hx, cy), int(body_r * 0.45))
+            pygame.draw.circle(screen, (180, 140, 95), (hx, cy), int(body_r * 0.2))
+
+            band_h = 3
+            band_rect = pygame.Rect(cx - body_r, cy - band_h // 2, body_r * 2, band_h)
+            pygame.draw.rect(screen, (95, 95, 105), band_rect, border_radius=1)
+            pygame.draw.rect(screen, (130, 130, 140), band_rect, 1, border_radius=1)
+
+            for i in range(3):
+                rx = cx + int((i - 1) * body_r * 0.55)
+                pygame.draw.circle(screen, (70, 70, 80), (rx, cy), 1)
+                pygame.draw.circle(screen, (150, 150, 160), (rx - 1, cy - 1), 1)
+
+            flame_y = fuse_y - 2
+            flame_r = max(1, int(2 + 1.5 * (0.5 + 0.5 * math.sin(t * 30 + 1))))
+            pygame.draw.circle(screen, (255, 220, 80), (cx, flame_y), flame_r)
+            pygame.draw.circle(screen, (255, 255, 220), (cx, flame_y), max(1, flame_r - 1))
             return
 
         progress = min(1.0, self.explosion_timer / self.explosion_duration)
         radius = int(self.blast_radius * progress)
         if radius <= 0:
             return
-            
-        # Outer smoke ring
-        smoke_alpha = int(100 * (1 - progress))
-        pygame.draw.circle(screen, (100, 100, 100, smoke_alpha), (int(self.pos.x - camera_offset.x), int(self.pos.y - camera_offset.y)), radius + 10, 5)
-        
-        # Main explosion
-        surface = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
-        # Outer orange
-        pygame.draw.circle(surface, (255, 150, 50, 150), (radius, radius), radius)
-        # Inner yellow
-        pygame.draw.circle(surface, (255, 220, 100, 200), (radius, radius), max(1, int(radius * 0.6)))
-        # Core white
-        pygame.draw.circle(surface, (255, 255, 240, 220), (radius, radius), max(1, int(radius * 0.2)))
-        
-        screen.blit(surface, (self.pos.x - radius - camera_offset.x, self.pos.y - radius - camera_offset.y))
+
+        smoke_r = radius + 12
+        smoke_alpha = int(60 * (1 - progress))
+        if smoke_alpha > 0:
+            smoke_surf = pygame.Surface((smoke_r * 2, smoke_r * 2), pygame.SRCALPHA)
+            pygame.draw.circle(smoke_surf, (90, 85, 80, smoke_alpha), (smoke_r, smoke_r), smoke_r, 5)
+            screen.blit(smoke_surf, (cx - smoke_r, cy - smoke_r))
+
+        ring_w = max(1, int(5 * (1 - progress)))
+        ring_a = int(200 * (1 - progress))
+        pygame.draw.circle(screen, (255, 180, 60, ring_a), (cx, cy), radius, ring_w)
+
+        exp_surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+        pygame.draw.circle(exp_surf, (255, 100, 20, int(160 * (1 - progress * 0.3))), (radius, radius), radius)
+        mid_r = max(1, int(radius * 0.65))
+        pygame.draw.circle(exp_surf, (255, 190, 50, int(200 * (1 - progress * 0.2))), (radius, radius), mid_r)
+        inner_r = max(1, int(radius * 0.35))
+        pygame.draw.circle(exp_surf, (255, 240, 140, int(230 * (1 - progress * 0.1))), (radius, radius), inner_r)
+        core_r = max(1, int(radius * 0.15))
+        pygame.draw.circle(exp_surf, (255, 255, 255, 240), (radius, radius), core_r)
+        screen.blit(exp_surf, (cx - radius, cy - radius))
+
+        for sp in self.shrapnel_particles:
+            life_r = sp["life"] / sp["max_life"] if sp["max_life"] > 0 else 0
+            if life_r <= 0:
+                continue
+            alpha = int(200 * life_r)
+            sx = int(sp["pos"].x - camera_offset.x)
+            sy = int(sp["pos"].y - camera_offset.y)
+            sz = max(1, int(sp["size"] * life_r))
+            sp_surf = pygame.Surface((sz * 2, sz * 2))
+            sp_surf.set_colorkey((0, 0, 0))
+            points = [(sz, 0), (sz * 2, sz), (sz, sz * 2), (0, sz)]
+            pygame.draw.polygon(sp_surf, sp["color"], points)
+            sp_surf.set_alpha(alpha)
+            screen.blit(sp_surf, (sx - sz, sy - sz))
 
 
 class Fireball:
@@ -486,6 +706,45 @@ class Fireball:
     Player fireball projectile that explodes on impact or after a short fuse.
 
     The explosion damages enemies in an area and can optionally knock them back.
+
+    Attributes:
+        pos (pygame.Vector2): Current position in world space.
+        direction (pygame.Vector2): Normalized movement direction.
+        speed (float): Movement speed in pixels per second.
+        max_range (float): Maximum travel distance before self-destruction.
+        damage (int): Damage dealt to enemies in the explosion.
+        blast_radius (float): Radius of the area-of-effect explosion.
+        fuse_time (float): Seconds before the fireball explodes automatically.
+        knockback_force (float): Force applied to enemies hit by the explosion.
+        explosion_duration (float): Duration of the explosion visual in seconds.
+        traveled (float): Distance the fireball has traveled so far.
+        timer (float): Elapsed time since creation.
+        color (tuple): RGB color of the fireball.
+        alive (bool): Whether the projectile is still active.
+        exploding (bool): Whether the explosion sequence has started.
+        explosion_timer (float): Elapsed time within the explosion phase.
+        damage_applied (bool): Whether explosion damage has already been applied.
+        animation_time (float): Accumulated time for visual animations.
+        trail (list): Position history for the visual trail effect.
+        trail_length (int): Maximum number of trail points stored.
+        ember_particles (list): Ember particle effects emitted during flight.
+        ember_spawn_timer (float): Accumulator controlling ember spawn rate.
+
+    Methods:
+        __init__(pos, direction, speed, max_range, damage, blast_radius, fuse_time, knockback_force=0.0, explosion_duration=0.35, color=(255, 120, 40)):
+            Initialize the fireball projectile with position, direction, and stats.
+        _size():
+            Return the visual base dimensions (width, height).
+        get_rect():
+            Return a collision rectangle centered on the current position.
+        _trigger_explosion():
+            Begin the explosion sequence.
+        _entity_center(entity):
+            Return the center position of a given entity.
+        update(dt, obstacles, enemies):
+            Update movement, trail, ember particles, obstacle collisions, and explosion logic.
+        draw(screen, camera_offset=None):
+            Render the fireball with trail, ember particles, and explosion effects.
     """
     def __init__(
         self,
@@ -525,7 +784,9 @@ class Fireball:
         # Visuals
         self.animation_time = 0.0
         self.trail = []
-        self.trail_length = 8
+        self.trail_length = 12
+        self.ember_particles = []
+        self.ember_spawn_timer = 0.0
 
     def _size(self):
         return 16, 16
@@ -588,6 +849,35 @@ class Fireball:
         if len(self.trail) > self.trail_length:
             self.trail.pop(0)
 
+        # Spawn ember particles during flight
+        self.ember_spawn_timer += dt
+        if self.ember_spawn_timer >= 0.02:
+            self.ember_spawn_timer = 0.0
+            perp = pygame.Vector2(-self.direction.y, self.direction.x)
+            for _ in range(2):
+                offset = perp * random.uniform(-8, 8) - self.direction * random.uniform(0, 15)
+                self.ember_particles.append({
+                    "pos": pygame.Vector2(self.pos) + offset,
+                    "vel": offset * random.uniform(0.5, 1.5) + pygame.Vector2(random.uniform(-10, 10), random.uniform(-10, 10)),
+                    "life": random.uniform(0.15, 0.35),
+                    "max_life": random.uniform(0.15, 0.35),
+                    "size": random.uniform(1.5, 3.5),
+                    "color": random.choice([
+                        (255, 200, 80),
+                        (255, 150, 40),
+                        (255, 100, 20),
+                        (255, 220, 100),
+                    ]),
+                })
+
+        # Update ember particles
+        for e in self.ember_particles[:]:
+            e["pos"] += e["vel"] * dt
+            e["vel"] *= 0.95
+            e["life"] -= dt
+            if e["life"] <= 0:
+                self.ember_particles.remove(e)
+
         rect = self.get_rect()
         for wall in obstacles:
             if rect.colliderect(wall):
@@ -604,32 +894,78 @@ class Fireball:
             camera_offset = pygame.Vector2(0, 0)
 
         if not self.exploding:
-            # Draw trail
+            cx = int(self.pos.x - camera_offset.x)
+            cy = int(self.pos.y - camera_offset.y)
+            t = self.animation_time
+
+            # ── Draw ember particles ──
+            for e in self.ember_particles:
+                life_r = e["life"] / e["max_life"] if e["max_life"] > 0 else 0
+                if life_r <= 0:
+                    continue
+                e_alpha = int(200 * life_r)
+                e_size = max(1, int(e["size"] * life_r))
+                ex = int(e["pos"].x - camera_offset.x)
+                ey = int(e["pos"].y - camera_offset.y)
+                eg_sz = e_size * 3
+                eg = pygame.Surface((eg_sz * 2, eg_sz * 2), pygame.SRCALPHA)
+                r, g, b = e["color"]
+                pygame.draw.circle(eg, (r, g, b, e_alpha // 3), (eg_sz, eg_sz), eg_sz)
+                screen.blit(eg, (ex - eg_sz, ey - eg_sz))
+                pygame.draw.circle(screen, e["color"], (ex, ey), e_size)
+
+            # ── Draw trail ──
             for i, pos in enumerate(self.trail):
-                alpha = int(100 * (i / len(self.trail)))
-                radius = int(4 + 4 * (i / len(self.trail)))
+                ratio = i / len(self.trail) if len(self.trail) > 0 else 0
+                alpha = int(80 * ratio)
+                radius = int(3 + 5 * ratio)
                 t_surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
-                pygame.draw.circle(t_surf, (*self.color[:3], alpha), (radius, radius), radius)
+                # Gradient from orange to yellow
+                trail_color = (
+                    int(255 * (0.4 + 0.6 * ratio)),
+                    int(120 * ratio),
+                    int(20 * ratio),
+                )
+                pygame.draw.circle(t_surf, (*trail_color, alpha), (radius, radius), radius)
                 screen.blit(t_surf, (pos.x - radius - camera_offset.x, pos.y - radius - camera_offset.y))
 
-            # Draw main fireball
-            rect = self.get_rect()
-            rect.x -= int(camera_offset.x)
-            rect.y -= int(camera_offset.y)
-            
-            # Outer glow
-            pulse = (math.sin(self.animation_time * 10) + 1.0) * 0.5
-            glow_size = int(rect.width * (1.2 + 0.2 * pulse))
+            # ── Draw main fireball ──
+            pulse = (math.sin(t * 12) + 1.0) * 0.5
+            fast_pulse = (math.sin(t * 20) + 1.0) * 0.5
+
+            # Outer glow (large, soft)
+            glow_size = int(18 + 8 * pulse)
             glow_surf = pygame.Surface((glow_size * 2, glow_size * 2), pygame.SRCALPHA)
-            pygame.draw.circle(glow_surf, (*self.color, 60), (glow_size, glow_size), glow_size)
-            screen.blit(glow_surf, (rect.centerx - glow_size, rect.centery - glow_size))
-            
-            # Core
-            pygame.draw.circle(screen, (255, 240, 200), rect.center, rect.width // 2 - 2)
-            pygame.draw.circle(screen, self.color, rect.center, rect.width // 2)
-            
-            # Inner bright spot
-            pygame.draw.circle(screen, (255, 255, 255), rect.center, max(2, rect.width // 4), 1)
+            outer_glow_a = int(50 + 30 * pulse)
+            pygame.draw.circle(glow_surf, (255, 100, 20, outer_glow_a), (glow_size, glow_size), glow_size)
+            pygame.draw.circle(glow_surf, (255, 200, 60, int(outer_glow_a * 0.5)), (glow_size, glow_size), int(glow_size * 0.6))
+            screen.blit(glow_surf, (cx - glow_size, cy - glow_size))
+
+            # Fireball body — outer ring
+            body_r = 8 + 2 * fast_pulse
+            pygame.draw.circle(screen, (255, 60, 10), (cx, cy), int(body_r))
+            # Mid layer
+            mid_r = int(body_r * 0.75)
+            pygame.draw.circle(screen, (255, 160, 30), (cx, cy), mid_r)
+            # Bright core
+            core_r = int(body_r * 0.45)
+            core_pulse = 0.8 + 0.2 * math.sin(t * 25)
+            pygame.draw.circle(screen, (255, 240, 180), (cx, cy), int(core_r * core_pulse))
+            # Hot center
+            center_r = int(core_r * 0.5)
+            pygame.draw.circle(screen, (255, 255, 255), (cx, cy), max(1, center_r))
+
+            # ── Flame flicker spikes ──
+            for i in range(6):
+                angle = t * 15 + i * (math.pi * 2 / 6)
+                spike_len = 3 + 5 * (0.5 + 0.5 * math.sin(t * 18 + i * 2.5))
+                sx = cx + int(math.cos(angle) * body_r)
+                sy = cy + int(math.sin(angle) * body_r)
+                ex = cx + int(math.cos(angle) * (body_r + spike_len))
+                ey = cy + int(math.sin(angle) * (body_r + spike_len))
+                spike_alpha = int(150 + 80 * math.sin(t * 22 + i * 3))
+                pygame.draw.line(screen, (255, 200 + i * 10, 50, spike_alpha), (sx, sy), (ex, ey),
+                                 max(1, int(2 + math.sin(t * 12 + i * 2))))
             return
 
         # Explosion visuals
@@ -637,18 +973,68 @@ class Fireball:
         radius = int(self.blast_radius * progress)
         if radius <= 0:
             return
-            
-        # Shockwave ring
-        ring_alpha = int(255 * (1 - progress))
-        pygame.draw.circle(screen, (255, 200, 100), (int(self.pos.x - camera_offset.x), int(self.pos.y - camera_offset.y)), radius, 3)
-        
-        # Inner fire
+
+        cx = int(self.pos.x - camera_offset.x)
+        cy = int(self.pos.y - camera_offset.y)
+
+        # ── Outer smoke ring ──
+        smoke_radius = radius + 15
+        smoke_alpha = int(40 * (1 - progress))
+        if smoke_alpha > 0:
+            smoke_surf = pygame.Surface((smoke_radius * 2, smoke_radius * 2), pygame.SRCALPHA)
+            pygame.draw.circle(smoke_surf, (80, 60, 40, smoke_alpha), (smoke_radius, smoke_radius), smoke_radius, 6)
+            screen.blit(smoke_surf, (cx - smoke_radius, cy - smoke_radius))
+
+        # ── Shockwave ring (fast expanding) ──
+        ring_width = max(1, int(6 * (1 - progress)))
+        ring_alpha = int(220 * (1 - progress))
+        pygame.draw.circle(screen, (255, 200, 80, ring_alpha), (cx, cy), radius, ring_width)
+        # Inner shockwave echo
+        if progress < 0.6:
+            echo_radius = int(radius * 0.6)
+            echo_alpha = int(160 * (1 - progress * 1.5))
+            pygame.draw.circle(screen, (255, 240, 160, echo_alpha), (cx, cy), echo_radius, max(1, ring_width - 1))
+
+        # ── Fireball burst layers ──
         surface = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
-        inner_alpha = int(180 * (1 - progress))
-        pygame.draw.circle(surface, (255, 100, 20, inner_alpha), (radius, radius), radius)
-        pygame.draw.circle(surface, (255, 240, 100, int(inner_alpha * 0.6)), (radius, radius), max(1, radius // 2))
-        
-        screen.blit(surface, (self.pos.x - radius - camera_offset.x, self.pos.y - radius - camera_offset.y))
+
+        # Outer flame
+        outer_alpha = int(150 * (1 - progress * 0.4))
+        pygame.draw.circle(surface, (255, 80, 10, outer_alpha), (radius, radius), radius)
+
+        # Mid flame
+        mid_r = max(1, int(radius * 0.7))
+        mid_alpha = int(200 * (1 - progress * 0.3))
+        pygame.draw.circle(surface, (255, 180, 40, mid_alpha), (radius, radius), mid_r)
+
+        # Inner bright core
+        inner_r = max(1, int(radius * 0.35))
+        inner_alpha = int(240 * (1 - progress * 0.2))
+        pygame.draw.circle(surface, (255, 240, 160, inner_alpha), (radius, radius), inner_r)
+
+        # White hot center
+        center_r = max(1, int(radius * 0.15))
+        pygame.draw.circle(surface, (255, 255, 255, inner_alpha), (radius, radius), center_r)
+
+        screen.blit(surface, (cx - radius, cy - radius))
+
+        # ── Explosion debris particles ──
+        import random as _rnd
+        if not hasattr(self, "_debris"):
+            self._debris = []
+        if progress < 0.4:
+            for _ in range(int(6 * (1 - progress * 2.5))):
+                angle = _rnd.uniform(0, math.pi * 2)
+                dist = _rnd.uniform(radius * 0.3, radius * 0.9)
+                d_alpha = int(180 * (1 - progress))
+                d_size = _rnd.randint(2, 4)
+                d_color = _rnd.choice([(255, 200, 60, d_alpha), (255, 140, 30, d_alpha),
+                                       (255, 100, 10, d_alpha)])
+                dx = cx + math.cos(angle) * dist
+                dy = cy + math.sin(angle) * dist
+                d_surf = pygame.Surface((d_size * 2, d_size * 2), pygame.SRCALPHA)
+                pygame.draw.circle(d_surf, d_color, (d_size, d_size), d_size)
+                screen.blit(d_surf, (int(dx - d_size), int(dy - d_size)))
 
 
 class FrostNova:
@@ -664,6 +1050,22 @@ class FrostNova:
         expansion_time (float): Current expansion time.
         expansion_duration (float): How long the visual expansion lasts.
         current_radius (float): Current visual radius.
+        damage_applied (bool): Whether damage and freeze have been applied.
+        animation_time (float): Accumulated time for visual animations.
+        shards (list): Ice shard particles for the visual effect.
+        mist (list): Frost mist particles for the visual effect.
+
+    Methods:
+        __init__(pos, radius, freeze_duration, damage=0, expansion_duration=0.5):
+            Initialize the frost nova with position, radius, and freeze parameters.
+        get_rect():
+            Return a rectangle encompassing the full nova radius.
+        _spawn_burst_particles():
+            Spawn ice shard and mist particles at burst time.
+        update(dt, obstacles, enemies):
+            Expand the nova, damage and freeze enemies, update particles.
+        draw(screen, camera_offset=None):
+            Render the frost nova with ice ring, shards, mist, and sparkles.
     """
     def __init__(self, pos, radius, freeze_duration, damage=0, expansion_duration=0.5):
         self.pos = pygame.Vector2(pos)
@@ -676,12 +1078,42 @@ class FrostNova:
         self.current_radius = 0.0
         self.damage_applied = False
         self.animation_time = 0.0
+        self.shards = []
+        self.mist = []
 
     def get_rect(self):
         size = int(self.radius * 2)
         rect = pygame.Rect(0, 0, size, size)
         rect.center = (int(self.pos.x), int(self.pos.y))
         return rect
+
+    def _spawn_burst_particles(self):
+        for _ in range(20):
+            angle = random.uniform(0, math.pi * 2)
+            speed = random.uniform(60, 200)
+            self.shards.append({
+                "pos": pygame.Vector2(self.pos),
+                "vel": pygame.Vector2(math.cos(angle), math.sin(angle)) * speed,
+                "max_life": (ml := random.uniform(0.2, 0.5)),
+                "life": ml,
+                "size": random.uniform(2.0, 5.0),
+                "rotation": random.uniform(0, math.pi * 2),
+                "rot_speed": random.uniform(-4, 4),
+                "color": random.choice([
+                    (200, 240, 255), (160, 210, 255),
+                    (220, 250, 255), (180, 220, 255),
+                ]),
+            })
+        for _ in range(12):
+            angle = random.uniform(0, math.pi * 2)
+            speed = random.uniform(20, 60)
+            self.mist.append({
+                "pos": pygame.Vector2(self.pos),
+                "vel": pygame.Vector2(math.cos(angle), math.sin(angle)) * speed + pygame.Vector2(0, -15),
+                "max_life": (ml := random.uniform(0.3, 0.7)),
+                "life": ml,
+                "size": random.uniform(4.0, 8.0),
+            })
 
     def update(self, dt, obstacles, enemies):
         if not self.alive:
@@ -693,6 +1125,7 @@ class FrostNova:
         self.current_radius = self.radius * progress
 
         if not self.damage_applied and progress >= 0.3:
+            self._spawn_burst_particles()
             for enemy in enemies:
                 if enemy.is_dead():
                     continue
@@ -703,6 +1136,21 @@ class FrostNova:
                         enemy.take_damage(self.damage)
                     enemy.add_effect(FreezeEffect(self.freeze_duration))
             self.damage_applied = True
+
+        for s in self.shards[:]:
+            s["pos"] += s["vel"] * dt
+            s["vel"] *= 0.93
+            s["rotation"] += s["rot_speed"] * dt
+            s["life"] -= dt
+            if s["life"] <= 0:
+                self.shards.remove(s)
+
+        for m in self.mist[:]:
+            m["pos"] += m["vel"] * dt
+            m["vel"] *= 0.96
+            m["life"] -= dt
+            if m["life"] <= 0:
+                self.mist.remove(m)
 
         if self.expansion_time >= self.expansion_duration:
             self.alive = False
@@ -715,9 +1163,26 @@ class FrostNova:
         cy = int(self.pos.y - camera_offset.y)
         progress = min(1.0, self.expansion_time / self.expansion_duration)
         radius = int(self.current_radius)
+        t = self.animation_time
 
         if radius <= 0:
             return
+
+        # ── Ground frost pattern ──
+        frost_pts = []
+        for i in range(12):
+            fa = t * 0.3 + i * (math.pi * 2 / 12)
+            fd = radius * (0.7 + 0.3 * math.sin(t * 2 + i * 1.5))
+            fx = cx + math.cos(fa) * fd
+            fy = cy + math.sin(fa) * fd
+            frost_pts.append((fx, fy))
+        frost_surf = pygame.Surface((radius * 2 + 10, radius * 2 + 10), pygame.SRCALPHA)
+        fro = radius + 5
+        rel_frost = [(p[0] - cx + fro, p[1] - cy + fro) for p in frost_pts]
+        frost_alpha = int(60 * (1 - progress))
+        pygame.draw.polygon(frost_surf, (180, 220, 255, frost_alpha), rel_frost)
+        pygame.draw.polygon(frost_surf, (200, 235, 255, frost_alpha), rel_frost, 1)
+        screen.blit(frost_surf, (cx - fro, cy - fro))
 
         # ── Outer frost ring shockwave ──
         ring_alpha = int(200 * (1 - progress))
@@ -733,11 +1198,46 @@ class FrostNova:
         inner_r = max(1, int(radius * 0.3))
         inner_alpha = int(200 * (1 - progress * 0.2))
         pygame.draw.circle(surface, (200, 235, 255, inner_alpha), (radius, radius), inner_r)
-
         screen.blit(surface, (cx - radius, cy - radius))
 
+        # ── Frost mist ──
+        for m in self.mist:
+            life_r = min(1.0, m["life"] / m["max_life"]) if m["max_life"] > 0 else 0
+            if life_r <= 0:
+                continue
+            mx = int(m["pos"].x - camera_offset.x)
+            my = int(m["pos"].y - camera_offset.y)
+            mist_alpha = int(80 * life_r)
+            mist_size = max(1, int(m["size"] * (0.5 + 0.5 * life_r)))
+            ms = pygame.Surface((mist_size * 2, mist_size * 2), pygame.SRCALPHA)
+            pygame.draw.circle(ms, (200, 230, 255, mist_alpha), (mist_size, mist_size), mist_size)
+            screen.blit(ms, (mx - mist_size, my - mist_size))
+
+        # ── Ice shards ──
+        for s in self.shards:
+            life_r = min(1.0, s["life"] / s["max_life"]) if s["max_life"] > 0 else 0
+            if life_r <= 0:
+                continue
+            sx = int(s["pos"].x - camera_offset.x)
+            sy = int(s["pos"].y - camera_offset.y)
+            shard_alpha = int(220 * life_r)
+            shard_size = max(1, int(s["size"] * life_r))
+            r, g, b = s["color"]
+            rot = s.get("rotation", 0)
+            # Diamond shard
+            pts = []
+            for j in range(4):
+                sa = rot + j * (math.pi * 2 / 4)
+                sd = shard_size * (1.5 if j % 2 == 0 else 0.7)
+                pts.append((sx + math.cos(sa) * sd, sy + math.sin(sa) * sd))
+            shard_surf = pygame.Surface((int(shard_size * 3), int(shard_size * 3)), pygame.SRCALPHA)
+            soff = shard_size * 1.5
+            rel = [(p[0] - sx + soff, p[1] - sy + soff) for p in pts]
+            pygame.draw.polygon(shard_surf, (r, g, b, shard_alpha), rel)
+            pygame.draw.polygon(shard_surf, (min(255, r + 40), min(255, g + 40), 255, shard_alpha), rel, 1)
+            screen.blit(shard_surf, (sx - soff, sy - soff))
+
         # ── Ice crystal sparkles ──
-        import random
         for _ in range(int(6 * (1 - progress) + 2)):
             sp_angle = random.uniform(0, math.pi * 2)
             sp_dist = random.uniform(0, radius)
@@ -761,6 +1261,40 @@ class GlacialCascade:
     A wide ice wave that cascades forward in a spreading fan, damaging and freezing
     all enemies it passes through. The wave grows wider as it travels, with visuals
     of multiple ice shards, frost mist, and a ground frost trail.
+
+    Attributes:
+        pos (pygame.Vector2): Current position in world space.
+        direction (pygame.Vector2): Normalized movement direction.
+        speed (float): Movement speed in pixels per second.
+        max_range (float): Maximum travel distance before destruction.
+        damage (int): Damage dealt to enemies on hit.
+        freeze_duration (float): How long enemies stay frozen.
+        base_width (float): Base width of the cascade fan.
+        color (tuple): RGB color of the ice effect.
+        alive (bool): Whether the cascade is still active.
+        traveled (float): Distance traveled so far.
+        animation_time (float): Accumulated time for visual animations.
+        hit_cooldowns (dict): Per-enemy ID cooldown timers for repeated hits.
+        frost_particles (list): Frost mist particle effects emitted by the wave.
+        ground_trail (list): Ground frost trail hexagonal shapes.
+        ice_splinters (list): Ice splinter particles flung from the leading edge.
+
+    Methods:
+        __init__(pos, direction, speed, max_range, damage, freeze_duration, cascade_width=80.0, color=(80, 180, 255)):
+            Initialize the glacial cascade with position, direction, and stats.
+        cascade_width (property):
+            Current width of the cascade fan based on travel progress.
+        _get_wedge_points():
+            Return the three corner points (tip, back-left, back-right) of the cascade wedge.
+        get_rect():
+            Return a bounding rectangle of the cascade wedge.
+        update(dt, obstacles, enemies):
+            Move the cascade, spawn frost particles, ice splinters, and ground trail, and
+            damage/freeze enemies within the wedge area.
+        _damage_enemies(enemies):
+            Apply damage and freeze effect to enemies within the cascade wedge.
+        draw(screen, camera_offset=None):
+            Render the cascade with ice shards, frost mist, ground trail, and wedge outline.
     """
     def __init__(self, pos, direction, speed, max_range, damage, freeze_duration,
                  cascade_width=80.0, color=(80, 180, 255)):
@@ -783,6 +1317,7 @@ class GlacialCascade:
         self.hit_cooldowns = {}
         self.frost_particles = []
         self.ground_trail = []
+        self.ice_splinters = []
 
     @property
     def cascade_width(self):
@@ -812,30 +1347,63 @@ class GlacialCascade:
         movement = self.direction * self.speed * dt
         self.pos += movement
         self.traveled += movement.length()
-
-        # Ground frost trail
+        cw = self.cascade_width
         perp = pygame.Vector2(-self.direction.y, self.direction.x)
-        for _ in range(2):
-            offset = random.uniform(-self.cascade_width * 0.3, self.cascade_width * 0.3)
-            tp = self.pos + perp * offset - self.direction * random.uniform(0, 25)
-            self.ground_trail.append((tp, self.animation_time))
-        while len(self.ground_trail) > 40:
+
+        # Ground frost trail - hexagon shapes
+        for _ in range(3):
+            offset = random.uniform(-cw * 0.35, cw * 0.35)
+            tp = self.pos + perp * offset - self.direction * random.uniform(0, 30)
+            life = random.uniform(0.3, 0.6)
+            self.ground_trail.append({
+                "pos": tp, "life": life, "max_life": life,
+                "size": random.uniform(3.0, 7.0),
+                "rotation": random.uniform(0, math.pi * 2),
+            })
+        while len(self.ground_trail) > 60:
             self.ground_trail.pop(0)
+        for gt in self.ground_trail:
+            gt["life"] -= dt
+        self.ground_trail = [gt for gt in self.ground_trail if gt["life"] > 0]
 
         # Frost mist particles
-        if random.random() < 0.5:
-            off = random.uniform(-self.cascade_width * 0.4, self.cascade_width * 0.4)
-            pp = self.pos + perp * off + self.direction * random.uniform(-20, 10)
+        if random.random() < 0.7:
+            off = random.uniform(-cw * 0.45, cw * 0.45)
+            pp = self.pos + perp * off + self.direction * random.uniform(-25, 15)
+            life = random.uniform(0.4, 0.9)
             self.frost_particles.append({
-                "pos": pp, "life": random.uniform(0.3, 0.7), "max_life": 0.7,
-                "size": random.randint(3, 6),
-                "vel": perp * random.uniform(-15, 15) - self.direction * random.uniform(5, 20),
+                "pos": pp, "life": life, "max_life": life,
+                "size": random.randint(2, 5),
+                "vel": perp * random.uniform(-20, 20) - self.direction * random.uniform(5, 25),
+                "rise": random.uniform(-10, -5),
             })
         for p in self.frost_particles[:]:
             p["pos"] += p["vel"] * dt
+            p["pos"].y += p["rise"] * dt
             p["life"] -= dt
             if p["life"] <= 0:
                 self.frost_particles.remove(p)
+
+        # Ice splinters flung from leading edge
+        if random.random() < 0.4:
+            spread_frac = random.uniform(-0.8, 0.8)
+            off = spread_frac * cw * 0.3
+            sp = self.pos + perp * off + self.direction * random.uniform(10, 30)
+            life = random.uniform(0.2, 0.5)
+            self.ice_splinters.append({
+                "pos": sp, "life": life, "max_life": life,
+                "vel": (self.direction * random.uniform(50, 150)
+                        + perp * random.uniform(-40, 40)),
+                "size": random.uniform(1.5, 4.0),
+                "rotation": random.uniform(0, math.pi * 2),
+                "rot_speed": random.uniform(-4, 4),
+            })
+        for s in self.ice_splinters[:]:
+            s["pos"] += s["vel"] * dt
+            s["life"] -= dt
+            s["rotation"] += s["rot_speed"] * dt
+            if s["life"] <= 0:
+                self.ice_splinters.remove(s)
 
         # Damage enemies in cascade area
         self._damage_enemies(enemies)
@@ -864,7 +1432,6 @@ class GlacialCascade:
             lateral = to_enemy - self.direction * forward_dist
             if lateral.length_squared() > half_w * half_w:
                 continue
-            # Re-hit cooldown ~0.25s
             last = self.hit_cooldowns.get(eid, -999.0)
             if self.animation_time - last < 0.25:
                 continue
@@ -879,74 +1446,158 @@ class GlacialCascade:
         ox, oy = camera_offset.x, camera_offset.y
         t = self.animation_time
         perp = pygame.Vector2(-self.direction.y, self.direction.x)
+        cw = self.cascade_width
 
-        # Ground frost trail
-        for i, (tp, _) in enumerate(self.ground_trail):
-            alpha = int(60 * (i / len(self.ground_trail)))
-            r = int(2 + 5 * (i / len(self.ground_trail)))
-            surf = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
-            pygame.draw.circle(surf, (*self.color[:3], alpha), (r, r), r)
-            screen.blit(surf, (tp.x - r - ox, tp.y - r - oy))
+        # Ground frost trail - hexagonal crystal shapes
+        for gt in self.ground_trail:
+            lr = min(1.0, gt["life"] / gt["max_life"]) if gt["max_life"] > 0 else 0
+            if lr <= 0:
+                continue
+            gx = gt["pos"].x - ox
+            gy = gt["pos"].y - oy
+            sz = gt["size"] * lr
+            alpha = int(50 * lr)
+            hex_pts = []
+            for hv in range(6):
+                ha = gt["rotation"] + hv * math.pi / 3
+                hex_pts.append((gx + math.cos(ha) * sz, gy + math.sin(ha) * sz))
+            if sz > 1:
+                hs = pygame.Surface((int(sz * 2.5), int(sz * 2.5)), pygame.SRCALPHA)
+                hcx = hcy = int(sz * 1.25)
+                hex_local = [(hcx + (px - gx), hcy + (py - gy)) for px, py in hex_pts]
+                pygame.draw.polygon(hs, (120, 180, 255, alpha), hex_local, 1)
+                screen.blit(hs, (gx - sz * 1.25, gy - sz * 1.25))
 
         # Frost mist
         for p in self.frost_particles:
-            lr = p["life"] / p["max_life"]
-            alpha = int(80 * lr)
+            lr = min(1.0, p["life"] / p["max_life"]) if p["max_life"] > 0 else 0
+            if lr <= 0:
+                continue
+            alpha = int(100 * lr)
             sz = int(p["size"] * (0.5 + 0.5 * lr))
             surf = pygame.Surface((sz * 2, sz * 2), pygame.SRCALPHA)
-            pygame.draw.circle(surf, (200, 230, 255, alpha), (sz, sz), sz)
+            pygame.draw.circle(surf, (180, 220, 255, alpha), (sz, sz), sz)
             screen.blit(surf, (p["pos"].x - sz - ox, p["pos"].y - sz - oy))
 
-        # Cascade wedge/crescent
+        # Ice splinters
+        for s in self.ice_splinters:
+            lr = min(1.0, s["life"] / s["max_life"]) if s["max_life"] > 0 else 0
+            if lr <= 0:
+                continue
+            sx = s["pos"].x - ox
+            sy = s["pos"].y - oy
+            sz = s["size"] * (0.3 + 0.7 * lr)
+            alpha = int(200 * lr)
+            pts = [
+                (sx, sy - sz),
+                (sx + sz * 0.4, sy - sz * 0.1),
+                (sx + sz * 0.1, sy + sz * 0.3),
+                (sx - sz * 0.3, sy + sz * 0.2),
+            ]
+            ca = math.cos(s["rotation"])
+            sa = math.sin(s["rotation"])
+            cx_ = sx
+            cy_ = sy
+            rpts = []
+            for rpx, rpy in pts:
+                dx = rpx - cx_
+                dy = rpy - cy_
+                rpts.append((cx_ + dx * ca - dy * sa, cy_ + dx * sa + dy * ca))
+            pygame.draw.polygon(screen, (180, 220, 255, alpha), rpts)
+
+        # Cascade wedge
         tip, bl, br = self._get_wedge_points()
         tip_s = (tip.x - ox, tip.y - oy)
         bl_s = (bl.x - ox, bl.y - oy)
         br_s = (br.x - ox, br.y - oy)
         pulse = (math.sin(t * 10) + 1.0) * 0.5
-        alpha = int(70 + 50 * pulse)
-
-        # Wedge fill and outline
         wedge_pts = [tip_s, bl_s, br_s]
-        if len(wedge_pts) >= 3:
-            wedge_surf = pygame.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
-            pygame.draw.polygon(wedge_surf, (*self.color[:3], alpha // 2), wedge_pts)
-            pygame.draw.polygon(wedge_surf, (*self.color[:3], alpha), wedge_pts, 2)
-            screen.blit(wedge_surf, (0, 0))
 
-        # Multiple ice shards within the cascade
-        num_shards = 9
+        # Layered wedge: outer (dark blue), mid (ice blue), inner (white)
+        wedge_surf = pygame.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
+        # Outer layer
+        pygame.draw.polygon(wedge_surf, (40, 100, 180, int(35 + 20 * pulse)), wedge_pts)
+        # Mid layer (inset)
+        mid_pts = [
+            (tip_s[0] * 0.5 + bl_s[0] * 0.5, tip_s[1] * 0.5 + bl_s[1] * 0.5),
+            (tip_s[0] * 0.5 + br_s[0] * 0.5, tip_s[1] * 0.5 + br_s[1] * 0.5),
+        ]
+        mid_bl = (bl_s[0] * 0.7 + tip_s[0] * 0.3, bl_s[1] * 0.7 + tip_s[1] * 0.3)
+        mid_br = (br_s[0] * 0.7 + tip_s[0] * 0.3, br_s[1] * 0.7 + tip_s[1] * 0.3)
+        pygame.draw.polygon(wedge_surf, (120, 200, 255, int(50 + 30 * pulse)),
+                            [tip_s, mid_bl, mid_br])
+        # Outline
+        pygame.draw.polygon(wedge_surf, (180, 230, 255, int(120 + 60 * pulse)), wedge_pts, 2)
+        screen.blit(wedge_surf, (0, 0))
+
+        # Jagged ice edge lines along sides
+        for side, sign in [(bl_s, 1), (br_s, -1)]:
+            for j in range(6):
+                jfrac = j / 5.0
+                jx = tip_s[0] + (side[0] - tip_s[0]) * jfrac
+                jy = tip_s[1] + (side[1] - tip_s[1]) * jfrac
+                jitter = 4 + 6 * math.sin(t * 15 + j * 3.0 + sign * 2.0)
+                jnx = jx + perp.x * jitter * sign
+                jny = jy + perp.y * jitter * sign
+                alpha_j = int(100 + 80 * math.sin(t * 12 + j * 1.5))
+                pygame.draw.line(screen, (160, 220, 255, alpha_j),
+                                 (jx, jy), (jnx, jny), max(1, int(2 + math.sin(t * 8 + j * 2) * 1)))
+
+        # Multiple ice shards within the cascade - diamonds + hexagons mixed
+        num_shards = 11
         for i in range(num_shards):
             frac = i / (num_shards - 1) if num_shards > 1 else 0.5
-            spread = (frac - 0.5) * self.cascade_width * 0.75
-            depth = 15 - frac * 25
+            spread = (frac - 0.5) * cw * 0.8
+            depth = 20 - frac * 28
             spos = self.pos + perp * spread - self.direction * depth
             ssx, ssy = spos.x - ox, spos.y - oy
-            spulse = (math.sin(t * 15 + i * 2.5) + 1.0) * 0.5
-            sz = 3 + 4 * (1 - abs(frac - 0.5) * 2)
-            pts = [
-                (ssx, ssy - sz * (0.4 + 0.3 * spulse)),
-                (ssx + sz * 0.35, ssy),
-                (ssx, ssy + sz * 0.35),
-                (ssx - sz * 0.35, ssy),
-            ]
-            pygame.draw.polygon(screen, (170, 210, 255), pts)
-            pygame.draw.polygon(screen, (210, 235, 255), pts, 1)
+            spulse = (math.sin(t * 12 + i * 2.2) + 1.0) * 0.5
+            sz = 3 + 5 * (1 - abs(frac - 0.5) * 2)
 
-        # Central bright core
+            if i % 3 == 0:
+                # Hexagonal crystal
+                hex_pts = []
+                for hv in range(6):
+                    ha = t * 2 + i * 1.2 + hv * math.pi / 3
+                    hex_pts.append(
+                        (ssx + math.cos(ha) * sz, ssy + math.sin(ha) * sz))
+                pygame.draw.polygon(screen, (120, 195, 255, 180), hex_pts)
+                pygame.draw.polygon(screen, (180, 230, 255, 220), hex_pts, 1)
+            else:
+                # Diamond shard
+                ds = sz * (0.5 + 0.3 * spulse)
+                pts = [
+                    (ssx, ssy - ds * 1.2),
+                    (ssx + ds * 0.6, ssy),
+                    (ssx, ssy + ds * 0.8),
+                    (ssx - ds * 0.6, ssy),
+                ]
+                pygame.draw.polygon(screen, (150, 210, 255), pts)
+                pygame.draw.polygon(screen, (200, 235, 255), pts, 1)
+
+        # Central bright core with inner glow
         cx = (tip_s[0] + bl_s[0] + br_s[0]) // 3
         cy = (tip_s[1] + bl_s[1] + br_s[1]) // 3
-        cr = int(5 + 3 * pulse)
-        pygame.draw.circle(screen, (220, 245, 255), (cx, cy), cr)
-        pygame.draw.circle(screen, (255, 255, 255), (cx, cy), cr // 2)
+        cr = int(6 + 4 * pulse)
+        cg = pygame.Surface((cr * 4, cr * 4), pygame.SRCALPHA)
+        cgc = cg.get_width() // 2
+        pygame.draw.circle(cg, (200, 240, 255, int(60 + 40 * pulse)),
+                           (cgc, cgc), cr * 2)
+        pygame.draw.circle(cg, (230, 250, 255, int(120 + 80 * pulse)),
+                           (cgc, cgc), cr)
+        pygame.draw.circle(cg, (255, 255, 255, int(200 + 55 * pulse)),
+                           (cgc, cgc), cr // 2)
+        screen.blit(cg, (cx - cgc, cy - cgc))
 
-        # Sparkles
-        for i in range(5):
-            angle = t * 2.5 + i * math.pi * 0.4 * 2
-            dist = 10 + 6 * math.sin(t * 2 + i * 1.3)
+        # Sparkling ice burst at tip
+        for i in range(6):
+            angle = t * 3.0 + i * math.pi / 3
+            dist = 12 + 8 * math.sin(t * 4 + i * 1.7)
             spx = cx + int(dist * math.cos(angle))
             spy = cy + int(dist * math.sin(angle))
-            sps = max(1, int(2 + math.sin(t * 5 + i * 2) * 1))
-            pygame.draw.circle(screen, (255, 255, 255), (spx, spy), sps)
+            sps = max(1, int(2.5 + math.sin(t * 6 + i * 2.5) * 1.5))
+            bright = int(200 + 55 * math.sin(t * 5 + i * 1.3))
+            pygame.draw.circle(screen, (bright, bright, 255), (spx, spy), sps)
 
 
 class ChainLightning:
@@ -961,13 +1612,39 @@ class ChainLightning:
         damage (int): Damage per hit.
         chain_range (float): Max distance to chain to next target.
         max_targets (int): Max number of enemies to chain to.
+        color (tuple): RGB color of the lightning.
         alive (bool): Whether the projectile is active.
         traveled (float): Distance traveled.
+        animation_time (float): Visual animation timer.
+        trail (list): Visual trail points.
+        trail_length (int): Maximum number of trail points.
         hit_enemies (list): Enemies already hit (prevents re-hits).
         chaining (bool): Whether currently chaining between targets.
         chain_targets (list): Remaining targets to chain to.
-        animation_time (float): Visual animation timer.
-        trail (list): Visual trail points.
+        chain_timer (float): Elapsed time during chain phase.
+        chain_delay (float): Delay between chain jumps.
+        chain_index (int): Current chain jump index.
+        arc_points (list): Lightning arc visual points for the current chain.
+        sparks (list): Spark particle effects.
+        chain_flash (float): Flash intensity during chain jumps.
+
+    Methods:
+        __init__(pos, direction, speed, max_range, damage, chain_range, max_targets=5, color=(255, 220, 50)):
+            Initialize the chain lightning projectile.
+        _size():
+            Return the visual base dimensions (width, height).
+        get_rect():
+            Return a collision rectangle centered on the current position.
+        _find_chain_target(from_pos, enemies):
+            Find the nearest unhit enemy within chain range.
+        _spawn_spark_burst(pos, count=12):
+            Spawn spark particles at the given position.
+        update(dt, obstacles, enemies):
+            Fly forward, then chain between targets, damaging each enemy.
+        _draw_lightning_arc(screen, start, end, time_offset, camera_offset):
+            Draw a jagged lightning arc between two positions.
+        draw(screen, camera_offset=None):
+            Render the lightning bolt with trails, arcs, and sparks.
     """
     def __init__(self, pos, direction, speed, max_range, damage, chain_range, max_targets=5,
                  color=(255, 220, 50)):
@@ -997,8 +1674,9 @@ class ChainLightning:
         self.chain_delay = 0.08
         self.chain_index = 0
 
-        # Visual arc points for rendering chain arcs
         self.arc_points = []
+        self.sparks = []
+        self.chain_flash = 0.0
 
     def _size(self):
         return 12, 12
@@ -1010,7 +1688,6 @@ class ChainLightning:
         return rect
 
     def _find_chain_target(self, from_pos, enemies):
-        """Find nearest alive enemy not yet hit within chain_range."""
         best = None
         best_dist = self.chain_range * self.chain_range
         for enemy in enemies:
@@ -1023,11 +1700,28 @@ class ChainLightning:
                 best = enemy
         return best
 
+    def _spawn_spark_burst(self, pos, count=12):
+        for _ in range(count):
+            angle = random.uniform(0, math.pi * 2)
+            speed = random.uniform(40, 160)
+            self.sparks.append({
+                "pos": pygame.Vector2(pos),
+                "vel": pygame.Vector2(math.cos(angle), math.sin(angle)) * speed,
+                "max_life": (ml := random.uniform(0.15, 0.4)),
+                "life": ml,
+                "size": random.uniform(1, 3),
+                "color": random.choice([
+                    (255, 255, 200), (255, 220, 50),
+                    (200, 180, 255), (255, 200, 100),
+                ]),
+            })
+
     def update(self, dt, obstacles, enemies):
         if not self.alive:
             return
 
         self.animation_time += dt
+        self.chain_flash = max(0, self.chain_flash - 4 * dt)
 
         if self.chaining:
             self.chain_timer += dt
@@ -1041,12 +1735,13 @@ class ChainLightning:
                 e_center = pygame.Vector2(enemy.get_rect().center)
                 arc_start = pygame.Vector2(self.pos)
                 self.arc_points.append((arc_start, e_center, self.animation_time))
+                self._spawn_spark_burst(e_center, 15)
+                self.chain_flash = 1.0
                 enemy.take_damage(self.damage)
                 logger.info(f"Chain Lightning chained to {enemy.__class__.__name__} for {self.damage} damage!")
                 self.pos = e_center
                 self.hit_enemies.append(enemy)
 
-                # Find next chain target
                 next_enemy = self._find_chain_target(self.pos, enemies)
                 if next_enemy and len(self.chain_targets) < self.max_targets:
                     self.chain_targets.append(next_enemy)
@@ -1061,6 +1756,26 @@ class ChainLightning:
         if len(self.trail) > self.trail_length:
             self.trail.pop(0)
 
+        # Spawn sparks while flying
+        if random.random() < 0.5:
+            perp = pygame.Vector2(-self.direction.y, self.direction.x)
+            offset = perp * random.uniform(-8, 8)
+            self.sparks.append({
+                "pos": pygame.Vector2(self.pos) + offset,
+                "vel": perp * random.uniform(-30, 30) + self.direction * random.uniform(-10, 0),
+                "max_life": (ml := random.uniform(0.1, 0.3)),
+                "life": ml,
+                "size": random.uniform(1, 2.5),
+                "color": (255, 255, 200),
+            })
+
+        for s in self.sparks[:]:
+            s["pos"] += s["vel"] * dt
+            s["vel"] *= 0.9
+            s["life"] -= dt
+            if s["life"] <= 0:
+                self.sparks.remove(s)
+
         rect = self.get_rect()
         for wall in obstacles:
             if rect.colliderect(wall):
@@ -1071,16 +1786,16 @@ class ChainLightning:
             if enemy.is_dead():
                 continue
             if rect.colliderect(enemy.get_rect()):
-                # First hit: start chaining
                 if enemy not in self.hit_enemies:
                     enemy.take_damage(self.damage)
                     logger.info(f"Chain Lightning hit {enemy.__class__.__name__} for {self.damage} damage!")
                     self.hit_enemies.append(enemy)
                     e_center = pygame.Vector2(enemy.get_rect().center)
                     self.arc_points.append((pygame.Vector2(self.pos), e_center, self.animation_time))
+                    self._spawn_spark_burst(e_center, 15)
+                    self.chain_flash = 1.0
                     self.pos = e_center
 
-                    # Find chain targets
                     next_enemy = self._find_chain_target(self.pos, enemies)
                     if next_enemy:
                         self.chain_targets = [enemy, next_enemy]
@@ -1095,7 +1810,6 @@ class ChainLightning:
             self.alive = False
 
     def _draw_lightning_arc(self, screen, start, end, time_offset, camera_offset):
-        """Draw a zigzag lightning arc between two points with glow."""
         sx = start.x - camera_offset.x
         sy = start.y - camera_offset.y
         ex = end.x - camera_offset.x
@@ -1120,52 +1834,114 @@ class ChainLightning:
             points.append((bx + perp_x * offset, by + perp_y * offset))
         points.append((ex, ey))
 
-        # Glow behind arc
-        glow_surf = pygame.Surface((int(abs(dx) + 30), int(abs(dy) + 30)), pygame.SRCALPHA)
-        g_ox = min(sx, ex) - 15 - camera_offset.x
-        g_oy = min(sy, ey) - 15 - camera_offset.y
-        for thickness in (6, 4):
-            alpha = 40 if thickness > 4 else 80
-            pygame.draw.lines(glow_surf, (255, 220, 50, alpha), False,
-                              [(p[0] - g_ox, p[1] - g_oy) for p in points], thickness)
-        screen.blit(glow_surf, (g_ox, g_oy))
+        # Glow
+        min_x = min(sx, ex)
+        min_y = min(sy, ey)
+        max_x = max(sx, ex)
+        max_y = max(sy, ey)
+        pad = 20
+        gw = int(max_x - min_x + pad * 2)
+        gh = int(max_y - min_y + pad * 2)
+        if gw <= 0 or gh <= 0:
+            return
+        glow_surf = pygame.Surface((gw, gh), pygame.SRCALPHA)
+        rel_pts = [(p[0] - min_x + pad, p[1] - min_y + pad) for p in points]
+        for thickness in (8, 5, 3):
+            alpha = 25 if thickness > 5 else 60
+            pygame.draw.lines(glow_surf, (255, 220, 50, alpha), False, rel_pts, thickness)
+        screen.blit(glow_surf, (min_x - pad, min_y - pad))
 
         # Main arc
         pygame.draw.lines(screen, (255, 255, 200), False, points, 2)
         pygame.draw.lines(screen, self.color, False, points, 1)
 
+        # Branch arc (small offshoot)
+        if dist > 60:
+            branch_idx = random.randint(1, max(2, segments - 2))
+            bp = points[branch_idx]
+            b_angle = math.atan2(dy, dx) + random.uniform(-1.0, 1.0)
+            b_len = dist * 0.15
+            bex = bp[0] + math.cos(b_angle) * b_len
+            bey = bp[1] + math.sin(b_angle) * b_len
+            branch_pts = [bp, (bex, bey)]
+            rel_branch = [(p[0] - min_x + pad, p[1] - min_y + pad) for p in branch_pts]
+            pygame.draw.lines(glow_surf, (255, 220, 80, 40), False, rel_branch, 2)
+            screen.blit(glow_surf, (min_x - pad, min_y - pad))
+            pygame.draw.lines(screen, (255, 255, 200), False, branch_pts, 1)
+
     def draw(self, screen, camera_offset=None):
         if camera_offset is None:
             camera_offset = pygame.Vector2(0, 0)
+
+        t = self.animation_time
 
         # Draw chain arcs
         for arc_start, arc_end, t_offset in self.arc_points:
             self._draw_lightning_arc(screen, arc_start, arc_end, t_offset, camera_offset)
 
+        # Draw sparks
+        for s in self.sparks:
+            life_r = min(1.0, s["life"] / s["max_life"]) if s["max_life"] > 0 else 0
+            if life_r <= 0:
+                continue
+            sx = int(s["pos"].x - camera_offset.x)
+            sy = int(s["pos"].y - camera_offset.y)
+            alpha = int(200 * life_r)
+            size = max(1, int(s["size"] * life_r))
+            r, g, b = s["color"]
+            sg = pygame.Surface((size * 3, size * 3), pygame.SRCALPHA)
+            pygame.draw.circle(sg, (r, g, b, alpha // 2), (size * 1.5, size * 1.5), size * 1.5)
+            screen.blit(sg, (sx - size * 1.5, sy - size * 1.5))
+            pygame.draw.circle(screen, (r, g, b, alpha), (sx, sy), size)
+
         # Draw trail
         for i, pos in enumerate(self.trail):
-            alpha = int(120 * (i / len(self.trail)))
-            radius = int(2 + 3 * (i / len(self.trail)))
-            t_surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
-            pygame.draw.circle(t_surf, (*self.color[:3], alpha), (radius, radius), radius)
-            screen.blit(t_surf, (pos.x - radius - camera_offset.x, pos.y - radius - camera_offset.y))
+            alpha = int(100 * (i / len(self.trail)))
+            # Jagged electrical trail instead of smooth circles
+            trail_r = int(2 + 3 * (i / len(self.trail)))
+            jx = random.uniform(-2, 2)
+            jy = random.uniform(-2, 2)
+            t_surf = pygame.Surface((trail_r * 2 + 4, trail_r * 2 + 4), pygame.SRCALPHA)
+            pygame.draw.circle(t_surf, (255, 220, 50, alpha), (trail_r + 2, trail_r + 2), trail_r)
+            screen.blit(t_surf, (pos.x - trail_r - 2 + jx - camera_offset.x,
+                                 pos.y - trail_r - 2 + jy - camera_offset.y))
+
+        # Chain flash overlay
+        if self.chain_flash > 0:
+            flash_surf = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+            flash_a = int(40 * self.chain_flash)
+            pygame.draw.circle(flash_surf, (255, 255, 200, flash_a),
+                               (int(self.pos.x - camera_offset.x), int(self.pos.y - camera_offset.y)),
+                               int(30 * self.chain_flash))
+            screen.blit(flash_surf, (0, 0))
 
         # Draw bolt head
         if not self.chaining:
-            rect = self.get_rect()
-            rect.x -= int(camera_offset.x)
-            rect.y -= int(camera_offset.y)
+            cx = int(self.pos.x - camera_offset.x)
+            cy = int(self.pos.y - camera_offset.y)
+            pulse = 0.5 + 0.5 * math.sin(t * 20)
 
-            pulse = (math.sin(self.animation_time * 15) + 1.0) * 0.5
             # Outer glow
-            glow_size = int(rect.width * (1.5 + 0.3 * pulse))
+            glow_size = int(14 + 4 * pulse)
             glow_surf = pygame.Surface((glow_size * 2, glow_size * 2), pygame.SRCALPHA)
-            pygame.draw.circle(glow_surf, (*self.color, 70), (glow_size, glow_size), glow_size)
-            screen.blit(glow_surf, (rect.centerx - glow_size, rect.centery - glow_size))
+            pygame.draw.circle(glow_surf, (255, 220, 50, int(50 + 30 * pulse)),
+                               (glow_size, glow_size), glow_size)
+            screen.blit(glow_surf, (cx - glow_size, cy - glow_size))
 
-            # Core bolt
-            pygame.draw.circle(screen, (255, 255, 220), rect.center, rect.width // 2)
-            pygame.draw.circle(screen, self.color, rect.center, rect.width // 2 - 1)
+            # Directional bolt head (arrow-like shape)
+            d = self.direction
+            perp = pygame.Vector2(-d.y, d.x)
+            size = 6 + 2 * pulse
+            tip = (cx + d.x * size * 1.5, cy + d.y * size * 1.5)
+            left = (cx + perp.x * size * 0.8 - d.x * size * 0.5,
+                    cy + perp.y * size * 0.8 - d.y * size * 0.5)
+            right = (cx - perp.x * size * 0.8 - d.x * size * 0.5,
+                     cy - perp.y * size * 0.8 - d.y * size * 0.5)
+            bolt_pts = [tip, left, right]
+            pygame.draw.polygon(screen, (255, 255, 220), bolt_pts)
+            pygame.draw.polygon(screen, self.color, bolt_pts, 1)
+            # Core dot
+            pygame.draw.circle(screen, (255, 255, 255), (cx, cy), max(1, int(size * 0.3)))
 
 
 class Thunderstrike:
@@ -1181,6 +1957,22 @@ class Thunderstrike:
         timer (float): Current time elapsed.
         struck (bool): Whether damage has been applied.
         animation_time (float): Visual animation timer.
+        flash_alpha (int): Current flash overlay alpha for the strike.
+        particles (list): Impact particle effects.
+
+    Methods:
+        __init__(pos, damage, radius=100.0, delay=0.5):
+            Initialize the thunderstrike at the target position.
+        get_rect():
+            Return a rectangle covering the strike radius.
+        update(dt, obstacles, enemies):
+            Wait for delay, then damage enemies and spawn visuals.
+        _spawn_impact_particles():
+            Spawn spark particles at the strike center.
+        _draw_bolt(screen, cx, cy, alpha, camera_offset):
+            Draw a branched lightning bolt from above to the strike center.
+        draw(screen, camera_offset=None):
+            Render the telegraph circle, lightning bolt, impact particles, and flash.
     """
     def __init__(self, pos, damage, radius=100.0, delay=0.5):
         self.pos = pygame.Vector2(pos)
@@ -1192,6 +1984,7 @@ class Thunderstrike:
         self.struck = False
         self.animation_time = 0.0
         self.flash_alpha = 0
+        self.particles = []
 
     def get_rect(self):
         size = int(self.radius * 2)
@@ -1207,7 +2000,6 @@ class Thunderstrike:
         self.timer += dt
 
         if not self.struck and self.timer >= self.delay:
-            # Apply damage to all enemies in radius
             for enemy in enemies:
                 if enemy.is_dead():
                     continue
@@ -1217,12 +2009,94 @@ class Thunderstrike:
                     logger.info(f"Thunderstrike hit {enemy.__class__.__name__} for {self.damage} damage!")
             self.struck = True
             self.flash_alpha = 255
+            # Spawn impact particles
+            self._spawn_impact_particles()
 
         if self.struck:
             self.flash_alpha = max(0, self.flash_alpha - 600 * dt)
 
-        if self.timer >= self.delay + 0.6:
+        for p in self.particles[:]:
+            p["pos"] += p["vel"] * dt
+            p["vel"] *= 0.92
+            p["life"] -= dt
+            if p["life"] <= 0:
+                self.particles.remove(p)
+
+        if self.timer >= self.delay + 0.8:
             self.alive = False
+
+    def _spawn_impact_particles(self):
+        for _ in range(20):
+            angle = random.uniform(0, math.pi * 2)
+            speed = random.uniform(50, 200)
+            self.particles.append({
+                "pos": pygame.Vector2(self.pos),
+                "vel": pygame.Vector2(math.cos(angle), math.sin(angle)) * speed,
+                "max_life": (ml := random.uniform(0.2, 0.5)),
+                "life": ml,
+                "size": random.uniform(2, 5),
+                "color": random.choice([
+                    (255, 255, 200), (255, 220, 50),
+                    (200, 180, 255), (255, 200, 100),
+                ]),
+            })
+
+    def _draw_bolt(self, screen, cx, cy, alpha, camera_offset):
+        """Draw a branched lightning bolt from above to center point."""
+        bolt_top_y = cy - 400
+        segments = 14
+
+        # Main bolt
+        bolt_points = [(cx, bolt_top_y)]
+        for i in range(1, segments):
+            t = i / segments
+            bx = cx + 12 * math.sin(t * math.pi * 5 + self.animation_time * 25)
+            by = bolt_top_y + (cy - bolt_top_y) * t
+            bolt_points.append((bx, by))
+        bolt_points.append((cx, cy))
+
+        # Branches
+        all_points = [bolt_points]
+        for _ in range(3):
+            src_idx = random.randint(2, segments - 3)
+            sp = bolt_points[src_idx]
+            b_angle = math.atan2(cy - bolt_top_y, 0) + random.uniform(-1.5, 1.5)
+            b_len = random.uniform(30, 80)
+            branch = [(sp[0], sp[1])]
+            for j in range(1, 4):
+                frac = j / 4
+                bx2 = sp[0] + math.cos(b_angle) * b_len * frac
+                by2 = sp[1] + math.sin(b_angle) * b_len * frac
+                branch.append((bx2 + random.uniform(-3, 3), by2 + random.uniform(-3, 3)))
+            all_points.append(branch)
+
+        # Compute bounds
+        all_coords = [p for pts in all_points for p in pts]
+        min_x = min(p[0] for p in all_coords)
+        max_x = max(p[0] for p in all_coords)
+        min_y = min(p[1] for p in all_coords)
+        max_y = max(p[1] for p in all_coords)
+        pad = 25
+        gw = int(max_x - min_x + pad * 2)
+        gh = int(max_y - min_y + pad * 2)
+        if gw <= 0 or gh <= 0:
+            return
+
+        glow_surf = pygame.Surface((gw, gh), pygame.SRCALPHA)
+
+        for points in all_points:
+            rel = [(p[0] - min_x + pad, p[1] - min_y + pad) for p in points]
+            for thickness in (8, 5, 3):
+                glow_a = int(20 * alpha / 255) if thickness > 5 else int(50 * alpha / 255)
+                pygame.draw.lines(glow_surf, (255, 220, 50, glow_a), False, rel, thickness)
+
+        screen.blit(glow_surf, (min_x - pad, min_y - pad))
+
+        # Main bolt lines
+        for idx, points in enumerate(all_points):
+            bolt_a = int(alpha * (1.0 if idx == 0 else 0.6))
+            pygame.draw.lines(screen, (255, 255, 255, bolt_a), False, points, 2)
+            pygame.draw.lines(screen, (255, 220, 80, bolt_a), False, points, 1)
 
     def draw(self, screen, camera_offset=None):
         if camera_offset is None:
@@ -1230,13 +2104,13 @@ class Thunderstrike:
 
         cx = int(self.pos.x - camera_offset.x)
         cy = int(self.pos.y - camera_offset.y)
+        t = self.animation_time
 
         if not self.struck:
-            # Telegraph: pulsing circle on ground + descending particles
             progress = self.timer / self.delay
-            pulse = (math.sin(self.animation_time * 10) + 1.0) * 0.5
+            pulse = 0.5 + 0.5 * math.sin(t * 10)
 
-            # Ground target circle
+            # Ground target circle (outer ring)
             circle_alpha = int(80 + 80 * pulse)
             circle_surf = pygame.Surface((int(self.radius * 2), int(self.radius * 2)), pygame.SRCALPHA)
             pygame.draw.circle(circle_surf, (255, 220, 50, circle_alpha),
@@ -1245,9 +2119,19 @@ class Thunderstrike:
                                (int(self.radius), int(self.radius)), int(self.radius * 0.6), 1)
             screen.blit(circle_surf, (cx - int(self.radius), cy - int(self.radius)))
 
+            # Crackling ground sparks (telegraph)
+            for _ in range(3):
+                angle = random.uniform(0, math.pi * 2)
+                dist = random.uniform(0, self.radius * 0.8)
+                ssx = cx + math.cos(angle) * dist
+                ssy = cy + math.sin(angle) * dist
+                sex = ssx + random.uniform(-15, 15)
+                sey = ssy + random.uniform(-15, 15)
+                spark_alpha = int(60 + 60 * pulse)
+                pygame.draw.line(screen, (255, 255, 200, spark_alpha), (ssx, ssy), (sex, sey), 1)
+
             # Descending light particles
-            import random
-            for _ in range(4):
+            for _ in range(5):
                 px = cx + random.uniform(-self.radius * 0.8, self.radius * 0.8)
                 py = cy - 200 + progress * 200 + random.uniform(-20, 20)
                 p_size = random.randint(2, 4)
@@ -1255,76 +2139,74 @@ class Thunderstrike:
                 p_surf = pygame.Surface((p_size * 2, p_size * 2), pygame.SRCALPHA)
                 pygame.draw.circle(p_surf, (255, 255, 200, p_alpha), (p_size, p_size), p_size)
                 screen.blit(p_surf, (int(px) - p_size, int(py) - p_size))
+
+            # Rising dust/energy from ground
+            for _ in range(2):
+                rx = cx + random.uniform(-self.radius * 0.6, self.radius * 0.6)
+                ry = cy + random.uniform(-5, 5) - progress * 30
+                r_size = random.randint(1, 3)
+                r_alpha = int(60 * (1 - progress) * (1 - abs(rx - cx) / self.radius))
+                r_surf = pygame.Surface((r_size * 2, r_size * 2), pygame.SRCALPHA)
+                pygame.draw.circle(r_surf, (200, 180, 255, r_alpha), (r_size, r_size), r_size)
+                screen.blit(r_surf, (int(rx) - r_size, int(ry) - r_size))
         else:
-            # Strike visual: bolt from above + expanding electrical field
             bolt_alpha = min(255, self.flash_alpha * 2)
 
-            # Main lightning bolt (from top of screen to center)
-            bolt_top_y = cy - 400
-            segments = 12
-            bolt_points = [(cx, bolt_top_y)]
-            for i in range(1, segments):
-                t = i / segments
-                bx = cx + 15 * math.sin(t * math.pi * 5 + self.animation_time * 30)
-                by = bolt_top_y + (cy - bolt_top_y) * t
-                bolt_points.append((bx, by))
-            bolt_points.append((cx, cy))
-
-            # Bolt glow
-            glow_surf = pygame.Surface((200, 450), pygame.SRCALPHA)
-            g_ox = cx - 100
-            g_oy = cy - 400
-            for thickness in (8, 5, 3):
-                alpha = int(30 * bolt_alpha / 255) if thickness > 5 else int(80 * bolt_alpha / 255)
-                pygame.draw.lines(glow_surf, (255, 220, 50, alpha), False,
-                                  [(p[0] - g_ox, p[1] - g_oy) for p in bolt_points], thickness)
-            screen.blit(glow_surf, (g_ox, g_oy))
-
-            # Main bolt
-            bolt_surf = pygame.Surface((200, 450), pygame.SRCALPHA)
-            b_ox = cx - 100
-            b_oy = cy - 400
-            pygame.draw.lines(bolt_surf, (255, 255, 255, bolt_alpha), False,
-                              [(p[0] - b_ox, p[1] - b_oy) for p in bolt_points], 2)
-            pygame.draw.lines(bolt_surf, (255, 220, 80, bolt_alpha), False,
-                              [(p[0] - b_ox, p[1] - b_oy) for p in bolt_points], 1)
-            screen.blit(bolt_surf, (b_ox, b_oy))
+            # Draw branched lightning bolt
+            self._draw_bolt(screen, cx, cy, bolt_alpha, camera_offset)
 
             # Expanding electrical field on ground
             field_progress = min(1.0, (self.timer - self.delay) / 0.5)
-            field_radius = int(self.radius * (0.3 + 0.7 * field_progress))
+            field_radius = int(self.radius * (0.2 + 0.8 * field_progress))
+
+            # Multiple expanding rings
+            for ring_i in range(3):
+                ring_r = int(field_radius * (0.3 + 0.7 * ((ring_i + 1) / 3)))
+                ring_alpha = int(100 * (1 - field_progress) / (ring_i + 1))
+                ring_color = (100, 80, 200) if ring_i > 0 else (255, 220, 50)
+                pygame.draw.circle(screen, (*ring_color, ring_alpha), (cx, cy), ring_r,
+                                   max(1, int(2 - field_progress)))
+
+            # Main field surface
             field_surf = pygame.Surface((field_radius * 2, field_radius * 2), pygame.SRCALPHA)
-
-            # Outer ring
-            ring_alpha = int(150 * (1 - field_progress))
-            pygame.draw.circle(field_surf, (100, 80, 200, ring_alpha),
-                               (field_radius, field_radius), field_radius, 2)
-            # Inner glow
+            fc = field_radius
             inner_alpha = int(80 * (1 - field_progress * 0.5))
-            pygame.draw.circle(field_surf, (200, 180, 255, inner_alpha),
-                               (field_radius, field_radius), int(field_radius * 0.7))
-            # Core flash
+            pygame.draw.circle(field_surf, (200, 180, 255, inner_alpha), (fc, fc), int(field_radius * 0.7))
             core_alpha = min(200, int(self.flash_alpha * 0.8))
-            pygame.draw.circle(field_surf, (255, 255, 255, core_alpha),
-                               (field_radius, field_radius), int(field_radius * 0.2))
-
+            pygame.draw.circle(field_surf, (255, 255, 255, core_alpha), (fc, fc), int(field_radius * 0.15))
             screen.blit(field_surf, (cx - field_radius, cy - field_radius))
 
             # Arc sparks on ground
-            import random as rnd
-            spark_surf = pygame.Surface((int(self.radius * 2), int(self.radius * 2)), pygame.SRCALPHA)
-            s_ox = cx - int(self.radius)
-            s_oy = cy - int(self.radius)
-            for _ in range(int(8 * (1 - field_progress) + 2)):
-                angle = rnd.uniform(0, math.pi * 2)
-                dist = rnd.uniform(0, field_radius)
-                sx = cx + math.cos(angle) * dist - s_ox
-                sy = cy + math.sin(angle) * dist - s_oy
-                ex = sx + rnd.uniform(-10, 10)
-                ey = sy + rnd.uniform(-10, 10)
+            for _ in range(int(10 * (1 - field_progress) + 2)):
+                s_angle = random.uniform(0, math.pi * 2)
+                s_dist = random.uniform(0, field_radius)
+                ssx = cx + math.cos(s_angle) * s_dist
+                ssy = cy + math.sin(s_angle) * s_dist
+                sex = ssx + random.uniform(-12, 12)
+                sey = ssy + random.uniform(-12, 12)
                 spark_alpha = int(200 * (1 - field_progress))
-                pygame.draw.line(spark_surf, (255, 255, 200, spark_alpha), (sx, sy), (ex, ey), 1)
-            screen.blit(spark_surf, (s_ox, s_oy))
+                pygame.draw.line(screen, (255, 255, 200, spark_alpha), (ssx, ssy), (sex, sey), 1)
+
+            # Flying debris particles
+            for p in self.particles:
+                life_r = min(1.0, p["life"] / p["max_life"]) if p["max_life"] > 0 else 0
+                if life_r <= 0:
+                    continue
+                px = int(p["pos"].x - camera_offset.x)
+                py = int(p["pos"].y - camera_offset.y)
+                p_alpha = int(200 * life_r)
+                p_size = max(1, int(p["size"] * life_r))
+                r, g, b = p["color"]
+                p_surf = pygame.Surface((p_size * 2, p_size * 2), pygame.SRCALPHA)
+                pygame.draw.circle(p_surf, (r, g, b, p_alpha), (p_size, p_size), p_size)
+                screen.blit(p_surf, (px - p_size, py - p_size))
+
+            # Screen flash (brief white overlay)
+            if self.flash_alpha > 50:
+                flash_surf = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+                flash_a = int(self.flash_alpha * 0.3)
+                flash_surf.fill((255, 255, 255, flash_a))
+                screen.blit(flash_surf, (0, 0))
 
 
 class EntanglingRoots:
@@ -1334,6 +2216,39 @@ class EntanglingRoots:
     Two phases:
       1. Flying phase — a seed/sprout projectile travels in a direction.
       2. Burst phase — on impact or max range, roots explode outward.
+
+    Attributes:
+        pos (pygame.Vector2): Current position in world space.
+        direction (pygame.Vector2): Normalized movement direction.
+        speed (float): Travel speed in pixels per second.
+        max_range (float): Maximum travel distance before bursting.
+        radius (float): Burst radius for root immobilization.
+        root_duration (float): How long enemies stay rooted.
+        damage (int): Damage dealt to enemies on burst.
+        alive (bool): Whether the projectile is still active.
+        traveled (float): Distance traveled so far.
+        timer (float): Elapsed time (phase-dependent).
+        expansion_duration (float): Duration of the burst expansion animation.
+        damage_applied (bool): Whether burst damage has been applied.
+        animation_time (float): Accumulated time for visual animations.
+        vine_points (list): Root vine visual control points.
+        bursting (bool): Whether the burst phase is active.
+        trail (list): Position history for the visual trail.
+        trail_length (int): Maximum number of trail points stored.
+        root_particles (list): Root branch particle data.
+        leaf_particles (list): Leaf particle effects burst from the seed.
+
+    Methods:
+        __init__(pos, direction, speed, max_range, radius, root_duration, damage=0, expansion_duration=0.5):
+            Initialize the entangling roots projectile.
+        get_rect():
+            Return a bounding rectangle depending on the current phase.
+        _trigger_burst():
+            Enter the burst phase and spawn initial leaf particles.
+        update(dt, obstacles, enemies):
+            Fly toward the target, then burst to root and damage enemies.
+        draw(screen, camera_offset=None):
+            Render the seed, trail, root branches, aura, leaf particles, and vine tendrils.
     """
     def __init__(self, pos, direction, speed, max_range, radius, root_duration, damage=0,
                  expansion_duration=0.5):
@@ -1357,7 +2272,9 @@ class EntanglingRoots:
         self.vine_points = []
         self.bursting = False
         self.trail = []
-        self.trail_length = 8
+        self.trail_length = 10
+        self.root_particles = []
+        self.leaf_particles = []
 
     def get_rect(self):
         if self.bursting:
@@ -1373,6 +2290,22 @@ class EntanglingRoots:
         self.bursting = True
         self.timer = 0.0
         self.damage_applied = False
+        # Spawn initial root burst leaf particles
+        for _ in range(30):
+            angle = random.uniform(0, math.pi * 2)
+            speed = random.uniform(60, 200)
+            self.leaf_particles.append({
+                "pos": pygame.Vector2(self.pos),
+                "vel": pygame.Vector2(math.cos(angle), math.sin(angle)) * speed,
+                "max_life": (ml := random.uniform(0.3, 0.6)),
+                "life": ml,
+                "size": random.uniform(2.0, 5.0),
+                "color": random.choice([
+                    (60, 200, 60), (100, 220, 80),
+                    (160, 255, 120), (200, 255, 180),
+                    (40, 160, 40),
+                ]),
+            })
 
     def update(self, dt, obstacles, enemies):
         if not self.alive:
@@ -1395,17 +2328,31 @@ class EntanglingRoots:
                         enemy.add_effect(RootEffect(self.root_duration))
                 self.damage_applied = True
 
+            # Root branch particles
+            for _ in range(3):
+                angle = random.uniform(0, math.pi * 2)
+                dist = random.uniform(0, self.radius * progress)
+                self.root_particles.append({
+                    "angle": angle,
+                    "dist": dist,
+                    "max_life": (ml := random.uniform(0.2, 0.4)),
+                    "life": ml,
+                    "width": random.uniform(2.0, 4.0),
+                })
+            if len(self.root_particles) > 60:
+                self.root_particles = self.root_particles[-60:]
+
+            # Leaf particles drift and fade
+            for p in self.leaf_particles[:]:
+                p["pos"] += p["vel"] * dt
+                p["vel"] *= 0.93
+                p["vel"].y += 20 * dt  # slight gravity
+                p["life"] -= dt
+                if p["life"] <= 0:
+                    self.leaf_particles.remove(p)
+
             if self.timer >= self.expansion_duration:
                 self.alive = False
-
-            # Vine points
-            import random as _rnd
-            for _ in range(2):
-                angle = _rnd.uniform(0, math.pi * 2)
-                dist = _rnd.uniform(0, self.radius * progress)
-                self.vine_points.append((angle, dist, self.animation_time))
-            if len(self.vine_points) > 40:
-                self.vine_points = self.vine_points[-40:]
             return
 
         # Flying phase
@@ -1437,38 +2384,50 @@ class EntanglingRoots:
             camera_offset = pygame.Vector2(0, 0)
 
         if not self.bursting:
-            # Draw flying seed/sprout
             cx = int(self.pos.x - camera_offset.x)
             cy = int(self.pos.y - camera_offset.y)
+            t = self.animation_time
 
             # Trail
             for i, pos in enumerate(self.trail):
                 alpha = int(100 * (i / len(self.trail)))
-                radius = int(2 + 3 * (i / len(self.trail)))
+                radius = int(2 + 4 * (i / len(self.trail)))
                 t_surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
-                pygame.draw.circle(t_surf, (60, 200, 60, alpha), (radius, radius), radius)
+                pygame.draw.circle(t_surf, (40, 160, 40, alpha), (radius, radius), radius)
                 screen.blit(t_surf, (pos.x - radius - camera_offset.x, pos.y - radius - camera_offset.y))
 
-            pulse = (math.sin(self.animation_time * 10) + 1.0) * 0.5
+            pulse = 0.5 + 0.5 * math.sin(t * 10)
 
-            # Glow
-            glow_size = 12 + int(4 * pulse)
+            # Outer glow
+            glow_size = 14 + int(4 * pulse)
             glow_surf = pygame.Surface((glow_size * 2, glow_size * 2), pygame.SRCALPHA)
-            pygame.draw.circle(glow_surf, (80, 255, 80, 50), (glow_size, glow_size), glow_size)
+            pygame.draw.circle(glow_surf, (60, 220, 60, int(40 + 20 * pulse)), (glow_size, glow_size), glow_size)
             screen.blit(glow_surf, (cx - glow_size, cy - glow_size))
 
-            # Seed body — small green orb with leaf-like shape
-            pygame.draw.circle(screen, (60, 180, 60), (cx, cy), 7)
-            pygame.draw.circle(screen, (120, 220, 100), (cx, cy), 5)
-            pygame.draw.circle(screen, (200, 255, 180), (cx - 1, cy - 1), 2)
+            # Root tendrils trailing from seed
+            for i in range(4):
+                ta = t * 4 + i * math.pi / 2
+                td = 4 + 5 * pulse
+                tx = cx + math.cos(ta) * td
+                ty = cy + math.sin(ta) * td
+                ex = tx + math.cos(ta + 0.3) * (6 + 4 * pulse)
+                ey = ty + math.sin(ta + 0.3) * (6 + 4 * pulse)
+                pygame.draw.line(screen, (40, 140, 40, int(150 + 50 * pulse)),
+                                 (tx, ty), (ex, ey), max(1, int(2 + pulse)))
 
-            # Tiny leaf wings
+            # Seed body
+            pygame.draw.circle(screen, (50, 170, 50), (cx, cy), 7)
+            pygame.draw.circle(screen, (100, 210, 90), (cx, cy), 5)
+            pygame.draw.circle(screen, (180, 255, 160), (cx - 1, cy - 1), 2)
+
+            # Leaf wings
             leaf_w = 4 + 2 * pulse
             for side in (-1, 1):
                 lx = cx + side * 6
-                ly = cy - 2 + 2 * math.sin(self.animation_time * 8)
-                pygame.draw.ellipse(screen, (80, 200, 60),
-                                    (lx - leaf_w, ly - 2, leaf_w * 2, 4))
+                ly = cy - 2 + 2 * math.sin(t * 8)
+                leaf_surf = pygame.Surface((int(leaf_w * 2), 6), pygame.SRCALPHA)
+                pygame.draw.ellipse(leaf_surf, (80, 200, 60, 200), (0, 0, int(leaf_w * 2), 4))
+                screen.blit(leaf_surf, (lx - leaf_w, ly - 2))
             return
 
         # Burst phase
@@ -1480,44 +2439,77 @@ class EntanglingRoots:
         if current_radius <= 0:
             return
 
-        import random as rnd
+        t = self.animation_time
 
-        # Outer green ring shockwave
+        # Root branches shooting outward
+        branch_count = int(10 + 6 * progress)
+        for i in range(branch_count):
+            ba = t * 0.5 + i * (math.pi * 2 / branch_count) + random.uniform(-0.1, 0.1)
+            bd = random.uniform(current_radius * 0.3, current_radius)
+            bx = cx + math.cos(ba) * bd
+            by = cy + math.sin(ba) * bd
+            branch_alpha = int(200 * (1 - progress) * (1 - bd / self.radius))
+            branch_width = max(1, int(3 * (1 - progress) * (1 - bd / self.radius * 0.5)))
+            # Draw root branch as a jagged line
+            pts = [(cx, cy)]
+            segs = 3
+            for s in range(1, segs + 1):
+                frac = s / segs
+                jag = random.uniform(-3, 3) * frac
+                spx = cx + math.cos(ba + jag * 0.03) * bd * frac
+                spy = cy + math.sin(ba + jag * 0.03) * bd * frac
+                pts.append((spx, spy))
+            for j in range(len(pts) - 1):
+                pygame.draw.line(screen, (40, 140, 40, branch_alpha),
+                                 pts[j], pts[j + 1], branch_width)
+
+        # Green burst aura
+        surface = pygame.Surface((current_radius * 2, current_radius * 2), pygame.SRCALPHA)
+        outer_alpha = int(80 * (1 - progress * 0.5))
+        pygame.draw.circle(surface, (40, 160, 40, outer_alpha), (current_radius, current_radius), current_radius)
+        mid_r = max(1, int(current_radius * 0.6))
+        mid_alpha = int(120 * (1 - progress * 0.3))
+        pygame.draw.circle(surface, (80, 200, 80, mid_alpha), (current_radius, current_radius), mid_r)
+        inner_r = max(1, int(current_radius * 0.3))
+        inner_alpha = int(160 * (1 - progress * 0.2))
+        pygame.draw.circle(surface, (180, 255, 160, inner_alpha), (current_radius, current_radius), inner_r)
+        screen.blit(surface, (cx - current_radius, cy - current_radius))
+
+        # Outer green ring
         ring_alpha = int(180 * (1 - progress))
         pygame.draw.circle(screen, (60, 180, 60, ring_alpha), (cx, cy), current_radius, max(2, int(3 * (1 - progress) + 1)))
 
-        # Main nature burst
-        burst_surf = pygame.Surface((current_radius * 2, current_radius * 2), pygame.SRCALPHA)
-        outer_alpha = int(100 * (1 - progress * 0.5))
-        pygame.draw.circle(burst_surf, (40, 160, 40, outer_alpha), (current_radius, current_radius), current_radius)
-        mid_r = max(1, int(current_radius * 0.65))
-        mid_alpha = int(140 * (1 - progress * 0.3))
-        pygame.draw.circle(burst_surf, (80, 200, 80, mid_alpha), (current_radius, current_radius), mid_r)
-        inner_r = max(1, int(current_radius * 0.3))
-        inner_alpha = int(180 * (1 - progress * 0.2))
-        pygame.draw.circle(burst_surf, (180, 255, 160, inner_alpha), (current_radius, current_radius), inner_r)
-        screen.blit(burst_surf, (cx - current_radius, cy - current_radius))
+        # Leaf particles spiraling outward
+        for p in self.leaf_particles:
+            life_r = min(1.0, p["life"] / p["max_life"]) if p["max_life"] > 0 else 0
+            if life_r <= 0:
+                continue
+            px = int(p["pos"].x - camera_offset.x)
+            py = int(p["pos"].y - camera_offset.y)
+            leaf_alpha = int(200 * life_r)
+            leaf_size = max(1, int(p["size"] * life_r))
+            r, g, b = p["color"]
+            # Leaf shape (small rotated ellipse)
+            leaf_surf = pygame.Surface((leaf_size * 2, leaf_size), pygame.SRCALPHA)
+            pygame.draw.ellipse(leaf_surf, (r, g, b, leaf_alpha),
+                                (0, 0, leaf_size * 2, leaf_size))
+            screen.blit(leaf_surf, (px - leaf_size, py - leaf_size // 2))
 
-        # Rising leaf particles
-        for _ in range(int(5 * (1 - progress) + 2)):
-            lx = cx + rnd.uniform(-current_radius, current_radius)
-            ly = cy - current_radius + progress * current_radius * 2 + rnd.uniform(-10, 10)
-            l_size = rnd.randint(2, 4)
-            l_color = rnd.choice([(60, 200, 60), (100, 220, 80), (160, 255, 120), (200, 255, 180)])
-            leaf_surf = pygame.Surface((l_size * 2, l_size * 2), pygame.SRCALPHA)
-            alpha = int(200 * (1 - progress))
-            pygame.draw.circle(leaf_surf, (*l_color, alpha), (l_size, l_size), l_size)
-            screen.blit(leaf_surf, (int(lx) - l_size, int(ly) - l_size))
-
-        # Vine tendrils on the ground
-        for angle, dist, t in self.vine_points:
-            vx = cx + math.cos(angle + t * 0.5) * dist
-            vy = cy + math.sin(angle + t * 0.5) * dist
-            tendril_len = 8 + 4 * math.sin(angle * 3 + t * 2)
-            ex = vx + math.cos(angle + 0.5) * tendril_len
-            ey = vy + math.sin(angle + 0.5) * tendril_len
-            vine_alpha = int(160 * (1 - dist / self.radius))
-            pygame.draw.line(screen, (60, 140, 40, vine_alpha), (vx, vy), (ex, ey), 2)
+        # Root vine tendrils on the ground
+        for rp in self.root_particles:
+            vr = min(1.0, rp["life"] / rp["max_life"]) if rp["max_life"] > 0 else 0
+            if vr <= 0:
+                continue
+            angle = rp["angle"]
+            dist = rp["dist"]
+            vx = cx + math.cos(angle) * dist
+            vy = cy + math.sin(angle) * dist
+            tendril_len = 6 + 4 * math.sin(angle * 3 + t * 2)
+            ex = vx + math.cos(angle + 0.4) * tendril_len
+            ey = vy + math.sin(angle + 0.4) * tendril_len
+            vine_alpha = int(160 * vr * (1 - dist / self.radius))
+            vine_width = max(1, int(rp["width"] * vr))
+            pygame.draw.line(screen, (50, 130, 40, vine_alpha), (vx, vy), (ex, ey), vine_width)
 
         # Inner flash (early burst)
         if progress < 0.3:
@@ -1533,6 +2525,33 @@ class NatureBolt:
     A nature bolt projectile fired by the Nature Spirit.
 
     Flies toward a target position with green visuals.
+
+    Attributes:
+        pos (pygame.Vector2): Current position in world space.
+        direction (pygame.Vector2): Normalized movement direction.
+        speed (float): Travel speed in pixels per second.
+        max_range (float): Maximum travel distance before despawning.
+        damage (int): Damage dealt to enemies on hit.
+        color (tuple): RGB color of the nature bolt.
+        alive (bool): Whether the projectile is still active.
+        traveled (float): Distance traveled so far.
+        animation_time (float): Accumulated time for visual animations.
+        trail (list): Position history for the visual trail.
+        trail_length (int): Maximum number of trail points stored.
+        target_pos (pygame.Vector2 or None): Optional target position for homing.
+        leaf_particles (list): Leaf particle effects emitted during flight.
+
+    Methods:
+        __init__(pos, direction, speed, max_range, damage, target_pos=None, color=(80, 220, 80)):
+            Initialize the nature bolt projectile.
+        _size():
+            Return the visual base dimensions (width, height).
+        get_rect():
+            Return a collision rectangle centered on the current position.
+        update(dt, obstacles, enemies):
+            Move the bolt, update leaf particles, check collisions and range.
+        draw(screen, camera_offset=None):
+            Render the bolt with leaf particles, trail, glow, and vine tendrils.
     """
     def __init__(self, pos, direction, speed, max_range, damage, target_pos=None, color=(80, 220, 80)):
         self.pos = pygame.Vector2(pos)
@@ -1550,11 +2569,12 @@ class NatureBolt:
         self.traveled = 0.0
         self.animation_time = 0.0
         self.trail = []
-        self.trail_length = 6
+        self.trail_length = 8
         self.target_pos = pygame.Vector2(target_pos) if target_pos else None
+        self.leaf_particles = []
 
     def _size(self):
-        return 10, 10
+        return 12, 12
 
     def get_rect(self):
         width, height = self._size()
@@ -1575,6 +2595,28 @@ class NatureBolt:
         if len(self.trail) > self.trail_length:
             self.trail.pop(0)
 
+        # Spawn leaf particles
+        if random.random() < 0.4:
+            perp = pygame.Vector2(-self.direction.y, self.direction.x)
+            offset = perp * random.uniform(-6, 6)
+            self.leaf_particles.append({
+                "pos": pygame.Vector2(self.pos) + offset,
+                "vel": perp * random.uniform(-20, 20) + pygame.Vector2(0, -10),
+                "max_life": (ml := random.uniform(0.2, 0.5)),
+                "life": ml,
+                "size": random.uniform(1.5, 3.0),
+                "color": random.choice([
+                    (60, 200, 60), (100, 220, 80),
+                    (160, 255, 120), (200, 255, 180),
+                ]),
+            })
+        for p in self.leaf_particles[:]:
+            p["pos"] += p["vel"] * dt
+            p["vel"] *= 0.95
+            p["life"] -= dt
+            if p["life"] <= 0:
+                self.leaf_particles.remove(p)
+
         rect = self.get_rect()
         for wall in obstacles:
             if rect.colliderect(wall):
@@ -1584,7 +2626,6 @@ class NatureBolt:
         if self.traveled >= self.max_range:
             self.alive = False
 
-        # Hit if close to target position (visual-only projectile)
         if self.target_pos and self.pos.distance_to(self.target_pos) < 15:
             self.alive = False
 
@@ -1592,47 +2633,94 @@ class NatureBolt:
         if camera_offset is None:
             camera_offset = pygame.Vector2(0, 0)
 
+        cx = int(self.pos.x - camera_offset.x)
+        cy = int(self.pos.y - camera_offset.y)
+        t = self.animation_time
+
+        # Leaf particles
+        for p in self.leaf_particles:
+            life_r = min(1.0, p["life"] / p["max_life"]) if p["max_life"] > 0 else 0
+            if life_r <= 0:
+                continue
+            px = int(p["pos"].x - camera_offset.x)
+            py = int(p["pos"].y - camera_offset.y)
+            leaf_alpha = int(150 * life_r)
+            leaf_size = max(1, int(p["size"] * life_r))
+            r, g, b = p["color"]
+            l_surf = pygame.Surface((leaf_size * 2, leaf_size), pygame.SRCALPHA)
+            pygame.draw.ellipse(l_surf, (r, g, b, leaf_alpha), (0, 0, leaf_size * 2, leaf_size))
+            screen.blit(l_surf, (px - leaf_size, py - leaf_size // 2))
+
         # Trail
         for i, pos in enumerate(self.trail):
             alpha = int(100 * (i / len(self.trail)))
-            radius = int(2 + 3 * (i / len(self.trail)))
+            radius = int(2 + 4 * (i / len(self.trail)))
             t_surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
-            pygame.draw.circle(t_surf, (*self.color[:3], alpha), (radius, radius), radius)
+            pygame.draw.circle(t_surf, (40, 180, 40, alpha), (radius, radius), radius)
             screen.blit(t_surf, (pos.x - radius - camera_offset.x, pos.y - radius - camera_offset.y))
 
-        rect = self.get_rect()
-        rect.x -= int(camera_offset.x)
-        rect.y -= int(camera_offset.y)
-
-        pulse = (math.sin(self.animation_time * 12) + 1.0) * 0.5
+        pulse = 0.5 + 0.5 * math.sin(t * 12)
 
         # Glow
-        glow_size = int(rect.width * (1.5 + 0.3 * pulse))
+        glow_size = int(12 + 4 * pulse)
         glow_surf = pygame.Surface((glow_size * 2, glow_size * 2), pygame.SRCALPHA)
-        pygame.draw.circle(glow_surf, (*self.color, 60), (glow_size, glow_size), glow_size)
-        screen.blit(glow_surf, (rect.centerx - glow_size, rect.centery - glow_size))
+        pygame.draw.circle(glow_surf, (60, 220, 60, int(50 + 20 * pulse)), (glow_size, glow_size), glow_size)
+        screen.blit(glow_surf, (cx - glow_size, cy - glow_size))
 
-        # Body
-        pygame.draw.circle(screen, (180, 255, 160), rect.center, rect.width // 2)
-        pygame.draw.circle(screen, self.color, rect.center, rect.width // 2 - 1)
-        # Core
-        pygame.draw.circle(screen, (220, 255, 220), rect.center, max(2, rect.width // 4))
+        # Vine tendril trail behind the bolt
+        for i in range(3):
+            va = t * 6 + i * math.pi * 2 / 3
+            vd = 4 + 2 * pulse
+            vx = cx + math.cos(va) * vd
+            vy = cy + math.sin(va) * vd
+            vex = vx + math.cos(va + 0.3) * (5 + 3 * pulse)
+            vey = vy + math.sin(va + 0.3) * (5 + 3 * pulse)
+            pygame.draw.line(screen, (40, 160, 40, int(120 + 60 * pulse)),
+                             (vx, vy), (vex, vey), max(1, int(2 + pulse)))
+
+        # Body layers
+        pygame.draw.circle(screen, (60, 180, 60), (cx, cy), 7)
+        pygame.draw.circle(screen, (100, 220, 90), (cx, cy), 5)
+        pygame.draw.circle(screen, (180, 255, 160), (cx - 1, cy - 1), 2)
 
 
 class ArcaneMissile:
     """
     Homing arcane missile that seeks the nearest enemy.
+    Crystal shard with orbiting sigils and a spiral trail.
 
     Attributes:
-        pos (pygame.Vector2): Current position.
-        direction (pygame.Vector2): Initial direction.
+        pos (pygame.Vector2): Current position in world space.
+        direction (pygame.Vector2): Normalized movement direction.
         speed (float): Travel speed in pixels per second.
-        max_range (float): Maximum travel distance.
-        damage (int): Damage on hit.
-        alive (bool): Whether the missile is active.
+        max_range (float): Maximum travel distance before despawning.
+        damage (int): Damage dealt to enemies on hit.
+        homing_strength (float): Turn rate toward the target (0-1).
+        alive (bool): Whether the projectile is still active.
         traveled (float): Distance traveled so far.
-        target (Enemy | None): Current homing target.
-        homing_strength (float): How aggressively it tracks (0-1).
+        animation_time (float): Accumulated time for visual animations.
+        target (Enemy or None): Currently tracked enemy.
+        trail (list): Position history for the visual trail.
+        trail_length (int): Maximum number of trail points stored.
+        arcane_sparks (list): Sparkle particle effects.
+        orbit_angle (float): Current angle for orbiting sigil visuals.
+        hit_effect (pygame.Surface or None): Cached hit visual effect surface.
+
+    Methods:
+        __init__(pos, direction, speed, max_range, damage, homing_strength=0.15):
+            Initialize the homing arcane missile.
+        _size():
+            Return the visual base dimensions (width, height).
+        get_rect():
+            Return a collision rectangle centered on the current position.
+        _acquire_target(enemies):
+            Find and set the nearest enemy as the homing target.
+        _spawn_hit_effect():
+            Spawn a bright hit visual at the current position.
+        update(dt, obstacles, enemies):
+            Home toward the target, move, update sparks, and check collisions.
+        draw(screen, camera_offset=None):
+            Render the missile with trail, sigils, arcane sparks, and crystals.
     """
     def __init__(self, pos, direction, speed, max_range, damage, homing_strength=0.15):
         self.pos = pygame.Vector2(pos)
@@ -1650,10 +2738,13 @@ class ArcaneMissile:
         self.animation_time = 0.0
         self.target = None
         self.trail = []
-        self.trail_length = 8
+        self.trail_length = 14
+        self.arcane_sparks = []
+        self.orbit_angle = random.uniform(0, math.pi * 2)
+        self.hit_effect = None
 
     def _size(self):
-        return 12, 12
+        return 14, 14
 
     def get_rect(self):
         w, h = self._size()
@@ -1674,11 +2765,45 @@ class ArcaneMissile:
                 closest = enemy
         return closest
 
+    def _spawn_hit_effect(self):
+        """Create an arcane rift burst on death."""
+        self.hit_effect = {
+            "pos": pygame.Vector2(self.pos),
+            "life": 0.4,
+            "max_life": 0.4,
+            "particles": [],
+        }
+        for _ in range(16):
+            angle = random.uniform(0, math.pi * 2)
+            speed = random.uniform(60, 200)
+            self.hit_effect["particles"].append({
+                "pos": pygame.Vector2(self.pos),
+                "vel": pygame.Vector2(math.cos(angle), math.sin(angle)) * speed,
+                "max_life": (ml := random.uniform(0.2, 0.4)),
+                "life": ml,
+                "size": random.uniform(2, 5),
+                "color": random.choice([
+                    (200, 140, 255), (160, 80, 240),
+                    (255, 200, 255), (120, 60, 220),
+                ]),
+            })
+
     def update(self, dt, obstacles, enemies):
         if not self.alive:
+            if self.hit_effect is not None:
+                self.hit_effect["life"] -= dt
+                for p in self.hit_effect["particles"][:]:
+                    p["pos"] += p["vel"] * dt
+                    p["vel"] *= 0.92
+                    p["life"] -= dt
+                    if p["life"] <= 0:
+                        self.hit_effect["particles"].remove(p)
+                if self.hit_effect["life"] <= 0:
+                    self.hit_effect = None
             return
 
         self.animation_time += dt
+        self.orbit_angle += dt * 4.0
 
         # Acquire or refresh target
         if self.target is None or self.target.is_dead():
@@ -1702,13 +2827,37 @@ class ArcaneMissile:
         if len(self.trail) > self.trail_length:
             self.trail.pop(0)
 
+        # Spawn arcane sparks
+        if random.random() < 0.6:
+            perp = pygame.Vector2(-self.direction.y, self.direction.x)
+            offset = perp * random.uniform(-10, 10)
+            self.arcane_sparks.append({
+                "pos": pygame.Vector2(self.pos) + offset,
+                "vel": pygame.Vector2(self.direction) * random.uniform(-20, -5) + perp * random.uniform(-15, 15),
+                "max_life": (ml := random.uniform(0.2, 0.5)),
+                "life": ml,
+                "size": random.uniform(1.5, 3.0),
+                "color": random.choice([
+                    (200, 150, 255), (160, 100, 240),
+                    (220, 180, 255), (180, 120, 250),
+                ]),
+            })
+        for s in self.arcane_sparks[:]:
+            s["pos"] += s["vel"] * dt
+            s["vel"] *= 0.95
+            s["life"] -= dt
+            if s["life"] <= 0:
+                self.arcane_sparks.remove(s)
+
         rect = self.get_rect()
         for wall in obstacles:
             if rect.colliderect(wall):
+                self._spawn_hit_effect()
                 self.alive = False
                 return
 
         if self.traveled >= self.max_range:
+            self._spawn_hit_effect()
             self.alive = False
             return
 
@@ -1719,6 +2868,7 @@ class ArcaneMissile:
             enemy_rect = enemy.get_rect()
             if rect.colliderect(enemy_rect):
                 enemy.take_damage(self.damage)
+                self._spawn_hit_effect()
                 self.alive = False
                 return
 
@@ -1726,36 +2876,155 @@ class ArcaneMissile:
         if camera_offset is None:
             camera_offset = pygame.Vector2(0, 0)
 
-        # Trail
+        cx = int(self.pos.x - camera_offset.x)
+        cy = int(self.pos.y - camera_offset.y)
+        t = self.animation_time
+
+        # ── Draw hit effect ──
+        if self.hit_effect is not None:
+            progress = 1.0 - self.hit_effect["life"] / self.hit_effect["max_life"]
+            # Expanding rift ring
+            rift_r = int(10 + 40 * progress)
+            rift_alpha = int(200 * (1 - progress))
+            rift_surf = pygame.Surface((rift_r * 2, rift_r * 2), pygame.SRCALPHA)
+            pygame.draw.circle(rift_surf, (120, 60, 200, rift_alpha), (rift_r, rift_r), rift_r, max(1, int(3 * (1 - progress))))
+            pygame.draw.circle(rift_surf, (200, 140, 255, rift_alpha // 2), (rift_r, rift_r), int(rift_r * 0.6), 1)
+            screen.blit(rift_surf, (int(self.hit_effect["pos"].x - camera_offset.x - rift_r),
+                                    int(self.hit_effect["pos"].y - camera_offset.y - rift_r)))
+            # Rift shard burst
+            for p in self.hit_effect["particles"]:
+                life_r = min(1.0, p["life"] / p["max_life"]) if p["max_life"] > 0 else 0
+                if life_r <= 0:
+                    continue
+                px = int(p["pos"].x - camera_offset.x)
+                py = int(p["pos"].y - camera_offset.y)
+                p_alpha = int(255 * life_r)
+                p_size = max(1, int(p["size"] * life_r))
+                r, g, b = p["color"]
+                # Draw as small diamond shard
+                pts = [
+                    (px, py - p_size),
+                    (px + p_size * 0.6, py),
+                    (px, py + p_size),
+                    (px - p_size * 0.6, py),
+                ]
+                shard_surf = pygame.Surface((p_size * 3, p_size * 3), pygame.SRCALPHA)
+                pygame.draw.polygon(shard_surf, (r, g, b, p_alpha), [(p_size * 1.5, p_size * 1.5 - p_size),
+                                        (p_size * 1.5 + p_size * 0.6, p_size * 1.5),
+                                        (p_size * 1.5, p_size * 1.5 + p_size),
+                                        (p_size * 1.5 - p_size * 0.6, p_size * 1.5)])
+                screen.blit(shard_surf, (px - p_size * 1.5, py - p_size * 1.5))
+                # Glow
+                g_sz = p_size * 2
+                g_surf = pygame.Surface((g_sz * 2, g_sz * 2), pygame.SRCALPHA)
+                pygame.draw.circle(g_surf, (r, g, b, p_alpha // 3), (g_sz, g_sz), g_sz)
+                screen.blit(g_surf, (px - g_sz, py - g_sz))
+            return
+
+        # ── Draw arcane sparks ──
+        for s in self.arcane_sparks:
+            life_r = min(1.0, s["life"] / s["max_life"]) if s["max_life"] > 0 else 0
+            if life_r <= 0:
+                continue
+            sx = int(s["pos"].x - camera_offset.x)
+            sy = int(s["pos"].y - camera_offset.y)
+            s_alpha = int(200 * life_r)
+            s_size = max(1, int(s["size"] * life_r))
+            r, g, b = s["color"]
+            sg_sz = s_size * 3
+            sg = pygame.Surface((sg_sz * 2, sg_sz * 2), pygame.SRCALPHA)
+            pygame.draw.circle(sg, (r, g, b, s_alpha // 3), (sg_sz, sg_sz), sg_sz)
+            screen.blit(sg, (sx - sg_sz, sy - sg_sz))
+            pygame.draw.circle(screen, s["color"], (sx, sy), s_size)
+
+        # ── Spiral trail ──
+        perp = pygame.Vector2(-self.direction.y, self.direction.x)
         for i, pos in enumerate(self.trail):
-            alpha = int(120 * (i / len(self.trail)))
-            radius = int(2 + 3 * (i / len(self.trail)))
-            t_surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
-            pygame.draw.circle(t_surf, (180, 100, 220, alpha), (radius, radius), radius)
-            screen.blit(t_surf, (pos.x - radius - camera_offset.x, pos.y - radius - camera_offset.y))
+            ratio = i / len(self.trail) if len(self.trail) > 0 else 0
+            trail_alpha = int(80 * ratio)
+            trail_radius = int(1 + 4 * ratio)
+            # Spiral offset from center line
+            spiral_offset = 6 * math.sin(t * 12 + i * 0.8)
+            spiral_dir = perp * spiral_offset
+            t_pos = pygame.Vector2(pos) + spiral_dir
+            t_surf = pygame.Surface((trail_radius * 2, trail_radius * 2), pygame.SRCALPHA)
+            # Color gradient: deep purple to bright pink
+            tc = (
+                int(120 + 80 * ratio),
+                int(60 + 80 * ratio),
+                int(200 + 55 * ratio),
+            )
+            pygame.draw.circle(t_surf, (*tc, trail_alpha), (trail_radius, trail_radius), trail_radius)
+            screen.blit(t_surf, (t_pos.x - trail_radius - camera_offset.x,
+                                 t_pos.y - trail_radius - camera_offset.y))
 
-        rect = self.get_rect()
-        rect.x -= int(camera_offset.x)
-        rect.y -= int(camera_offset.y)
+        # ── Crystal shard body ──
+        pulse = 0.7 + 0.3 * math.sin(t * 12)
+        fast_pulse = 0.5 + 0.5 * math.sin(t * 25)
 
-        pulse = (math.sin(self.animation_time * 15) + 1.0) * 0.5
+        # Outer glow (hexagonal shape)
+        glow_r = 14 + 4 * pulse
+        glow_surf = pygame.Surface((int(glow_r * 2) + 8, int(glow_r * 2) + 8), pygame.SRCALPHA)
+        g_center = (int(glow_r) + 4, int(glow_r) + 4)
+        glow_a = int(40 + 30 * pulse)
+        # Hexagonal glow
+        glow_pts = []
+        for i in range(6):
+            a = t * 1.5 + i * (math.pi * 2 / 6)
+            gx = g_center[0] + math.cos(a) * glow_r
+            gy = g_center[1] + math.sin(a) * glow_r
+            glow_pts.append((gx, gy))
+        pygame.draw.polygon(glow_surf, (160, 80, 220, glow_a), glow_pts)
+        pygame.draw.polygon(glow_surf, (200, 140, 255, glow_a // 2), glow_pts, 2)
+        screen.blit(glow_surf, (cx - int(glow_r) - 4, cy - int(glow_r) - 4))
 
-        # Outer glow
-        glow_size = int(rect.width * (2.0 + 0.4 * pulse))
-        glow_surf = pygame.Surface((glow_size * 2, glow_size * 2), pygame.SRCALPHA)
-        pygame.draw.circle(glow_surf, (200, 120, 255, 50), (glow_size, glow_size), glow_size)
-        screen.blit(glow_surf, (rect.centerx - glow_size, rect.centery - glow_size))
+        # Crystal body — rotating diamond
+        crystal_r = 6 + 2 * fast_pulse
+        rot_angle = t * 3.0
+        crystal_pts = []
+        for i in range(4):
+            a = rot_angle + i * (math.pi * 2 / 4)
+            rx = cx + math.cos(a) * crystal_r
+            ry = cy + math.sin(a) * crystal_r
+            crystal_pts.append((rx, ry))
+        # Outer crystal
+        pygame.draw.polygon(screen, (140, 60, 210), crystal_pts)
+        pygame.draw.polygon(screen, (200, 140, 255), crystal_pts, 2)
+        # Inner crystal (smaller, counter-rotating)
+        inner_r = crystal_r * 0.6
+        inner_pts = []
+        for i in range(4):
+            a = -rot_angle + i * (math.pi * 2 / 4)
+            rx = cx + math.cos(a) * inner_r
+            ry = cy + math.sin(a) * inner_r
+            inner_pts.append((rx, ry))
+        pygame.draw.polygon(screen, (200, 160, 255), inner_pts)
+        pygame.draw.polygon(screen, (230, 200, 255), inner_pts, 1)
+        # Bright core
+        core_r = max(2, int(crystal_r * 0.35))
+        pygame.draw.circle(screen, (255, 230, 255), (cx, cy), core_r)
+        pygame.draw.circle(screen, (255, 255, 255), (cx, cy), max(1, core_r // 2))
 
-        # Missile body - outer
-        pygame.draw.circle(screen, (160, 80, 200), rect.center, rect.width // 2)
-        # Missile body - inner
-        pygame.draw.circle(screen, (200, 140, 240), rect.center, rect.width // 2 - 1)
-        # Core
-        core_r = max(2, rect.width // 4)
-        core_pulse = 0.7 + 0.3 * pulse
-        pygame.draw.circle(screen, (255, 220, 255), rect.center, int(core_r * core_pulse))
-        # Inner spark
-        pygame.draw.circle(screen, (255, 255, 255), rect.center, max(1, core_r // 2))
+        # ── Orbiting arcane sigils ──
+        sigil_count = 3
+        for i in range(sigil_count):
+            sigil_angle = self.orbit_angle + i * (math.pi * 2 / sigil_count)
+            sigil_dist = 14 + 4 * math.sin(t * 3.0 + i * 2.0)
+            sx = cx + math.cos(sigil_angle) * sigil_dist
+            sy = cy + math.sin(sigil_angle) * sigil_dist
+            sigil_size = max(2, int(3 + 2 * math.sin(t * 5.0 + i * 1.5)))
+            sigil_alpha = int(180 + 70 * math.sin(t * 6.0 + i * 2.3))
+            # Draw sigil as small 3-point star
+            star_pts = []
+            for j in range(3):
+                a = sigil_angle + j * (math.pi * 2 / 3)
+                spx = sx + math.cos(a) * sigil_size
+                spy = sy + math.sin(a) * sigil_size
+                star_pts.append((spx, spy))
+            pygame.draw.polygon(screen, (180, 120, 255, sigil_alpha), star_pts)
+            pygame.draw.polygon(screen, (220, 180, 255, sigil_alpha), star_pts, 1)
+            # Glow dot at sigil center
+            pygame.draw.circle(screen, (255, 220, 255, sigil_alpha), (int(sx), int(sy)), max(1, sigil_size // 2))
 
 
 class DarkPact:
@@ -1770,6 +3039,19 @@ class DarkPact:
         expansion_time (float): Current expansion time.
         expansion_duration (float): How long the visual expansion lasts.
         current_radius (float): Current visual radius.
+        damage_applied (bool): Whether damage has already been applied.
+        animation_time (float): Accumulated time for visual animations.
+        smoke_particles (list): Rising shadow smoke particle effects.
+
+    Methods:
+        __init__(pos, damage, radius=150.0, expansion_duration=0.5):
+            Initialize the dark pact shadow burst.
+        get_rect():
+            Return a rectangle covering the burst radius.
+        update(dt, obstacles, enemies):
+            Expand the burst, damage enemies, and spawn smoke particles.
+        draw(screen, camera_offset=None):
+            Render the dark burst with smoke rings, particles, and tendrils.
     """
     def __init__(self, pos, damage, radius=150.0, expansion_duration=0.5):
         self.pos = pygame.Vector2(pos)
@@ -1781,6 +3063,7 @@ class DarkPact:
         self.current_radius = 0.0
         self.damage_applied = False
         self.animation_time = 0.0
+        self.smoke_particles = []
 
     def get_rect(self):
         size = int(self.radius * 2)
@@ -1807,6 +3090,32 @@ class DarkPact:
                     enemy.take_damage(self.damage)
             self.damage_applied = True
 
+        # Spawn rising smoke particles
+        spawn_count = max(1, int(15 * dt * (1 - progress * 0.5)))
+        for _ in range(spawn_count):
+            angle = random.uniform(0, math.pi * 2)
+            dist = random.uniform(0, self.current_radius)
+            self.smoke_particles.append({
+                "pos": pygame.Vector2(self.pos) + pygame.Vector2(math.cos(angle), math.sin(angle)) * dist,
+                "vel": pygame.Vector2(random.uniform(-8, 8), random.uniform(-30, -10)),
+                "max_life": (ml := random.uniform(0.3, 0.7)),
+                "life": ml,
+                "size": random.uniform(3.0, 7.0),
+                "color": random.choice([
+                    (60, 20, 100),
+                    (100, 50, 160),
+                    (140, 80, 200),
+                    (40, 10, 80),
+                ]),
+            })
+
+        for p in self.smoke_particles[:]:
+            p["pos"] += p["vel"] * dt
+            p["vel"] *= 0.96
+            p["life"] -= dt
+            if p["life"] <= 0:
+                self.smoke_particles.remove(p)
+
         if self.expansion_time >= self.expansion_duration:
             self.alive = False
 
@@ -1822,6 +3131,37 @@ class DarkPact:
         if radius <= 0:
             return
 
+        t = self.animation_time
+
+        # ── Shadow tendrils reaching outward ──
+        tendril_count = int(6 + 4 * (1 - progress))
+        for i in range(tendril_count):
+            t_angle = t * 2.0 + i * (math.pi * 2 / tendril_count)
+            tendril_len = int(radius * (0.6 + 0.4 * math.sin(t * 4.0 + i * 1.5)))
+            end_x = cx + math.cos(t_angle) * tendril_len
+            end_y = cy + math.sin(t_angle) * tendril_len
+            tendril_alpha = int(80 * (1 - progress))
+            # Jagged tendril (3 segments)
+            pts = [(cx, cy)]
+            for seg in range(1, 4):
+                frac = seg / 3
+                jitter = random.uniform(-4, 4) * frac
+                seg_x = cx + math.cos(t_angle + jitter * 0.05) * tendril_len * frac
+                seg_y = cy + math.sin(t_angle + jitter * 0.05) * tendril_len * frac
+                pts.append((seg_x, seg_y))
+            if len(pts) >= 2:
+                for j in range(len(pts) - 1):
+                    pygame.draw.line(screen, (80, 30, 140, tendril_alpha),
+                                     pts[j], pts[j + 1], max(1, int(2 - progress * 1.5)))
+
+        # ── Pulsing shadow rings ──
+        ring_count = 3
+        for i in range(ring_count):
+            ring_r = int(radius * (0.2 + 0.8 * ((i + 1) / ring_count)))
+            ring_phase = (t * 3.0 + i * 1.2) % 1.0
+            ring_pulse = int(40 + 30 * math.sin(t * 5.0 + i * 2.0))
+            pygame.draw.circle(screen, (100, 40, 160, ring_pulse), (cx, cy), ring_r, max(1, int(2 - progress)))
+
         # ── Outer shadow ring ──
         ring_alpha = int(180 * (1 - progress))
         pygame.draw.circle(screen, (80, 40, 120, ring_alpha), (cx, cy), radius, max(2, int(3 * (1 - progress) + 1)))
@@ -1836,11 +3176,27 @@ class DarkPact:
         inner_r = max(1, int(radius * 0.3))
         inner_alpha = int(180 * (1 - progress * 0.2))
         pygame.draw.circle(surface, (160, 80, 220, inner_alpha), (radius, radius), inner_r)
+        # Void center
+        void_r = max(1, int(radius * 0.15))
+        pygame.draw.circle(surface, (20, 5, 50, 200), (radius, radius), void_r)
 
         screen.blit(surface, (cx - radius, cy - radius))
 
+        # ── Rising smoke particles ──
+        for p in self.smoke_particles:
+            life_r = min(1.0, p["life"] / p["max_life"]) if p["max_life"] > 0 else 0
+            if life_r <= 0:
+                continue
+            px = int(p["pos"].x - camera_offset.x)
+            py = int(p["pos"].y - camera_offset.y)
+            smoke_alpha = int(120 * life_r)
+            smoke_size = max(1, int(p["size"] * (0.5 + 0.5 * life_r)))
+            r, g, b = p["color"]
+            sg = pygame.Surface((smoke_size * 3, smoke_size * 3), pygame.SRCALPHA)
+            pygame.draw.circle(sg, (r, g, b, smoke_alpha), (smoke_size * 1.5, smoke_size * 1.5), smoke_size * 1.5)
+            screen.blit(sg, (px - smoke_size * 1.5, py - smoke_size * 1.5))
+
         # ── Shadow wisps ──
-        import random
         for _ in range(int(8 * (1 - progress) + 2)):
             w_angle = random.uniform(0, math.pi * 2)
             w_dist = random.uniform(0, radius)
@@ -1863,6 +3219,27 @@ class Afterimage:
     """
     Short-lived afterimage left by Void Walker dodge.
     Deals 18 damage once in a small area at the player's previous position.
+
+    Attributes:
+        pos (pygame.Vector2): Center position of the afterimage.
+        damage (int): Damage dealt to enemies in range.
+        radius (float): Effect radius for damage.
+        alive (bool): Whether the effect is still active.
+        life (float): Current elapsed lifetime.
+        max_life (float): Maximum lifetime before despawn.
+        damage_applied (bool): Whether damage has already been applied.
+        angle (float): Current rotation angle for visual sigil.
+        rot_speed (float): Rotation speed for the sigil.
+
+    Methods:
+        __init__(pos, damage=18, radius=70.0, duration=0.7):
+            Initialize the afterimage at the given position.
+        get_rect():
+            Return a rectangle covering the effect area.
+        update(dt, obstacles, enemies):
+            Apply damage after a short delay and fade out.
+        draw(screen, camera_offset=None):
+            Render the player silhouette, ghostly ring, glow, sigil, and sparkles.
     """
     def __init__(self, pos, damage=18, radius=70.0, duration=0.7):
         import random
@@ -1962,6 +3339,25 @@ class ElementalBurst:
     """
     Burst of elemental energy triggered by a dual-element combo.
     Deals damage in an area with a colorful elemental visual.
+
+    Attributes:
+        pos (pygame.Vector2): Center position of the burst.
+        damage (int): Damage dealt to enemies in range.
+        radius (float): Maximum expansion radius.
+        alive (bool): Whether the effect is still active.
+        life (float): Current elapsed lifetime.
+        max_life (float): Maximum lifetime before despawn.
+        damage_applied (bool): Whether damage has already been applied.
+
+    Methods:
+        __init__(pos, damage, radius=180.0, duration=0.8):
+            Initialize the elemental burst.
+        get_rect():
+            Return a rectangle covering the burst radius.
+        update(dt, obstacles, enemies):
+            Apply damage after a short delay and animate the vortex.
+        draw(screen, camera_offset=None):
+            Render the vortex glow, spiral arms, particles, core, and energy wisps.
     """
     def __init__(self, pos, damage, radius=180.0, duration=0.8):
         self.pos = pygame.Vector2(pos)

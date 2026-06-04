@@ -9,69 +9,382 @@ from src.entities.nature_spirit import NatureSpirit
 
 class Character:
     """
-    Represents the player character with animated movement in four directions.
+    Represents the player character with animated movement, combat, skill system,
+    resource management, and visual effects.
 
-    This class handles player movement, animation, health, and respawn logic.
+    Attributes grouped by category:
 
-    Attributes:
-        animations (dict[str, list[pygame.Surface]]):
-            Dictionary containing lists of Pygame surfaces for each direction ("up", "down", "side").
-        direction (str):
-            Current movement direction of the character ("up", "down", "side").
-        image (pygame.Surface):
-            Current frame of the character to be drawn.
-        pos (pygame.Vector2):
-            Position of the character on the screen.
-        spawn_point (pygame.Vector2):
-            The respawn point for the character.
-        speed (float):
-            Movement speed of the character in pixels per second.
-        
-        # New attributes for CollisionSystem
-        rect (pygame.Rect): Collision and drawing rectangle (for integer coordinates).
-        velocity (pygame.Vector2): Normalized vector representing the desired movement direction.
+    --- Animations & Sprites ---
+        sprite_set (str): Name of the character sprite set.
+        animations (dict[str, list[pygame.Surface]]): Animation frames per direction.
+        animations_flipped (dict[str, list[pygame.Surface]]): Horizontally flipped side frames.
+        direction (str): Current direction ("up", "down", "side").
+        image (pygame.Surface): Current animation frame to draw.
+        frame_index (int): Current animation frame index.
+        animation_speed (float): Frames per second for animation.
+        time_accumulator (float): Accumulated time for frame switching.
+        flip (bool): Whether to flip the sprite horizontally.
+        moving (bool): Whether the character is currently in motion.
 
-        frame_index (int):
-            Current frame index for animation.
-        animation_speed (float):
-            Number of frames per second for animation.
-        time_accumulator (float):
-            Accumulates time to control animation frame switching.
-        flip (bool):
-            Whether to flip the character horizontally (used for left/right movement).
-        moving (bool):
-            Whether the character is currently moving.
-        hp (int):
-            Current health points of the character.
-        death_count (int):
-            Number of times the character has died.
-        death_sound (pygame.mixer.Sound):
-            Sound effect played on death.
+    --- Position & Movement ---
+        pos (pygame.Vector2): World position.
+        spawn_point (pygame.Vector2): Respawn point.
+        rect (pygame.Rect): Collision/drawing rectangle.
+        velocity (pygame.Vector2): Normalized movement direction.
+        base_speed (float): Base movement speed in px/s.
+        speed_multiplier (float): Multiplier applied to base speed.
+        speed (float): Effective movement speed.
+        sprint_multiplier (float): Speed multiplier while sprinting.
+        is_sprinting (bool): Whether sprinting is active.
+        can_sprint (bool): Whether the character can sprint.
+
+    --- Health & Death ---
+        max_hp (int): Maximum health points.
+        hp (int): Current health points.
+        death_count (int): Number of deaths.
+        death_sound (pygame.mixer.Sound): Sound played on death.
+        invulnerable (bool): Whether the character is temporarily invulnerable.
+        invulnerability_timer (float): Elapsed invulnerability time.
+        invulnerability_duration (float): Duration of invulnerability after hit.
+
+    --- Resources ---
+        max_stamina (int): Maximum stamina.
+        stamina (int): Current stamina.
+        stamina_drain_rate (int): Stamina drained per second while sprinting.
+        stamina_regen_rate (int): Stamina regenerated per second.
+        max_mana (int): Maximum mana.
+        mana (int): Current mana.
+        mana_drain_rate (float): Mana drained per second while casting.
+        mana_regen_rate (float): Mana regenerated per second.
+        energy (float): Alias for stamina for compatibility.
+
+    --- Leveling & XP ---
+        xp (int): Current experience points.
+        level (int): Current level.
+        xp_to_next_level (int): XP required for next level.
+
+    --- Combat Stats ---
+        base_attack_damage (int): Base melee damage.
+        base_attack_range (int): Base melee range in pixels.
+        base_attack_cooldown (int): Base melee cooldown in ms.
+        attack_damage (int): Effective attack damage.
+        attack_range (int): Effective attack range.
+        attack_cooldown (int): Effective attack cooldown (modified by __getattribute__).
+        attack_cooldown_mult (float): Cooldown multiplier (<1 = faster).
+        last_attack_time (int): Timestamp of last attack.
+        is_attacking (bool): Whether currently attacking.
+        last_attack_dir (pygame.Vector2): Direction of last attack.
+        melee_origin_offset (float): Offset from character center for melee origin.
+        melee_slash_distance (float): Forward reach of melee attacks.
+        damage_bonus (int): Flat bonus damage added to all attacks.
+        cooldown_multiplier (float): Global skill cooldown multiplier.
+        shield (float): Damage absorption before HP loss.
+        defense (int): Flat damage reduction from armor.
+
+    --- Skill System ---
+        skillbook (list): Learned skills (dicts with skill_id, name, description, etc.).
+        skillbar (list): 6-slot skill hotbar (skill dicts or None).
+        skill_tree_points (int): Available skill tree points.
+        skill_tree_unlocked (set): Unlocked skill tree node IDs.
+
+    --- Status Effects ---
+        effects (list): Active status effect instances.
+        confused (bool): Whether movement is inverted.
+        dizzy (bool): Whether the character is staggered.
+        resistances (dict): Resistance values per effect name (0.0-1.0).
+        floating_texts (list): Active damage/heal floating text popups.
+
+    --- Passive / Keystone Attributes ---
+        static_field (bool): Static Field passive active.
+        static_field_proc_chance (float): Proc chance for Static Field.
+        static_field_damage (int): Static Field damage.
+        regeneration (bool): Regeneration passive active.
+        regeneration_hp_per_sec (float): HP regenerated per second.
+        regeneration_acc (float): Accumulator for regen tick.
+        pyromancers_fury (bool): Pyromancer's Fury passive active.
+        pyromancers_fury_damage_mult (float): Fire damage multiplier.
+        pyromancers_fury_area_mult (float): Fire area multiplier.
+        poison_blade (bool): Poison Blade passive active.
+        poison_blade_damage_per_sec (float): Poison DPS.
+        poison_blade_duration (float): Poison duration in seconds.
+        mana_flow (bool): Mana Flow passive active.
+        eternal_fortress (bool): Eternal Fortress keystone active.
+        soul_harvest (bool): Soul Harvest keystone active.
+        soul_harvest_stacks (list): Current Soul Harvest kill stacks.
+        soul_harvest_duration (float): Stack duration.
+        soul_harvest_hp_per_kill (int): HP restored per kill.
+        soul_harvest_damage_per_stack (float): Damage bonus per stack.
+        void_walker (bool): Void Walker keystone active.
+        void_walker_dodge_chance (float): Dodge chance.
+        void_walker_teleport_range (float): Teleport range.
+        void_walker_afterimage_damage (int): Afterimage damage.
+        elemental_mastery (bool): Elemental Mastery keystone active.
+        elemental_damage_mult (float): Elemental damage multiplier.
+        last_elemental_skill (str or None): ID of last used elemental skill.
+        last_elemental_time (float): Timestamp of last elemental skill.
+        combo_window (float): Window in seconds for element combo.
+        elemental_damage_attrs (frozenset): Attribute names affected by elemental mastery.
+
+    --- Skill Cooldowns & Config ---
+        fireball_speed (float): Fireball projectile speed.
+        fireball_range (float): Fireball max range.
+        fireball_damage (int): Fireball damage.
+        fireball_blast_radius (float): Fireball explosion radius.
+        fireball_fuse_time (float): Fireball fuse duration.
+        fireball_cooldown (int): Fireball cooldown in ms.
+        fireball_last_used (int): Last fireball use timestamp.
+        fireball_knockback (float): Fireball knockback force.
+        game_state (object or None): Reference to game state.
+        flame_shield_duration (float): Flame Shield active duration.
+        flame_shield_cooldown (int): Flame Shield cooldown in ms.
+        flame_shield_last_used (int): Last Flame Shield timestamp.
+        flame_shield_active (bool): Whether Flame Shield is active.
+        flame_shield_active_time (float): Remaining active time.
+        flame_shield_damage_per_sec (float): Flame Shield DPS.
+        flame_shield_radius (float): Flame Shield radius.
+        flame_shield_particles (list): Flame Shield visual particles.
+        flame_shield_damage_acc (float): Accumulated fractional damage.
+        frost_nova_radius (float): Frost Nova radius.
+        frost_nova_freeze_duration (float): Freeze duration.
+        frost_nova_damage (int): Frost Nova damage.
+        frost_nova_cooldown (int): Frost Nova cooldown.
+        frost_nova_last_used (int): Last Frost Nova timestamp.
+        ice_armor_duration (float): Ice Armor active duration.
+        ice_armor_cooldown (int): Ice Armor cooldown.
+        ice_armor_last_used (int): Last Ice Armor timestamp.
+        ice_armor_active (bool): Whether Ice Armor is active.
+        ice_armor_active_time (float): Remaining active time.
+        ice_armor_remaining_absorption (float): Remaining damage absorption.
+        ice_armor_max_absorption (float): Max absorption capacity.
+        ice_armor_slow_radius (float): Slow aura radius.
+        ice_armor_slow_factor (float): Slow movement multiplier.
+        ice_armor_particles (list): Ice Armor visual particles.
+        glacial_cascade_speed (float): Cascade projectile speed.
+        glacial_cascade_range (float): Cascade max range.
+        glacial_cascade_damage (int): Cascade damage.
+        glacial_cascade_freeze_duration (float): Cascade freeze duration.
+        glacial_cascade_cooldown (int): Cascade cooldown.
+        glacial_cascade_last_used (int): Last Cascade timestamp.
+        glacial_cascade_width (float): Cascade fan base width.
+        chain_lightning_speed (float): Lightning bolt speed.
+        chain_lightning_range (float): Lightning max range.
+        chain_lightning_damage (int): Lightning damage per hit.
+        chain_lightning_chain_range (float): Chain jump range.
+        chain_lightning_max_targets (int): Max chain targets.
+        chain_lightning_cooldown (int): Lightning cooldown.
+        chain_lightning_last_used (int): Last Lightning timestamp.
+        thunderstrike_damage (int): Thunderstrike damage.
+        thunderstrike_radius (float): Thunderstrike radius.
+        thunderstrike_range (float): Thunderstrike cast range.
+        thunderstrike_cooldown (int): Thunderstrike cooldown.
+        thunderstrike_last_used (int): Last Thunderstrike timestamp.
+        entangling_roots_speed (float): Root projectile speed.
+        entangling_roots_range (float): Root max range.
+        entangling_roots_radius (float): Root burst radius.
+        entangling_roots_root_duration (float): Root immobilize duration.
+        entangling_roots_damage (int): Root burst damage.
+        entangling_roots_cooldown (int): Roots cooldown.
+        entangling_roots_last_used (int): Last Roots timestamp.
+        summon_spirit_damage (int): Spirit attack damage.
+        summon_spirit_duration (float): Spirit lifetime.
+        summon_spirit_cooldown (int): Spirit summon cooldown.
+        summon_spirit_last_used (int): Last summon timestamp.
+        summon_spirit_particles (list): Summon visual particles.
+        shadow_step_range (float): Shadow Step teleport range.
+        shadow_step_cooldown (int): Shadow Step cooldown.
+        shadow_step_last_used (int): Last Shadow Step timestamp.
+        shadow_step_invuln_duration (float): Invulnerability after step.
+        shadow_step_effect (object or None): Current shadow effect object.
+        shadow_step_particles (list): Shadow Step visual particles.
+        dark_pact_hp_cost_percent (float): HP cost as fraction of max HP.
+        dark_pact_damage (int): Dark Pact damage.
+        dark_pact_radius (float): Dark Pact radius.
+        dark_pact_cooldown (int): Dark Pact cooldown.
+        dark_pact_last_used (int): Last Dark Pact timestamp.
+        arcane_missiles_speed (float): Missile speed.
+        arcane_missiles_range (float): Missile max range.
+        arcane_missiles_damage (int): Missile damage per bolt.
+        arcane_missiles_count (int): Number of missiles per cast.
+        arcane_missiles_cooldown (int): Missiles cooldown.
+        arcane_missiles_last_used (int): Last Missiles timestamp.
+        mystic_barrier_duration (float): Barrier active duration.
+        mystic_barrier_cooldown (int): Barrier cooldown.
+        mystic_barrier_last_used (int): Last Barrier timestamp.
+        mystic_barrier_active (bool): Whether barrier is active.
+        mystic_barrier_active_time (float): Remaining active time.
+        mystic_barrier_reflect_pct (float): Damage reflect percentage.
+        mystic_barrier_particles (list): Barrier visual particles.
+
+    --- Keystone Skills ---
+        berserkers_rage_active (bool): Whether Rage is active.
+        berserkers_rage_duration (float): Rage duration.
+        berserkers_rage_active_time (float): Remaining Rage time.
+        berserkers_rage_cooldown (int): Rage cooldown.
+        berserkers_rage_last_used (int): Last Rage timestamp.
+        berserkers_rage_particles (list): Rage visual particles.
+        chrono_shift_active (bool): Whether Chrono Shift is active.
+        chrono_shift_duration (float): Chrono Shift duration.
+        chrono_shift_active_time (float): Remaining active time.
+        chrono_shift_cooldown (int): Chrono Shift cooldown.
+        chrono_shift_last_used (int): Last Chrono Shift timestamp.
+        chrono_shift_particles (list): Chrono Shift visual particles.
+
+    --- Dash ---
+        dash_speed_multiplier (float): Dash speed boost multiplier.
+        dash_duration (float): Dash duration in seconds.
+        dash_cooldown (int): Dash cooldown in ms.
+        dash_active_time (float): Remaining dash time.
+        dash_last_used (int): Last dash timestamp.
+        dash_direction (pygame.Vector2): Dash direction.
+        dash_trail (list): Dash visual trail points.
+        _dash_trail_timer (float): Dash trail spawn accumulator.
 
     Methods:
+        __init__():
+            Initialize all character attributes, skills, and resources.
+        __getattribute__(name):
+            Apply dynamic modifiers to cooldown, damage, and attack_cooldown attributes.
+
+        # Skill Learning
+        _build_skillbook():
+            Build and return the initial skillbook (includes dash).
+        learn_fireball():
+        learn_flame_shield():
+        learn_pyromancers_fury():
+        learn_frost_nova():
+        learn_ice_armor():
+        learn_glacial_cascade():
+        learn_chain_lightning():
+        learn_static_field():
+        learn_thunderstrike():
+        learn_entangling_roots():
+        learn_regeneration():
+        learn_summon_spirit():
+        learn_shadow_step():
+        learn_poison_blade():
+        learn_dark_pact():
+        learn_arcane_missiles():
+        learn_mana_flow():
+        learn_mystic_barrier():
+        learn_berserkers_rage():
+        learn_eternal_fortress():
+        learn_soul_harvest():
+        learn_void_walker():
+        learn_elemental_mastery():
+        learn_chrono_shift():
+            Add the named skill/passive/keystone to the skillbook.
+
+        # Skill Usage
+        get_skill_in_slot(slot_index):
+            Return the skill dict in the given hotbar slot.
+        use_skill_from_slot(slot_index, aim_direction=None):
+            Use the skill in the given hotbar slot.
+        get_skill_cooldown_percent(skill):
+            Return cooldown progress (0.0-1.0) for a skill.
+        is_skill_ready(skill):
+            Return True if the skill is off cooldown.
+        use_skill(skill, aim_direction=None):
+            Execute a skill by its dict, spawning the appropriate projectile/effect.
+
+        # Combat
+        can_attack(current_time=None):
+            Return True if melee attack cooldown has elapsed.
+        start_attack(current_time=None, show_slash=True):
+            Begin a melee attack animation.
+        get_effective_attack_damage():
+            Return attack damage including bonuses.
+        get_forward_direction():
+            Return the forward Vector2 based on current direction.
+        get_center():
+            Return the center position as Vector2.
+        get_melee_anchor():
+            Return the origin point for melee slash.
+        attack(enemies, aim_direction=None, cone_degrees=90.0):
+            Perform a standard melee attack (sword style).
+        _apply_weapon_enchantments(enemy):
+            Apply on-hit weapon effects to the given enemy.
+        attack_mace(enemies, aim_direction=None):
+        attack_axe(enemies, aim_direction=None):
+        attack_spear(enemies, aim_direction=None):
+        attack_war_hammer(enemies, aim_direction=None):
+            Perform weapon-class-specific melee attacks.
+
+        # Resource Management
+        consume_stamina(amount):
+            Deduct stamina, clamped to 0.
+        restore_stamina(amount):
+            Restore stamina, clamped to max.
+        consume_mana(amount):
+            Deduct mana, clamped to 0.
+        restore_mana(amount):
+            Restore mana, clamped to max.
+        heal(amount):
+            Restore HP, clamped to max_hp.
+        use_item(item):
+            Use a consumable item from inventory.
+
+        # Status Effects
+        get_resistance(effect_name):
+            Return resistance value (0.0-1.0) for the given effect.
+        is_immune(effect_name):
+            Return True if resistance >= 1.0 for the effect.
+        add_effect(effect):
+            Add a status effect to the character.
+        strength_metric(x):
+            Placeholder metric for sorting/filtering effects.
+
+        # Core Loop
         get_rect():
-            Returns the collision rectangle, updated to the current float position.
-
-        update(dt, collision_system, obstacles):
-            Update the character's position and animation based on keyboard input.
-            Args:
-                dt (float): Time elapsed since the last frame in seconds.
-                collision_system (CollisionSystem): The external collision handler instance.
-                obstacles (list[pygame.Rect]): List of static collision boxes (walls).
-        
+            Return the collision rectangle at current position.
         _set_velocity():
-            Calculates the desired movement vector (velocity) based on keyboard input.
-
-        take_damage(amount):
-            Reduce the character's health by the given amount and handle death.
-            Args:
-                amount (int): Amount of damage to take.
+            Calculate movement velocity from keyboard input.
+        update(dt, collision_system, obstacles):
+            Update movement, resources, cooldowns, effects, and skill particles.
+        take_damage(amount, ignore_invulnerability=False):
+            Apply damage, factoring invulnerability, shield, and armor.
         die():
-            Handle character death, play sound, increment death count, reset health and position.
-        draw(screen):
-            Draw the character's current frame to the given Pygame surface.
-            Args:
-                screen (pygame.Surface): The surface to draw the character on.
+            Handle death: play sound, reset HP and position.
+        draw(screen, camera_offset=None):
+            Render the character and all active skill/passive visual effects.
+        gain_xp(amount):
+            Add XP and trigger level-up if threshold reached.
+        level_up():
+            Increase level, update next XP threshold.
+
+        # Floating Text
+        add_floating_text(text, x, y, color, duration, size):
+            Queue a floating damage/heal text popup.
+        _update_floating_texts(dt):
+            Update floating text lifetimes.
+        _draw_floating_texts(screen, camera_offset):
+            Render all active floating texts.
+
+        # Skill Visual Effects
+        _spawn_shadow_step_effect(start_pos, end_pos):
+        _update_shadow_step_particles(dt):
+        _draw_shadow_step(screen, camera_offset):
+        _spawn_summon_effect(pos):
+        _update_summon_spirit_particles(dt):
+        _draw_summon_spirit(screen, camera_offset):
+        _update_berserkers_rage_particles(dt):
+        _draw_berserkers_rage(screen, camera_offset):
+        _update_flame_shield_particles(dt):
+        _draw_flame_shield(screen, camera_offset):
+        _update_ice_armor_particles(dt):
+        _draw_ice_armor(screen, camera_offset):
+        _update_mystic_barrier_particles(dt):
+        _draw_mystic_barrier(screen, camera_offset):
+        _update_chrono_shift_particles(dt):
+        _draw_chrono_shift(screen, camera_offset):
+            Update and render skill/passive visual particle effects.
+
+        # Visual Helpers (defined inside draw)
+        swoosh(center, angle_deg, arc_total, radius, color, width, alpha, layers=3):
+            Draw a melee swoosh arc.
+        gust_line(start, end, color, alpha, width):
+            Draw a single gust arc line.
+        dot(center, color, alpha, radius):
+            Draw a single dot for melee effects.
     """
     def __init__(self):
         self.sprite_set = "WomanHuman1(Recolor)"
@@ -173,6 +486,7 @@ class Character:
         self.fireball_blast_radius = 110.0
         self.fireball_fuse_time = 0.9
         self.fireball_cooldown = 1300
+        self.fireball_last_used = -self.fireball_cooldown
         self.fireball_knockback = 18.0
         self.game_state = None
 
@@ -250,6 +564,7 @@ class Character:
         self.summon_spirit_duration = 10.0
         self.summon_spirit_cooldown = 12000
         self.summon_spirit_last_used = -self.summon_spirit_cooldown
+        self.summon_spirit_particles = []
 
         # Passive: Regeneration
         self.regeneration = False
@@ -266,6 +581,8 @@ class Character:
         self.shadow_step_cooldown = 6000
         self.shadow_step_last_used = -self.shadow_step_cooldown
         self.shadow_step_invuln_duration = 0.5
+        self.shadow_step_effect = None
+        self.shadow_step_particles = []
 
         # Passive: Poison Blade
         self.poison_blade = False
@@ -351,6 +668,8 @@ class Character:
         self.dash_active_time = 0.0
         self.dash_last_used = -self.dash_cooldown
         self.dash_direction = pygame.Vector2(1, 0)
+        self.dash_trail = []
+        self._dash_trail_timer = 0.0
 
     def __getattribute__(self, name):
         if name.endswith("_cooldown") and name not in ("attack_cooldown", "base_attack_cooldown"):
@@ -701,22 +1020,30 @@ class Character:
             return 0.0
         
         skill_id = skill.get("skill_id", "")
+        if not skill_id:
+            return 0.0
+        
         current_time = pygame.time.get_ticks()
         
-        if skill_id == "dash":
-            elapsed = current_time - self.dash_last_used
-            if elapsed >= self.dash_cooldown:
-                return 0.0
-            return 1.0 - (elapsed / self.dash_cooldown)
+        last_used = getattr(self, f"{skill_id}_last_used", None)
+        if last_used is None:
+            return 0.0
         
-        if skill_id == "fireball":
-            last_used = getattr(self, "fireball_last_used", -self.fireball_cooldown)
-            elapsed = current_time - last_used
-            if elapsed >= self.fireball_cooldown:
-                return 0.0
-            return 1.0 - (elapsed / self.fireball_cooldown)
+        # Skills with dynamic cooldown (may include cooldown reduction bonuses)
+        if skill_id == "berserkers_rage":
+            cooldown = self.berserkers_rage_cooldown + getattr(self, "berserkers_rage_cooldown_bonus", 0)
+        elif skill_id == "chrono_shift":
+            cooldown = self.chrono_shift_cooldown + getattr(self, "chrono_shift_cooldown_bonus", 0)
+        else:
+            cooldown = getattr(self, f"{skill_id}_cooldown", 0)
         
-        return 0.0
+        if cooldown <= 0:
+            return 0.0
+        
+        elapsed = current_time - last_used
+        if elapsed >= cooldown:
+            return 0.0
+        return 1.0 - (elapsed / cooldown)
 
     def is_skill_ready(self, skill):
         """
@@ -983,11 +1310,16 @@ class Character:
             if direction.length_squared() == 0:
                 direction = pygame.Vector2(1, 0)
 
+            start_pos = self.get_center()
             teleport_offset = direction.normalize() * self.shadow_step_range
             self.pos += teleport_offset
+            end_pos = self.get_center()
+
             self.invulnerable = True
             self.invulnerability_timer = self.shadow_step_invuln_duration
             self.shadow_step_last_used = current_time
+
+            self._spawn_shadow_step_effect(start_pos, end_pos)
             logger.info("Player used Shadow Step.")
             return True
 
@@ -1068,6 +1400,9 @@ class Character:
             if not hasattr(game_state, "spirits"):
                 game_state.spirits = []
             game_state.spirits.append(spirit)
+
+            # Spawn summon visual effect
+            self._spawn_summon_effect(spawn_pos)
             self.summon_spirit_last_used = current_time
             logger.info("Player used Summon Spirit.")
             return True
@@ -1712,6 +2047,12 @@ class Character:
         # Update floating texts
         self._update_floating_texts(dt)
 
+        # Update Shadow Step particles
+        self._update_shadow_step_particles(dt)
+
+        # Update Summon Spirit particles
+        self._update_summon_spirit_particles(dt)
+
         # Update invulnerability
         if self.invulnerable:
             self.invulnerability_timer -= dt
@@ -1750,7 +2091,27 @@ class Character:
 
         if self.dash_active_time > 0:
             self.dash_active_time = max(0.0, self.dash_active_time - dt)
-        
+            self._dash_trail_timer += dt
+            # Record afterimage at intervals
+            if self._dash_trail_timer >= 0.025:
+                self._dash_trail_timer = 0.0
+                img = self.image
+                if self.direction == "side" and self.flip:
+                    img = self.animations_flipped["side"][self.frame_index]
+                self.dash_trail.append({
+                    "pos": pygame.Vector2(self.pos),
+                    "image": img,
+                    "life": 0.35,
+                })
+        elif self.dash_trail:
+            self.dash_trail.clear()
+
+        # Update dash trail lifetimes
+        for t in self.dash_trail[:]:
+            t["life"] -= dt
+            if t["life"] <= 0:
+                self.dash_trail.remove(t)
+
         # Reset speed to base speed for next frame logic (if needed elsewhere)
         # Though _set_velocity will overwrite it again next frame.
         self.speed = self.base_speed 
@@ -1774,7 +2135,6 @@ class Character:
 
         # Void Walker: dodge chance
         if self.void_walker and amount > 0 and not ignore_invulnerability:
-            import random
             if random.random() < self.void_walker_dodge_chance:
                 old_center = self.get_center()
                 # Teleport in a random direction
@@ -1821,7 +2181,7 @@ class Character:
                     player_center = self.get_center()
                     reflect_radius = 200.0
                     for enemy in list(game_state.enemies):
-                        enemy_center = enemy.get_center()
+                        enemy_center = enemy.get_rect().center
                         if player_center.distance_to(enemy_center) < reflect_radius:
                             enemy.take_damage(reflect_damage)
                             logger.info(f"Mystic Barrier reflected {reflect_damage} damage to {enemy.__class__.__name__}!")
@@ -1835,7 +2195,7 @@ class Character:
                 if game_state is not None and hasattr(game_state, "enemies"):
                     player_center = self.get_center()
                     for enemy in list(game_state.enemies):
-                        enemy_center = enemy.get_center()
+                        enemy_center = enemy.get_rect().center
                         distance = player_center.distance_to(enemy_center)
                         if distance < 200:
                             enemy.take_damage(self.static_field_damage)
@@ -1958,6 +2318,38 @@ class Character:
     def draw(self, screen, camera_offset=None):
         if camera_offset is None:
             camera_offset = pygame.Vector2(0, 0)
+
+        # ── Dash motion trail ──
+        for t in self.dash_trail:
+            life_ratio = t["life"] / 0.35 if 0.35 > 0 else 0
+            if life_ratio <= 0:
+                continue
+            alpha = int(180 * life_ratio)
+            draw_pos = (int(t["pos"].x - camera_offset.x), int(t["pos"].y - camera_offset.y))
+            trail_img = t["image"].copy()
+            trail_img.set_alpha(alpha)
+            # Blue-tinted afterimage
+            tint = pygame.Surface(trail_img.get_size(), pygame.SRCALPHA)
+            tint.fill((120, 180, 255, int(60 * life_ratio)))
+            trail_img.blit(tint, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
+            screen.blit(trail_img, draw_pos)
+
+        # ── Dash wind lines ──
+        if self.dash_active_time > 0:
+            center = self.get_center()
+            cx = int(center.x - camera_offset.x)
+            cy = int(center.y - camera_offset.y)
+            dash_dir = self.dash_direction
+            perp = pygame.Vector2(-dash_dir.y, dash_dir.x)
+            for i in range(3):
+                offset = perp * (8 + i * 12 - 24)
+                start_pt = (cx + int(offset.x) - int(dash_dir.x * 20),
+                            cy + int(offset.y) - int(dash_dir.y * 20))
+                end_pt = (cx + int(offset.x) - int(dash_dir.x * 60),
+                          cy + int(offset.y) - int(dash_dir.y * 60))
+                wind_alpha = int(100 * (self.dash_active_time / self.dash_duration))
+                pygame.draw.line(screen, (180, 220, 255, wind_alpha), start_pt, end_pt,
+                                 max(1, int(2 - i * 0.5)))
 
         # Blink if invulnerable
         if self.invulnerable and int(pygame.time.get_ticks() / 100) % 2 == 0:
@@ -2260,6 +2652,12 @@ class Character:
         if self.berserkers_rage_active:
             self._draw_berserkers_rage(screen, camera_offset)
 
+        # Draw Shadow Step visual effect (always draw if active, even during other effects)
+        self._draw_shadow_step(screen, camera_offset)
+
+        # Draw Summon Spirit visual effect
+        self._draw_summon_spirit(screen, camera_offset)
+
         # Draw floating texts
         self._draw_floating_texts(screen, camera_offset)
 
@@ -2302,20 +2700,193 @@ class Character:
             screen.blit(shadow_surf, (text_rect.x + 2, text_rect.y + 2))
             screen.blit(text_surf, text_rect)
 
+    # ─── Shadow Step helpers ─────────────────────────────────────────
+
+    def _spawn_shadow_step_effect(self, start_pos, end_pos):
+        """Create vanish/appear particles and trail for Shadow Step teleport."""
+        self.shadow_step_effect = {
+            "start": pygame.Vector2(start_pos),
+            "end": pygame.Vector2(end_pos),
+            "life": 0.5,
+            "max_life": 0.5,
+        }
+        # Vanish particles at start
+        for _ in range(20):
+            angle = random.uniform(0, math.pi * 2)
+            speed = random.uniform(40, 120)
+            self.shadow_step_particles.append({
+                "pos": pygame.Vector2(start_pos),
+                "vel": pygame.Vector2(math.cos(angle), math.sin(angle)) * speed,
+                "max_life": (ml := random.uniform(0.2, 0.4)),
+                "life": ml,
+                "size": random.uniform(2.0, 5.0),
+                "phase": "vanish",
+                "color": random.choice([
+                    (80, 40, 140),
+                    (120, 60, 180),
+                    (160, 100, 220),
+                ]),
+            })
+        # Appear particles at end
+        for _ in range(25):
+            angle = random.uniform(0, math.pi * 2)
+            speed = random.uniform(20, 80)
+            self.shadow_step_particles.append({
+                "pos": pygame.Vector2(end_pos),
+                "vel": pygame.Vector2(math.cos(angle), math.sin(angle)) * speed,
+                "max_life": (ml := random.uniform(0.3, 0.5)),
+                "life": ml,
+                "size": random.uniform(3.0, 6.0),
+                "phase": "appear",
+                "color": random.choice([
+                    (80, 40, 160),
+                    (140, 80, 220),
+                    (180, 120, 255),
+                ]),
+            })
+        # Trail particles along the path
+        steps = 10
+        for i in range(steps):
+            t = i / steps
+            trail_pos = start_pos.lerp(end_pos, t)
+            self.shadow_step_particles.append({
+                "pos": pygame.Vector2(trail_pos),
+                "vel": pygame.Vector2(random.uniform(-10, 10), random.uniform(-10, 10)),
+                "max_life": (ml := random.uniform(0.15, 0.35)),
+                "life": ml,
+                "size": random.uniform(1.5, 3.5),
+                "phase": "trail",
+                "color": random.choice([
+                    (60, 30, 120),
+                    (100, 50, 160),
+                    (140, 70, 200),
+                ]),
+            })
+
+    def _update_shadow_step_particles(self, dt):
+        if self.shadow_step_effect is not None:
+            self.shadow_step_effect["life"] -= dt
+            if self.shadow_step_effect["life"] <= 0:
+                self.shadow_step_effect = None
+
+        for p in self.shadow_step_particles[:]:
+            p["pos"] += p["vel"] * dt
+            p["vel"] *= 0.92
+            p["life"] -= dt
+            if p["life"] <= 0:
+                self.shadow_step_particles.remove(p)
+
+    def _draw_shadow_step(self, screen, camera_offset):
+        if not self.shadow_step_particles:
+            return
+
+        # Draw shadow trail line between start and end
+        if self.shadow_step_effect is not None:
+            progress = 1.0 - self.shadow_step_effect["life"] / self.shadow_step_effect["max_life"]
+            start_screen = self.shadow_step_effect["start"] - camera_offset
+            end_screen = self.shadow_step_effect["end"] - camera_offset
+            trail_alpha = int(100 * (1 - progress))
+            # Draw shadowy path line
+            line_surf = pygame.Surface((800, 600), pygame.SRCALPHA)
+            for w in range(3):
+                offset = pygame.Vector2(random.uniform(-3, 3), random.uniform(-3, 3))
+                pygame.draw.line(line_surf, (60, 30, 120, trail_alpha // (w + 1)),
+                                 (int(start_screen.x + offset.x), int(start_screen.y + offset.y)),
+                                 (int(end_screen.x + offset.x), int(end_screen.y + offset.y)),
+                                 max(1, 3 - w))
+            screen.blit(line_surf, (0, 0))
+
+        # Draw particles
+        for p in self.shadow_step_particles:
+            life_r = min(1.0, p["life"] / p["max_life"]) if p["max_life"] > 0 else 0
+            if life_r <= 0:
+                continue
+            px = int(p["pos"].x - camera_offset.x)
+            py = int(p["pos"].y - camera_offset.y)
+            alpha = int(220 * life_r)
+            size = max(1, int(p["size"] * life_r))
+            r, g, b = p["color"]
+
+            phase = p.get("phase", "vanish")
+            if phase == "appear":
+                # Diamond-like burst shape
+                pts = [
+                    (px, py - size * 2),
+                    (px + size, py),
+                    (px, py + size * 2),
+                    (px - size, py),
+                ]
+                p_surf = pygame.Surface((size * 4, size * 4), pygame.SRCALPHA)
+                soff = size * 2
+                rel_pts = [(p[0] - px + soff, p[1] - py + soff) for p in pts]
+                pygame.draw.polygon(p_surf, (r, g, b, alpha), rel_pts)
+                pygame.draw.polygon(p_surf, (min(255, r + 60), min(255, g + 60), min(255, b + 60), alpha), rel_pts, 1)
+                screen.blit(p_surf, (px - soff, py - soff))
+            else:
+                # Dark mist circle for vanish/trail
+                g_sz = size * 2
+                g_surf = pygame.Surface((g_sz * 2, g_sz * 2), pygame.SRCALPHA)
+                pygame.draw.circle(g_surf, (r, g, b, alpha // 2), (g_sz, g_sz), g_sz)
+                screen.blit(g_surf, (px - g_sz, py - g_sz))
+                pygame.draw.circle(screen, (r, g, b, alpha), (px, py), size)
+
+    # ─── Summon Spirit helpers ───────────────────────────────────────
+
+    def _spawn_summon_effect(self, pos):
+        """Create green energy particles for the summon circle."""
+        for _ in range(30):
+            angle = random.uniform(0, math.pi * 2)
+            speed = random.uniform(40, 150)
+            self.summon_spirit_particles.append({
+                "pos": pygame.Vector2(pos),
+                "vel": pygame.Vector2(math.cos(angle), math.sin(angle)) * speed,
+                "max_life": (ml := random.uniform(0.3, 0.7)),
+                "life": ml,
+                "size": random.uniform(2.0, 5.0),
+                "color": random.choice([
+                    (60, 220, 60), (100, 255, 100),
+                    (160, 255, 140), (40, 180, 40),
+                ]),
+            })
+
+    def _update_summon_spirit_particles(self, dt):
+        for p in self.summon_spirit_particles[:]:
+            p["pos"] += p["vel"] * dt
+            p["vel"] *= 0.92
+            p["life"] -= dt
+            if p["life"] <= 0:
+                self.summon_spirit_particles.remove(p)
+
+    def _draw_summon_spirit(self, screen, camera_offset):
+        for p in self.summon_spirit_particles:
+            life_r = min(1.0, p["life"] / p["max_life"]) if p["max_life"] > 0 else 0
+            if life_r <= 0:
+                continue
+            px = int(p["pos"].x - camera_offset.x)
+            py = int(p["pos"].y - camera_offset.y)
+            alpha = int(200 * life_r)
+            size = max(1, int(p["size"] * life_r))
+            r, g, b = p["color"]
+            g_sz = size * 2
+            g_surf = pygame.Surface((g_sz * 2, g_sz * 2), pygame.SRCALPHA)
+            pygame.draw.circle(g_surf, (r, g, b, alpha // 2), (g_sz, g_sz), g_sz)
+            screen.blit(g_surf, (px - g_sz, py - g_sz))
+            pygame.draw.circle(screen, (r, g, b, alpha), (px, py), size)
+
     # ─── Berserker's Rage helpers ─────────────────────────────────────
 
     def _update_berserkers_rage_particles(self, dt):
-        import random
         if self.berserkers_rage_active:
             spawn_count = max(1, int(30 * dt))
             for _ in range(spawn_count):
                 angle = random.uniform(0, math.pi * 2)
                 dist = random.uniform(10, 80)
+                ml = random.uniform(0.2, 0.6)
                 self.berserkers_rage_particles.append({
                     "angle": angle,
                     "dist": dist,
-                    "life": random.uniform(0.2, 0.6),
-                    "max_life": random.uniform(0.2, 0.6),
+                    "life": ml,
+                    "max_life": ml,
                     "size": random.uniform(2.0, 5.0),
                     "drift": random.uniform(30, 90),
                     "color": random.choice([
@@ -2334,7 +2905,6 @@ class Character:
             p["angle"] += 1.5 * dt
 
     def _draw_berserkers_rage(self, screen, camera_offset):
-        import random
         center = self.get_center()
         cx = center.x - camera_offset.x
         cy = center.y - camera_offset.y
@@ -2345,45 +2915,58 @@ class Character:
 
         # ── Outer rage aura ──
         aura_radius = radius * (0.9 + 0.15 * pulse)
-        aura_surf = pygame.Surface((int(aura_radius * 2) + 4, int(aura_radius * 2) + 4), pygame.SRCALPHA)
-        aura_a = int(40 + 30 * pulse)
-        pygame.draw.circle(aura_surf, (220, 50, 20, aura_a),
-                           (int(aura_radius) + 2, int(aura_radius) + 2),
-                           int(aura_radius))
-        inner_a = int(30 + 20 * pulse)
-        pygame.draw.circle(aura_surf, (255, 100, 30, inner_a),
-                           (int(aura_radius) + 2, int(aura_radius) + 2),
-                           int(aura_radius * 0.6))
-        screen.blit(aura_surf, (int(cx - aura_radius - 2), int(cy - aura_radius - 2)))
+        aura_surf = pygame.Surface((int(aura_radius * 2) + 8, int(aura_radius * 2) + 8), pygame.SRCALPHA)
+        a_cx = int(aura_radius) + 4
+        a_cy = int(aura_radius) + 4
+        aura_a = int(50 + 40 * pulse)
+        pygame.draw.circle(aura_surf, (220, 40, 10, aura_a), (a_cx, a_cy), int(aura_radius))
+        inner_a = int(40 + 30 * pulse)
+        pygame.draw.circle(aura_surf, (255, 80, 20, inner_a), (a_cx, a_cy), int(aura_radius * 0.6))
+        core_a = int(25 + 20 * pulse)
+        pygame.draw.circle(aura_surf, (255, 160, 40, core_a), (a_cx, a_cy), int(aura_radius * 0.3))
+        screen.blit(aura_surf, (int(cx - aura_radius - 4), int(cy - aura_radius - 4)))
+
+        # ── Ground rage rune (rotating star) ──
+        rune_pts = []
+        rune_outer = radius * 0.5
+        rune_inner = radius * 0.2
+        for ri in range(8):
+            ra = t * 1.2 + ri * math.pi / 4
+            rr = rune_outer if ri % 2 == 0 else rune_inner
+            rune_pts.append((cx + math.cos(ra) * rr, cy + math.sin(ra) * rr))
+        rune_alpha = int(30 + 20 * math.sin(t * 3))
+        pygame.draw.polygon(screen, (200, 60, 20, rune_alpha), rune_pts, 2)
 
         # ── Rage ring ──
         ring_r = radius * 0.8
         ring_a = int(80 + 50 * math.sin(t * 9.0))
-        ring_surf = pygame.Surface((int(ring_r * 2) + 4, int(ring_r * 2) + 4), pygame.SRCALPHA)
+        ring_surf = pygame.Surface((int(ring_r * 2) + 8, int(ring_r * 2) + 8), pygame.SRCALPHA)
+        rc_x = int(ring_r) + 4
+        rc_y = int(ring_r) + 4
         for i in range(3):
             r = int(ring_r * (0.85 + 0.05 * (i + 1)))
             offset_phase = t * 4.0 + i * 1.0
             rr = r * (0.98 + 0.04 * math.sin(offset_phase))
             pygame.draw.circle(ring_surf,
                                (200, 60 + i * 30, 10 + i * 10, ring_a // (i + 1)),
-                               (int(ring_r) + 2, int(ring_r) + 2), int(rr),
+                               (rc_x, rc_y), int(rr),
                                max(1, 3 - i))
-        screen.blit(ring_surf, (int(cx - ring_r - 2), int(cy - ring_r - 2)))
+        screen.blit(ring_surf, (int(cx - ring_r - 4), int(cy - ring_r - 4)))
 
         # ── Rage spikes ──
-        spike_count = 8
+        spike_count = 14
         for i in range(spike_count):
             spike_angle = t * 2.5 + i * (math.pi * 2 / spike_count)
-            spike_len = 18 + 12 * math.sin(t * 7.0 + i * 2.0)
-            inner_dist = radius * 0.75 + 8 * math.sin(t * 5.0 + i * 1.5)
+            spike_len = 15 + 15 * (0.3 + 0.7 * ((i % 3) / 2.0)) * (0.5 + 0.5 * math.sin(t * 7.0 + i * 2.0))
+            inner_dist = radius * (0.7 + 0.1 * ((i % 3) / 2.0)) + 6 * math.sin(t * 5.0 + i * 1.5)
             sx1 = cx + math.cos(spike_angle) * inner_dist
             sy1 = cy + math.sin(spike_angle) * inner_dist
             sx2 = cx + math.cos(spike_angle) * (inner_dist + spike_len)
             sy2 = cy + math.sin(spike_angle) * (inner_dist + spike_len)
             spike_alpha = int(140 + 80 * math.sin(t * 8.0 + i * 1.7))
-            pygame.draw.line(screen, (220, 80 + i * 12, 10 + i * 5, spike_alpha),
-                             (sx1, sy1), (sx2, sy2),
-                             max(1, int(3 + 2 * math.sin(t * 4.0 + i))))
+            sw = max(1, int(2 + 3 * (i % 3) / 2.0 * math.sin(t * 4.0 + i)))
+            pygame.draw.line(screen, (220, 60 + i * 8, 10 + i * 4, spike_alpha),
+                             (sx1, sy1), (sx2, sy2), sw)
 
         # ── Rage particles ──
         for p in self.berserkers_rage_particles:
@@ -2406,14 +2989,29 @@ class Character:
 
         # ── Rising sparkles ──
         if self.berserkers_rage_active:
-            for _ in range(3):
+            for _ in range(4):
                 sp_angle = random.uniform(0, math.pi * 2)
-                sp_dist = random.uniform(0, radius * 0.4)
-                sp_x = cx + math.cos(sp_angle) * sp_dist
-                sp_y = cy + random.uniform(-25, 0)
-                sp_size = random.randint(1, 2)
+                sp_dist = random.uniform(0, radius * 0.45)
+                sp_x = cx + math.cos(sp_angle) * sp_dist + random.uniform(-3, 3)
+                sp_y = cy + random.uniform(-30, 5)
+                sp_size = random.randint(1, 3)
                 sp_color = random.choice([(255, 200, 80), (255, 140, 40), (255, 255, 120)])
                 pygame.draw.circle(screen, sp_color, (int(sp_x), int(sp_y)), sp_size)
+
+        # ── Ground fire bursts ──
+        if self.berserkers_rage_active:
+            for fi in range(3):
+                fa = t * 8.0 + fi * math.pi * 2 / 3
+                fd = radius * 0.5 + 20 * math.sin(t * 6 + fi * 1.5)
+                fx = cx + math.cos(fa) * fd
+                fy = cy + math.sin(fa) * fd
+                fh = 10 + 8 * math.sin(t * 10 + fi * 2.3)
+                fw = max(1, int(3 + 2 * math.sin(t * 7 + fi * 1.8)))
+                f_alpha = int(100 + 80 * math.sin(t * 9 + fi * 2.0))
+                pygame.draw.line(screen, (255, 120 + fi * 20, 30, f_alpha),
+                                 (fx, fy), (fx, fy - fh), fw)
+                pygame.draw.line(screen, (255, 200, 80, f_alpha // 2),
+                                 (fx, fy), (fx, fy - fh // 2), fw - 1)
 
     # ─── Flame Shield helpers ───────────────────────────────────────────
 
@@ -2423,29 +3021,34 @@ class Character:
 
         # Spawn new particles while active
         if self.flame_shield_active:
-            spawn_count = max(1, int(18 * dt))  # particles per frame
+            effective_radius = self.flame_shield_radius
+            if self.pyromancers_fury:
+                effective_radius *= self.pyromancers_fury_area_mult
+            spawn_count = max(1, int(30 * dt))
             for _ in range(spawn_count):
-                effective_radius = self.flame_shield_radius
-                if self.pyromancers_fury:
-                    effective_radius *= self.pyromancers_fury_area_mult
                 angle = random.uniform(0, math.pi * 2)
-                dist = random.uniform(effective_radius * 0.45, effective_radius)
-                speed = random.uniform(25, 70)  # upward drift speed
+                dist = random.uniform(effective_radius * 0.3, effective_radius)
+                speed = random.uniform(30, 90)
+                is_flame_tongue = random.random() < 0.25
+                max_life = random.uniform(0.3, 0.8)
                 self.flame_shield_particles.append({
                     "angle": angle,
                     "dist": dist,
-                    "life": random.uniform(0.3, 0.7),
-                    "max_life": random.uniform(0.3, 0.7),
-                    "size": random.uniform(2.5, 6.0),
-                    "drift": random.uniform(-15, 15),
+                    "life": max_life,
+                    "max_life": max_life,
+                    "size": random.uniform(3.0, 8.0),
+                    "drift": random.uniform(-20, 20),
                     "vertical_speed": -speed,
                     "color": random.choice([
-                        (255, 120, 20),   # orange
-                        (255, 80, 10),    # deep orange
-                        (255, 180, 40),   # bright yellow
-                        (255, 60, 10),    # red-orange
-                        (255, 200, 80),   # bright yellow
+                        (255, 120, 20),
+                        (255, 80, 10),
+                        (255, 180, 40),
+                        (255, 60, 10),
+                        (255, 200, 80),
                     ]),
+                    "flame_tongue": is_flame_tongue,
+                    "tongue_len": random.uniform(8, 18) if is_flame_tongue else 0,
+                    "tongue_phase": random.uniform(0, math.pi * 2),
                 })
 
         # Update existing particles
@@ -2454,10 +3057,9 @@ class Character:
             if p["life"] <= 0:
                 self.flame_shield_particles.remove(p)
                 continue
-            # Slowly spiral inward and drift upward
             p["angle"] += p["drift"] * dt
-            p["dist"] = max(0, p["dist"] - 8 * dt)
-            p["vertical_speed"] -= 120 * dt  # accelerate upward (negative)
+            p["dist"] = max(0, p["dist"] - 10 * dt)
+            p["vertical_speed"] -= 140 * dt
 
     def _draw_flame_shield(self, screen, camera_offset):
         """Draw the flame shield aura and particles."""
@@ -2466,43 +3068,89 @@ class Character:
         cy = center.y - camera_offset.y
         t = pygame.time.get_ticks() / 1000.0
 
-        # Apply Pyromancer's Fury area buff to visual radius
         visual_radius = self.flame_shield_radius
         if self.pyromancers_fury:
             visual_radius *= self.pyromancers_fury_area_mult
 
+        # ── Heat distortion shimmer (subtle wavy ring) ──
+        shimmer_surf = pygame.Surface((int(visual_radius * 2) + 20, int(visual_radius * 2) + 20), pygame.SRCALPHA)
+        shimmer_a = int(15 + 10 * math.sin(t * 5.0))
+        for i in range(3):
+            r = visual_radius + i * 6 + 4 * math.sin(t * 7.0 + i * 2.0)
+            pygame.draw.circle(shimmer_surf, (255, 180, 80, shimmer_a // (i + 1)),
+                               (int(r) + 10, int(r) + 10), int(r), 1)
+        screen.blit(shimmer_surf, (int(cx - visual_radius - 10), int(cy - visual_radius - 10)))
+
         # ── Inner pulsing glow ring ──
-        pulse = 0.6 + 0.4 * math.sin(t * 6.0)
-        glow_radius = visual_radius * (0.85 + 0.15 * pulse)
-        glow_surf = pygame.Surface((int(glow_radius * 2) + 4, int(glow_radius * 2) + 4), pygame.SRCALPHA)
-        glow_a = int(35 + 25 * pulse)
-        pygame.draw.circle(glow_surf, (255, 100, 20, glow_a),
-                           (int(glow_radius) + 2, int(glow_radius) + 2),
+        pulse_slow = 0.6 + 0.4 * math.sin(t * 4.5)
+        pulse_fast = 0.5 + 0.5 * math.sin(t * 11.0)
+        glow_radius = visual_radius * (0.82 + 0.18 * pulse_slow)
+        glow_surf = pygame.Surface((int(glow_radius * 2) + 8, int(glow_radius * 2) + 8), pygame.SRCALPHA)
+        glow_a = int(45 + 35 * pulse_slow)
+        pygame.draw.circle(glow_surf, (255, 80, 10, glow_a),
+                           (int(glow_radius) + 4, int(glow_radius) + 4),
                            int(glow_radius))
-        # brighter inner core
-        inner_r = int(glow_radius * 0.55)
-        inner_a = int(25 + 20 * pulse)
-        pygame.draw.circle(glow_surf, (255, 160, 40, inner_a),
-                           (int(glow_radius) + 2, int(glow_radius) + 2),
+        mid_r = int(glow_radius * 0.65)
+        mid_a = int(35 + 25 * pulse_slow)
+        pygame.draw.circle(glow_surf, (255, 160, 40, mid_a),
+                           (int(glow_radius) + 4, int(glow_radius) + 4),
+                           mid_r)
+        inner_r = int(glow_radius * 0.35)
+        inner_a = int(25 + 20 * pulse_slow)
+        pygame.draw.circle(glow_surf, (255, 220, 80, inner_a),
+                           (int(glow_radius) + 4, int(glow_radius) + 4),
                            inner_r)
-        screen.blit(glow_surf, (int(cx - glow_radius - 2), int(cy - glow_radius - 2)))
+        screen.blit(glow_surf, (int(cx - glow_radius - 4), int(cy - glow_radius - 4)))
+
+        # ── Flame tongue ring segments ──
+        tongue_count = 12
+        for i in range(tongue_count):
+            angle = i * (math.pi * 2 / tongue_count) + t * 0.8
+            flicker = 0.6 + 0.4 * math.sin(t * 14.0 + i * 1.7)
+            tongue_len = visual_radius * 0.12 * flicker
+            inner = visual_radius * (0.92 + 0.06 * pulse_fast)
+            outer = inner + tongue_len
+            sx = cx + int(math.cos(angle) * inner)
+            sy = cy + int(math.sin(angle) * inner)
+            ex = cx + int(math.cos(angle) * outer)
+            ey = cy + int(math.sin(angle) * outer)
+            t_alpha = int(120 + 100 * flicker * pulse_fast)
+            if t_alpha > 10:
+                tongue_color = (255, 140 + int(60 * flicker), 20 + int(40 * flicker), t_alpha)
+                # Draw tongue as tapered line
+                pygame.draw.line(screen, tongue_color, (sx, sy), (ex, ey), max(1, int(3 + 4 * flicker)))
+                # Wider glow for tongue
+                tg_sz = max(1, int(1 + flicker * 2))
+                for glow_offset in range(3):
+                    tg_x = sx + int((ex - sx) * glow_offset / 3)
+                    tg_y = sy + int((ey - sy) * glow_offset / 3)
+                    tg_r = int(tg_sz * (2 - glow_offset * 0.5))
+                    tg_surf = pygame.Surface((tg_r * 2, tg_r * 2), pygame.SRCALPHA)
+                    tg_a = int(t_alpha * 0.3 * (1 - glow_offset * 0.25))
+                    pygame.draw.circle(tg_surf, (255, 200, 80, tg_a), (tg_r, tg_r), tg_r)
+                    screen.blit(tg_surf, (tg_x - tg_r, tg_y - tg_r))
 
         # ── Outer flickering ring ──
         ring_r = visual_radius
-        ring_a = int(70 + 40 * math.sin(t * 9.0))
+        ring_a = int(80 + 50 * math.sin(t * 9.0))
         ring_surf = pygame.Surface((int(ring_r * 2) + 4, int(ring_r * 2) + 4), pygame.SRCALPHA)
-        pygame.draw.circle(ring_surf, (255, 90, 10, ring_a),
+        ring_width = max(1, int(2 + 2 * pulse_fast))
+        pygame.draw.circle(ring_surf, (255, 80, 5, ring_a),
                            (int(ring_r) + 2, int(ring_r) + 2),
-                           int(ring_r), max(1, int(3 * pulse)))
+                           int(ring_r), ring_width)
+        # Second ring layer
+        if ring_width > 1:
+            pygame.draw.circle(ring_surf, (255, 200, 60, ring_a // 2),
+                               (int(ring_r) + 2, int(ring_r) + 2),
+                               int(ring_r * 0.98), max(1, ring_width - 1))
         screen.blit(ring_surf, (int(cx - ring_r - 2), int(cy - ring_r - 2)))
 
         # ── Flame particles ──
         for p in self.flame_shield_particles:
-            life_ratio = p["life"] / p["max_life"] if p["max_life"] > 0 else 0
+            life_ratio = min(1.0, p["life"] / p["max_life"]) if p["max_life"] > 0 else 0
             if life_ratio <= 0:
                 continue
 
-            # World position from polar around center
             px = cx + math.cos(p["angle"]) * p["dist"]
             py = cy + math.sin(p["angle"]) * p["dist"] + p["vertical_speed"] * (1 - life_ratio) * 0.3
 
@@ -2510,12 +3158,40 @@ class Character:
             size = max(1, int(p["size"] * life_ratio))
             r, g, b = p["color"]
 
-            # Glow layer
-            glow_sz = size * 3
-            glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
-            pygame.draw.circle(glow, (r, g, b, alpha // 3),
-                               (glow_sz, glow_sz), glow_sz)
-            screen.blit(glow, (int(px - glow_sz), int(py - glow_sz)))
+            # Flame tongue particles draw as elongated shapes
+            if p.get("flame_tongue") and p["tongue_len"] > 0:
+                tongue_phase = p.get("tongue_phase", 0)
+                tongue_len = p["tongue_len"] * (0.5 + 0.5 * math.sin(t * 12 + tongue_phase))
+                perp = pygame.Vector2(-math.sin(p["angle"]), math.cos(p["angle"]))
+                base_pt = (px, py)
+                tip_pt = (px + perp.x * tongue_len * 0.3,
+                          py + perp.y * tongue_len * 0.3)
+                t_alpha = int(alpha * 0.6)
+                # Draw glow at midpoint
+                glow_sz = size * 4
+                glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+                pygame.draw.circle(glow, (r, g, b, t_alpha // 3), (glow_sz, glow_sz), glow_sz)
+                screen.blit(glow, (int((base_pt[0] + tip_pt[0]) / 2 - glow_sz),
+                                   int((base_pt[1] + tip_pt[1]) / 2 - glow_sz)))
+                # Draw tongue line on temp SRCALPHA surface
+                min_x = min(base_pt[0], tip_pt[0])
+                min_y = min(base_pt[1], tip_pt[1])
+                surf_w = int(max(base_pt[0], tip_pt[0]) - min_x) + 10
+                surf_h = int(max(base_pt[1], tip_pt[1]) - min_y) + 10
+                if surf_w > 0 and surf_h > 0:
+                    line_surf = pygame.Surface((surf_w, surf_h), pygame.SRCALPHA)
+                    rel_b = (int(base_pt[0] - min_x + 5), int(base_pt[1] - min_y + 5))
+                    rel_t = (int(tip_pt[0] - min_x + 5), int(tip_pt[1] - min_y + 5))
+                    pygame.draw.line(line_surf, (r, g, b, t_alpha), rel_b, rel_t,
+                                     max(1, int(size * 1.5)))
+                    screen.blit(line_surf, (int(min_x - 5), int(min_y - 5)))
+            else:
+                # Standard circular particle
+                glow_sz = size * 3
+                glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+                pygame.draw.circle(glow, (r, g, b, alpha // 3),
+                                   (glow_sz, glow_sz), glow_sz)
+                screen.blit(glow, (int(px - glow_sz), int(py - glow_sz)))
 
             # Core
             if alpha > 20:
@@ -2525,41 +3201,41 @@ class Character:
         # ── Rising ember sparkles ──
         if self.flame_shield_active:
             import random
-            for _ in range(2):
+            for _ in range(3):
                 em_angle = random.uniform(0, math.pi * 2)
-                em_dist = random.uniform(0, visual_radius * 0.3)
+                em_dist = random.uniform(0, visual_radius * 0.4)
                 em_x = cx + math.cos(em_angle) * em_dist
-                em_y = cy + random.uniform(-20, 20)
+                em_y = cy + random.uniform(-visual_radius * 0.2, visual_radius * 0.2)
                 em_size = random.randint(1, 3)
+                em_phase = random.uniform(0, math.pi * 2)
+                drift_x = math.sin(em_phase + t) * 2
                 em_color = random.choice([(255, 220, 100), (255, 180, 60), (255, 255, 140)])
-                pygame.draw.circle(screen, em_color, (int(em_x), int(em_y)), em_size)
+                pygame.draw.circle(screen, em_color, (int(em_x + drift_x), int(em_y)), em_size)
 
     # ─── Ice Armor helpers ───────────────────────────────────────────
 
     def _update_ice_armor_particles(self, dt):
         """Spawn, move, and cull ice particles around the character."""
-        import random
-
         if self.ice_armor_active:
-            spawn_count = max(1, int(15 * dt))
+            spawn_count = max(1, int(18 * dt))
             for _ in range(spawn_count):
                 angle = random.uniform(0, math.pi * 2)
                 dist = random.uniform(self.ice_armor_slow_radius * 0.3, self.ice_armor_slow_radius)
                 speed = random.uniform(20, 50)
+                is_snow = random.random() < 0.3
                 self.ice_armor_particles.append({
                     "angle": angle,
                     "dist": dist,
-                    "life": random.uniform(0.4, 0.8),
-                    "max_life": random.uniform(0.4, 0.8),
+                    "max_life": (ml := random.uniform(0.4, 0.8)),
+                    "life": ml,
                     "size": random.uniform(2.0, 5.0),
                     "drift": random.uniform(-10, 10),
                     "vertical_speed": -speed,
+                    "is_snow": is_snow,
                     "color": random.choice([
-                        (180, 220, 255),
-                        (200, 235, 255),
-                        (160, 200, 255),
-                        (220, 240, 255),
-                        (140, 190, 255),
+                        (180, 220, 255), (200, 235, 255),
+                        (160, 200, 255), (220, 240, 255),
+                        (140, 190, 255), (255, 255, 255),
                     ]),
                 })
 
@@ -2574,49 +3250,74 @@ class Character:
 
     def _draw_ice_armor(self, screen, camera_offset):
         """Draw the ice armor aura and particles."""
-        import random
         center = self.get_center()
         cx = center.x - camera_offset.x
         cy = center.y - camera_offset.y
         t = pygame.time.get_ticks() / 1000.0
 
-        visual_radius = self.ice_armor_slow_radius
+        vr = self.ice_armor_slow_radius
+        pulse = 0.5 + 0.5 * math.sin(t * 4.0)
+        fast_pulse = 0.5 + 0.5 * math.sin(t * 10.0)
+
+        # ── Hexagonal ice crystal shell ──
+        hex_pts = []
+        for i in range(6):
+            ha = t * 0.3 + i * (math.pi * 2 / 6)
+            hr = vr * (0.85 + 0.15 * pulse)
+            hx = cx + math.cos(ha) * hr
+            hy = cy + math.sin(ha) * hr
+            hex_pts.append((hx, hy))
+
+        hex_surf = pygame.Surface((int(vr * 2.2), int(vr * 2.2)), pygame.SRCALPHA)
+        hoff = int(vr * 1.1)
+        hex_glow_a = int(30 + 20 * pulse)
+        rel_hex = [(p[0] - cx + hoff, p[1] - cy + hoff) for p in hex_pts]
+        pygame.draw.polygon(hex_surf, (80, 160, 255, hex_glow_a), rel_hex)
+        pygame.draw.polygon(hex_surf, (140, 200, 255, int(hex_glow_a * 1.5)), rel_hex,
+                            max(1, int(2 + fast_pulse * 2)))
+        screen.blit(hex_surf, (cx - hoff, cy - hoff))
 
         # ── Inner frost glow ring ──
-        pulse = 0.5 + 0.5 * math.sin(t * 4.0)
-        glow_radius = visual_radius * (0.8 + 0.2 * pulse)
+        glow_radius = vr * (0.7 + 0.3 * pulse)
         glow_surf = pygame.Surface((int(glow_radius * 2) + 4, int(glow_radius * 2) + 4), pygame.SRCALPHA)
-        glow_a = int(30 + 20 * pulse)
+        glow_a = int(35 + 25 * pulse)
         pygame.draw.circle(glow_surf, (60, 140, 255, glow_a),
-                           (int(glow_radius) + 2, int(glow_radius) + 2),
-                           int(glow_radius))
+                           (int(glow_radius) + 2, int(glow_radius) + 2), int(glow_radius))
         inner_r = int(glow_radius * 0.5)
-        inner_a = int(20 + 15 * pulse)
+        inner_a = int(25 + 20 * pulse)
         pygame.draw.circle(glow_surf, (140, 200, 255, inner_a),
-                           (int(glow_radius) + 2, int(glow_radius) + 2),
-                           inner_r)
+                           (int(glow_radius) + 2, int(glow_radius) + 2), inner_r)
         screen.blit(glow_surf, (int(cx - glow_radius - 2), int(cy - glow_radius - 2)))
 
         # ── Outer frost ring ──
-        ring_r = visual_radius
-        ring_a = int(60 + 40 * math.sin(t * 7.0))
+        ring_r = vr
+        ring_a = int(70 + 50 * math.sin(t * 7.0))
         ring_surf = pygame.Surface((int(ring_r * 2) + 4, int(ring_r * 2) + 4), pygame.SRCALPHA)
         pygame.draw.circle(ring_surf, (100, 180, 255, ring_a),
                            (int(ring_r) + 2, int(ring_r) + 2),
-                           int(ring_r), max(1, int(2 * pulse)))
+                           int(ring_r), max(1, int(2 + fast_pulse)))
         screen.blit(ring_surf, (int(cx - ring_r - 2), int(cy - ring_r - 2)))
 
-        # ── Ice crystal shield overlay ──
-        shard_count = 8
+        # ── Connecting facet lines (center to hex vertices) ──
+        for i in range(6):
+            ha = t * 0.3 + i * (math.pi * 2 / 6)
+            hr = vr * (0.85 + 0.15 * pulse)
+            hx = cx + math.cos(ha) * hr
+            hy = cy + math.sin(ha) * hr
+            line_alpha = int(50 + 40 * math.sin(t * 3.0 + i * 1.2))
+            pygame.draw.line(screen, (140, 200, 255, line_alpha), (cx, cy), (hx, hy),
+                             max(1, int(1 + fast_pulse)))
+
+        # ── Ice crystal shards orbiting ──
+        shard_count = 10
         for i in range(shard_count):
-            shard_angle = t * 0.5 + i * (math.pi * 2 / shard_count)
-            shard_dist = visual_radius * 0.7 + 10 * math.sin(t * 3.0 + i)
+            shard_angle = t * 0.6 + i * (math.pi * 2 / shard_count)
+            shard_dist = vr * (0.5 + 0.2 * math.sin(t * 2.0 + i * 1.5))
             sx = cx + math.cos(shard_angle) * shard_dist
             sy = cy + math.sin(shard_angle) * shard_dist
-            shard_size = max(2, int(4 + 2 * math.sin(t * 2.0 + i * 1.5)))
-            shard_alpha = int(100 + 80 * math.sin(t * 5.0 + i * 2.0))
+            shard_size = max(2, int(4 + 2 * math.sin(t * 3.0 + i * 2.0)))
+            shard_alpha = int(120 + 80 * math.sin(t * 5.0 + i * 2.5))
             shard_color = (180, 220, 255, shard_alpha)
-            # Draw shard as small diamond
             pts = [
                 (sx, sy - shard_size),
                 (sx + shard_size * 0.6, sy),
@@ -2626,46 +3327,63 @@ class Character:
             pygame.draw.polygon(screen, shard_color[:3], pts)
             pygame.draw.polygon(screen, (220, 240, 255), pts, 1)
 
+        # ── Falling snow particles ──
+        if self.ice_armor_active:
+            for _ in range(2):
+                sn_angle = random.uniform(0, math.pi * 2)
+                sn_dist = random.uniform(0, vr * 0.6)
+                sn_x = cx + math.cos(sn_angle) * sn_dist
+                sn_y = cy - vr * 0.5 + random.uniform(0, vr)
+                sn_size = random.randint(1, 2)
+                sn_alpha = int(100 + 80 * random.random())
+                pygame.draw.circle(screen, (220, 240, 255, sn_alpha), (int(sn_x), int(sn_y)), sn_size)
+
         # ── Ice particles ──
         for p in self.ice_armor_particles:
-            life_ratio = p["life"] / p["max_life"] if p["max_life"] > 0 else 0
+            life_ratio = min(1.0, p["life"] / p["max_life"]) if p["max_life"] > 0 else 0
             if life_ratio <= 0:
                 continue
-
             px = cx + math.cos(p["angle"]) * p["dist"]
             py = cy + math.sin(p["angle"]) * p["dist"] + p["vertical_speed"] * (1 - life_ratio) * 0.3
-
             alpha = int(200 * life_ratio)
             size = max(1, int(p["size"] * life_ratio))
             r, g, b = p["color"]
 
-            glow_sz = size * 3
-            glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
-            pygame.draw.circle(glow, (r, g, b, alpha // 3),
-                               (glow_sz, glow_sz), glow_sz)
-            screen.blit(glow, (int(px - glow_sz), int(py - glow_sz)))
-
-            if alpha > 20:
-                pygame.draw.circle(screen, (min(255, r + 40), min(255, g + 30), min(255, b + 10)),
-                                   (int(px), int(py)), size)
+            if p.get("is_snow"):
+                # Snowflake (cross shape)
+                pygame.draw.line(screen, (r, g, b, alpha), (px - size, py), (px + size, py), 1)
+                pygame.draw.line(screen, (r, g, b, alpha), (px, py - size), (px, py + size), 1)
+            else:
+                # Frost particle (circular with glow)
+                glow_sz = size * 3
+                glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+                pygame.draw.circle(glow, (r, g, b, alpha // 3), (glow_sz, glow_sz), glow_sz)
+                screen.blit(glow, (int(px - glow_sz), int(py - glow_sz)))
+                if alpha > 20:
+                    pygame.draw.circle(screen, (min(255, r + 40), min(255, g + 30), min(255, b + 10)),
+                                       (int(px), int(py)), size)
 
         # ── Shield health indicator (frost cracks at edges) ──
         absorb_ratio = self.ice_armor_remaining_absorption / self.ice_armor_max_absorption
         if absorb_ratio < 0.5:
             crack_alpha = int(150 * (1.0 - absorb_ratio * 2))
-            for _ in range(3):
+            for _ in range(int(3 + 3 * (1 - absorb_ratio * 2))):
                 crack_angle = random.uniform(0, math.pi * 2)
-                crack_dist = visual_radius
+                crack_dist = vr
                 cpx = cx + math.cos(crack_angle) * crack_dist
                 cpy = cy + math.sin(crack_angle) * crack_dist
+                # Longer cracks when more damaged
+                crack_len = 2 + 4 * (1 - absorb_ratio * 2)
                 pygame.draw.line(screen, (200, 220, 255, crack_alpha),
-                                 (cpx - 3, cpy - 3), (cpx + 3, cpy + 3), 2)
+                                 (cpx - crack_len, cpy - crack_len),
+                                 (cpx + crack_len, cpy + crack_len),
+                                 max(1, int(1 + (1 - absorb_ratio * 2) * 2)))
 
         # ── Frost sparkles ──
         if self.ice_armor_active:
-            for _ in range(2):
+            for _ in range(3):
                 sp_angle = random.uniform(0, math.pi * 2)
-                sp_dist = random.uniform(0, visual_radius * 0.4)
+                sp_dist = random.uniform(0, vr * 0.4)
                 sp_x = cx + math.cos(sp_angle) * sp_dist
                 sp_y = cy + random.uniform(-15, 15)
                 sp_size = random.randint(1, 2)
@@ -2678,23 +3396,29 @@ class Character:
         import random
 
         if self.mystic_barrier_active:
-            spawn_count = max(1, int(12 * dt))
+            spawn_count = max(1, int(18 * dt))
             for _ in range(spawn_count):
                 angle = random.uniform(0, math.pi * 2)
-                dist = random.uniform(30, 100)
+                dist = random.uniform(20, 90)
+                max_life = random.uniform(0.3, 0.8)
+                is_shard = random.random() < 0.4
                 self.mystic_barrier_particles.append({
                     "angle": angle,
                     "dist": dist,
-                    "life": random.uniform(0.3, 0.7),
-                    "max_life": random.uniform(0.3, 0.7),
-                    "size": random.uniform(2.0, 4.0),
-                    "drift": random.uniform(-20, 20),
+                    "life": max_life,
+                    "max_life": max_life,
+                    "size": random.uniform(2.0, 5.0),
+                    "drift": random.uniform(-15, 15),
+                    "radial_vel": random.uniform(15, 50),
+                    "rotation": random.uniform(0, math.pi * 2),
+                    "rot_speed": random.uniform(-3, 3),
+                    "is_shard": is_shard,
                     "color": random.choice([
-                        (200, 140, 255),
-                        (160, 80, 220),
+                        (180, 120, 255),
+                        (120, 80, 240),
                         (220, 180, 255),
-                        (180, 100, 240),
-                        (240, 200, 255),
+                        (100, 200, 255),
+                        (160, 100, 220),
                     ]),
                 })
 
@@ -2704,8 +3428,8 @@ class Character:
                 self.mystic_barrier_particles.remove(p)
                 continue
             p["angle"] += p["drift"] * dt
-            pulse = 1.0 + 0.3 * math.sin(p["life"] * 8.0)
-            p["dist"] *= pulse
+            p["dist"] += p["radial_vel"] * dt
+            p["rotation"] += p["rot_speed"] * dt
 
     def _draw_mystic_barrier(self, screen, camera_offset):
         import random
@@ -2715,101 +3439,175 @@ class Character:
         t = pygame.time.get_ticks() / 1000.0
 
         radius = 85.0
+        pulse = 0.6 + 0.4 * math.sin(t * 4.0)
+        fast_pulse = 0.5 + 0.5 * math.sin(t * 10.0)
 
-        # ── Outer magenta barrier ring ──
-        pulse = 0.6 + 0.4 * math.sin(t * 3.5)
-        glow_radius = radius * (0.9 + 0.1 * pulse)
-        glow_surf = pygame.Surface((int(glow_radius * 2) + 4, int(glow_radius * 2) + 4), pygame.SRCALPHA)
-        glow_a = int(40 + 25 * pulse)
-        pygame.draw.circle(glow_surf, (140, 60, 180, glow_a),
-                           (int(glow_radius) + 2, int(glow_radius) + 2),
-                           int(glow_radius))
-        inner_r = int(glow_radius * 0.55)
+        # ── Crystalline hexagon shell ──
+        hex_pts = []
+        for i in range(6):
+            a = t * 0.4 + i * (math.pi * 2 / 6)
+            hr = radius * (0.85 + 0.15 * pulse)
+            hx = cx + math.cos(a) * hr
+            hy = cy + math.sin(a) * hr
+            hex_pts.append((hx, hy))
+
+        # Outer hexagon glow
+        hex_surf = pygame.Surface((int(radius * 2.4), int(radius * 2.4)), pygame.SRCALPHA)
+        hex_off = int(radius * 1.2)
+        hex_glow_a = int(30 + 20 * pulse)
+        pygame.draw.polygon(hex_surf, (100, 60, 200, hex_glow_a),
+                           [(p[0] - cx + hex_off, p[1] - cy + hex_off) for p in hex_pts])
+        pygame.draw.polygon(hex_surf, (160, 100, 240, int(hex_glow_a * 1.5)),
+                           [(p[0] - cx + hex_off, p[1] - cy + hex_off) for p in hex_pts],
+                           max(1, int(2 + fast_pulse * 2)))
+        screen.blit(hex_surf, (cx - hex_off, cy - hex_off))
+
+        # ── Inner glow hexagon ──
+        inner_hr = radius * 0.65 * (0.9 + 0.1 * pulse)
+        inner_pts = []
+        for i in range(6):
+            a = -t * 0.3 + i * (math.pi * 2 / 6)
+            ix = cx + math.cos(a) * inner_hr
+            iy = cy + math.sin(a) * inner_hr
+            inner_pts.append((ix, iy))
+        inner_surf = pygame.Surface((int(radius * 2), int(radius * 2)), pygame.SRCALPHA)
+        inner_off = int(radius)
         inner_a = int(25 + 20 * pulse)
-        pygame.draw.circle(glow_surf, (200, 120, 240, inner_a),
-                           (int(glow_radius) + 2, int(glow_radius) + 2),
-                           inner_r)
-        screen.blit(glow_surf, (int(cx - glow_radius - 2), int(cy - glow_radius - 2)))
+        pygame.draw.polygon(inner_surf, (180, 140, 255, inner_a),
+                           [(p[0] - cx + inner_off, p[1] - cy + inner_off) for p in inner_pts])
+        screen.blit(inner_surf, (cx - inner_off, cy - inner_off))
 
-        # ── Arcane rune ring ──
-        ring_r = radius
-        ring_a = int(80 + 60 * math.sin(t * 6.0))
-        ring_surf = pygame.Surface((int(ring_r * 2) + 4, int(ring_r * 2) + 4), pygame.SRCALPHA)
-        pygame.draw.circle(ring_surf, (200, 140, 255, ring_a),
-                           (int(ring_r) + 2, int(ring_r) + 2),
-                           int(ring_r), max(1, int(2 * (0.5 + 0.5 * pulse))))
-        screen.blit(ring_surf, (int(cx - ring_r - 2), int(cy - ring_r - 2)))
+        # ── Connecting facet lines (from center to each vertex) ──
+        for i in range(6):
+            a = t * 0.4 + i * (math.pi * 2 / 6)
+            hr = radius * (0.85 + 0.15 * pulse)
+            hx = cx + math.cos(a) * hr
+            hy = cy + math.sin(a) * hr
+            line_alpha = int(60 + 50 * math.sin(t * 3.0 + i * 1.2))
+            pygame.draw.line(screen, (200, 160, 255, line_alpha), (cx, cy), (hx, hy),
+                             max(1, int(1 + fast_pulse)))
 
-        # ── Rotating energy sigils ──
-        sigil_count = 4
-        for i in range(sigil_count):
-            sigil_angle = t * 0.8 + i * (math.pi * 2 / sigil_count)
-            sigil_dist = radius * 0.75 + 8 * math.sin(t * 4.0 + i * 1.2)
-            sx = cx + math.cos(sigil_angle) * sigil_dist
-            sy = cy + math.sin(sigil_angle) * sigil_dist
-            sigil_size = max(2, int(5 + 3 * math.sin(t * 3.0 + i * 1.7)))
-            sigil_alpha = int(120 + 80 * math.sin(t * 5.0 + i * 2.3))
-            sigil_color = (220, 160, 255, sigil_alpha)
-            pts = [
-                (sx, sy - sigil_size),
-                (sx + sigil_size * 0.7, sy),
-                (sx, sy + sigil_size),
-                (sx - sigil_size * 0.7, sy),
-            ]
-            pygame.draw.polygon(screen, sigil_color[:3], pts)
-            pygame.draw.polygon(screen, (240, 210, 255), pts, 1)
+        # ── Hexagon edge connector lines ──
+        for i in range(6):
+            a1 = t * 0.4 + i * (math.pi * 2 / 6)
+            a2 = t * 0.4 + (i + 1) * (math.pi * 2 / 6)
+            hr = radius * (0.85 + 0.15 * pulse)
+            x1 = cx + math.cos(a1) * hr
+            y1 = cy + math.sin(a1) * hr
+            x2 = cx + math.cos(a2) * hr
+            y2 = cy + math.sin(a2) * hr
+            edge_alpha = int(100 + 80 * math.sin(t * 5.0 + i * 1.8))
+            pygame.draw.line(screen, (180, 140, 255, edge_alpha), (x1, y1), (x2, y2),
+                             max(1, int(2 + fast_pulse)))
 
-        # ── Barrier particles ──
+        # ── Rotating arcane glyphs at hex vertices ──
+        for i in range(6):
+            a = -t * 0.6 + i * (math.pi * 2 / 6)
+            glyph_dist = radius * 0.78 + 6 * math.sin(t * 3.0 + i * 1.5)
+            gx = cx + math.cos(a) * glyph_dist
+            gy = cy + math.sin(a) * glyph_dist
+            g_size = max(2, int(4 + 3 * math.sin(t * 4.0 + i * 2.0)))
+            g_alpha = int(130 + 100 * math.sin(t * 5.0 + i * 2.5))
+            # Triangle glyph
+            tri_pts = []
+            for j in range(3):
+                ta = a + j * (math.pi * 2 / 3)
+                tx = gx + math.cos(ta) * g_size
+                ty = gy + math.sin(ta) * g_size
+                tri_pts.append((tx, ty))
+            pygame.draw.polygon(screen, (100, 200, 255, g_alpha), tri_pts)
+            pygame.draw.polygon(screen, (180, 230, 255, g_alpha), tri_pts, 1)
+            # Center dot
+            pygame.draw.circle(screen, (220, 240, 255, g_alpha), (int(gx), int(gy)), max(1, g_size // 3))
+
+        # ── Shard particles ──
         for p in self.mystic_barrier_particles:
-            life_ratio = p["life"] / p["max_life"] if p["max_life"] > 0 else 0
+            life_ratio = min(1.0, p["life"] / p["max_life"]) if p["max_life"] > 0 else 0
             if life_ratio <= 0:
                 continue
             px = cx + math.cos(p["angle"]) * p["dist"]
             py = cy + math.sin(p["angle"]) * p["dist"]
-            alpha = int(200 * life_ratio)
+            alpha = int(220 * life_ratio)
             size = max(1, int(p["size"] * life_ratio))
             r, g, b = p["color"]
-            glow_sz = size * 3
-            glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
-            pygame.draw.circle(glow, (r, g, b, alpha // 3),
-                               (glow_sz, glow_sz), glow_sz)
-            screen.blit(glow, (int(px - glow_sz), int(py - glow_sz)))
-            if alpha > 20:
-                pygame.draw.circle(screen, (min(255, r + 40), min(255, g + 30), min(255, b + 10)),
-                                   (int(px), int(py)), size)
+            rot = p.get("rotation", 0)
 
-        # ── Arcane sparkles ──
+            if p.get("is_shard"):
+                # Draw as diamond shard with rotation
+                pts = []
+                for j in range(4):
+                    sa = rot + j * (math.pi * 2 / 4)
+                    sd = size * (1.5 if j % 2 == 0 else 0.8)
+                    sx = px + math.cos(sa) * sd
+                    sy = py + math.sin(sa) * sd
+                    pts.append((sx, sy))
+                shard_surf = pygame.Surface((int(size * 4), int(size * 4)), pygame.SRCALPHA)
+                soff = size * 2
+                rel_pts = [(p[0] - px + soff, p[1] - py + soff) for p in pts]
+                pygame.draw.polygon(shard_surf, (r, g, b, alpha), rel_pts)
+                pygame.draw.polygon(shard_surf, (min(255, r + 60), min(255, g + 60), min(255, b + 60), alpha), rel_pts, 1)
+                screen.blit(shard_surf, (int(px - soff), int(py - soff)))
+                # Glow
+                g_sz = int(size * 2)
+                g_surf = pygame.Surface((g_sz * 2, g_sz * 2), pygame.SRCALPHA)
+                pygame.draw.circle(g_surf, (r, g, b, alpha // 3), (g_sz, g_sz), g_sz)
+                screen.blit(g_surf, (int(px - g_sz), int(py - g_sz)))
+            else:
+                # Standard circular particle
+                glow_sz = size * 3
+                glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+                pygame.draw.circle(glow, (r, g, b, alpha // 3), (glow_sz, glow_sz), glow_sz)
+                screen.blit(glow, (int(px - glow_sz), int(py - glow_sz)))
+                if alpha > 20:
+                    pygame.draw.circle(screen, (min(255, r + 40), min(255, g + 30), min(255, b + 10)),
+                                       (int(px), int(py)), size)
+
+        # ── Protective glyph flashes ──
         if self.mystic_barrier_active:
-            for _ in range(3):
-                sp_angle = random.uniform(0, math.pi * 2)
-                sp_dist = random.uniform(0, radius * 0.5)
-                sp_x = cx + math.cos(sp_angle) * sp_dist
-                sp_y = cy + random.uniform(-10, 10)
-                sp_size = random.randint(1, 2)
-                sp_color = random.choice([(220, 180, 255), (180, 120, 240), (255, 220, 255)])
-                pygame.draw.circle(screen, sp_color, (int(sp_x), int(sp_y)), sp_size)
+            for _ in range(2):
+                flash_angle = random.uniform(0, math.pi * 2)
+                flash_dist = radius * (0.5 + 0.4 * random.random())
+                fx = cx + math.cos(flash_angle) * flash_dist
+                fy = cy + math.sin(flash_angle) * flash_dist
+                f_size = random.randint(2, 4)
+                f_alpha = int(100 + 100 * random.random())
+                f_color = random.choice([
+                    (180, 230, 255, f_alpha),
+                    (140, 200, 255, f_alpha),
+                    (220, 240, 255, f_alpha),
+                ])
+                # Draw as cross glyph
+                pygame.draw.line(screen, f_color, (fx - f_size, fy), (fx + f_size, fy), 1)
+                pygame.draw.line(screen, f_color, (fx, fy - f_size), (fx, fy + f_size), 1)
 
     # ─── Chrono Shift helpers ─────────────────────────────────────────
 
     def _update_chrono_shift_particles(self, dt):
-        import random
         if self.chrono_shift_active:
-            spawn_count = max(1, int(20 * dt))
+            spawn_count = max(1, int(25 * dt))
             for _ in range(spawn_count):
                 angle = random.uniform(0, math.pi * 2)
-                dist = random.uniform(15, 70)
+                dist = random.uniform(10, 75)
+                ml = random.uniform(0.2, 0.5)
+                ptype = random.choices(
+                    ["orbit", "spark", "dust"],
+                    weights=[0.5, 0.3, 0.2],
+                )[0]
                 self.chrono_shift_particles.append({
                     "angle": angle,
                     "dist": dist,
-                    "life": random.uniform(0.15, 0.4),
-                    "max_life": random.uniform(0.15, 0.4),
-                    "size": random.uniform(1.5, 3.5),
-                    "drift": random.uniform(-40, -10),
+                    "life": ml,
+                    "max_life": ml,
+                    "size": random.uniform(1.5, 4.5),
+                    "drift": random.uniform(-80, -15),
+                    "type": ptype,
+                    "base_alpha": random.randint(150, 255),
                     "color": random.choice([
-                        (180, 220, 255),
-                        (140, 200, 240),
-                        (200, 235, 255),
-                        (160, 210, 250),
+                        (255, 215, 0),
+                        (255, 230, 80),
+                        (255, 200, 40),
+                        (255, 245, 200),
+                        (255, 180, 20),
                     ]),
                 })
         for p in self.chrono_shift_particles[:]:
@@ -2821,89 +3619,177 @@ class Character:
             p["dist"] += 20 * dt
 
     def _draw_chrono_shift(self, screen, camera_offset):
-        import random
         center = self.get_center()
         cx = center.x - camera_offset.x
         cy = center.y - camera_offset.y
         t = pygame.time.get_ticks() / 1000.0
 
         radius = 90.0
-
-        # ── Outer time distortion ring ──
         pulse = 0.5 + 0.5 * math.sin(t * 5.0)
-        glow_radius = radius * (0.85 + 0.15 * pulse)
-        glow_surf = pygame.Surface((int(glow_radius * 2) + 4, int(glow_radius * 2) + 4), pygame.SRCALPHA)
-        glow_a = int(30 + 20 * pulse)
-        pygame.draw.circle(glow_surf, (80, 160, 220, glow_a),
-                           (int(glow_radius) + 2, int(glow_radius) + 2),
-                           int(glow_radius))
-        inner_r = int(glow_radius * 0.5)
-        inner_a = int(20 + 15 * pulse)
-        pygame.draw.circle(glow_surf, (140, 210, 255, inner_a),
-                           (int(glow_radius) + 2, int(glow_radius) + 2),
-                           inner_r)
-        screen.blit(glow_surf, (int(cx - glow_radius - 2), int(cy - glow_radius - 2)))
 
-        # ── Rotating clock hand ring ──
-        ring_r = radius
-        ring_a = int(60 + 40 * math.sin(t * 8.0))
-        ring_surf = pygame.Surface((int(ring_r * 2) + 4, int(ring_r * 2) + 4), pygame.SRCALPHA)
-        pygame.draw.circle(ring_surf, (160, 210, 255, ring_a),
-                           (int(ring_r) + 2, int(ring_r) + 2),
-                           int(ring_r), max(1, int(2 * (0.5 + 0.5 * pulse))))
-        screen.blit(ring_surf, (int(cx - ring_r - 2), int(cy - ring_r - 2)))
+        # ── Radiant gold light beams ──
+        for bi in range(8):
+            ba = t * 0.3 + bi * math.pi / 4
+            ba_a = int(8 + 6 * math.sin(t * 2 + bi * 1.3))
+            for bj in range(3):
+                bd = radius * (0.3 + bj * 0.3)
+                bx = cx + math.cos(ba) * bd
+                by = cy + math.sin(ba) * bd
+                bs = 3 + bj * 3
+                pygame.draw.circle(screen, (255, 220, 100, ba_a), (int(bx), int(by)), bs)
 
-        # ── Clock ticks ──
-        tick_count = 12
-        for i in range(tick_count):
-            tick_angle = t * 0.6 + i * (math.pi * 2 / tick_count)
-            tick_dist = radius * 0.85
-            tx = cx + math.cos(tick_angle) * tick_dist
-            ty = cy + math.sin(tick_angle) * tick_dist
-            tick_len = 4 + 3 * math.sin(t * 4.0 + i)
-            tick_alpha = int(100 + 80 * math.sin(t * 6.0 + i * 1.3))
-            pygame.draw.line(screen, (160, 210, 255, tick_alpha),
-                             (tx - math.cos(tick_angle) * tick_len,
-                              ty - math.sin(tick_angle) * tick_len),
-                             (tx + math.cos(tick_angle) * tick_len,
-                              ty + math.sin(tick_angle) * tick_len), 2)
+        # ── Golden time ripple waves ──
+        for ri in range(3):
+            rp = (t * 1.5 + ri * 1.2) % 1.8
+            rr = rp * radius * 1.3
+            ra = int(50 * (1 - rp / 1.8))
+            if ra > 0:
+                rs = pygame.Surface((int(rr * 2) + 4, int(rr * 2) + 4), pygame.SRCALPHA)
+                rc = rs.get_width() // 2
+                pygame.draw.circle(rs, (255, 200, 50, ra), (rc, rc), int(rr), 1)
+                pygame.draw.circle(rs, (255, 230, 150, ra // 2), (rc, rc), int(rr * 0.7), 1)
+                screen.blit(rs, (cx - rc, cy - rc))
 
-        # ── Clock hands ──
-        hand_angle = t * 2.0
-        for hand_len, hand_width, hand_color in [
-            (radius * 0.5, 3, (180, 220, 255)),
-            (radius * 0.7, 2, (140, 200, 240)),
+        # ── Golden ground clock face ──
+        face_surf = pygame.Surface((int(radius * 2.6), int(radius * 2.6)), pygame.SRCALPHA)
+        fc = face_surf.get_width() // 2
+        pygame.draw.circle(face_surf, (80, 60, 10, 20), (fc, fc), int(radius * 1.15))
+        pygame.draw.circle(face_surf, (120, 90, 20, 15), (fc, fc), int(radius * 0.9))
+        pygame.draw.circle(face_surf, (200, 160, 30, 8), (fc, fc), int(radius * 0.65))
+        screen.blit(face_surf, (cx - fc, cy - fc))
+
+        # ── 3 Concentric gold gear rings ──
+        ring_data = [
+            (radius * 0.95, t * 0.4, 120, 255, 200, 50),
+            (radius * 0.70, t * -0.6, 100, 255, 220, 80),
+            (radius * 0.45, t * 0.8, 80, 255, 230, 120),
+        ]
+        for rr, rspeed, ra, *rgb in ring_data:
+            ring_a = int(ra + 50 * math.sin(t * 6.0 + rspeed * 10))
+            if ring_a <= 0:
+                continue
+            rs = pygame.Surface((int(rr * 2) + 8, int(rr * 2) + 8), pygame.SRCALPHA)
+            rcx = rs.get_width() // 2
+            rcy = rs.get_height() // 2
+            pygame.draw.circle(rs, (*rgb, ring_a), (rcx, rcy), int(rr), max(1, int(2 + pulse)))
+            for gi in range(20):
+                ga = rspeed + gi * math.pi / 10
+                gd = rr
+                gx = rcx + math.cos(ga) * gd
+                gy = rcy + math.sin(ga) * gd
+                gs = 2 + (gi % 4)
+                pygame.draw.circle(rs, (*rgb, ring_a), (int(gx), int(gy)), gs)
+            screen.blit(rs, (cx - rcx, cy - rcy))
+
+        # ── Outer gold gear teeth ──
+        gear_a = int(70 + 40 * math.sin(t * 7.0))
+        for gi in range(30):
+            ga = t * 0.5 + gi * math.pi / 15
+            gd = radius * 1.05
+            inner_d = radius * 0.90
+            gx1 = cx + math.cos(ga) * inner_d
+            gy1 = cy + math.sin(ga) * inner_d
+            gx2 = cx + math.cos(ga) * gd
+            gy2 = cy + math.sin(ga) * gd
+            gx3 = cx + math.cos(ga + 0.06) * gd
+            gy3 = cy + math.sin(ga + 0.06) * gd
+            tw = 2 if gi % 4 == 0 else 1
+            pygame.draw.line(screen, (255, 200, 50, gear_a), (gx1, gy1), (gx2, gy2), tw)
+            if gi % 2 == 0:
+                pygame.draw.line(screen, (255, 230, 120, gear_a), (gx2, gy2), (gx3, gy3), 1)
+
+        # ── Golden clock hands with glow trail ──
+        for hand_len, hand_width, hand_color, speed in [
+            (radius * 0.55, 3, (255, 215, 0), 2.0),
+            (radius * 0.80, 2, (255, 200, 60), 1.2),
+            (radius * 0.35, 2, (255, 240, 150), 4.0),
         ]:
-            hx = cx + math.cos(hand_angle) * hand_len
-            hy = cy + math.sin(hand_angle) * hand_len
-            pygame.draw.line(screen, hand_color, (cx, cy), (hx, hy), hand_width)
+            ha = t * speed
+            hx = cx + math.cos(ha) * hand_len
+            hy = cy + math.sin(ha) * hand_len
+            for ti in range(4):
+                ta = ha - 0.015 * (ti + 1)
+                tax = cx + math.cos(ta) * hand_len * 0.85
+                tay = cy + math.sin(ta) * hand_len * 0.85
+                ta_a = 70 - ti * 15
+                pygame.draw.line(screen, (*hand_color, ta_a), (cx, cy), (tax, tay), hand_width)
+            pygame.draw.line(screen, hand_color, (cx, cy), (hx, hy), hand_width + 1)
+            cap_size = 5 + hand_width
+            pygame.draw.circle(screen, (255, 215, 0), (int(cx), int(cy)), cap_size)
+            pygame.draw.circle(screen, (255, 245, 200), (int(cx), int(cy)), cap_size - 2)
 
-        # ── Time particles ──
+        # ── Golden clock markers (12 outer + inner) ──
+        for i in range(12):
+            ma = t * 0.3 + i * math.pi / 6
+            outer_dist = radius * 0.88
+            inner_dist = radius * 0.60
+            mxo = cx + math.cos(ma) * outer_dist
+            myo = cy + math.sin(ma) * outer_dist
+            mxi = cx + math.cos(ma) * inner_dist
+            myi = cy + math.sin(ma) * inner_dist
+            ma_a = int(150 + 70 * math.sin(t * 3 + i * 0.5))
+            mw = 3 if i % 3 == 0 else 1
+            ml = 8 if i % 3 == 0 else 4
+            mo = math.cos(ma)
+            ms = math.sin(ma)
+            pygame.draw.line(screen, (255, 215, 0, ma_a),
+                             (mxo - mo * ml, myo - ms * ml),
+                             (mxo + mo * ml, myo + ms * ml), mw)
+            if i % 3 == 0:
+                pygame.draw.line(screen, (255, 240, 150, ma_a // 2),
+                                 (mxi - mo * 2, myi - ms * 2),
+                                 (mxi + mo * 2, myi + ms * 2), 1)
+
+        # ── Golden time particles ──
         for p in self.chrono_shift_particles:
             life_ratio = p["life"] / p["max_life"] if p["max_life"] > 0 else 0
             if life_ratio <= 0:
                 continue
             px = cx + math.cos(p["angle"]) * p["dist"]
             py = cy + math.sin(p["angle"]) * p["dist"]
-            alpha = int(180 * life_ratio)
+            alpha = int(p.get("base_alpha", 180) * life_ratio)
             size = max(1, int(p["size"] * life_ratio))
             r, g, b = p["color"]
-            glow_sz = size * 3
-            glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
-            pygame.draw.circle(glow, (r, g, b, alpha // 3),
-                               (glow_sz, glow_sz), glow_sz)
-            screen.blit(glow, (int(px - glow_sz), int(py - glow_sz)))
-            if alpha > 20:
+            ptype = p.get("type", "orbit")
+
+            if ptype == "spark":
+                # Star-spark shape
+                for spi in range(4):
+                    sa = p["angle"] * 3 + spi * math.pi / 2
+                    sd = size * 1.5
+                    spx = px + math.cos(sa) * sd
+                    spy = py + math.sin(sa) * sd
+                    pygame.draw.line(screen, (r, g, b, alpha),
+                                     (int(px), int(py)),
+                                     (int(spx), int(spy)), 1)
+                pygame.draw.circle(screen, (r, g, b, alpha), (int(px), int(py)), size)
+            elif ptype == "dust":
+                # Tiny golden dust mote
+                pygame.draw.circle(screen, (r, g, b, alpha // 2), (int(px), int(py)), size)
+                if size > 1:
+                    pygame.draw.circle(screen, (255, 255, 200, alpha // 3),
+                                       (int(px), int(py)), size * 2)
+            else:
+                # Orbit glow
+                glow_sz = size * 3
+                glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+                pygame.draw.circle(glow, (r, g, b, alpha // 3),
+                                   (glow_sz, glow_sz), glow_sz)
+                screen.blit(glow, (int(px - glow_sz), int(py - glow_sz)))
                 pygame.draw.circle(screen, (min(255, r + 40), min(255, g + 30), min(255, b + 10)),
                                    (int(px), int(py)), size)
 
-        # ── Time sparkles ──
+        # ── Golden sparkles ──
         if self.chrono_shift_active:
-            for _ in range(4):
+            for _ in range(6):
                 sp_angle = random.uniform(0, math.pi * 2)
-                sp_dist = random.uniform(0, radius * 0.6)
-                sp_x = cx + math.cos(sp_angle) * sp_dist
-                sp_y = cy + random.uniform(-15, 15)
-                sp_size = random.randint(1, 2)
-                sp_color = random.choice([(200, 235, 255), (160, 210, 255), (220, 240, 255)])
+                sp_dist = random.uniform(0, radius * 0.7)
+                sp_x = cx + math.cos(sp_angle) * sp_dist + random.uniform(-3, 3)
+                sp_y = cy + random.uniform(-25, 25)
+                sp_size = random.randint(1, 3)
+                sp_color = random.choice([(255, 215, 0), (255, 240, 150), (255, 200, 40)])
                 pygame.draw.circle(screen, sp_color, (int(sp_x), int(sp_y)), sp_size)
+                # Tiny glow
+                if sp_size > 1:
+                    pygame.draw.circle(screen, (255, 255, 200, 40),
+                                       (int(sp_x), int(sp_y)), sp_size + 2)

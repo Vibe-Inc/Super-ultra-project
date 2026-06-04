@@ -1,11 +1,13 @@
 import json
 import os
 import datetime
+import pygame
 from src.core.logger import logger
 from src.items.items import create_item
 import src.config as cfg
 
 SAVES_DIR = "saves"
+SETTINGS_FILE = os.path.join(SAVES_DIR, "settings.json")
 
 def _skill_dicts_to_json(items):
     """Convert tuple RGB values to lists for JSON serialization."""
@@ -389,3 +391,68 @@ class SaveManager:
         if os.path.exists(file_path):
             os.remove(file_path)
             logger.info(f"Deleted save {file_path}")
+
+    @staticmethod
+    def save_settings(app):
+        """
+        Persist current user settings (language, display mode, brightness, volume)
+        to a JSON file so they survive application restarts.
+
+        Args:
+            app (App): The main application instance.
+        """
+        SaveManager.ensure_saves_dir()
+        data = {
+            "language": cfg.LANGUAGE,
+            "fullscreen": app.is_fullscreen,
+            "windowed_width": app.windowed_size[0],
+            "windowed_height": app.windowed_size[1],
+            "brightness": cfg.USER_SCREEN_BRIGHTNESS,
+            "music_volume": cfg.MUSIC_VOLUME,
+            "profiler_enabled": cfg.PROFILER_ENABLED,
+        }
+        with open(SETTINGS_FILE, 'w') as f:
+            json.dump(data, f, indent=4)
+        logger.info(f"Settings saved to {SETTINGS_FILE}")
+
+    @staticmethod
+    def load_settings(app):
+        """
+        Restore previously persisted user settings into the application.
+
+        Args:
+            app (App): The main application instance.
+        """
+        if not os.path.exists(SETTINGS_FILE):
+            logger.info("No saved settings found — using defaults.")
+            return
+
+        with open(SETTINGS_FILE, 'r') as f:
+            data = json.load(f)
+
+        # Language
+        lang = data.get("language", cfg.LANGUAGE)
+        if lang in cfg.SUPPORTED_LANGUAGES and lang != cfg.LANGUAGE:
+            app.update_language(lang)
+
+        # Brightness
+        cfg.USER_SCREEN_BRIGHTNESS = data.get("brightness", cfg.USER_SCREEN_BRIGHTNESS)
+        cfg.update_brightness()
+
+        # Music volume
+        cfg.MUSIC_VOLUME = data.get("music_volume", 0.3)
+        if pygame.mixer.get_init():
+            pygame.mixer.music.set_volume(cfg.MUSIC_VOLUME)
+
+        # Profiler
+        app.set_profiler_enabled(data.get("profiler_enabled", False))
+
+        # Windowed size
+        if "windowed_width" in data and "windowed_height" in data:
+            app.windowed_size = (data["windowed_width"], data["windowed_height"])
+
+        # Fullscreen — apply after windowed_size is restored
+        if data.get("fullscreen", False):
+            app._apply_display_mode(True, update_windowed_size=False)
+
+        logger.info(f"Settings loaded from {SETTINGS_FILE}")

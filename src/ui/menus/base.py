@@ -21,14 +21,18 @@ class Menu:
             List of Tooltip objects for button tooltips.
 
     Methods:
+        __init__(app):
+            Initialize the menu with an app reference.
+        _apply_button_size(button, rect):
+            Assign a rect to a button and refresh its text surface.
+        _screen_size(screen=None):
+            Return the current screen dimensions.
         draw(screen):
             Draw all buttons and tooltips onto the provided screen surface.
-            Args:
-                screen (pygame.Surface): The surface to draw the menu on.
+        layout(screen):
+            Placeholder layout method; subclasses override.
         handle_event(event):
             Handle Pygame events, triggering button actions when clicked.
-            Args:
-                event (pygame.event.Event): The Pygame event to process.
     """
     
     def __init__(self, app: "App"):

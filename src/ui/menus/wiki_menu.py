@@ -160,37 +160,53 @@ def _draw_ornate_border(surf, rect, theme, scale):
         pygame.draw.line(surf, border, (r.right - int(18 * scale), y), (r.right - int(10 * scale), y), w)
 
 
-# ─── Shimmer text (cached per time bucket) ──────────────────
+# ─── Plain text (no shimmer) ────────────────────────────────
 def _render_shimmer_text(font, text, base_color, t, intensity=0.15):
-    """Render text with base_color and a subtle animated highlight pass (no mask)."""
-    tb = int(t * 6)
-    ck = (id(font), text, base_color, tb)
-    if ck in _shimmer_cache:
-        return _shimmer_cache[ck]
-    result = font.render(text, True, base_color)
-    if intensity <= 0:
-        return result
-    w, h = result.get_size()
-    # Draw a soft vertical highlight band that scrolls across
-    shimmer_w = max(1, int(w * 0.2))
-    band = pygame.Surface((shimmer_w, h), pygame.SRCALPHA)
-    for sx in range(shimmer_w):
-        ratio = 1.0 - abs(sx - shimmer_w // 2) / (shimmer_w // 2 + 1)
-        a = int(50 * ratio * intensity / 0.15)
-        pygame.draw.line(band, (*GOLD_BRIGHT, max(0, min(120, a))), (sx, 0), (sx, h))
-    # Position band based on time
-    band_x = int((t * 150) % (w + shimmer_w)) - shimmer_w
-    # Blit only within text bounds
-    clip = result.get_clip()
-    result.blit(band, (band_x, 0), special_flags=pygame.BLEND_RGBA_ADD)
-    if len(_shimmer_cache) > 30:
-        _shimmer_cache.clear()
-    _shimmer_cache[ck] = result
-    return result
+    return font.render(text, True, base_color)
 
 
 # ─── Ambient Particle (simplified — single circle) ──────────
 class AmbientParticle:
+    """
+    Simple floating ambient particle used for background atmosphere.
+
+    Attributes:
+        sw (int):
+            Screen width boundary.
+        sh (int):
+            Screen height boundary.
+        x (float):
+            Current x position.
+        y (float):
+            Current y position.
+        vx (float):
+            Horizontal velocity.
+        vy (float):
+            Vertical velocity.
+        sz (int):
+            Particle radius in pixels.
+        brightness (int):
+            Brightness value for the particle color.
+        alpha (int):
+            Alpha transparency value.
+        phase (float):
+            Phase offset for oscillation.
+        freq (float):
+            Frequency of horizontal oscillation.
+        _surf (pygame.Surface | None):
+            Cached surface (may be None).
+
+    Methods:
+        __init__(sw, sh):
+            Initialize the particle with random properties.
+        _reset(init=False):
+            Reset particle position and properties.
+        update(dt, t):
+            Update particle position and check bounds.
+        draw(surf, t):
+            Draw the particle with oscillating alpha.
+    """
+
     def __init__(self, sw, sh):
         self.sw, self.sh = sw, sh
         self._reset(True)
@@ -227,6 +243,40 @@ class AmbientParticle:
 
 # ─── Burst Particle ─────────────────────────────────────────
 class WikiParticle:
+    """
+    Burst particle for wiki menu visual effects, supporting glow and star shapes.
+
+    Attributes:
+        x (float):
+            Current x position.
+        y (float):
+            Current y position.
+        vx (float):
+            Horizontal velocity.
+        vy (float):
+            Vertical velocity (gravity applied each frame).
+        lt (float):
+            Remaining lifetime in seconds.
+        max_lt (float):
+            Maximum lifetime for alpha scaling.
+        color (tuple):
+            RGB(A) color of the particle.
+        size (int):
+            Base size of the particle.
+        glow (bool):
+            Whether this particle has a glow effect.
+        star (bool):
+            Whether this particle is drawn as a star shape.
+
+    Methods:
+        __init__(x, y, vx, vy, lt, color, size, glow=False, star=False):
+            Initialize the burst particle.
+        update(dt):
+            Update position and lifetime.
+        draw(surf):
+            Draw the particle with fading alpha.
+    """
+
     def __init__(self, x, y, vx, vy, lt, color, size, glow=False, star=False):
         self.x, self.y = x, y
         self.vx, self.vy = vx, vy
@@ -315,6 +365,133 @@ SECTIONS_META = {
 
 
 class WikiMenu(Menu):
+    """
+    In-game wiki / compendium (Codex Arcanum) with bestiary, magic, effects, and guide sections.
+
+    Features ornate parchment-styled backgrounds, section cards, table of contents,
+    content pages with monster portraits, and transition animations.
+
+    Attributes:
+        app (App):
+            The main application instance.
+        _page (str):
+            Current page identifier ('main', 'bestiary', 'magic', 'effects', 'guide').
+        _sub_page (int):
+            Current sub-page index within a section.
+        _show_toc (bool):
+            Whether the table of contents is currently displayed.
+        font_ornate (pygame.font.Font):
+            Large ornate font for icons.
+        font_large (pygame.font.Font):
+            Large font for the main title.
+        font_title (pygame.font.Font):
+            Title font for section headers.
+        font_subtitle (pygame.font.Font):
+            Subtitle font for section cards.
+        font_body (pygame.font.Font):
+            Body text font for content pages.
+        font_small (pygame.font.Font):
+            Small font for captions and page numbers.
+        font_toc (pygame.font.Font):
+            Font for table of contents entries.
+        ink_color (tuple):
+            Primary ink color for text.
+        ink_light (tuple):
+            Lighter ink color for subtler text.
+        particles (list[WikiParticle]):
+            Active burst particles.
+        ambient_particles (list[AmbientParticle]):
+            Active ambient background particles.
+        _anim_time (float):
+            Accumulated animation time.
+        _page_enter_time (int):
+            Timestamp of the last page entry (ms).
+        _transition_progress (float):
+            Normalized page transition progress (0.0 to 1.0).
+        _transition_from (str):
+            Page being transitioned from.
+        _hover_glow (dict):
+            Hover glow progress per section card index.
+        buttons (list[Button]):
+            List of control buttons.
+        back_btn (Button):
+            Back button.
+        prev_btn (Button):
+            Previous page button.
+        next_btn (Button):
+            Next page button.
+        toc_btn (Button):
+            Table of contents toggle button.
+        section_buttons (list):
+            Main page section card buttons.
+        section_button_data (list[tuple]):
+            Data for main page section cards.
+        _toc_hover (int):
+            Index of the hovered TOC entry.
+        _toc_entry_rects (list[tuple[pygame.Rect, int]]):
+            List of (rect, page_index) for TOC hit detection.
+
+    Methods:
+        __init__(app):
+            Initialize the wiki menu.
+        on_enter():
+            Reset animations and spawn ambient particles on entry.
+        _build_main_page():
+            Build the main page with section cards.
+        _open_bestiary():
+            Open the bestiary section.
+        _open_magic():
+            Open the magic section.
+        _open_effects():
+            Open the effects section.
+        _open_guide():
+            Open the guide section.
+        _emit_particles(theme):
+            Spawn burst particles with the given theme colors.
+        _go_back():
+            Navigate back through sub-pages or to the main page.
+        _toggle_toc():
+            Toggle the table of contents display.
+        _prev_page():
+            Go to the previous sub-page.
+        _next_page():
+            Go to the next sub-page.
+        _get_max_subpages():
+            Get the maximum sub-page index for the current section.
+        _theme():
+            Get the current section's color theme.
+        _get_content():
+            Get the content pages for the current section.
+        _get_meta():
+            Get the metadata for the current section.
+        _bestiary_pages():
+            Build bestiary content pages.
+        _magic_pages():
+            Build magic content pages.
+        _effects_pages():
+            Build effects content pages.
+        _guide_pages():
+            Build guide content pages.
+        layout(screen):
+            Position buttons based on screen size and current page.
+        update(dt):
+            Update animations and particles.
+        draw(screen):
+            Render the wiki menu.
+        _draw_main(screen, sw, sh, scale):
+            Draw the main page with section cards.
+        _draw_toc(screen, sw, sh, scale):
+            Draw the table of contents.
+        _draw_content(screen, sw, sh, scale):
+            Draw a content page with title, body, and optional portrait.
+        handle_event(event):
+            Handle input events.
+        _handle_main_click(event):
+            Handle clicks on the main page section cards.
+        _handle_toc_click(event):
+            Handle clicks on table of contents entries.
+    """
+
     def __init__(self, app: "App"):
         super().__init__(app)
         self._page = "main"

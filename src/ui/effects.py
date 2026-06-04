@@ -28,6 +28,20 @@ def ease_in_quart(t):
 
 
 class Star:
+    """A single twinkling background star.
+
+    Attributes:
+        x (float): X position.
+        y (float): Y position.
+        size (float): Radius of the star.
+        base_alpha (int): Base alpha value for the twinkle.
+        twinkle_speed (float): Speed of the twinkle oscillation.
+        phase (float): Random phase offset for the twinkle wave.
+        color (tuple): RGB color of the star.
+
+    Methods:
+        draw(surf, t): Draw the star with current twinkle alpha.
+    """
     def __init__(self, sw, sh):
         self.x = random.uniform(0, sw)
         self.y = random.uniform(0, sh)
@@ -59,6 +73,23 @@ class Star:
 
 
 class LightRay:
+    """A drifting ray of light across the screen.
+
+    Attributes:
+        sw (int): Screen width for boundary calculations.
+        sh (int): Screen height for boundary calculations.
+        y (float): Current Y position of the ray.
+        height (float): Height of the light ray.
+        speed (float): Drift speed of the ray.
+        phase (float): Random phase offset for sine wave motion.
+        amp (float): Amplitude of the sine wave drift.
+        alpha (int): Alpha transparency of the ray.
+        width_factor (float): Fraction of screen width the ray spans.
+
+    Methods:
+        _reset(): Reinitialize the ray with random values.
+        draw(surf, t): Draw the light ray at the current position.
+    """
     def __init__(self, sw, sh):
         self.sw = sw
         self.sh = sh
@@ -89,6 +120,26 @@ class LightRay:
 
 
 class AmbientEmber:
+    """A floating ember particle that rises upward.
+
+    Attributes:
+        sw (int): Screen width.
+        sh (int): Screen height.
+        x (float): Current X position.
+        y (float): Current Y position.
+        speed (float): Upward movement speed.
+        sway_amp (float): Horizontal sway amplitude.
+        sway_freq (float): Horizontal sway frequency.
+        phase (float): Random phase offset.
+        size (float): Radius of the ember.
+        alpha (int): Base alpha transparency.
+        color (tuple): RGB color tuple.
+
+    Methods:
+        _reset(): Reinitialize the ember with random values.
+        update(dt, t): Move the ember upward and sway it.
+        draw(surf, t): Draw the ember with pulsing alpha.
+    """
     def __init__(self, sw, sh):
         self.sw, self.sh = sw, sh
         self._reset()
@@ -130,6 +181,28 @@ class AmbientEmber:
 
 
 class FloatingOrb:
+    """A large floating orb with a soft glowing halo.
+
+    Attributes:
+        sw (int): Screen width.
+        sh (int): Screen height.
+        x (float): Current X position.
+        y (float): Current Y position.
+        vx (float): Horizontal velocity.
+        vy (float): Vertical velocity.
+        radius (int): Radius of the orb.
+        hue_shift (float): Color hue shift value.
+        phase (float): Random phase offset for pulsing.
+        freq (float): Pulse frequency.
+        alpha_base (int): Base alpha for the glow.
+        color_variant (str): Color scheme name ('gold', 'purple', 'teal', 'crimson').
+
+    Methods:
+        _reset(init=False): Reinitialize the orb with random values.
+        _get_color(ri, r, a): Compute the color at a given ring.
+        update(dt, t): Move the orb and apply drift.
+        draw(surf, t): Draw the glowing orb.
+    """
     def __init__(self, sw, sh):
         self.sw, self.sh = sw, sh
         self._reset(True)
@@ -186,6 +259,22 @@ class FloatingOrb:
 
 
 class LaunchBurst:
+    """A burst particle emitted during a screen launch transition.
+
+    Attributes:
+        x (float): Current X position.
+        y (float): Current Y position.
+        vx (float): Horizontal velocity.
+        vy (float): Vertical velocity.
+        color (tuple): RGBA color tuple.
+        size (float): Size of the particle.
+        lt (float): Remaining lifetime in seconds.
+        max_lt (float): Maximum lifetime in seconds.
+
+    Methods:
+        update(dt): Update position, gravity, and lifetime.
+        draw(surf): Draw the particle if still alive.
+    """
     def __init__(self, x, y, vx, vy, color, size, lt):
         self.x, self.y = x, y
         self.vx, self.vy = vx, vy
@@ -236,6 +325,22 @@ def render_shimmer_text(font, text, base_color, t, intensity=0.15):
 
 
 class TitleSparkle:
+    """A small sparkle particle emitted from the title text.
+
+    Attributes:
+        x (float): Current X position.
+        y (float): Current Y position.
+        vx (float): Horizontal velocity.
+        vy (float): Vertical velocity.
+        life (float): Remaining life ratio (0 to 1).
+        max_life (float): Maximum lifetime in seconds.
+        size (float): Radius of the sparkle.
+        color (tuple): RGB color tuple.
+
+    Methods:
+        update(dt): Update position, gravity, and lifetime.
+        draw(surf): Draw the sparkle if still alive.
+    """
     def __init__(self, x, y):
         self.x = x + random.uniform(-4, 4)
         self.y = y + random.uniform(-4, 4)
@@ -268,6 +373,19 @@ class TitleSparkle:
 
 
 class MenuClock:
+    """An animated analogue clock rendered on the menu screen.
+
+    Attributes:
+        _face (pygame.Surface | None): Cached clock face surface.
+        _key (tuple): Cache key based on screen dimensions.
+        _numerals (list[str]): Roman numeral labels (XII, I, II, ...).
+        _num_cache (dict): Cache for rendered numeral surfaces.
+
+    Methods:
+        _get_num_surf(text, font): Return a cached numeral surface.
+        _build_face(sw, sh, scale): Pre-render the static clock face.
+        draw(screen, t, sw, sh, scale): Draw the clock with animated hands.
+    """
     def __init__(self):
         self._face = None
         self._key = (0, 0)

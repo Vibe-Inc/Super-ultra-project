@@ -19,6 +19,64 @@ if TYPE_CHECKING:
 
 
 class SettingsMenu(Menu):
+    """
+    Settings screen for display mode, language, brightness, and audio volume.
+
+    Features animated background effects and gold-styled sliders.
+
+    Attributes:
+        app (App):
+            The main application instance.
+        buttons (list[Button]):
+            List of setting buttons (display mode, language, back).
+        brightness_slider (Slider):
+            Slider control for screen brightness.
+        audio_slider (Slider):
+            Slider control for audio volume.
+        _label_font (pygame.font.Font):
+            Font for setting labels.
+        _title_font (pygame.font.Font):
+            Large font for the title.
+        font_small (pygame.font.Font):
+            Small font for captions.
+        _anim_time (float):
+            Accumulated animation time.
+        _launch_phase (float):
+            Phase of the launch animation.
+        _particles (list):
+            Decorative ambient particles.
+        _stars (list):
+            Background star effects.
+        _light_rays (list):
+            Light ray effects.
+        _embers (list):
+            Ambient ember particles.
+        _bursts (list):
+            Launch burst effects.
+        _sparkles (list):
+            Title sparkle effects.
+        _panel_rect (pygame.Rect):
+            Rectangle for the central panel.
+
+    Methods:
+        __init__(app):
+            Initialize the settings menu.
+        _display_mode_label():
+            Get the label for the current display mode.
+        toggle_display_mode():
+            Toggle between fullscreen and windowed mode.
+        toggle_language():
+            Cycle through available languages.
+        back_to_main():
+            Return to the main menu.
+        handle_event(event):
+            Handle input events.
+        update(dt):
+            Update animations and effects.
+        draw(screen):
+            Render the settings menu.
+    """
+
     def __init__(self, app: "App"):
         super().__init__(app)
         scale = cfg.ui_scale()
@@ -41,11 +99,13 @@ class SettingsMenu(Menu):
                    on_click=self.back_to_main, shape='shield'),
         ]
 
-        initial_volume = pygame.mixer.music.get_volume() if pygame.mixer.get_init() else 0.3
-
         def set_brightness(v):
             cfg.USER_SCREEN_BRIGHTNESS = max(0.3, v)
             cfg.update_brightness()
+
+        def set_volume(v):
+            cfg.MUSIC_VOLUME = v
+            pygame.mixer.music.set_volume(v)
 
         track_len = max(50, int(340 * scale))
         sh2 = max(10, int(44 * scale))
@@ -60,8 +120,8 @@ class SettingsMenu(Menu):
             0, 0, sh2, max(3, int(6 * scale)),
             (0, 0, 0), (255, 255, 255),
             max(10, int(22 * scale)), max(10, int(22 * scale)),
-            track_len, value=initial_volume,
-            action=lambda v: pygame.mixer.music.set_volume(v), style='gold',
+            track_len, value=cfg.MUSIC_VOLUME,
+            action=set_volume, style='gold',
         )
 
         self._label_font = cfg.get_font(max(12, int(28 * scale)))
@@ -99,6 +159,8 @@ class SettingsMenu(Menu):
         self._launch_phase = 0.0
         self._bursts.clear()
         self._sparkles.clear()
+        self.audio_slider.value = cfg.MUSIC_VOLUME
+        self.brightness_slider.value = cfg.USER_SCREEN_BRIGHTNESS
         sw, sh = cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT
 
         if not self._stars:
