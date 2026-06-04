@@ -378,6 +378,7 @@ class Game(State):
                 ],
             },
             "stalker": {
+                "visual_style": "stalker",
                 "sprite_set": "MenHuman1(Recolor)",
                 "speed": 120.0,
                 "hp": 110,
@@ -394,6 +395,7 @@ class Game(State):
                 ],
             },
             "skirmisher": {
+                "visual_style": "skirmisher",
                 "sprite_set": "WomanHuman1(Recolor)",
                 "speed": 140.0,
                 "hp": 85,
@@ -411,6 +413,7 @@ class Game(State):
                 ],
             },
             "guardian": {
+                "visual_style": "guardian",
                 "sprite_set": "MenHuman1",
                 "speed": 100.0,
                 "hp": 140,
