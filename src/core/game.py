@@ -1,5 +1,12 @@
 import math
 import pygame
+import os
+import sys
+# Ensure project root is on sys.path if this module is executed directly
+_project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
 from typing import TYPE_CHECKING
 import random
 
@@ -23,6 +30,7 @@ from src.entities.monster_visuals import build_monster_animations
 from src.entities.monster_attacks import build_attack_controller, AttackContext
 from src.combat.base_player_combat import PlayerCombatController
 from src.minigames.blackjack import BlackjackGame
+from src.minigames.fishing import FishingController
 import inspect
 import database.effects as effects_db
 
@@ -539,6 +547,7 @@ class Game(State):
             create_item("iron_boots"),
             create_item("defense_charm"),
             create_item("leather_gloves"),
+            create_item("fishing_rod"),
             ]
 
         self.shop_inv = ShopInventory(self.app, shop_items)
@@ -606,6 +615,11 @@ class Game(State):
             on_apply=self._debug_apply_effect,
             on_close=lambda: None
         )
+        # Fishing minigame controller
+        try:
+            self.fishing = FishingController(self)
+        except Exception:
+            self.fishing = None
 
     def reinit_ui(self):
         self.hud = HUD(self.character, self.app, self.toggle_player_inventory, self.use_skill_slot, open_shop_callback=self.open_shop)
@@ -1139,6 +1153,13 @@ class Game(State):
         self.npc.update(self.character.pos)
         self.card_npc.update(self.character.pos)
 
+        # Update fishing controller
+        try:
+            if getattr(self, 'fishing', None):
+                self.fishing.update(dt)
+        except Exception:
+            pass
+
         # Safety: if current map defines an NPC spawn but NPC is far away (not placed), place it
         try:
             if self.current_map_path in self.NPC_SPAWNS and (self.npc.pos.x < -1000 or self.npc.pos.y < -1000):
@@ -1304,6 +1325,11 @@ class Game(State):
             elif kind == 'item':
                 entry[2].draw(screen, camera_offset)
 
+        try:
+            if getattr(self, 'fishing', None):
+                self.fishing.draw(screen, camera_offset)
+        except Exception:
+            pass
         self.map.draw_fringe_overlay(screen, camera_offset, self.character)
 
         if not self.npc.is_interactable:
@@ -1382,6 +1408,14 @@ class Game(State):
                 pass
 
         self.hud.handle_event(event)
+        # Route events to fishing controller (casting/reeling)
+        if getattr(self, 'fishing', None):
+            try:
+                handled = self.fishing.handle_event(event)
+                if handled:
+                    return
+            except Exception:
+                pass
 
         if event.type == pygame.MOUSEWHEEL:
             if getattr(self.app.INV_manager, 'hotbar', None):

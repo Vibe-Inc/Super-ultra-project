@@ -1,6 +1,5 @@
 import pygame
-import platform
-
+import platform 
 if platform.system() == "Windows":
     try:
         import ctypes
