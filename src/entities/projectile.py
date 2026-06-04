@@ -1484,7 +1484,9 @@ class EntanglingRoots:
         self.vine_points = []
         self.bursting = False
         self.trail = []
-        self.trail_length = 8
+        self.trail_length = 10
+        self.root_particles = []
+        self.leaf_particles = []
 
     def get_rect(self):
         if self.bursting:
@@ -1500,6 +1502,22 @@ class EntanglingRoots:
         self.bursting = True
         self.timer = 0.0
         self.damage_applied = False
+        # Spawn initial root burst leaf particles
+        for _ in range(30):
+            angle = random.uniform(0, math.pi * 2)
+            speed = random.uniform(60, 200)
+            self.leaf_particles.append({
+                "pos": pygame.Vector2(self.pos),
+                "vel": pygame.Vector2(math.cos(angle), math.sin(angle)) * speed,
+                "max_life": (ml := random.uniform(0.3, 0.6)),
+                "life": ml,
+                "size": random.uniform(2.0, 5.0),
+                "color": random.choice([
+                    (60, 200, 60), (100, 220, 80),
+                    (160, 255, 120), (200, 255, 180),
+                    (40, 160, 40),
+                ]),
+            })
 
     def update(self, dt, obstacles, enemies):
         if not self.alive:
@@ -1522,17 +1540,31 @@ class EntanglingRoots:
                         enemy.add_effect(RootEffect(self.root_duration))
                 self.damage_applied = True
 
+            # Root branch particles
+            for _ in range(3):
+                angle = random.uniform(0, math.pi * 2)
+                dist = random.uniform(0, self.radius * progress)
+                self.root_particles.append({
+                    "angle": angle,
+                    "dist": dist,
+                    "max_life": (ml := random.uniform(0.2, 0.4)),
+                    "life": ml,
+                    "width": random.uniform(2.0, 4.0),
+                })
+            if len(self.root_particles) > 60:
+                self.root_particles = self.root_particles[-60:]
+
+            # Leaf particles drift and fade
+            for p in self.leaf_particles[:]:
+                p["pos"] += p["vel"] * dt
+                p["vel"] *= 0.93
+                p["vel"].y += 20 * dt  # slight gravity
+                p["life"] -= dt
+                if p["life"] <= 0:
+                    self.leaf_particles.remove(p)
+
             if self.timer >= self.expansion_duration:
                 self.alive = False
-
-            # Vine points
-            import random as _rnd
-            for _ in range(2):
-                angle = _rnd.uniform(0, math.pi * 2)
-                dist = _rnd.uniform(0, self.radius * progress)
-                self.vine_points.append((angle, dist, self.animation_time))
-            if len(self.vine_points) > 40:
-                self.vine_points = self.vine_points[-40:]
             return
 
         # Flying phase
@@ -1564,38 +1596,50 @@ class EntanglingRoots:
             camera_offset = pygame.Vector2(0, 0)
 
         if not self.bursting:
-            # Draw flying seed/sprout
             cx = int(self.pos.x - camera_offset.x)
             cy = int(self.pos.y - camera_offset.y)
+            t = self.animation_time
 
             # Trail
             for i, pos in enumerate(self.trail):
                 alpha = int(100 * (i / len(self.trail)))
-                radius = int(2 + 3 * (i / len(self.trail)))
+                radius = int(2 + 4 * (i / len(self.trail)))
                 t_surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
-                pygame.draw.circle(t_surf, (60, 200, 60, alpha), (radius, radius), radius)
+                pygame.draw.circle(t_surf, (40, 160, 40, alpha), (radius, radius), radius)
                 screen.blit(t_surf, (pos.x - radius - camera_offset.x, pos.y - radius - camera_offset.y))
 
-            pulse = (math.sin(self.animation_time * 10) + 1.0) * 0.5
+            pulse = 0.5 + 0.5 * math.sin(t * 10)
 
-            # Glow
-            glow_size = 12 + int(4 * pulse)
+            # Outer glow
+            glow_size = 14 + int(4 * pulse)
             glow_surf = pygame.Surface((glow_size * 2, glow_size * 2), pygame.SRCALPHA)
-            pygame.draw.circle(glow_surf, (80, 255, 80, 50), (glow_size, glow_size), glow_size)
+            pygame.draw.circle(glow_surf, (60, 220, 60, int(40 + 20 * pulse)), (glow_size, glow_size), glow_size)
             screen.blit(glow_surf, (cx - glow_size, cy - glow_size))
 
-            # Seed body — small green orb with leaf-like shape
-            pygame.draw.circle(screen, (60, 180, 60), (cx, cy), 7)
-            pygame.draw.circle(screen, (120, 220, 100), (cx, cy), 5)
-            pygame.draw.circle(screen, (200, 255, 180), (cx - 1, cy - 1), 2)
+            # Root tendrils trailing from seed
+            for i in range(4):
+                ta = t * 4 + i * math.pi / 2
+                td = 4 + 5 * pulse
+                tx = cx + math.cos(ta) * td
+                ty = cy + math.sin(ta) * td
+                ex = tx + math.cos(ta + 0.3) * (6 + 4 * pulse)
+                ey = ty + math.sin(ta + 0.3) * (6 + 4 * pulse)
+                pygame.draw.line(screen, (40, 140, 40, int(150 + 50 * pulse)),
+                                 (tx, ty), (ex, ey), max(1, int(2 + pulse)))
 
-            # Tiny leaf wings
+            # Seed body
+            pygame.draw.circle(screen, (50, 170, 50), (cx, cy), 7)
+            pygame.draw.circle(screen, (100, 210, 90), (cx, cy), 5)
+            pygame.draw.circle(screen, (180, 255, 160), (cx - 1, cy - 1), 2)
+
+            # Leaf wings
             leaf_w = 4 + 2 * pulse
             for side in (-1, 1):
                 lx = cx + side * 6
-                ly = cy - 2 + 2 * math.sin(self.animation_time * 8)
-                pygame.draw.ellipse(screen, (80, 200, 60),
-                                    (lx - leaf_w, ly - 2, leaf_w * 2, 4))
+                ly = cy - 2 + 2 * math.sin(t * 8)
+                leaf_surf = pygame.Surface((int(leaf_w * 2), 6), pygame.SRCALPHA)
+                pygame.draw.ellipse(leaf_surf, (80, 200, 60, 200), (0, 0, int(leaf_w * 2), 4))
+                screen.blit(leaf_surf, (lx - leaf_w, ly - 2))
             return
 
         # Burst phase
@@ -1607,44 +1651,77 @@ class EntanglingRoots:
         if current_radius <= 0:
             return
 
-        import random as rnd
+        t = self.animation_time
 
-        # Outer green ring shockwave
+        # Root branches shooting outward
+        branch_count = int(10 + 6 * progress)
+        for i in range(branch_count):
+            ba = t * 0.5 + i * (math.pi * 2 / branch_count) + random.uniform(-0.1, 0.1)
+            bd = random.uniform(current_radius * 0.3, current_radius)
+            bx = cx + math.cos(ba) * bd
+            by = cy + math.sin(ba) * bd
+            branch_alpha = int(200 * (1 - progress) * (1 - bd / self.radius))
+            branch_width = max(1, int(3 * (1 - progress) * (1 - bd / self.radius * 0.5)))
+            # Draw root branch as a jagged line
+            pts = [(cx, cy)]
+            segs = 3
+            for s in range(1, segs + 1):
+                frac = s / segs
+                jag = random.uniform(-3, 3) * frac
+                spx = cx + math.cos(ba + jag * 0.03) * bd * frac
+                spy = cy + math.sin(ba + jag * 0.03) * bd * frac
+                pts.append((spx, spy))
+            for j in range(len(pts) - 1):
+                pygame.draw.line(screen, (40, 140, 40, branch_alpha),
+                                 pts[j], pts[j + 1], branch_width)
+
+        # Green burst aura
+        surface = pygame.Surface((current_radius * 2, current_radius * 2), pygame.SRCALPHA)
+        outer_alpha = int(80 * (1 - progress * 0.5))
+        pygame.draw.circle(surface, (40, 160, 40, outer_alpha), (current_radius, current_radius), current_radius)
+        mid_r = max(1, int(current_radius * 0.6))
+        mid_alpha = int(120 * (1 - progress * 0.3))
+        pygame.draw.circle(surface, (80, 200, 80, mid_alpha), (current_radius, current_radius), mid_r)
+        inner_r = max(1, int(current_radius * 0.3))
+        inner_alpha = int(160 * (1 - progress * 0.2))
+        pygame.draw.circle(surface, (180, 255, 160, inner_alpha), (current_radius, current_radius), inner_r)
+        screen.blit(surface, (cx - current_radius, cy - current_radius))
+
+        # Outer green ring
         ring_alpha = int(180 * (1 - progress))
         pygame.draw.circle(screen, (60, 180, 60, ring_alpha), (cx, cy), current_radius, max(2, int(3 * (1 - progress) + 1)))
 
-        # Main nature burst
-        burst_surf = pygame.Surface((current_radius * 2, current_radius * 2), pygame.SRCALPHA)
-        outer_alpha = int(100 * (1 - progress * 0.5))
-        pygame.draw.circle(burst_surf, (40, 160, 40, outer_alpha), (current_radius, current_radius), current_radius)
-        mid_r = max(1, int(current_radius * 0.65))
-        mid_alpha = int(140 * (1 - progress * 0.3))
-        pygame.draw.circle(burst_surf, (80, 200, 80, mid_alpha), (current_radius, current_radius), mid_r)
-        inner_r = max(1, int(current_radius * 0.3))
-        inner_alpha = int(180 * (1 - progress * 0.2))
-        pygame.draw.circle(burst_surf, (180, 255, 160, inner_alpha), (current_radius, current_radius), inner_r)
-        screen.blit(burst_surf, (cx - current_radius, cy - current_radius))
+        # Leaf particles spiraling outward
+        for p in self.leaf_particles:
+            life_r = min(1.0, p["life"] / p["max_life"]) if p["max_life"] > 0 else 0
+            if life_r <= 0:
+                continue
+            px = int(p["pos"].x - camera_offset.x)
+            py = int(p["pos"].y - camera_offset.y)
+            leaf_alpha = int(200 * life_r)
+            leaf_size = max(1, int(p["size"] * life_r))
+            r, g, b = p["color"]
+            # Leaf shape (small rotated ellipse)
+            leaf_surf = pygame.Surface((leaf_size * 2, leaf_size), pygame.SRCALPHA)
+            pygame.draw.ellipse(leaf_surf, (r, g, b, leaf_alpha),
+                                (0, 0, leaf_size * 2, leaf_size))
+            screen.blit(leaf_surf, (px - leaf_size, py - leaf_size // 2))
 
-        # Rising leaf particles
-        for _ in range(int(5 * (1 - progress) + 2)):
-            lx = cx + rnd.uniform(-current_radius, current_radius)
-            ly = cy - current_radius + progress * current_radius * 2 + rnd.uniform(-10, 10)
-            l_size = rnd.randint(2, 4)
-            l_color = rnd.choice([(60, 200, 60), (100, 220, 80), (160, 255, 120), (200, 255, 180)])
-            leaf_surf = pygame.Surface((l_size * 2, l_size * 2), pygame.SRCALPHA)
-            alpha = int(200 * (1 - progress))
-            pygame.draw.circle(leaf_surf, (*l_color, alpha), (l_size, l_size), l_size)
-            screen.blit(leaf_surf, (int(lx) - l_size, int(ly) - l_size))
-
-        # Vine tendrils on the ground
-        for angle, dist, t in self.vine_points:
-            vx = cx + math.cos(angle + t * 0.5) * dist
-            vy = cy + math.sin(angle + t * 0.5) * dist
-            tendril_len = 8 + 4 * math.sin(angle * 3 + t * 2)
-            ex = vx + math.cos(angle + 0.5) * tendril_len
-            ey = vy + math.sin(angle + 0.5) * tendril_len
-            vine_alpha = int(160 * (1 - dist / self.radius))
-            pygame.draw.line(screen, (60, 140, 40, vine_alpha), (vx, vy), (ex, ey), 2)
+        # Root vine tendrils on the ground
+        for rp in self.root_particles:
+            vr = min(1.0, rp["life"] / rp["max_life"]) if rp["max_life"] > 0 else 0
+            if vr <= 0:
+                continue
+            angle = rp["angle"]
+            dist = rp["dist"]
+            vx = cx + math.cos(angle) * dist
+            vy = cy + math.sin(angle) * dist
+            tendril_len = 6 + 4 * math.sin(angle * 3 + t * 2)
+            ex = vx + math.cos(angle + 0.4) * tendril_len
+            ey = vy + math.sin(angle + 0.4) * tendril_len
+            vine_alpha = int(160 * vr * (1 - dist / self.radius))
+            vine_width = max(1, int(rp["width"] * vr))
+            pygame.draw.line(screen, (50, 130, 40, vine_alpha), (vx, vy), (ex, ey), vine_width)
 
         # Inner flash (early burst)
         if progress < 0.3:
@@ -1677,11 +1754,12 @@ class NatureBolt:
         self.traveled = 0.0
         self.animation_time = 0.0
         self.trail = []
-        self.trail_length = 6
+        self.trail_length = 8
         self.target_pos = pygame.Vector2(target_pos) if target_pos else None
+        self.leaf_particles = []
 
     def _size(self):
-        return 10, 10
+        return 12, 12
 
     def get_rect(self):
         width, height = self._size()
@@ -1702,6 +1780,28 @@ class NatureBolt:
         if len(self.trail) > self.trail_length:
             self.trail.pop(0)
 
+        # Spawn leaf particles
+        if random.random() < 0.4:
+            perp = pygame.Vector2(-self.direction.y, self.direction.x)
+            offset = perp * random.uniform(-6, 6)
+            self.leaf_particles.append({
+                "pos": pygame.Vector2(self.pos) + offset,
+                "vel": perp * random.uniform(-20, 20) + pygame.Vector2(0, -10),
+                "max_life": (ml := random.uniform(0.2, 0.5)),
+                "life": ml,
+                "size": random.uniform(1.5, 3.0),
+                "color": random.choice([
+                    (60, 200, 60), (100, 220, 80),
+                    (160, 255, 120), (200, 255, 180),
+                ]),
+            })
+        for p in self.leaf_particles[:]:
+            p["pos"] += p["vel"] * dt
+            p["vel"] *= 0.95
+            p["life"] -= dt
+            if p["life"] <= 0:
+                self.leaf_particles.remove(p)
+
         rect = self.get_rect()
         for wall in obstacles:
             if rect.colliderect(wall):
@@ -1711,7 +1811,6 @@ class NatureBolt:
         if self.traveled >= self.max_range:
             self.alive = False
 
-        # Hit if close to target position (visual-only projectile)
         if self.target_pos and self.pos.distance_to(self.target_pos) < 15:
             self.alive = False
 
@@ -1719,31 +1818,55 @@ class NatureBolt:
         if camera_offset is None:
             camera_offset = pygame.Vector2(0, 0)
 
+        cx = int(self.pos.x - camera_offset.x)
+        cy = int(self.pos.y - camera_offset.y)
+        t = self.animation_time
+
+        # Leaf particles
+        for p in self.leaf_particles:
+            life_r = min(1.0, p["life"] / p["max_life"]) if p["max_life"] > 0 else 0
+            if life_r <= 0:
+                continue
+            px = int(p["pos"].x - camera_offset.x)
+            py = int(p["pos"].y - camera_offset.y)
+            leaf_alpha = int(150 * life_r)
+            leaf_size = max(1, int(p["size"] * life_r))
+            r, g, b = p["color"]
+            l_surf = pygame.Surface((leaf_size * 2, leaf_size), pygame.SRCALPHA)
+            pygame.draw.ellipse(l_surf, (r, g, b, leaf_alpha), (0, 0, leaf_size * 2, leaf_size))
+            screen.blit(l_surf, (px - leaf_size, py - leaf_size // 2))
+
         # Trail
         for i, pos in enumerate(self.trail):
             alpha = int(100 * (i / len(self.trail)))
-            radius = int(2 + 3 * (i / len(self.trail)))
+            radius = int(2 + 4 * (i / len(self.trail)))
             t_surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
-            pygame.draw.circle(t_surf, (*self.color[:3], alpha), (radius, radius), radius)
+            pygame.draw.circle(t_surf, (40, 180, 40, alpha), (radius, radius), radius)
             screen.blit(t_surf, (pos.x - radius - camera_offset.x, pos.y - radius - camera_offset.y))
 
-        rect = self.get_rect()
-        rect.x -= int(camera_offset.x)
-        rect.y -= int(camera_offset.y)
-
-        pulse = (math.sin(self.animation_time * 12) + 1.0) * 0.5
+        pulse = 0.5 + 0.5 * math.sin(t * 12)
 
         # Glow
-        glow_size = int(rect.width * (1.5 + 0.3 * pulse))
+        glow_size = int(12 + 4 * pulse)
         glow_surf = pygame.Surface((glow_size * 2, glow_size * 2), pygame.SRCALPHA)
-        pygame.draw.circle(glow_surf, (*self.color, 60), (glow_size, glow_size), glow_size)
-        screen.blit(glow_surf, (rect.centerx - glow_size, rect.centery - glow_size))
+        pygame.draw.circle(glow_surf, (60, 220, 60, int(50 + 20 * pulse)), (glow_size, glow_size), glow_size)
+        screen.blit(glow_surf, (cx - glow_size, cy - glow_size))
 
-        # Body
-        pygame.draw.circle(screen, (180, 255, 160), rect.center, rect.width // 2)
-        pygame.draw.circle(screen, self.color, rect.center, rect.width // 2 - 1)
-        # Core
-        pygame.draw.circle(screen, (220, 255, 220), rect.center, max(2, rect.width // 4))
+        # Vine tendril trail behind the bolt
+        for i in range(3):
+            va = t * 6 + i * math.pi * 2 / 3
+            vd = 4 + 2 * pulse
+            vx = cx + math.cos(va) * vd
+            vy = cy + math.sin(va) * vd
+            vex = vx + math.cos(va + 0.3) * (5 + 3 * pulse)
+            vey = vy + math.sin(va + 0.3) * (5 + 3 * pulse)
+            pygame.draw.line(screen, (40, 160, 40, int(120 + 60 * pulse)),
+                             (vx, vy), (vex, vey), max(1, int(2 + pulse)))
+
+        # Body layers
+        pygame.draw.circle(screen, (60, 180, 60), (cx, cy), 7)
+        pygame.draw.circle(screen, (100, 220, 90), (cx, cy), 5)
+        pygame.draw.circle(screen, (180, 255, 160), (cx - 1, cy - 1), 2)
 
 
 class ArcaneMissile:

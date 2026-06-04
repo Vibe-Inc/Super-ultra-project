@@ -250,6 +250,7 @@ class Character:
         self.summon_spirit_duration = 10.0
         self.summon_spirit_cooldown = 12000
         self.summon_spirit_last_used = -self.summon_spirit_cooldown
+        self.summon_spirit_particles = []
 
         # Passive: Regeneration
         self.regeneration = False
@@ -1077,6 +1078,9 @@ class Character:
             if not hasattr(game_state, "spirits"):
                 game_state.spirits = []
             game_state.spirits.append(spirit)
+
+            # Spawn summon visual effect
+            self._spawn_summon_effect(spawn_pos)
             self.summon_spirit_last_used = current_time
             logger.info("Player used Summon Spirit.")
             return True
@@ -1724,6 +1728,9 @@ class Character:
         # Update Shadow Step particles
         self._update_shadow_step_particles(dt)
 
+        # Update Summon Spirit particles
+        self._update_summon_spirit_particles(dt)
+
         # Update invulnerability
         if self.invulnerable:
             self.invulnerability_timer -= dt
@@ -2326,6 +2333,9 @@ class Character:
         # Draw Shadow Step visual effect (always draw if active, even during other effects)
         self._draw_shadow_step(screen, camera_offset)
 
+        # Draw Summon Spirit visual effect
+        self._draw_summon_spirit(screen, camera_offset)
+
         # Draw floating texts
         self._draw_floating_texts(screen, camera_offset)
 
@@ -2497,6 +2507,49 @@ class Character:
                 pygame.draw.circle(g_surf, (r, g, b, alpha // 2), (g_sz, g_sz), g_sz)
                 screen.blit(g_surf, (px - g_sz, py - g_sz))
                 pygame.draw.circle(screen, (r, g, b, alpha), (px, py), size)
+
+    # ─── Summon Spirit helpers ───────────────────────────────────────
+
+    def _spawn_summon_effect(self, pos):
+        """Create green energy particles for the summon circle."""
+        for _ in range(30):
+            angle = random.uniform(0, math.pi * 2)
+            speed = random.uniform(40, 150)
+            self.summon_spirit_particles.append({
+                "pos": pygame.Vector2(pos),
+                "vel": pygame.Vector2(math.cos(angle), math.sin(angle)) * speed,
+                "max_life": (ml := random.uniform(0.3, 0.7)),
+                "life": ml,
+                "size": random.uniform(2.0, 5.0),
+                "color": random.choice([
+                    (60, 220, 60), (100, 255, 100),
+                    (160, 255, 140), (40, 180, 40),
+                ]),
+            })
+
+    def _update_summon_spirit_particles(self, dt):
+        for p in self.summon_spirit_particles[:]:
+            p["pos"] += p["vel"] * dt
+            p["vel"] *= 0.92
+            p["life"] -= dt
+            if p["life"] <= 0:
+                self.summon_spirit_particles.remove(p)
+
+    def _draw_summon_spirit(self, screen, camera_offset):
+        for p in self.summon_spirit_particles:
+            life_r = min(1.0, p["life"] / p["max_life"]) if p["max_life"] > 0 else 0
+            if life_r <= 0:
+                continue
+            px = int(p["pos"].x - camera_offset.x)
+            py = int(p["pos"].y - camera_offset.y)
+            alpha = int(200 * life_r)
+            size = max(1, int(p["size"] * life_r))
+            r, g, b = p["color"]
+            g_sz = size * 2
+            g_surf = pygame.Surface((g_sz * 2, g_sz * 2), pygame.SRCALPHA)
+            pygame.draw.circle(g_surf, (r, g, b, alpha // 2), (g_sz, g_sz), g_sz)
+            screen.blit(g_surf, (px - g_sz, py - g_sz))
+            pygame.draw.circle(screen, (r, g, b, alpha), (px, py), size)
 
     # ─── Berserker's Rage helpers ─────────────────────────────────────
 
