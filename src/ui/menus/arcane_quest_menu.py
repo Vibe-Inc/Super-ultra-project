@@ -1390,14 +1390,6 @@ class ArcaneQuestMenu(Menu):
         grad.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
         screen.blit(grad, btn.rect.topleft)
 
-        # Shimmer sweep
-        shimmer_x = int((self.anim_time * 120 + idx * 30) % (btn.rect.width + 40)) - 20
-        for sx in range(max(0, shimmer_x), min(btn.rect.width, shimmer_x + 20)):
-            sa = int(100 * (1 - abs(sx - shimmer_x - 10) / 10))
-            pygame.draw.line(screen, (255, 255, 250, sa),
-                             (btn.rect.x + sx, btn.rect.y),
-                             (btn.rect.x + sx, btn.rect.bottom))
-
         # Gold border
         pygame.draw.rect(screen, GOLD_BRIGHT, btn.rect, 2, border_radius=8)
 
@@ -1448,15 +1440,6 @@ class ArcaneQuestMenu(Menu):
                 b = int(GOLD[2] * (1 - tt) + PURPLE_BRIGHT[2] * tt)
                 pygame.draw.line(screen, (r, g, b), (rect.x + x, rect.y + 1),
                                  (rect.x + x, rect.bottom - 2))
-
-            # Shimmer sweep
-            shimmer_x = int((self.anim_time * 60) % (fill_w + 60)) - 30
-            for sx in range(max(0, shimmer_x), min(fill_w, shimmer_x + 30)):
-                a = int(120 * (1 - abs(sx - shimmer_x - 15) / 15))
-                if a > 0:
-                    pygame.draw.line(screen, (255, 240, 200, a),
-                                     (rect.x + sx, rect.y + 1),
-                                     (rect.x + sx, rect.bottom - 2))
 
             # Completion sparkle near end of bar
             if frac > 0.9 and glowing:
