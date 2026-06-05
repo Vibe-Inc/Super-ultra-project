@@ -1,4 +1,5 @@
 import math
+import os
 import random
 import pygame
 from typing import TYPE_CHECKING
@@ -59,6 +60,27 @@ class MysteriumMagnumMenu(Menu):
         self._card_scaled_rings = []
         self._load_card_back()
         self.card_ring_offsets = [0.0, 0.0, 0.0, 0.0]
+
+        self.tarot_cards = []
+        self._load_tarot_cards()
+
+        self.revealed_cards = []
+        self._revealed_numbers = set()
+        self.reveal_button = None
+        reveal_w = max(160, int(220 * scale))
+        reveal_h = max(40, int(48 * scale))
+        self.reveal_button = Button(
+            pygame.Rect(0, 0, reveal_w, reveal_h),
+            _("⟐ Reveal Secret ⟐"),
+            (80, 35, 110),
+            (120, 55, 160),
+            cfg.get_font(max(12, int(18 * scale))),
+            (220, 200, 240),
+            cfg.corner_radius,
+            on_click=self._reveal_secret,
+        )
+        self.buttons.append(self.reveal_button)
+        self._reveal_cost = 1
 
     def _init_particles(self):
         purple_gold = [
@@ -144,6 +166,94 @@ class MysteriumMagnumMenu(Menu):
             sh = int(card_h * sf)
             self._card_scaled_rings.append(pygame.transform.smoothscale(full, (sw, sh)))
 
+    def _load_tarot_cards(self):
+        self.tarot_cards = []
+        base = "assets/tarot"
+        scale = cfg.ui_scale()
+        try:
+            entries = sorted(os.listdir(base))
+        except Exception:
+            return
+        for entry in entries:
+            folder = os.path.join(base, entry)
+            if not os.path.isdir(folder) or entry == "_cardBack":
+                continue
+            parts = entry.split("_", 1)
+            if not parts[0].isdigit():
+                continue
+            num = int(parts[0])
+            name = parts[1] if len(parts) > 1 else entry
+            img_path = None
+            for f in os.listdir(folder):
+                if f.lower().endswith("_5x.png") and "back" not in f.lower():
+                    img_path = os.path.join(folder, f)
+                    break
+            if img_path is None:
+                continue
+            try:
+                full = pygame.image.load(img_path).convert_alpha()
+            except Exception:
+                continue
+            card_w = int(70 * scale)
+            card_h = int(full.get_height() * card_w / full.get_width())
+            scaled = pygame.transform.smoothscale(full, (card_w, card_h))
+            self.tarot_cards.append({
+                "num": num,
+                "name": name,
+                "front": scaled,
+            })
+        self.tarot_cards.sort(key=lambda c: c["num"])
+
+    def _pick_weighted_card(self):
+        available = [c for c in self.tarot_cards if c["num"] not in self._revealed_numbers]
+        if not available:
+            return None
+        weights = [max(1, 22 - c["num"]) for c in available]
+        total = sum(weights)
+        r = random.uniform(0, total)
+        acc = 0
+        for i, w in enumerate(weights):
+            acc += w
+            if r <= acc:
+                return available[i]
+        return available[-1]
+
+    def _reveal_secret(self):
+        stars = getattr(self.app, "purple_stars", 0)
+        if stars < self._reveal_cost:
+            return
+        card = self._pick_weighted_card()
+        if card is None:
+            return
+        self.app.purple_stars = stars - self._reveal_cost
+        self._revealed_numbers.add(card["num"])
+
+        ring_slots = [8, 10, 14, 18]
+        num = card["num"]
+        if num >= 16:
+            ring_idx = 0
+        elif num >= 11:
+            ring_idx = 1
+        elif num >= 6:
+            ring_idx = 2
+        else:
+            ring_idx = 3
+
+        occupied = {(rc["ring_idx"], rc["slot_idx"]) for rc in self.revealed_cards}
+        slot_idx = 0
+        for s in range(ring_slots[ring_idx]):
+            if (ring_idx, s) not in occupied:
+                slot_idx = s
+                break
+
+        self.revealed_cards.append({
+            "card": card,
+            "ring_idx": ring_idx,
+            "slot_idx": slot_idx,
+            "progress": 0.0,
+            "float_offset": random.uniform(0, math.pi * 2),
+        })
+
     def exit_menu(self):
         try:
             self.app.INV_manager._return_held_item()
@@ -172,6 +282,21 @@ class MysteriumMagnumMenu(Menu):
             self.exit_button._update_text_surface()
         except Exception:
             pass
+
+        if self.reveal_button:
+            rev_w = max(160, int(self.sidebar_rect.width * 0.8))
+            rev_h = max(40, int(48 * scale))
+            rev_y = self.exit_button.rect.top - rev_h - int(12 * scale)
+            self.reveal_button.rect = pygame.Rect(
+                self.sidebar_rect.centerx - rev_w // 2,
+                rev_y,
+                rev_w,
+                rev_h,
+            )
+            try:
+                self.reveal_button._update_text_surface()
+            except Exception:
+                pass
 
         size = (sw, sh)
         if self._layout_size != size:
@@ -206,6 +331,9 @@ class MysteriumMagnumMenu(Menu):
         ring_speeds = [0.003, -0.005, 0.008, -0.010]
         for i, speed in enumerate(ring_speeds):
             self.card_ring_offsets[i] = (self.card_ring_offsets[i] + speed * dt * 60) % (math.pi * 2)
+
+        for rc in self.revealed_cards:
+            rc["progress"] = min(1.0, rc["progress"] + dt * 2.0)
 
     def handle_event(self, event):
         super().handle_event(event)
@@ -357,10 +485,13 @@ class MysteriumMagnumMenu(Menu):
             (370, 18, 1.30),
         ]
         base_alpha = 55
+        revealed_slots = {(rc["ring_idx"], rc["slot_idx"]) for rc in self.revealed_cards}
         for ri, (radius, count, scale_f) in enumerate(rings):
             offset = self.card_ring_offsets[ri]
             scaled = self._card_scaled_rings[ri]
             for i in range(count):
+                if (ri, i) in revealed_slots:
+                    continue
                 angle = offset + i * 2 * math.pi / count
                 px = cx + math.cos(angle) * radius
                 py = cy + math.sin(angle) * radius
@@ -370,6 +501,67 @@ class MysteriumMagnumMenu(Menu):
                 rotated.set_alpha(int(base_alpha * scale_f * fade))
                 rect = rotated.get_rect(center=(int(px), int(py)))
                 surface.blit(rotated, rect)
+
+    def _draw_revealed_cards(self, surface):
+        if not self.revealed_cards:
+            return
+        t = self.animation_time
+        cx, cy = self.tree_rect.center
+        rings = [
+            (120,  8,  0.80),
+            (200, 10, 1.00),
+            (280, 14, 1.15),
+            (370, 18, 1.30),
+        ]
+        for rc in self.revealed_cards:
+            card = rc["card"]
+            prog = rc["progress"]
+            ease = 1.0 - (1.0 - prog) ** 3
+            if ease < 0.01:
+                continue
+
+            ri = rc["ring_idx"]
+            radius, count, scale_f = rings[ri]
+            offset = self.card_ring_offsets[ri]
+            slot_angle = offset + rc["slot_idx"] * 2 * math.pi / count
+            tx = cx + math.cos(slot_angle) * radius
+            ty = cy + math.sin(slot_angle) * radius
+
+            px = cx + (tx - cx) * ease
+            py = cy + (ty - cy) * ease
+
+            ring_card = self._card_scaled_rings[ri]
+            target_w = ring_card.get_width()
+            s = 0.1 + 0.9 * ease
+            display_w = max(1, int(target_w * s))
+            surf = card["front"]
+            ar = surf.get_height() / max(1, surf.get_width())
+            display_h = max(1, int(display_w * ar))
+
+            rot_angle = math.degrees(slot_angle) + 90
+            rot_angle += math.sin(t * 0.3 + rc["float_offset"]) * 2
+
+            scaled = pygame.transform.smoothscale(surf, (display_w, display_h))
+            rotated = pygame.transform.rotate(scaled, rot_angle)
+            rotated.set_alpha(int(230 * (0.3 + 0.7 * ease)))
+
+            glow_r = max(display_w, display_h)
+            glow_surf = pygame.Surface((glow_r * 3, glow_r * 3), pygame.SRCALPHA)
+            glow_a = int(30 * ease * (0.6 + 0.4 * math.sin(t * 1.2 + rc["float_offset"])))
+            pygame.draw.circle(glow_surf, (160, 80, 240, glow_a),
+                               (glow_r * 1.5, glow_r * 1.5), glow_r * 1.2)
+            surface.blit(glow_surf, (px - glow_r * 1.5, py - glow_r * 1.5))
+
+            rect = rotated.get_rect(center=(int(px), int(py)))
+            surface.blit(rotated, rect)
+
+            if ease > 0.85:
+                name_font = cfg.get_font(max(10, int(13 * cfg.ui_scale())))
+                label = f"#{card['num']} {card['name']}"
+                ls = name_font.render(label, True, (212, 175, 55))
+                ls.set_alpha(int(160 * ease))
+                lr = ls.get_rect(midtop=(int(px), rect.bottom + 3))
+                surface.blit(ls, lr)
 
     def _draw_sidebar(self, screen):
         r = self.sidebar_rect
@@ -515,8 +707,10 @@ class MysteriumMagnumMenu(Menu):
 
         self._draw_background(screen)
         self._draw_card_rings(screen)
+        self._draw_revealed_cards(screen)
 
         screen.set_clip(old_clip)
 
         self._draw_sidebar(screen)
+        self.reveal_button.draw(screen)
         self.exit_button.draw(screen)
