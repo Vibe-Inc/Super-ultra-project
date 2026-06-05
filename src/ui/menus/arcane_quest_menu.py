@@ -15,7 +15,7 @@ import pygame
 from typing import TYPE_CHECKING
 
 from src.ui.menus.base import Menu
-from src.ui.widgets import Button
+from src.ui.widgets import Button, Tooltip
 import src.config as cfg
 from src.core.logger import logger
 
@@ -166,52 +166,99 @@ class ArcaneQuestMenu(Menu):
         self.title_rect = pygame.Rect(0, 0, 0, 0)
         self.slot_rects: list[pygame.Rect] = []
 
-    def get_quest_data(self) -> list[dict]:
-        """Export full quest definitions + progress for save serialization."""
-        return [
-            {
-                "id": q.id,
-                "title": q.title,
-                "description": q.description,
-                "target_type": q.target_type,
-                "target_count": q.target_count,
-                "location_label": q.location_label,
-                "reward": q.reward,
-                "progress": q.progress,
-                "completed": q.completed,
-                "claimed": q.claimed,
-            }
-            for q in self.quests
-        ]
+        # Quest completion cooldown (2 min after all claimed)
+        self.quest_cooldown_until = 0.0
+        self.quest_cooldown_active = False
 
-    def set_quest_data(self, data: list[dict]):
-        """Restore full quest state from save data (replaces current quests)."""
+        # Reroll system (max 3, each with 10-min cooldown)
+        self.rerolls_remaining = 3
+        self.reroll_cooldown_until = 0.0
+        self.reroll_icon_rect = pygame.Rect(0, 0, 0, 0)
+        self.reroll_tooltip: Tooltip | None = None
+
+    def get_quest_data(self) -> dict:
+        """Export quests + cooldown/reroll state for save serialization."""
+        return {
+            "quests": [
+                {
+                    "id": q.id,
+                    "title": q.title,
+                    "description": q.description,
+                    "target_type": q.target_type,
+                    "target_count": q.target_count,
+                    "location_label": q.location_label,
+                    "reward": q.reward,
+                    "progress": q.progress,
+                    "completed": q.completed,
+                    "claimed": q.claimed,
+                }
+                for q in self.quests
+            ],
+            "quest_cooldown_until": self.quest_cooldown_until,
+            "rerolls_remaining": self.rerolls_remaining,
+            "reroll_cooldown_until": self.reroll_cooldown_until,
+        }
+
+    def set_quest_data(self, data: dict | list[dict]):
+        """Restore quest cooldown/reroll state from save data."""
         if not data:
             return
-        self.quests = []
-        for d in data:
-            q = ArcaneQuest(
-                d.get("id", ""),
-                d.get("title", ""),
-                d.get("description", ""),
-                d.get("target_type", "mobs"),
-                d.get("target_count", 5),
-                d.get("location_label", ""),
-                d.get("reward", {}),
-            )
-            q.progress = d.get("progress", 0)
-            q.completed = d.get("completed", False)
-            q.claimed = d.get("claimed", False)
-            self.quests.append(q)
+        if isinstance(data, list):
+            # Legacy format — treat as list of quest dicts, reset cooldowns
+            self.quests = []
+            for d in data:
+                q = ArcaneQuest(
+                    d.get("id", ""),
+                    d.get("title", ""),
+                    d.get("description", ""),
+                    d.get("target_type", "mobs"),
+                    d.get("target_count", 5),
+                    d.get("location_label", ""),
+                    d.get("reward", {}),
+                )
+                q.progress = d.get("progress", 0)
+                q.completed = d.get("completed", False)
+                q.claimed = d.get("claimed", False)
+                self.quests.append(q)
+            self.quest_cooldown_until = 0.0
+            self.quest_cooldown_active = False
+            self.rerolls_remaining = 3
+            self.reroll_cooldown_until = 0.0
+        else:
+            # New dict format
+            self.quests = []
+            for d in data.get("quests", []):
+                q = ArcaneQuest(
+                    d.get("id", ""),
+                    d.get("title", ""),
+                    d.get("description", ""),
+                    d.get("target_type", "mobs"),
+                    d.get("target_count", 5),
+                    d.get("location_label", ""),
+                    d.get("reward", {}),
+                )
+                q.progress = d.get("progress", 0)
+                q.completed = d.get("completed", False)
+                q.claimed = d.get("claimed", False)
+                self.quests.append(q)
+            self.quest_cooldown_until = data.get("quest_cooldown_until", 0.0)
+            self.quest_cooldown_active = self.quest_cooldown_until > time.time()
+            self.rerolls_remaining = data.get("rerolls_remaining", 3)
+            self.reroll_cooldown_until = data.get("reroll_cooldown_until", 0.0)
         self._layout_size = None
 
     def reset_quests(self):
         """Reset all quest progress (for new game)."""
+        self.rerolls_remaining = 3
+        self.reroll_cooldown_until = 0.0
+        self.reroll_tooltip = None
         self._init_quests()
         self._layout_size = None
 
     def _init_quests(self):
         self.quests = []
+        self.quest_cooldown_until = 0.0
+        self.quest_cooldown_active = False
         gs = self.app.manager.states.get("gameplay") if hasattr(self.app, "manager") else None
         mob_names = list(gs.enemy_profile_names) if gs and hasattr(gs, "enemy_profile_names") else ["brute", "venomous", "arcanist"]
         random.shuffle(mob_names)
@@ -236,6 +283,62 @@ class ArcaneQuestMenu(Menu):
                 reward,
             ))
         self.claim_buttons.clear()
+
+    def _check_quest_cooldown(self):
+        if self.quest_cooldown_active and time.time() >= self.quest_cooldown_until:
+            self.quest_cooldown_active = False
+            self._init_quests()
+            self._layout_size = None
+            base_cx = self.panel_rect.centerx if self.panel_rect.width > 0 else 400
+            base_cy = self.panel_rect.centery if self.panel_rect.height > 0 else 300
+            for _ in range(3):
+                cx = random.randint(base_cx - 100, base_cx + 100)
+                cy = random.randint(base_cy - 100, base_cy + 100)
+                self._spawn_burst(cx, cy, GOLD_BRIGHT, n=30)
+                self._spawn_burst(cx, cy, PURPLE_BRIGHT, n=30)
+
+    def _start_quest_cooldown(self):
+        if not self.quest_cooldown_active:
+            self.quest_cooldown_until = time.time() + 120.0
+            self.quest_cooldown_active = True
+
+    def _reroll_quests(self):
+        if self.rerolls_remaining <= 0:
+            return
+        if time.time() < self.reroll_cooldown_until:
+            return
+        unclaimed = [q for q in self.quests if not q.claimed]
+        if not unclaimed:
+            return
+        gs = self.app.manager.states.get("gameplay") if hasattr(self.app, "manager") else None
+        mob_names = list(gs.enemy_profile_names) if gs and hasattr(gs, "enemy_profile_names") else ["brute", "venomous", "arcanist"]
+        rng = random.Random()
+        base_xp = [80, 120, 180, 250, 350, 500]
+        base_gold = [20, 35, 55, 80, 120, 180]
+        for q in unclaimed:
+            mob_key = rng.choice(mob_names)
+            kill_count = rng.randint(3, 8)
+            mob_name = MOB_DISPLAY_NAMES.get(mob_key, mob_key.capitalize())
+            idx = rng.randint(0, len(base_xp) - 1)
+            reward = {"xp": base_xp[idx], "gold": base_gold[idx]}
+            if rng.random() < 0.35:
+                reward["item"] = rng.choice(["Arcane Token", "Crystal Shard", "Storm Core", "Abyss Essence"])
+            q.id = f"r_{int(time.time())}_{mob_key}_{rng.randint(0, 999)}"
+            q.title = _("Hunt {n}").format(n=mob_name)
+            q.description = _("Kill {c}x {n}").format(c=kill_count, n=mob_name)
+            q.target_type = mob_key
+            q.target_count = kill_count
+            q.location_label = ""
+            q.reward = reward
+            q.progress = 0
+            q.completed = False
+        self.rerolls_remaining -= 1
+        self.reroll_cooldown_until = time.time() + 600.0
+        self._rebuild_claim_buttons()
+        self._layout_size = None
+        cx = self.panel_rect.centerx if self.panel_rect.width > 0 else 400
+        cy = self.panel_rect.centery if self.panel_rect.height > 0 else 300
+        self._spawn_burst(cx, cy, MAGIC_CYAN, n=40)
 
     def _init_particles(self):
         rng = random.Random(1337)
@@ -410,6 +513,9 @@ class ArcaneQuestMenu(Menu):
 
         self._rebuild_claim_buttons()
 
+        if all(q.claimed for q in self.quests):
+            self._start_quest_cooldown()
+
     def _rebuild_claim_buttons(self):
         scale = cfg.ui_scale()
         self.claim_buttons = []
@@ -476,6 +582,8 @@ class ArcaneQuestMenu(Menu):
             pass
         self._ensure_layout(sw, sh)
 
+        self._check_quest_cooldown()
+
         alive = []
         for p in self.particles:
             p.update(dt)
@@ -519,6 +627,11 @@ class ArcaneQuestMenu(Menu):
                 new_bursts.append(p)
         self.burst_particles = new_bursts
 
+        # Update reroll tooltip
+        if self.reroll_tooltip:
+            mouse_pos = pygame.mouse.get_pos()
+            self.reroll_tooltip.hover_update(mouse_pos)
+
     # ── Event handling ────────────────────────────────────────────────
     def handle_event(self, event):
         super().handle_event(event)
@@ -526,6 +639,49 @@ class ArcaneQuestMenu(Menu):
             for btn in self.claim_buttons:
                 if btn.rect.collidepoint(event.pos) and btn.on_click:
                     btn.on_click()
+            if self.reroll_icon_rect and self.reroll_icon_rect.collidepoint(event.pos):
+                self._reroll_quests()
+        elif event.type == pygame.MOUSEMOTION:
+            if self.reroll_icon_rect:
+                hovering = self.reroll_icon_rect.collidepoint(event.pos)
+                reroll_ready = (self.rerolls_remaining > 0 and
+                                time.time() >= self.reroll_cooldown_until)
+                if hovering and reroll_ready:
+                    title = _("Reroll Quests")
+                    desc = _("Available: {n}/{m}").format(
+                        n=self.rerolls_remaining, m=3)
+                    if self.reroll_cooldown_until > time.time():
+                        remaining = int(self.reroll_cooldown_until - time.time())
+                        mins, secs = divmod(remaining, 60)
+                        desc += "\n" + _("Cooldown: {m}:{s:02d}").format(m=mins, s=secs)
+                    self.reroll_tooltip = Tooltip(
+                        self.reroll_icon_rect, title + "\n" + desc,
+                        cfg.tooltip_bg_CREDITS, cfg.tooltip_border_CREDITS,
+                        cfg.tooltip_font_CREDITS, cfg.text_color,
+                        cfg.tooltip_appear, cfg.tooltip_padding,
+                    )
+                elif hovering and self.rerolls_remaining <= 0:
+                    self.reroll_tooltip = Tooltip(
+                        self.reroll_icon_rect,
+                        _("Reroll Unavailable") + "\n" + _("No rerolls remaining"),
+                        cfg.tooltip_bg_CREDITS, cfg.tooltip_border_CREDITS,
+                        cfg.tooltip_font_CREDITS, cfg.text_color,
+                        cfg.tooltip_appear, cfg.tooltip_padding,
+                    )
+                elif hovering and time.time() < self.reroll_cooldown_until:
+                    remaining = int(self.reroll_cooldown_until - time.time())
+                    mins, secs = divmod(remaining, 60)
+                    self.reroll_tooltip = Tooltip(
+                        self.reroll_icon_rect,
+                        _("Reroll Quests") + "\n" +
+                        _("Available: {n}/{m}").format(n=self.rerolls_remaining, m=3) +
+                        "\n" + _("Cooldown: {m}:{s:02d}").format(m=mins, s=secs),
+                        cfg.tooltip_bg_CREDITS, cfg.tooltip_border_CREDITS,
+                        cfg.tooltip_font_CREDITS, cfg.text_color,
+                        cfg.tooltip_appear, cfg.tooltip_padding,
+                    )
+                else:
+                    self.reroll_tooltip = None
         elif event.type == pygame.KEYDOWN:
             if event.key in (pygame.K_ESCAPE, pygame.K_b):
                 self.close_menu()
@@ -557,6 +713,8 @@ class ArcaneQuestMenu(Menu):
         self._draw_quest_slots(screen, scaled_rect)
 
         self._draw_back_button(screen, scaled_rect)
+        self._draw_reroll_ui(screen, scaled_rect)
+        self._draw_quest_cooldown(screen, scaled_rect)
 
         self._draw_ambient_particles(screen)
         self._draw_burst_particles(screen)
@@ -1048,6 +1206,104 @@ class ArcaneQuestMenu(Menu):
             pygame.draw.rect(glow, (*GOLD_BRIGHT, ga), glow.get_rect(),
                              width=2, border_radius=rect.height // 2)
             screen.blit(glow, rect.topleft)
+
+    def _draw_quest_cooldown(self, screen, panel_rect):
+        if not self.quest_cooldown_active:
+            return
+        if not all(q.claimed for q in self.quests):
+            return
+        remaining = max(0.0, self.quest_cooldown_until - time.time())
+        total = 120.0
+        frac = remaining / total
+
+        cx, cy = panel_rect.centerx, panel_rect.centery
+        radius = int(min(panel_rect.width, panel_rect.height) * 0.25)
+        radius = max(40, radius)
+
+        # Semi-transparent overlay
+        overlay = pygame.Surface(panel_rect.size, pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 100))
+        screen.blit(overlay, panel_rect.topleft)
+
+        # Ring background
+        ring_bg = pygame.Surface((radius * 2 + 20, radius * 2 + 20), pygame.SRCALPHA)
+        pygame.draw.circle(ring_bg, (*PURPLE_DARK, 60), (radius + 10, radius + 10), radius, width=6)
+        screen.blit(ring_bg, (cx - radius - 10, cy - radius - 10))
+
+        # Progress arc
+        steps = 60
+        for i in range(steps):
+            if i / steps > frac:
+                break
+            ang = -math.pi / 2 + (i / steps) * math.pi * 2
+            next_ang = -math.pi / 2 + ((i + 1) / steps) * math.pi * 2
+            x1 = cx + math.cos(ang) * radius
+            y1 = cy + math.sin(ang) * radius
+            x2 = cx + math.cos(next_ang) * radius
+            y2 = cy + math.sin(next_ang) * radius
+            pulse = (math.sin(self.anim_time * 3.0 + i * 0.2) + 1.0) * 0.5
+            a = int(150 + 105 * pulse)
+            color = (
+                int(GOLD_BRIGHT[0] * (1 - pulse * 0.3)),
+                int(GOLD_BRIGHT[1] * (1 - pulse * 0.3)),
+                int(GOLD_BRIGHT[2] * (1 - pulse * 0.3)),
+                a,
+            )
+            pygame.draw.line(screen, color, (x1, y1), (x2, y2), max(2, int(6 * pulse + 2)))
+
+        # Countdown text
+        mins, secs = divmod(int(remaining), 60)
+        time_text = _("New quests in: {m}:{s:02d}").format(m=mins, s=secs)
+        time_surf = self.body_font.render(time_text, True, GOLD_BRIGHT)
+        glow_rect = time_surf.get_rect(
+            inflate=(20, 10)).copy()
+        glow_rect.center = (cx, cy)
+        glow_s = pygame.Surface(glow_rect.size, pygame.SRCALPHA)
+        pulse2 = (math.sin(self.anim_time * 2.0) + 1.0) * 0.5
+        glow_s.fill((*PURPLE_BRIGHT, int(40 + 40 * pulse2)))
+        screen.blit(glow_s, glow_rect.topleft)
+        screen.blit(time_surf, time_surf.get_rect(center=(cx, cy)))
+
+    def _draw_reroll_ui(self, screen, panel_rect):
+        bx = panel_rect.right - int(64 * cfg.ui_scale())
+        by = panel_rect.bottom - int(48 * cfg.ui_scale())
+        size = int(28 * cfg.ui_scale())
+        self.reroll_icon_rect = pygame.Rect(bx - size // 2, by - size // 2, size, size)
+
+        ready = self.rerolls_remaining > 0 and time.time() >= self.reroll_cooldown_until
+        color = GOLD_BRIGHT if ready else (100, 90, 120)
+
+        # Outer glow when ready
+        if ready:
+            pulse = (math.sin(self.anim_time * 3.0) + 1.0) * 0.5
+            glow_surf = pygame.Surface((size + 16, size + 16), pygame.SRCALPHA)
+            ga = int(60 + 70 * pulse)
+            pygame.draw.circle(glow_surf, (*GOLD_BRIGHT, ga),
+                               ((size + 16) // 2, (size + 16) // 2), (size + 16) // 2)
+            screen.blit(glow_surf, (bx - (size + 16) // 2, by - (size + 16) // 2))
+
+        # Diamond background
+        pts = [(bx, by - size // 2), (bx + size // 2, by),
+               (bx, by + size // 2), (bx - size // 2, by)]
+        pygame.draw.polygon(screen, (40, 25, 60) if not ready else (60, 35, 90), pts)
+        pygame.draw.polygon(screen, color, pts, width=2)
+
+        # ↻ refresh symbol
+        if ready:
+            rot = math.degrees(self.anim_time * 30) % 360
+        else:
+            rot = 0.0
+        icon_text = "↻"
+        icon_font = cfg.get_font(max(12, int(18 * cfg.ui_scale())))
+        icon_surf = icon_font.render(icon_text, True, color)
+        if ready:
+            icon_surf = pygame.transform.rotate(icon_surf, rot)
+        icon_rect = icon_surf.get_rect(center=(bx, by))
+        screen.blit(icon_surf, icon_rect)
+
+        # Hover tooltip
+        if self.reroll_tooltip:
+            self.reroll_tooltip.draw(screen)
 
     def _draw_back_button(self, screen, panel_rect):
         btn = self.back_button
