@@ -199,17 +199,52 @@ class MysteriumMagnumMenu(Menu):
             })
 
     def _init_pentagrams(self):
-        for _ in range(5):
+        pentagram_palette = [
+            (180, 120, 255), (212, 175, 55), (140, 60, 200),
+            (100, 200, 220), (255, 180, 100), (160, 80, 240),
+            (200, 140, 255), (240, 200, 80),
+        ]
+        rng = random.Random(42)
+        cols, rows = 2, 2
+        cell_w = 1200 / cols
+        cell_h = 1000 / rows
+        positions = []
+        for row in range(rows):
+            for col in range(cols):
+                x_min = -600 + col * cell_w
+                x_max = x_min + cell_w
+                y_min = -500 + row * cell_h
+                y_max = y_min + cell_h
+                margin = 80
+                x = rng.uniform(x_min + margin, x_max - margin)
+                y = rng.uniform(y_min + margin, y_max - margin)
+                positions.append((x, y))
+        for x, y in positions:
+            base_color = rng.choice(pentagram_palette)
+            glow_color = (
+                min(255, base_color[0] + rng.randint(-20, 20)),
+                min(255, base_color[1] + rng.randint(-20, 20)),
+                min(255, base_color[2] + rng.randint(-15, 15)),
+            )
             self.pentagrams.append({
-                "x": random.uniform(-700, 700),
-                "y": random.uniform(-600, 600),
-                "size": random.uniform(30, 80),
-                "rotation": random.uniform(0, math.pi * 2),
-                "rot_speed": random.uniform(-0.12, 0.12),
-                "alpha": random.uniform(0.06, 0.18),
-                "pulse_speed": random.uniform(0.3, 0.8),
-                "pulse_offset": random.uniform(0, math.pi * 2),
-                "color": random.choice([(180, 120, 255), (212, 175, 55), (140, 60, 200)]),
+                "x": x,
+                "y": y,
+                "size": rng.uniform(25, 60),
+                "rotation": rng.uniform(0, math.pi * 2),
+                "rot_speed": rng.uniform(-0.08, 0.08),
+                "alpha": rng.uniform(0.03, 0.09),
+                "pulse_speed": rng.uniform(0.2, 0.5),
+                "pulse_offset": rng.uniform(0, math.pi * 2),
+                "color": base_color,
+                "glow_color": glow_color,
+                "layer_count": 1,
+                "ring_count": rng.randint(0, 1),
+                "has_inner_pentagon": rng.random() > 0.5,
+                "orbit_particles": 0,
+                "orbit_speed": 0,
+                "orbit_offset": 0,
+                "orbit_radius_factor": 1.3,
+                "color_shift_speed": rng.uniform(0.05, 0.15),
             })
 
     def _init_runes(self):
@@ -846,15 +881,177 @@ class MysteriumMagnumMenu(Menu):
         self._gradient_cache[key] = temp
         surface.blit(temp, rect)
 
-    def _draw_pentagram(self, surface, cx, cy, size, rotation, color, alpha):
-        points = []
+    def _draw_pentagram(self, surface, cx, cy, size, rotation, color, alpha,
+                         glow_color=None, layer_count=2, ring_count=1,
+                         has_inner_pentagon=True, orbit_particles=4,
+                         orbit_speed=0.6, orbit_offset=0.0, orbit_radius_factor=1.3,
+                         color_shift_speed=0.2):
+        """Draw a richly layered mystical pentagram with glow, rings, orbiting
+        particles, and colour-shifting energy lines."""
+        t = self.animation_time
+        a255 = int(alpha * 255)
+        if a255 < 1:
+            return
+
+        if glow_color is None:
+            glow_color = color
+
+        # ── 1. Outer glow halo ─────────────────────────────────────────
+        glow_r = int(size * 1.8)
+        glow_surf = pygame.Surface((glow_r * 2, glow_r * 2), pygame.SRCALPHA)
+        # Soft radial glow that pulses
+        pulse = (math.sin(t * 1.2 + rotation) + 1.0) * 0.5
+        for ring in range(4, 0, -1):
+            rr = int(glow_r * ring / 4)
+            ga = int(a255 * 0.08 * (1.0 - ring / 5) * (0.6 + 0.4 * pulse))
+            gc = glow_color
+            pygame.draw.circle(glow_surf, (*gc, ga), (glow_r, glow_r), rr)
+        surface.blit(glow_surf, (cx - glow_r, cy - glow_r))
+
+        # ── 2. Outer decorative rings ──────────────────────────────────
+        for ri in range(ring_count):
+            ring_r = int(size * (1.35 + ri * 0.18))
+            ring_a = int(a255 * (0.35 - ri * 0.08))
+            # Dash effect: draw arcs with gaps
+            segments = 20 + ri * 8
+            for s in range(segments):
+                a1 = rotation + s * 2 * math.pi / segments
+                frac = s / segments
+                seg_alpha = int(ring_a * (0.4 + 0.6 * math.sin(t * 0.8 + frac * 6 + ri)))
+                if seg_alpha < 1:
+                    continue
+                a2 = a1 + math.pi / segments * 0.55
+                pts = []
+                for st in range(6):
+                    ang = a1 + (a2 - a1) * st / 5
+                    pts.append((cx + math.cos(ang) * ring_r, cy + math.sin(ang) * ring_r))
+                if len(pts) >= 2:
+                    # Colour shift along the ring
+                    cs = (math.sin(t * color_shift_speed + frac * 4 + ri) + 1.0) * 0.5
+                    rc = (
+                        int(color[0] * (1 - cs) + glow_color[0] * cs),
+                        int(color[1] * (1 - cs) + glow_color[1] * cs),
+                        int(color[2] * (1 - cs) + glow_color[2] * cs),
+                    )
+                    pygame.draw.lines(surface, (*rc, seg_alpha), False, pts, max(1, int(1.2)))
+            # Tiny rune dots on the ring
+            if ring_r > 10:
+                dot_count = 5 + ri * 3
+                for d in range(dot_count):
+                    da = rotation * (0.5 if ri % 2 else -0.5) + d * 2 * math.pi / dot_count
+                    dx = cx + math.cos(da) * ring_r
+                    dy = cy + math.sin(da) * ring_r
+                    dot_pulse = (math.sin(t * 1.5 + d * 1.1 + ri) + 1.0) * 0.5
+                    dot_a = int(ring_a * dot_pulse * 0.7)
+                    if dot_a > 0:
+                        pygame.draw.circle(surface, (*glow_color, dot_a), (int(dx), int(dy)), max(1, int(1.5)))
+
+        # ── 3. Star points (outer) ────────────────────────────────────
+        outer_pts = []
         for i in range(5):
             angle = rotation + i * 2 * math.pi / 5 - math.pi / 2
-            points.append((cx + math.cos(angle) * size, cy + math.sin(angle) * size))
+            outer_pts.append((cx + math.cos(angle) * size, cy + math.sin(angle) * size))
+
+        # ── 4. Inner pentagon vertices ─────────────────────────────────
+        inner_r = size * 0.38  # ratio for inner pentagon
+        inner_pts = []
         for i in range(5):
-            pygame.draw.line(surface, (*color, int(alpha * 255)), points[i], points[(i + 2) % 5], max(1, int(1.5)))
-        pygame.draw.polygon(surface, (*color, int(alpha * 150)), points, width=1)
-        pygame.draw.circle(surface, (*color, int(alpha * 120)), (cx, cy), int(size * 1.3), 1)
+            angle = rotation + i * 2 * math.pi / 5 - math.pi / 2 + math.pi / 5
+            inner_pts.append((cx + math.cos(angle) * inner_r, cy + math.sin(angle) * inner_r))
+
+        # ── 5. Multi-layered energy lines (star strokes) ───────────────
+        for layer in range(layer_count):
+            layer_offset = layer * 0.04 * size  # slight outward offset per layer
+            layer_alpha_factor = 1.0 - layer * 0.2
+            for i in range(5):
+                p1 = outer_pts[i]
+                p2 = outer_pts[(i + 2) % 5]
+                # Colour shift per line segment
+                seg_t = (math.sin(t * color_shift_speed * 1.5 + i * 1.3 + layer) + 1.0) * 0.5
+                lc = (
+                    int(color[0] * (1 - seg_t * 0.3) + glow_color[0] * seg_t * 0.3),
+                    int(color[1] * (1 - seg_t * 0.3) + glow_color[1] * seg_t * 0.3),
+                    int(color[2] * (1 - seg_t * 0.3) + glow_color[2] * seg_t * 0.3),
+                )
+                la = int(a255 * layer_alpha_factor * (0.6 + 0.4 * pulse))
+                width = max(1, int(1.8 - layer * 0.4))
+                pygame.draw.line(surface, (*lc, la), p1, p2, width)
+
+            # Glow version (thicker, more transparent)
+            glow_la = int(a255 * 0.12 * layer_alpha_factor)
+            if glow_la > 0:
+                for i in range(5):
+                    p1 = outer_pts[i]
+                    p2 = outer_pts[(i + 2) % 5]
+                    pygame.draw.line(surface, (*glow_color, glow_la), p1, p2, max(2, int(3 - layer)))
+
+        # ── 6. Inner pentagon fill ─────────────────────────────────────
+        if has_inner_pentagon:
+            inner_alpha = int(a255 * 0.12 * (0.5 + 0.5 * pulse))
+            if inner_alpha > 0:
+                pygame.draw.polygon(surface, (*glow_color, inner_alpha), inner_pts)
+            # Inner pentagon outline
+            inner_outline_a = int(a255 * 0.4 * (0.6 + 0.4 * pulse))
+            if inner_outline_a > 0:
+                pygame.draw.polygon(surface, (*color, inner_outline_a), inner_pts, width=max(1, int(1)))
+                # Connect inner pentagon to outer star points
+                for i in range(5):
+                    conn_a = int(a255 * 0.15 * (0.5 + 0.5 * math.sin(t + i)))
+                    if conn_a > 0:
+                        pygame.draw.line(surface, (*color, conn_a), inner_pts[i], outer_pts[i], 1)
+
+        # ── 7. Outer pentagon outline (connecting outer points) ────────
+        pent_alpha = int(a255 * 0.25 * (0.5 + 0.5 * pulse))
+        if pent_alpha > 0:
+            pygame.draw.polygon(surface, (*color, pent_alpha), outer_pts, width=max(1, int(1)))
+
+        # ── 8. Central glow disc ───────────────────────────────────────
+        central_r = int(size * 0.25)
+        if central_r > 2:
+            for cr in range(central_r, 0, -2):
+                ca = int(a255 * 0.06 * (cr / central_r) * (0.7 + 0.3 * pulse))
+                pygame.draw.circle(surface, (*glow_color, ca), (cx, cy), cr)
+
+        # ── 9. Orbiting energy particles ───────────────────────────────
+        orbit_r = int(size * orbit_radius_factor)
+        for pi_idx in range(orbit_particles):
+            pa = orbit_offset + t * orbit_speed + pi_idx * 2 * math.pi / orbit_particles
+            ppx = cx + math.cos(pa) * orbit_r
+            ppy = cy + math.sin(pa) * orbit_r
+            # Particle trail
+            trail_len = 5
+            for ti in range(trail_len):
+                trail_a = orbit_r + ti * 2
+                ta = pa - ti * 0.08
+                tpx = cx + math.cos(ta) * trail_len * 2 + math.cos(pa) * orbit_r
+                tpy = cy + math.sin(ta) * trail_len * 2 + math.sin(pa) * orbit_r
+                tpa = int(a255 * 0.3 * (1.0 - ti / trail_len) * (0.5 + 0.5 * pulse))
+                if tpa > 0:
+                    pygame.draw.circle(surface, (*glow_color, tpa), (int(tpx), int(tpy)), max(1, int(2 - ti * 0.3)))
+            # Main particle
+            ppa = int(a255 * 0.5 * (0.6 + 0.4 * pulse))
+            psize = max(1, int(2.5 + pulse))
+            if ppa > 0:
+                pygame.draw.circle(surface, (*color, ppa), (int(ppx), int(ppy)), psize)
+                # Tiny glow around particle
+                pg_a = int(a255 * 0.15)
+                if pg_a > 0:
+                    pygame.draw.circle(surface, (*glow_color, pg_a), (int(ppx), int(ppy)), psize + 2)
+
+        # ── 10. Vertex sparkle nodes ───────────────────────────────────
+        for i in range(5):
+            sparkle_a = int(a255 * 0.4 * (0.5 + 0.5 * math.sin(t * 2.0 + i * 1.3)))
+            if sparkle_a > 0:
+                sx, sy = outer_pts[i]
+                sparkle_sz = max(1, int(2.5 + pulse * 1.5))
+                pygame.draw.circle(surface, (*glow_color, sparkle_a), (int(sx), int(sy)), sparkle_sz)
+                # Cross sparkle
+                cross_a = int(sparkle_a * 0.5)
+                cross_len = sparkle_sz + 3
+                pygame.draw.line(surface, (*glow_color, cross_a),
+                                 (int(sx) - cross_len, int(sy)), (int(sx) + cross_len, int(sy)), 1)
+                pygame.draw.line(surface, (*glow_color, cross_a),
+                                 (int(sx), int(sy) - cross_len), (int(sx), int(sy) + cross_len), 1)
 
     def _draw_magic_circle(self, surface, cx, cy, radius, rotation, color, alpha, ring_count):
         for i in range(ring_count):
@@ -902,7 +1099,19 @@ class MysteriumMagnumMenu(Menu):
                 pulse = (math.sin(t * pent["pulse_speed"] + pent["pulse_offset"]) + 1.0) * 0.5
                 a = pent["alpha"] * (0.5 + 0.5 * pulse)
                 sz = pent["size"] * (0.9 + 0.1 * pulse)
-                self._draw_pentagram(surface, int(px), int(py), sz, pent["rotation"], pent["color"], a)
+                self._draw_pentagram(
+                    surface, int(px), int(py), sz, pent["rotation"],
+                    pent["color"], a,
+                    glow_color=pent.get("glow_color"),
+                    layer_count=pent.get("layer_count", 2),
+                    ring_count=pent.get("ring_count", 1),
+                    has_inner_pentagon=pent.get("has_inner_pentagon", True),
+                    orbit_particles=pent.get("orbit_particles", 4),
+                    orbit_speed=pent.get("orbit_speed", 0.6),
+                    orbit_offset=pent.get("orbit_offset", 0.0),
+                    orbit_radius_factor=pent.get("orbit_radius_factor", 1.3),
+                    color_shift_speed=pent.get("color_shift_speed", 0.2),
+                )
 
         # Runes
         for r_data in self.runes:
@@ -1023,7 +1232,7 @@ class MysteriumMagnumMenu(Menu):
             (280, 5, 1.15),
             (370, 6, 1.30),
         ]
-        base_alpha = 55
+        base_alpha = 140  # raised from 55 so face-down cards are clearly visible
         revealed_slots = {(rc["ring_idx"], rc["slot_idx"]) for rc in self.revealed_cards}
 
         # Ring glows
@@ -1047,8 +1256,9 @@ class MysteriumMagnumMenu(Menu):
                 py = cy + math.sin(angle) * radius
                 rot_angle = math.degrees(angle) + 90
                 rotated = pygame.transform.rotate(scaled, rot_angle)
-                fade = 0.7 + 0.3 * math.sin(t * 0.3 + ri + i)
-                rotated.set_alpha(int(base_alpha * scale_f * fade))
+                # Gentle pulse between 0.80 and 1.0 so cards breathe without disappearing
+                fade = 0.88 + 0.12 * math.sin(t * 0.3 + ri + i)
+                rotated.set_alpha(int(base_alpha * fade))
                 rect = rotated.get_rect(center=(int(px), int(py)))
                 surface.blit(rotated, rect)
 
@@ -1158,6 +1368,23 @@ class MysteriumMagnumMenu(Menu):
             return
         ease = 1.0 - (1.0 - self._sel_progress) ** 3
         card = self._selected_card["card"]
+        t = self.animation_time
+        scale = cfg.ui_scale()
+        num = card["num"]
+
+        # Determine card rarity tier for colour theming
+        if num >= 19:
+            tier_color = (255, 215, 100)   # legendary gold
+            tier_glow = (255, 180, 60)
+        elif num >= 14:
+            tier_color = (200, 130, 255)   # epic purple
+            tier_glow = (160, 80, 240)
+        elif num >= 8:
+            tier_color = (100, 200, 220)   # rare cyan
+            tier_glow = (60, 160, 200)
+        else:
+            tier_color = (180, 140, 255)   # common violet
+            tier_glow = (140, 100, 220)
 
         sw, sh = self.tree_rect.size
         panel_w = int(sw * 0.85)
@@ -1166,39 +1393,87 @@ class MysteriumMagnumMenu(Menu):
         py = self.tree_rect.y + (sh - panel_h) // 2
         panel_rect = pygame.Rect(px, py, panel_w, panel_h)
 
-        # Dimmed overlay
+        # ── Dimmed overlay with subtle colour tint ─────────────────────
         overlay = pygame.Surface((self.tree_rect.width, self.tree_rect.height), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, int(180 * ease)))
+        overlay.fill((5, 2, 12, int(200 * ease)))
         screen.blit(overlay, self.tree_rect.topleft)
 
-        # Ornate border
-        outer = panel_rect.inflate(8, 8)
-        pygame.draw.rect(screen, (80, 50, 110, int(200 * ease)), outer, border_radius=22)
-        pygame.draw.rect(screen, (160, 130, 60, int(100 * ease)), outer.inflate(-6, -6), width=1, border_radius=20)
+        # ── Multi-layered ornate border ────────────────────────────────
+        # Outermost halo
+        outer_halo = panel_rect.inflate(14, 14)
+        halo_a = int(60 * ease * (0.5 + 0.5 * math.sin(t * 0.8)))
+        pygame.draw.rect(screen, (*tier_glow, halo_a), outer_halo, border_radius=24)
+        # Gold accent border
+        outer = panel_rect.inflate(6, 6)
+        pygame.draw.rect(screen, (80, 50, 110, int(220 * ease)), outer, border_radius=22)
+        gold_a = int(140 * ease * (0.6 + 0.4 * math.sin(t * 1.0)))
+        pygame.draw.rect(screen, (*tier_color, gold_a), outer, width=max(1, int(1.5 * scale)), border_radius=22)
 
-        # Panel body
-        self._draw_gradient_rect(screen, panel_rect, (25, 12, 40), (12, 5, 22), border_radius=20)
-        bw = max(2, int(2 * cfg.ui_scale()))
-        pygame.draw.rect(screen, (140, 90, 200, int(200 * ease)), panel_rect, bw, border_radius=20)
+        # ── Panel body with richer gradient ────────────────────────────
+        self._draw_gradient_rect(screen, panel_rect, (22, 10, 38), (10, 4, 20), border_radius=20)
+        bw = max(2, int(2.5 * scale))
+        border_pulse = int((160 + 60 * math.sin(t * 1.2)) * ease)
+        pygame.draw.rect(screen, (*tier_color[:3], min(255, border_pulse)), panel_rect, bw, border_radius=20)
+        # Inner decorative line
         inner = panel_rect.inflate(-8, -8)
-        pygame.draw.rect(screen, (80, 50, 110, int(120 * ease)), inner, 1, border_radius=18)
+        inner_a = int(80 * ease)
+        pygame.draw.rect(screen, (*tier_glow, inner_a), inner, 1, border_radius=18)
 
-        # Corner runes
-        orn_font = cfg.get_font(max(10, int(16 * cfg.ui_scale())))
+        # ── Animated energy dots along panel border ────────────────────
+        perim = 2 * (panel_rect.width + panel_rect.height) - 8
+        dot_count = 20
+        for di in range(dot_count):
+            frac = (di / dot_count + t * 0.06) % 1.0
+            dist = int(frac * perim)
+            if dist < panel_rect.width:
+                dx, dy = panel_rect.x + dist, panel_rect.y
+            elif dist < panel_rect.width + panel_rect.height:
+                dx, dy = panel_rect.right, panel_rect.y + (dist - panel_rect.width)
+            elif dist < 2 * panel_rect.width + panel_rect.height:
+                dx, dy = panel_rect.right - (dist - panel_rect.width - panel_rect.height), panel_rect.bottom
+            else:
+                dx, dy = panel_rect.x, panel_rect.bottom - (dist - 2 * panel_rect.width - panel_rect.height)
+            dp = (math.sin(t * 2.5 + di * 1.4) + 1.0) * 0.5
+            da = int(40 + 50 * dp)
+            pygame.draw.circle(screen, (*tier_color, da), (dx, dy), max(1, int(1.5 * scale)))
+
+        # ── Corner ornaments (elaborate) ───────────────────────────────
+        orn_font = cfg.get_font(max(10, int(16 * scale)))
         orn_chars = ["ᛟ", "ᛞ", "ᛝ", "ᛚ"]
-        for idx, (gcx, gcy) in enumerate([
-            (panel_rect.x + 14, panel_rect.y + 14),
-            (panel_rect.right - 14, panel_rect.y + 14),
-            (panel_rect.x + 14, panel_rect.bottom - 14),
-            (panel_rect.right - 14, panel_rect.bottom - 14),
-        ]):
-            op = (math.sin(self.animation_time * 1.2 + idx * 1.5) + 1.0) * 0.5
-            oa = int(80 + 120 * op)
-            o = orn_font.render(orn_chars[idx], True, (212, 175, 55))
+        corner_positions = [
+            (panel_rect.x + 16, panel_rect.y + 16),
+            (panel_rect.right - 16, panel_rect.y + 16),
+            (panel_rect.x + 16, panel_rect.bottom - 16),
+            (panel_rect.right - 16, panel_rect.bottom - 16),
+        ]
+        for idx, (gcx, gcy) in enumerate(corner_positions):
+            op = (math.sin(t * 1.2 + idx * 1.5) + 1.0) * 0.5
+            oa = int(90 + 130 * op)
+            # Diamond ornament behind rune
+            gem_sz = int(10 * scale)
+            pygame.draw.polygon(screen, (*tier_color, int(oa * 0.3 * ease)),
+                [(gcx, gcy - gem_sz), (gcx + gem_sz, gcy), (gcx, gcy + gem_sz), (gcx - gem_sz, gcy)])
+            # Rune character
+            o = orn_font.render(orn_chars[idx], True, tier_color)
             o.set_alpha(int(oa * ease))
             screen.blit(o, (gcx - o.get_width() // 2, gcy - o.get_height() // 2))
 
-        margin = int(30 * cfg.ui_scale())
+        # ── Arcane corner filigree lines ───────────────────────────────
+        filig_len = int(30 * scale)
+        for idx, (gcx, gcy) in enumerate(corner_positions):
+            h_dir = 1 if gcx == panel_rect.x + 16 else -1
+            v_dir = 1 if gcy == panel_rect.y + 16 else -1
+            fa = int(60 * ease * (0.5 + 0.5 * math.sin(t + idx)))
+            # Diagonal filigree
+            end_x = gcx + h_dir * filig_len
+            end_y = gcy + v_dir * filig_len
+            mid_x = gcx + h_dir * filig_len * 0.5
+            mid_y = gcy + v_dir * filig_len * 0.5
+            pygame.draw.line(screen, (*tier_color, fa), (gcx, gcy), (end_x, gcy), 1)
+            pygame.draw.line(screen, (*tier_color, fa), (gcx, gcy), (gcx, end_y), 1)
+            pygame.draw.circle(screen, (*tier_color, int(fa * 0.6)), (int(end_x), int(end_y)), max(1, int(2 * scale)))
+
+        margin = int(30 * scale)
         card_img = self._sel_card_front_large
         img_rect = None
         if card_img:
@@ -1212,44 +1487,115 @@ class MysteriumMagnumMenu(Menu):
             img_y = py + (panel_h - ch) // 2
             img_rect = pygame.Rect(img_x, img_y, cw, ch)
 
-            # Card glow
-            glow = pygame.Surface((cw + 40, ch + 40), pygame.SRCALPHA)
-            glow_a = int(40 * ease * (0.6 + 0.4 * math.sin(self.animation_time * 0.8)))
-            cgx, cgy = glow.get_size()
-            pygame.draw.ellipse(glow, (160, 80, 240, glow_a), (10, 10, cgx - 20, cgy - 20))
-            screen.blit(glow, (img_x - 20, img_y - 20))
+            # ── Multi-layer card glow ──────────────────────────────────
+            glow_w, glow_h = cw + 60, ch + 60
+            glow = pygame.Surface((glow_w, glow_h), pygame.SRCALPHA)
+            # Outer diffuse glow
+            ga1 = int(30 * ease * (0.5 + 0.5 * math.sin(t * 0.7)))
+            pygame.draw.ellipse(glow, (*tier_glow, ga1), (0, 0, glow_w, glow_h))
+            # Inner focused glow
+            ga2 = int(50 * ease * (0.6 + 0.4 * math.sin(t * 1.1)))
+            pygame.draw.ellipse(glow, (*tier_color, ga2), (15, 15, glow_w - 30, glow_h - 30))
+            screen.blit(glow, (img_x - 30, img_y - 30))
+
+            # ── Card frame (ornate gold border) ────────────────────────
+            frame_inset = 3
+            frame_rect = img_rect.inflate(6, 6)
+            # Outer gold frame
+            pygame.draw.rect(screen, (*tier_color, int(120 * ease)), frame_rect,
+                             width=max(2, int(2.5 * scale)), border_radius=6)
+            # Inner subtle line
+            inner_frame = img_rect.inflate(-2, -2)
+            pygame.draw.rect(screen, (255, 255, 255, int(30 * ease)), inner_frame, 1, border_radius=4)
+
+            # ── Floating arcane particles around card ──────────────────
+            card_cx, card_cy = img_rect.center
+            for pi in range(6):
+                pa = t * 0.4 + pi * math.pi * 2 / 6
+                orbit_r_x = cw * 0.65
+                orbit_r_y = ch * 0.65
+                ppx = card_cx + math.cos(pa) * orbit_r_x
+                ppy = card_cy + math.sin(pa) * orbit_r_y
+                ppa = int(80 * ease * (0.4 + 0.6 * math.sin(t * 1.5 + pi * 2)))
+                if ppa > 0:
+                    pygame.draw.circle(screen, (*tier_color, ppa), (int(ppx), int(ppy)), max(1, int(2 * scale)))
+                    # Tiny connecting line to card
+                    line_a = int(ppa * 0.3)
+                    pygame.draw.line(screen, (*tier_glow, line_a), (int(ppx), int(ppy)), img_rect.center, 1)
+
             screen.blit(card_img, img_rect)
 
-            gold = (212, 175, 55)
-            pygame.draw.rect(screen, (*gold, int(60 * ease)), img_rect, 1, border_radius=4)
+            # ── Card number badge ──────────────────────────────────────
+            badge_font = cfg.get_font(max(10, int(14 * scale)))
+            badge_text = f"#{num}"
+            badge_surf = badge_font.render(badge_text, True, tier_color)
+            badge_w = badge_surf.get_width() + 12
+            badge_h = badge_surf.get_height() + 6
+            badge_rect = pygame.Rect(img_x + cw - badge_w - 4, img_y - badge_h // 2, badge_w, badge_h)
+            pygame.draw.rect(screen, (15, 8, 25, int(200 * ease)), badge_rect, border_radius=8)
+            pygame.draw.rect(screen, (*tier_color, int(120 * ease)), badge_rect, 1, border_radius=8)
+            screen.blit(badge_surf, badge_rect.center)
 
+        # ── Text column ────────────────────────────────────────────────
         text_x = px + margin
         if img_rect:
-            text_x = img_rect.right + margin
+            text_x = img_rect.right + margin + int(10 * scale)
         text_w = panel_rect.right - text_x - margin
 
-        sec_font = cfg.get_font(max(16, int(28 * cfg.ui_scale())))
-        name_text = f"#{card['num']} — {card['name']}"
-        name_surf = sec_font.render(name_text, True, (240, 220, 255))
+        # ── Card name with glow ────────────────────────────────────────
+        sec_font = cfg.get_font(max(16, int(28 * scale)))
+        name_text = card['name']
+        # Glow layers for name
+        for gi in range(3):
+            name_glow = sec_font.render(name_text, True, tier_glow)
+            name_glow.set_alpha(int(40 * ease * (0.5 + 0.5 * math.sin(t * 0.9 + gi))))
+            screen.blit(name_glow, (text_x + gi * (1 if gi % 2 == 0 else -1),
+                                     py + margin + 8 + gi * (1 if gi < 2 else -1)))
+        name_surf = sec_font.render(name_text, True, (240, 225, 255))
         name_surf.set_alpha(int(255 * ease))
-        screen.blit(name_surf, (text_x, py + margin + 10))
+        name_y = py + margin + 8
+        screen.blit(name_surf, (text_x, name_y))
 
-        div_y = py + margin + 10 + name_surf.get_height() + 10
-        for i in range(min(text_w, panel_w - margin * 2)):
-            dx = text_x + i
-            da = int((1.0 - abs(i / max(1, text_w - 1) - 0.5) * 2) * 100 * ease)
-            pygame.draw.line(screen, (140, 80, 220, da), (dx, div_y), (dx, div_y + 1))
+        # ── Arcana number + ornamental subtitle ────────────────────────
+        sub_font = cfg.get_font(max(11, int(15 * scale)))
+        sub_text = f"— Arcana {num} of 22 —"
+        sub_surf = sub_font.render(sub_text, True, tier_color)
+        sub_surf.set_alpha(int(140 * ease))
+        sub_y = name_y + name_surf.get_height() + 6
+        screen.blit(sub_surf, (text_x, sub_y))
 
-        eff = self.card_effects.get(card["num"])
+        # ── Animated ornamental divider ────────────────────────────────
+        div_y = sub_y + sub_surf.get_height() + 10
+        div_width = min(text_w, panel_w - margin * 2)
+        # Centre diamond ornament
+        div_cx = text_x + div_width // 2
+        diamond_sz = int(4 * scale)
+        diamond_pulse = (math.sin(t * 1.5) + 1.0) * 0.5
+        d_a = int(150 * ease * (0.5 + 0.5 * diamond_pulse))
+        pygame.draw.polygon(screen, (*tier_color, d_a), [
+            (div_cx, div_y - diamond_sz), (div_cx + diamond_sz, div_y),
+            (div_cx, div_y + diamond_sz), (div_cx - diamond_sz, div_y)])
+        # Lines extending from diamond
+        for side in (-1, 1):
+            for i in range(div_width // 2 - diamond_sz):
+                ix = div_cx + side * (diamond_sz + i + 1)
+                if text_x <= ix < text_x + div_width:
+                    wave = math.sin(t * 2.0 + i * 0.08) * 0.3 + 0.7
+                    la = int((1.0 - i / max(1, div_width // 2)) * 120 * wave * ease)
+                    pygame.draw.line(screen, (*tier_color, la), (ix, div_y), (ix, div_y + 1))
+
+        # ── Description text ───────────────────────────────────────────
+        eff = self.card_effects.get(num)
         if eff and eff["desc"]:
-            body_font = cfg.get_font(max(12, int(18 * cfg.ui_scale())))
-            # Word-wrap description to fit panel width
+            body_font = cfg.get_font(max(12, int(18 * scale)))
+            # Description background panel
+            desc_panel_y = div_y + 16
             words = eff["desc"].split(" ")
             lines = []
             current_line = ""
             for w in words:
                 test = f"{current_line} {w}".strip()
-                if body_font.size(test)[0] <= text_w:
+                if body_font.size(test)[0] <= text_w - 16:
                     current_line = test
                 else:
                     if current_line:
@@ -1258,59 +1604,82 @@ class MysteriumMagnumMenu(Menu):
             if current_line:
                 lines.append(current_line)
 
-            desc_y = div_y + 20
-            for line in lines:
-                desc_surf = body_font.render(line, True, (200, 190, 220))
-                desc_surf.set_alpha(int(220 * ease))
+            line_h = body_font.get_height() + 4
+            desc_panel_h = len(lines) * line_h + 16
+            desc_panel = pygame.Rect(text_x - 8, desc_panel_y - 6,
+                                      min(text_w + 8, panel_w - margin * 2 + 8), desc_panel_h)
+            # Subtle background for description
+            pygame.draw.rect(screen, (15, 8, 25, int(80 * ease)), desc_panel, border_radius=8)
+            pygame.draw.rect(screen, (*tier_glow, int(25 * ease)), desc_panel, 1, border_radius=8)
+
+            desc_y = desc_panel_y + 4
+            for li, line in enumerate(lines):
+                desc_surf = body_font.render(line, True, (210, 200, 230))
+                desc_surf.set_alpha(int(230 * ease))
                 screen.blit(desc_surf, (text_x, desc_y))
-                desc_y += desc_surf.get_height() + 4
+                desc_y += line_h
 
-            stats_font = cfg.get_font(max(11, int(16 * cfg.ui_scale())))
-            stats_y = desc_y + 12
-            parts = []
+            # ── Stats section with individual badges ───────────────────
+            stats_y = desc_panel.bottom + 14
+            stats_font = cfg.get_font(max(10, int(14 * scale)))
+            stat_badge_h = int(22 * scale)
+
+            stat_items = []
             if eff["mana"]:
-                parts.append(f"+{eff['mana']} Max Mana")
+                stat_items.append(("✧", f"+{eff['mana']} Max Mana", (100, 180, 255)))
             if eff["regen"]:
-                parts.append(f"+{eff['regen']}/s Mana Regen")
+                stat_items.append(("↻", f"+{eff['regen']}/s Mana Regen", (120, 200, 255)))
             if eff["hp_regen"]:
-                parts.append(f"+{eff['hp_regen']} HP/s")
+                stat_items.append(("♥", f"+{eff['hp_regen']} HP/s", (100, 220, 120)))
             if eff["speed"]:
-                parts.append(f"+{int(eff['speed'] * 100)}% Move Speed")
+                stat_items.append(("»", f"+{int(eff['speed'] * 100)}% Move Speed", (200, 220, 100)))
             if eff["cdr"]:
-                parts.append(f"+{int(eff['cdr'] * 100)}% Skill Haste")
+                stat_items.append(("◈", f"+{int(eff['cdr'] * 100)}% Skill Haste", (180, 140, 255)))
             if eff["atk_spd"]:
-                parts.append(f"+{int(eff['atk_spd'] * 100)}% Atk Speed")
+                stat_items.append(("⚡", f"+{int(eff['atk_spd'] * 100)}% Atk Speed", (255, 200, 80)))
             if eff["dmg"]:
-                parts.append(f"+{eff['dmg']} Damage")
+                stat_items.append(("⚔", f"+{eff['dmg']} Damage", (255, 100, 100)))
             if eff["stam"]:
-                parts.append(f"+{eff['stam']}/s Stamina")
-            if parts:
-                # Wrap stats across multiple lines
-                stats_line = ""
-                for pi, part in enumerate(parts):
-                    sep = " | " if pi > 0 else ""
-                    test = f"{stats_line}{sep}{part}"
-                    if stats_font.size(test)[0] <= text_w:
-                        stats_line = test
-                    else:
-                        if stats_line:
-                            ss = stats_font.render(stats_line, True, (212, 175, 55))
-                            ss.set_alpha(int(200 * ease))
-                            screen.blit(ss, (text_x, stats_y))
-                            stats_y += ss.get_height() + 4
-                        stats_line = part
-                if stats_line:
-                    ss = stats_font.render(stats_line, True, (212, 175, 55))
-                    ss.set_alpha(int(200 * ease))
-                    screen.blit(ss, (text_x, stats_y))
+                stat_items.append(("♦", f"+{eff['stam']}/s Stamina", (180, 220, 100)))
 
-        # Close button
-        close_font = cfg.get_font(max(14, int(20 * cfg.ui_scale())))
-        close_r = pygame.Rect(panel_rect.right - 44, panel_rect.y + 10, 34, 34)
-        close_a = int(150 + 105 * (0.5 + 0.5 * math.sin(self.animation_time * 2)))
-        pygame.draw.circle(screen, (200, 150, 255), close_r.center, close_r.width // 2)
-        pygame.draw.circle(screen, (100, 60, 150), close_r.center, close_r.width // 2, 2)
-        cx_mark = close_font.render("✕", True, (50, 20, 80))
+            if stat_items:
+                badge_x = text_x
+                badge_y = stats_y
+                for icon, text, color in stat_items:
+                    full_text = f" {icon} {text}"
+                    tw_stat = stats_font.size(full_text)[0]
+                    badge_w_stat = tw_stat + int(16 * scale)
+
+                    # Check if badge fits on current line
+                    if badge_x + badge_w_stat > panel_rect.right - margin:
+                        badge_x = text_x
+                        badge_y += stat_badge_h + int(4 * scale)
+
+                    badge_rect = pygame.Rect(badge_x, badge_y, badge_w_stat, stat_badge_h)
+                    # Badge background
+                    badge_bg_a = int(100 * ease * (0.7 + 0.3 * math.sin(t * 0.8 + badge_x * 0.01)))
+                    pygame.draw.rect(screen, (*color, int(badge_bg_a * 0.15)), badge_rect, border_radius=6)
+                    pygame.draw.rect(screen, (*color, int(badge_bg_a * 0.4)), badge_rect, 1, border_radius=6)
+                    # Badge text
+                    badge_ts = stats_font.render(full_text, True, color)
+                    badge_ts.set_alpha(int(220 * ease))
+                    screen.blit(badge_ts, (badge_x + int(8 * scale),
+                                           badge_y + (stat_badge_h - badge_ts.get_height()) // 2))
+                    badge_x += badge_w_stat + int(6 * scale)
+
+        # ── Close button (ornate) ──────────────────────────────────────
+        close_r = pygame.Rect(panel_rect.right - 48, panel_rect.y + 12, 36, 36)
+        # Animated ring around close button
+        ring_a = int(120 * ease * (0.5 + 0.5 * math.sin(t * 2.0)))
+        ring_r = close_r.width // 2 + 4
+        pygame.draw.circle(screen, (*tier_color, ring_a), close_r.center, ring_r, max(1, int(1.5 * scale)))
+        # Button body
+        close_pulse = int(180 + 75 * (0.5 + 0.5 * math.sin(t * 1.5)))
+        pygame.draw.circle(screen, (40, 20, 60, int(220 * ease)), close_r.center, close_r.width // 2)
+        pygame.draw.circle(screen, (*tier_color, int(close_pulse * ease * 0.5)),
+                           close_r.center, close_r.width // 2, 2)
+        close_font = cfg.get_font(max(14, int(20 * scale)))
+        cx_mark = close_font.render("✕", True, (200, 180, 220))
         cx_mark.set_alpha(int(200 * ease))
         screen.blit(cx_mark, cx_mark.get_rect(center=close_r.center))
 
