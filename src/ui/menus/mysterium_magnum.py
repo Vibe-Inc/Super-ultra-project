@@ -375,29 +375,29 @@ class MysteriumMagnumMenu(Menu):
         star_cx = panel_rect.x + int(panel_rect.width * 0.25)
         star_cy = panel_rect.centery
         star_outer_r = max(8, int(18 * cfg.ui_scale()))
-        star_inner_r = int(star_outer_r * 0.4)
+        star_inner_r = int(star_outer_r * 0.35)
         star_pulse = (math.sin(t * 2.0) + 1.0) * 0.5
         star_rot = t * 0.5
 
         star_pts = []
-        for i in range(10):
-            angle = star_rot + i * math.pi / 5 - math.pi / 2
+        for i in range(8):
+            angle = star_rot + i * math.pi / 4 - math.pi / 2
             r2 = star_outer_r if i % 2 == 0 else star_inner_r
             star_pts.append((star_cx + math.cos(angle) * r2, star_cy + math.sin(angle) * r2))
 
         glow_r = int(star_outer_r * 2.5)
         glow_surf = pygame.Surface((glow_r * 2, glow_r * 2), pygame.SRCALPHA)
         glow_a = int(60 + 60 * star_pulse)
-        pygame.draw.circle(glow_surf, (255, 215, 0, glow_a), (glow_r, glow_r), glow_r)
+        pygame.draw.circle(glow_surf, (180, 80, 255, glow_a), (glow_r, glow_r), glow_r)
         screen.blit(glow_surf, (star_cx - glow_r, star_cy - glow_r))
 
         star_color = (
+            int(180 + 40 * star_pulse),
+            int(80 + 40 * star_pulse),
             int(255 - 40 * star_pulse),
-            int(215 - 40 * star_pulse),
-            int(80 - 20 * star_pulse),
         )
         pygame.draw.polygon(screen, star_color, star_pts)
-        pygame.draw.polygon(screen, (255, 255, 200), star_pts, width=max(1, int(1.5 * cfg.ui_scale())))
+        pygame.draw.polygon(screen, (220, 180, 255), star_pts, width=max(1, int(1.5 * cfg.ui_scale())))
 
         label_x = panel_rect.x + int(panel_rect.width * 0.45)
         label_y = panel_rect.y + int(10 * cfg.ui_scale())
@@ -405,9 +405,9 @@ class MysteriumMagnumMenu(Menu):
         screen.blit(label, (label_x, label_y))
 
         count_color = (
-            int(255 - 30 * star_pulse),
-            int(215 - 30 * star_pulse),
-            int(100 + 80 * star_pulse),
+            int(220 + 35 * star_pulse),
+            int(140 + 60 * star_pulse),
+            int(255),
         )
         count_text = str(stars)
         count_surf = self.section_font.render(count_text, True, count_color)
