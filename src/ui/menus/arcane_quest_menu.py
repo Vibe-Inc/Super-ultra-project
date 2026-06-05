@@ -184,7 +184,9 @@ class ArcaneQuestMenu(Menu):
         self.reroll_tooltip: Tooltip | None = None
 
     def get_quest_data(self) -> dict:
-        """Export quests + reroll state for save serialization."""
+        """Export quests + reroll state for save serialization.
+        Cooldowns are saved as remaining duration so they only tick while
+        this save file is actively loaded."""
         return {
             "quests": [
                 {
@@ -198,18 +200,19 @@ class ArcaneQuestMenu(Menu):
                     "progress": q.progress,
                     "completed": q.completed,
                     "claimed": q.claimed,
-                    "cooldown_until": q.cooldown_until,
+                    "cooldown_remaining": max(0.0, q.cooldown_until - time.time()),
                 }
                 for q in self.quests
             ],
             "rerolls_remaining": self.rerolls_remaining,
-            "reroll_cooldown_until": self.reroll_cooldown_until,
+            "reroll_cooldown_remaining": max(0.0, self.reroll_cooldown_until - time.time()),
         }
 
     def set_quest_data(self, data: dict | list[dict]):
         """Restore quest and reroll state from save data."""
         if not data:
             return
+        now = time.time()
         if isinstance(data, list):
             # Legacy format — treat as list of quest dicts, reset cooldowns
             self.quests = []
@@ -226,7 +229,7 @@ class ArcaneQuestMenu(Menu):
                 q.progress = d.get("progress", 0)
                 q.completed = d.get("completed", False)
                 q.claimed = d.get("claimed", False)
-                q.cooldown_until = d.get("cooldown_until", 0.0)
+                q.cooldown_until = now + d.get("cooldown_remaining", 0.0)
                 self.quests.append(q)
             self.rerolls_remaining = 1
             self.reroll_cooldown_until = 0.0
@@ -246,10 +249,10 @@ class ArcaneQuestMenu(Menu):
                 q.progress = d.get("progress", 0)
                 q.completed = d.get("completed", False)
                 q.claimed = d.get("claimed", False)
-                q.cooldown_until = d.get("cooldown_until", 0.0)
+                q.cooldown_until = now + d.get("cooldown_remaining", 0.0)
                 self.quests.append(q)
             self.rerolls_remaining = data.get("rerolls_remaining", 1)
-            self.reroll_cooldown_until = data.get("reroll_cooldown_until", 0.0)
+            self.reroll_cooldown_until = now + data.get("reroll_cooldown_remaining", 0.0)
         self._layout_size = None
 
     def reset_quests(self):
