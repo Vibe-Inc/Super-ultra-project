@@ -6,8 +6,15 @@ right now the book shows empty parchment pages with water-themed
 decorations, particles, and animations.
 """
 
-import pygame
 import math
+import os
+import sys
+# Ensure project root is on sys.path if this module is executed directly
+_project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
+import pygame
 import random
 from src.ui.menus.base import Menu
 from src.ui.widgets import Button
