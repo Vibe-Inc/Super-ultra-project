@@ -786,13 +786,38 @@ class FishingController:
     def _on_catch_success(self):
         """Handle a successful catch.
 
-        Adds the fish's reward item to the world item list and
-        shows a green "Caught ..." result message, then returns
-        the controller to the ``idle`` state.
+        Adds the fish's reward item to the world item list, updates the
+        persistent collection book counter, and shows a full info dialog
+        (first catch) or a counter result message (repeat catches).
         """
         fish = self.active_fish.fish_type if self.active_fish else None
         if fish:
-            msg = f"Caught {fish.name}!"
+            try:
+                app = getattr(self.game, "app", None)
+                if app is not None and not hasattr(app, "caught_fish"):
+                    app.caught_fish = {}
+                if app is not None and fish.reward_item_id:
+                    was_first = fish.reward_item_id not in app.caught_fish
+                    app.caught_fish[fish.reward_item_id] = (
+                        app.caught_fish.get(fish.reward_item_id, 0) + 1
+                    )
+                    if was_first:
+                        self._show_first_catch_info(fish)
+                    else:
+                        count = app.caught_fish[fish.reward_item_id]
+                        self.ui.show_result(
+                            f"Caught {fish.name}!  (\u00d7{count})",
+                            success=True, duration=3.0,
+                        )
+                else:
+                    self.ui.show_result(
+                        f"Caught {fish.name}!", success=True, duration=3.0
+                    )
+            except Exception:
+                self.ui.show_result(
+                    f"Caught {fish.name}!", success=True, duration=3.0
+                )
+
             if fish.reward_item_id:
                 try:
                     item = create_item(fish.reward_item_id)
@@ -807,9 +832,48 @@ class FishingController:
                             )
                 except Exception:
                     pass
-            self.ui.show_result(msg, success=True, duration=3.0)
         self.state = "idle"
         self.bobber = None
+
+    def _show_first_catch_info(self, fish):
+        """Show a dialog with the fish's details when caught for the first time."""
+        try:
+            from src.ui.widgets import Dialog
+            from database.GP_database import Gp_database
+            rarity = ""
+            speed_val = 0.0
+            base_price = 0
+            try:
+                db = Gp_database()
+                row = db.conn.execute(
+                    "SELECT rarity, speed, base_price FROM fish WHERE item_id = ?",
+                    (fish.reward_item_id,),
+                ).fetchone()
+                db.close()
+                if row:
+                    rarity, speed_val, base_price = row
+            except Exception:
+                pass
+
+            lines = [
+                _("New fish discovered!"),
+                "",
+                _("Name: {name}").format(name=fish.name),
+                _("Rarity: {rarity}").format(rarity=rarity or "?"),
+                _("Difficulty: {d:.2f}").format(d=float(fish.difficulty)),
+                _("Speed: {s:.2f}").format(s=float(speed_val or fish.speed)),
+                _("Base price: {p} gold").format(p=int(base_price)),
+                "",
+                _("Check your Field Journal to see it again."),
+            ]
+            self.game.app.current_dialog = Dialog(self.game.app, lines)
+        except Exception:
+            try:
+                self.ui.show_result(
+                    f"Caught {fish.name}!", success=True, duration=3.0
+                )
+            except Exception:
+                pass
         self.active_fish = None
         self.ui.show_hit_timer = 0.0
 

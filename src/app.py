@@ -159,6 +159,9 @@ class App:
         self.current_dialog = None
         self.last_talked_npc = None
 
+        # Persistent collection book state — fish_id -> catch count
+        self.caught_fish = {}
+
         # Audio / fullscreen / clock
         self.audio = "on"
         self.clock = pygame.time.Clock()

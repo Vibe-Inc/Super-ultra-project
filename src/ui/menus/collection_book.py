@@ -1,9 +1,9 @@
-"""Fishing Field Journal — ornate empty book with an ocean theme.
+"""Fishing Field Journal — ornate book showing all fish with caught/uncaught status.
 
-A visual-only collection book that the player opens by talking to the
-fishing NPC.  All fish entries and logic will be added in later steps;
-right now the book shows empty parchment pages with water-themed
-decorations, particles, and animations.
+When a fish is first caught the player sees a full info dialog; on
+subsequent catches a counter is shown.  The book itself displays
+all fish from the database, with caught fish highlighted and
+uncaught ones shown as dark silhouettes.
 """
 
 import math
@@ -86,12 +86,7 @@ def _ease_out_cubic(t):
 # ---------------------------------------------------------------------------
 
 class CollectionBookMenu(Menu):
-    """An ornate ocean-themed field journal (empty for now).
-
-    The book opens with an animation, shows blank parchment pages with
-    water-themed decorations and bubble particles.  Fish entries will be
-    added in a later step.
-    """
+    """An ornate ocean-themed field journal showing all fish (caught + uncaught)."""
 
     def __init__(self, app):
         super().__init__(app)
@@ -106,14 +101,66 @@ class CollectionBookMenu(Menu):
         self.is_flipping = False
 
         self.current_spread = 0
-        self.max_spreads = 3  # several empty spreads to flip through
+        self.max_spreads = 3
 
         self.ambient_particles = []
         self.page_particles = []
         self.shine_phase = random.uniform(0, math.pi * 2)
 
+        # Load all fish entries from DB
+        self.fish_entries = self._load_fish_entries()
+        if self.fish_entries:
+            self.max_spreads = max(1, math.ceil(len(self.fish_entries) / 2))
+        else:
+            self.max_spreads = 1
+
         self.buttons = []
         self._setup_buttons()
+
+    @staticmethod
+    def _load_fish_entries():
+        """Load all fish info from the database.
+
+        Each entry: {id, name, rarity, difficulty, speed, base_price, image (or None)}.
+        Returns an empty list if the DB is unavailable.
+        """
+        try:
+            from database.GP_database import Gp_database
+            from src.items.items import create_item
+        except Exception:
+            return []
+
+        entries = []
+        try:
+            db = Gp_database()
+            rows = db.conn.execute(
+                "SELECT items.id, items.name, fish.rarity, fish.difficulty, "
+                "fish.speed, fish.base_price "
+                "FROM items INNER JOIN fish ON items.id = fish.item_id"
+            ).fetchall()
+            db.close()
+        except Exception:
+            return []
+
+        for row in rows:
+            fish_id, name, rarity, difficulty, speed, base_price = row
+            img = None
+            try:
+                item = create_item(fish_id)
+                if item is not None and getattr(item, "image", None) is not None:
+                    img = item.image
+            except Exception:
+                img = None
+            entries.append({
+                "id": fish_id,
+                "name": name or fish_id.replace("_", " ").title(),
+                "rarity": rarity or "?",
+                "difficulty": float(difficulty or 0.0),
+                "speed": float(speed or 0.0),
+                "base_price": int(base_price or 0),
+                "image": img,
+            })
+        return entries
 
     # -- Buttons --
 
@@ -124,7 +171,6 @@ class CollectionBookMenu(Menu):
         book_w, book_h = int(860 * scale), int(600 * scale)
         btn_w, btn_h = int(120 * scale), int(36 * scale)
 
-        # Position in the right-bottom corner of the right page
         back_x = cx + book_w // 2 - btn_w - int(30 * scale)
         back_y = cy + book_h // 2 - btn_h - int(30 * scale)
         back_rect = pygame.Rect(back_x, back_y, btn_w, btn_h)
@@ -133,7 +179,6 @@ class CollectionBookMenu(Menu):
             cfg.button_font, cfg.text_color, cfg.corner_radius, on_click=self.close_menu
         ))
 
-        # Prev page button (left side of bottom)
         if self.current_spread > 0:
             prev_x = cx - book_w // 2 + int(30 * scale)
             prev_y = cy + book_h // 2 - btn_h - int(30 * scale)
@@ -143,7 +188,6 @@ class CollectionBookMenu(Menu):
                 cfg.button_font, cfg.text_color, cfg.corner_radius, on_click=self.prev_page
             ))
 
-        # Next page button (middle-right area)
         if self.current_spread < self.max_spreads - 1:
             next_x = cx + book_w // 2 - btn_w * 2 - int(40 * scale)
             next_y = cy + book_h // 2 - btn_h - int(30 * scale)
@@ -244,7 +288,6 @@ class CollectionBookMenu(Menu):
             else:
                 open_progress = _ease_out_cubic(t)
 
-        # Flip animation — fade content in/out
         content_alpha = 255
         if self.is_flipping:
             t = (current_time - self.flip_start_time) / self.flip_duration
@@ -292,7 +335,7 @@ class CollectionBookMenu(Menu):
         # Book
         book_surf = pygame.Surface((book_w, book_h), pygame.SRCALPHA)
         self._draw_book_background(book_surf, book_w, book_h, scale, current_time)
-        self._draw_empty_pages(book_surf, book_w, book_h, scale, content_alpha)
+        self._draw_fish_pages(book_surf, book_w, book_h, scale, content_alpha)
 
         book_rect = book_surf.get_rect(center=(cx, cy + y_offset))
         if self.is_opening:
@@ -497,11 +540,11 @@ class CollectionBookMenu(Menu):
                                    int(18 * scale), (120, 150, 180))
 
     # ------------------------------------------------------------------
-    # Empty pages content
+    # Fish pages — draw fish entries for the current spread
     # ------------------------------------------------------------------
 
-    def _draw_empty_pages(self, surf, w, h, scale, alpha=255):
-        """Draw page titles and page numbers on the blank spread."""
+    def _draw_fish_pages(self, surf, w, h, scale, alpha=255):
+        """Draw the fish collection entries for the current spread."""
         content = pygame.Surface((w, h), pygame.SRCALPHA)
 
         # Title on first spread
@@ -510,8 +553,6 @@ class CollectionBookMenu(Menu):
             tx = w // 4 - title.get_width() // 2
             ty = int(30 * scale)
             content.blit(title, (tx, ty))
-
-            # Frame around title
             frame_pad = int(10 * scale)
             frame_rect = pygame.Rect(tx - frame_pad, ty - frame_pad,
                                      title.get_width() + frame_pad * 2,
@@ -522,8 +563,6 @@ class CollectionBookMenu(Menu):
             pygame.draw.rect(content, (160, 180, 205),
                              frame_rect.inflate(-int(3 * scale), -int(3 * scale)),
                              width=1, border_radius=int(3 * scale))
-
-            # Subtitle
             sub_y = ty + title.get_height() + int(12 * scale)
             sub = self._render_text(cfg.INV_nums_font,
                                     _("\u2014 Fish Collection \u2014"),
@@ -534,16 +573,11 @@ class CollectionBookMenu(Menu):
         num_color = (120, 145, 175)
         page_left = self.current_spread * 2 + 1
         page_right = self.current_spread * 2 + 2
-
         left_num = self._render_text(cfg.INV_nums_font, str(page_left), num_color)
-        lx = int(32 * scale)
-        ly = h - int(35 * scale)
-        content.blit(left_num, (lx, ly))
-
+        content.blit(left_num, (int(32 * scale), int(h - 35 * scale)))
         right_num = self._render_text(cfg.INV_nums_font, str(page_right), num_color)
-        rx = w - int(40 * scale) - right_num.get_width()
-        ry = h - int(35 * scale)
-        content.blit(right_num, (rx, ry))
+        content.blit(right_num, (w - int(40 * scale) - right_num.get_width(),
+                                 int(h - 35 * scale)))
 
         # Header flourish
         header_y = int(62 * scale)
@@ -561,8 +595,146 @@ class CollectionBookMenu(Menu):
                        (cxx - int(3 * scale), header_y)]
                 pygame.draw.polygon(content, dot_color, pts)
 
+        # Draw fish entries — 2 per spread, one on each page side
+        start_idx = self.current_spread * 2
+        end_idx = min(start_idx + 2, len(self.fish_entries))
+
+        # Caught fish dict from App
+        caught = getattr(self.app, "caught_fish", {})
+
+        for i in range(start_idx, end_idx):
+            fish = self.fish_entries[i]
+            local_idx = i - start_idx  # 0 for left, 1 for right
+
+            # Card position
+            card_w = int(340 * scale)
+            card_h = int(420 * scale)
+            if local_idx == 0:
+                card_x = (w // 2 - card_w) // 2
+            else:
+                card_x = w // 2 + (w // 2 - card_w) // 2
+            card_y = int(80 * scale)
+
+            self._draw_fish_card(content, card_x, card_y, card_w, card_h,
+                                 fish, scale, caught)
+
         content.set_alpha(alpha)
         surf.blit(content, (0, 0))
+
+    def _draw_fish_card(self, surf, x, y, w, h, fish, scale, caught):
+        """Draw a single fish card on the page.
+
+        Caught fish are shown in full color; uncaught fish are shown
+        as dark silhouettes with "???" placeholders.
+        """
+        fish_id = fish["id"]
+        count = caught.get(fish_id, 0)
+        is_caught = count > 0
+
+        # Card shadow
+        shadow = pygame.Rect(x + int(4 * scale), y + int(4 * scale), w, h)
+        pygame.draw.rect(surf, (0, 0, 0, 40), shadow, border_radius=int(10 * scale))
+
+        # Card background — parchment
+        card_bg = (238, 225, 198) if is_caught else (210, 200, 185)
+        card_rect = pygame.Rect(x, y, w, h)
+        pygame.draw.rect(surf, card_bg, card_rect, border_radius=int(10 * scale))
+
+        # Border — silver if caught, dark grey if uncaught
+        border = (180, 195, 210) if is_caught else (120, 120, 120)
+        pygame.draw.rect(surf, border, card_rect, width=2, border_radius=int(10 * scale))
+
+        # Inner border
+        inner = card_rect.inflate(-int(5 * scale), -int(5 * scale))
+        pygame.draw.rect(surf, border, inner, width=1, border_radius=int(8 * scale))
+
+        # Fish image area
+        img_size = int(80 * scale)
+        img_x = x + (w - img_size) // 2
+        img_y = y + int(20 * scale)
+        img_rect = pygame.Rect(img_x, img_y, img_size, img_size)
+
+        # Image background circle
+        if is_caught:
+            circle_color = (200, 220, 235)
+            img_border = (180, 195, 210)
+        else:
+            circle_color = (50, 50, 55)
+            img_border = (40, 40, 45)
+
+        pygame.draw.ellipse(surf, circle_color, img_rect)
+        pygame.draw.ellipse(surf, img_border, img_rect, width=2)
+
+        # Draw the fish image or silhouette
+        raw_img = fish.get("image")
+        if raw_img is not None and is_caught:
+            img_surf = pygame.transform.scale(raw_img, (img_size - 8, img_size - 8))
+            surf.blit(img_surf, (img_x + 4, img_y + 4))
+        elif raw_img is not None:
+            # Darken the image for uncaught
+            img_surf = pygame.transform.scale(raw_img, (img_size - 8, img_size - 8))
+            dark = pygame.Surface(img_surf.get_size(), pygame.SRCALPHA)
+            dark.fill((0, 0, 0, 160))
+            img_surf.blit(dark, (0, 0))
+            surf.blit(img_surf, (img_x + 4, img_y + 4))
+        else:
+            # No image — draw a fish silhouette shape
+            color = (100, 180, 220) if is_caught else (60, 60, 65)
+            cx = img_rect.centerx
+            cy = img_rect.centery
+            r = img_size // 3
+            pygame.draw.ellipse(surf, color, (cx - r, cy - r // 2, r * 2, r), 2)
+            # Question marks for uncaught
+            if not is_caught:
+                q = cfg.INV_nums_font.render("???", True, (80, 80, 85))
+                surf.blit(q, (cx - q.get_width() // 2, cy - q.get_height() // 2))
+
+        # Fish name
+        name_color = (25, 50, 80) if is_caught else (90, 90, 95)
+        name = self._render_text(cfg.INV_nums_font, fish["name"], name_color)
+        nx = x + (w - name.get_width()) // 2
+        ny = img_y + img_size + int(10 * scale)
+        surf.blit(name, (nx, ny))
+
+        # Rarity
+        rarity_color = (100, 130, 160) if is_caught else (90, 90, 95)
+        rarity = self._render_text(cfg.INV_nums_font,
+                                   _("Rarity: {r}").format(r=fish["rarity"]), rarity_color)
+        surf.blit(rarity, (x + int(15 * scale), ny + int(22 * scale)))
+
+        # Difficulty
+        diff = self._render_text(cfg.INV_nums_font,
+                                 _("Difficulty: {d:.2f}").format(d=fish["difficulty"]),
+                                 rarity_color)
+        surf.blit(diff, (x + int(15 * scale), ny + int(38 * scale)))
+
+        # Speed
+        spd = self._render_text(cfg.INV_nums_font,
+                                _("Speed: {s:.2f}").format(s=fish["speed"]),
+                                rarity_color)
+        surf.blit(spd, (x + int(15 * scale), ny + int(54 * scale)))
+
+        # Base price
+        price = self._render_text(cfg.INV_nums_font,
+                                  _("Price: {p}g").format(p=fish["base_price"]),
+                                  rarity_color)
+        surf.blit(price, (x + int(15 * scale), ny + int(70 * scale)))
+
+        # Catch counter badge (bottom-right corner of card)
+        if is_caught:
+            badge_text = _("\u00d7{count}").format(count=count)
+            badge = cfg.INV_nums_font.render(badge_text, True, (30, 60, 100))
+            badge_bg = pygame.Surface((badge.get_width() + 8, badge.get_height() + 4))
+            badge_bg.fill((180, 200, 220))
+            badge_bg.blit(badge, (4, 2))
+            bx = x + w - badge_bg.get_width() - int(8 * scale)
+            by = y + h - badge_bg.get_height() - int(8 * scale)
+            surf.blit(badge_bg, (bx, by))
+        else:
+            # "Not yet caught" text
+            nc = self._render_text(cfg.INV_nums_font, _("Not yet caught"), (120, 120, 125))
+            surf.blit(nc, (x + (w - nc.get_width()) // 2,
+                           y + h - nc.get_height() - int(8 * scale)))
 
     # ------------------------------------------------------------------
     # Decorative helpers
@@ -584,7 +756,6 @@ class CollectionBookMenu(Menu):
         cx = x + size // 2
         cy = y + size // 2
 
-        # Outer arc
         pts = []
         for i in range(12):
             a = math.pi * 0.5 * (i / 11)
@@ -593,7 +764,6 @@ class CollectionBookMenu(Menu):
             pts.append((int(cx + math.cos(a) * r), int(cy + math.sin(a) * r)))
         pygame.draw.lines(surf, silver, False, pts, max(1, int(2 * scale)))
 
-        # Middle arc
         pts2 = []
         for i in range(10):
             a = math.pi * 0.5 * (i / 9)
@@ -602,7 +772,6 @@ class CollectionBookMenu(Menu):
         pulse_s = tuple(min(255, int(c + 20 * pulse)) for c in silver_light)
         pygame.draw.lines(surf, pulse_s, False, pts2, max(1, int(1.5 * scale)))
 
-        # Inner arc
         pts3 = []
         for i in range(8):
             a = math.pi * 0.5 * (i / 7)
@@ -610,7 +779,6 @@ class CollectionBookMenu(Menu):
             pts3.append((int(cx + math.cos(a) * r), int(cy + math.sin(a) * r)))
         pygame.draw.lines(surf, silver_dark, False, pts3, 1)
 
-        # Gem cluster
         gem_colors = [(80, 200, 220), (40, 160, 120), (60, 130, 190)]
         for gi, gc in enumerate(gem_colors):
             angle = math.pi * 0.5 * (gi / 3)
@@ -619,7 +787,6 @@ class CollectionBookMenu(Menu):
             gy = cy + int(math.sin(angle) * g_dist)
             self._draw_gem(surf, gx, gy, max(1, int(size * 0.08)), gc, scale)
 
-        # Silver dots
         for i in range(7):
             a = math.pi * 0.5 * (i / 6)
             r = size * 0.41
