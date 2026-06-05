@@ -637,12 +637,12 @@ class CollectionBookMenu(Menu):
         pygame.draw.rect(surf, (0, 0, 0, 40), shadow, border_radius=int(10 * scale))
 
         # Card background — parchment
-        card_bg = (238, 225, 198) if is_caught else (210, 200, 185)
+        card_bg = (238, 225, 198) if is_caught else (225, 215, 195)
         card_rect = pygame.Rect(x, y, w, h)
         pygame.draw.rect(surf, card_bg, card_rect, border_radius=int(10 * scale))
 
-        # Border — silver if caught, dark grey if uncaught
-        border = (180, 195, 210) if is_caught else (120, 120, 120)
+        # Border — silver if caught, faded silver-blue if uncaught
+        border = (180, 195, 210) if is_caught else (140, 150, 160)
         pygame.draw.rect(surf, border, card_rect, width=2, border_radius=int(10 * scale))
 
         # Inner border
@@ -660,35 +660,29 @@ class CollectionBookMenu(Menu):
             circle_color = (200, 220, 235)
             img_border = (180, 195, 210)
         else:
-            circle_color = (50, 50, 55)
-            img_border = (40, 40, 45)
+            circle_color = (30, 50, 70)
+            img_border = (60, 80, 100)
 
         pygame.draw.ellipse(surf, circle_color, img_rect)
         pygame.draw.ellipse(surf, img_border, img_rect, width=2)
 
         # Draw the fish image or silhouette
         raw_img = fish.get("image")
-        if raw_img is not None and is_caught:
+        cx = img_rect.centerx
+        cy = img_rect.centery
+        r = img_size // 3
+        if is_caught and raw_img is not None:
             img_surf = pygame.transform.scale(raw_img, (img_size - 8, img_size - 8))
             surf.blit(img_surf, (img_x + 4, img_y + 4))
-        elif raw_img is not None:
-            # Darken the image for uncaught
-            img_surf = pygame.transform.scale(raw_img, (img_size - 8, img_size - 8))
-            dark = pygame.Surface(img_surf.get_size(), pygame.SRCALPHA)
-            dark.fill((0, 0, 0, 160))
-            img_surf.blit(dark, (0, 0))
-            surf.blit(img_surf, (img_x + 4, img_y + 4))
-        else:
-            # No image — draw a fish silhouette shape
-            color = (100, 180, 220) if is_caught else (60, 60, 65)
-            cx = img_rect.centerx
-            cy = img_rect.centery
-            r = img_size // 3
+        elif is_caught:
+            # No image — fish silhouette oval
+            color = (100, 180, 220)
             pygame.draw.ellipse(surf, color, (cx - r, cy - r // 2, r * 2, r), 2)
-            # Question marks for uncaught
-            if not is_caught:
-                q = cfg.INV_nums_font.render("???", True, (80, 80, 85))
-                surf.blit(q, (cx - q.get_width() // 2, cy - q.get_height() // 2))
+        else:
+            # Uncaught — clean filled circle, no rectangular image
+            pygame.draw.circle(surf, (60, 60, 65), (cx, cy), r)
+            q = cfg.INV_nums_font.render("?", True, (150, 155, 160))
+            surf.blit(q, (cx - q.get_width() // 2, cy - q.get_height() // 2))
 
         # Fish name
         name_color = (25, 50, 80) if is_caught else (90, 90, 95)
