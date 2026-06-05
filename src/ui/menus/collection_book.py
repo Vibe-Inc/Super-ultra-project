@@ -135,7 +135,7 @@ class CollectionBookMenu(Menu):
             db = Gp_database()
             rows = db.conn.execute(
                 "SELECT items.id, items.name, fish.rarity, fish.difficulty, "
-                "fish.speed, fish.base_price "
+                "fish.speed, fish.base_price, items.description "
                 "FROM items INNER JOIN fish ON items.id = fish.item_id"
             ).fetchall()
             db.close()
@@ -143,7 +143,7 @@ class CollectionBookMenu(Menu):
             return []
 
         for row in rows:
-            fish_id, name, rarity, difficulty, speed, base_price = row
+            fish_id, name, rarity, difficulty, speed, base_price, description = row
             img = None
             try:
                 item = create_item(fish_id)
@@ -158,6 +158,7 @@ class CollectionBookMenu(Menu):
                 "difficulty": float(difficulty or 0.0),
                 "speed": float(speed or 0.0),
                 "base_price": int(base_price or 0),
+                "description": description or "",
                 "image": img,
             })
         return entries
@@ -719,6 +720,37 @@ class CollectionBookMenu(Menu):
                                   _("Price: {p}g").format(p=fish["base_price"]),
                                   rarity_color)
         surf.blit(price, (x + int(15 * scale), ny + int(70 * scale)))
+
+        # Description — word-wrapped below the stats
+        desc_text = fish.get("description", "")
+        if is_caught and desc_text:
+            desc_color = (80, 90, 100)
+            max_desc_w = w - int(30 * scale)
+            line_h = int(18 * scale)
+            desc_x = x + int(15 * scale)
+            desc_y = ny + int(90 * scale)
+            words = desc_text.split(" ")
+            line = ""
+            for word in words:
+                test = line + (" " if line else "") + word
+                tw = cfg.INV_nums_font.size(test)[0] * self.book_magnifier
+                if tw > max_desc_w and line:
+                    rendered = self._render_text(cfg.INV_nums_font, line, desc_color)
+                    surf.blit(rendered, (desc_x, desc_y))
+                    desc_y += line_h
+                    line = word
+                else:
+                    line = test
+            if line:
+                rendered = self._render_text(cfg.INV_nums_font, line, desc_color)
+                surf.blit(rendered, (desc_x, desc_y))
+        elif not is_caught:
+            # Show "???" description for uncaught
+            desc_color = (120, 120, 125)
+            placeholder = self._render_text(cfg.INV_nums_font,
+                                            "???", desc_color)
+            surf.blit(placeholder, (x + int(15 * scale),
+                                    ny + int(90 * scale)))
 
         # Catch counter badge (bottom-right corner of card)
         if is_caught:
