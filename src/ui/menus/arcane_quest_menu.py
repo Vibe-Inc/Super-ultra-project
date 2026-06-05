@@ -497,6 +497,26 @@ class ArcaneQuestMenu(Menu):
         self._init_particles()
         self._init_energy_arcs()
         self._layout_size = None
+        sw, sh = (cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT)
+        try:
+            sw, sh = self.app.screen.get_size()
+        except Exception:
+            pass
+        self._ensure_layout(sw, sh)
+        # Graceful entrance sparkles across the panel, not a dense explosion
+        px, py = self.panel_rect.x, self.panel_rect.y
+        pw, ph = self.panel_rect.width, self.panel_rect.height
+        for _ in range(30):
+            sx = px + random.uniform(0, pw)
+            sy = py + random.uniform(0, ph)
+            ang = random.uniform(0, math.pi * 2)
+            speed = random.uniform(20, 80)
+            life = random.uniform(1.2, 2.5)
+            sz = random.uniform(1.5, 4.0)
+            color = random.choice([GOLD_BRIGHT, PURPLE_BRIGHT, MAGIC_CYAN])
+            self.burst_particles.append(
+                _Particle(sx, sy, math.cos(ang) * speed, math.sin(ang) * speed, life, color, sz)
+            )
 
     def close_menu(self):
         self.app.manager.set_state("gameplay")
@@ -594,7 +614,7 @@ class ArcaneQuestMenu(Menu):
         self.flicker_t += dt
 
         if self.entrance_active:
-            t = (time.time() - self.entrance_start) / 0.6
+            t = (time.time() - self.entrance_start) / 1.8
             self.entrance_progress = max(0.0, min(1.0, t))
             if self.entrance_progress >= 1.0:
                 self.entrance_active = False
@@ -713,11 +733,19 @@ class ArcaneQuestMenu(Menu):
         ease = 1.0 - (1.0 - t) ** 3
 
         panel = self.panel_rect
-        scale = 0.92 + 0.08 * ease
-        scaled_w = int(panel.width * scale)
-        scaled_h = int(panel.height * scale)
+
+        # Panel slides down from above during entrance
+        slide_dist = int((1.0 - ease) * sh * 0.18)
+        s = 0.90 + 0.10 * ease
+        scaled_w = int(panel.width * s)
+        scaled_h = int(panel.height * s)
         scaled_rect = pygame.Rect(0, 0, scaled_w, scaled_h)
-        scaled_rect.center = panel.center
+        scaled_rect.center = (panel.centerx, panel.centery - slide_dist)
+
+        # Entrance golden expanding ring
+        if t > 0.08 and t < 0.6:
+            ring_progress = (t - 0.08) / 0.52
+            self._draw_entrance_ring(screen, panel, ring_progress)
 
         self._draw_soft_shadow(screen, scaled_rect, offset=14, alpha=80)
         self._draw_panel(screen, scaled_rect)
@@ -994,20 +1022,51 @@ class ArcaneQuestMenu(Menu):
     def _draw_title(self, screen, panel_rect):
         cx = panel_rect.centerx
         title_y = panel_rect.y + 20
-        title_surf = self.title_font.render(_("ARCANE QUESTS"), True, GOLD_BRIGHT)
-        shadow_surf = self.title_font.render(_("ARCANE QUESTS"), True, (0, 0, 0))
+        title_text = _("ARCANE QUESTS")
+        title_surf = self.title_font.render(title_text, True, GOLD_BRIGHT)
+        shadow_surf = self.title_font.render(title_text, True, (0, 0, 0))
 
-        glow = pygame.Surface((title_surf.get_width() + 60, title_surf.get_height() + 30), pygame.SRCALPHA)
+        # Entrance: title scales/fades in from center
+        t = self.entrance_progress
+        if self.entrance_active:
+            title_delay = 0.1
+            title_dur = 0.4
+            title_p = max(0.0, min(1.0, (t - title_delay) / title_dur))
+            if title_p <= 0.0:
+                return
+            title_ease = 1.0 - (1.0 - title_p) ** 2
+            title_scale = 0.6 + 0.4 * title_ease
+            title_alpha = int(255 * title_ease)
+            # Scale title surface
+            scaled_ts = pygame.transform.scale(
+                title_surf,
+                (int(title_surf.get_width() * title_scale), int(title_surf.get_height() * title_scale))
+            )
+            # Apply alpha
+            scaled_ts.set_alpha(title_alpha)
+            ts = scaled_ts
+        else:
+            ts = title_surf
+
+        glow = pygame.Surface((ts.get_width() + 60, ts.get_height() + 30), pygame.SRCALPHA)
         pulse = (math.sin(self.anim_time * 2.0) + 1.0) * 0.5
         glow_alpha = int(70 + 60 * pulse)
         glow.fill((*PURPLE_BRIGHT, glow_alpha))
-        inner = pygame.Rect(20, 10, title_surf.get_width() + 20, title_surf.get_height() + 10)
+        inner = pygame.Rect(20, 10, ts.get_width() + 20, ts.get_height() + 10)
         pygame.draw.rect(glow, (0, 0, 0, 0), inner)
         screen.blit(glow, (cx - glow.get_width() // 2, title_y - 10))
-        screen.blit(shadow_surf, (cx - title_surf.get_width() // 2 + 2, title_y + 2))
-        screen.blit(title_surf, (cx - title_surf.get_width() // 2, title_y))
+        if self.entrance_active:
+            shadow_ts = pygame.transform.scale(
+                shadow_surf,
+                (int(shadow_surf.get_width() * title_scale), int(shadow_surf.get_height() * title_scale))
+            )
+            shadow_ts.set_alpha(title_alpha)
+            screen.blit(shadow_ts, (cx - ts.get_width() // 2 + 2, title_y + 2))
+        else:
+            screen.blit(shadow_surf, (cx - ts.get_width() // 2 + 2, title_y + 2))
+        screen.blit(ts, (cx - ts.get_width() // 2, title_y))
 
-        line_y = title_y + title_surf.get_height() + 6
+        line_y = title_y + ts.get_height() + 6
         line_w = int(panel_rect.width * 0.7)
         line_x = cx - line_w // 2
         for i in range(line_w):
@@ -1022,7 +1081,29 @@ class ArcaneQuestMenu(Menu):
                     (dx, line_y + dsz), (dx - dsz, line_y)]
             pygame.draw.polygon(screen, GOLD, dpts)
 
+    def _draw_entrance_ring(self, screen, panel_rect, progress):
+        """Expanding golden ring that radiates from panel center during entrance."""
+        cx, cy = panel_rect.center
+        max_radius = int(max(panel_rect.width, panel_rect.height) * 0.7)
+        radius = int(max_radius * progress)
+        alpha = int(80 * (1.0 - progress) * (1.0 + math.sin(self.anim_time * 8)))
+        if alpha < 3:
+            return
+        ring_surf = pygame.Surface((radius * 2 + 10, radius * 2 + 10), pygame.SRCALPHA)
+        pulse = (math.sin(self.anim_time * 10 + progress * 5) + 1.0) * 0.5
+        for w in range(2, 0, -1):
+            a = int(alpha * (1.0 - w * 0.2))
+            col = (
+                int(GOLD_BRIGHT[0] * (0.7 + 0.3 * pulse)),
+                int(GOLD_BRIGHT[1] * (0.7 + 0.3 * pulse)),
+                int(GOLD_BRIGHT[2] * (0.5 + 0.5 * pulse)),
+                a,
+            )
+            pygame.draw.circle(ring_surf, col, (radius + 5, radius + 5), radius + w * 2, width=max(1, int(2 + w)))
+        screen.blit(ring_surf, (cx - radius - 5, cy - radius - 5))
+
     def _draw_quest_slots(self, screen, panel_rect):
+        t = self.entrance_progress
         for i, q in enumerate(self.quests):
             if i >= len(self.slot_rects):
                 break
@@ -1030,6 +1111,21 @@ class ArcaneQuestMenu(Menu):
             r.clamp_ip(panel_rect)
             if r.width <= 0 or r.height <= 0:
                 continue
+
+            # Entrance stagger: each slot slides in from right with fade
+            if self.entrance_active:
+                slot_delay = 0.25 + i * 0.12
+                slot_duration = 0.35
+                slot_progress = max(0.0, min(1.0, (t - slot_delay) / slot_duration))
+                if slot_progress <= 0.0:
+                    continue
+                slot_ease = 1.0 - (1.0 - slot_progress) ** 2
+                slide_offset = int(r.width * 0.3 * (1.0 - slot_ease))
+                slot_alpha = int(255 * slot_ease)
+                # Shift the rect for this slot
+                r = r.move(slide_offset, 0)
+            else:
+                slot_alpha = 255
 
             completed_ready = q.is_finished and not q.claimed
             claimed = q.claimed
