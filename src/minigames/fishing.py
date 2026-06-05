@@ -320,7 +320,17 @@ class FishingUI:
         if self.result_timer > 0.0 and self.result_message:
             color = (80, 220, 80) if self.result_is_success else (220, 80, 80)
             txt = self.big_font.render(self.result_message, True, color)
-            screen.blit(txt, (screen.get_width() // 2 - txt.get_width() // 2, screen.get_height() // 2 - 80))
+            txt_x = screen.get_width() // 2 - txt.get_width() // 2
+            txt_y = screen.get_height() // 2 - 80
+            # Dark outline for readability
+            outline_color = (0, 0, 0)
+            for dx in (-1, 0, 1):
+                for dy in (-1, 0, 1):
+                    if dx == 0 and dy == 0:
+                        continue
+                    outline = self.big_font.render(self.result_message, True, outline_color)
+                    screen.blit(outline, (txt_x + dx, txt_y + dy))
+            screen.blit(txt, (txt_x, txt_y))
 
         if self.ctrl.state == "active":
             bar_w = 20
@@ -787,7 +797,14 @@ class FishingController:
                 try:
                     item = create_item(fish.reward_item_id)
                     if item:
-                        self.game.items.append(item)
+                        from src.inventory.system import CraftingLogic
+                        added = CraftingLogic.add_crafted_item(
+                            self.game.MAIN_player_inv, item, 1
+                        )
+                        if not added:
+                            self.ui.show_result(
+                                "Inventory full!", success=False, duration=2.0
+                            )
                 except Exception:
                     pass
             self.ui.show_result(msg, success=True, duration=3.0)
