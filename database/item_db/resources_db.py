@@ -35,3 +35,12 @@ def seed_resources(db):
         max_stack=64,
         description="A thin wooden stick. A basic crafting component for tools and weapons."
     )
+    db.add_generic_item(
+        item_id="flint",
+        item_type="resource",
+        name="Flint",
+        image_path="assets/items/resources/flint.png",
+        price=4,
+        max_stack=64,
+        description="A sharp-edged stone. Useful for starting fires and crafting tools."
+    )

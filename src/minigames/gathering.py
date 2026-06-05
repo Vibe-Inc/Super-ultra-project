@@ -12,6 +12,7 @@ properties is set to a truthy value on the tile:
 * ``is_wood_gatherable``  -- trees (axe).
 * ``is_stone_gatherable`` -- rock outcrops (pickaxe).
 * ``is_ore_gatherable``   -- ore veins (hammer).
+* ``is_flint_gatherable`` -- flint outcrops (bare hands, no tool).
 
 The legacy ``choppable`` / ``minable`` properties are still honoured
 as fallbacks so older maps keep working.
@@ -58,6 +59,7 @@ GATHER_TILE_PROPERTY = {
     "wood":   "is_wood_gatherable",
     "stone":  "is_stone_gatherable",
     "ore":    "is_ore_gatherable",
+    "flint":  "is_flint_gatherable",
 }
 
 # Legacy tile properties still recognised for backwards compatibility
@@ -68,13 +70,21 @@ GATHER_TILE_PROPERTY_FALLBACK = {
     "wood":   ("choppable",),
     "stone":  ("minable",),
     "ore":    ("minable",),
+    "flint":  (),
 }
+
+# Gather types that can be picked up without any tool equipped (i.e.
+# "bare hands"). When the player has no gathering tool active, the
+# controller falls back to these types so that loose surface resources
+# like flint still show a "Press G" prompt and can be collected.
+GATHER_NO_TOOL_TYPES = {"flint"}
 
 # Default per-gather-type yield item id when the tool doesn't override it.
 GATHER_DEFAULT_YIELD = {
     "wood":  "wood",
     "stone": "stone",
     "ore":   "iron_ore",
+    "flint": "flint",
 }
 
 # How far (in tiles) the controller will search around the player for
@@ -99,11 +109,25 @@ GATHER_COOLDOWN_DURATION = 30.0
 # tree or rock outcrop is a stack of orthogonal tiles.
 GATHER_CLUSTER_ADJACENCY = 4
 
+# Tile property that marks a tree tile as an apple tree. Tiles with
+# this property also carry ``is_wood_gatherable`` so the player still
+# chops them for wood -- the apple is awarded as a bonus on success.
+APPLE_TREE_TILE_PROPERTY = "is_an_apple_tree"
+
+# Probability (0.0..1.0) that chopping an apple-tree tile cluster
+# also drops an apple in addition to the wood. Set per-chop so a
+# lucky roll can yield multiple apples from a single cluster.
+APPLE_DROP_CHANCE = 0.5
+
+# Item id granted as a bonus when chopping an apple tree.
+APPLE_DROP_ITEM_ID = "apple"
+
 # UI labels for the per-gather-type action verb.
 GATHER_LABELS = {
     "wood":  "Chopping",
     "stone": "Mining",
     "ore":   "Mining",
+    "flint": "Picking up",
 }
 
 
@@ -208,6 +232,7 @@ class GatheringUI:
                 "wood":  "chop",
                 "stone": "mine",
                 "ore":   "crack",
+                "flint": "pick up",
             }.get(gather_type, "gather")
             msg = f"Press G to {verb}"
             text_color = (245, 245, 220)
@@ -304,6 +329,11 @@ class GatheringController:
         # idle. Set by :py:meth:`start`, consumed by
         # :py:meth:`_finish_success` to mark the cluster on cooldown.
         self.target_cluster_idx: Optional[int] = None
+        # Whether the current gather was started with an active gathering
+        # tool (``True``) or via a tool-less fallback such as picking
+        # up flint with bare hands (``False``). Used to skip tool
+        # durability damage on success when no tool was involved.
+        self.target_had_tool: bool = False
 
     # ------------------------------------------------------------------
     # Tool detection
@@ -543,19 +573,34 @@ class GatheringController:
           these);
         * ``None`` when no tool is equipped, no gatherable tile is
           adjacent to the player, and no cooldown tiles are nearby.
+
+        If no tool is equipped, the method also probes the
+        tool-less gather types (see :data:`GATHER_NO_TOOL_TYPES`,
+        e.g. ``flint``) so that bare-hand pickups still surface a
+        "Press G" prompt.
         """
         tool = self._get_active_tool()
-        if not tool:
+        if tool:
+            gather_type = tool.gather_type
+            tile = self._find_target_tile(gather_type)
+            if tile is not None:
+                return (tile, gather_type)
+            # No ready tile -- surface a "Regrowing" prompt instead so the
+            # player understands why the hint isn't an actionable "Press G".
+            cooldown_tile = self._find_cooldown_tile(gather_type)
+            if cooldown_tile is not None:
+                return (cooldown_tile, gather_type)
             return None
-        gather_type = tool.gather_type
-        tile = self._find_target_tile(gather_type)
-        if tile is not None:
-            return (tile, gather_type)
-        # No ready tile -- surface a "Regrowing" prompt instead so the
-        # player understands why the hint isn't an actionable "Press G".
-        cooldown_tile = self._find_cooldown_tile(gather_type)
-        if cooldown_tile is not None:
-            return (cooldown_tile, gather_type)
+
+        # No tool equipped: fall back to the tool-less gather types
+        # (e.g. flint outcrops picked up by hand).
+        for gather_type in GATHER_NO_TOOL_TYPES:
+            tile = self._find_target_tile(gather_type)
+            if tile is not None:
+                return (tile, gather_type)
+            cooldown_tile = self._find_cooldown_tile(gather_type)
+            if cooldown_tile is not None:
+                return (cooldown_tile, gather_type)
         return None
 
     # ------------------------------------------------------------------
@@ -566,15 +611,30 @@ class GatheringController:
 
         Returns ``True`` if a gather started, ``False`` otherwise (no
         gather tool, no matching tile, or a minigame already running).
+
+        If no tool is equipped, the controller falls back to the
+        tool-less gather types declared in :data:`GATHER_NO_TOOL_TYPES`
+        (currently ``flint``), so the player can still pick up loose
+        surface resources with bare hands.
         """
         if self.state != "idle":
             logger.debug(f"gather.start: rejected, state={self.state}")
             return False
         tool = self._get_active_tool()
-        if not tool:
-            logger.debug("gather.start: rejected, no active tool")
+        gather_type: Optional[str] = None
+        if tool:
+            gather_type = tool.gather_type
+        else:
+            for gt in GATHER_NO_TOOL_TYPES:
+                if self._find_target_tile(gt) is not None:
+                    gather_type = gt
+                    break
+        if not gather_type:
+            if not tool:
+                logger.debug("gather.start: rejected, no active tool or bare-hand gatherable")
+            else:
+                logger.debug(f"gather.start: rejected, tool gather_type={gather_type!r} invalid")
             return False
-        gather_type = tool.gather_type
 
         tile = self._find_target_tile(gather_type)
         if tile is None:
@@ -582,10 +642,18 @@ class GatheringController:
             return False
 
         self.target_gather_type = gather_type
-        self.target_yield_min = max(1, int(getattr(tool, "gather_yield_min", 1) or 1))
-        self.target_yield_max = max(self.target_yield_min,
-                                    int(getattr(tool, "gather_yield_max", self.target_yield_min) or self.target_yield_min))
-        self.power = max(0, int(getattr(tool, "power", 1) or 1))
+        self.target_had_tool = bool(tool)
+        if tool is not None:
+            self.target_yield_min = max(1, int(getattr(tool, "gather_yield_min", 1) or 1))
+            self.target_yield_max = max(self.target_yield_min,
+                                        int(getattr(tool, "gather_yield_max", self.target_yield_min) or self.target_yield_min))
+            self.power = max(0, int(getattr(tool, "power", 1) or 1))
+        else:
+            # Bare-hand gathering: no tool means no yield bonus and no
+            # durability to wear. Use a fixed 1-1 yield at power 0.
+            self.target_yield_min = 1
+            self.target_yield_max = 1
+            self.power = 0
         self.fill = 0.0
         base = 2.8
         self.gather_time = max(0.6, base - self.power * 0.18)
@@ -602,8 +670,8 @@ class GatheringController:
         logger.info(
             f"Gather started: type={gather_type} tile=({tx},{ty}) "
             f"cluster={cluster_idx} size={cluster_size} "
-            f"tool={getattr(tool, 'item_id', '?')} power={self.power} "
-            f"time={self.gather_time:.2f}s"
+            f"tool={getattr(tool, 'item_id', 'bare_hands') if tool else 'bare_hands'} "
+            f"power={self.power} time={self.gather_time:.2f}s"
         )
         return True
 
@@ -619,6 +687,7 @@ class GatheringController:
             self.target_cluster_idx = None
             self.target_gather_type = None
             self.target_yield_item_id = None
+            self.target_had_tool = False
             self.fill = 0.0
             self.result = GatheringResult("Cancelled", success=False, duration=1.0)
 
@@ -628,6 +697,12 @@ class GatheringController:
         Resources are added **directly to the player's inventory** via
         :class:`src.inventory.system.CraftingLogic.add_crafted_item` --
         no world drop is spawned.
+
+        When the gathered cluster is an apple tree (the cluster has at
+        least one tile with :data:`APPLE_TREE_TILE_PROPERTY`) and the
+        gather type is ``"wood"``, an extra apple is rolled for and
+        added to the inventory with probability
+        :data:`APPLE_DROP_CHANCE`.
         """
         yield_id = self.target_yield_item_id
         lo = self.target_yield_min
@@ -642,9 +717,36 @@ class GatheringController:
             if item_obj is not None:
                 added = self._add_to_inventory(item_obj, amount)
 
-        if added > 0:
-            nice_name = yield_id.replace("_", " ").title()
-            self.result = GatheringResult(f"+{added} {nice_name}", success=True, duration=1.8)
+        # Optional bonus drop: chopping an apple tree cluster has a
+        # chance to also yield an apple on top of the wood. Each chop
+        # rolls independently so a single tree can drop multiple
+        # apples over time.
+        apple_added = 0
+        if (
+            added > 0
+            and self.target_gather_type == "wood"
+            and self.target_cluster_idx is not None
+            and self._cluster_has_property(self.target_cluster_idx, APPLE_TREE_TILE_PROPERTY)
+            and random.random() < APPLE_DROP_CHANCE
+        ):
+            try:
+                apple_obj = create_item(APPLE_DROP_ITEM_ID)
+            except Exception:
+                apple_obj = None
+            if apple_obj is not None:
+                apple_added = self._add_to_inventory(apple_obj, 1)
+
+        if added > 0 or apple_added > 0:
+            nice_name = yield_id.replace("_", " ").title() if yield_id else "Resource"
+            msg = f"+{added} {nice_name}" if added > 0 else ""
+            if apple_added > 0:
+                joiner = " " if msg else ""
+                msg = f"{msg}{joiner}+1 Apple" if msg else f"+1 Apple"
+            if not msg:
+                msg = "Got nothing..."
+                self.result = GatheringResult(msg, success=False, duration=1.2)
+            else:
+                self.result = GatheringResult(msg, success=True, duration=1.8)
         else:
             self.result = GatheringResult("Got nothing...", success=False, duration=1.2)
 
@@ -662,10 +764,12 @@ class GatheringController:
             logger.info(
                 f"Gather finished: cluster={self.target_cluster_idx} "
                 f"size={cluster_size} type={self.target_gather_type} "
+                f"yield={added} apple={apple_added} "
                 f"cooldown={GATHER_COOLDOWN_DURATION:.0f}s"
             )
 
-        self._damage_tool()
+        if self.target_had_tool:
+            self._damage_tool()
         self._reset_target()
 
     def _add_to_inventory(self, item_obj, amount: int) -> int:
@@ -733,6 +837,7 @@ class GatheringController:
         self.target_cluster_idx = None
         self.target_gather_type = None
         self.target_yield_item_id = None
+        self.target_had_tool = False
         self.fill = 0.0
         self.power = 0
 
@@ -872,6 +977,34 @@ class GatheringController:
         n = len(cluster)
         return pygame.Vector2(sum_x / n, sum_y / n)
 
+    def _cluster_has_property(self, cluster_idx: int, prop_name: str) -> bool:
+        """Return ``True`` if *any* tile in ``cluster_idx`` carries the
+        given custom tile property (e.g. ``is_an_apple_tree``).
+
+        Used to detect "secondary" tile flags (like an apple tree
+        being a wood-gatherable tree that also drops apples) without
+        having to re-walk the map for every chop.
+        """
+        self._ensure_clusters_built(self.target_gather_type or "wood")
+        if cluster_idx < 0 or cluster_idx >= len(self.tile_clusters):
+            return False
+        cluster = self.tile_clusters[cluster_idx]
+        if not cluster:
+            return False
+        try:
+            tmx_map = self.game.map.current_map
+            tmx = getattr(tmx_map, "tmxdata", None) or getattr(tmx_map, "get_tmx_data", lambda: None)()
+        except Exception:
+            tmx = None
+        if tmx is None:
+            return False
+        tw, th = tmx.tilewidth, tmx.tileheight
+        for tx, ty in cluster:
+            world_pos = pygame.Vector2(tx * tw + tw // 2, ty * th + th // 2)
+            if self._tile_property_at(world_pos, (prop_name,)):
+                return True
+        return False
+
     # ------------------------------------------------------------------
     # Per-cluster gather cooldowns
     # ------------------------------------------------------------------
@@ -910,11 +1043,13 @@ class GatheringController:
             return
 
         # Abort if the tool is no longer active (e.g. player swapped
-        # hotbar slots, or the tool's durability hit zero).
-        tool = self._get_active_tool()
-        if not tool or tool.gather_type != self.target_gather_type:
-            self.cancel()
-            return
+        # hotbar slots, or the tool's durability hit zero). Bare-hand
+        # gathers have no tool to keep around so this check is skipped.
+        if self.target_had_tool:
+            tool = self._get_active_tool()
+            if not tool or tool.gather_type != self.target_gather_type:
+                self.cancel()
+                return
 
         # Tick the progress bar.
         rate = 1.0 / max(0.001, self.gather_time)

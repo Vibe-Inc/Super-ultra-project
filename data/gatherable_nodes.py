@@ -7,10 +7,10 @@ load time. The :class:`src.core.game.Game` calls
 to its map at runtime.
 
 Gathering is now driven entirely by the ``is_wood_gatherable`` /
-``is_stone_gatherable`` / ``is_ore_gatherable`` tile properties placed
-on the ``.tmx`` files -- the coordinate-based nodes have been removed.
-This list is kept so the loading infrastructure keeps working, but
-nothing is registered at startup.
+``is_stone_gatherable`` / ``is_ore_gatherable`` / ``is_flint_gatherable``
+tile properties placed on the ``.tmx`` files -- the coordinate-based
+nodes have been removed. This list is kept so the loading
+infrastructure keeps working, but nothing is registered at startup.
 """
 
 from src.world.gatherable_nodes import GatherableNodeDef
