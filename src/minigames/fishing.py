@@ -122,7 +122,11 @@ class Bobber:
 class FishInstance:
 
     def __init__(self, fish_type: FishType, start_x: float, start_y: float):
-        """Create a fish with erratic vertical motion on the bar.
+        """Create a fish with smooth drifting vertical motion on the bar.
+
+        The fish glides toward random target positions using smooth
+        acceleration, producing natural flowing movement instead of
+        sharp zigzags.
 
         Args:
             fish_type (FishType): The kind of fish this instance
@@ -144,13 +148,13 @@ class FishInstance:
                 ``[0.02, 0.98]`` (0 = top, 1 = bottom).
             velocity (float): Current vertical velocity in
                 normalized units per second.
-            _dir_timer (float): Seconds until the next direction
+            _target_y (float): Target position the fish drifts
+                toward.
+            _drift_speed (float): Maximum speed toward the target.
+            _target_timer (float): Seconds until the next target
                 change.
-            _change_interval_min (float): Lower bound for the
-                inter-direction-change interval.
-            _change_interval_max (float): Upper bound for the
-                inter-direction-change interval.
-            _max_speed (float): Cap for the fish's burst speed.
+            _wobble_phase (float): Phase offset for the sinusoidal
+                wobble overlay.
         """
         self.fish_type = fish_type
         self.pos = pygame.Vector2(start_x, start_y)
@@ -160,44 +164,52 @@ class FishInstance:
         self.seed = random.random() * 1000.0
         self.y_norm = 0.5
         diff = fish_type.difficulty
-        self.velocity = random.uniform(-1.0, 1.0) * (0.3 + diff * 0.4)
-        self._dir_timer = random.uniform(0.6, 1.6)
-        self._change_interval_min = max(0.25, 0.7 - diff * 0.3)
-        self._change_interval_max = max(0.6, 1.6 - diff * 0.5)
-        self._max_speed = 0.45 + diff * 0.8
+        self.velocity = 0.0
+        self._target_y = random.uniform(0.2, 0.8)
+        self._drift_speed = 0.35 + diff * 0.2
+        self._target_timer = random.uniform(1.0, 2.0)
+        self._wobble_phase = random.uniform(0.0, math.tau)
 
     def update(self, dt: float):
         """Step the fish forward by ``dt`` seconds.
 
-        Re-rolls velocity whenever the direction-change timer
-        elapses, applies a soft top/bottom bounce, and integrates
-        ``y_norm``.
+        The fish smoothly accelerates toward a randomly chosen
+        target position.  A small sinusoidal wobble is layered on
+        top for a natural feel.  Soft bouncing keeps ``y_norm``
+        inside ``[0.02, 0.98]``.
 
         Args:
             dt (float): Elapsed time in seconds. Must be
                 non-negative.
         """
         self.time += dt
-        self._dir_timer -= dt
-        if self._dir_timer <= 0.0:
-            burst = 1.0
-            if random.random() < 0.25 + self.fish_type.difficulty * 0.25:
-                burst = random.uniform(1.3, 2.2)
-            direction = random.choice([-1.0, 1.0])
-            magnitude = random.uniform(0.25, 1.0) * self._max_speed * burst
-            self.velocity = direction * magnitude
-            self._dir_timer = random.uniform(
-                self._change_interval_min,
-                self._change_interval_max,
-            )
 
-        self.y_norm += self.velocity * dt
+        # Pick a new target when the timer expires.
+        self._target_timer -= dt
+        if self._target_timer <= 0.0:
+            self._target_y = random.uniform(0.15, 0.85)
+            self._target_timer = random.uniform(1.5, 3.0)
+
+        # Smooth acceleration toward the target.
+        diff_to_target = self._target_y - self.y_norm
+        desired_speed = max(-self._drift_speed, min(self._drift_speed, diff_to_target * 2.0))
+        self.velocity += (desired_speed - self.velocity) * min(1.0, 3.5 * dt)
+
+        # Small sinusoidal wobble for natural feel.
+        wobble_amp = 0.03 + self.fish_type.difficulty * 0.02
+        wobble = math.sin(self.time * 2.5 + self._wobble_phase) * wobble_amp
+
+        self.y_norm += self.velocity * dt + wobble * dt
+
+        # Soft bounce at the edges.
         if self.y_norm < 0.02:
             self.y_norm = 0.02
-            self.velocity = abs(self.velocity) * 0.6
+            self.velocity = abs(self.velocity) * 0.5
+            self._target_y = random.uniform(0.3, 0.7)
         elif self.y_norm > 0.98:
             self.y_norm = 0.98
-            self.velocity = -abs(self.velocity) * 0.6
+            self.velocity = -abs(self.velocity) * 0.5
+            self._target_y = random.uniform(0.3, 0.7)
 
 
 class FishingUI:
@@ -308,7 +320,17 @@ class FishingUI:
         if self.result_timer > 0.0 and self.result_message:
             color = (80, 220, 80) if self.result_is_success else (220, 80, 80)
             txt = self.big_font.render(self.result_message, True, color)
-            screen.blit(txt, (screen.get_width() // 2 - txt.get_width() // 2, screen.get_height() // 2 - 80))
+            txt_x = screen.get_width() // 2 - txt.get_width() // 2
+            txt_y = screen.get_height() // 2 - 80
+            # Dark outline for readability
+            outline_color = (0, 0, 0)
+            for dx in (-1, 0, 1):
+                for dy in (-1, 0, 1):
+                    if dx == 0 and dy == 0:
+                        continue
+                    outline = self.big_font.render(self.result_message, True, outline_color)
+                    screen.blit(outline, (txt_x + dx, txt_y + dy))
+            screen.blit(txt, (txt_x, txt_y))
 
         if self.ctrl.state == "active":
             bar_w = 20
@@ -444,14 +466,66 @@ class FishingController:
         self.active_bobber_norm = 0.5
         self.active_overlap = False
 
+        self.fish_types: List[FishType] = self._load_fish_from_db()
+
+    def _load_fish_from_db(self) -> List[FishType]:
+        """Load all fish from the database and convert to ``FishType``.
+
+        Opens a read-only connection to the game database, queries
+        the ``fish`` table joined with ``items``, and returns a list
+        of :class:`FishType` dataclass instances.
+
+        If the database is unavailable or contains no fish rows,
+        a small fallback list is returned so the minigame still
+        functions.
+
+        Returns:
+            List[FishType]: Available fish archetypes for the
+            minigame.
+        """
+        fallback = [
+            FishType(id="fish_common", name="Common Fish", weight=70,
+                     difficulty=0.3, speed=1.0),
+            FishType(id="fish_rare", name="Rare Fish", weight=30,
+                     difficulty=0.7, speed=1.6),
+        ]
         try:
-            from src.minigames.fishing_config import FISH_TYPES
-            self.fish_types: List[FishType] = [FishType(**f) for f in FISH_TYPES]
+            import sqlite3
+            import os
+            db_path = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "..", "..", "database", "GP_database.db",
+            )
+            db_path = os.path.normpath(db_path)
+            if not os.path.exists(db_path):
+                return fallback
+            conn = sqlite3.connect(db_path)
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT items.id, items.name,
+                       fish.rarity, fish.difficulty, fish.speed,
+                       fish.spawn_weight, fish.base_price
+                FROM items
+                INNER JOIN fish ON items.id = fish.item_id
+            """)
+            rows = cursor.fetchall()
+            conn.close()
+            if not rows:
+                return fallback
+            result: List[FishType] = []
+            for row in rows:
+                result.append(FishType(
+                    id=row["id"],
+                    name=row["name"],
+                    weight=float(row["spawn_weight"]),
+                    difficulty=float(row["difficulty"]),
+                    speed=float(row["speed"]),
+                    reward_item_id=row["id"],
+                ))
+            return result
         except Exception:
-            self.fish_types = [
-                FishType(id="fish_common", name="Common Fish", weight=70, difficulty=0.3, speed=1.0, reward_item_id="fish_raw"),
-                FishType(id="fish_rare", name="Rare Fish", weight=30, difficulty=0.7, speed=1.6, reward_item_id="fish_raw"),
-            ]
+            return fallback
 
     def _is_fishable_tile(self, world_pos: pygame.Vector2) -> bool:
         """Check whether the tile at ``world_pos`` has the
@@ -668,11 +742,11 @@ class FishingController:
             if overlap:
                 proximity = 1.0 - (distance / tolerance) if tolerance > 0 else 0.0
                 accel = proximity * proximity
-                base_fill = 60.0 * (1.0 - difficulty * 0.15)
+                base_fill = 18.0 * (1.0 - difficulty * 0.15)
                 fill_rate = base_fill * accel
                 self.catch_fill += fill_rate * dt
             else:
-                drain_rate = 25.0 + difficulty * 8.0
+                drain_rate = 12.0 + difficulty * 4.0
                 self.catch_fill -= drain_rate * dt
             self.catch_fill = max(0.0, min(self.catch_fill, self.catch_fill_max))
 
@@ -712,23 +786,94 @@ class FishingController:
     def _on_catch_success(self):
         """Handle a successful catch.
 
-        Adds the fish's reward item to the world item list and
-        shows a green "Caught ..." result message, then returns
-        the controller to the ``idle`` state.
+        Adds the fish's reward item to the world item list, updates the
+        persistent collection book counter, and shows a full info dialog
+        (first catch) or a counter result message (repeat catches).
         """
         fish = self.active_fish.fish_type if self.active_fish else None
         if fish:
-            msg = f"Caught {fish.name}!"
+            try:
+                app = getattr(self.game, "app", None)
+                if app is not None and not hasattr(app, "caught_fish"):
+                    app.caught_fish = {}
+                if app is not None and fish.reward_item_id:
+                    was_first = fish.reward_item_id not in app.caught_fish
+                    app.caught_fish[fish.reward_item_id] = (
+                        app.caught_fish.get(fish.reward_item_id, 0) + 1
+                    )
+                    if was_first:
+                        self._show_first_catch_info(fish)
+                    else:
+                        count = app.caught_fish[fish.reward_item_id]
+                        self.ui.show_result(
+                            f"Caught {fish.name}!  (\u00d7{count})",
+                            success=True, duration=3.0,
+                        )
+                else:
+                    self.ui.show_result(
+                        f"Caught {fish.name}!", success=True, duration=3.0
+                    )
+            except Exception:
+                self.ui.show_result(
+                    f"Caught {fish.name}!", success=True, duration=3.0
+                )
+
             if fish.reward_item_id:
                 try:
                     item = create_item(fish.reward_item_id)
                     if item:
-                        self.game.items.append(item)
+                        from src.inventory.system import CraftingLogic
+                        added = CraftingLogic.add_crafted_item(
+                            self.game.MAIN_player_inv, item, 1
+                        )
+                        if not added:
+                            self.ui.show_result(
+                                "Inventory full!", success=False, duration=2.0
+                            )
                 except Exception:
                     pass
-            self.ui.show_result(msg, success=True, duration=3.0)
         self.state = "idle"
         self.bobber = None
+
+    def _show_first_catch_info(self, fish):
+        """Show a dialog with the fish's details when caught for the first time."""
+        try:
+            from src.ui.widgets import Dialog
+            from database.GP_database import Gp_database
+            rarity = ""
+            speed_val = 0.0
+            base_price = 0
+            try:
+                db = Gp_database()
+                row = db.conn.execute(
+                    "SELECT rarity, speed, base_price FROM fish WHERE item_id = ?",
+                    (fish.reward_item_id,),
+                ).fetchone()
+                db.close()
+                if row:
+                    rarity, speed_val, base_price = row
+            except Exception:
+                pass
+
+            lines = [
+                _("New fish discovered!"),
+                "",
+                _("Name: {name}").format(name=fish.name),
+                _("Rarity: {rarity}").format(rarity=rarity or "?"),
+                _("Difficulty: {d:.2f}").format(d=float(fish.difficulty)),
+                _("Speed: {s:.2f}").format(s=float(speed_val or fish.speed)),
+                _("Base price: {p} gold").format(p=int(base_price)),
+                "",
+                _("Check your Field Journal to see it again."),
+            ]
+            self.game.app.current_dialog = Dialog(self.game.app, lines)
+        except Exception:
+            try:
+                self.ui.show_result(
+                    f"Caught {fish.name}!", success=True, duration=3.0
+                )
+            except Exception:
+                pass
         self.active_fish = None
         self.ui.show_hit_timer = 0.0
 
