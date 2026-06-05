@@ -82,6 +82,31 @@ class MysteriumMagnumMenu(Menu):
         self.buttons.append(self.reveal_button)
         self._reveal_cost = 1
 
+        self.card_effects = {
+            0:  {"mana": 5,  "hp": 0,   "regen": 0.0, "desc": _("The Fool walks where angels fear to tread. A blank slate, full of potential.")},
+            1:  {"mana": 10, "hp": 0,   "regen": 0.3, "desc": _("The Magician channels the elements. Your mana reganition quickens.")},
+            2:  {"mana": 15, "hp": 10,  "regen": 0.0, "desc": _("The High Priestess guards the temple of inner wisdom. Vitality blooms within.")},
+            3:  {"mana": 10, "hp": 0,   "regen": 0.0, "desc": _("The Empress nurtures all life. The veil between worlds grows thin.")},
+            4:  {"mana": 10, "hp": 15,  "regen": 0.0, "desc": _("The Emperor imposes order upon chaos. Your constitution hardens.")},
+            5:  {"mana": 10, "hp": 0,   "regen": 0.0, "desc": _("The Hierophant speaks in riddles and parables. Seek meaning in the mundane.")},
+            6:  {"mana": 8,  "hp": 0,   "regen": 0.0, "desc": _("The Lovers bind fate to choice. Not all bonds are visible to the eye.")},
+            7:  {"mana": 8,  "hp": 0,   "regen": 0.0, "desc": _("The Chariot triumphs through will alone. Forward, always forward.")},
+            8:  {"mana": 12, "hp": 0,   "regen": 0.0, "desc": _("Justice weighs all deeds. The scales do not forget.")},
+            9:  {"mana": 15, "hp": 0,   "regen": 0.5, "desc": _("The Hermit seeks truth in solitude. Light your own lantern.")},
+            10: {"mana": 10, "hp": 0,   "regen": 0.0, "desc": _("The Wheel of Fortune turns endlessly. What goes around, comes around.")},
+            11: {"mana": 8,  "hp": 20,  "regen": 0.0, "desc": _("Strength is not merely muscle — it is the courage to endure.")},
+            12: {"mana": 15, "hp": 0,   "regen": 0.0, "desc": _("The Hanged Man sees the world upside down. Wisdom comes from surrender.")},
+            13: {"mana": 20, "hp": 0,   "regen": 0.0, "desc": _("Death is not the end, but a transformation. Let the old self fall away.")},
+            14: {"mana": 10, "hp": 10,  "regen": 0.0, "desc": _("Temperance blends opposites into harmony. Balance is the highest art.")},
+            15: {"mana": 15, "hp": 0,   "regen": 0.0, "desc": _("The Devil binds with chains of illusion. Break them, or be consumed.")},
+            16: {"mana": 12, "hp": 0,   "regen": 0.0, "desc": _("The Tower falls so that something new may rise. Destruction paves the way.")},
+            17: {"mana": 20, "hp": 0,   "regen": 1.0, "desc": _("The Star shines in the darkest night. Hope is a compass that never fails.")},
+            18: {"mana": 15, "hp": 25,  "regen": 0.0, "desc": _("The Moon reveals what lurks beneath. Not all shadows are enemies.")},
+            19: {"mana": 20, "hp": 15,  "regen": 1.5, "desc": _("The Sun banishes all doubt. Warmth and clarity flood the soul.")},
+            20: {"mana": 25, "hp": 0,   "regen": 0.0, "desc": _("Judgement calls all to account. Rise and be measured.")},
+            21: {"mana": 30, "hp": 30,  "regen": 2.0, "desc": _("The World completes the great cycle. All paths converge here.")},
+        }
+
         self._selected_card = None
         self._sel_progress = 0.0
         self._sel_card_front_large = None
@@ -258,6 +283,22 @@ class MysteriumMagnumMenu(Menu):
             "float_offset": random.uniform(0, math.pi * 2),
         })
 
+        eff = self.card_effects.get(card["num"])
+        if eff:
+            try:
+                gs = self.app.manager.states.get("gameplay")
+                if gs and hasattr(gs, "character"):
+                    ch = gs.character
+                    if hasattr(ch, "mana_system"):
+                        ch.mana_system.increase_max_mana(eff["mana"])
+                    if eff["hp"]:
+                        ch.max_hp += eff["hp"]
+                        ch.hp = min(ch.max_hp, ch.hp + eff["hp"])
+                    if eff["regen"] and hasattr(ch, "mana_system"):
+                        ch.mana_system.mana_regen_rate += eff["regen"]
+            except Exception:
+                pass
+
     def exit_menu(self):
         try:
             self.app.INV_manager._return_held_item()
@@ -374,6 +415,9 @@ class MysteriumMagnumMenu(Menu):
 
     def handle_event(self, event):
         super().handle_event(event)
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_F8:
+            self.app.purple_stars = getattr(self.app, "purple_stars", 0) + 10
+            return
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             pos = event.pos
             if self._selected_card is not None:
@@ -689,12 +733,28 @@ class MysteriumMagnumMenu(Menu):
             da = int((1.0 - abs(i / max(1, text_w - 1) - 0.5) * 2) * 100 * ease)
             pygame.draw.line(screen, (140, 80, 220, da), (dx, div_y), (dx, div_y + 1))
 
-        body_font = cfg.get_font(max(12, int(18 * cfg.ui_scale())))
-        desc_text = _("No description yet...")
-        desc_surf = body_font.render(desc_text, True, (180, 170, 200))
-        desc_surf.set_alpha(int(180 * ease))
-        desc_y = div_y + 20
-        screen.blit(desc_surf, (text_x, desc_y))
+        eff = self.card_effects.get(card["num"])
+        if eff and eff["desc"]:
+            body_font = cfg.get_font(max(12, int(18 * cfg.ui_scale())))
+            desc_surf = body_font.render(eff["desc"], True, (200, 190, 220))
+            desc_surf.set_alpha(int(220 * ease))
+            desc_y = div_y + 20
+            screen.blit(desc_surf, (text_x, desc_y))
+
+            stats_font = cfg.get_font(max(11, int(16 * cfg.ui_scale())))
+            stats_y = desc_y + desc_surf.get_height() + 16
+            parts = []
+            if eff["mana"]:
+                parts.append(f"+{eff['mana']} Max Mana")
+            if eff["hp"]:
+                parts.append(f"+{eff['hp']} Max HP")
+            if eff["regen"]:
+                parts.append(f"+{eff['regen']}/s Mana Regen")
+            if parts:
+                stats_text = " | ".join(parts)
+                stats_surf = stats_font.render(stats_text, True, (212, 175, 55))
+                stats_surf.set_alpha(int(200 * ease))
+                screen.blit(stats_surf, (text_x, stats_y))
 
         close_font = cfg.get_font(max(14, int(20 * cfg.ui_scale())))
         close_r = pygame.Rect(panel_rect.right - 44, panel_rect.y + 10, 34, 34)
@@ -743,6 +803,17 @@ class MysteriumMagnumMenu(Menu):
         hint_text = _("Secrets await within the cards...")
         hint = self.small_font.render(hint_text, True, (150, 140, 175))
         screen.blit(hint, (r.x + 18, div_y + 10))
+
+        narrative_y = div_y + 10 + hint.get_height() + 6
+        narr_lines = [
+            _("The Mysterium Magnum is a deck of 22 arcana,"),
+            _("each holding a fragment of forgotten power."),
+            _("Reveal them, and their essence binds to you."),
+        ]
+        for nli, nl in enumerate(narr_lines):
+            ns = self.small_font.render(nl, True, (130, 120, 155))
+            ns.set_alpha(160)
+            screen.blit(ns, (r.x + 18, narrative_y + nli * (self.small_font.get_height() + 2)))
 
         py = div_y + 10 + hint.get_height() + 24
 
