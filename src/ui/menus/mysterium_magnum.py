@@ -82,6 +82,10 @@ class MysteriumMagnumMenu(Menu):
         self.buttons.append(self.reveal_button)
         self._reveal_cost = 1
 
+        self._selected_card = None
+        self._sel_progress = 0.0
+        self._sel_card_front_large = None
+
     def _init_particles(self):
         purple_gold = [
             (120, 50, 180), (180, 100, 220), (80, 30, 140),
@@ -328,15 +332,74 @@ class MysteriumMagnumMenu(Menu):
         for c in self.magic_circles:
             c["rotation"] += c["rot_speed"] * dt
 
+        speed_mul = 0.0 if self._selected_card is not None else 1.0
         ring_speeds = [0.003, -0.005, 0.008, -0.010]
         for i, speed in enumerate(ring_speeds):
-            self.card_ring_offsets[i] = (self.card_ring_offsets[i] + speed * dt * 60) % (math.pi * 2)
+            self.card_ring_offsets[i] = (self.card_ring_offsets[i] + speed * speed_mul * dt * 60) % (math.pi * 2)
 
         for rc in self.revealed_cards:
             rc["progress"] = min(1.0, rc["progress"] + dt * 2.0)
 
+        if self._selected_card is not None:
+            self._sel_progress = min(1.0, self._sel_progress + dt * 3.0)
+        else:
+            self._sel_progress = max(0.0, self._sel_progress - dt * 4.0)
+
+    def _get_reveal_card_rects(self):
+        rects = []
+        if not self.revealed_cards:
+            return rects
+        cx, cy = self.tree_rect.center
+        rings = [(120, 8), (200, 10), (280, 14), (370, 18)]
+        for rc in self.revealed_cards:
+            prog = rc["progress"]
+            ease = 1.0 - (1.0 - prog) ** 3
+            if ease < 0.85:
+                continue
+            ri = rc["ring_idx"]
+            radius, count = rings[ri]
+            offset = self.card_ring_offsets[ri]
+            angle = offset + rc["slot_idx"] * 2 * math.pi / count
+            tx = cx + math.cos(angle) * radius
+            ty = cy + math.sin(angle) * radius
+            px = cx + (tx - cx) * ease
+            py = cy + (ty - cy) * ease
+            ring_card = self._card_scaled_rings[ri]
+            w = ring_card.get_width()
+            h = ring_card.get_height()
+            r = pygame.Rect(0, 0, int(w * 1.5), int(h * 1.5))
+            r.center = (int(px), int(py))
+            rects.append((r, rc))
+        return rects
+
     def handle_event(self, event):
         super().handle_event(event)
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            pos = event.pos
+            if self._selected_card is not None:
+                sw, sh = self.tree_rect.size
+                panel_w = int(sw * 0.85)
+                panel_h = int(sh * 0.85)
+                panel_x = self.tree_rect.x + (sw - panel_w) // 2
+                panel_y = self.tree_rect.y + (sh - panel_h) // 2
+                panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
+                close_r = pygame.Rect(panel_rect.right - 44, panel_rect.y + 10, 34, 34)
+                if not panel_rect.collidepoint(pos) or close_r.collidepoint(pos):
+                    self._selected_card = None
+                    self._sel_card_front_large = None
+                return
+            for rect, rc in self._get_reveal_card_rects():
+                if rect.collidepoint(pos):
+                    card = rc["card"]
+                    large = pygame.transform.smoothscale(
+                        card["front"],
+                        (int(card["front"].get_width() * 2.5),
+                         int(card["front"].get_height() * 2.5))
+                    )
+                    self._selected_card = rc
+                    self._sel_card_front_large = large
+                    self._sel_progress = 0.0
+                    break
 
     def _draw_gradient_rect(self, surface, rect, color_top, color_bottom, border_radius=0):
         cache_key = (rect.width, rect.height, color_top, color_bottom, border_radius)
@@ -563,6 +626,87 @@ class MysteriumMagnumMenu(Menu):
                 lr = ls.get_rect(midtop=(int(px), rect.bottom + 3))
                 surface.blit(ls, lr)
 
+    def _draw_card_info(self, screen):
+        if self._selected_card is None or self._sel_progress < 0.01:
+            return
+        ease = 1.0 - (1.0 - self._sel_progress) ** 3
+        card = self._selected_card["card"]
+
+        sw, sh = self.tree_rect.size
+        panel_w = int(sw * 0.85)
+        panel_h = int(sh * 0.85)
+        px = self.tree_rect.x + (sw - panel_w) // 2
+        py = self.tree_rect.y + (sh - panel_h) // 2
+
+        overlay = pygame.Surface((self.tree_rect.width, self.tree_rect.height), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, int(180 * ease)))
+        screen.blit(overlay, self.tree_rect.topleft)
+
+        panel_rect = pygame.Rect(px, py, panel_w, panel_h)
+        self._draw_gradient_rect(screen, panel_rect, (25, 12, 40), (12, 5, 22), border_radius=20)
+        bw = max(2, int(2 * cfg.ui_scale()))
+        pygame.draw.rect(screen, (140, 90, 200, int(200 * ease)), panel_rect, bw, border_radius=20)
+        inner = panel_rect.inflate(-8, -8)
+        pygame.draw.rect(screen, (80, 50, 110, int(120 * ease)), inner, 1, border_radius=18)
+
+        margin = int(30 * cfg.ui_scale())
+        card_img = self._sel_card_front_large
+        if card_img:
+            max_ch = panel_h - margin * 2
+            cw, ch = card_img.get_size()
+            if ch > max_ch:
+                cw = int(cw * max_ch / ch)
+                ch = int(max_ch)
+                card_img = pygame.transform.smoothscale(card_img, (cw, ch))
+            img_x = px + margin
+            img_y = py + (panel_h - ch) // 2
+            img_rect = pygame.Rect(img_x, img_y, cw, ch)
+
+            glow = pygame.Surface((cw + 40, ch + 40), pygame.SRCALPHA)
+            glow_a = int(40 * ease * (0.6 + 0.4 * math.sin(self.animation_time * 0.8)))
+            cgx, cgy = glow.get_size()
+            pygame.draw.ellipse(glow, (160, 80, 240, glow_a), (10, 10, cgx - 20, cgy - 20))
+            screen.blit(glow, (img_x - 20, img_y - 20))
+            screen.blit(card_img, img_rect)
+
+            gold = (212, 175, 55)
+            pygame.draw.rect(screen, (*gold, int(60 * ease)), img_rect, 1, border_radius=4)
+
+        text_x = px + margin
+        if card_img:
+            text_x = img_rect.right + margin
+        text_w = panel_rect.right - text_x - margin
+
+        sec_font = cfg.get_font(max(16, int(28 * cfg.ui_scale())))
+        name_text = f"#{card['num']} — {card['name']}"
+        name_surf = sec_font.render(name_text, True, (240, 220, 255))
+        name_surf.set_alpha(int(255 * ease))
+        screen.blit(name_surf, (text_x, py + margin + 10))
+
+        div_y = py + margin + 10 + name_surf.get_height() + 10
+        for i in range(min(text_w, panel_w - margin * 2)):
+            dx = text_x + i
+            da = int((1.0 - abs(i / max(1, text_w - 1) - 0.5) * 2) * 100 * ease)
+            pygame.draw.line(screen, (140, 80, 220, da), (dx, div_y), (dx, div_y + 1))
+
+        body_font = cfg.get_font(max(12, int(18 * cfg.ui_scale())))
+        desc_text = _("No description yet...")
+        desc_surf = body_font.render(desc_text, True, (180, 170, 200))
+        desc_surf.set_alpha(int(180 * ease))
+        desc_y = div_y + 20
+        screen.blit(desc_surf, (text_x, desc_y))
+
+        close_font = cfg.get_font(max(14, int(20 * cfg.ui_scale())))
+        close_r = pygame.Rect(panel_rect.right - 44, panel_rect.y + 10, 34, 34)
+        close_a = int(150 + 105 * (0.5 + 0.5 * math.sin(self.animation_time * 2)))
+        close_color = (200, 150, 255, int(close_a * ease))
+        pygame.draw.circle(screen, close_color[:3], close_r.center, close_r.width // 2)
+        pygame.draw.circle(screen, (100, 60, 150, int(200 * ease)), close_r.center, close_r.width // 2, 2)
+        cx_mark = close_font.render("✕", True, (50, 20, 80))
+        cx_mark.set_alpha(int(200 * ease))
+        cx_rect = cx_mark.get_rect(center=close_r.center)
+        screen.blit(cx_mark, cx_rect)
+
     def _draw_sidebar(self, screen):
         r = self.sidebar_rect
         t = self.animation_time
@@ -712,5 +856,6 @@ class MysteriumMagnumMenu(Menu):
         screen.set_clip(old_clip)
 
         self._draw_sidebar(screen)
+        self._draw_card_info(screen)
         self.reveal_button.draw(screen)
         self.exit_button.draw(screen)
