@@ -82,6 +82,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">database.item_db.consumables_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_consumables</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">database.item_db.armor_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_armor</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">database.item_db.tools_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_tools</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">database.item_db.fish_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_fish</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">database.crafting_recepies_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_recipes</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">database.GP_database</span><span class="w"> </span><span class="kn">import</span> <span class="n">Gp_database</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">src.config</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cfg</span>
@@ -179,6 +180,7 @@
         <span class="n">seed_consumables</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
         <span class="n">seed_armor</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
         <span class="n">seed_tools</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
+        <span class="n">seed_fish</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
         <span class="n">seed_recipes</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
         <span class="n">db</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
@@ -231,6 +233,9 @@
         <span class="c1"># Dialog state: current active dialog UI and last NPC the player talked to</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current_dialog</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">last_talked_npc</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Persistent collection book state — fish_id -&gt; catch count</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">caught_fish</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="c1"># Audio / fullscreen / clock</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">audio</span> <span class="o">=</span> <span class="s2">&quot;on&quot;</span>

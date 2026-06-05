@@ -556,6 +556,11 @@
             <span class="s2">&quot;maps/tavern.tmx&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">320</span><span class="p">,</span> <span class="mi">320</span><span class="p">),</span>
         <span class="p">}</span>
 
+        <span class="c1"># Fishing NPC spawn positions (pixels) — placed near the lake</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">FISHING_NPC_SPAWNS</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;maps/test-map-1.tmx&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1120</span><span class="p">,</span> <span class="mi">1024</span><span class="p">),</span>
+        <span class="p">}</span>
+
         <span class="c1"># Maps where enemy spawning (both default and random) is disabled</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">NO_ENEMY_SPAWN_MAPS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;maps/tavern.tmx&quot;</span><span class="p">,</span> <span class="s2">&quot;maps/test-map-1.tmx&quot;</span><span class="p">}</span>
 
@@ -666,6 +671,39 @@
                 <span class="n">cn_x</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">cn_x</span><span class="p">,</span> <span class="n">map_w</span> <span class="o">-</span> <span class="n">cn_w</span><span class="p">))</span>
                 <span class="n">cn_y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">cn_y</span><span class="p">,</span> <span class="n">map_h</span> <span class="o">-</span> <span class="n">cn_h</span><span class="p">))</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">cn_x</span><span class="p">,</span> <span class="n">cn_y</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="c1"># ---- Fishing NPC (woman near the lake) ----</span>
+        <span class="n">fishing_npc_dialog</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;Hello there! I come here to fish every day.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;The lake is full of interesting catches — have you tried?&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Equip a fishing rod and press F near the water to cast your line.&quot;</span>
+        <span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">initial_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">FISHING_NPC_SPAWNS</span><span class="p">:</span>
+            <span class="n">fn_x</span><span class="p">,</span> <span class="n">fn_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FISHING_NPC_SPAWNS</span><span class="p">[</span><span class="n">initial_map_path</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fn_x</span><span class="p">,</span> <span class="n">fn_y</span> <span class="o">=</span> <span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="o">-</span><span class="mi">5000</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span> <span class="o">=</span> <span class="n">NPC</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">fn_x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">fn_y</span><span class="p">,</span>
+            <span class="n">sprite_set</span><span class="o">=</span><span class="s2">&quot;WomanHuman1&quot;</span><span class="p">,</span>
+            <span class="n">dialog_lines</span><span class="o">=</span><span class="n">fishing_npc_dialog</span><span class="p">,</span>
+            <span class="n">is_merchant</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">gender</span><span class="o">=</span><span class="s1">&#39;female&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Clamp fishing NPC to map bounds</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">initial_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">FISHING_NPC_SPAWNS</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_width</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_height</span><span class="p">:</span>
+                <span class="n">map_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_width</span>
+                <span class="n">map_h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_height</span>
+                <span class="n">fn_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>
+                <span class="n">fn_h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
+                <span class="n">fn_x</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">fn_x</span><span class="p">,</span> <span class="n">map_w</span> <span class="o">-</span> <span class="n">fn_w</span><span class="p">))</span>
+                <span class="n">fn_y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">fn_y</span><span class="p">,</span> <span class="n">map_h</span> <span class="o">-</span> <span class="n">fn_h</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">fn_x</span><span class="p">,</span> <span class="n">fn_y</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">pass</span>
 
@@ -1190,6 +1228,25 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="o">-</span><span class="mi">5000</span><span class="p">)</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No card NPC spawn for map </span><span class="si">{</span><span class="n">switched_map_path</span><span class="si">}</span><span class="s2">; hiding card NPC&quot;</span><span class="p">)</span>
 
+            <span class="c1"># Place fishing NPC on the new map (or hide if not present)</span>
+            <span class="k">if</span> <span class="n">switched_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">FISHING_NPC_SPAWNS</span><span class="p">:</span>
+                <span class="n">fn_x</span><span class="p">,</span> <span class="n">fn_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FISHING_NPC_SPAWNS</span><span class="p">[</span><span class="n">switched_map_path</span><span class="p">]</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_width</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_height</span><span class="p">:</span>
+                        <span class="n">map_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_width</span>
+                        <span class="n">map_h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_height</span>
+                        <span class="n">fn_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>
+                        <span class="n">fn_h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
+                        <span class="n">fn_x</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">fn_x</span><span class="p">,</span> <span class="n">map_w</span> <span class="o">-</span> <span class="n">fn_w</span><span class="p">))</span>
+                        <span class="n">fn_y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">fn_y</span><span class="p">,</span> <span class="n">map_h</span> <span class="o">-</span> <span class="n">fn_h</span><span class="p">))</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">pass</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">fn_x</span><span class="p">,</span> <span class="n">fn_y</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Placed fishing NPC for map </span><span class="si">{</span><span class="n">switched_map_path</span><span class="si">}</span><span class="s2"> at (</span><span class="si">{</span><span class="n">fn_x</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">fn_y</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="o">-</span><span class="mi">5000</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No fishing NPC spawn for map </span><span class="si">{</span><span class="n">switched_map_path</span><span class="si">}</span><span class="s2">; hiding fishing NPC&quot;</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">update_animation</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
 
         <span class="c1"># Enemy Spawning Logic</span>
@@ -1295,6 +1352,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
 
         <span class="c1"># Update fishing controller</span>
         <span class="k">try</span><span class="p">:</span>
@@ -1318,6 +1376,15 @@
                 <span class="n">cnx</span><span class="p">,</span> <span class="n">cny</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">CARD_NPC_SPAWNS</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">cnx</span><span class="p">,</span> <span class="n">cny</span><span class="p">)</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Safety placed card NPC on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="si">}</span><span class="s2"> at (</span><span class="si">{</span><span class="n">cnx</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">cny</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="c1"># Safety: place fishing NPC if it should be on this map but is far away</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">FISHING_NPC_SPAWNS</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">1000</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">1000</span><span class="p">):</span>
+                <span class="n">fnx</span><span class="p">,</span> <span class="n">fny</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FISHING_NPC_SPAWNS</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">fnx</span><span class="p">,</span> <span class="n">fny</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Safety placed fishing NPC on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="si">}</span><span class="s2"> at (</span><span class="si">{</span><span class="n">fnx</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">fny</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">pass</span>
 
@@ -1454,6 +1521,10 @@
             <span class="n">card_npc_vis</span> <span class="o">=</span> <span class="n">_is_visible</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="n">card_npc_vis</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">fishing_npc_vis</span> <span class="o">=</span> <span class="n">_is_visible</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">fishing_npc_vis</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="c1"># Collect all visible entities with their y-position for sorting.</span>
         <span class="n">draw_entities</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1461,6 +1532,8 @@
             <span class="n">draw_entities</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="s1">&#39;npc&#39;</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">card_npc_vis</span><span class="p">:</span>
             <span class="n">draw_entities</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="s1">&#39;card_npc&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">fishing_npc_vis</span><span class="p">:</span>
+            <span class="n">draw_entities</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="s1">&#39;fishing_npc&#39;</span><span class="p">))</span>
         <span class="n">draw_entities</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="s1">&#39;player&#39;</span><span class="p">))</span>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
@@ -1478,6 +1551,8 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;card_npc&#39;</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;fishing_npc&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;player&#39;</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;item&#39;</span><span class="p">:</span>
@@ -1648,6 +1723,8 @@
                         <span class="n">on_play_cards</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">open_blackjack</span><span class="p">,</span>
                         <span class="n">show_play_cards</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                     <span class="p">)</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span><span class="o">.</span><span class="n">is_interactable</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;collection_book&quot;</span><span class="p">)</span>
                 <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">is_interactable</span><span class="p">:</span>
                     <span class="k">def</span><span class="w"> </span><span class="nf">on_close</span><span class="p">():</span>
                         <span class="k">try</span><span class="p">:</span>

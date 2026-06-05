@@ -518,6 +518,75 @@ money, skill hotbar, and the inventory button, as well as handling related UI ev
 <p>This package contains all menu classes used in the game, split into separate modules
 for better organization and maintainability.</p>
 <dl class="py class">
+<dt class="sig sig-object py" id="src.ui.menus.CollectionBookMenu">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.menus.</span></span><span class="sig-name descname"><span class="pre">CollectionBookMenu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/collection_book.html#CollectionBookMenu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.CollectionBookMenu" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.ui.menus.Menu" title="src.ui.menus.base.Menu"><code class="xref py py-class docutils literal notranslate"><span class="pre">Menu</span></code></a></p>
+<p>Ornate ocean-themed field journal showing all fish with caught/uncaught status.</p>
+<p>The book displays two fish entries per spread.  Caught fish are shown
+in full colour with a catch-counter badge; uncaught fish are shown as
+a dark circle with a “?” placeholder.  Supports page-flip animation
+and ambient bubble particles.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>app</strong> – The main application instance</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.CollectionBookMenu.close_menu">
+<span class="sig-name descname"><span class="pre">close_menu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/collection_book.html#CollectionBookMenu.close_menu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.CollectionBookMenu.close_menu" title="Link to this definition"></a></dt>
+<dd><p>Return to the gameplay state.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.CollectionBookMenu.draw">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/collection_book.html#CollectionBookMenu.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.CollectionBookMenu.draw" title="Link to this definition"></a></dt>
+<dd><p>Render the entire book interface onto the screen.</p>
+<p>Draws the opening animation, book background, fish entries,
+page-flip effects, particles, and UI buttons.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>screen</strong> – The main pygame display surface</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.CollectionBookMenu.handle_event">
+<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/collection_book.html#CollectionBookMenu.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.CollectionBookMenu.handle_event" title="Link to this definition"></a></dt>
+<dd><p>Process keyboard and UI events.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event</strong> – Pygame event to handle</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.CollectionBookMenu.next_page">
+<span class="sig-name descname"><span class="pre">next_page</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/collection_book.html#CollectionBookMenu.next_page"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.CollectionBookMenu.next_page" title="Link to this definition"></a></dt>
+<dd><p>Navigate to the next book spread if possible.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.CollectionBookMenu.prev_page">
+<span class="sig-name descname"><span class="pre">prev_page</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/collection_book.html#CollectionBookMenu.prev_page"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.CollectionBookMenu.prev_page" title="Link to this definition"></a></dt>
+<dd><p>Navigate to the previous book spread if possible.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ui.menus.CollectionBookMenu.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.016666666666666666</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/collection_book.html#CollectionBookMenu.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.CollectionBookMenu.update" title="Link to this definition"></a></dt>
+<dd><p>Update ambient bubbles, particles, and animation phase.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dt</strong> – Delta time in seconds (default 1/60)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="src.ui.menus.CreditsMenu">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ui.menus.</span></span><span class="sig-name descname"><span class="pre">CreditsMenu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/ui/menus/credits_menu.html#CreditsMenu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.ui.menus.CreditsMenu" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#src.ui.menus.Menu" title="src.ui.menus.base.Menu"><code class="xref py py-class docutils literal notranslate"><span class="pre">Menu</span></code></a></p>
