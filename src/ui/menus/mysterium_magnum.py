@@ -257,23 +257,20 @@ class MysteriumMagnumMenu(Menu):
         self.app.purple_stars = stars - self._reveal_cost
         self._revealed_numbers.add(card["num"])
 
-        ring_slots = [8, 10, 14, 18]
+        ring_slots = [6, 5, 5, 6]
         num = card["num"]
         if num >= 16:
             ring_idx = 0
+            slot_idx = num - 16
         elif num >= 11:
             ring_idx = 1
+            slot_idx = num - 11
         elif num >= 6:
             ring_idx = 2
+            slot_idx = num - 6
         else:
             ring_idx = 3
-
-        occupied = {(rc["ring_idx"], rc["slot_idx"]) for rc in self.revealed_cards}
-        slot_idx = 0
-        for s in range(ring_slots[ring_idx]):
-            if (ring_idx, s) not in occupied:
-                slot_idx = s
-                break
+            slot_idx = num
 
         self.revealed_cards.append({
             "card": card,
@@ -596,10 +593,10 @@ class MysteriumMagnumMenu(Menu):
         t = self.animation_time
         cx, cy = self.tree_rect.center
         rings = [
-            (120,  8,  0.80),
-            (200, 10, 1.00),
-            (280, 14, 1.15),
-            (370, 18, 1.30),
+            (120,  6,  0.80),
+            (200,  5,  1.00),
+            (280,  5,  1.15),
+            (370,  6,  1.30),
         ]
         base_alpha = 55
         revealed_slots = {(rc["ring_idx"], rc["slot_idx"]) for rc in self.revealed_cards}
@@ -625,10 +622,10 @@ class MysteriumMagnumMenu(Menu):
         t = self.animation_time
         cx, cy = self.tree_rect.center
         rings = [
-            (120,  8,  0.80),
-            (200, 10, 1.00),
-            (280, 14, 1.15),
-            (370, 18, 1.30),
+            (120,  6,  0.80),
+            (200,  5,  1.00),
+            (280,  5,  1.15),
+            (370,  6,  1.30),
         ]
         for rc in self.revealed_cards:
             card = rc["card"]
