@@ -152,6 +152,7 @@ class App:
         add_item(7, 3, "steel_boots")
         
         self.money = 100
+        self.purple_stars = 0
 
         # Dialog state: current active dialog UI and last NPC the player talked to
         self.current_dialog = None

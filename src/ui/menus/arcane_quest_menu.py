@@ -398,6 +398,9 @@ class ArcaneQuestMenu(Menu):
         except Exception:
             pass
 
+        self.app.purple_stars = getattr(self.app, "purple_stars", 0) + 1
+        logger.info(f"Player earned a Purple Star! Total: {self.app.purple_stars}")
+
         try:
             btn_rect = self.claim_buttons[quest_idx].rect if quest_idx < len(self.claim_buttons) else self.panel_rect
             self._spawn_burst(btn_rect.centerx, btn_rect.centery, GOLD_BRIGHT, n=50)

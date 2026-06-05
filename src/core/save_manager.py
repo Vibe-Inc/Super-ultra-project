@@ -227,6 +227,7 @@ class SaveManager:
         save_data = {
             "date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "money": app.money,
+            "purple_stars": app.purple_stars,
             "player": {
                 "pos_x": char.pos.x,
                 "pos_y": char.pos.y,
@@ -279,6 +280,7 @@ class SaveManager:
 
         # Restore Money
         app.money = data.get("money", 0)
+        app.purple_stars = data.get("purple_stars", 0)
 
         # Restore Inventory
         inv_data = data.get("inventory", [])
