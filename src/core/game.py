@@ -773,7 +773,10 @@ class Game(State):
 
         Each source is a dict: { 'pos': (x,y), 'radius': int, 'intensity': float }
         The Game computes camera offset and converts world positions to screen space.
+        Only returns lights during night/dusk/dawn — illumination turns on at night.
         """
+        if self.is_daytime():
+            return []
         lights = []
         try:
             camera = self._get_camera_offset()

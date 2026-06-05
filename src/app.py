@@ -335,13 +335,7 @@ class App:
                 except Exception:
                     pass
 
-            # Determine the minimum effective brightness needed so that
-            # local light sources remain visible even during daytime.
-            # When there are active lights, keep a small amount of darkness
-            # so the radial gradients have something to "punch through".
             has_lights = bool(local_lights)
-            if has_lights and effective_brightness >= 1:
-                effective_brightness = 0.92  # subtle daytime overlay for light glow
 
             if effective_brightness < 1:
                 overlay_alpha = int((1 - effective_brightness) * 255)
@@ -388,7 +382,7 @@ class App:
                         grad = pygame.Surface(
                             (radius * 2, radius * 2), pygame.SRCALPHA
                         )
-                        steps = max(1, radius // 2)
+                        steps = max(1, radius)
                         for i in range(steps, 0, -1):
                             frac = i / steps          # 1 at edge, 0 at centre
                             r = int(frac * radius)
@@ -396,14 +390,14 @@ class App:
                             if even:
                                 a = int(overlay_alpha * intensity)
                             else:
-                                a = int((1.0 - frac ** 4) * overlay_alpha * intensity)
+                                a = int((1.0 - frac) * overlay_alpha * intensity)
                             a = max(0, min(255, a))
                             pygame.draw.circle(
                                 grad, (0, 0, 0, a), (radius, radius), r
                             )
                         # Smooth the gradient to remove concentric banding
                         small = pygame.transform.smoothscale(
-                            grad, (max(1, radius // 4), max(1, radius // 4))
+                            grad, (max(1, radius // 2), max(1, radius // 2))
                         )
                         grad = pygame.transform.smoothscale(
                             small, (radius * 2, radius * 2)
@@ -435,10 +429,10 @@ class App:
                             for i in range(steps, 0, -1):
                                 frac = i / steps
                                 r = int(frac * radius)
-                                ca = int((1.0 - frac ** 4) * 80 * intensity)
+                                ca = int((1.0 - frac) * 80 * intensity)
                                 ca = max(0, min(255, ca))
                                 pygame.draw.circle(clr, (*light_color, ca), (radius, radius), r)
-                            small = pygame.transform.smoothscale(clr, (max(1, radius // 4), max(1, radius // 4)))
+                            small = pygame.transform.smoothscale(clr, (max(1, radius // 2), max(1, radius // 2)))
                             clr = pygame.transform.smoothscale(small, (radius * 2, radius * 2))
                             if not l.get('full_360'):
                                 mask = self._get_dir_mask(radius, dir_x, dir_y)
