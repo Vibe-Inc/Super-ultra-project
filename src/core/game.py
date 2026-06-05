@@ -840,6 +840,7 @@ class Game(State):
             visual_style=visual_style,
         )
         enemy.target_entity = self.character
+        enemy.profile_name = profile_name
         return enemy
 
     def spawn_random_enemy(self):
@@ -1146,6 +1147,19 @@ class Game(State):
                 gold_gain = int(random.randint(_base_gold_min, _base_gold_max) * _scale)
                 self.app.money += gold_gain
                 logger.info(f"Gained {gold_gain} gold. Total: {self.app.money}")
+
+                # Update quest progress for the killed mob type
+                mob_type = getattr(enemy, 'profile_name', None)
+                if mob_type:
+                    quest_state = self.app.manager.states.get("arcane_quest")
+                    if quest_state and hasattr(quest_state, "quests"):
+                        for q in quest_state.quests:
+                            if q.claimed:
+                                continue
+                            if q.target_type == mob_type:
+                                q.progress = min(q.target_count, q.progress + 1)
+                                if q.progress >= q.target_count:
+                                    q.completed = True
 
                 # Spawn loot drops at the enemy's death location (Python-configured, no JSON)
                 self._drop_enemy_loot(enemy)

@@ -43,7 +43,7 @@ MAGIC_CYAN    = (140, 220, 255)
 
 MOB_DISPLAY_NAMES = {
     "brute": "Brute",
-    "venomous": "Venomous Stalker",
+    "venomous": "Venomous",
     "arcanist": "Arcanist",
     "trickster": "Trickster",
     "bomber": "Bomber",
