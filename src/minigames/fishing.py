@@ -456,14 +456,66 @@ class FishingController:
         self.active_bobber_norm = 0.5
         self.active_overlap = False
 
+        self.fish_types: List[FishType] = self._load_fish_from_db()
+
+    def _load_fish_from_db(self) -> List[FishType]:
+        """Load all fish from the database and convert to ``FishType``.
+
+        Opens a read-only connection to the game database, queries
+        the ``fish`` table joined with ``items``, and returns a list
+        of :class:`FishType` dataclass instances.
+
+        If the database is unavailable or contains no fish rows,
+        a small fallback list is returned so the minigame still
+        functions.
+
+        Returns:
+            List[FishType]: Available fish archetypes for the
+            minigame.
+        """
+        fallback = [
+            FishType(id="fish_common", name="Common Fish", weight=70,
+                     difficulty=0.3, speed=1.0),
+            FishType(id="fish_rare", name="Rare Fish", weight=30,
+                     difficulty=0.7, speed=1.6),
+        ]
         try:
-            from src.minigames.fishing_config import FISH_TYPES
-            self.fish_types: List[FishType] = [FishType(**f) for f in FISH_TYPES]
+            import sqlite3
+            import os
+            db_path = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "..", "..", "database", "GP_database.db",
+            )
+            db_path = os.path.normpath(db_path)
+            if not os.path.exists(db_path):
+                return fallback
+            conn = sqlite3.connect(db_path)
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT items.id, items.name,
+                       fish.rarity, fish.difficulty, fish.speed,
+                       fish.spawn_weight, fish.base_price
+                FROM items
+                INNER JOIN fish ON items.id = fish.item_id
+            """)
+            rows = cursor.fetchall()
+            conn.close()
+            if not rows:
+                return fallback
+            result: List[FishType] = []
+            for row in rows:
+                result.append(FishType(
+                    id=row["id"],
+                    name=row["name"],
+                    weight=float(row["spawn_weight"]),
+                    difficulty=float(row["difficulty"]),
+                    speed=float(row["speed"]),
+                    reward_item_id=row["id"],
+                ))
+            return result
         except Exception:
-            self.fish_types = [
-                FishType(id="fish_common", name="Common Fish", weight=70, difficulty=0.3, speed=1.0, reward_item_id="fish_raw"),
-                FishType(id="fish_rare", name="Rare Fish", weight=30, difficulty=0.7, speed=1.6, reward_item_id="fish_raw"),
-            ]
+            return fallback
 
     def _is_fishable_tile(self, world_pos: pygame.Vector2) -> bool:
         """Check whether the tile at ``world_pos`` has the
