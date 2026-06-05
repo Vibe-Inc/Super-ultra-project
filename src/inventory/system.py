@@ -432,6 +432,18 @@ class MAIN_player_inventory(Inventory):
             corner_width=max(2, int(8 * scale)),
             on_click=None,
         )
+        # Mystical MYSTERIUM MAGNUM button (cards theme) — opens the
+        # MysteriumMagnumMenu (registered in StateManager as "mysterium_magnum").
+        self.open_mysterium_magnum_btn = Button(
+            rect=pygame.Rect(0, 0, btn_w, btn_h),
+            text=_("MYSTERIUM MAGNUM"),
+            color=cfg.INV_MYSTERIUMMAGNUM_BTN_COLOR,
+            hover_color=cfg.INV_MYSTERIUMMAGNUM_BTN_HOVER_COLOR,
+            font=cfg.get_font(max(10, int(22 * scale))),
+            font_color=cfg.INV_MYSTERIUMMAGNUM_BTN_FONT_COLOR,
+            corner_width=max(2, int(8 * scale)),
+            on_click=None,
+        )
 
     def inventory_interactions(self, event, manager):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -447,6 +459,10 @@ class MAIN_player_inventory(Inventory):
                     return
                 if hasattr(self, 'open_arcane_quest_btn') and self.open_arcane_quest_btn.rect.collidepoint(mouse_pos):
                     try: self.app.manager.set_state("arcane_quest")
+                    except Exception: pass
+                    return
+                if hasattr(self, 'open_mysterium_magnum_btn') and self.open_mysterium_magnum_btn.rect.collidepoint(mouse_pos):
+                    try: self.app.manager.set_state("mysterium_magnum")
                     except Exception: pass
                     return
         return super().inventory_interactions(event, manager)

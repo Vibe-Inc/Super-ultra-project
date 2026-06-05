@@ -16,6 +16,7 @@ from src.ui.menus.save_load_menu import SaveLoadMenu
 from src.ui.menus.recipe_book import RecipeBookMenu
 from src.ui.menus.wiki_menu import WikiMenu
 from src.ui.menus.arcane_quest_menu import ArcaneQuestMenu
+from src.ui.menus.mysterium_magnum import MysteriumMagnumMenu
 
 __all__ = [
     "Menu",
@@ -29,4 +30,5 @@ __all__ = [
     "RecipeBookMenu",
     "WikiMenu",
     "ArcaneQuestMenu",
+    "MysteriumMagnumMenu",
 ]

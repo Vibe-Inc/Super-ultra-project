@@ -288,6 +288,12 @@ INV_ARCANEQUEST_BTN_COLOR        = (38, 22, 60)
 INV_ARCANEQUEST_BTN_HOVER_COLOR  = (62, 38, 100)
 INV_ARCANEQUEST_BTN_FONT_COLOR   = (255, 220, 140)
 
+# ============== MYSTERIUM MAGNUM BUTTON (right-side, below Arcane Quests) ==============
+# Magical cards theme: deep teal base with gold/cyan accents.
+INV_MYSTERIUMMAGNUM_BTN_COLOR        = (15, 40, 55)
+INV_MYSTERIUMMAGNUM_BTN_HOVER_COLOR  = (25, 65, 85)
+INV_MYSTERIUMMAGNUM_BTN_FONT_COLOR   = (180, 230, 255)
+
 # ============== INVENTORY OVERLAY AND SELECTED ITEM ==============
 INV_OVERLAY_ALPHA = 160
 INV_OVERLAY_COLOR = (5, 8, 12)
