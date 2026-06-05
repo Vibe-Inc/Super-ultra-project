@@ -1,11 +1,6 @@
 """
 Arcane Quest Menu - A magical quest interface with gold and purple accents on black.
-
-Features:
-- Gold & purple magical style on a black base
-- Paginated quest list (5 quests per page)
-- Per-quest claim reward system
-- Rich animated background: nebula, magical circles, constellations, runes, energy arcs
+Optimized with cached elements, gold dust particles, ornate decorations, and majestic visuals.
 """
 
 import math
@@ -148,11 +143,8 @@ class ArcaneQuestMenu(Menu):
             on_click=self.close_menu,
         )
 
-        # Per-quest claim buttons (created per layout)
         self.claim_buttons: list[Button] = []
-
         self.buttons = [self.back_button]
-
         self.quests: list[ArcaneQuest] = []
         self._init_quests()
 
@@ -160,6 +152,7 @@ class ArcaneQuestMenu(Menu):
         self.particles: list[_Particle] = []
         self.burst_particles: list[_Particle] = []
         self.star_particles: list[_Particle] = []
+        self.gold_dust: list[_Particle] = []
         self.energy_arcs: list[dict] = []
         self._init_particles()
         self._init_energy_arcs()
@@ -177,28 +170,30 @@ class ArcaneQuestMenu(Menu):
         self.title_rect = pygame.Rect(0, 0, 0, 0)
         self.slot_rects: list[pygame.Rect] = []
 
-        # Reroll system (1 reroll, 10-min cooldown)
         self.rerolls_remaining = 1
         self.reroll_cooldown_until = 0.0
         self.reroll_icon_rect = pygame.Rect(0, 0, 0, 0)
         self.reroll_tooltip: Tooltip | None = None
 
+        # ── Cached elements ──────────────────────────────────────────
+        self._cached_stars: list[dict] = []
+        self._cached_constellations: list[tuple] = []
+        self._cached_runes: list[dict] = []
+        self._orb_cache: dict[tuple, pygame.Surface] = {}
+        self._nebula_cache: pygame.Surface | None = None
+        self._nebula_cache_key: tuple | None = None
+        self._sigil_cache: pygame.Surface | None = None
+        self._sigil_cache_size: tuple = (0, 0)
+
+    # ── Data persistence ──────────────────────────────────────────────
     def get_quest_data(self) -> dict:
-        """Export quests + reroll state for save serialization.
-        Cooldowns are saved as remaining duration so they only tick while
-        this save file is actively loaded."""
         return {
             "quests": [
                 {
-                    "id": q.id,
-                    "title": q.title,
-                    "description": q.description,
-                    "target_type": q.target_type,
-                    "target_count": q.target_count,
-                    "location_label": q.location_label,
-                    "reward": q.reward,
-                    "progress": q.progress,
-                    "completed": q.completed,
+                    "id": q.id, "title": q.title, "description": q.description,
+                    "target_type": q.target_type, "target_count": q.target_count,
+                    "location_label": q.location_label, "reward": q.reward,
+                    "progress": q.progress, "completed": q.completed,
                     "claimed": q.claimed,
                     "cooldown_remaining": max(0.0, q.cooldown_until - time.time()),
                 }
@@ -209,22 +204,16 @@ class ArcaneQuestMenu(Menu):
         }
 
     def set_quest_data(self, data: dict | list[dict]):
-        """Restore quest and reroll state from save data."""
         if not data:
             return
         now = time.time()
+        self.quests = []
         if isinstance(data, list):
-            # Legacy format — treat as list of quest dicts, reset cooldowns
-            self.quests = []
             for d in data:
                 q = ArcaneQuest(
-                    d.get("id", ""),
-                    d.get("title", ""),
-                    d.get("description", ""),
-                    d.get("target_type", "mobs"),
-                    d.get("target_count", 5),
-                    d.get("location_label", ""),
-                    d.get("reward", {}),
+                    d.get("id", ""), d.get("title", ""), d.get("description", ""),
+                    d.get("target_type", "mobs"), d.get("target_count", 5),
+                    d.get("location_label", ""), d.get("reward", {}),
                 )
                 q.progress = d.get("progress", 0)
                 q.completed = d.get("completed", False)
@@ -234,17 +223,11 @@ class ArcaneQuestMenu(Menu):
             self.rerolls_remaining = 1
             self.reroll_cooldown_until = 0.0
         else:
-            # Dict format
-            self.quests = []
             for d in data.get("quests", []):
                 q = ArcaneQuest(
-                    d.get("id", ""),
-                    d.get("title", ""),
-                    d.get("description", ""),
-                    d.get("target_type", "mobs"),
-                    d.get("target_count", 5),
-                    d.get("location_label", ""),
-                    d.get("reward", {}),
+                    d.get("id", ""), d.get("title", ""), d.get("description", ""),
+                    d.get("target_type", "mobs"), d.get("target_count", 5),
+                    d.get("location_label", ""), d.get("reward", {}),
                 )
                 q.progress = d.get("progress", 0)
                 q.completed = d.get("completed", False)
@@ -256,7 +239,6 @@ class ArcaneQuestMenu(Menu):
         self._layout_size = None
 
     def reset_quests(self):
-        """Reset all quest progress (for new game)."""
         self.rerolls_remaining = 1
         self.reroll_cooldown_until = 0.0
         self.reroll_tooltip = None
@@ -283,15 +265,11 @@ class ArcaneQuestMenu(Menu):
                 f"q_{i}_{mob_key}",
                 _("Hunt {n}").format(n=mob_name),
                 _("Kill {c}x {n}").format(c=kill_count, n=mob_name),
-                mob_key,
-                kill_count,
-                "",
-                reward,
+                mob_key, kill_count, "", reward,
             ))
         self.claim_buttons.clear()
 
     def _process_quest_cooldowns(self):
-        """Regenerate any claimed quest whose individual cooldown has expired."""
         for i, q in enumerate(self.quests):
             if q.claimed and q.cooldown_until <= time.time():
                 self._spawn_replacement_quest(i)
@@ -369,10 +347,12 @@ class ArcaneQuestMenu(Menu):
         cy = self.panel_rect.centery if self.panel_rect.height > 0 else 300
         self._spawn_burst(cx, cy, MAGIC_CYAN, n=40)
 
+    # ── Particle initialization ───────────────────────────────────────
     def _init_particles(self):
         rng = random.Random(1337)
         self.particles.clear()
         self.star_particles.clear()
+        self.gold_dust.clear()
         self.ambient_orbs = []
 
         for _ in range(150):
@@ -401,6 +381,19 @@ class ArcaneQuestMenu(Menu):
                 _Particle(x, y, vx, vy, life, color, size, shape="star")
             )
 
+        # Gold dust particles that flow around panel edges
+        for _ in range(40):
+            x = rng.uniform(0, 1000)
+            y = rng.uniform(0, 1000)
+            ang = rng.uniform(0, math.pi * 2)
+            speed = rng.uniform(4, 18)
+            life = rng.uniform(4.0, 12.0)
+            color = rng.choice([GOLD_BRIGHT, GOLD, (255, 230, 160)])
+            size = rng.uniform(0.5, 2.0)
+            self.gold_dust.append(
+                _Particle(x, y, math.cos(ang) * speed, math.sin(ang) * speed, life, color, size, shape="dust")
+            )
+
         for _ in range(8):
             self.ambient_orbs.append({
                 "x": rng.uniform(0, 1000),
@@ -424,20 +417,147 @@ class ArcaneQuestMenu(Menu):
             speed = rng.uniform(0.3, 1.0)
             color = rng.choice([GOLD_BRIGHT, PURPLE_BRIGHT, MAGIC_CYAN, GOLD])
             self.energy_arcs.append({
-                "angle": angle,
-                "radius": radius,
-                "length": length,
-                "speed": speed,
-                "color": color,
-                "alpha": rng.uniform(0.05, 0.12),
-                "phase": rng.uniform(0, math.pi * 2),
-                "width": rng.uniform(1.0, 2.5),
+                "angle": angle, "radius": radius, "length": length, "speed": speed,
+                "color": color, "alpha": rng.uniform(0.05, 0.12),
+                "phase": rng.uniform(0, math.pi * 2), "width": rng.uniform(1.0, 2.5),
             })
 
+    # ── Cached element generation ────────────────────────────────────
+    def _build_cache(self, sw: int, sh: int):
+        rng = random.Random(7)
+        star_colors = [GOLD_BRIGHT, GOLD, PURPLE_BRIGHT, PURPLE, MAGIC_CYAN, (255, 200, 180), (200, 180, 255)]
+        self._cached_stars = []
+        for _ in range(300):
+            sx = rng.randint(0, sw - 1)
+            sy = rng.randint(0, sh - 1)
+            ci = rng.randint(0, len(star_colors) - 1)
+            phase = rng.uniform(0, math.pi * 2)
+            speed = 1.5 + rng.random() * 2.0
+            self._cached_stars.append({
+                "x": sx, "y": sy, "color": star_colors[ci],
+                "phase": phase, "speed": speed,
+                "seed_a": sx * 0.08 + sy * 0.06,
+            })
+
+        rng2 = random.Random(13)
+        const_points = [(rng2.randint(0, sw - 1), rng2.randint(0, sh - 1)) for _ in range(40)]
+        self._cached_constellations = []
+        for i, (x1, y1) in enumerate(const_points):
+            for j, (x2, y2) in enumerate(const_points):
+                if j <= i:
+                    continue
+                dx, dy = x2 - x1, y2 - y1
+                dist = math.sqrt(dx*dx + dy*dy)
+                if dist < 90 and dist > 20:
+                    self._cached_constellations.append((x1, y1, x2, y2, i))
+
+        scale_runes = cfg.ui_scale()
+        rune_positions = [
+            (0.06, 0.08), (0.94, 0.08), (0.06, 0.92), (0.94, 0.92),
+            (0.02, 0.25), (0.98, 0.25), (0.02, 0.75), (0.98, 0.75),
+            (0.10, 0.02), (0.90, 0.02), (0.10, 0.98), (0.90, 0.98),
+            (0.50, 0.02), (0.50, 0.98), (0.02, 0.50), (0.98, 0.50),
+        ]
+        rune_chars = ["ᚠ", "ᚢ", "ᚦ", "ᚨ", "ᚱ", "ᚲ", "ᚷ", "ᚹ",
+                      "ᚺ", "ᚾ", "ᛁ", "ᛃ", "ᛇ", "ᛈ", "ᛉ", "ᛊ"]
+        rune_font = cfg.get_font(max(16, int(32 * scale_runes)))
+        self._cached_runes = []
+        for i, (rx, ry) in enumerate(rune_positions):
+            px, py = int(sw * rx), int(sh * ry)
+            r_color = GOLD if i % 3 == 0 else (PURPLE_BRIGHT if i % 3 == 1 else MAGIC_CYAN)
+            surf = rune_font.render(rune_chars[i], True, r_color)
+            self._cached_runes.append({"x": px, "y": py, "surf": surf, "idx": i})
+
+    def _get_orb_surface(self, radius: int, color: tuple, base_alpha: int) -> pygame.Surface:
+        key = (radius, color, base_alpha)
+        if key in self._orb_cache:
+            return self._orb_cache[key]
+        surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+        for ri in range(radius, 0, -2):
+            ta = base_alpha * (1.0 - ri / radius)
+            pygame.draw.circle(surf, (color[0], color[1], color[2], ta), (radius, radius), ri)
+        self._orb_cache[key] = surf
+        return surf
+
+    def _get_nebula(self, sw: int, sh: int) -> pygame.Surface:
+        key = (sw, sh)
+        if self._nebula_cache_key == key and self._nebula_cache is not None:
+            return self._nebula_cache
+        nebula = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        nebula_colors = [
+            (18, 8, 38), (24, 10, 42), (16, 12, 36), (20, 14, 32),
+            (14, 6, 28), (26, 12, 34), (32, 16, 28), (12, 14, 30),
+            (36, 18, 44), (22, 8, 32), (28, 14, 38), (10, 10, 28),
+        ]
+        nebula_centers = [
+            (0.3, 0.4), (0.7, 0.3), (0.5, 0.7), (0.2, 0.6),
+            (0.8, 0.6), (0.4, 0.8), (0.6, 0.2), (0.3, 0.5),
+            (0.15, 0.25), (0.85, 0.75), (0.45, 0.15), (0.55, 0.85),
+        ]
+        for y in range(0, sh, 4):
+            for x in range(0, sw, 4):
+                blend_r, blend_g, blend_b = 0, 0, 0
+                total = 0
+                for (nc, (nx, ny)) in zip(nebula_colors, nebula_centers):
+                    dx = x / sw - nx
+                    dy = y / sh - ny
+                    dist = math.sqrt(dx*dx + dy*dy) * 3.2
+                    if dist < 1.5:
+                        w = (1.0 - dist / 1.5) * 0.35
+                        blend_r += nc[0] * w
+                        blend_g += nc[1] * w
+                        blend_b += nc[2] * w
+                        total += w
+                if total > 0:
+                    r2 = int(min(255, blend_r / total))
+                    g2 = int(min(255, blend_g / total))
+                    b2 = int(min(255, blend_b / total))
+                    nebula.set_at((x, y), (r2, g2, b2, 180))
+        self._nebula_cache = nebula
+        self._nebula_cache_key = key
+        return nebula
+
+    def _get_sigil_surface(self, w: int, h: int) -> pygame.Surface:
+        if self._sigil_cache is not None and self._sigil_cache_size == (w, h):
+            return self._sigil_cache
+        surf = pygame.Surface((w, h), pygame.SRCALPHA)
+        cx, cy = w // 2, h // 2
+        r = min(w, h) // 2 - 10
+        if r > 6:
+            # Outer dashed circle
+            segments = 20
+            for i in range(segments):
+                if i % 2 == 0:
+                    ang1 = (i / segments) * math.pi * 2
+                    ang2 = ((i + 1) / segments) * math.pi * 2
+                    x1 = cx + math.cos(ang1) * r
+                    y1 = cy + math.sin(ang1) * r
+                    x2 = cx + math.cos(ang2) * r
+                    y2 = cy + math.sin(ang2) * r
+                    pygame.draw.line(surf, (*GOLD_DEEP, 60), (x1, y1), (x2, y2), 1)
+            # Inner 4-pointed star
+            inner_r = r * 0.6
+            pts = []
+            for i in range(4):
+                ang = (i / 4) * math.pi * 2 - math.pi / 4
+                pts.append((cx + math.cos(ang) * inner_r, cy + math.sin(ang) * inner_r))
+                ang2 = ang + math.pi / 4
+                pts.append((cx + math.cos(ang2) * inner_r * 0.4, cy + math.sin(ang2) * inner_r * 0.4))
+            if len(pts) >= 3:
+                pygame.draw.polygon(surf, (*PURPLE, 50), pts)
+                pygame.draw.polygon(surf, (*GOLD_DEEP, 70), pts, width=1)
+            # Center dot
+            pygame.draw.circle(surf, (*GOLD, 80), (cx, cy), max(2, r // 8))
+        self._sigil_cache = surf
+        self._sigil_cache_size = (w, h)
+        return surf
+
+    # ── Layout ────────────────────────────────────────────────────────
     def _ensure_layout(self, screen_width: int, screen_height: int):
         if self._layout_size != (screen_width, screen_height):
             self._layout_size = (screen_width, screen_height)
             self._recalc_layout(screen_width, screen_height)
+            self._build_cache(screen_width, screen_height)
 
     def _recalc_layout(self, screen_width: int, screen_height: int):
         scale = cfg.ui_scale()
@@ -489,6 +609,7 @@ class ArcaneQuestMenu(Menu):
             except Exception:
                 pass
 
+    # ── Lifecycle ────────────────────────────────────────────────────
     def on_enter(self):
         self.entrance_active = True
         self.entrance_start = time.time()
@@ -497,13 +618,13 @@ class ArcaneQuestMenu(Menu):
         self._init_particles()
         self._init_energy_arcs()
         self._layout_size = None
+        self._orb_cache.clear()
         sw, sh = (cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT)
         try:
             sw, sh = self.app.screen.get_size()
         except Exception:
             pass
         self._ensure_layout(sw, sh)
-        # Graceful entrance sparkles across the panel, not a dense explosion
         px, py = self.panel_rect.x, self.panel_rect.y
         pw, ph = self.panel_rect.width, self.panel_rect.height
         for _ in range(30):
@@ -527,14 +648,11 @@ class ArcaneQuestMenu(Menu):
         q = self.quests[quest_idx]
         if not q.is_finished or q.claimed:
             return
-
         q.claimed = True
         q.completed = True
         q.progress = q.target_count
-
         self.claim_flash_alpha = 1.0
         self.claim_flash_time = 0.0
-
         reward = q.reward
         try:
             if "gold" in reward and hasattr(self.app, "money"):
@@ -549,19 +667,15 @@ class ArcaneQuestMenu(Menu):
                     char.xp += int(reward["xp"])
         except Exception:
             pass
-
         self.app.purple_stars = getattr(self.app, "purple_stars", 0) + 1
         logger.info(f"Player earned a Purple Star! Total: {self.app.purple_stars}")
-
         try:
             btn_rect = self.claim_buttons[quest_idx].rect if quest_idx < len(self.claim_buttons) else self.panel_rect
             self._spawn_burst(btn_rect.centerx, btn_rect.centery, GOLD_BRIGHT, n=50)
             self._spawn_burst(btn_rect.centerx + 30, btn_rect.centery, PURPLE_BRIGHT, n=50)
         except Exception:
             pass
-
         self._rebuild_claim_buttons()
-
         q.cooldown_until = time.time() + ArcaneQuest.QUEST_COOLDOWN_SECONDS
 
     def _rebuild_claim_buttons(self):
@@ -599,7 +713,6 @@ class ArcaneQuestMenu(Menu):
             )
 
     def _bump_page_progress(self, amount=1):
-        """Dev hook: bump all unclaimed quests."""
         for q in self.quests:
             if q.claimed:
                 continue
@@ -607,32 +720,28 @@ class ArcaneQuestMenu(Menu):
             if q.progress >= q.target_count:
                 q.completed = True
 
+    # ── Update ────────────────────────────────────────────────────────
     def update(self, dt=None):
         if dt is None:
             dt = 1.0 / 60.0
         self.anim_time += dt
         self.flicker_t += dt
-
         if self.entrance_active:
             t = (time.time() - self.entrance_start) / 1.8
             self.entrance_progress = max(0.0, min(1.0, t))
             if self.entrance_progress >= 1.0:
                 self.entrance_active = False
-
         if self.claim_flash_alpha > 0.0:
             self.claim_flash_time += dt
             self.claim_flash_alpha = max(0.0, 1.0 - self.claim_flash_time / 1.0)
-
         sw, sh = (cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT)
         try:
             sw, sh = self.app.screen.get_size()
         except Exception:
             pass
         self._ensure_layout(sw, sh)
-
         self._process_quest_cooldowns()
 
-        # Live reroll tooltip update (only recreate when content changes)
         mouse_pos = pygame.mouse.get_pos()
         hovering_reroll = self.reroll_icon_rect and self.reroll_icon_rect.collidepoint(mouse_pos)
         if hovering_reroll:
@@ -659,29 +768,26 @@ class ArcaneQuestMenu(Menu):
         elif self.reroll_tooltip is not None:
             self.reroll_tooltip = None
 
-        alive = []
-        for p in self.particles:
-            p.update(dt)
-            if p.x < 0: p.x = sw
-            elif p.x > sw: p.x = 0
-            if p.y < -10:
-                p.y = sh + 10
-                p.life = p.max_life
-            if p.alive:
-                alive.append(p)
-        self.particles = alive
-
-        alive_stars = []
-        for p in self.star_particles:
-            p.update(dt)
-            if p.x < 0: p.x = sw
-            elif p.x > sw: p.x = 0
-            if p.y < -10:
-                p.y = sh + 10
-                p.life = p.max_life
-            if p.alive:
-                alive_stars.append(p)
-        self.star_particles = alive_stars
+        # Update ambient particles with wrap-around
+        for lst in (self.particles, self.star_particles, self.gold_dust):
+            alive = []
+            for p in lst:
+                p.update(dt)
+                if p.x < 0: p.x = sw
+                elif p.x > sw: p.x = 0
+                if p.y < -10:
+                    p.y = sh + 10
+                    if hasattr(p, 'max_life') and p.max_life > 0:
+                        p.life = p.max_life
+                if p.alive:
+                    alive.append(p)
+                elif p.shape == "dust":
+                    p.x = random.uniform(0, sw)
+                    p.y = random.uniform(0, sh)
+                    p.life = p.max_life
+                    alive.append(p)
+            lst.clear()
+            lst.extend(alive)
 
         for orb in self.ambient_orbs:
             orb["x"] += orb["vx"] * dt
@@ -702,7 +808,6 @@ class ArcaneQuestMenu(Menu):
                 new_bursts.append(p)
         self.burst_particles = new_bursts
 
-        # Update reroll tooltip
         if self.reroll_tooltip:
             self.reroll_tooltip.hover_update(mouse_pos)
 
@@ -726,15 +831,12 @@ class ArcaneQuestMenu(Menu):
         sw, sh = screen.get_size()
         self._ensure_layout(sw, sh)
         self.update()
-
         self._draw_background(screen)
 
         t = self.entrance_progress
         ease = 1.0 - (1.0 - t) ** 3
-
         panel = self.panel_rect
 
-        # Panel slides down from above during entrance
         slide_dist = int((1.0 - ease) * sh * 0.18)
         s = 0.90 + 0.10 * ease
         scaled_w = int(panel.width * s)
@@ -742,7 +844,6 @@ class ArcaneQuestMenu(Menu):
         scaled_rect = pygame.Rect(0, 0, scaled_w, scaled_h)
         scaled_rect.center = (panel.centerx, panel.centery - slide_dist)
 
-        # Entrance golden expanding ring
         if t > 0.08 and t < 0.6:
             ring_progress = (t - 0.08) / 0.52
             self._draw_entrance_ring(screen, panel, ring_progress)
@@ -750,15 +851,13 @@ class ArcaneQuestMenu(Menu):
         self._draw_soft_shadow(screen, scaled_rect, offset=14, alpha=80)
         self._draw_panel(screen, scaled_rect)
         self._draw_title(screen, scaled_rect)
-
         self._draw_quest_slots(screen, scaled_rect)
-
         self._draw_back_button(screen, scaled_rect)
         self._draw_reroll_ui(screen, scaled_rect)
-
         self._draw_ambient_particles(screen)
         self._draw_burst_particles(screen)
         self._draw_star_particles(screen)
+        self._draw_gold_dust(screen)
 
     # ── Background ────────────────────────────────────────────────────
     def _draw_background(self, screen):
@@ -766,62 +865,21 @@ class ArcaneQuestMenu(Menu):
         t = self.anim_time
 
         screen.fill((6, 4, 14))
+        screen.blit(self._get_nebula(sw, sh), (0, 0))
 
-        # -- Nebula clouds (cached) --
-        cache_key = (sw, sh)
-        if not hasattr(self, '_nebula_cache') or self._nebula_cache_key != cache_key:
-            nebula = pygame.Surface((sw, sh), pygame.SRCALPHA)
-            nebula_colors = [
-                (18, 8, 38), (24, 10, 42), (16, 12, 36), (20, 14, 32),
-                (14, 6, 28), (26, 12, 34), (32, 16, 28), (12, 14, 30),
-                (36, 18, 44), (22, 8, 32), (28, 14, 38), (10, 10, 28),
-            ]
-            nebula_centers = [
-                (0.3, 0.4), (0.7, 0.3), (0.5, 0.7), (0.2, 0.6),
-                (0.8, 0.6), (0.4, 0.8), (0.6, 0.2), (0.3, 0.5),
-                (0.15, 0.25), (0.85, 0.75), (0.45, 0.15), (0.55, 0.85),
-            ]
-            for y in range(0, sh, 4):
-                for x in range(0, sw, 4):
-                    blend_r, blend_g, blend_b = 0, 0, 0
-                    total = 0
-                    for (nc, (nx, ny)) in zip(nebula_colors, nebula_centers):
-                        dx = x / sw - nx
-                        dy = y / sh - ny
-                        dist = math.sqrt(dx*dx + dy*dy) * 3.2
-                        if dist < 1.5:
-                            w = (1.0 - dist / 1.5) * 0.35
-                            blend_r += nc[0] * w
-                            blend_g += nc[1] * w
-                            blend_b += nc[2] * w
-                            total += w
-                    if total > 0:
-                        r2 = int(min(255, blend_r / total))
-                        g2 = int(min(255, blend_g / total))
-                        b2 = int(min(255, blend_b / total))
-                        nebula.set_at((x, y), (r2, g2, b2, 180))
-            self._nebula_cache = nebula
-            self._nebula_cache_key = cache_key
-        screen.blit(self._nebula_cache, (0, 0))
-
-        # -- Large ambient floating orbs --
+        # Ambient floating orbs (cached surfaces)
         for orb in self.ambient_orbs:
             px = orb["x"] % sw
             py = orb["y"] % sh
             pulse = (math.sin(t * orb["pulse_speed"] + orb["pulse_offset"]) + 1.0) * 0.5
             alpha = int(orb["alpha"] * 255 * (0.6 + 0.4 * pulse))
             r = int(orb["radius"])
-            orb_surf = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
-            for ri in range(r, 0, -2):
-                ta = alpha * (1.0 - ri / r)
-                c = orb["color"]
-                pygame.draw.circle(orb_surf, (c[0], c[1], c[2], ta), (r, r), ri)
+            orb_surf = self._get_orb_surface(r, orb["color"], alpha)
             screen.blit(orb_surf, (int(px) - r, int(py) - r))
 
-        # -- Animated magical circle (rotating rings + hexagram) --
+        # Animated magical circle (rotating rings + hexagram)
         cx, cy = sw // 2, sh // 2
         circle_rot = t * 0.15
-        # Outer rings
         for ring_idx, radius in enumerate([min(sw, sh) * 0.35, min(sw, sh) * 0.30, min(sw, sh) * 0.25]):
             p = (math.sin(t * 0.5 + ring_idx * 1.2) + 1.0) * 0.5
             a = int(10 + 20 * p)
@@ -831,7 +889,6 @@ class ArcaneQuestMenu(Menu):
             for i in range(segments):
                 ang1 = circle_rot * dir + (i / segments) * math.pi * 2
                 ang2 = circle_rot * dir + ((i + 1) / segments) * math.pi * 2
-                # Skip some segments for a dashed look
                 if i % 4 == 0:
                     continue
                 x1 = cx + math.cos(ang1) * radius
@@ -840,7 +897,7 @@ class ArcaneQuestMenu(Menu):
                 y2 = cy + math.sin(ang2) * radius
                 pygame.draw.line(screen, color, (x1, y1), (x2, y2), max(1, int(1.5 - ring_idx * 0.3)))
 
-        # Hexagram (6-pointed star)
+        # Hexagram
         hex_radius = min(sw, sh) * 0.18
         hex_rot = t * 0.08
         hex_alpha = int(12 + 10 * math.sin(t * 0.7))
@@ -849,18 +906,16 @@ class ArcaneQuestMenu(Menu):
         for i in range(6):
             ang = hex_rot + (i / 6) * math.pi * 2 - math.pi / 2
             points.append((cx + math.cos(ang) * hex_radius, cy + math.sin(ang) * hex_radius))
-        # Connect every other point (star shape)
         for i in range(6):
             p1 = points[i]
             p2 = points[(i + 2) % 6]
             pygame.draw.line(screen, hex_color, p1, p2, 1)
-        # Outer hexagon
         for i in range(6):
             p1 = points[i]
             p2 = points[(i + 1) % 6]
             pygame.draw.line(screen, hex_color, p1, p2, 1)
 
-        # -- Energy arcs (curved golden/purple lines) --
+        # Energy arcs
         for arc in self.energy_arcs:
             ang = arc["angle"] + t * arc["speed"]
             radius = arc["radius"]
@@ -879,16 +934,13 @@ class ArcaneQuestMenu(Menu):
                 if sa > 2:
                     pygame.draw.circle(screen, (*color, sa), (int(px), int(py)), max(1, int(arc["width"])))
 
-        # -- Twinkling stars (doubled) --
-        rng = random.Random(7)
-        star_colors = [GOLD_BRIGHT, GOLD, PURPLE_BRIGHT, PURPLE, MAGIC_CYAN, (255, 200, 180), (200, 180, 255)]
-        for _ in range(300):
-            sx = rng.randint(0, sw - 1)
-            sy = rng.randint(0, sh - 1)
-            twinkle = (math.sin(t * (1.5 + rng.random() * 2.0) + sx * 0.08 + sy * 0.06) + 1.0) * 0.5
+        # Cached twinkling stars
+        for star in self._cached_stars:
+            twinkle = (math.sin(t * star["speed"] + star["phase"] + star["seed_a"]) + 1.0) * 0.5
             a = int(25 + 100 * twinkle)
             size = 1 + twinkle * 0.7
-            c = rng.choice(star_colors)
+            c = star["color"]
+            sx, sy = star["x"], star["y"]
             star_surf = pygame.Surface((6, 6), pygame.SRCALPHA)
             pygame.draw.circle(star_surf, (*c, a), (3, 3), max(1, int(size)))
             screen.blit(star_surf, (sx - 3, sy - 3))
@@ -899,42 +951,24 @@ class ArcaneQuestMenu(Menu):
                 pygame.draw.circle(glow_surf, (*c, ga), (glow_r, glow_r), glow_r)
                 screen.blit(glow_surf, (sx - glow_r, sy - glow_r))
 
-        # -- Constellation lines (connecting close stars) --
-        rng2 = random.Random(13)
-        const_points = [(rng2.randint(0, sw - 1), rng2.randint(0, sh - 1)) for _ in range(40)]
-        for i, (x1, y1) in enumerate(const_points):
-            for j, (x2, y2) in enumerate(const_points):
-                if j <= i:
-                    continue
-                dx, dy = x2 - x1, y2 - y1
-                dist = math.sqrt(dx*dx + dy*dy)
-                if dist < 90 and dist > 20:
-                    twinkle = (math.sin(t * 0.6 + x1 * 0.01 + y1 * 0.01 + i) + 1.0) * 0.5
-                    a = int(6 + 12 * twinkle)
-                    if a > 3:
-                        pygame.draw.line(screen, (PURPLE_BRIGHT[0], PURPLE_BRIGHT[1], PURPLE_BRIGHT[2], a),
-                                         (x1, y1), (x2, y2), 1)
+        # Cached constellation lines
+        for (x1, y1, x2, y2, idx) in self._cached_constellations:
+            twinkle = (math.sin(t * 0.6 + x1 * 0.01 + y1 * 0.01 + idx) + 1.0) * 0.5
+            a = int(6 + 12 * twinkle)
+            if a > 3:
+                pygame.draw.line(screen, (PURPLE_BRIGHT[0], PURPLE_BRIGHT[1], PURPLE_BRIGHT[2], a),
+                                 (x1, y1), (x2, y2), 1)
 
-        # -- Decorative runes (16 around the edges) --
-        scale_runes = cfg.ui_scale()
-        rune_positions = [
-            (0.06, 0.08), (0.94, 0.08), (0.06, 0.92), (0.94, 0.92),
-            (0.02, 0.25), (0.98, 0.25), (0.02, 0.75), (0.98, 0.75),
-            (0.10, 0.02), (0.90, 0.02), (0.10, 0.98), (0.90, 0.98),
-            (0.50, 0.02), (0.50, 0.98), (0.02, 0.50), (0.98, 0.50),
-        ]
-        rune_chars = ["ᚠ", "ᚢ", "ᚦ", "ᚨ", "ᚱ", "ᚲ", "ᚷ", "ᚹ",
-                      "ᚺ", "ᚾ", "ᛁ", "ᛃ", "ᛇ", "ᛈ", "ᛉ", "ᛊ"]
-        rune_font = cfg.get_font(max(16, int(32 * scale_runes)))
-        for i, (rx, ry) in enumerate(rune_positions):
-            px, py = int(sw * rx), int(sh * ry)
-            pulse = (math.sin(t * 0.7 + i * 0.8) + 1.0) * 0.5
+        # Cached rune ornaments around edges
+        for rune in self._cached_runes:
+            pulse = (math.sin(t * 0.7 + rune["idx"] * 0.8) + 1.0) * 0.5
             a = int(20 + 60 * pulse)
-            r_color = GOLD if i % 3 == 0 else (PURPLE_BRIGHT if i % 3 == 1 else MAGIC_CYAN)
-            rune_surf = rune_font.render(rune_chars[i], True, (*r_color, a))
-            screen.blit(rune_surf, (px - rune_surf.get_width() // 2, py - rune_surf.get_height() // 2))
+            rune_surf = rune["surf"].copy()
+            rune_surf.set_alpha(a)
+            rw, rh = rune_surf.get_size()
+            screen.blit(rune_surf, (rune["x"] - rw // 2, rune["y"] - rh // 2))
 
-        # -- Radial gold/purple glow behind panel --
+        # Radial glow behind panel
         max_r = int(min(sw, sh) * 0.65)
         glow_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
         for r in range(max_r, 0, -4):
@@ -949,7 +983,7 @@ class ArcaneQuestMenu(Menu):
             pygame.draw.circle(glow_surf, ci, (cx, cy), r)
         screen.blit(glow_surf, (0, 0))
 
-        # -- Light rays from center (subtle) --
+        # Light rays from center
         for i in range(16):
             ang = (i / 16) * math.pi * 2 + t * 0.05
             a = max(0, int(3 + 5 * math.sin(t * 0.3 + i * 0.8)))
@@ -958,7 +992,7 @@ class ArcaneQuestMenu(Menu):
             ey = cy + math.sin(ang) * ray_len
             pygame.draw.line(screen, (*GOLD, a), (cx, cy), (ex, ey), 1)
 
-        # -- Vignette overlay --
+        # Vignette
         overlay = pygame.Surface((sw, sh), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 130))
         screen.blit(overlay, (0, 0))
@@ -973,12 +1007,16 @@ class ArcaneQuestMenu(Menu):
             screen.blit(sh_surf, (sh_rect.x - offset // 2, sh_rect.y + offset // 2))
 
     def _draw_panel(self, screen, rect):
+        # Outer majestic border
         outer = rect.inflate(6, 6)
         pygame.draw.rect(screen, GOLD_DARK, outer, border_radius=22)
         pygame.draw.rect(screen, PURPLE, rect.inflate(3, 3), width=2, border_radius=20)
+
+        # Panel fill
         pygame.draw.rect(screen, BLACK_PANEL, rect, border_radius=18)
         pygame.draw.rect(screen, GOLD_DEEP, rect.inflate(-6, -6), width=1, border_radius=14)
 
+        # Gradient overlay (purple tint from top to bottom)
         grad = pygame.Surface(rect.size, pygame.SRCALPHA)
         for y in range(rect.height):
             tt = y / max(1, rect.height - 1)
@@ -990,7 +1028,18 @@ class ArcaneQuestMenu(Menu):
         grad.blit(clip, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
         screen.blit(grad, rect.topleft)
 
-        gem_size = 8
+        # Arcane sigil watermark at panel center
+        sigil_w = int(rect.width * 0.35)
+        sigil_h = int(rect.height * 0.30)
+        sigil = self._get_sigil_surface(sigil_w, sigil_h)
+        pulse = (math.sin(self.anim_time * 1.5) + 1.0) * 0.5
+        sigil.set_alpha(int(40 + 60 * pulse))
+        sx = rect.x + (rect.width - sigil_w) // 2
+        sy = rect.y + (rect.height - sigil_h) // 2
+        screen.blit(sigil, (sx, sy))
+
+        # Ornate corner gems
+        gem_size = 10
         for gcx, gcy in [
             (rect.x + 14, rect.y + 14),
             (rect.right - 14, rect.y + 14),
@@ -1003,7 +1052,13 @@ class ArcaneQuestMenu(Menu):
             pygame.draw.polygon(screen, lighter, pts)
             pts = [(gcx - gem_size, gcy), (gcx + gem_size, gcy), (gcx, gcy + gem_size)]
             pygame.draw.polygon(screen, darker, pts)
-            pygame.draw.circle(screen, GOLD_BRIGHT, (gcx - 2, gcy - 2), 2)
+            gp = (math.sin(self.anim_time * 2.0 + gcx * 0.1) + 1.0) * 0.5
+            glow_r = gem_size * 2
+            gsurf = pygame.Surface((glow_r * 2, glow_r * 2), pygame.SRCALPHA)
+            ga = int(30 + 50 * gp)
+            pygame.draw.circle(gsurf, (*GOLD_BRIGHT, ga), (glow_r, glow_r), glow_r)
+            screen.blit(gsurf, (gcx - glow_r, gcy - glow_r))
+            pygame.draw.circle(screen, GOLD_BRIGHT, (gcx - 2, gcy - 2), max(2, gem_size // 4))
 
         # Corner rune ornaments
         rune_orn = cfg.get_font(max(12, int(18 * cfg.ui_scale())))
@@ -1019,6 +1074,20 @@ class ArcaneQuestMenu(Menu):
             o = rune_orn.render(orn_chars[idx], True, (*GOLD, a))
             screen.blit(o, (gcx - o.get_width() // 2, gcy - o.get_height() // 2 - 2))
 
+        # Decorative border runes along top and bottom edges
+        small_rune = cfg.get_font(max(8, int(12 * cfg.ui_scale())))
+        border_runes = ["ᚠ", "ᚢ", "ᚦ", "ᚨ", "ᚱ", "ᚲ", "ᚷ", "ᚹ", "ᚺ", "ᚾ", "ᛁ", "ᛃ"]
+        for i, ch in enumerate(border_runes):
+            frac = (i + 0.5) / len(border_runes)
+            bp = (math.sin(self.anim_time * 1.5 + i * 0.9) + 1.0) * 0.5
+            ba = int(30 + 50 * bp)
+            rs = small_rune.render(ch, True, (*GOLD_DEEP, ba))
+            # Top edge
+            tx = rect.x + int(rect.width * frac)
+            screen.blit(rs, (tx - rs.get_width() // 2, rect.y + 2))
+            # Bottom edge
+            screen.blit(rs, (tx - rs.get_width() // 2, rect.bottom - rs.get_height() - 2))
+
     def _draw_title(self, screen, panel_rect):
         cx = panel_rect.centerx
         title_y = panel_rect.y + 20
@@ -1026,7 +1095,6 @@ class ArcaneQuestMenu(Menu):
         title_surf = self.title_font.render(title_text, True, GOLD_BRIGHT)
         shadow_surf = self.title_font.render(title_text, True, (0, 0, 0))
 
-        # Entrance: title scales/fades in from center
         t = self.entrance_progress
         if self.entrance_active:
             title_delay = 0.1
@@ -1037,17 +1105,16 @@ class ArcaneQuestMenu(Menu):
             title_ease = 1.0 - (1.0 - title_p) ** 2
             title_scale = 0.6 + 0.4 * title_ease
             title_alpha = int(255 * title_ease)
-            # Scale title surface
             scaled_ts = pygame.transform.scale(
                 title_surf,
                 (int(title_surf.get_width() * title_scale), int(title_surf.get_height() * title_scale))
             )
-            # Apply alpha
             scaled_ts.set_alpha(title_alpha)
             ts = scaled_ts
         else:
             ts = title_surf
 
+        # Purple glow behind title
         glow = pygame.Surface((ts.get_width() + 60, ts.get_height() + 30), pygame.SRCALPHA)
         pulse = (math.sin(self.anim_time * 2.0) + 1.0) * 0.5
         glow_alpha = int(70 + 60 * pulse)
@@ -1055,6 +1122,8 @@ class ArcaneQuestMenu(Menu):
         inner = pygame.Rect(20, 10, ts.get_width() + 20, ts.get_height() + 10)
         pygame.draw.rect(glow, (0, 0, 0, 0), inner)
         screen.blit(glow, (cx - glow.get_width() // 2, title_y - 10))
+
+        # Shadow
         if self.entrance_active:
             shadow_ts = pygame.transform.scale(
                 shadow_surf,
@@ -1066,6 +1135,7 @@ class ArcaneQuestMenu(Menu):
             screen.blit(shadow_surf, (cx - ts.get_width() // 2 + 2, title_y + 2))
         screen.blit(ts, (cx - ts.get_width() // 2, title_y))
 
+        # Decorative line under title with diamond endpoints
         line_y = title_y + ts.get_height() + 6
         line_w = int(panel_rect.width * 0.7)
         line_x = cx - line_w // 2
@@ -1081,8 +1151,15 @@ class ArcaneQuestMenu(Menu):
                     (dx, line_y + dsz), (dx - dsz, line_y)]
             pygame.draw.polygon(screen, GOLD, dpts)
 
+        # Decorative arcane swashes on both sides of title
+        swash_font = cfg.get_font(max(14, int(22 * cfg.ui_scale())))
+        left_swash = swash_font.render("⟐", True, (*GOLD_DEEP, 120))
+        right_swash = swash_font.render("⟐", True, (*GOLD_DEEP, 120))
+        swash_y = title_y + ts.get_height() // 2 - left_swash.get_height() // 2
+        screen.blit(left_swash, (line_x - left_swash.get_width() - 10, swash_y))
+        screen.blit(right_swash, (line_x + line_w + 10, swash_y))
+
     def _draw_entrance_ring(self, screen, panel_rect, progress):
-        """Expanding golden ring that radiates from panel center during entrance."""
         cx, cy = panel_rect.center
         max_radius = int(max(panel_rect.width, panel_rect.height) * 0.7)
         radius = int(max_radius * progress)
@@ -1112,7 +1189,7 @@ class ArcaneQuestMenu(Menu):
             if r.width <= 0 or r.height <= 0:
                 continue
 
-            # Entrance stagger: each slot slides in from right with fade
+            # Entrance stagger
             if self.entrance_active:
                 slot_delay = 0.25 + i * 0.12
                 slot_duration = 0.35
@@ -1122,7 +1199,6 @@ class ArcaneQuestMenu(Menu):
                 slot_ease = 1.0 - (1.0 - slot_progress) ** 2
                 slide_offset = int(r.width * 0.3 * (1.0 - slot_ease))
                 slot_alpha = int(255 * slot_ease)
-                # Shift the rect for this slot
                 r = r.move(slide_offset, 0)
             else:
                 slot_alpha = 255
@@ -1130,7 +1206,7 @@ class ArcaneQuestMenu(Menu):
             completed_ready = q.is_finished and not q.claimed
             claimed = q.claimed
 
-            # Outer glow when complete
+            # Outer glow when completable
             if completed_ready:
                 pulse = (math.sin(self.anim_time * 3.0 + i * 0.7) + 1.0) * 0.5
                 glow_surf = pygame.Surface((r.width + 8, r.height + 8), pygame.SRCALPHA)
@@ -1138,22 +1214,58 @@ class ArcaneQuestMenu(Menu):
                 pygame.draw.rect(glow_surf, (*GOLD_BRIGHT, ga), glow_surf.get_rect(), border_radius=12)
                 screen.blit(glow_surf, (r.x - 4, r.y - 4))
 
-            # Border
+            # Slot border
             outer_col = GOLD_BRIGHT if completed_ready else (GOLD_DARK if not claimed else PURPLE_DARK)
             pygame.draw.rect(screen, outer_col, r.inflate(3, 3), border_radius=10)
             pygame.draw.rect(screen, PURPLE_DARK if not claimed else (45, 45, 55), r, border_radius=10)
+
+            # Animated arcane border runes on unclaimed slots
+            if not claimed:
+                border_font = cfg.get_font(max(6, int(9 * cfg.ui_scale())))
+                runes = ["ᚠ", "ᛟ", "ᚲ", "ᛉ"]
+                for rune_idx, (rx_pos, ry_pos) in enumerate([
+                    (r.x + 4, r.centery), (r.right - 4, r.centery),
+                    (r.centerx, r.y + 4), (r.centerx, r.bottom - 4),
+                ]):
+                    rp = (math.sin(self.anim_time * 2.0 + i * 0.5 + rune_idx * 1.3) + 1.0) * 0.5
+                    ra = int(30 + 60 * rp)
+                    rs = border_font.render(runes[rune_idx % len(runes)], True, (*GOLD_DEEP, ra))
+                    rsr = rs.get_rect(center=(rx_pos, ry_pos))
+                    screen.blit(rs, rsr)
+
+            # Slot background fill
             inner = r.inflate(-4, -4)
             bg_col = (20, 12, 32) if not claimed else (25, 25, 30)
             pygame.draw.rect(screen, bg_col, inner, border_radius=8)
             if not claimed:
                 pygame.draw.rect(screen, GOLD_DEEP, inner.inflate(-2, -2), width=1, border_radius=6)
 
+            # Subtle slot arcane sigil watermark
+            sigil_w = min(inner.width, inner.height) // 3
+            if sigil_w > 8 and not claimed:
+                ss = pygame.Surface((sigil_w * 2, sigil_w * 2), pygame.SRCALPHA)
+                scx, scy = sigil_w, sigil_w
+                for ring in range(2, 0, -1):
+                    ra = max(0, int(8 + 10 * math.sin(self.anim_time * 1.5 + i + ring)))
+                    pygame.draw.circle(ss, (*PURPLE_DEEP, ra), (scx, scy), sigil_w * ring // 2, width=1)
+                l_a = max(0, int(8 + 12 * math.sin(self.anim_time * 2 + i)))
+                pygame.draw.line(ss, (*PURPLE_DEEP, l_a),
+                                 (scx - sigil_w // 2, scy), (scx + sigil_w // 2, scy), 1)
+                l_a2 = max(0, int(8 + 12 * math.sin(self.anim_time * 2 + i + 1)))
+                pygame.draw.line(ss, (*PURPLE_DEEP, l_a2),
+                                 (scx, scy - sigil_w // 2), (scx, scy + sigil_w // 2), 1)
+                screen.blit(ss, (inner.right - sigil_w * 2 - 4, inner.centery - sigil_w))
+
             # Quest title
             title_surf = self.section_font.render(q.title, True, GOLD_BRIGHT if not claimed else (120, 120, 130))
+            if slot_alpha < 255:
+                title_surf.set_alpha(slot_alpha)
             screen.blit(title_surf, (r.x + 10, r.y + 6))
 
             # Mob description
             desc_surf = self.body_font.render(q.description, True, PURPLE_BRIGHT if not claimed else (100, 100, 110))
+            if slot_alpha < 255:
+                desc_surf.set_alpha(slot_alpha)
             screen.blit(desc_surf, (r.x + 10, r.y + 10 + title_surf.get_height()))
 
             # Reward text
@@ -1167,6 +1279,8 @@ class ArcaneQuestMenu(Menu):
             reward_text = " • ".join(reward_parts) if reward_parts else ""
             if reward_text:
                 reward_surf = self.small_font.render(reward_text, True, GOLD if not claimed else (100, 100, 110))
+                if slot_alpha < 255:
+                    reward_surf.set_alpha(slot_alpha)
                 screen.blit(reward_surf, (r.x + 10, r.y + 10 + title_surf.get_height() + desc_surf.get_height() + 2))
 
             # Progress bar
@@ -1180,10 +1294,12 @@ class ArcaneQuestMenu(Menu):
             self._draw_progress_bar(screen, bar_rect, q.progress_fraction(),
                                     glowing=(completed_ready and not claimed))
 
-            # Progress text
+            # Progress label
             if not claimed:
                 prog_label = _("{cur}/{max}").format(cur=q.progress, max=q.target_count)
                 prog_surf = self.small_font.render(prog_label, True, WHITE_SOFT)
+                if slot_alpha < 255:
+                    prog_surf.set_alpha(slot_alpha)
                 screen.blit(prog_surf, (bar_rect.right + 6, bar_rect.y - 1))
 
             # Claim / Claimed button
@@ -1197,9 +1313,7 @@ class ArcaneQuestMenu(Menu):
                     self._draw_magical_claim_button(screen, btn, i)
                 else:
                     self._draw_locked_button(screen, btn)
-
             elif claimed:
-                # Show cooldown ring + countdown if on cooldown
                 if q.on_cooldown:
                     remaining = q.cooldown_remaining
                     total = ArcaneQuest.QUEST_COOLDOWN_SECONDS
@@ -1209,7 +1323,7 @@ class ArcaneQuestMenu(Menu):
                     cx_slot, cy_slot = r.centerx + int(r.width * 0.08), r.centery
                     # Ring background
                     pygame.draw.circle(screen, (*PURPLE_DARK, 60), (cx_slot, cy_slot), ring_radius, width=3)
-                    # Progress arc (fills counter-clockwise as cooldown shrinks)
+                    # Arcane progress arc
                     arc_steps = 30
                     for step in range(arc_steps):
                         if step / arc_steps > (1.0 - frac):
@@ -1230,18 +1344,23 @@ class ArcaneQuestMenu(Menu):
                     cd_surf = self.small_font.render(cd_text, True, GOLD)
                     screen.blit(cd_surf, cd_surf.get_rect(center=(cx_slot, cy_slot)))
                 else:
-                    # Simple DONE badge when cooldown is done (shouldn't last long)
+                    # Ornate CLAIMED badge
                     badge_w = max(70, int(100 * cfg.ui_scale()))
                     badge_h = max(22, int(30 * cfg.ui_scale()))
                     badge_rect = pygame.Rect(r.right - badge_w - int(8 * cfg.ui_scale()),
                                              r.centery - badge_h // 2, badge_w, badge_h)
-                    pygame.draw.rect(screen, (50, 50, 55), badge_rect, border_radius=6)
-                    pygame.draw.rect(screen, (120, 120, 130), badge_rect, 1, border_radius=6)
-                    done_surf = self.small_font.render(_("CLAIMED"), True, (160, 160, 170))
+                    bg = pygame.Surface(badge_rect.size, pygame.SRCALPHA)
+                    pygame.draw.rect(bg, (40, 40, 50, 200), bg.get_rect(), border_radius=6)
+                    pygame.draw.rect(bg, (GOLD_DARK[0], GOLD_DARK[1], GOLD_DARK[2], 180),
+                                     bg.get_rect(), 1, border_radius=6)
+                    screen.blit(bg, badge_rect)
+                    done_surf = self.small_font.render(_("CLAIMED"), True, GOLD)
+                    done_surf.set_alpha(200)
                     screen.blit(done_surf, done_surf.get_rect(center=badge_rect.center))
 
     def _draw_magical_claim_button(self, screen, btn, idx):
         pulse = (math.sin(self.anim_time * 3.0 + idx * 1.1) + 1.0) * 0.5
+
         # Outer glow aura
         aura_size = int(btn.rect.width * 1.4)
         aura_surf = pygame.Surface((aura_size, aura_size), pygame.SRCALPHA)
@@ -1258,7 +1377,7 @@ class ArcaneQuestMenu(Menu):
         screen.blit(aura_surf,
                     (btn.rect.centerx - aura_size // 2, btn.rect.centery - aura_size // 2))
 
-        # Gradient background
+        # Gradient background (gold → purple)
         grad = pygame.Surface(btn.rect.size, pygame.SRCALPHA)
         for x in range(btn.rect.width):
             tt = x / max(1, btn.rect.width - 1)
@@ -1281,17 +1400,17 @@ class ArcaneQuestMenu(Menu):
 
         # Gold border
         pygame.draw.rect(screen, GOLD_BRIGHT, btn.rect, 2, border_radius=8)
+
         # Text with glow
         text_surf = btn.font.render(btn.text, True, (255, 255, 240))
         text_rect = text_surf.get_rect(center=btn.rect.center)
-        # text shadow
         shadow_surf = btn.font.render(btn.text, True, (80, 50, 20, 120))
         screen.blit(shadow_surf, (text_rect.x + 1, text_rect.y + 1))
         screen.blit(text_surf, text_rect)
-        # Decorative star left
+
+        # Decorative stars
         self._draw_star(screen, btn.rect.x + 8, btn.rect.centery, 2.5, GOLD_BRIGHT,
                         self.anim_time + idx * 0.3)
-        # Decorative star right
         self._draw_star(screen, btn.rect.right - 8, btn.rect.centery, 2.5, PURPLE_BRIGHT,
                         self.anim_time + idx * 0.3 + 1.5)
 
@@ -1314,9 +1433,12 @@ class ArcaneQuestMenu(Menu):
         screen.blit(text_surf, text_rect)
 
     def _draw_progress_bar(self, screen, rect, frac, glowing=False):
+        # Background track
         pygame.draw.rect(screen, (8, 4, 18), rect, border_radius=rect.height // 2)
         inner = rect.inflate(-2, -2)
         pygame.draw.rect(screen, (20, 10, 32), inner, border_radius=inner.height // 2)
+
+        # Gold→purple gradient fill
         fill_w = max(0, int(rect.width * frac))
         if fill_w > 0:
             for x in range(fill_w):
@@ -1326,6 +1448,8 @@ class ArcaneQuestMenu(Menu):
                 b = int(GOLD[2] * (1 - tt) + PURPLE_BRIGHT[2] * tt)
                 pygame.draw.line(screen, (r, g, b), (rect.x + x, rect.y + 1),
                                  (rect.x + x, rect.bottom - 2))
+
+            # Shimmer sweep
             shimmer_x = int((self.anim_time * 60) % (fill_w + 60)) - 30
             for sx in range(max(0, shimmer_x), min(fill_w, shimmer_x + 30)):
                 a = int(120 * (1 - abs(sx - shimmer_x - 15) / 15))
@@ -1334,11 +1458,22 @@ class ArcaneQuestMenu(Menu):
                                      (rect.x + sx, rect.y + 1),
                                      (rect.x + sx, rect.bottom - 2))
 
+            # Completion sparkle near end of bar
+            if frac > 0.9 and glowing:
+                sp = (math.sin(self.anim_time * 6.0) + 1.0) * 0.5
+                sx_end = rect.x + fill_w - 2
+                sa = int(80 + 175 * sp)
+                sz = max(1, int(2 + sp * 2))
+                pygame.draw.circle(screen, (*GOLD_BRIGHT, sa), (sx_end, rect.centery), sz)
+
+        # Clip to rounded rect
         mask = pygame.Surface(rect.size, pygame.SRCALPHA)
         pygame.draw.rect(mask, (255, 255, 255, 255), mask.get_rect(),
                          border_radius=rect.height // 2)
         screen.blit(mask, rect.topleft, special_flags=pygame.BLEND_RGBA_MULT)
         pygame.draw.rect(screen, GOLD_DEEP, rect, width=1, border_radius=rect.height // 2)
+
+        # Glow border when completable
         if glowing:
             pulse = (math.sin(self.anim_time * 4.0) + 1.0) * 0.5
             ga = int(80 + 80 * pulse)
@@ -1365,16 +1500,14 @@ class ArcaneQuestMenu(Menu):
                                ((size + 16) // 2, (size + 16) // 2), (size + 16) // 2)
             screen.blit(glow_surf, (bx - (size + 16) // 2, by - (size + 16) // 2))
 
-        # Cooldown ring (when used and waiting for cooldown)
+        # Cooldown ring
         on_cooldown = self.rerolls_remaining <= 0 and time.time() < self.reroll_cooldown_until
         if on_cooldown:
             ring_radius = int(size * 0.75)
             remaining = max(0.0, self.reroll_cooldown_until - time.time())
             total = 600.0
             frac = remaining / total
-            # Ring background
             pygame.draw.circle(screen, (*PURPLE_DARK, 80), (bx, by), ring_radius, width=2)
-            # Progress arc
             arc_steps = 24
             for step in range(arc_steps):
                 if step / arc_steps > (1.0 - frac):
@@ -1408,7 +1541,6 @@ class ArcaneQuestMenu(Menu):
         icon_rect = icon_surf.get_rect(center=(bx, by))
         screen.blit(icon_surf, icon_rect)
 
-        # Hover tooltip
         if self.reroll_tooltip:
             self.reroll_tooltip.draw(screen)
 
@@ -1472,3 +1604,11 @@ class ArcaneQuestMenu(Menu):
             if p.y > screen.get_height() + 10:
                 continue
             self._draw_star(screen, int(p.x), int(p.y), int(p.size), p.color, self.anim_time + p.x)
+
+    def _draw_gold_dust(self, screen):
+        for p in self.gold_dust:
+            sz = max(1, int(p.size))
+            a = int(200 * p.alpha)
+            if a <= 3:
+                continue
+            pygame.draw.circle(screen, (*p.color, a), (int(p.x), int(p.y)), sz)
