@@ -12,9 +12,39 @@ def seed_tools(db):
     )
 
     db.add_tool(
+        item_id="wooden_pickaxe",
+        name="Wooden Pickaxe",
+        image_path="assets/items/tools/wooden_pickaxe.png",
+        tool_type="pickaxe",
+        durability=30,
+        power=1,
+        price=15,
+        max_stack=1,
+        description="A flimsy pickaxe carved from wood. Better than fists when mining stone.",
+        gather_type="stone",
+        gather_yield_min=1,
+        gather_yield_max=1,
+    )
+
+    db.add_tool(
+        item_id="wooden_axe",
+        name="Wooden Axe",
+        image_path="assets/items/tools/wooden_axe.png",
+        tool_type="axe",
+        durability=30,
+        power=1,
+        price=15,
+        max_stack=1,
+        description="A rough wooden axe. Useful for chopping down trees.",
+        gather_type="wood",
+        gather_yield_min=1,
+        gather_yield_max=2,
+    )
+
+    db.add_tool(
         item_id="stone_axe",
         name="Stone Axe",
-        image_path="assets/items/tools/axe.png",
+        image_path="assets/items/tools/stone_axe.png",
         tool_type="axe",
         durability=50,
         power=2,
@@ -44,7 +74,7 @@ def seed_tools(db):
     db.add_tool(
         item_id="stone_pickaxe",
         name="Stone Pickaxe",
-        image_path="assets/items/tools/pickaxe.png",
+        image_path="assets/items/tools/stone_pickaxe.png",
         tool_type="pickaxe",
         durability=50,
         power=2,

@@ -26,3 +26,12 @@ def seed_resources(db):
         max_stack=64,
         description="Raw iron ore, straight from the rock. Smelt it into ingots."
     )
+    db.add_generic_item(
+        item_id="stick",
+        item_type="resource",
+        name="Stick",
+        image_path="assets/items/resources/stick.png",
+        price=1,
+        max_stack=64,
+        description="A thin wooden stick. A basic crafting component for tools and weapons."
+    )
