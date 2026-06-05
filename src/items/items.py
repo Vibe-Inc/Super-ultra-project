@@ -48,7 +48,7 @@ class Item:
             self._cached_image = pygame.transform.scale(self.image, (size, size))
             self._cached_size = size
         return self._cached_image
-    
+
     def get_tooltip_text(self):
         return f"{self.name}\n{self.description}"
 
@@ -139,7 +139,7 @@ class MeleeWeapon(Weapon):
             f"{_('Style')}: {style_label}\n"
             f"Price: ${self.price}"
         )
-        return f"{self.name}\n{stats}\n{self.description}"    
+        return f"{self.name}\n{stats}\n{self.description}"
 
 
 class RangedWeapon(Weapon):
@@ -316,7 +316,7 @@ class Lantern(Item):
     """Handheld lantern that illuminates a small radius around the character while held.
 
     The lantern emits light automatically when it occupies the player's active
-    hotbar slot — no toggling required.  ``Game.get_light_sources`` reads the
+    hotbar slot — no toggling needed.  ``Game.get_light_sources`` reads the
     ``emits_light`` flag and the ``light_radius`` / ``intensity`` attributes to
     feed the lighting overlay in the renderer.
     """
@@ -382,6 +382,56 @@ class LightRing(Armor):
         return f"{self.name}\n{stats}\n{self.description}"
 
 
+# ─── Rainbow / Gay Ring ───────────────────────────────────────────────────────
+
+class GayRing(Armor):
+    """A fabulous rainbow ring that creates a gloving rainbow aura around the wearer.
+
+    When equipped in the ring slot, it generates a vibrant rainbow aura with
+    orbiting rainbow-colored particles, pulsing rainbow rings, and sparkle effects
+    that follow the player character.
+    """
+    # Predefined rainbow color palette for consistent cycling
+    RAINBOW_COLORS = [
+        (255, 50, 50),    # Red
+        (255, 160, 20),   # Orange
+        (255, 255, 50),   # Yellow
+        (50, 255, 50),    # Green
+        (50, 200, 255),   # Cyan/Blue
+        (200, 50, 255),   # Purple
+        (255, 50, 200),   # Pink
+    ]
+
+    def __init__(self, row: dict | None = None, *, image_path: str = "assets/items/accessories/Gay_ring.png"):
+        if row is None:
+            row = {
+                "id": "gay_ring",
+                "name": "Gay Ring",
+                "type": "armor",
+                "max_stack": 1,
+                "price": 67,
+                "description": "A fabulous rainbow ring! Creates a gloving rainbow aura around you when equipped.",
+                "image_path": image_path,
+                "slot_type": "ring",
+                "defense_value": 1,
+            }
+        super().__init__(row)
+        self.emits_light = True
+        self.light_radius = 130
+        self.light_intensity = 1.6
+
+    def get_tooltip_text(self):
+        rainbow_charm = "🌈✨🌈✨🌈"
+        stats = (
+            f"{_('Type')}: {_('Armor')} ({_('Ring')})\n"
+            f"{_('Defense')}: +{self.defense_value}\n"
+            f"{rainbow_charm}\n"
+            f"{_('Gloving Rainbow Aura')}\n"
+            f"Price: ${self.price}"
+        )
+        return f"{self.name}\n{stats}\n{self.description}"
+
+
 def create_item(item_id: str):
     """
     Factory function to instantiate the appropriate item class.
@@ -397,7 +447,6 @@ def create_item(item_id: str):
         try:
             return Lamp(None)
         except Exception:
-            # fallback to generic Item if Lamp construction fails
             pass
 
     if item_id == "lantern":
@@ -412,8 +461,14 @@ def create_item(item_id: str):
         except Exception:
             pass
 
-    from database.GP_database import Gp_database 
-    
+    if item_id == "gay_ring":
+        try:
+            return GayRing(None)
+        except Exception:
+            pass
+
+    from database.GP_database import Gp_database
+
     db = Gp_database()
     row = db.get_item(item_id)
     db.close()
@@ -423,7 +478,7 @@ def create_item(item_id: str):
         return None
 
     item_type = row.get("type")
-    
+
     if item_type == "weapon":
         w_class = row.get("weapon_class")
         if w_class == "ranged":

@@ -842,6 +842,28 @@ class Game(State):
             except Exception:
                 pass
 
+
+            # GayRing: emits its own soft rainbow light when equipped in ring slot
+            from src.items.items import GayRing
+            try:
+                eq = getattr(self, 'PLAYER_inventory_equipment', None)
+                if eq:
+                    for ex in range(eq.columns):
+                        for ey in range(eq.rows):
+                            eq_slot = eq.items[ex][ey]
+                            if eq_slot:
+                                eq_item = eq_slot[0] if isinstance(eq_slot, (list, tuple)) else eq_slot
+                                if isinstance(eq_item, GayRing) and getattr(eq_item, 'emits_light', False):
+                                    screen_pos = (int(player_center.x - camera.x), int(player_center.y - camera.y))
+                                    lights.append({
+                                        'pos': screen_pos,
+                                        'radius': int(getattr(eq_item, 'light_radius', 130)),
+                                        'intensity': float(getattr(eq_item, 'light_intensity', 1.6)),
+                                        'full_360': True,
+                                    })
+            except Exception:
+                pass
+
             # Optional: existing dropped items that emit light
             for it in getattr(self, 'items', []):
                 try:
@@ -1164,6 +1186,26 @@ class Game(State):
         # Ice Armor: slow nearby enemies
         if self.character.ice_armor_active:
             self._apply_ice_armor_slow(dt)
+
+        # GayRing: check if equipped in ring slot and toggle rainbow aura
+        from src.items.items import GayRing
+        try:
+            eq = getattr(self, 'PLAYER_inventory_equipment', None)
+            gay_ring_equipped = False
+            if eq:
+                for ex in range(eq.columns):
+                    for ey in range(eq.rows):
+                        eq_slot = eq.items[ex][ey]
+                        if eq_slot:
+                            eq_item = eq_slot[0] if isinstance(eq_slot, (list, tuple)) else eq_slot
+                            if isinstance(eq_item, GayRing):
+                                gay_ring_equipped = True
+                                break
+                    if gay_ring_equipped:
+                        break
+            self.character.rainbow_aura_active = gay_ring_equipped
+        except Exception:
+            pass
 
         # Regeneration passive
         if self.character.regeneration:

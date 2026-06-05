@@ -128,6 +128,7 @@ class App:
         add_item(3, 1, "crossbow")
         add_item(4, 1, "throwing_dagger")
         add_item(5, 1, "light_ring")
+        add_item(6, 1, "gay_ring")
 
         # Row 2 — Potions
         add_item(0, 2, "small_health_potion", 3)
@@ -378,6 +379,7 @@ class App:
                         lx, ly = l.get('pos', (0, 0))
                         radius = int(l.get('radius', 120))
                         intensity = float(l.get('intensity', 1.0))
+                        even = l.get('even', False)
                         if radius <= 0:
                             continue
                         # Build a soft alpha-reduction gradient.
@@ -391,7 +393,10 @@ class App:
                             frac = i / steps          # 1 at edge, 0 at centre
                             r = int(frac * radius)
                             # Alpha to SUBTRACT from the overlay: high at centre
-                            a = int((1.0 - frac) * overlay_alpha * intensity)
+                            if even:
+                                a = int(overlay_alpha * intensity)
+                            else:
+                                a = int((1.0 - frac ** 4) * overlay_alpha * intensity)
                             a = max(0, min(255, a))
                             pygame.draw.circle(
                                 grad, (0, 0, 0, a), (radius, radius), r
@@ -406,11 +411,12 @@ class App:
 
                         # Apply directional hemisphere mask so the light
                         # only illuminates in front and sides, not behind.
-                        mask = self._get_dir_mask(radius, dir_x, dir_y)
-                        grad.blit(
-                            mask, (0, 0),
-                            special_flags=pygame.BLEND_RGBA_MULT,
-                        )
+                        if not l.get('full_360'):
+                            mask = self._get_dir_mask(radius, dir_x, dir_y)
+                            grad.blit(
+                                mask, (0, 0),
+                                special_flags=pygame.BLEND_RGBA_MULT,
+                            )
 
                         gx = lx - radius
                         gy = ly - radius
@@ -421,6 +427,26 @@ class App:
                             )
                         except Exception:
                             pass
+
+                        # Colored light overlay (e.g. rainbow GayRing)
+                        light_color = l.get('color')
+                        if light_color:
+                            clr = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+                            for i in range(steps, 0, -1):
+                                frac = i / steps
+                                r = int(frac * radius)
+                                ca = int((1.0 - frac ** 4) * 80 * intensity)
+                                ca = max(0, min(255, ca))
+                                pygame.draw.circle(clr, (*light_color, ca), (radius, radius), r)
+                            small = pygame.transform.smoothscale(clr, (max(1, radius // 4), max(1, radius // 4)))
+                            clr = pygame.transform.smoothscale(small, (radius * 2, radius * 2))
+                            if not l.get('full_360'):
+                                mask = self._get_dir_mask(radius, dir_x, dir_y)
+                                clr.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+                            try:
+                                overlay.blit(clr, (gx, gy), special_flags=pygame.BLEND_RGBA_ADD)
+                            except Exception:
+                                pass
                 else:
                     # No local lights – simple uniform darkening
                     if self._brightness_overlay is None or self._brightness_overlay.get_size() != (cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT):
