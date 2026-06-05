@@ -518,6 +518,9 @@ class MainMenu(Menu):
 
     def start_game(self):
         logger.info("Start game requested from MainMenu")
+        quest_state = self.app.manager.states.get("arcane_quest")
+        if quest_state and hasattr(quest_state, "reset_quests"):
+            quest_state.reset_quests()
         self.app.manager.set_state("gameplay")
 
     def exit_game(self):

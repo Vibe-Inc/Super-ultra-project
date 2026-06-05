@@ -85,6 +85,12 @@ class StateManager:
         if hasattr(gameplay_state, "reinit_ui"):
             gameplay_state.reinit_ui()
         
+        # Preserve quest data before recreating the quest menu
+        old_quest = self.states.get("arcane_quest")
+        quest_data = None
+        if old_quest and hasattr(old_quest, "get_quest_data"):
+            quest_data = old_quest.get_quest_data()
+        
         self.states = {
             "main": MainMenu(self.states["main"].app),
             "settings": SettingsMenu(self.states["settings"].app),
@@ -98,6 +104,12 @@ class StateManager:
             "wiki": WikiMenu(self.states["main"].app),
             "arcane_quest": ArcaneQuestMenu(self.states["main"].app),
         }
+        
+        # Restore quest data into the new quest menu
+        if quest_data:
+            new_quest = self.states.get("arcane_quest")
+            if new_quest and hasattr(new_quest, "set_quest_data"):
+                new_quest.set_quest_data(quest_data)
         
         if current_name:
             self.current_state = self.states.get(current_name)

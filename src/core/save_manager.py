@@ -199,6 +199,12 @@ class SaveManager:
                     col_data.append(None)
             serialized_hotbar.append(col_data)
 
+        # Serialize Quest Data
+        quest_data = []
+        quest_state = app.manager.states.get("arcane_quest")
+        if quest_state and hasattr(quest_state, "get_quest_data"):
+            quest_data = quest_state.get_quest_data()
+
         char = game_state.character
 
         # Build character state dict (raw __dict__ values to bypass __getattribute__ overrides)
@@ -236,7 +242,8 @@ class SaveManager:
             "hotbar": serialized_hotbar,
             "hotbar_active_slot": getattr(game_state, "hotbar", None).active_slot_index if hasattr(game_state, "hotbar") and game_state.hotbar else 0,
             "equipment": serialized_equip,
-            "game_time_seconds": int(getattr(game_state, "game_time_seconds", 6 * 3600))
+            "game_time_seconds": int(getattr(game_state, "game_time_seconds", 6 * 3600)),
+            "quests": quest_data,
         }
         
         if hasattr(game_state, "current_map_path"):
@@ -365,6 +372,13 @@ class SaveManager:
                     equip_inv.items[col][row] = [item, count]
                 else:
                     equip_inv.items[col][row] = None
+
+        # Restore Quest Data
+        quest_data = data.get("quests", [])
+        if quest_data:
+            quest_state = app.manager.states.get("arcane_quest")
+            if quest_state and hasattr(quest_state, "set_quest_data"):
+                quest_state.set_quest_data(quest_data)
 
         # Sync character defense from loaded equipment
         equip_inv.sync_character_defense(char)
