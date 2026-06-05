@@ -668,11 +668,11 @@ class FishingController:
             if overlap:
                 proximity = 1.0 - (distance / tolerance) if tolerance > 0 else 0.0
                 accel = proximity * proximity
-                base_fill = 60.0 * (1.0 - difficulty * 0.15)
+                base_fill = 18.0 * (1.0 - difficulty * 0.15)
                 fill_rate = base_fill * accel
                 self.catch_fill += fill_rate * dt
             else:
-                drain_rate = 25.0 + difficulty * 8.0
+                drain_rate = 12.0 + difficulty * 4.0
                 self.catch_fill -= drain_rate * dt
             self.catch_fill = max(0.0, min(self.catch_fill, self.catch_fill_max))
 
