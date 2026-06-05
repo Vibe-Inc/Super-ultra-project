@@ -134,6 +134,18 @@ class Gp_database:
         ''')
 
         self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS fish (
+                item_id TEXT PRIMARY KEY,
+                rarity TEXT NOT NULL DEFAULT 'common',
+                difficulty REAL DEFAULT 0.3,
+                speed REAL DEFAULT 1.0,
+                spawn_weight INT DEFAULT 50,
+                base_price INT DEFAULT 10,
+                FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE
+            )
+        ''')
+
+        self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS consumable_effects (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 item_id TEXT,
@@ -426,6 +438,59 @@ class Gp_database:
             self.conn.rollback()
             return False
 
+    def add_fish(self, item_id: str, name: str, image_path: str,
+                 rarity: str = "common", difficulty: float = 0.3,
+                 speed: float = 1.0, spawn_weight: int = 50,
+                 base_price: int = 10, description: str = "") -> bool:
+        """
+        Add a fish item to the database.
+
+        Fish are caught via the fishing minigame and stored in the
+        inventory.  Each fish carries stats that map directly to the
+        ``FishType`` dataclass used by the fishing controller.
+
+        Args:
+            item_id (str): Unique identifier for the fish.
+            name (str): Display name or translation key.
+            image_path (str): File path to the fish's sprite.
+            rarity (str): Rarity tier — ``common``, ``uncommon``,
+                ``rare``, or ``legendary``.
+            difficulty (float): ``0.0`` (very easy) to ``1.0`` (very
+                hard). Controls speed, direction-change frequency,
+                and catch tolerance in the minigame.
+            speed (float): Multiplier applied to the fish's base
+                vertical speed on the catching bar.
+            spawn_weight (int): Relative spawn weight when selecting
+                a fish on a bite. Higher = more common.
+            base_price (int): Gold value when sold.
+            description (str): Description text.
+
+        Returns:
+            bool: True if insertion was successful, False otherwise.
+        """
+        try:
+            self.conn.execute("BEGIN TRANSACTION")
+
+            self.cursor.execute('''
+                INSERT INTO items (id, type, name, image_path, price, max_stack, description)
+                VALUES (?, 'fish', ?, ?, ?, 64, ?)
+            ''', (item_id, name, image_path, base_price, description))
+
+            self.cursor.execute('''
+                INSERT INTO fish (item_id, rarity, difficulty, speed, spawn_weight, base_price)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (item_id, rarity, difficulty, speed, spawn_weight, base_price))
+
+            self.conn.commit()
+            print(f"Fish '{item_id}' added successfully.")
+            return True
+        except sqlite3.IntegrityError:
+            self.conn.rollback()
+            return False
+        except sqlite3.Error:
+            self.conn.rollback()
+            return False
+
     def add_consumable(self, item_id: str, item_type: str, name: str, image_path: str,
                        heal_amount: int = 0, effects: list = None,
                        price: int = 0, max_stack: int = 64, description: str = "") -> bool:
@@ -510,12 +575,15 @@ class Gp_database:
                    weapons.cone_degrees, weapons.on_hit_effects, weapons.combat_style,
                    consumables.heal_amount,
                    armor.slot_type, armor.defense_value,
-                   tools.tool_type, tools.durability AS tool_durability, tools.power
+                   tools.tool_type, tools.durability AS tool_durability, tools.power,
+                   fish.rarity, fish.difficulty, fish.speed AS fish_speed,
+                   fish.spawn_weight, fish.base_price AS fish_base_price
             FROM items
             LEFT JOIN weapons ON items.id = weapons.item_id
             LEFT JOIN consumables ON items.id = consumables.item_id
             LEFT JOIN armor ON items.id = armor.item_id
             LEFT JOIN tools ON items.id = tools.item_id
+            LEFT JOIN fish ON items.id = fish.item_id
             WHERE items.id = ?
         ''', (item_id,))
 
