@@ -122,7 +122,11 @@ class Bobber:
 class FishInstance:
 
     def __init__(self, fish_type: FishType, start_x: float, start_y: float):
-        """Create a fish with erratic vertical motion on the bar.
+        """Create a fish with smooth drifting vertical motion on the bar.
+
+        The fish glides toward random target positions using smooth
+        acceleration, producing natural flowing movement instead of
+        sharp zigzags.
 
         Args:
             fish_type (FishType): The kind of fish this instance
@@ -144,13 +148,13 @@ class FishInstance:
                 ``[0.02, 0.98]`` (0 = top, 1 = bottom).
             velocity (float): Current vertical velocity in
                 normalized units per second.
-            _dir_timer (float): Seconds until the next direction
+            _target_y (float): Target position the fish drifts
+                toward.
+            _drift_speed (float): Maximum speed toward the target.
+            _target_timer (float): Seconds until the next target
                 change.
-            _change_interval_min (float): Lower bound for the
-                inter-direction-change interval.
-            _change_interval_max (float): Upper bound for the
-                inter-direction-change interval.
-            _max_speed (float): Cap for the fish's burst speed.
+            _wobble_phase (float): Phase offset for the sinusoidal
+                wobble overlay.
         """
         self.fish_type = fish_type
         self.pos = pygame.Vector2(start_x, start_y)
@@ -160,44 +164,52 @@ class FishInstance:
         self.seed = random.random() * 1000.0
         self.y_norm = 0.5
         diff = fish_type.difficulty
-        self.velocity = random.uniform(-1.0, 1.0) * (0.3 + diff * 0.4)
-        self._dir_timer = random.uniform(0.6, 1.6)
-        self._change_interval_min = max(0.25, 0.7 - diff * 0.3)
-        self._change_interval_max = max(0.6, 1.6 - diff * 0.5)
-        self._max_speed = 0.45 + diff * 0.8
+        self.velocity = 0.0
+        self._target_y = random.uniform(0.2, 0.8)
+        self._drift_speed = 0.35 + diff * 0.2
+        self._target_timer = random.uniform(1.0, 2.0)
+        self._wobble_phase = random.uniform(0.0, math.tau)
 
     def update(self, dt: float):
         """Step the fish forward by ``dt`` seconds.
 
-        Re-rolls velocity whenever the direction-change timer
-        elapses, applies a soft top/bottom bounce, and integrates
-        ``y_norm``.
+        The fish smoothly accelerates toward a randomly chosen
+        target position.  A small sinusoidal wobble is layered on
+        top for a natural feel.  Soft bouncing keeps ``y_norm``
+        inside ``[0.02, 0.98]``.
 
         Args:
             dt (float): Elapsed time in seconds. Must be
                 non-negative.
         """
         self.time += dt
-        self._dir_timer -= dt
-        if self._dir_timer <= 0.0:
-            burst = 1.0
-            if random.random() < 0.25 + self.fish_type.difficulty * 0.25:
-                burst = random.uniform(1.3, 2.2)
-            direction = random.choice([-1.0, 1.0])
-            magnitude = random.uniform(0.25, 1.0) * self._max_speed * burst
-            self.velocity = direction * magnitude
-            self._dir_timer = random.uniform(
-                self._change_interval_min,
-                self._change_interval_max,
-            )
 
-        self.y_norm += self.velocity * dt
+        # Pick a new target when the timer expires.
+        self._target_timer -= dt
+        if self._target_timer <= 0.0:
+            self._target_y = random.uniform(0.15, 0.85)
+            self._target_timer = random.uniform(1.5, 3.0)
+
+        # Smooth acceleration toward the target.
+        diff_to_target = self._target_y - self.y_norm
+        desired_speed = max(-self._drift_speed, min(self._drift_speed, diff_to_target * 2.0))
+        self.velocity += (desired_speed - self.velocity) * min(1.0, 3.5 * dt)
+
+        # Small sinusoidal wobble for natural feel.
+        wobble_amp = 0.03 + self.fish_type.difficulty * 0.02
+        wobble = math.sin(self.time * 2.5 + self._wobble_phase) * wobble_amp
+
+        self.y_norm += self.velocity * dt + wobble * dt
+
+        # Soft bounce at the edges.
         if self.y_norm < 0.02:
             self.y_norm = 0.02
-            self.velocity = abs(self.velocity) * 0.6
+            self.velocity = abs(self.velocity) * 0.5
+            self._target_y = random.uniform(0.3, 0.7)
         elif self.y_norm > 0.98:
             self.y_norm = 0.98
-            self.velocity = -abs(self.velocity) * 0.6
+            self.velocity = -abs(self.velocity) * 0.5
+            self._target_y = random.uniform(0.3, 0.7)
 
 
 class FishingUI:
