@@ -41,6 +41,17 @@ BLACK_PANEL   = (18, 10, 28, 235)
 WHITE_SOFT    = (235, 225, 255)
 MAGIC_CYAN    = (140, 220, 255)
 
+MOB_DISPLAY_NAMES = {
+    "brute": "Brute",
+    "venomous": "Venomous Stalker",
+    "arcanist": "Arcanist",
+    "trickster": "Trickster",
+    "bomber": "Bomber",
+    "stalker": "Stalker",
+    "skirmisher": "Skirmisher",
+    "guardian": "Guardian",
+}
+
 
 class _Particle:
     __slots__ = (
@@ -100,7 +111,7 @@ class ArcaneQuest:
 
 
 class ArcaneQuestMenu(Menu):
-    QUESTS_PER_PAGE = 5
+    QUESTS_PER_PAGE = 6
 
     def __init__(self, app: "App"):
         super().__init__(app)
@@ -126,39 +137,13 @@ class ArcaneQuestMenu(Menu):
             on_click=self.close_menu,
         )
 
-        # Page navigation buttons
-        nav_w = max(100, int(140 * scale))
-        nav_h = max(36, int(48 * scale))
-        self.prev_button = Button(
-            pygame.Rect(0, 0, nav_w, nav_h),
-            _("< PREV"),
-            (35, 20, 55),
-            (70, 40, 100),
-            cfg.button_font,
-            PURPLE_BRIGHT,
-            max(2, int(8 * scale)),
-            on_click=self._prev_page,
-        )
-        self.next_button = Button(
-            pygame.Rect(0, 0, nav_w, nav_h),
-            _("NEXT >"),
-            (35, 20, 55),
-            (70, 40, 100),
-            cfg.button_font,
-            PURPLE_BRIGHT,
-            max(2, int(8 * scale)),
-            on_click=self._next_page,
-        )
-
-        # Per-quest claim buttons (created per page in layout)
+        # Per-quest claim buttons (created per layout)
         self.claim_buttons: list[Button] = []
 
-        self.buttons = [self.back_button, self.prev_button, self.next_button]
+        self.buttons = [self.back_button]
 
         self.quests: list[ArcaneQuest] = []
         self._init_quests()
-        self.page = 0
-        self.max_page = max(0, (len(self.quests) - 1) // self.QUESTS_PER_PAGE)
 
         self.anim_time = 0.0
         self.particles: list[_Particle] = []
@@ -180,7 +165,6 @@ class ArcaneQuestMenu(Menu):
         self.panel_rect = pygame.Rect(0, 0, 0, 0)
         self.title_rect = pygame.Rect(0, 0, 0, 0)
         self.slot_rects: list[pygame.Rect] = []
-        self.page_info_rect = pygame.Rect(0, 0, 0, 0)
 
     def get_quest_data(self) -> list[dict]:
         """Export quest state for save serialization."""
@@ -211,29 +195,31 @@ class ArcaneQuestMenu(Menu):
         self._init_quests()
 
     def _init_quests(self):
-        templates = [
-            ArcaneQuest("q1", _("Whispers of the Dark Forest"),
-                        _("Kill 10x Shadow Wraith"), "mobs", 10, "", {"xp": 250, "gold": 75}),
-            ArcaneQuest("q2", _("The Frozen Crypt"),
-                        _("Kill 8x Frost Revenant"), "mobs", 8, "", {"xp": 300, "gold": 100, "item": "Ice Shard"}),
-            ArcaneQuest("q3", _("Burning Reckoning"),
-                        _("Kill 12x Flame Imp"), "mobs", 12, "", {"xp": 200, "gold": 50}),
-            ArcaneQuest("q4", _("Stormcaller's Wake"),
-                        _("Kill 6x Storm Elemental"), "mobs", 6, "", {"xp": 500, "gold": 150, "item": "Storm Core"}),
-            ArcaneQuest("q5", _("Venomous Depths"),
-                        _("Kill 15x Toxic Crawler"), "mobs", 15, "", {"xp": 180, "gold": 40}),
-            ArcaneQuest("q6", _("Arcane Ruins"),
-                        _("Kill 5x Mana Leech"), "mobs", 5, "", {"xp": 600, "gold": 200, "item": "Arcane Token"}),
-            ArcaneQuest("q7", _("The Undead March"),
-                        _("Kill 20x Skeletal Warrior"), "mobs", 20, "", {"xp": 350, "gold": 90}),
-            ArcaneQuest("q8", _("Crystal Caverns"),
-                        _("Kill 7x Crystal Golem"), "mobs", 7, "", {"xp": 450, "gold": 120, "item": "Crystal Shard"}),
-            ArcaneQuest("q9", _("Shadow of the Abyss"),
-                        _("Kill 3x Void Beast"), "mobs", 3, "", {"xp": 1000, "gold": 300, "item": "Abyss Essence"}),
-            ArcaneQuest("q10", _("Twilight Grove"),
-                        _("Kill 10x Thorn Hound"), "mobs", 10, "", {"xp": 220, "gold": 60}),
-        ]
-        self.quests = templates
+        self.quests = []
+        gs = self.app.manager.states.get("gameplay") if hasattr(self.app, "manager") else None
+        mob_names = list(gs.enemy_profile_names) if gs and hasattr(gs, "enemy_profile_names") else ["brute", "venomous", "arcanist"]
+        random.shuffle(mob_names)
+        rng = random.Random()
+        base_xp = [80, 120, 180, 250, 350, 500]
+        base_gold = [20, 35, 55, 80, 120, 180]
+        for i in range(self.QUESTS_PER_PAGE):
+            mob_key = mob_names[i % len(mob_names)]
+            kill_count = rng.randint(3, 8)
+            mob_name = MOB_DISPLAY_NAMES.get(mob_key, mob_key.capitalize())
+            idx = rng.randint(0, len(base_xp) - 1)
+            reward = {"xp": base_xp[idx], "gold": base_gold[idx]}
+            if rng.random() < 0.35:
+                reward["item"] = rng.choice(["Arcane Token", "Crystal Shard", "Storm Core", "Abyss Essence"])
+            self.quests.append(ArcaneQuest(
+                f"q_{i}_{mob_key}",
+                _("Hunt {n}").format(n=mob_name),
+                _("Kill {c}x {n}").format(c=kill_count, n=mob_name),
+                mob_key,
+                kill_count,
+                "",
+                reward,
+            ))
+        self.claim_buttons.clear()
 
     def _init_particles(self):
         rng = random.Random(1337)
@@ -323,14 +309,11 @@ class ArcaneQuestMenu(Menu):
 
         slot_pad = int(24 * scale)
         slot_gap = int(6 * scale)
-        slot_count = self.QUESTS_PER_PAGE
+        slot_count = len(self.quests)
         title_bottom = self.title_rect.bottom + int(8 * scale)
         btn_area_height = max(44, int(54 * scale))
-        nav_area_height = max(40, int(50 * scale))
-        available = (panel_h - (title_bottom - panel_y) - btn_area_height - nav_area_height - int(20 * scale))
-        slot_h = max(72, int(available / slot_count) - slot_gap)
-        if slot_h > 110:
-            slot_h = int(available / slot_count) - slot_gap
+        available = (panel_h - (title_bottom - panel_y) - btn_area_height - int(20 * scale))
+        slot_h = max(68, int(available / max(1, slot_count)) - slot_gap)
 
         self.slot_rects = []
         for i in range(slot_count):
@@ -343,37 +326,34 @@ class ArcaneQuestMenu(Menu):
             )
             self.slot_rects.append(sr)
 
-        # Position the buttons at the bottom
-        back_w = self.back_button.rect.width
         back_h = self.back_button.rect.height
-        nav_w = self.prev_button.rect.width
-        nav_h = self.prev_button.rect.height
-
-        bottom_y = self.panel_rect.bottom - max(back_h, nav_h) - int(14 * scale)
-
-        # Page info centered
-        self.page_info_rect = pygame.Rect(0, 0, 120, nav_h)
-        self.page_info_rect.centerx = self.panel_rect.centerx
-        self.page_info_rect.y = bottom_y + (nav_h - self.page_info_rect.height) // 2
-
-        # Prev on left side of center
-        self.prev_button.rect.topleft = (
-            self.page_info_rect.x - nav_w - int(10 * scale),
-            bottom_y + (nav_h - nav_h) // 2,
-        )
-        # Next on right side of center
-        self.next_button.rect.topleft = (
-            self.page_info_rect.right + int(10 * scale),
-            bottom_y + (nav_h - nav_h) // 2,
-        )
-        # Back on far left
+        bottom_y = self.panel_rect.bottom - back_h - int(14 * scale)
         self.back_button.rect.topleft = (
             self.panel_rect.x + int(14 * scale),
             bottom_y,
         )
 
-        # Generate per-quest claim buttons for the current page
-        self._rebuild_claim_buttons(scale)
+        self.claim_buttons = []
+        for i, q in enumerate(self.quests):
+            if i >= len(self.slot_rects):
+                break
+            sr = self.slot_rects[i]
+            cw = max(80, int(120 * scale))
+            ch = max(28, int(36 * scale))
+            cx = sr.right - cw - int(8 * scale)
+            cy = sr.bottom - ch - int(6 * scale)
+            text = _("CLAIM") if not q.claimed else _("DONE")
+            btn = Button(
+                pygame.Rect(cx, cy, cw, ch),
+                text,
+                (70, 30, 100) if not q.claimed else (50, 50, 55),
+                (100, 50, 140) if not q.claimed else (70, 70, 75),
+                cfg.button_font,
+                GOLD_BRIGHT if not q.claimed else (140, 140, 150),
+                max(2, int(6 * scale)),
+                on_click=lambda idx=i: self.claim_reward(idx),
+            )
+            self.claim_buttons.append(btn)
 
         for btn in self.buttons:
             try:
@@ -381,50 +361,15 @@ class ArcaneQuestMenu(Menu):
             except Exception:
                 pass
 
-    def _rebuild_claim_buttons(self, scale):
-        self.claim_buttons = []
-        start = self.page * self.QUESTS_PER_PAGE
-        page_quests = self.quests[start:start + self.QUESTS_PER_PAGE]
-
-        for i, q in enumerate(page_quests):
-            if i >= len(self.slot_rects):
-                break
-            sr = self.slot_rects[i]
-            cw = max(80, int(110 * scale))
-            ch = max(26, int(34 * scale))
-            cx = sr.right - cw - int(8 * scale)
-            cy = sr.bottom - ch - int(6 * scale)
-            btn = Button(
-                pygame.Rect(cx, cy, cw, ch),
-                _("CLAIM") if not q.claimed else _("DONE"),
-                (70, 30, 100) if not q.claimed else (50, 50, 55),
-                (100, 50, 140) if not q.claimed else (70, 70, 75),
-                cfg.button_font,
-                GOLD_BRIGHT if not q.claimed else (140, 140, 150),
-                max(2, int(6 * scale)),
-                on_click=lambda idx=start + i: self.claim_reward(idx),
-            )
-            self.claim_buttons.append(btn)
-
-    def _prev_page(self):
-        if self.page > 0:
-            self.page -= 1
-            scale = cfg.ui_scale()
-            self._rebuild_claim_buttons(scale)
-
-    def _next_page(self):
-        if self.page < self.max_page:
-            self.page += 1
-            scale = cfg.ui_scale()
-            self._rebuild_claim_buttons(scale)
-
     def on_enter(self):
         self.entrance_active = True
         self.entrance_start = time.time()
         self.entrance_progress = 0.0
         self.claim_flash_alpha = 0.0
+        self._init_quests()
         self._init_particles()
         self._init_energy_arcs()
+        self._layout_size = None
 
     def close_menu(self):
         self.app.manager.set_state("gameplay")
@@ -459,14 +404,34 @@ class ArcaneQuestMenu(Menu):
             pass
 
         try:
-            btn_rect = self.claim_buttons[quest_idx % self.QUESTS_PER_PAGE].rect if self.claim_buttons else self.panel_rect
+            btn_rect = self.claim_buttons[quest_idx].rect if quest_idx < len(self.claim_buttons) else self.panel_rect
             self._spawn_burst(btn_rect.centerx, btn_rect.centery, GOLD_BRIGHT, n=50)
             self._spawn_burst(btn_rect.centerx + 30, btn_rect.centery, PURPLE_BRIGHT, n=50)
         except Exception:
             pass
 
         scale = cfg.ui_scale()
-        self._rebuild_claim_buttons(scale)
+        self.claim_buttons = []
+        for i, q2 in enumerate(self.quests):
+            if i >= len(self.slot_rects):
+                break
+            sr = self.slot_rects[i]
+            cw = max(80, int(120 * scale))
+            ch = max(28, int(36 * scale))
+            cx = sr.right - cw - int(8 * scale)
+            cy = sr.bottom - ch - int(6 * scale)
+            text = _("CLAIM") if not q2.claimed else _("DONE")
+            btn = Button(
+                pygame.Rect(cx, cy, cw, ch),
+                text,
+                (70, 30, 100) if not q2.claimed else (50, 50, 55),
+                (100, 50, 140) if not q2.claimed else (70, 70, 75),
+                cfg.button_font,
+                GOLD_BRIGHT if not q2.claimed else (140, 140, 150),
+                max(2, int(6 * scale)),
+                on_click=lambda idx=i: self.claim_reward(idx),
+            )
+            self.claim_buttons.append(btn)
 
     def _spawn_burst(self, x, y, color, n=40):
         for _ in range(n):
@@ -479,10 +444,8 @@ class ArcaneQuestMenu(Menu):
             )
 
     def _bump_page_progress(self, amount=1):
-        """Dev hook: bump all quests on current page."""
-        start = self.page * self.QUESTS_PER_PAGE
-        page_quests = self.quests[start:start + self.QUESTS_PER_PAGE]
-        for q in page_quests:
+        """Dev hook: bump all unclaimed quests."""
+        for q in self.quests:
             if q.claimed:
                 continue
             q.progress = min(q.target_count, q.progress + amount)
@@ -588,7 +551,6 @@ class ArcaneQuestMenu(Menu):
 
         self._draw_quest_slots(screen, scaled_rect)
 
-        self._draw_page_nav(screen, scaled_rect)
         self._draw_back_button(screen, scaled_rect)
 
         self._draw_ambient_particles(screen)
@@ -886,10 +848,7 @@ class ArcaneQuestMenu(Menu):
             pygame.draw.polygon(screen, GOLD, dpts)
 
     def _draw_quest_slots(self, screen, panel_rect):
-        start = self.page * self.QUESTS_PER_PAGE
-        page_quests = self.quests[start:start + self.QUESTS_PER_PAGE]
-
-        for i, q in enumerate(page_quests):
+        for i, q in enumerate(self.quests):
             if i >= len(self.slot_rects):
                 break
             r = self.slot_rects[i].copy()
@@ -897,7 +856,6 @@ class ArcaneQuestMenu(Menu):
             if r.width <= 0 or r.height <= 0:
                 continue
 
-            # Slot background with border
             completed_ready = q.is_finished and not q.claimed
             claimed = q.claimed
 
@@ -919,7 +877,7 @@ class ArcaneQuestMenu(Menu):
             if not claimed:
                 pygame.draw.rect(screen, GOLD_DEEP, inner.inflate(-2, -2), width=1, border_radius=6)
 
-            # Quest title (truncated if needed)
+            # Quest title
             title_surf = self.section_font.render(q.title, True, GOLD_BRIGHT if not claimed else (120, 120, 130))
             screen.blit(title_surf, (r.x + 10, r.y + 6))
 
@@ -957,73 +915,19 @@ class ArcaneQuestMenu(Menu):
                 prog_surf = self.small_font.render(prog_label, True, WHITE_SOFT)
                 screen.blit(prog_surf, (bar_rect.right + 6, bar_rect.y - 1))
 
-            # Claim / Completed / Claimed button
+            # Claim / Claimed button
             if i < len(self.claim_buttons) and not claimed:
                 btn = self.claim_buttons[i]
-                # Reposition to match slot
                 cw = btn.rect.width
                 ch = btn.rect.height
                 btn.rect.topleft = (r.right - cw - int(8 * cfg.ui_scale()),
                                     r.bottom - ch - int(6 * cfg.ui_scale()))
                 if completed_ready:
-                    # Magical claim button style
-                    pulse = (math.sin(self.anim_time * 3.0 + i * 1.1) + 1.0) * 0.5
-                    aura_size = int(btn.rect.width * 1.3)
-                    aura_surf = pygame.Surface((aura_size, aura_size), pygame.SRCALPHA)
-                    aa = int(50 + 50 * pulse)
-                    for r_ in range(aura_size // 2, 0, -3):
-                        t_ = r_ / (aura_size // 2)
-                        col = (
-                            int(GOLD_BRIGHT[0] * (1 - t_) + PURPLE_BRIGHT[0] * t_),
-                            int(GOLD_BRIGHT[1] * (1 - t_) + PURPLE_BRIGHT[1] * t_),
-                            int(GOLD_BRIGHT[2] * (1 - t_) + PURPLE_BRIGHT[2] * t_),
-                            max(0, int(aa * (1 - t_))),
-                        )
-                        pygame.draw.circle(aura_surf, col, (aura_size // 2, aura_size // 2), r_)
-                    screen.blit(aura_surf,
-                                (btn.rect.centerx - aura_size // 2, btn.rect.centery - aura_size // 2))
-                    # Gradient background
-                    grad = pygame.Surface(btn.rect.size, pygame.SRCALPHA)
-                    for x in range(btn.rect.width):
-                        tt = x / max(1, btn.rect.width - 1)
-                        cr = int(GOLD_DEEP[0] * (1 - tt) + PURPLE_DEEP[0] * tt)
-                        cg = int(GOLD_DEEP[1] * (1 - tt) + PURPLE_DEEP[1] * tt)
-                        cb = int(GOLD_DEEP[2] * (1 - tt) + PURPLE_DEEP[2] * tt)
-                        pygame.draw.line(grad, (cr, cg, cb), (x, 0), (x, btn.rect.height))
-                    mask = pygame.Surface(btn.rect.size, pygame.SRCALPHA)
-                    pygame.draw.rect(mask, (255, 255, 255, 255), mask.get_rect(), border_radius=8)
-                    grad.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
-                    screen.blit(grad, btn.rect.topleft)
-                    # Gold border
-                    pygame.draw.rect(screen, GOLD_BRIGHT, btn.rect, 2, border_radius=8)
-                    # Text
-                    text_surf = btn.font.render(btn.text, True, (255, 255, 240))
-                    text_rect = text_surf.get_rect(center=btn.rect.center)
-                    screen.blit(text_surf, text_rect)
-                    # Small star
-                    self._draw_star(screen, btn.rect.x + 8, btn.rect.centery, 2, GOLD_BRIGHT,
-                                    self.anim_time + i * 0.3)
+                    self._draw_magical_claim_button(screen, btn, i)
                 else:
-                    # Locked claim
-                    dim_grad = pygame.Surface(btn.rect.size, pygame.SRCALPHA)
-                    for x in range(btn.rect.width):
-                        tt = x / max(1, btn.rect.width - 1)
-                        cr = int(35 * (1 - tt) + 50 * tt)
-                        cg = int(25 * (1 - tt) + 30 * tt)
-                        cb = int(45 * (1 - tt) + 40 * tt)
-                        pygame.draw.line(dim_grad, (cr, cg, cb, 200), (x, 0), (x, btn.rect.height))
-                    dim_mask = pygame.Surface(btn.rect.size, pygame.SRCALPHA)
-                    pygame.draw.rect(dim_mask, (255, 255, 255, 255), dim_mask.get_rect(), border_radius=8)
-                    dim_grad.blit(dim_mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
-                    screen.blit(dim_grad, btn.rect.topleft)
-                    pygame.draw.rect(screen, (GOLD_DARK[0] // 2, GOLD_DARK[1] // 2, GOLD_DARK[2] // 2),
-                                     btn.rect, 1, border_radius=8)
-                    text_surf = btn.font.render(btn.text, True, (130, 130, 140))
-                    text_rect = text_surf.get_rect(center=btn.rect.center)
-                    screen.blit(text_surf, text_rect)
+                    self._draw_locked_button(screen, btn)
 
             elif claimed:
-                # Completed badge
                 badge_w = max(70, int(100 * cfg.ui_scale()))
                 badge_h = max(22, int(30 * cfg.ui_scale()))
                 badge_rect = pygame.Rect(r.right - badge_w - int(8 * cfg.ui_scale()),
@@ -1032,6 +936,79 @@ class ArcaneQuestMenu(Menu):
                 pygame.draw.rect(screen, (120, 120, 130), badge_rect, 1, border_radius=6)
                 done_surf = self.small_font.render(_("CLAIMED"), True, (160, 160, 170))
                 screen.blit(done_surf, done_surf.get_rect(center=badge_rect.center))
+
+    def _draw_magical_claim_button(self, screen, btn, idx):
+        pulse = (math.sin(self.anim_time * 3.0 + idx * 1.1) + 1.0) * 0.5
+        # Outer glow aura
+        aura_size = int(btn.rect.width * 1.4)
+        aura_surf = pygame.Surface((aura_size, aura_size), pygame.SRCALPHA)
+        aa = int(60 + 70 * pulse)
+        for r_ in range(aura_size // 2, 0, -4):
+            t_ = r_ / (aura_size // 2)
+            col = (
+                int(GOLD_BRIGHT[0] * (1 - t_) + PURPLE_BRIGHT[0] * t_),
+                int(GOLD_BRIGHT[1] * (1 - t_) + PURPLE_BRIGHT[1] * t_),
+                int(GOLD_BRIGHT[2] * (1 - t_) + PURPLE_BRIGHT[2] * t_),
+                max(0, int(aa * (1 - t_))),
+            )
+            pygame.draw.circle(aura_surf, col, (aura_size // 2, aura_size // 2), r_)
+        screen.blit(aura_surf,
+                    (btn.rect.centerx - aura_size // 2, btn.rect.centery - aura_size // 2))
+
+        # Gradient background
+        grad = pygame.Surface(btn.rect.size, pygame.SRCALPHA)
+        for x in range(btn.rect.width):
+            tt = x / max(1, btn.rect.width - 1)
+            cr = int(GOLD_BRIGHT[0] * (1 - tt) + PURPLE[0] * tt)
+            cg = int(GOLD_BRIGHT[1] * (1 - tt) + PURPLE[1] * tt)
+            cb = int(GOLD_BRIGHT[2] * (1 - tt) + PURPLE[2] * tt)
+            pygame.draw.line(grad, (cr, cg, cb), (x, 0), (x, btn.rect.height))
+        mask = pygame.Surface(btn.rect.size, pygame.SRCALPHA)
+        pygame.draw.rect(mask, (255, 255, 255, 255), mask.get_rect(), border_radius=8)
+        grad.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+        screen.blit(grad, btn.rect.topleft)
+
+        # Shimmer sweep
+        shimmer_x = int((self.anim_time * 120 + idx * 30) % (btn.rect.width + 40)) - 20
+        for sx in range(max(0, shimmer_x), min(btn.rect.width, shimmer_x + 20)):
+            sa = int(100 * (1 - abs(sx - shimmer_x - 10) / 10))
+            pygame.draw.line(screen, (255, 255, 250, sa),
+                             (btn.rect.x + sx, btn.rect.y),
+                             (btn.rect.x + sx, btn.rect.bottom))
+
+        # Gold border
+        pygame.draw.rect(screen, GOLD_BRIGHT, btn.rect, 2, border_radius=8)
+        # Text with glow
+        text_surf = btn.font.render(btn.text, True, (255, 255, 240))
+        text_rect = text_surf.get_rect(center=btn.rect.center)
+        # text shadow
+        shadow_surf = btn.font.render(btn.text, True, (80, 50, 20, 120))
+        screen.blit(shadow_surf, (text_rect.x + 1, text_rect.y + 1))
+        screen.blit(text_surf, text_rect)
+        # Decorative star left
+        self._draw_star(screen, btn.rect.x + 8, btn.rect.centery, 2.5, GOLD_BRIGHT,
+                        self.anim_time + idx * 0.3)
+        # Decorative star right
+        self._draw_star(screen, btn.rect.right - 8, btn.rect.centery, 2.5, PURPLE_BRIGHT,
+                        self.anim_time + idx * 0.3 + 1.5)
+
+    def _draw_locked_button(self, screen, btn):
+        dim_grad = pygame.Surface(btn.rect.size, pygame.SRCALPHA)
+        for x in range(btn.rect.width):
+            tt = x / max(1, btn.rect.width - 1)
+            cr = int(40 * (1 - tt) + 55 * tt)
+            cg = int(28 * (1 - tt) + 32 * tt)
+            cb = int(50 * (1 - tt) + 45 * tt)
+            pygame.draw.line(dim_grad, (cr, cg, cb, 180), (x, 0), (x, btn.rect.height))
+        dim_mask = pygame.Surface(btn.rect.size, pygame.SRCALPHA)
+        pygame.draw.rect(dim_mask, (255, 255, 255, 255), dim_mask.get_rect(), border_radius=8)
+        dim_grad.blit(dim_mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+        screen.blit(dim_grad, btn.rect.topleft)
+        pygame.draw.rect(screen, (GOLD_DARK[0], GOLD_DARK[1], GOLD_DARK[2]),
+                         btn.rect, 1, border_radius=8)
+        text_surf = btn.font.render(btn.text, True, (140, 135, 150))
+        text_rect = text_surf.get_rect(center=btn.rect.center)
+        screen.blit(text_surf, text_rect)
 
     def _draw_progress_bar(self, screen, rect, frac, glowing=False):
         pygame.draw.rect(screen, (8, 4, 18), rect, border_radius=rect.height // 2)
@@ -1066,23 +1043,6 @@ class ArcaneQuestMenu(Menu):
             pygame.draw.rect(glow, (*GOLD_BRIGHT, ga), glow.get_rect(),
                              width=2, border_radius=rect.height // 2)
             screen.blit(glow, rect.topleft)
-
-    def _draw_page_nav(self, screen, panel_rect):
-        # Page indicator
-        page_text = _("Page {p}/{m}").format(p=self.page + 1, m=self.max_page + 1)
-        page_surf = self.body_font.render(page_text, True, PURPLE_BRIGHT)
-        pr = page_surf.get_rect(center=self.page_info_rect.center)
-        screen.blit(page_surf, pr)
-
-        self.prev_button.draw(screen)
-        self.next_button.draw(screen)
-
-        # Glow on nav text
-        pulse = (math.sin(self.anim_time * 2.0) + 1.0) * 0.5
-        a = int(40 + 40 * pulse)
-        glow_surf = pygame.Surface((page_surf.get_width() + 20, page_surf.get_height() + 10), pygame.SRCALPHA)
-        glow_surf.fill((*PURPLE_BRIGHT, a))
-        screen.blit(glow_surf, (pr.x - 10, pr.y - 5))
 
     def _draw_back_button(self, screen, panel_rect):
         btn = self.back_button
