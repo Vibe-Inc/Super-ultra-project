@@ -74,7 +74,7 @@ class MysteriumMagnumMenu(Menu):
             _("⟐ Reveal Secret ⟐"),
             (80, 35, 110),
             (120, 55, 160),
-            cfg.get_font(max(12, int(18 * scale))),
+            cfg.get_font(max(14, int(24 * scale))),
             (220, 200, 240),
             cfg.corner_radius,
             on_click=self._reveal_secret,
@@ -83,28 +83,28 @@ class MysteriumMagnumMenu(Menu):
         self._reveal_cost = 1
 
         self.card_effects = {
-            0:  {"mana": 5,  "hp": 0,   "regen": 0.0, "desc": _("The Fool walks where angels fear to tread. A blank slate, full of potential.")},
-            1:  {"mana": 10, "hp": 0,   "regen": 0.3, "desc": _("The Magician channels the elements. Your mana reganition quickens.")},
-            2:  {"mana": 15, "hp": 10,  "regen": 0.0, "desc": _("The High Priestess guards the temple of inner wisdom. Vitality blooms within.")},
-            3:  {"mana": 10, "hp": 0,   "regen": 0.0, "desc": _("The Empress nurtures all life. The veil between worlds grows thin.")},
-            4:  {"mana": 10, "hp": 15,  "regen": 0.0, "desc": _("The Emperor imposes order upon chaos. Your constitution hardens.")},
-            5:  {"mana": 10, "hp": 0,   "regen": 0.0, "desc": _("The Hierophant speaks in riddles and parables. Seek meaning in the mundane.")},
-            6:  {"mana": 8,  "hp": 0,   "regen": 0.0, "desc": _("The Lovers bind fate to choice. Not all bonds are visible to the eye.")},
-            7:  {"mana": 8,  "hp": 0,   "regen": 0.0, "desc": _("The Chariot triumphs through will alone. Forward, always forward.")},
-            8:  {"mana": 12, "hp": 0,   "regen": 0.0, "desc": _("Justice weighs all deeds. The scales do not forget.")},
-            9:  {"mana": 15, "hp": 0,   "regen": 0.5, "desc": _("The Hermit seeks truth in solitude. Light your own lantern.")},
-            10: {"mana": 10, "hp": 0,   "regen": 0.0, "desc": _("The Wheel of Fortune turns endlessly. What goes around, comes around.")},
-            11: {"mana": 8,  "hp": 20,  "regen": 0.0, "desc": _("Strength is not merely muscle — it is the courage to endure.")},
-            12: {"mana": 15, "hp": 0,   "regen": 0.0, "desc": _("The Hanged Man sees the world upside down. Wisdom comes from surrender.")},
-            13: {"mana": 20, "hp": 0,   "regen": 0.0, "desc": _("Death is not the end, but a transformation. Let the old self fall away.")},
-            14: {"mana": 10, "hp": 10,  "regen": 0.0, "desc": _("Temperance blends opposites into harmony. Balance is the highest art.")},
-            15: {"mana": 15, "hp": 0,   "regen": 0.0, "desc": _("The Devil binds with chains of illusion. Break them, or be consumed.")},
-            16: {"mana": 12, "hp": 0,   "regen": 0.0, "desc": _("The Tower falls so that something new may rise. Destruction paves the way.")},
-            17: {"mana": 20, "hp": 0,   "regen": 1.0, "desc": _("The Star shines in the darkest night. Hope is a compass that never fails.")},
-            18: {"mana": 15, "hp": 25,  "regen": 0.0, "desc": _("The Moon reveals what lurks beneath. Not all shadows are enemies.")},
-            19: {"mana": 20, "hp": 15,  "regen": 1.5, "desc": _("The Sun banishes all doubt. Warmth and clarity flood the soul.")},
-            20: {"mana": 25, "hp": 0,   "regen": 0.0, "desc": _("Judgement calls all to account. Rise and be measured.")},
-            21: {"mana": 30, "hp": 30,  "regen": 2.0, "desc": _("The World completes the great cycle. All paths converge here.")},
+            0:  {"mana": 5,  "regen": 0.0, "hp_regen": 0.0, "speed": 0.0, "cdr": 0.0, "atk_spd": 0.0, "dmg": 0, "stam": 0.0, "desc": _("The Fool walks where angels fear to tread. A blank slate, full of potential.")},
+            1:  {"mana": 10, "regen": 0.3, "hp_regen": 0.0, "speed": 0.0, "cdr": 0.0, "atk_spd": 0.0, "dmg": 0, "stam": 0.0, "desc": _("The Magician channels the elements. Your mana reganition quickens.")},
+            2:  {"mana": 15, "regen": 0.0, "hp_regen": 0.0, "speed": 0.0, "cdr": 0.0, "atk_spd": 0.0, "dmg": 0, "stam": 2.5, "desc": _("The High Priestess guards the temple of inner wisdom. Stamina flows abundantly.")},
+            3:  {"mana": 10, "regen": 0.0, "hp_regen": 0.5, "speed": 0.0, "cdr": 0.0, "atk_spd": 0.0, "dmg": 0, "stam": 0.0, "desc": _("The Empress nurtures all life. Your wounds mend more swiftly.")},
+            4:  {"mana": 10, "regen": 0.0, "hp_regen": 0.0, "speed": 0.03, "cdr": 0.0, "atk_spd": 0.0, "dmg": 0, "stam": 0.0, "desc": _("The Emperor imposes order upon chaos. Your steps grow swifter.")},
+            5:  {"mana": 10, "regen": 0.0, "hp_regen": 0.0, "speed": 0.0, "cdr": 0.0, "atk_spd": 0.0, "dmg": 3, "stam": 0.0, "desc": _("The Hierophant speaks in riddles and parables. Your strikes carry more weight.")},
+            6:  {"mana": 8,  "regen": 0.0, "hp_regen": 0.0, "speed": 0.0, "cdr": 0.0, "atk_spd": 0.03, "dmg": 0, "stam": 0.0, "desc": _("The Lovers bind fate to choice. Your reflexes sharpen.")},
+            7:  {"mana": 8,  "regen": 0.0, "hp_regen": 0.0, "speed": 0.03, "cdr": 0.0, "atk_spd": 0.0, "dmg": 0, "stam": 0.0, "desc": _("The Chariot triumphs through will alone. Forward, always faster.")},
+            8:  {"mana": 12, "regen": 0.0, "hp_regen": 0.0, "speed": 0.0, "cdr": 0.03, "atk_spd": 0.0, "dmg": 0, "stam": 0.0, "desc": _("Justice weighs all deeds. Your skills recover more swiftly.")},
+            9:  {"mana": 15, "regen": 0.5, "hp_regen": 0.0, "speed": 0.0, "cdr": 0.0, "atk_spd": 0.0, "dmg": 0, "stam": 0.0, "desc": _("The Hermit seeks truth in solitude. Light your own lantern.")},
+            10: {"mana": 10, "regen": 0.0, "hp_regen": 0.0, "speed": 0.02, "cdr": 0.0, "atk_spd": 0.0, "dmg": 0, "stam": 0.0, "desc": _("The Wheel of Fortune turns endlessly. Fortune favours the swift.")},
+            11: {"mana": 8,  "regen": 0.0, "hp_regen": 0.0, "speed": 0.0, "cdr": 0.0, "atk_spd": 0.0, "dmg": 5, "stam": 0.0, "desc": _("Strength is not merely muscle — it is the courage to strike true.")},
+            12: {"mana": 15, "regen": 0.0, "hp_regen": 0.0, "speed": 0.0, "cdr": 0.05, "atk_spd": 0.0, "dmg": 0, "stam": 0.0, "desc": _("The Hanged Man sees the world upside down. Patience hastens all things.")},
+            13: {"mana": 20, "regen": 0.0, "hp_regen": 0.0, "speed": 0.0, "cdr": 0.0, "atk_spd": 0.0, "dmg": 8, "stam": 0.0, "desc": _("Death is not the end, but a transformation. Let the old self fall away.")},
+            14: {"mana": 10, "regen": 0.0, "hp_regen": 1.0, "speed": 0.0, "cdr": 0.0, "atk_spd": 0.0, "dmg": 0, "stam": 0.0, "desc": _("Temperance blends opposites into harmony. Your body mends itself.")},
+            15: {"mana": 15, "regen": 0.0, "hp_regen": 0.0, "speed": 0.0, "cdr": 0.0, "atk_spd": 0.05, "dmg": 0, "stam": 0.0, "desc": _("The Devil binds with chains of illusion. Break free — strike faster.")},
+            16: {"mana": 12, "regen": 0.0, "hp_regen": 0.0, "speed": 0.0, "cdr": 0.0, "atk_spd": 0.0, "dmg": 5, "stam": 0.0, "desc": _("The Tower falls so that something new may rise. Destruction fuels your blows.")},
+            17: {"mana": 20, "regen": 1.0, "hp_regen": 0.0, "speed": 0.0, "cdr": 0.0, "atk_spd": 0.0, "dmg": 0, "stam": 0.0, "desc": _("The Star shines in the darkest night. Hope is a compass that never fails.")},
+            18: {"mana": 15, "regen": 0.0, "hp_regen": 2.0, "speed": 0.0, "cdr": 0.0, "atk_spd": 0.0, "dmg": 0, "stam": 0.0, "desc": _("The Moon reveals what lurks beneath. The dark grants you resilience.")},
+            19: {"mana": 20, "regen": 1.5, "hp_regen": 0.0, "speed": 0.05, "cdr": 0.0, "atk_spd": 0.0, "dmg": 0, "stam": 0.0, "desc": _("The Sun banishes all doubt. Warmth and speed flood your veins.")},
+            20: {"mana": 25, "regen": 0.0, "hp_regen": 0.0, "speed": 0.0, "cdr": 0.10, "atk_spd": 0.0, "dmg": 0, "stam": 0.0, "desc": _("Judgement calls all to account. Rise and be swift.")},
+            21: {"mana": 30, "regen": 2.0, "hp_regen": 0.0, "speed": 0.10, "cdr": 0.10, "atk_spd": 0.0, "dmg": 0, "stam": 0.0, "desc": _("The World completes the great cycle. All paths converge in you.")},
         }
 
         self._selected_card = None
@@ -291,11 +291,21 @@ class MysteriumMagnumMenu(Menu):
                     ch = gs.character
                     if hasattr(ch, "mana_system"):
                         ch.mana_system.increase_max_mana(eff["mana"])
-                    if eff["hp"]:
-                        ch.max_hp += eff["hp"]
-                        ch.hp = min(ch.max_hp, ch.hp + eff["hp"])
                     if eff["regen"] and hasattr(ch, "mana_system"):
                         ch.mana_system.mana_regen_rate += eff["regen"]
+                    if eff["hp_regen"]:
+                        ch.regeneration = True
+                        ch.regeneration_hp_per_sec += eff["hp_regen"]
+                    if eff["speed"]:
+                        ch.speed_multiplier *= (1.0 + eff["speed"])
+                    if eff["cdr"]:
+                        ch.cooldown_multiplier *= (1.0 - eff["cdr"])
+                    if eff["atk_spd"]:
+                        ch.attack_cooldown_mult *= (1.0 - eff["atk_spd"])
+                    if eff["dmg"]:
+                        ch.damage_bonus += eff["dmg"]
+                    if eff["stam"]:
+                        ch.stamina_regen_rate += eff["stam"]
             except Exception:
                 pass
 
@@ -374,7 +384,7 @@ class MysteriumMagnumMenu(Menu):
             c["rotation"] += c["rot_speed"] * dt
 
         speed_mul = 0.0 if self._selected_card is not None else 1.0
-        ring_speeds = [0.003, -0.005, 0.008, -0.010]
+        ring_speeds = [0.001, -0.002, 0.003, -0.004]
         for i, speed in enumerate(ring_speeds):
             self.card_ring_offsets[i] = (self.card_ring_offsets[i] + speed * speed_mul * dt * 60) % (math.pi * 2)
 
@@ -735,26 +745,36 @@ class MysteriumMagnumMenu(Menu):
 
         eff = self.card_effects.get(card["num"])
         if eff and eff["desc"]:
-            body_font = cfg.get_font(max(12, int(18 * cfg.ui_scale())))
-            desc_surf = body_font.render(eff["desc"], True, (200, 190, 220))
-            desc_surf.set_alpha(int(220 * ease))
-            desc_y = div_y + 20
-            screen.blit(desc_surf, (text_x, desc_y))
+                body_font = cfg.get_font(max(12, int(18 * cfg.ui_scale())))
+                desc_surf = body_font.render(eff["desc"], True, (200, 190, 220))
+                desc_surf.set_alpha(int(220 * ease))
+                desc_y = div_y + 20
+                screen.blit(desc_surf, (text_x, desc_y))
 
-            stats_font = cfg.get_font(max(11, int(16 * cfg.ui_scale())))
-            stats_y = desc_y + desc_surf.get_height() + 16
-            parts = []
-            if eff["mana"]:
-                parts.append(f"+{eff['mana']} Max Mana")
-            if eff["hp"]:
-                parts.append(f"+{eff['hp']} Max HP")
-            if eff["regen"]:
-                parts.append(f"+{eff['regen']}/s Mana Regen")
-            if parts:
-                stats_text = " | ".join(parts)
-                stats_surf = stats_font.render(stats_text, True, (212, 175, 55))
-                stats_surf.set_alpha(int(200 * ease))
-                screen.blit(stats_surf, (text_x, stats_y))
+                stats_font = cfg.get_font(max(11, int(16 * cfg.ui_scale())))
+                stats_y = desc_y + desc_surf.get_height() + 16
+                parts = []
+                if eff["mana"]:
+                    parts.append(f"+{eff['mana']} Max Mana")
+                if eff["regen"]:
+                    parts.append(f"+{eff['regen']}/s Mana Regen")
+                if eff["hp_regen"]:
+                    parts.append(f"+{eff['hp_regen']} HP/s")
+                if eff["speed"]:
+                    parts.append(f"+{int(eff['speed']*100)}% Move Speed")
+                if eff["cdr"]:
+                    parts.append(f"+{int(eff['cdr']*100)}% Skill Haste")
+                if eff["atk_spd"]:
+                    parts.append(f"+{int(eff['atk_spd']*100)}% Atk Speed")
+                if eff["dmg"]:
+                    parts.append(f"+{eff['dmg']} Damage")
+                if eff["stam"]:
+                    parts.append(f"+{eff['stam']}/s Stamina")
+                if parts:
+                    stats_text = " | ".join(parts)
+                    stats_surf = stats_font.render(stats_text, True, (212, 175, 55))
+                    stats_surf.set_alpha(int(200 * ease))
+                    screen.blit(stats_surf, (text_x, stats_y))
 
         close_font = cfg.get_font(max(14, int(20 * cfg.ui_scale())))
         close_r = pygame.Rect(panel_rect.right - 44, panel_rect.y + 10, 34, 34)

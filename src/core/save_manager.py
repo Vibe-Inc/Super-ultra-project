@@ -35,6 +35,8 @@ CHARACTER_SCALAR_FIELDS = [
     "max_stamina", "stamina", "stamina_drain_rate", "stamina_regen_rate",
     "can_sprint", "is_sprinting",
     "skill_tree_points",
+    "cooldown_multiplier",
+    "damage_bonus",
     "base_attack_damage", "attack_damage",
     "base_attack_range", "attack_range",
     "base_attack_cooldown", "attack_cooldown_mult",
