@@ -1,6 +1,7 @@
 import pytmx
 import pygame
 from src.core.logger import logger
+import src.config as cfg
 
 class Map:
     FRINGE_LAYER_NAME = "details fringe layer"
@@ -50,6 +51,13 @@ class Map:
             Collect all collidable rects from the map.
     """
 
+    WINDOW_LOCAL_IDS = (
+        382, 383, 384, 385, 386,
+        416, 417, 418, 419, 420,
+        515, 516, 518, 519, 520, 522, 523,
+        549, 550, 552, 553, 554, 556, 557,
+    )
+
     def __init__(self, map_file: str):
         self.map_file = map_file
         self.game_map = None
@@ -57,6 +65,7 @@ class Map:
         self.pixel_height = 0
         self._base_render_cache = None
         self._fringe_components = []
+        self._window_overlay = None
 
     def ensure_loaded(self) -> bool:
         if self.game_map is None:
@@ -146,10 +155,17 @@ class Map:
         if self.game_map is None:
             self._base_render_cache = None
             self._fringe_components = []
+            self._window_overlay = None
             return
 
+        tw = self.game_map.tilewidth
+        th = self.game_map.tileheight
         surface = pygame.Surface((self.pixel_width, self.pixel_height), pygame.SRCALPHA)
         fringe_components = []
+
+        window_surf = pygame.Surface((self.pixel_width, self.pixel_height), pygame.SRCALPHA)
+        orange_cache = {}
+
         for layer in self.game_map.visible_layers:
             if isinstance(layer, pytmx.TiledTileLayer):
                 if self._is_fringe_layer(layer):
@@ -158,9 +174,25 @@ class Map:
                 for x, y, gid in layer:
                     tile = self.game_map.get_tile_image_by_gid(gid)
                     if tile:
-                        surface.blit(tile, (x * self.game_map.tilewidth, y * self.game_map.tileheight))
+                        surface.blit(tile, (x * tw, y * th))
+                    if not gid:
+                        continue
+                    props = self.game_map.get_tile_properties_by_gid(gid)
+                    if props and props.get("id") in self.WINDOW_LOCAL_IDS:
+                        if gid not in orange_cache and tile:
+                            orange = tile.copy()
+                            px = pygame.PixelArray(orange)
+                            px.replace((99, 96, 159), (180, 100, 40))
+                            px.replace((123, 133, 195), (210, 145, 65))
+                            px.replace((138, 177, 219), (235, 185, 100))
+                            del px
+                            orange_cache[gid] = orange
+                        if gid in orange_cache:
+                            window_surf.blit(orange_cache[gid], (x * tw, y * th))
+
         self._base_render_cache = surface
         self._fringe_components = fringe_components
+        self._window_overlay = window_surf if orange_cache else None
 
     def get_tmx_data(self):
         if self.ensure_loaded():
@@ -178,6 +210,12 @@ class Map:
                 screen.blit(self._base_render_cache, (0, 0))
             else:
                 screen.blit(self._base_render_cache, (-int(camera_offset.x), -int(camera_offset.y)))
+
+        if self._window_overlay is not None and cfg.ENVIRONMENT_BRIGHTNESS < 0.95:
+            if camera_offset is None:
+                screen.blit(self._window_overlay, (0, 0))
+            else:
+                screen.blit(self._window_overlay, (-int(camera_offset.x), -int(camera_offset.y)))
 
     def draw_fringe_overlay(self, screen, camera_offset=None, player=None):
         if not self.ensure_loaded():
