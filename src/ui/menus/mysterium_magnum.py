@@ -54,6 +54,12 @@ class MysteriumMagnumMenu(Menu):
         self._nebula_cache = None
         self._gradient_cache = {}
 
+        self._card_back_tex = None
+        self._card_back_scaled = None
+        self._card_scaled_rings = []
+        self._load_card_back()
+        self.card_ring_offsets = [0.0, 0.0, 0.0, 0.0]
+
     def _init_particles(self):
         purple_gold = [
             (120, 50, 180), (180, 100, 220), (80, 30, 140),
@@ -119,6 +125,25 @@ class MysteriumMagnumMenu(Menu):
                 "ring_count": random.randint(2, 4),
             })
 
+    def _load_card_back(self):
+        scale = cfg.ui_scale()
+        path = "assets/tarot/_cardBack/_cardBack_5x.png"
+        try:
+            full = pygame.image.load(path).convert_alpha()
+        except Exception:
+            full = pygame.Surface((230, 405), pygame.SRCALPHA)
+            full.fill((60, 30, 80))
+        card_w = int(55 * scale)
+        card_h = int(full.get_height() * card_w / full.get_width())
+        self._card_back_tex = full
+        self._card_back_scaled = pygame.transform.smoothscale(full, (card_w, card_h))
+        ring_scales = [0.70, 0.85, 1.00, 1.15]
+        self._card_scaled_rings = []
+        for sf in ring_scales:
+            sw = int(card_w * sf)
+            sh = int(card_h * sf)
+            self._card_scaled_rings.append(pygame.transform.smoothscale(full, (sw, sh)))
+
     def exit_menu(self):
         try:
             self.app.INV_manager._return_held_item()
@@ -177,6 +202,10 @@ class MysteriumMagnumMenu(Menu):
 
         for c in self.magic_circles:
             c["rotation"] += c["rot_speed"] * dt
+
+        ring_speeds = [0.003, -0.005, 0.008, -0.010]
+        for i, speed in enumerate(ring_speeds):
+            self.card_ring_offsets[i] = (self.card_ring_offsets[i] + speed * dt * 60) % (math.pi * 2)
 
     def handle_event(self, event):
         super().handle_event(event)
@@ -315,6 +344,32 @@ class MysteriumMagnumMenu(Menu):
                 sz = max(1, int(p["size"] * (0.8 + 0.4 * pulse)))
                 if alpha > 0.05:
                     pygame.draw.circle(surface, pcolor, (int(px), int(py)), sz)
+
+    def _draw_card_rings(self, surface):
+        if self._card_back_scaled is None:
+            return
+        t = self.animation_time
+        cx, cy = self.tree_rect.center
+        rings = [
+            (120,  8,  0.80),
+            (200, 10, 1.00),
+            (280, 14, 1.15),
+            (370, 18, 1.30),
+        ]
+        base_alpha = 55
+        for ri, (radius, count, scale_f) in enumerate(rings):
+            offset = self.card_ring_offsets[ri]
+            scaled = self._card_scaled_rings[ri]
+            for i in range(count):
+                angle = offset + i * 2 * math.pi / count
+                px = cx + math.cos(angle) * radius
+                py = cy + math.sin(angle) * radius
+                rot_angle = math.degrees(angle) + 90
+                rotated = pygame.transform.rotate(scaled, rot_angle)
+                fade = 0.7 + 0.3 * math.sin(t * 0.3 + ri + i)
+                rotated.set_alpha(int(base_alpha * scale_f * fade))
+                rect = rotated.get_rect(center=(int(px), int(py)))
+                surface.blit(rotated, rect)
 
     def _draw_sidebar(self, screen):
         r = self.sidebar_rect
@@ -459,6 +514,7 @@ class MysteriumMagnumMenu(Menu):
         screen.set_clip(self.tree_rect)
 
         self._draw_background(screen)
+        self._draw_card_rings(screen)
 
         screen.set_clip(old_clip)
 
