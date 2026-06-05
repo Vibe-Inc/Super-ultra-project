@@ -111,7 +111,7 @@ class ArcaneQuest:
 
 
 class ArcaneQuestMenu(Menu):
-    QUESTS_PER_PAGE = 6
+    QUEST_COUNT = 6
 
     def __init__(self, app: "App"):
         super().__init__(app)
@@ -167,10 +167,16 @@ class ArcaneQuestMenu(Menu):
         self.slot_rects: list[pygame.Rect] = []
 
     def get_quest_data(self) -> list[dict]:
-        """Export quest state for save serialization."""
+        """Export full quest definitions + progress for save serialization."""
         return [
             {
                 "id": q.id,
+                "title": q.title,
+                "description": q.description,
+                "target_type": q.target_type,
+                "target_count": q.target_count,
+                "location_label": q.location_label,
+                "reward": q.reward,
                 "progress": q.progress,
                 "completed": q.completed,
                 "claimed": q.claimed,
@@ -179,20 +185,30 @@ class ArcaneQuestMenu(Menu):
         ]
 
     def set_quest_data(self, data: list[dict]):
-        """Import quest state from save data (matched by quest id)."""
+        """Restore full quest state from save data (replaces current quests)."""
         if not data:
             return
-        id_map = {d["id"]: d for d in data}
-        for q in self.quests:
-            if q.id in id_map:
-                saved = id_map[q.id]
-                q.progress = saved.get("progress", 0)
-                q.completed = saved.get("completed", False)
-                q.claimed = saved.get("claimed", False)
+        self.quests = []
+        for d in data:
+            q = ArcaneQuest(
+                d.get("id", ""),
+                d.get("title", ""),
+                d.get("description", ""),
+                d.get("target_type", "mobs"),
+                d.get("target_count", 5),
+                d.get("location_label", ""),
+                d.get("reward", {}),
+            )
+            q.progress = d.get("progress", 0)
+            q.completed = d.get("completed", False)
+            q.claimed = d.get("claimed", False)
+            self.quests.append(q)
+        self._layout_size = None
 
     def reset_quests(self):
         """Reset all quest progress (for new game)."""
         self._init_quests()
+        self._layout_size = None
 
     def _init_quests(self):
         self.quests = []
@@ -202,7 +218,7 @@ class ArcaneQuestMenu(Menu):
         rng = random.Random()
         base_xp = [80, 120, 180, 250, 350, 500]
         base_gold = [20, 35, 55, 80, 120, 180]
-        for i in range(self.QUESTS_PER_PAGE):
+        for i in range(self.QUEST_COUNT):
             mob_key = mob_names[i % len(mob_names)]
             kill_count = rng.randint(3, 8)
             mob_name = MOB_DISPLAY_NAMES.get(mob_key, mob_key.capitalize())
@@ -333,27 +349,7 @@ class ArcaneQuestMenu(Menu):
             bottom_y,
         )
 
-        self.claim_buttons = []
-        for i, q in enumerate(self.quests):
-            if i >= len(self.slot_rects):
-                break
-            sr = self.slot_rects[i]
-            cw = max(80, int(120 * scale))
-            ch = max(28, int(36 * scale))
-            cx = sr.right - cw - int(8 * scale)
-            cy = sr.bottom - ch - int(6 * scale)
-            text = _("CLAIM") if not q.claimed else _("DONE")
-            btn = Button(
-                pygame.Rect(cx, cy, cw, ch),
-                text,
-                (70, 30, 100) if not q.claimed else (50, 50, 55),
-                (100, 50, 140) if not q.claimed else (70, 70, 75),
-                cfg.button_font,
-                GOLD_BRIGHT if not q.claimed else (140, 140, 150),
-                max(2, int(6 * scale)),
-                on_click=lambda idx=i: self.claim_reward(idx),
-            )
-            self.claim_buttons.append(btn)
+        self._rebuild_claim_buttons()
 
         for btn in self.buttons:
             try:
@@ -366,7 +362,6 @@ class ArcaneQuestMenu(Menu):
         self.entrance_start = time.time()
         self.entrance_progress = 0.0
         self.claim_flash_alpha = 0.0
-        self._init_quests()
         self._init_particles()
         self._init_energy_arcs()
         self._layout_size = None
@@ -410,9 +405,12 @@ class ArcaneQuestMenu(Menu):
         except Exception:
             pass
 
+        self._rebuild_claim_buttons()
+
+    def _rebuild_claim_buttons(self):
         scale = cfg.ui_scale()
         self.claim_buttons = []
-        for i, q2 in enumerate(self.quests):
+        for i, q in enumerate(self.quests):
             if i >= len(self.slot_rects):
                 break
             sr = self.slot_rects[i]
@@ -420,14 +418,14 @@ class ArcaneQuestMenu(Menu):
             ch = max(28, int(36 * scale))
             cx = sr.right - cw - int(8 * scale)
             cy = sr.bottom - ch - int(6 * scale)
-            text = _("CLAIM") if not q2.claimed else _("DONE")
+            text = _("CLAIM") if not q.claimed else _("DONE")
             btn = Button(
                 pygame.Rect(cx, cy, cw, ch),
                 text,
-                (70, 30, 100) if not q2.claimed else (50, 50, 55),
-                (100, 50, 140) if not q2.claimed else (70, 70, 75),
+                (70, 30, 100) if not q.claimed else (50, 50, 55),
+                (100, 50, 140) if not q.claimed else (70, 70, 75),
                 cfg.button_font,
-                GOLD_BRIGHT if not q2.claimed else (140, 140, 150),
+                GOLD_BRIGHT if not q.claimed else (140, 140, 150),
                 max(2, int(6 * scale)),
                 on_click=lambda idx=i: self.claim_reward(idx),
             )
@@ -521,7 +519,11 @@ class ArcaneQuestMenu(Menu):
     # ── Event handling ────────────────────────────────────────────────
     def handle_event(self, event):
         super().handle_event(event)
-        if event.type == pygame.KEYDOWN:
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            for btn in self.claim_buttons:
+                if btn.rect.collidepoint(event.pos) and btn.on_click:
+                    btn.on_click()
+        elif event.type == pygame.KEYDOWN:
             if event.key in (pygame.K_ESCAPE, pygame.K_b):
                 self.close_menu()
             elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
