@@ -635,8 +635,9 @@ class Game(State):
         except Exception:
             self.gathering = None
 
-        # Per-map gatherable node registries (coordinate-based trees,
-        # rocks, ore veins -- see src.world.gatherable_nodes).
+        # Per-map gatherable node registries (currently empty: gathering
+        # is driven entirely by the is_*_gatherable tile properties on
+        # the .tmx files -- see src.world.gatherable_nodes).
         self.gatherables: dict[str, GatherableNodeRegistry] = {}
         try:
             self._build_gatherable_registries()
@@ -646,6 +647,10 @@ class Game(State):
     def _build_gatherable_registries(self) -> None:
         """Read :mod:`data.gatherable_nodes` once and group the entries
         by ``map_path`` into :class:`GatherableNodeRegistry` instances.
+
+        The data file is intentionally empty now; the registries exist
+        so the per-map update / draw hooks in :meth:`Game.update` and
+        :meth:`Game.draw_scene` keep working without a guard.
         """
         try:
             from data.gatherable_nodes import load_gatherable_node_defs
@@ -1402,12 +1407,17 @@ class Game(State):
         except Exception:
             pass
 
+        # Draw the fringe (upper-details) overlay BEFORE the gathering
+        # UI so the bar and "Press G to ..." hint sit on top of the
+        # upper halves of trees / rocks and never get hidden behind
+        # tall tile art.
+        self.map.draw_fringe_overlay(screen, camera_offset, self.character)
+
         try:
             if getattr(self, 'gathering', None):
                 self.gathering.draw(screen, camera_offset)
         except Exception:
             pass
-        self.map.draw_fringe_overlay(screen, camera_offset, self.character)
 
         if not self.npc.is_interactable:
             if getattr(self.app.INV_manager, 'current_shop_inv', None) is not None:

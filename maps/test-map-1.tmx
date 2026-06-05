@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="90" height="60" tilewidth="32" tileheight="32" infinite="0" nextlayerid="7" nextobjectid="1">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="90" height="60" tilewidth="32" tileheight="32" infinite="0" nextlayerid="7" nextobjectid="1">
  <tileset firstgid="1" source="tilesets/Topdown RPG 32x32 - Ground Tileset 1.1.tsx"/>
  <tileset firstgid="145" name="exterior_2" tilewidth="32" tileheight="32" tilecount="3876" columns="34">
   <image source="tilesets/exterior_2.png" width="1088" height="3648"/>
@@ -706,11 +706,13 @@
   <tile id="1149">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1150">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1151">
@@ -721,51 +723,61 @@
   <tile id="1182">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1183">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1184">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1185">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1216">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1217">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1218">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1219">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1354">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1355">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1356">
@@ -776,11 +788,13 @@
   <tile id="1388">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1389">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1390">
@@ -791,11 +805,13 @@
   <tile id="1422">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1423">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1521">
@@ -921,11 +937,13 @@
   <tile id="1773">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1774">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1780">
@@ -936,11 +954,13 @@
   <tile id="1781">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1782">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1783">
@@ -951,11 +971,13 @@
   <tile id="1789">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1790">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1791">
@@ -976,41 +998,49 @@
   <tile id="1806">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1807">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1808">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1815">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1816">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1817">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1823">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1824">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1825">
@@ -1021,51 +1051,61 @@
   <tile id="1840">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1841">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1842">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1849">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1850">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1851">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1857">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1858">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1891">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1892">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2009">
@@ -2411,7 +2451,7 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
- <layer id="3" name="Details Fringe Layer" width="90" height="60">
+ <layer id="3" name="Details Fringe Layer" width="90" height="60" locked="1">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5791,5792,5793,5794,5795,5796,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,1719,1720,1721,1722,1723,1724,1725,1726,0,0,0,0,0,0,0,0,0,0,0,5827,5828,5829,5830,5831,5832,223,224,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
