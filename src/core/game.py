@@ -878,9 +878,11 @@ class Game(State):
                     pass
 
             # Window illumination: windows emit warm light at night
+            # Skip for interior maps (e.g. tavern) where windows are on internal walls
+            _NO_WINDOW_LIGHT_MAPS = {"maps/tavern.tmx"}
             try:
                 game_map = getattr(self, 'map', None)
-                if game_map:
+                if game_map and self.current_map_path not in _NO_WINDOW_LIGHT_MAPS:
                     window_positions = game_map.get_window_positions()
                     for wx, wy in window_positions:
                         screen_pos = (int(wx - camera.x), int(wy - camera.y))

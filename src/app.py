@@ -337,7 +337,14 @@ class App:
 
             has_lights = bool(local_lights)
 
-            if effective_brightness < 1:
+            # Skip day-night overlay entirely for interior maps (e.g. tavern)
+            _skip_night_overlay = False
+            if self.manager.get_state() == "gameplay":
+                gs = self.manager.states.get("gameplay")
+                if gs and getattr(gs, 'current_map_path', '') == "maps/tavern.tmx":
+                    _skip_night_overlay = True
+
+            if effective_brightness < 1 and not _skip_night_overlay:
                 overlay_alpha = int((1 - effective_brightness) * 255)
                 # Use the environment tint color computed by the game state for dawn/dusk/night
                 if night_tint:
