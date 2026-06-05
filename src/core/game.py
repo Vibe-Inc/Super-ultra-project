@@ -876,6 +876,22 @@ class Game(State):
                         lights.append({'pos': screen_pos, 'radius': int(getattr(it, 'light_radius', 120)), 'intensity': float(getattr(it, 'intensity', 0.8))})
                 except Exception:
                     pass
+
+            # Window illumination: windows emit warm light at night
+            try:
+                game_map = getattr(self, 'map', None)
+                if game_map:
+                    window_positions = game_map.get_window_positions()
+                    for wx, wy in window_positions:
+                        screen_pos = (int(wx - camera.x), int(wy - camera.y))
+                        lights.append({
+                            'pos': screen_pos,
+                            'radius': 100,
+                            'intensity': 0.9,
+                            'full_360': True,
+                        })
+            except Exception:
+                pass
         except Exception:
             pass
         return lights

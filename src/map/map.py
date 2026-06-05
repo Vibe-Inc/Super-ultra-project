@@ -66,6 +66,7 @@ class Map:
         self._base_render_cache = None
         self._fringe_components = []
         self._window_overlay = None
+        self._window_positions = []
 
     def ensure_loaded(self) -> bool:
         if self.game_map is None:
@@ -156,6 +157,7 @@ class Map:
             self._base_render_cache = None
             self._fringe_components = []
             self._window_overlay = None
+            self._window_positions = []
             return
 
         tw = self.game_map.tilewidth
@@ -165,6 +167,7 @@ class Map:
 
         window_surf = pygame.Surface((self.pixel_width, self.pixel_height), pygame.SRCALPHA)
         orange_cache = {}
+        window_positions = []
 
         for layer in self.game_map.visible_layers:
             if isinstance(layer, pytmx.TiledTileLayer):
@@ -179,6 +182,8 @@ class Map:
                         continue
                     props = self.game_map.get_tile_properties_by_gid(gid)
                     if props and props.get("id") in self.WINDOW_LOCAL_IDS:
+                        # Record window center position for illumination
+                        window_positions.append((x * tw + tw // 2, y * th + th // 2))
                         if gid not in orange_cache and tile:
                             orange = tile.copy()
                             px = pygame.PixelArray(orange)
@@ -193,6 +198,7 @@ class Map:
         self._base_render_cache = surface
         self._fringe_components = fringe_components
         self._window_overlay = window_surf if orange_cache else None
+        self._window_positions = window_positions
 
     def get_tmx_data(self):
         if self.ensure_loaded():
@@ -267,6 +273,14 @@ class Map:
                 if overlap_rect.width * overlap_rect.height > fade_threshold:
                     return True
         return False
+
+    def get_window_positions(self):
+        """Return list of (world_x, world_y) center positions for all window tiles."""
+        if not self.ensure_loaded():
+            return []
+        if self._base_render_cache is None:
+            self._build_render_cache()
+        return list(self._window_positions)
 
     def get_obstacles(self):
         if not self.ensure_loaded():
@@ -390,6 +404,10 @@ class LocalMap:
 
     def get_obstacles(self):
         return self.current_map.get_obstacles()
+
+    def get_window_positions(self):
+        """Return list of (world_x, world_y) center positions for all window tiles."""
+        return self.current_map.get_window_positions()
 
     def update(self, player):
         """
