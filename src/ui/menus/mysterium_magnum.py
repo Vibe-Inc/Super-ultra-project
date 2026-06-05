@@ -353,6 +353,78 @@ class MysteriumMagnumMenu(Menu):
         hint = self.small_font.render(hint_text, True, (150, 140, 175))
         screen.blit(hint, (r.x + 18, div_y + 10))
 
+        py = div_y + 10 + hint.get_height() + 24
+
+        for i in range(r.width - 36):
+            x = r.x + 18 + i
+            alpha = int((1.0 - abs(i / max(1, r.width - 36) - 0.5) * 2) * 80)
+            pygame.draw.line(screen, (70, 40, 100, alpha), (x, py), (x, py + 1))
+        py += 12
+
+        stars = getattr(self.app, "purple_stars", 0)
+        t = self.animation_time
+
+        panel_w = r.width - 36
+        panel_h = max(60, int(80 * cfg.ui_scale()))
+        panel_rect = pygame.Rect(r.x + 18, py, panel_w, panel_h)
+        pygame.draw.rect(screen, (18, 8, 32), panel_rect, border_radius=10)
+        pygame.draw.rect(screen, (100, 60, 140), panel_rect, 2, border_radius=10)
+        inner_panel = panel_rect.inflate(-4, -4)
+        pygame.draw.rect(screen, (55, 35, 80), inner_panel, 1, border_radius=8)
+
+        star_cx = panel_rect.x + int(panel_rect.width * 0.25)
+        star_cy = panel_rect.centery
+        star_outer_r = max(8, int(18 * cfg.ui_scale()))
+        star_inner_r = int(star_outer_r * 0.4)
+        star_pulse = (math.sin(t * 2.0) + 1.0) * 0.5
+        star_rot = t * 0.5
+
+        star_pts = []
+        for i in range(10):
+            angle = star_rot + i * math.pi / 5 - math.pi / 2
+            r2 = star_outer_r if i % 2 == 0 else star_inner_r
+            star_pts.append((star_cx + math.cos(angle) * r2, star_cy + math.sin(angle) * r2))
+
+        glow_r = int(star_outer_r * 2.5)
+        glow_surf = pygame.Surface((glow_r * 2, glow_r * 2), pygame.SRCALPHA)
+        glow_a = int(60 + 60 * star_pulse)
+        pygame.draw.circle(glow_surf, (255, 215, 0, glow_a), (glow_r, glow_r), glow_r)
+        screen.blit(glow_surf, (star_cx - glow_r, star_cy - glow_r))
+
+        star_color = (
+            int(255 - 40 * star_pulse),
+            int(215 - 40 * star_pulse),
+            int(80 - 20 * star_pulse),
+        )
+        pygame.draw.polygon(screen, star_color, star_pts)
+        pygame.draw.polygon(screen, (255, 255, 200), star_pts, width=max(1, int(1.5 * cfg.ui_scale())))
+
+        label_x = panel_rect.x + int(panel_rect.width * 0.45)
+        label_y = panel_rect.y + int(10 * cfg.ui_scale())
+        label = self.small_font.render(_("Purple Stars"), True, (200, 180, 220))
+        screen.blit(label, (label_x, label_y))
+
+        count_color = (
+            int(255 - 30 * star_pulse),
+            int(215 - 30 * star_pulse),
+            int(100 + 80 * star_pulse),
+        )
+        count_text = str(stars)
+        count_surf = self.section_font.render(count_text, True, count_color)
+        count_shadow = self.section_font.render(count_text, True, (0, 0, 0))
+        count_x = label_x
+        count_y = label_y + label.get_height() + 4
+        screen.blit(count_shadow, (count_x + 2, count_y + 2))
+        screen.blit(count_surf, (count_x, count_y))
+
+        decor_r = max(2, int(3 * cfg.ui_scale()))
+        for i in range(3):
+            da = t * 1.5 + i * 2.094
+            dx = panel_rect.right - int(12 * cfg.ui_scale())
+            dy = panel_rect.centery + math.sin(da) * (panel_h * 0.25)
+            dc = (180, 130, 255, int(80 + 80 * (math.sin(da) + 1) * 0.5))
+            pygame.draw.circle(screen, dc[:3], (dx, int(dy)), decor_r)
+
     def draw(self, screen):
         self.layout(screen)
         raw_dt = 0.016
