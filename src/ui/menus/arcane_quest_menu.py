@@ -164,10 +164,10 @@ class ArcaneQuestMenu(Menu):
 
         # ── Fonts ────────────────────────────────────────────────────
         self.title_font   = cfg.get_font(max(20, int(46 * scale)))
-        self.section_font = cfg.get_font(max(16, int(28 * scale)))
-        self.body_font    = cfg.get_font(max(14, int(20 * scale)))
-        self.small_font   = cfg.get_font(max(12, int(16 * scale)))
-        self.reward_font  = cfg.get_font(max(14, int(22 * scale)))
+        self.section_font = cfg.get_font(max(16, int(32 * scale)))
+        self.body_font    = cfg.get_font(max(14, int(26 * scale)))
+        self.small_font   = cfg.get_font(max(12, int(20 * scale)))
+        self.reward_font  = cfg.get_font(max(14, int(26 * scale)))
 
         # ── Buttons ──────────────────────────────────────────────────
         btn_w = max(160, int(280 * scale))
@@ -175,8 +175,8 @@ class ArcaneQuestMenu(Menu):
         self.back_button = Button(
             pygame.Rect(0, 0, btn_w, btn_h),
             _("BACK"),
-            (60, 35, 75),
-            (90, 55, 115),
+            (45, 25, 65),
+            (80, 50, 110),
             cfg.button_font,
             GOLD_BRIGHT,
             max(2, int(10 * scale)),
@@ -197,16 +197,16 @@ class ArcaneQuestMenu(Menu):
             on_click=self.claim_reward,
         )
 
-        # 'Completed' indicator — a small badge that appears when the quest is done
+        # 'Completed' indicator — a magical gold/purple badge
         complete_w = max(140, int(220 * scale))
         complete_h = max(34, int(46 * scale))
         self.complete_button = Button(
             pygame.Rect(0, 0, complete_w, complete_h),
             _("COMPLETED"),
-            (35, 110, 70),
-            (55, 150, 95),
+            (100, 50, 140),
+            (130, 70, 180),
             cfg.button_font,
-            (220, 255, 230),
+            GOLD_BRIGHT,
             max(2, int(10 * scale)),
             on_click=None,
         )
@@ -253,10 +253,10 @@ class ArcaneQuestMenu(Menu):
         template = ArcaneQuest(
             quest_id="kill_mobs_in_dark_forest",
             title=_("Whispers of the Dark Forest"),
-            description=_("Kill {X} mobs in {Y}").format(X="10", Y="the Dark Forest"),
+            description=_("Kill {X}x {M}").format(X="10", M="Shadow Wraith"),
             target_type="mobs",
             target_count=10,
-            location_label=_("the Dark Forest"),
+            location_label="",
             reward={"xp": 250, "gold": 75, "item": "Arcane Token"},
         )
         self.quests = [template]
@@ -267,8 +267,9 @@ class ArcaneQuestMenu(Menu):
         rng = random.Random(1337)
         self.particles.clear()
         self.star_particles.clear()
+        self.ambient_orbs = []
 
-        for _ in range(60):
+        for _ in range(120):
             x = rng.uniform(0, 1000)
             y = rng.uniform(0, 1000)
             vx = rng.uniform(-8, 8)
@@ -277,22 +278,35 @@ class ArcaneQuestMenu(Menu):
             color = rng.choice(
                 [GOLD_BRIGHT, GOLD, PURPLE_BRIGHT, PURPLE, (180, 150, 255), (255, 230, 180)]
             )
-            size = rng.uniform(1.0, 2.4)
+            size = rng.uniform(1.0, 3.0)
             self.particles.append(
                 _Particle(x, y, vx, vy, life, color, size, shape="dot")
             )
 
-        for _ in range(20):
+        for _ in range(40):
             x = rng.uniform(0, 1000)
             y = rng.uniform(0, 1000)
             vx = rng.uniform(-4, 4)
             vy = rng.uniform(-10, -2)
             life = rng.uniform(2.0, 5.0)
             color = rng.choice([GOLD_BRIGHT, PURPLE_BRIGHT, MAGIC_CYAN])
-            size = rng.uniform(2.0, 3.5)
+            size = rng.uniform(2.0, 4.5)
             self.star_particles.append(
                 _Particle(x, y, vx, vy, life, color, size, shape="star")
             )
+
+        for _ in range(6):
+            self.ambient_orbs.append({
+                "x": rng.uniform(0, 1000),
+                "y": rng.uniform(0, 1000),
+                "radius": rng.uniform(80, 200),
+                "vx": rng.uniform(-3, 3),
+                "vy": rng.uniform(-2, 2),
+                "color": rng.choice([PURPLE_DEEP, PURPLE, GOLD_DARK, (30, 15, 50)]),
+                "alpha": rng.uniform(0.03, 0.07),
+                "pulse_speed": rng.uniform(0.3, 0.8),
+                "pulse_offset": rng.uniform(0, math.pi * 2),
+            })
 
     # ── Layout ────────────────────────────────────────────────────────
     def _ensure_layout(self, screen_width: int, screen_height: int):
@@ -324,15 +338,15 @@ class ArcaneQuestMenu(Menu):
             self.panel_rect.x + card_pad,
             self.title_rect.bottom + int(10 * scale),
             self.panel_rect.width - card_pad * 2,
-            int(190 * scale),
+            int(220 * scale),
         )
 
         # Progress bar
         self.progress_rect = pygame.Rect(
             self.quest_card_rect.x + int(20 * scale),
-            self.quest_card_rect.bottom - int(46 * scale),
+            self.quest_card_rect.bottom - int(50 * scale),
             self.quest_card_rect.width - int(40 * scale),
-            int(22 * scale),
+            int(26 * scale),
         )
 
         # Reward banner
@@ -340,7 +354,7 @@ class ArcaneQuestMenu(Menu):
             self.quest_card_rect.x,
             self.quest_card_rect.bottom + int(14 * scale),
             self.quest_card_rect.width,
-            int(56 * scale),
+            int(64 * scale),
         )
 
         # Buttons (bottom row of the panel)
@@ -514,9 +528,20 @@ class ArcaneQuestMenu(Menu):
                 alive_stars.append(p)
         self.star_particles = alive_stars
 
+        # Update ambient orbs (drift slowly)
+        for orb in self.ambient_orbs:
+            orb["x"] += orb["vx"] * dt
+            orb["y"] += orb["vy"] * dt
+            if orb["x"] < -200:
+                orb["x"] = sw + 200
+            elif orb["x"] > sw + 200:
+                orb["x"] = -200
+            if orb["y"] < -200:
+                orb["y"] = sh + 200
+            elif orb["y"] > sh + 200:
+                orb["y"] = -200
+
         # Burst particles
-        self.burst_particles = [p for p in self.burst_particles if p.update(dt) is None and p.life > 0]
-        # The comprehension above has a bug (update returns None); do an explicit loop:
         new_bursts = []
         for p in self.burst_particles:
             p.update(dt)
@@ -583,32 +608,115 @@ class ArcaneQuestMenu(Menu):
     # ── Sub-draws ─────────────────────────────────────────────────────
     def _draw_background(self, screen):
         sw, sh = screen.get_size()
-        # Full-screen dim layer
-        overlay = pygame.Surface((sw, sh), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 170))
-        screen.blit(overlay, (0, 0))
+        t = self.anim_time
 
-        # Subtle radial glow behind the panel — gold/purple
+        # Dark base
+        screen.fill((8, 5, 16))
+
+        # ── Nebula clouds (cached) ──
+        cache_key = (sw, sh)
+        if not hasattr(self, '_nebula_cache') or self._nebula_cache_key != cache_key:
+            nebula = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            nebula_colors = [
+                (18, 8, 38), (24, 10, 42), (16, 12, 36), (20, 14, 32),
+                (14, 6, 28), (26, 12, 34), (32, 16, 28), (12, 14, 30),
+            ]
+            nebula_centers = [
+                (0.3, 0.4), (0.7, 0.3), (0.5, 0.7), (0.2, 0.6),
+                (0.8, 0.6), (0.4, 0.8), (0.6, 0.2), (0.3, 0.5),
+            ]
+            for y in range(0, sh, 4):
+                for x in range(0, sw, 4):
+                    blend_r, blend_g, blend_b = 0, 0, 0
+                    total = 0
+                    for (nc, (nx, ny)) in zip(nebula_colors, nebula_centers):
+                        dx = x / sw - nx
+                        dy = y / sh - ny
+                        dist = math.sqrt(dx*dx + dy*dy) * 3.0
+                        if dist < 1.5:
+                            w = (1.0 - dist / 1.5) * 0.4
+                            blend_r += nc[0] * w
+                            blend_g += nc[1] * w
+                            blend_b += nc[2] * w
+                            total += w
+                    if total > 0:
+                        r2 = int(min(255, blend_r / total))
+                        g2 = int(min(255, blend_g / total))
+                        b2 = int(min(255, blend_b / total))
+                        nebula.set_at((x, y), (r2, g2, b2, 160))
+            self._nebula_cache = nebula
+            self._nebula_cache_key = cache_key
+        screen.blit(self._nebula_cache, (0, 0))
+
+        # ── Large ambient floating orbs ──
+        for orb in self.ambient_orbs:
+            px = orb["x"] % sw
+            py = orb["y"] % sh
+            pulse = (math.sin(t * orb["pulse_speed"] + orb["pulse_offset"]) + 1.0) * 0.5
+            alpha = int(orb["alpha"] * 255 * (0.6 + 0.4 * pulse))
+            r = int(orb["radius"])
+            orb_surf = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
+            for ri in range(r, 0, -2):
+                ta = alpha * (1.0 - ri / r)
+                c = orb["color"]
+                pygame.draw.circle(orb_surf, (c[0], c[1], c[2], ta), (r, r), ri)
+            screen.blit(orb_surf, (int(px) - r, int(py) - r))
+
+        # ── Radial gold/purple glow behind panel ──
         cx, cy = sw // 2, sh // 2
-        max_r = int(min(sw, sh) * 0.7)
-        for r in range(max_r, 0, -3):
-            t = r / max_r
-            a = int(20 * (1.0 - t) * (0.5 + 0.5 * math.sin(self.anim_time * 1.2)))
-            c = (PURPLE[0], PURPLE[1], PURPLE[2], max(0, a))
-            pygame.draw.circle(overlay, c, (cx, cy), r)
-        screen.blit(overlay, (0, 0))
+        max_r = int(min(sw, sh) * 0.75)
+        glow_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        for r in range(max_r, 0, -4):
+            p = r / max_r
+            a = int(14 * (1.0 - p) * (0.5 + 0.5 * math.sin(t * 1.0)))
+            ci = (
+                int(PURPLE[0] * (1 - p) + GOLD[0] * p),
+                int(PURPLE[1] * (1 - p) + GOLD[1] * p),
+                int(PURPLE[2] * (1 - p) + GOLD[2] * p),
+                max(0, a),
+            )
+            pygame.draw.circle(glow_surf, ci, (cx, cy), r)
+        screen.blit(glow_surf, (0, 0))
 
-        # Faint background stars (subtle)
+        # ── Twinkling stars ──
         rng = random.Random(7)
-        for _ in range(80):
-            x = rng.randint(0, sw - 1)
-            y = rng.randint(0, sh - 1)
-            tw = (math.sin(self.anim_time * 2.0 + x * 0.13) + 1.0) * 0.5
-            a = int(40 + 60 * tw)
-            color = random.choice([GOLD_BRIGHT, PURPLE_BRIGHT, MAGIC_CYAN, (200, 200, 255)])
-            star_surf = pygame.Surface((4, 4), pygame.SRCALPHA)
-            pygame.draw.circle(star_surf, (*color, a), (2, 2), 1)
-            screen.blit(star_surf, (x, y))
+        star_colors = [GOLD_BRIGHT, GOLD, PURPLE_BRIGHT, PURPLE, MAGIC_CYAN, (255, 200, 180)]
+        for _ in range(160):
+            sx = rng.randint(0, sw - 1)
+            sy = rng.randint(0, sh - 1)
+            twinkle = (math.sin(t * (1.5 + rng.random() * 2.0) + sx * 0.1 + sy * 0.07) + 1.0) * 0.5
+            a = int(30 + 90 * twinkle)
+            size = 1 + twinkle * 0.5
+            c = rng.choice(star_colors)
+            star_surf = pygame.Surface((6, 6), pygame.SRCALPHA)
+            pygame.draw.circle(star_surf, (*c, a), (3, 3), max(1, int(size)))
+            screen.blit(star_surf, (sx - 3, sy - 3))
+            if twinkle > 0.8 and size > 1.3:
+                glow_r = 8
+                glow_surf = pygame.Surface((glow_r * 2, glow_r * 2), pygame.SRCALPHA)
+                ga = int(30 * twinkle)
+                pygame.draw.circle(glow_surf, (*c, ga), (glow_r, glow_r), glow_r)
+                screen.blit(glow_surf, (sx - glow_r, sy - glow_r))
+
+        # ── Decorative runes ──
+        rune_positions = [
+            (0.08, 0.12), (0.92, 0.12), (0.08, 0.88), (0.92, 0.88),
+            (0.03, 0.5), (0.97, 0.5), (0.5, 0.03), (0.5, 0.97),
+        ]
+        rune_chars = ["ᚠ", "ᚢ", "ᚦ", "ᚨ", "ᚱ", "ᚲ", "ᚷ", "ᚹ"]
+        rune_font = cfg.get_font(max(16, int(28 * cfg.ui_scale())))
+        for i, (rx, ry) in enumerate(rune_positions):
+            px, py = int(sw * rx), int(sh * ry)
+            pulse = (math.sin(t * 0.8 + i * 0.9) + 1.0) * 0.5
+            a = int(30 + 50 * pulse)
+            r_color = GOLD if i % 2 == 0 else PURPLE_BRIGHT
+            rune_surf = rune_font.render(rune_chars[i], True, (*r_color, a))
+            screen.blit(rune_surf, (px - rune_surf.get_width() // 2, py - rune_surf.get_height() // 2))
+
+        # ── Vignette overlay ──
+        overlay = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 140))
+        screen.blit(overlay, (0, 0))
 
     def _draw_soft_shadow(self, screen, rect, offset=10, alpha=70):
         # Layered offset rectangles for a soft shadow
@@ -701,6 +809,9 @@ class ArcaneQuestMenu(Menu):
 
         r = self.quest_card_rect.copy()
         r.clamp_ip(panel_rect)
+        # Outer gold border
+        outer = r.inflate(6, 6)
+        pygame.draw.rect(screen, GOLD_DARK, outer, border_radius=14)
         # Outer purple border
         pygame.draw.rect(screen, PURPLE_DARK, r, border_radius=12)
         # Inner black panel
@@ -713,14 +824,14 @@ class ArcaneQuestMenu(Menu):
         title_surf = self.section_font.render(q.title, True, GOLD_BRIGHT)
         screen.blit(title_surf, (r.x + 16, r.y + 12))
 
-        # Description (uses the "Kill X mobs in Y" template)
-        desc_surf = self.body_font.render(q.description, True, WHITE_SOFT)
-        screen.blit(desc_surf, (r.x + 16, r.y + 12 + title_surf.get_height() + 6))
+        # Mob target: "Kill Xx Name" — no location
+        desc_surf = self.body_font.render(q.description, True, PURPLE_BRIGHT)
+        screen.blit(desc_surf, (r.x + 16, r.y + 12 + title_surf.get_height() + 8))
 
         # Progress label
-        prog_label = _("Progress: {cur}/{max}").format(cur=q.progress, max=q.target_count)
-        prog_label_surf = self.small_font.render(prog_label, True, PURPLE_BRIGHT)
-        screen.blit(prog_label_surf, (r.x + 16, self.progress_rect.y - 22))
+        prog_label = _("{cur}/{max}").format(cur=q.progress, max=q.target_count)
+        prog_label_surf = self.body_font.render(prog_label, True, WHITE_SOFT)
+        screen.blit(prog_label_surf, (r.x + 16, self.progress_rect.y - 28))
 
         # Progress bar
         frac = q.progress_fraction()
@@ -810,6 +921,16 @@ class ArcaneQuestMenu(Menu):
         btn = self.back_button
         if not panel_rect.colliderect(btn.rect):
             return
+        # Magical border
+        pulse = (math.sin(self.anim_time * 2.0) + 1.0) * 0.5
+        border_rect = btn.rect.inflate(4, 4)
+        bw = int(1 + pulse * 0.5)
+        border_color = (
+            int(GOLD[0] * (1 - pulse * 0.3)),
+            int(GOLD[1] * (1 - pulse * 0.3)),
+            int(GOLD[2] * (1 - pulse * 0.3)),
+        )
+        pygame.draw.rect(screen, border_color, border_rect, width=bw, border_radius=12)
         btn.draw(screen)
 
     def _draw_complete_button(self, screen, panel_rect):
@@ -820,15 +941,25 @@ class ArcaneQuestMenu(Menu):
         if not panel_rect.colliderect(btn.rect):
             return
         # Magical glow behind the completed button
-        glow_surf = pygame.Surface((btn.rect.width + 30, btn.rect.height + 30), pygame.SRCALPHA)
+        glow_surf = pygame.Surface((btn.rect.width + 40, btn.rect.height + 40), pygame.SRCALPHA)
         pulse = (math.sin(self.anim_time * 3.0) + 1.0) * 0.5
-        a = int(60 + 60 * pulse)
-        pygame.draw.rect(glow_surf, (*PURPLE_BRIGHT, a), glow_surf.get_rect(),
-                         border_radius=14)
-        screen.blit(glow_surf, (btn.rect.x - 15, btn.rect.y - 15))
-        # Gold border
-        border_rect = btn.rect.inflate(4, 4)
-        pygame.draw.rect(screen, GOLD_BRIGHT, border_rect, width=2, border_radius=10)
+        a = int(60 + 80 * pulse)
+        ga = int(40 + 60 * pulse)
+        # Dual glow: purple + gold
+        pygame.draw.rect(glow_surf, (*PURPLE_BRIGHT, a), glow_surf.get_rect(), border_radius=16)
+        inner_glow = glow_surf.get_rect().inflate(-12, -12)
+        pygame.draw.rect(glow_surf, (*GOLD_BRIGHT, ga), inner_glow, border_radius=12)
+        screen.blit(glow_surf, (btn.rect.x - 20, btn.rect.y - 20))
+        # Triple gold/purple border
+        for fi in range(3):
+            col = [GOLD_BRIGHT, GOLD, PURPLE][fi]
+            br = btn.rect.inflate(fi * 3 + 2, fi * 3 + 2)
+            pygame.draw.rect(screen, col, br, width=max(1, 2 - fi), border_radius=10 + fi)
+        # Sparkle stars
+        for i in range(3):
+            sx = btn.rect.x + int(btn.rect.width * (0.15 + 0.35 * i))
+            sy = btn.rect.y - 4 + int(math.sin(self.anim_time * 2.5 + i * 1.7) * 3)
+            self._draw_star(screen, sx, sy, 2, GOLD_BRIGHT, self.anim_time + i * 0.5)
         btn.draw(screen)
 
     def _draw_claim_button(self, screen, panel_rect):
@@ -915,26 +1046,32 @@ class ArcaneQuestMenu(Menu):
             screen.blit(shadow, shadow_rect)
             screen.blit(text_surf, text_rect)
         else:
-            # Locked / not-yet-finished: gray and dimmed, but still drawn
-            # Dim the existing button to make the difference clear
-            saved_color = btn.color
-            saved_hover = btn.hover_color
-            btn.color = (55, 55, 60)
-            btn.hover_color = (75, 75, 80)
-            try:
-                btn.draw(screen)
-            except Exception:
-                pass
-            btn.color = saved_color
-            btn.hover_color = saved_hover
+            # Locked / not-yet-finished: dark magical button (dimmed purple/gold)
+            grad = pygame.Surface(btn.rect.size, pygame.SRCALPHA)
+            for x in range(btn.rect.width):
+                t = x / max(1, btn.rect.width - 1)
+                r = int(40 * (1 - t) + 60 * t)
+                g = int(30 * (1 - t) + 35 * t)
+                b = int(50 * (1 - t) + 45 * t)
+                pygame.draw.line(grad, (r, g, b, 200), (x, 0), (x, btn.rect.height))
+            mask = pygame.Surface(btn.rect.size, pygame.SRCALPHA)
+            pygame.draw.rect(mask, (255, 255, 255, 255), mask.get_rect(), border_radius=12)
+            grad.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+            screen.blit(grad, btn.rect.topleft)
 
-            # Overlay a small lock icon
-            lock_cx = btn.rect.x + 18
-            lock_cy = btn.rect.centery
-            pygame.draw.circle(screen, (150, 150, 160), (lock_cx, lock_cy - 2), 6)
-            pygame.draw.rect(screen, (150, 150, 160),
-                             (lock_cx - 7, lock_cy - 1, 14, 10), border_radius=2)
-            pygame.draw.circle(screen, (90, 90, 100), (lock_cx, lock_cy + 2), 2)
+            # Dimmed gold/purple border
+            pulse = (math.sin(self.anim_time * 1.5) + 1.0) * 0.5
+            border_color = (
+                int(GOLD_DARK[0] * (0.5 + 0.2 * pulse)),
+                int(GOLD_DARK[1] * (0.5 + 0.2 * pulse)),
+                int(GOLD_DARK[2] * (0.5 + 0.2 * pulse)),
+            )
+            pygame.draw.rect(screen, border_color, btn.rect.inflate(2, 2), width=1, border_radius=12)
+
+            # Dimmed text
+            text_surf = btn.font.render(btn.text, True, (140, 140, 150))
+            text_rect = text_surf.get_rect(center=btn.rect.center)
+            screen.blit(text_surf, text_rect)
 
     def _draw_star(self, screen, x, y, size, color, t):
         # 4-point sparkle star
