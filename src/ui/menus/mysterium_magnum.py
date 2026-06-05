@@ -121,7 +121,8 @@ class MysteriumMagnumMenu(Menu):
 
         # ── Reveal state ───────────────────────────────────────────────
         self.revealed_cards = []
-        self._revealed_numbers = set()
+        self._revealed_numbers = set(self.app.revealed_tarot_cards)
+        self._rebuild_revealed_cards()
         self._reveal_bursts: list[dict] = []
 
         # ── Selection overlay ──────────────────────────────────────────
@@ -350,6 +351,28 @@ class MysteriumMagnumMenu(Menu):
 
     # ── Card helpers ───────────────────────────────────────────────────
 
+    def _rebuild_revealed_cards(self):
+        self.revealed_cards = []
+        for card in self.tarot_cards:
+            if card["num"] not in self._revealed_numbers:
+                continue
+            num = card["num"]
+            if num >= 16:
+                ring_idx, slot_idx = 0, num - 16
+            elif num >= 11:
+                ring_idx, slot_idx = 1, num - 11
+            elif num >= 6:
+                ring_idx, slot_idx = 2, num - 6
+            else:
+                ring_idx, slot_idx = 3, num
+            self.revealed_cards.append({
+                "card": card,
+                "ring_idx": ring_idx,
+                "slot_idx": slot_idx,
+                "progress": 1.0,
+                "float_offset": 0.0,
+            })
+
     def _pick_weighted_card(self):
         available = [c for c in self.tarot_cards if c["num"] not in self._revealed_numbers]
         if not available:
@@ -387,6 +410,7 @@ class MysteriumMagnumMenu(Menu):
             return
         self.app.purple_stars = stars - self._reveal_cost
         self._revealed_numbers.add(card["num"])
+        self.app.revealed_tarot_cards.add(card["num"])
 
         num = card["num"]
         if num >= 16:
@@ -542,6 +566,8 @@ class MysteriumMagnumMenu(Menu):
         self._entrance_active = True
         self._entrance_progress = 0.0
         self._reveal_bursts.clear()
+        self._revealed_numbers = set(self.app.revealed_tarot_cards)
+        self._rebuild_revealed_cards()
 
     # ── Heavy pre-render cache builders ─────────────────────────────────
 
@@ -1614,7 +1640,7 @@ class MysteriumMagnumMenu(Menu):
 
             desc_y = desc_panel_y + 4
             for li, line in enumerate(lines):
-                desc_surf = body_font.render(line, True, (210, 200, 230))
+                desc_surf = body_font.render(line, True, tier_color)
                 desc_surf.set_alpha(int(230 * ease))
                 screen.blit(desc_surf, (text_x, desc_y))
                 desc_y += line_h
@@ -1656,13 +1682,11 @@ class MysteriumMagnumMenu(Menu):
                         badge_y += stat_badge_h + int(4 * scale)
 
                     badge_rect = pygame.Rect(badge_x, badge_y, badge_w_stat, stat_badge_h)
-                    # Badge background
                     badge_bg_a = int(100 * ease * (0.7 + 0.3 * math.sin(t * 0.8 + badge_x * 0.01)))
-                    pygame.draw.rect(screen, (*color, int(badge_bg_a * 0.15)), badge_rect, border_radius=6)
-                    pygame.draw.rect(screen, (*color, int(badge_bg_a * 0.4)), badge_rect, 1, border_radius=6)
-                    # Badge text
+                    pygame.draw.rect(screen, (10, 6, 18, int(badge_bg_a * 0.5)), badge_rect, border_radius=6)
+                    pygame.draw.rect(screen, (*color, int(badge_bg_a * 0.7)), badge_rect, 1, border_radius=6)
                     badge_ts = stats_font.render(full_text, True, color)
-                    badge_ts.set_alpha(int(220 * ease))
+                    badge_ts.set_alpha(int(255 * ease))
                     screen.blit(badge_ts, (badge_x + int(8 * scale),
                                            badge_y + (stat_badge_h - badge_ts.get_height()) // 2))
                     badge_x += badge_w_stat + int(6 * scale)

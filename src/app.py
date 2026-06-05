@@ -153,6 +153,7 @@ class App:
         
         self.money = 100
         self.purple_stars = 0
+        self.revealed_tarot_cards: set[int] = set()
 
         # Dialog state: current active dialog UI and last NPC the player talked to
         self.current_dialog = None
