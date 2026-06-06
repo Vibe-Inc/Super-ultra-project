@@ -34,6 +34,7 @@ from src.entities.monster_attacks import build_attack_controller, AttackContext
 from src.combat.base_player_combat import PlayerCombatController
 from src.minigames.blackjack import BlackjackGame
 from src.minigames.roulette import RouletteGame
+from src.minigames.poker import PokerGame
 from src.minigames.fishing import FishingController
 from src.minigames.gathering import GatheringController
 from src.world.gatherable_nodes import GatherableNodeRegistry
@@ -121,6 +122,10 @@ class Game(State):
             Merchant shop inventory used by the NPC.
         blackjack_game (BlackjackGame):
             Active blackjack instance, or None.
+        roulette_game (RouletteGame):
+            Active roulette instance, or None.
+        poker_game (PokerGame):
+            Active poker instance, or None.
         spawn_menu (SpawnMenu):
             Debug menu for spawning enemies on demand.
         game_time_seconds (float):
@@ -590,12 +595,12 @@ class Game(State):
         self.card_npc_first_dialog = [
             "Well, well — a fresh face in the tavern!",
             "Name's Ren. I pass the time with some casino games.",
-            "Care for a round of Blackjack or Roulette? I promise I don't cheat... much."
+            "Care for a round of Blackjack, Roulette, or Poker? I promise I don't cheat... much."
         ]
         self.card_npc_repeat_dialog = [
             "Back again? I knew you'd come around.",
             "The tables are waiting for you.",
-            "Would you like to play Blackjack or Roulette?"
+            "Would you like to play Blackjack, Roulette, or Poker?"
         ]
         self.card_npc_post_game_dialog = [
             "Thanks for playing! That was a fine round.",
@@ -701,9 +706,10 @@ class Game(State):
         except Exception:
             pass
 
-        # Blackjack & Roulette game state (None when not playing)
+        # Blackjack, Roulette & Poker game state (None when not playing)
         self.blackjack_game = None
         self.roulette_game = None
+        self.poker_game = None
 
         # Debug menu for spawning mobs
         self.spawn_menu = SpawnMenu(
@@ -883,6 +889,37 @@ class Game(State):
                 on_close=lambda: setattr(self.card_npc, 'was_talked', True),
             )
         self.roulette_game = RouletteGame(self.app, on_close=on_close, player_money=self.app.money)
+
+    def open_poker(self):
+        def on_close(outcome, net_change):
+            self.poker_game = None
+            self.app.money += net_change
+            if self.app.money < 0:
+                self.app.money = 0
+            logger.info(f"Poker closed: outcome={outcome}, net_change={net_change}, money now={self.app.money}")
+            if net_change > 0:
+                post_lines = [
+                    "Thanks for playing! That was a fine round.",
+                    f"You walked away {net_change} gold richer!",
+                    "Come back anytime — the cards are always dealt."
+                ]
+            elif net_change < 0:
+                post_lines = [
+                    "Thanks for playing! That was a fine round.",
+                    f"Tough luck — you lost {abs(net_change)} gold.",
+                    "Come back anytime — the cards are always dealt."
+                ]
+            else:
+                post_lines = [
+                    "Thanks for playing! That was a fine round.",
+                    "Come back anytime — the cards are always dealt."
+                ]
+            self.app.current_dialog = Dialog(
+                self.app,
+                post_lines,
+                on_close=lambda: setattr(self.card_npc, 'was_talked', True),
+            )
+        self.poker_game = PokerGame(self.app, on_close=on_close, player_money=self.app.money)
 
     def _get_card_npc_dialog(self):
         if not self.card_npc.was_talked:
@@ -2026,7 +2063,7 @@ class Game(State):
                 self.app.current_dialog.draw(screen)
             except Exception:
                 pass
-        # Draw blackjack or roulette overlay on top of everything
+        # Draw blackjack, roulette, or poker overlay on top of everything
         if self.blackjack_game:
             try:
                 self.blackjack_game.draw(screen)
@@ -2035,6 +2072,11 @@ class Game(State):
         if self.roulette_game:
             try:
                 self.roulette_game.draw(screen)
+            except Exception:
+                pass
+        if self.poker_game:
+            try:
+                self.poker_game.draw(screen)
             except Exception:
                 pass
         # Smeltery workstation overlay (workbench / coke oven / blast furnace).
@@ -2081,7 +2123,7 @@ class Game(State):
                 self.effects_menu.handle_event(event)
                 return
 
-        # If blackjack or roulette game is active, route all events to it
+        # If blackjack, roulette, or poker game is active, route all events to it
         if self.blackjack_game:
             try:
                 self.blackjack_game.handle_event(event)
@@ -2091,6 +2133,12 @@ class Game(State):
         if self.roulette_game:
             try:
                 self.roulette_game.handle_event(event)
+                return
+            except Exception:
+                pass
+        if self.poker_game:
+            try:
+                self.poker_game.handle_event(event)
                 return
             except Exception:
                 pass
@@ -2218,6 +2266,8 @@ class Game(State):
                         show_play_cards=True,
                         on_play_roulette=self.open_roulette,
                         show_play_roulette=True,
+                        on_play_poker=self.open_poker,
+                        show_play_poker=True,
                     )
                 elif self.fishing_npc.is_interactable:
                     self.app.manager.set_state("collection_book")

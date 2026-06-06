@@ -587,7 +587,8 @@ class Dialog:
 
     def __init__(self, app, lines, on_close=None, on_shop=None, show_shop=False,
                  on_play_cards=None, show_play_cards=False,
-                 on_play_roulette=None, show_play_roulette=False):
+                 on_play_roulette=None, show_play_roulette=False,
+                 on_play_poker=None, show_play_poker=False):
         self.app = app
         self.lines = lines if isinstance(lines, (list, tuple)) else [str(lines)]
         self.on_close = on_close
@@ -597,6 +598,8 @@ class Dialog:
         self.show_play_cards = bool(show_play_cards)
         self.on_play_roulette = on_play_roulette
         self.show_play_roulette = bool(show_play_roulette)
+        self.on_play_poker = on_play_poker
+        self.show_play_poker = bool(show_play_poker)
 
         sw, sh = self.app.screen.get_size()
         w = min(800, sw - 100)
@@ -623,14 +626,17 @@ class Dialog:
         self.shop_button = None
         self.play_cards_button = None
         self.play_roulette_button = None
+        self.play_poker_button = None
 
         action_buttons = []
         if self.show_shop:
             action_buttons.append(('shop', _('SHOP'), (100, 110, 70), (150, 160, 110)))
         if self.show_play_cards:
-            action_buttons.append(('cards', _('PLAY CARDS'), (70, 100, 70), (110, 150, 110)))
+            action_buttons.append(('cards', _('PLAY BLACKJACK'), (70, 100, 70), (110, 150, 110)))
         if self.show_play_roulette:
             action_buttons.append(('roulette', _('PLAY ROULETTE'), (85, 60, 115), (135, 90, 165)))
+        if self.show_play_poker:
+            action_buttons.append(('poker', _('PLAY POKER'), (95, 75, 55), (145, 115, 85)))
 
         self._action_buttons = action_buttons
 
@@ -657,6 +663,11 @@ class Dialog:
                     placeholder, label, color, hover,
                     self.font, (255, 255, 255), 6, on_click=self._play_roulette_action
                 )
+            elif kind == 'poker':
+                self.play_poker_button = Button(
+                    placeholder, label, color, hover,
+                    self.font, (255, 255, 255), 6, on_click=self._play_poker_action
+                )
 
     def _layout_buttons(self, rect):
         btn_w = self.btn_w
@@ -677,6 +688,8 @@ class Dialog:
                 self.play_cards_button.rect = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
             elif kind == 'roulette' and self.play_roulette_button:
                 self.play_roulette_button.rect = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
+            elif kind == 'poker' and self.play_poker_button:
+                self.play_poker_button.rect = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
             btn_x += btn_w + gap
 
     def _close(self):
@@ -706,6 +719,9 @@ class Dialog:
             if self.show_play_roulette and self.play_roulette_button and self.play_roulette_button.rect.collidepoint(event.pos):
                 if self.play_roulette_button.on_click:
                     self.play_roulette_button.on_click()
+            if self.show_play_poker and self.play_poker_button and self.play_poker_button.rect.collidepoint(event.pos):
+                if self.play_poker_button.on_click:
+                    self.play_poker_button.on_click()
         if event.type == pygame.KEYDOWN:
             if event.key in (pygame.K_RETURN, pygame.K_ESCAPE):
                 self._close()
@@ -730,6 +746,14 @@ class Dialog:
         if callable(self.on_play_roulette):
             try:
                 self.on_play_roulette()
+            except Exception:
+                pass
+        self._close()
+
+    def _play_poker_action(self):
+        if callable(self.on_play_poker):
+            try:
+                self.on_play_poker()
             except Exception:
                 pass
         self._close()
@@ -914,6 +938,11 @@ class Dialog:
         if self.show_play_roulette and self.play_roulette_button:
             try:
                 self.play_roulette_button.draw(surface)
+            except Exception:
+                pass
+        if self.show_play_poker and self.play_poker_button:
+            try:
+                self.play_poker_button.draw(surface)
             except Exception:
                 pass
         self.ok_button.draw(surface)

@@ -118,6 +118,9 @@ class RouletteGame:
         self._btn_clear = None
         self._btn_close = None
         self._btn_play = None
+        self._btn_rules = None
+        
+        self.show_rules = False
 
         self._init_bet_zones()
 
@@ -319,6 +322,13 @@ class RouletteGame:
             pass
 
     def handle_event(self, event: pygame.event.Event):
+        if self.show_rules:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                self.show_rules = False
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                self.show_rules = False
+            return
+
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self._close("quit")
@@ -334,6 +344,11 @@ class RouletteGame:
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             pos = event.pos
+            
+            if event.button == 1 and self._btn_rules and self._btn_rules.collidepoint(pos):
+                self.show_rules = True
+                return
+
             if self.phase == self.PHASE_BETTING:
                 # Left click
                 if event.button == 1:
@@ -444,6 +459,46 @@ class RouletteGame:
             pygame.draw.circle(surface, WHITE, (int(ball_x), int(ball_y)), max(6, int(8 * cfg.ui_scale())))
             pygame.draw.circle(surface, (200, 200, 200), (int(ball_x), int(ball_y)), max(6, int(8 * cfg.ui_scale())), width=1)
 
+    def _draw_rules(self, surface: pygame.Surface, tr: pygame.Rect):
+        """Draw the rules modal."""
+        overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
+        surface.blit(overlay, (0, 0))
+
+        mw, mh = int(tr.width * 0.7), int(tr.height * 0.7)
+        m_rect = pygame.Rect(tr.centerx - mw // 2, tr.centery - mh // 2, mw, mh)
+        pygame.draw.rect(surface, BUTTON_BG, m_rect, border_radius=12)
+        pygame.draw.rect(surface, BUTTON_BORDER, m_rect, width=3, border_radius=12)
+
+        title = self.font_large.render("Roulette Rules", True, GOLD)
+        surface.blit(title, (m_rect.centerx - title.get_width() // 2, m_rect.y + 20))
+
+        rules = [
+            "Goal: Predict where the ball will land on the roulette wheel.",
+            "",
+            "Betting Options:",
+            "  - Straight Up (Single Number): Pays 35 to 1.",
+            "  - Dozens (1-12, 13-24, 25-36): Pays 2 to 1.",
+            "  - Even-Money Bets (Red/Black, Even/Odd, 1-18/19-36): Pays 1 to 1.",
+            "",
+            "How to play:",
+            "  - Select a chip value from the bottom.",
+            "  - Left-click on the betting board to place your chips.",
+            "  - Right-click to remove chips.",
+            "  - Press 'Spin' when you're ready to play.",
+            "  - Number 0 is green and generally results in a loss for outside bets."
+        ]
+
+        ty = m_rect.y + 80
+        for line in rules:
+            if line:
+                txt = self.font_small.render(line, True, WHITE)
+                surface.blit(txt, (m_rect.x + 40, ty))
+            ty += 24
+
+        hint = self.font_small.render("Click anywhere to close", True, (150, 150, 150))
+        surface.blit(hint, (m_rect.centerx - hint.get_width() // 2, m_rect.bottom - 40))
+
     def draw(self, surface: pygame.Surface):
         # Dim background
         overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
@@ -459,6 +514,12 @@ class RouletteGame:
         # Title
         title = self.font_large.render("Roulette Casino", True, GOLD)
         surface.blit(title, (tr.centerx - title.get_width() // 2, tr.y + 16))
+
+        # Rules button
+        btn_w = max(90, int(120 * cfg.ui_scale()))
+        btn_h = max(30, int(40 * cfg.ui_scale()))
+        self._btn_rules = pygame.Rect(tr.x + 20, tr.y + 20, btn_w, btn_h)
+        self._draw_button(surface, self._btn_rules, "Rules (R)", self._btn_rules.collidepoint(mouse_pos), GOLD)
 
         # ---- Money display ----
         right_margin = 20
@@ -621,3 +682,6 @@ class RouletteGame:
             res_surf = self.font_large.render(self.result_text, True, self.result_color)
             ry = btn_y - res_surf.get_height() - 20
             surface.blit(res_surf, (tr.centerx - res_surf.get_width() // 2, ry))
+
+        if self.show_rules:
+            self._draw_rules(surface, tr)
