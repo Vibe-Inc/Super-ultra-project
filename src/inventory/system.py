@@ -917,15 +917,42 @@ class CraftingGrid(Inventory):
         output_rect = pygame.Rect(self.output_pos_x, self.output_pos_y, self.slot_size, self.slot_size)
         if output_rect.collidepoint(mouse_x, mouse_y) and event.button == 1:
             if self.output_slot and not manager.selected_item:
+                # Snapshot the crafted item so we can grant XP and log
+                # the rolled tier before the output slot is cleared.
+                crafted_item = self.output_slot[0] if self.output_slot else None
+                crafted_tier = getattr(crafted_item, "tier", "fine") if crafted_item is not None else "fine"
+
                 manager.selected_item = self.output_slot
                 self.output_slot = None
-                
+
                 for col in range(3):
                     for row in range(3):
                         if self.items[col][row]:
                             self.items[col][row][1] -= 1
                             if self.items[col][row][1] <= 0:
                                 self.items[col][row] = None
+
+                # Award smelting XP for the craft.  Only weapon /
+                # armor / tool crafts grant XP -- miscellaneous items
+                # that happen to share the workbench (e.g. potions)
+                # are excluded so skill grinding isn't trivially
+                # exploitable.
+                try:
+                    from src.systems.smelting_skill import XP_PER_CRAFT
+                    from src.items.items import Weapon, Armor, Tool
+                    if crafted_item is not None and isinstance(crafted_item, (Weapon, Armor, Tool)):
+                        char = getattr(self.app.manager.states.get("gameplay"), "character", None)
+                        skill = getattr(char, "smelting_skill", None) if char is not None else None
+                        if skill is not None:
+                            levels_gained = skill.add_xp(XP_PER_CRAFT)
+                            if levels_gained:
+                                from src.core.logger import logger as _logger
+                                _logger.info(
+                                    f"Smelting skill reached level {skill.level}"
+                                )
+                except Exception:
+                    pass
+
                 self.check_recipes()
             return
 
@@ -947,6 +974,24 @@ class CraftingGrid(Inventory):
 
         if matched_recipe:
             new_item = create_item(matched_recipe["result_id"])
+            # Apply a crafting tier.  The probability distribution
+            # depends on the player's smelting skill level (read from
+            # the character) so the same recipe at the same 3x3 grid
+            # can yield a horrendous, fine or legendary item.
+            try:
+                from database.crafting_tiers_db import roll_tier, get_tier_name
+                smelting_level = 1
+                try:
+                    char = getattr(self.app.manager.states.get("gameplay"), "character", None)
+                    if char is not None and getattr(char, "smelting_skill", None) is not None:
+                        smelting_level = int(char.smelting_skill.level or 1)
+                except Exception:
+                    smelting_level = 1
+                tier_id = roll_tier(smelting_level)
+                from src.items.items import apply_tier_to_item
+                apply_tier_to_item(new_item, tier_id)
+            except Exception:
+                pass
             self.output_slot = [new_item, matched_recipe["amount"]]
         else:
             self.output_slot = None
