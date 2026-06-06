@@ -384,26 +384,7 @@ class MainMenu(Menu):
 
         self._clock.draw(screen, t, sw, sh, scale)
 
-        logo_progress = min(1.0, max(0, (t - 0.2) / 0.8))
-        logo_scale_eased = ease_out_back(logo_progress)
-        logo_base_w = self.beta_logo_img.get_width()
-        logo_base_h = self.beta_logo_img.get_height()
-        logo_float = math.sin(t * 0.7) * 5 * scale
-        lw = max(1, int(logo_base_w * logo_scale_eased))
-        lh = max(1, int(logo_base_h * logo_scale_eased))
-        logo_scaled = pygame.transform.smoothscale(self.beta_logo_img, (lw, lh))
-        logo_cy = int(sh * 0.18) + int(logo_float)
-        logo_rect = logo_scaled.get_rect(center=(sw // 2, logo_cy))
-
-        if logo_progress > 0.05:
-            glow_sz = max(lw, lh) + int(50 * scale * logo_scale_eased)
-            glow = pygame.Surface((glow_sz, glow_sz), pygame.SRCALPHA)
-            ga = int(35 + 20 * math.sin(t * 1.3)) if logo_progress > 0.5 else int(60 * logo_progress)
-            pygame.draw.circle(glow, (*GOLD, max(0, min(60, ga))), (glow_sz // 2, glow_sz // 2), glow_sz // 2)
-            screen.blit(glow, (logo_rect.centerx - glow_sz // 2, logo_rect.centery - glow_sz // 2))
-
-        logo_scaled.set_alpha(int(255 * min(1.0, logo_progress * 2)))
-        screen.blit(logo_scaled, logo_rect)
+        # (Removed floating logo above the title)
 
         title_text = "CODEX ARCANUM"
         title_y = int(sh * 0.35)
