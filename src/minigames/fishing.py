@@ -776,17 +776,23 @@ class FishingController:
             bool: ``True`` if the event was consumed, ``False``
             otherwise.
         """
+        inv_manager = getattr(self.game.app, 'INV_manager', None)
+        if inv_manager and getattr(inv_manager, 'player_inventory_opened', False):
+            return False
+
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_f and self.state in ("ready", "idle"):
                 mouse_pos = pygame.mouse.get_pos()
                 target_world = pygame.Vector2(mouse_pos) + self.game._get_camera_offset()
                 self.cast(target_world)
-                return True
+                return self.state == "casting"
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 3 and self.state in ("ready", "idle"):
+                if not self._can_fish():
+                    return False
                 target_world = pygame.Vector2(event.pos) + self.game._get_camera_offset()
                 self.cast(target_world)
-                return True
+                return self.state == "casting"
         return False
 
 

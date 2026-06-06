@@ -1762,7 +1762,8 @@ class Game(State):
                         self.player_combat.handle_player_attack(mouse_world_pos)
             
             elif event.button == 3:
-                if getattr(self.app.INV_manager, 'hotbar', None):
-                    self.app.INV_manager.hotbar.use_active_slot()
+                if not self.app.INV_manager.player_inventory_opened:
+                    if getattr(self.app.INV_manager, 'hotbar', None):
+                        self.app.INV_manager.hotbar.use_active_slot()
 
         self.app.INV_manager.PLAYER_inventory_open(event, self.MAIN_player_inv, self.PLAYER_inventory_equipment)
