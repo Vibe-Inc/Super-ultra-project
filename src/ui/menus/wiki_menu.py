@@ -1091,35 +1091,73 @@ class WikiMenu(Menu):
         tt2 = dy + int(18 * scale)
         taw2 = inner.width - (ps2 + int(24 * scale) if pimg else 0)
         if locked:
-            icon_char = theme.get("icon", "?")
-            sigil_size = max(1, int(72 * scale))
-            sigil_font = cfg.get_font(sigil_size)
-            sigil = sigil_font.render(icon_char, True, theme["accent"])
-            sigil.set_alpha(int(50 + 35 * math.sin(t * 1.5)))
-            float_ofs = int(math.sin(t * 0.8) * 4 * scale)
-            six = inner.x + (taw2 - sigil.get_width()) // 2
-            siy = tt2 + int(30 * scale) + float_ofs
+            dark_accent = tuple(max(0, c // 4) for c in theme["accent"])
+            cx = inner.x + taw2 // 2
+            cy = tt2 + int(60 * scale) + int(math.sin(t * 0.8) * 4 * scale)
 
-            glow_r = max(sigil.get_width(), sigil.get_height()) // 2 + int(20 * scale)
+            seal_radius = max(30, int(55 * scale))
+            sc = seal_radius
+            ring = pygame.Surface((sc * 2, sc * 2), pygame.SRCALPHA)
+            # Outer ring
+            pygame.draw.circle(ring, (*dark_accent, 60), (sc, sc), sc, max(1, int(2 * scale)))
+            # Inner ring
+            pygame.draw.circle(ring, (*dark_accent, 40), (sc, sc), int(sc * 0.7), max(1, int(scale)))
+            # Compass rays
+            for ang in range(0, 360, 90):
+                rad = math.radians(ang + t * 30)
+                ex = sc + math.cos(rad) * sc
+                ey = sc + math.sin(rad) * sc
+                pygame.draw.line(ring, (*dark_accent, 35), (sc, sc), (ex, ey), max(1, int(scale)))
+            # Mid-point ticks
+            for ang in range(45, 360, 90):
+                rad = math.radians(ang - t * 20)
+                tx = sc + math.cos(rad) * sc * 0.85
+                ty = sc + math.sin(rad) * sc * 0.85
+                pygame.draw.circle(ring, (*dark_accent, 50), (int(tx), int(ty)), max(1, int(2 * scale)))
+
+            # Glow
+            glow_r = int(sc * 1.4)
             gs = pygame.Surface((glow_r * 2, glow_r * 2), pygame.SRCALPHA)
-            ga = int(12 + 10 * math.sin(t * 1.5))
+            ga = int(10 + 8 * math.sin(t * 1.5))
             pygame.draw.circle(gs, (*theme["glow"], ga), (glow_r, glow_r), glow_r)
-            screen.blit(gs, (six + sigil.get_width() // 2 - glow_r, siy + sigil.get_height() // 2 - glow_r))
+            screen.blit(gs, (cx - glow_r, cy - glow_r))
+            screen.blit(ring, (cx - sc, cy - sc))
 
-            screen.blit(sigil, (six, siy))
+            # Section icon in center
+            icon_char = theme.get("icon", "?")
+            icon_sz = max(1, int(36 * scale))
+            icon_fnt = cfg.get_font(icon_sz)
+            icon_surf = icon_fnt.render(icon_char, True, theme["accent"])
+            icon_surf.set_alpha(int(70 + 40 * math.sin(t * 1.5)))
+            screen.blit(icon_surf, (cx - icon_surf.get_width() // 2, cy - icon_surf.get_height() // 2))
+
+            # Orbital wisps — outer ring
+            for i in range(4):
+                ang = t * 0.8 + i * math.pi * 0.5
+                d = sc * 0.85
+                wpx = cx + math.cos(ang) * d
+                wpy = cy + math.sin(ang) * d
+                wa = int(40 + 30 * math.sin(t * 1.2 + i * 1.5))
+                ws = pygame.Surface((6, 6), pygame.SRCALPHA)
+                pygame.draw.circle(ws, (*theme["glow"], wa), (3, 3), 3)
+                screen.blit(ws, (wpx - 3, wpy - 3))
+            # Orbital wisps — inner ring
+            for i in range(3):
+                ang = t * 1.1 + i * math.pi * 0.667 + 0.5
+                d = sc * 0.55
+                wpx = cx + math.cos(ang) * d
+                wpy = cy + math.sin(ang) * d
+                wa = int(25 + 20 * math.sin(t * 1.5 + i * 2.0))
+                ws = pygame.Surface((4, 4), pygame.SRCALPHA)
+                pygame.draw.circle(ws, (*theme["accent"], wa), (2, 2), 2)
+                screen.blit(ws, (wpx - 2, wpy - 2))
 
             sub = self.font_subtitle.render("Not yet discovered", True,
                                              tuple(c // 2 + 40 for c in self.ink_light))
             sub.set_alpha(int(130 + 50 * math.sin(t * 0.7)))
             sub_x = inner.x + (taw2 - sub.get_width()) // 2
-            sub_y = siy + sigil.get_height() + int(24 * scale)
+            sub_y = cy + sc + int(30 * scale)
             screen.blit(sub, (sub_x, sub_y))
-
-            hint = self.font_small.render("???", True, GOLD_DARK)
-            hint.set_alpha(int(80 + 40 * math.sin(t * 0.9 + 1)))
-            hint_x = inner.x + (taw2 - hint.get_width()) // 2
-            hint_y = sub_y + sub.get_height() + int(16 * scale)
-            screen.blit(hint, (hint_x, hint_y))
         else:
             tah = inner.y + inner.height - tt2
             bf = self.font_body
