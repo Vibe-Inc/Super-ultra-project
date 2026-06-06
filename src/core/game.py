@@ -1975,14 +1975,9 @@ class Game(State):
                 self.blackjack_game.draw(screen)
             except Exception:
                 pass
-        # Crafting "Tempering" minigame overlay (workbench tempering).
-        if getattr(self, 'crafting_minigame', None):
-            try:
-                self.crafting_minigame.update(0.0)  # safety: no-op if not running
-                self.crafting_minigame.draw(screen)
-            except Exception:
-                pass
         # Smeltery workstation overlay (workbench / coke oven / blast furnace).
+        # Must draw BEFORE the crafting minigame so the Tempering overlay
+        # renders on top of the smeltery panel, not behind it.
         try:
             if getattr(self, 'smeltery', None) and self.smeltery.is_open:
                 self.smeltery.draw(screen)
@@ -1994,6 +1989,13 @@ class Game(State):
                     pass
         except Exception:
             pass
+        # Crafting "Tempering" minigame overlay (workbench tempering).
+        if getattr(self, 'crafting_minigame', None):
+            try:
+                self.crafting_minigame.update(0.0)  # safety: no-op if not running
+                self.crafting_minigame.draw(screen)
+            except Exception:
+                pass
         # Draw debug spawn / effects menus
         self.spawn_menu.draw(screen)
         try:

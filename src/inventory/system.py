@@ -852,7 +852,7 @@ class CraftingGrid(Inventory):
         _matrix_match(m1, m2):
             Compare two 3x3 matrices for equality.
     """
-    def __init__(self, app):
+    def __init__(self, app, allow_advanced_crafting=True):
         scale = cfg.ui_scale()
         super().__init__(3, 3, None,
             int(cfg.BASE_INV_slot_size * scale), 0, 0,
@@ -867,6 +867,11 @@ class CraftingGrid(Inventory):
         
         db = Gp_database()
         self.all_recipes = db.get_all_recipes()
+        if not allow_advanced_crafting:
+            self.all_recipes = [
+                r for r in self.all_recipes
+                if not self._recipe_uses_smeltery_materials(r)
+            ]
         db.close()
         btn_size = int(self.slot_size * 0.85)
         self.book_button = Button(
@@ -878,6 +883,14 @@ class CraftingGrid(Inventory):
             on_click=self.open_recipe_menu
         )
         
+
+    @staticmethod
+    def _recipe_uses_smeltery_materials(recipe):
+        for row in recipe["matrix"]:
+            for ingredient in row:
+                if ingredient in ("iron_ingot", "steel_ingot"):
+                    return True
+        return False
 
     def open_recipe_menu(self):
         self.app.manager.set_state("recipe_book")

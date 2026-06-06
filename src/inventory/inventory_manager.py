@@ -179,7 +179,7 @@ class INVENTORY_manager:
         self.hotbar = None
 
         from src.inventory.system import CraftingGrid
-        self.crafting_system = CraftingGrid(app)
+        self.crafting_system = CraftingGrid(app, allow_advanced_crafting=False)
 
         self.renderer = InventoryRenderer()
 
