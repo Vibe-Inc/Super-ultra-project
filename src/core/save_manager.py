@@ -441,6 +441,7 @@ class SaveManager:
             "brightness": cfg.USER_SCREEN_BRIGHTNESS,
             "music_volume": cfg.MUSIC_VOLUME,
             "profiler_enabled": cfg.PROFILER_ENABLED,
+            "guide_intro_shown": app.guide_intro_shown,
         }
         with open(SETTINGS_FILE, 'w') as f:
             json.dump(data, f, indent=4)
@@ -481,6 +482,9 @@ class SaveManager:
         # Windowed size
         if "windowed_width" in data and "windowed_height" in data:
             app.windowed_size = (data["windowed_width"], data["windowed_height"])
+
+        # Guide intro one-time flag
+        app.guide_intro_shown = data.get("guide_intro_shown", False)
 
         # Fullscreen — apply after windowed_size is restored
         if data.get("fullscreen", False):

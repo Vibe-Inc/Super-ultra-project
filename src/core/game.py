@@ -13,6 +13,7 @@ import random
 from src.core.logger import logger
 import src.config as cfg
 from src.core.state import State
+from src.core.save_manager import SaveManager
 from src.entities.character import Character
 from src.map.map import LocalMap
 from src.inventory.system import MAIN_player_inventory, MAIN_player_inventory_equipment, ShopInventory, MAIN_player_hotbar
@@ -715,7 +716,6 @@ class Game(State):
             self.fishing = None
 
         # Trigger flags for guide article auto-open (one-shot)
-        self._triggered_guide_movement = False
         self._triggered_guide_combat = False
         self._triggered_guide_inventory = False
         self._triggered_guide_crafting = False
@@ -1269,9 +1269,10 @@ class Game(State):
     def update(self, dt):
         tr = self.app.article_tracker
 
-        # Guide: Movement & Navigation — first frame of gameplay
-        if not self._triggered_guide_movement:
-            self._triggered_guide_movement = True
+        # Guide intro — only on the very first-ever game start
+        if not self.app.guide_intro_shown:
+            self.app.guide_intro_shown = True
+            SaveManager.save_settings(self.app)
             tr.try_open(self.app, "guide", "1. Movement & Navigation")
 
         switched_map_path = self.map.update(self.character)
