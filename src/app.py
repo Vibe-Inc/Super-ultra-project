@@ -156,6 +156,12 @@ class App:
         add_item(7, 3, "steel_boots")
         
         self.money = 100
+        self.purple_stars = 0
+        self.revealed_tarot_cards: set[int] = set()
+
+        # Unlock flags for mage-NPC gated features
+        self.arcane_quests_unlocked = False
+        self.mysterium_magnum_unlocked = False
 
         # Dialog state: current active dialog UI and last NPC the player talked to
         self.current_dialog = None

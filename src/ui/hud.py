@@ -6,6 +6,7 @@ from src.entities.character import Character
 from src.ui.widgets import Button
 import src.config as cfg
 from src.core.logger import logger
+from src.mana.mana_system import CONSUME_ANIM_DURATION
 
 # Ensure _ is available for gettext translations
 try:
@@ -178,6 +179,7 @@ class HUD:
         self.hp_bar_rect = pygame.Rect(0, 0, 0, 0)
         self.xp_bar_rect = pygame.Rect(0, 0, 0, 0)
         self.stamina_bar_rect = pygame.Rect(0, 0, 0, 0)
+        self.mana_bar_rect = pygame.Rect(0, 0, 0, 0)
         self._layout_size = None
 
         # slot rects (populated/updated per-frame or on-event)
@@ -230,6 +232,13 @@ class HUD:
         stamina_bar_x = (screen_width - stamina_bar_width) // 2
         stamina_bar_y = hotbar_top - stamina_bar_height - 10
         self.stamina_bar_rect = pygame.Rect(stamina_bar_x, stamina_bar_y, stamina_bar_width, stamina_bar_height)
+
+        # Mana bar above stamina bar
+        mana_bar_width = hotbar_total_width
+        mana_bar_height = 14
+        mana_bar_x = (screen_width - mana_bar_width) // 2
+        mana_bar_y = stamina_bar_y - mana_bar_height - 6
+        self.mana_bar_rect = pygame.Rect(mana_bar_x, mana_bar_y, mana_bar_width, mana_bar_height)
 
         # rebuild rects
         self.skill_slot_rects = []
@@ -339,9 +348,13 @@ class HUD:
             
             # Draw cooldown overlay if skill is on cooldown
             if cooldown_percent > 0.0:
-                # Semi-transparent dark overlay
+                # Tinted overlay using skill's theme color (more visually interesting than pure black)
                 overlay_surf = pygame.Surface(rect.size, pygame.SRCALPHA)
-                pygame.draw.rect(overlay_surf, cfg.COOLDOWN_OVERLAY_COLOR, overlay_surf.get_rect(), border_radius=cfg.INV_SLOT_BORDER_RADIUS)
+                skill_color = skill.get("color", theme["primary"])
+                tint_strength = cfg.COOLDOWN_OVERLAY_TINT_STRENGTH
+                overlay_color = tuple(int(c * tint_strength) for c in skill_color[:3])
+                overlay_color = overlay_color + (140,)
+                pygame.draw.rect(overlay_surf, overlay_color, overlay_surf.get_rect(), border_radius=cfg.INV_SLOT_BORDER_RADIUS)
                 surface.blit(overlay_surf, rect.topleft)
                 
                 # Progress bar at bottom of slot
@@ -349,15 +362,18 @@ class HUD:
                 bar_rect = pygame.Rect(rect.left + 2, rect.bottom - bar_height - 2, rect.width - 4, bar_height)
                 
                 # Background of progress bar
-                pygame.draw.rect(surface, cfg.COOLDOWN_BAR_BG_COLOR, bar_rect, border_radius=2)
+                pygame.draw.rect(surface, cfg.COOLDOWN_BAR_BG_COLOR, bar_rect, border_radius=3)
                 
                 # Fill showing remaining cooldown (fills from left as cooldown recovers)
                 fill_width = int((1.0 - cooldown_percent) * bar_rect.width)
                 if fill_width > 0:
                     fill_rect = pygame.Rect(bar_rect.left, bar_rect.top, fill_width, bar_rect.height)
-                    pygame.draw.rect(surface, cfg.COOLDOWN_BAR_FILL_COLOR, fill_rect, border_radius=2)
+                    pygame.draw.rect(surface, cfg.COOLDOWN_BAR_FILL_COLOR, fill_rect, border_radius=3)
+                    # Highlight on top half for subtle gradient effect
+                    highlight_rect = pygame.Rect(bar_rect.left, bar_rect.top, fill_width, max(1, bar_rect.height // 2))
+                    pygame.draw.rect(surface, cfg.COOLDOWN_BAR_FILL_HIGHLIGHT, highlight_rect, border_radius=3)
                 
-                # Display cooldown time remaining
+                # Display cooldown time remaining with background pill
                 skill_id = skill.get("skill_id", "")
                 if skill_id == "berserkers_rage":
                     cooldown = self.character.berserkers_rage_cooldown + getattr(self.character, "berserkers_rage_cooldown_bonus", 0)
@@ -372,17 +388,35 @@ class HUD:
                     cooldown_font = cfg.get_font(max(8, int(cfg.COOLDOWN_TEXT_SIZE * cfg.ui_scale())))
                     time_text = f"{remaining_time:.1f}s"
                     time_surf = cooldown_font.render(time_text, True, cfg.COOLDOWN_TEXT_COLOR)
-                    # Lower the remaining time text slightly for better visual alignment
+                    
+                    # Dark pill background behind text for readability
+                    text_padding = int(4 * cfg.ui_scale())
+                    text_bg_rect = time_surf.get_rect().inflate(text_padding * 2, text_padding)
                     y_offset = int(10 * cfg.ui_scale())
+                    text_bg_rect.center = (rect.centerx, rect.centery + y_offset)
+                    bg_surf = pygame.Surface(text_bg_rect.size, pygame.SRCALPHA)
+                    pygame.draw.rect(bg_surf, cfg.COOLDOWN_TEXT_BG_COLOR, bg_surf.get_rect(), border_radius=cfg.COOLDOWN_TEXT_BORDER_RADIUS)
+                    surface.blit(bg_surf, text_bg_rect.topleft)
+                    
                     time_rect = time_surf.get_rect(center=(rect.centerx, rect.centery + y_offset))
                     surface.blit(time_surf, time_rect)
             else:
-                # Skill is ready - show subtle ready indicator
+                # Skill is ready - pulsing border glow and bar
                 ready_pulse = (math.sin(t * 3.0) + 1.0) * 0.5
-                ready_alpha = int(60 + 40 * ready_pulse)
+                glow_alpha = int(40 + 50 * ready_pulse)
+                ready_glow_color = (*theme["accent"][:3], glow_alpha)
+                
+                # Pulsing glow ring around the slot
+                glow_rect = rect.inflate(6, 6)
+                glow_surf = pygame.Surface(glow_rect.size, pygame.SRCALPHA)
+                pygame.draw.rect(glow_surf, ready_glow_color, glow_surf.get_rect(), border_radius=cfg.INV_SLOT_BORDER_RADIUS + 2, width=2)
+                surface.blit(glow_surf, glow_rect.topleft)
+                
+                # Ready bar at the bottom
+                ready_alpha = int(60 + 60 * ready_pulse)
                 ready_surf = pygame.Surface((rect.width - 4, cfg.COOLDOWN_BAR_HEIGHT), pygame.SRCALPHA)
                 ready_color = (*cfg.COOLDOWN_BAR_READY_COLOR[:3], ready_alpha)
-                pygame.draw.rect(ready_surf, ready_color, ready_surf.get_rect(), border_radius=2)
+                pygame.draw.rect(ready_surf, ready_color, ready_surf.get_rect(), border_radius=3)
                 surface.blit(ready_surf, (rect.left + 2, rect.bottom - cfg.COOLDOWN_BAR_HEIGHT - 2))
             
             small_font = cfg.get_font(max(8, int(16 * cfg.ui_scale())))
@@ -406,6 +440,163 @@ class HUD:
                     game_state.open_shop()
             except Exception:
                 pass
+
+    # ─── Mana Crumble Animation helpers ────────────────────────────────
+
+    def _draw_mana_crumble_segment(
+        self,
+        screen: pygame.Surface,
+        bar_x: int,
+        bar_y: int,
+        bar_width: int,
+        bar_height: int,
+        seg,
+    ) -> None:
+        """Render a single crumbling, dust-emitting segment of the mana bar.
+
+        The segment is described by a normalized [start_norm, end_norm] range
+        over the bar.  This function draws:
+
+        1. A faded "ghost" of the lost mana section that smoothly dissolves
+           away over ``CONSUME_ANIM_DURATION`` seconds.
+        2. A few darker crumble blocks along the right edge of the segment,
+           receding as the animation progresses.
+        3. Each dust particle defined in ``seg.dust`` (rising and fading).
+
+        Args:
+            screen: Target pygame surface.
+            bar_x: X position of the mana bar in screen coordinates.
+            bar_y: Y position of the mana bar in screen coordinates.
+            bar_width: Width of the mana bar in pixels.
+            bar_height: Height of the mana bar in pixels.
+            seg: A ``_ConsumeSegment`` with ``start_norm``, ``end_norm``,
+                ``progress`` (0..1) and a ``dust`` list of particle dicts.
+        """
+        progress = float(getattr(seg, "progress", 0.0))
+        if progress >= 1.0:
+            return
+
+        # Convert normalized range to pixel coordinates on the bar.
+        seg_x0 = int(bar_x + seg.start_norm * bar_width)
+        seg_x1 = int(bar_x + seg.end_norm * bar_width)
+        seg_w = max(1, seg_x1 - seg_x0)
+        seg_h = bar_height
+
+        # The right edge "eats" inward a little as the animation progresses,
+        # so the segment visually shrinks from the right (the part that was
+        # just spent is the part that disappears first).
+        right_eat = int(seg_w * 0.25 * progress)
+        draw_x0 = seg_x0
+        draw_x1 = max(seg_x0 + 1, seg_x1 - right_eat)
+        draw_w = max(1, draw_x1 - draw_x0)
+
+        # ── 1. Faded ghost of the spent section ──
+        ghost_alpha = int(180 * (1.0 - progress))
+        if ghost_alpha > 0 and draw_w > 0:
+            ghost = pygame.Surface((draw_w, seg_h), pygame.SRCALPHA)
+            # Pale lavender fill with a soft vertical gradient
+            for y in range(seg_h):
+                fade = y / max(1, seg_h - 1)
+                r = int(150 + 50 * (1 - fade))
+                g = int(110 + 60 * (1 - fade))
+                b = int(220 - 20 * fade)
+                pygame.draw.line(ghost, (r, g, b, ghost_alpha), (0, y), (draw_w, y))
+            # Add a few sparkly highlight stripes that crackle through the
+            # segment as it dissolves.
+            crackle_t = self.animation_time
+            for ci in range(3):
+                stripe_x = int((crackle_t * 35 + ci * 37 + seg.start_norm * 17) % draw_w)
+                stripe_alpha = int(60 * (1.0 - progress) * (0.4 + 0.6 * math.sin(crackle_t * 6 + ci)))
+                if stripe_alpha > 0:
+                    pygame.draw.line(ghost, (255, 240, 255, stripe_alpha),
+                                     (stripe_x, 0), (stripe_x, seg_h - 1), 1)
+            # Top and bottom subtle "disintegrating" borders
+            pygame.draw.line(ghost, (220, 200, 255, ghost_alpha // 2), (0, 0), (draw_w, 0), 1)
+            pygame.draw.line(ghost, (200, 180, 240, ghost_alpha // 2), (0, seg_h - 1), (draw_w, seg_h - 1), 1)
+            screen.blit(ghost, (draw_x0, bar_y))
+
+        # ── 2. Crumble noise blocks along the right (draining) edge ──
+        # A row of small chunks that get smaller and sparser over time.
+        if draw_w > 2 and seg_h > 3:
+            chunk_count = max(2, int(draw_w / 6))
+            chunk_layer = pygame.Surface((draw_w, seg_h), pygame.SRCALPHA)
+            for ci in range(chunk_count):
+                # Each chunk has a stable seed-like offset based on its index
+                # and the segment so the same chunk pattern is reproducible.
+                seed_t = ci * 0.31 + (seg.start_norm * 5.7)
+                wobble = (math.sin(seed_t * 11.1 + self.animation_time * 2.0) * 0.5 + 0.5)
+                shrink = progress  # 0..1
+                chunk_w = max(1, int(3 * (1.0 - shrink * 0.8) * (0.5 + 0.5 * wobble)))
+                chunk_h = max(1, int(seg_h * (0.35 + 0.5 * wobble) * (1.0 - shrink * 0.5)))
+                if chunk_w <= 0 or chunk_h <= 0:
+                    continue
+                # Position chunks in a slightly irregular row near the right
+                cx = draw_w - 1 - int((ci + 0.5) * (draw_w / chunk_count))
+                if cx < 0 or cx >= draw_w:
+                    continue
+                cy = (seg_h - chunk_h) // 2 + int(2 * math.sin(seed_t * 7.3 + self.animation_time * 3))
+                cy = max(0, min(seg_h - chunk_h, cy))
+                chunk_alpha = int(220 * (1.0 - shrink) * (0.5 + 0.5 * wobble))
+                if chunk_alpha <= 0:
+                    continue
+                chunk_color = (180, 150, 240, chunk_alpha)
+                pygame.draw.rect(chunk_layer, chunk_color,
+                                 (cx - chunk_w // 2, cy, chunk_w, chunk_h))
+            screen.blit(chunk_layer, (draw_x0, bar_y))
+
+        # ── 3. Dust particles (drifting upward and out) ──
+        for p in seg.dust:
+            lt = p.get("lt", 0.0)
+            # Each particle stores its starting lifetime; recompute on the
+            # fly as 0.55..0.95 (matches _make_dust's spawn range) so we
+            # don't have to also persist ``max_lt``.
+            max_lt = p.get("max_lt", 0.0)
+            if max_lt <= 0.0:
+                # Fallback: estimate from spawn range.  This is only used
+                # for legacy particles; new ones always set max_lt.
+                max_lt = 0.75
+            life_ratio = max(0.0, min(1.0, lt / max_lt))
+            if life_ratio <= 0.0:
+                continue
+
+            # Particle local X is normalized 0..1 across the segment's
+            # width.  If a particle has drifted out of the segment via
+            # horizontal velocity, skip it (it floats off the bar's edge).
+            local_x = p.get("local_x_norm", 0.5)
+            local_x = max(0.0, min(1.0, local_x))
+            # Y is normalized 0..1 across the *bar height* (not the
+            # segment height) and drifts upward.  Skip particles that
+            # have flown well above the bar.
+            y_norm = p.get("y_norm", 0.5)
+            if y_norm < -0.6 or y_norm > 1.4:
+                continue
+            px = draw_x0 + int(local_x * draw_w)
+            y_offset_px = y_norm * seg_h
+            py = bar_y + int(y_offset_px)
+            # Apply an extra upward drift based on remaining life so
+            # dust feels like it lifts off the bar and floats away.
+            drift = (1.0 - life_ratio) * 18.0
+            py = int(py - drift)
+
+            size = max(0.6, p.get("size", 1.0) * (0.4 + 0.6 * life_ratio))
+            r, g, b = p.get("color", (200, 160, 255))
+            base_alpha = 220
+            alpha = int(base_alpha * life_ratio)
+            if alpha <= 0:
+                continue
+
+            # Soft glow
+            glow_sz = max(1, int(size * 3.5))
+            glow_surf = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+            pygame.draw.circle(glow_surf, (r, g, b, alpha // 4),
+                               (glow_sz, glow_sz), glow_sz)
+            screen.blit(glow_surf, (int(px) - glow_sz, py - glow_sz))
+            # Core
+            pygame.draw.circle(screen, (r, g, b, alpha), (int(px), py), max(1, int(size)))
+            # Bright center for the freshest dust
+            if life_ratio > 0.6 and size > 1.0:
+                pygame.draw.circle(screen, (255, 240, 255, int(alpha * 0.7)),
+                                   (int(px), py), max(1, int(size * 0.55)))
 
     def draw(self, screen: pygame.Surface):
         # Update animation time using the game clock for smooth animations
@@ -635,6 +826,100 @@ class HUD:
 
         # Stamina Bar Border (Rounded)
         pygame.draw.rect(screen, (200, 200, 200), (stamina_bar_x, stamina_bar_y, stamina_bar_width, stamina_bar_height), 1, border_radius=6)
+
+        # ═══════════════════════════════════════════════════════════════
+        # MANA BAR - Magical Purple-Blue with Gold Trim and Stars
+        # ═══════════════════════════════════════════════════════════════
+        mana_bar_x = self.mana_bar_rect.x
+        mana_bar_y = self.mana_bar_rect.y
+        mana_bar_width = self.mana_bar_rect.width
+        mana_bar_height = self.mana_bar_rect.height
+
+        mana_percent = max(0, self.character.mana / self.character.max_mana)
+        current_mana_width = int(mana_bar_width * mana_percent)
+
+        # Mana Bar Background (Dark purple)
+        mana_bg_surf = pygame.Surface((mana_bar_width, mana_bar_height), pygame.SRCALPHA)
+        pygame.draw.rect(mana_bg_surf, (15, 8, 35, 220), mana_bg_surf.get_rect(), border_radius=7)
+        screen.blit(mana_bg_surf, (mana_bar_x, mana_bar_y))
+
+        # Mana Bar Fill (Gradient purple-blue with shimmer)
+        if current_mana_width > 0:
+            fill_radius = min(7, current_mana_width // 2)
+            mana_fill_surf = pygame.Surface((current_mana_width, mana_bar_height), pygame.SRCALPHA)
+            # Base gradient
+            for x in range(current_mana_width):
+                t = x / max(1, current_mana_width)
+                # Purple to blue gradient
+                r = int(80 + 60 * (1 - t))
+                g = int(40 + 80 * t)
+                b = int(180 + 75 * t)
+                pygame.draw.line(mana_fill_surf, (r, g, b, 240), (x, 0), (x, mana_bar_height - 1))
+            # Shimmer highlight
+            shimmer_offset = int((self.animation_time * 40) % (current_mana_width + 60)) - 30
+            for sx in range(max(0, shimmer_offset), min(current_mana_width, shimmer_offset + 30)):
+                shimmer_alpha = int(80 * (1 - abs(sx - shimmer_offset - 15) / 15))
+                if shimmer_alpha > 0 and sx < current_mana_width:
+                    pygame.draw.line(mana_fill_surf, (200, 180, 255, shimmer_alpha), (sx, 1), (sx, 2))
+            # Clip with rounded corners
+            clip_surf = pygame.Surface((current_mana_width, mana_bar_height), pygame.SRCALPHA)
+            pygame.draw.rect(clip_surf, (255, 255, 255, 255), clip_surf.get_rect(), border_radius=fill_radius)
+            mana_fill_surf.blit(clip_surf, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+            screen.blit(mana_fill_surf, (mana_bar_x, mana_bar_y))
+
+        # ─── Magical Crumble Overlay ──────────────────────────────────
+        # The just-spent section turns faded and dissolves into dust.
+        # The ManaSystem exposes these as normalized [start_norm, end_norm]
+        # ranges on the bar.  We render them as:
+        #   1) a fading purple/lavender "ghost" fill that loses opacity
+        #   2) crumbling noise blocks along the right (draining) edge
+        #   3) drifting dust particles that float upward and out
+        mana_system = getattr(self.character, "mana_system", None)
+        if mana_system is not None and mana_bar_width > 0 and mana_bar_height > 0:
+            segments = mana_system.get_consume_segments()
+            for seg in segments:
+                self._draw_mana_crumble_segment(
+                    screen,
+                    mana_bar_x,
+                    mana_bar_y,
+                    mana_bar_width,
+                    mana_bar_height,
+                    seg,
+                )
+
+        # Gold Trim Border (Double layer for richness)
+        gold_outer = (212, 175, 55)
+        gold_inner = (255, 215, 100)
+        pygame.draw.rect(screen, gold_outer, (mana_bar_x - 1, mana_bar_y - 1, mana_bar_width + 2, mana_bar_height + 2), 2, border_radius=8)
+        pygame.draw.rect(screen, gold_inner, (mana_bar_x, mana_bar_y, mana_bar_width, mana_bar_height), 1, border_radius=7)
+
+        # Magical Stars and Sparkles
+        t = self.animation_time
+        star_positions = [
+            (0.1, 0.3), (0.3, 0.7), (0.5, 0.2), (0.7, 0.8), (0.9, 0.4),
+            (0.15, 0.6), (0.45, 0.5), (0.75, 0.3), (0.85, 0.7)
+        ]
+        for sx_pct, sy_pct in star_positions:
+            sx = mana_bar_x + int(sx_pct * mana_bar_width)
+            sy = mana_bar_y + int(sy_pct * mana_bar_height)
+            # Twinkle effect
+            twinkle = (math.sin(t * 4.0 + sx_pct * 10) + 1.0) * 0.5
+            if twinkle > 0.6:
+                star_alpha = int(200 * (twinkle - 0.6) * 2.5)
+                star_size = 1 + int(twinkle * 2)
+                star_color = (255, 255, 200, star_alpha)
+                # Draw 4-pointed star
+                pygame.draw.line(screen, star_color[:3], (sx - star_size, sy), (sx + star_size, sy), 1)
+                pygame.draw.line(screen, star_color[:3], (sx, sy - star_size), (sx, sy + star_size), 1)
+
+        # Corner gem decorations (magical orbs at edges)
+        gem_glow = int(100 + 60 * math.sin(t * 3.0))
+        for gx, gy in [(mana_bar_x + 4, mana_bar_y + mana_bar_height // 2),
+                       (mana_bar_x + mana_bar_width - 4, mana_bar_y + mana_bar_height // 2)]:
+            gem_surf = pygame.Surface((8, 8), pygame.SRCALPHA)
+            pygame.draw.circle(gem_surf, (120, 80, 200, gem_glow), (4, 4), 4)
+            pygame.draw.circle(gem_surf, (180, 150, 255, gem_glow), (4, 4), 2)
+            screen.blit(gem_surf, (gx - 4, gy - 4))
 
         # Draw vertical skill hotbar (right side) if no shop is open
         if not getattr(self.app.INV_manager, 'current_shop_inv', None):

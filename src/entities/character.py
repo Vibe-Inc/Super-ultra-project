@@ -6,6 +6,7 @@ from database.effects import PoisonEffect
 from src.core.logger import logger
 from src.entities.projectile import Fireball, GlacialCascade, FrostNova, ChainLightning, Thunderstrike, EntanglingRoots, NatureBolt, DarkPact, ArcaneMissile
 from src.entities.nature_spirit import NatureSpirit
+from src.mana.mana_system import ManaSystem
 
 class Character:
     """
@@ -443,11 +444,14 @@ class Character:
         self.is_sprinting = False
         self.can_sprint = True
 
-        # Mana / Energy system
-        self.max_mana = 50
-        self.mana = self.max_mana
+        # Mana system (using ManaSystem component)
+        # Regen rate reduced 4x (10.0 -> 2.5) so mana regenerates much
+        # more slowly and the magical crumble animation has time to play out.
+        self.mana_system = ManaSystem(max_mana=100, mana_regen_rate=2.5)
+        self.max_mana = self.mana_system.max_mana
+        self.mana = self.mana_system.current_mana
         self.mana_drain_rate = 20.0
-        self.mana_regen_rate = 10.0
+        self.mana_regen_rate = self.mana_system.mana_regen_rate
         # energy is an alias to support systems that use "energy"
         self.energy = self.stamina
         # Armor / defense system (consumed by Armor items)
@@ -764,6 +768,7 @@ class Character:
             "description": "Launch an explosive fireball dealing 28 damage with area effect and knockback.",
             "color": (188, 82, 35),
             "accent": (255, 214, 120),
+            "manaCost": 20,
         })
         logger.info("Player learned Fireball!")
 
@@ -778,6 +783,7 @@ class Character:
             "description": "Surrounds you with flames, dealing 8 damage/sec to nearby enemies.",
             "color": (220, 80, 20),
             "accent": (255, 180, 60),
+            "manaCost": 15,
         })
         logger.info("Player learned Flame Shield!")
 
@@ -797,6 +803,7 @@ class Character:
             "description": "Freeze all enemies within radius for 3 seconds.",
             "color": (60, 140, 255),
             "accent": (180, 220, 255),
+            "manaCost": 25,
         })
         logger.info("Player learned Frost Nova!")
 
@@ -811,6 +818,7 @@ class Character:
             "description": "Grants a shield of ice absorbing 30 damage and slowing attackers.",
             "color": (40, 100, 220),
             "accent": (140, 200, 255),
+            "manaCost": 30,
         })
         logger.info("Player learned Ice Armor!")
 
@@ -825,6 +833,7 @@ class Character:
             "description": "Ice shards cascade outward dealing 35 damage and freezing enemies.",
             "color": (80, 160, 240),
             "accent": (200, 230, 255),
+            "manaCost": 22,
         })
         logger.info("Player learned Glacial Cascade!")
 
@@ -838,6 +847,7 @@ class Character:
             "description": "Fires a lightning bolt that jumps between up to 5 enemies.",
             "color": (255, 220, 50),
             "accent": (255, 255, 180),
+            "manaCost": 18,
         })
         logger.info("Player learned Chain Lightning!")
 
@@ -855,6 +865,7 @@ class Character:
             "description": "Call down lightning from above for 55 damage in a column.",
             "color": (200, 180, 255),
             "accent": (255, 230, 255),
+            "manaCost": 28,
         })
         logger.info("Player learned Thunderstrike!")
 
@@ -868,6 +879,7 @@ class Character:
             "description": "Unleash roots that immobilize enemies for 4 seconds.",
             "color": (60, 180, 60),
             "accent": (160, 255, 140),
+            "manaCost": 22,
         })
         logger.info("Player learned Entangling Roots!")
 
@@ -885,6 +897,7 @@ class Character:
             "description": "Summon a nature spirit that attacks for 15 damage.",
             "color": (100, 220, 120),
             "accent": (200, 255, 200),
+            "manaCost": 35,
         })
         logger.info("Player learned Summon Spirit!")
 
@@ -898,6 +911,7 @@ class Character:
             "description": "Teleport through shadows, becoming invulnerable briefly.",
             "color": (100, 50, 140),
             "accent": (200, 160, 255),
+            "manaCost": 20,
         })
         logger.info("Player learned Shadow Step!")
 
@@ -915,6 +929,7 @@ class Character:
             "description": "Sacrifice 10% HP to deal 60 shadow damage to all nearby enemies.",
             "color": (140, 60, 180),
             "accent": (220, 160, 255),
+            "manaCost": 25,
         })
         logger.info("Player learned Dark Pact!")
 
@@ -928,6 +943,7 @@ class Character:
             "description": "Fire homing arcane missiles dealing 22 damage each.",
             "color": (140, 60, 120),
             "accent": (255, 180, 240),
+            "manaCost": 24,
         })
         logger.info("Player learned Arcane Missiles!")
 
@@ -945,6 +961,7 @@ class Character:
             "description": "Creates a barrier that reflects 30% of incoming damage.",
             "color": (180, 80, 160),
             "accent": (255, 200, 240),
+            "manaCost": 25,
         })
         logger.info("Player learned Mystic Barrier!")
 
@@ -958,6 +975,7 @@ class Character:
             "description": "+50% damage dealt, +20% damage taken. The fury consumes you.",
             "color": (200, 50, 30),
             "accent": (255, 160, 60),
+            "manaCost": 30,
         })
         logger.info("Player learned Berserker's Rage!")
 
@@ -999,6 +1017,7 @@ class Character:
             "description": "Slow time for 3 seconds. +25% attack speed. Cooldown: 30s.",
             "color": (100, 160, 220),
             "accent": (200, 230, 255),
+            "manaCost": 40,
         })
         logger.info("Player learned Chrono Shift!")
 
@@ -1055,14 +1074,82 @@ class Character:
     def is_skill_ready(self, skill):
         """
         Check if a skill is ready to use (cooldown expired).
-        
+
         Args:
             skill (dict): The skill dictionary with skill_id.
-            
+
         Returns:
             bool: True if skill is ready, False if on cooldown.
         """
         return self.get_skill_cooldown_percent(skill) == 0.0
+
+    def _is_skill_on_cooldown(self, skill_id, current_time):
+        """
+        Internal cooldown gate that mirrors the per-skill cooldown logic
+        in ``use_skill``. Returns True when the skill is still on cooldown.
+
+        This lets us reject a cast *before* spending mana, so the player
+        doesn't get penalised for trying to fire a skill they couldn't use.
+
+        Args:
+            skill_id (str): The skill identifier (e.g. "fireball").
+            current_time (int): ``pygame.time.get_ticks()`` value in ms.
+
+        Returns:
+            bool: True if the skill is on cooldown, False if it's ready.
+        """
+        # Skills with dynamic cooldown (may include cooldown reduction bonuses)
+        if skill_id == "berserkers_rage":
+            cooldown = self.berserkers_rage_cooldown + getattr(self, "berserkers_rage_cooldown_bonus", 0)
+        elif skill_id == "chrono_shift":
+            cooldown = self.chrono_shift_cooldown + getattr(self, "chrono_shift_cooldown_bonus", 0)
+        else:
+            cooldown = getattr(self, f"{skill_id}_cooldown", 0)
+
+        if cooldown is None or cooldown <= 0:
+            return False
+
+        last_used = getattr(self, f"{skill_id}_last_used", None)
+        if last_used is None:
+            return False
+        return current_time - last_used < cooldown
+
+    def _is_skill_state_blocked(self, skill_id):
+        """
+        Return True if the skill can't be used due to a non-cooldown state
+        condition (e.g. toggle already active). Mirrors the early ``if ...:
+        return False`` guards inside ``use_skill``.
+        """
+        if skill_id == "flame_shield" and getattr(self, "flame_shield_active", False):
+            return True
+        if skill_id == "ice_armor" and getattr(self, "ice_armor_active", False):
+            return True
+        if skill_id == "mystic_barrier" and getattr(self, "mystic_barrier_active", False):
+            return True
+        if skill_id == "berserkers_rage" and getattr(self, "berserkers_rage_active", False):
+            return True
+        if skill_id == "chrono_shift" and getattr(self, "chrono_shift_active", False):
+            return True
+        return False
+
+    def get_skill_mana_cost(self, skill):
+        """
+        Return the mana cost of a skill (read from the skill dict's ``manaCost`` key).
+
+        Falls back to 0 for skills that don't define one (e.g., passives, dash).
+
+        Args:
+            skill (dict): The skill dictionary with a ``manaCost`` field.
+
+        Returns:
+            int: Mana required to cast the skill (>= 0).
+        """
+        if skill is None:
+            return 0
+        try:
+            return int(skill.get("manaCost", 0) or 0)
+        except (TypeError, ValueError):
+            return 0
 
     def use_skill(self, skill, aim_direction=None):
         if skill is None:
@@ -1070,6 +1157,49 @@ class Character:
 
         skill_id = skill.get("skill_id", "")
         current_time = pygame.time.get_ticks()
+
+        # ─── ManaSystem integration ────────────────────────────────────
+        # Cast gating order (matches the inner skill branches' return-False
+        # checks so mana is only spent on a *successful* cast):
+        #   1. Cooldown   — don't penalise the player for trying a skill
+        #                    they can't use yet.
+        #   2. State      — e.g. an already-active Flame Shield / Ice Armor.
+        #   3. Mana       — only checked once we know the cast can actually
+        #                    happen, then deducted at the same time.
+        # Anything that fails steps 1/2 returns ``False`` *without* touching
+        # the player's mana pool.
+        if self._is_skill_on_cooldown(skill_id, current_time):
+            return False
+        if self._is_skill_state_blocked(skill_id):
+            return False
+
+        mana_cost = self.get_skill_mana_cost(skill)
+        if mana_cost > 0 and not self.mana_system.has_enough_mana(mana_cost):
+            logger.info(
+                f"Cannot cast '{skill_id}': not enough mana "
+                f"(need {mana_cost}, have {int(self.mana_system.current_mana)})."
+            )
+            try:
+                self.add_floating_text(
+                    "Not enough mana!",
+                    self.pos.x,
+                    self.pos.y - 50,
+                    (180, 120, 255),
+                    1.2,
+                    20,
+                )
+            except Exception:
+                pass
+            return False
+
+        # Mana is sufficient (or the skill is free) and the cooldown/state
+        # gates have passed — deduct it so the inner branch commits. If the
+        # inner branch still bails (e.g. missing game_state, no projectiles
+        # container) the cost is not refunded; this matches typical ARPG
+        # design where paying mana and missing is a player mistake.
+        if mana_cost > 0:
+            self.consume_mana(mana_cost)
+        # ───────────────────────────────────────────────────────────────
 
         # Elemental Mastery: dual-element combo tracking
         if self.elemental_mastery:
@@ -2104,12 +2234,12 @@ class Character:
                 self.stamina = self.max_stamina
                 self.can_sprint = True
 
-        # Mana regeneration
-        if getattr(self, "mana", None) is not None:
-            if self.mana < self.max_mana:
-                self.mana += self.mana_regen_rate * dt
-                if self.mana > self.max_mana:
-                    self.mana = self.max_mana
+        # Mana regeneration (using ManaSystem)
+        if hasattr(self, "mana_system"):
+            self.mana_system.update(dt)
+            # Sync with legacy attributes for compatibility
+            self.mana = self.mana_system.current_mana
+            self.max_mana = self.mana_system.max_mana
 
         # KEY IMPLEMENTATION STEP: Single function call for collision-aware movement
         collision_system.handle_movement_and_collision(self, dt, obstacles)
@@ -2299,9 +2429,16 @@ class Character:
     def consume_mana(self, amount):
         """
         Attempt to consume mana. Returns True if enough mana was available.
+        Uses the ManaSystem component if available.
         """
         if amount <= 0:
             return True
+        if hasattr(self, "mana_system"):
+            result = self.mana_system.consume_mana(amount)
+            # Sync with legacy attributes
+            self.mana = self.mana_system.current_mana
+            return result
+        # Fallback if mana_system not initialized
         if getattr(self, "mana", 0) >= amount:
             self.mana -= amount
             logger.debug(f"Consumed {amount} mana. Mana: {int(self.mana)}/{self.max_mana}")
@@ -2312,9 +2449,16 @@ class Character:
     def restore_mana(self, amount):
         """
         Restore mana (clamped to max_mana).
+        Uses the ManaSystem component if available.
         """
         if amount <= 0:
             return
+        if hasattr(self, "mana_system"):
+            self.mana_system.restore_mana(amount)
+            # Sync with legacy attributes
+            self.mana = self.mana_system.current_mana
+            return
+        # Fallback if mana_system not initialized
         prev = int(getattr(self, "mana", 0))
         self.mana = min(self.max_mana, self.mana + amount)
         logger.info(f"Player restored {int(self.mana) - prev} mana. Mana: {int(self.mana)}/{self.max_mana}")
