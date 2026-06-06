@@ -5,6 +5,7 @@ from src.core.logger import logger
 from src.core.state_manager import StateManager
 from src.core.save_manager import SaveManager
 from src.core.profiling import FrameProfiler, FpsCounter
+from src.core.article_tracker import ArticleUnlockTracker
 from src.inventory.inventory_manager import INVENTORY_manager
 from src.items.items import create_item
 from database.item_db.weapons_db import seed_weapons
@@ -180,6 +181,9 @@ class App:
 
         # State manager
         self.manager = StateManager(self)
+
+        # Article unlock tracker for auto-opening wiki articles
+        self.article_tracker = ArticleUnlockTracker()
 
     def _get_dir_mask(self, radius: int, dir_x: float, dir_y: float) -> "pygame.Surface":
         """Return a cached hemisphere mask that attenuates light behind the character.

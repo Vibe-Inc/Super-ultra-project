@@ -233,6 +233,7 @@ class SaveManager:
             "revealed_tarot_cards": list(app.revealed_tarot_cards),
             "arcane_quests_unlocked": getattr(app, 'arcane_quests_unlocked', False),
             "mysterium_magnum_unlocked": getattr(app, 'mysterium_magnum_unlocked', False),
+            "seen_articles": app.article_tracker.serialize(),
             "player": {
                 "pos_x": char.pos.x,
                 "pos_y": char.pos.y,
@@ -389,6 +390,12 @@ class SaveManager:
             quest_state = app.manager.states.get("arcane_quest")
             if quest_state and hasattr(quest_state, "set_quest_data"):
                 quest_state.set_quest_data(quest_data)
+
+        # Restore seen articles
+        seen_articles = data.get("seen_articles", [])
+        if seen_articles:
+            app.article_tracker.deserialize(seen_articles)
+            logger.info(f"Restored {len(seen_articles)} seen articles from save.")
 
         # Sync character defense from loaded equipment
         equip_inv.sync_character_defense(char)

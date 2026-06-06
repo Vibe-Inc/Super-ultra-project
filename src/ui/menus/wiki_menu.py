@@ -975,29 +975,40 @@ class WikiMenu(Menu):
             ey = toc_top + i * (entry_h + gap) + sl
             er = pygame.Rect(inner.x + int(10 * scale), ey, inner.width - int(20 * scale), entry_h)
             hov = i == self._toc_hover
+            locked = not self.app.article_tracker.already_seen(self._page, et)
 
             ns = pygame.Surface(er.size, pygame.SRCALPHA)
             bc = theme["accent"]
-            ns.fill((bc[0] // 3 + 50, bc[1] // 3 + 40, bc[2] // 3 + 50, 140) if hov else
-                    (bc[0] // 6 + 20, bc[1] // 6 + 15, bc[2] // 6 + 20, 60))
+            if locked:
+                ns.fill((bc[0] // 8 + 10, bc[1] // 8 + 8, bc[2] // 8 + 10, 80) if hov else
+                        (bc[0] // 10 + 5, bc[1] // 10 + 4, bc[2] // 10 + 5, 40))
+            else:
+                ns.fill((bc[0] // 3 + 50, bc[1] // 3 + 40, bc[2] // 3 + 50, 140) if hov else
+                        (bc[0] // 6 + 20, bc[1] // 6 + 15, bc[2] // 6 + 20, 60))
 
-            if hov:
+            if hov and not locked:
                 gs2 = pygame.Surface((er.w + 12, er.h + 12), pygame.SRCALPHA)
                 pygame.draw.rect(gs2, (*theme["glow"], max(0, min(60, int(50 + 20 * math.sin(t * 3))))),
                                  gs2.get_rect(), border_radius=12)
                 screen.blit(gs2, (er.x - 6, er.y - 6))
 
-            pygame.draw.rect(ns, GOLD if hov else GOLD_DARK, ns.get_rect(), 1, border_radius=10)
+            pygame.draw.rect(ns, GOLD if hov and not locked else GOLD_DARK, ns.get_rect(), 1, border_radius=10)
             screen.blit(ns, er.topleft)
 
-            ns2 = self.font_small.render(f"{i+1}.", True, GOLD_BRIGHT)
+            ns2 = self.font_small.render(f"{i+1}.", True, GOLD_BRIGHT if not locked else GOLD_DARK)
             screen.blit(ns2, (er.x + 12, er.y + (er.height - ns2.get_height()) // 2))
 
             tc = GOLD_BRIGHT if hov else self.ink_color
+            if locked:
+                tc = tuple(c // 2 + 30 for c in self.ink_color)
             es = self.font_toc.render(et, True, tc)
             screen.blit(es, (er.x + 48, er.y + (er.height - es.get_height()) // 2))
 
-            if hov:
+            if locked:
+                lock_surf = self.font_small.render("\U0001F512", True, (100, 80, 60))
+                screen.blit(lock_surf, (er.right - lock_surf.get_width() - 14,
+                                        er.y + (er.height - lock_surf.get_height()) // 2))
+            elif hov:
                 ar = self.font_small.render("\u2192", True, GOLD_BRIGHT)
                 screen.blit(ar, (er.right - ar.get_width() - 14,
                                  er.y + (er.height - ar.get_height()) // 2 + int(math.sin(t * 4) * 3)))
@@ -1022,6 +1033,11 @@ class WikiMenu(Menu):
         ps = pd.get("portrait", None)
         t = self._anim_time
 
+        locked = not self.app.article_tracker.already_seen(self._page, title)
+        if locked:
+            body = "???\n\nThis knowledge has not yet been unlocked.\nBrave the wilds and earn this entry."
+            ps = None
+
         _draw_deep_bg(screen, sw, sh, t, theme)
         pad = max(8, int(20 * scale))
         box = pygame.Rect(pad, pad, sw - 2 * pad, sh - 2 * pad)
@@ -1041,7 +1057,8 @@ class WikiMenu(Menu):
         taw = inner.width - (ps2 + int(24 * scale) if pimg else 0)
         tt = max(0, min(1.0, t * 5.0))
         tsl = int((1.0 - _eased_out_cubic(tt)) * 30 * scale)
-        ts = _render_shimmer_text(self.font_title, title, INK, t, 0.1)
+        title_color = tuple(c // 2 + 40 for c in INK) if locked else INK
+        ts = _render_shimmer_text(self.font_title, title, title_color, t, 0.1)
         tx = inner.x + (taw - ts.get_width()) // 2
 
         for ox, oy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:

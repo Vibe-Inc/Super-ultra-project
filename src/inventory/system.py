@@ -853,6 +853,12 @@ class CraftingGrid(Inventory):
                 manager.selected_item = self.output_slot
                 self.output_slot = None
                 
+                # Guide: Crafting & Recipes — first item crafted
+                gs = self.app.manager.states.get("gameplay")
+                if gs and not gs._triggered_guide_crafting:
+                    gs._triggered_guide_crafting = True
+                    self.app.article_tracker.try_open(self.app, "guide", "5. Crafting & Recipes")
+                
                 for col in range(3):
                     for row in range(3):
                         if self.items[col][row]:
