@@ -27,6 +27,7 @@ SECTION_THEMES = {
     "magic":    {"accent": (200,120,40), "border": (160,80,20),  "glow": (255,180,60),     "icon": "\u2726"},
     "effects":  {"accent": (120,60,140), "border": (80,30,100),  "glow": (180,100,220),    "icon": "\u2622"},
     "guide":    {"accent": (20,40,100),  "border": (30,20,80),   "glow": (80,120,220),     "icon": "\u270E"},
+    "smeltery": {"accent": (180,70,30),  "border": (120,40,10),  "glow": (255,140,60),     "icon": "\u2699"},
 }
 
 # ─── Caches ─────────────────────────────────────────────────
@@ -362,6 +363,11 @@ SECTIONS_META = {
         _("5. Crafting & Recipes"), _("6. Leveling & Experience"),
         _("7. Day & Night Cycle"), _("8. Enemies & Threat Assessment"),
         _("9. Respeccing & Strategy"), _("10. Final Words")]},
+    "smeltery": {"subtitle": _("Master's Forge"), "icon": "\u2699", "entries": [
+        _("1. The Smeltery Unveiled"), _("2. Workbench & Shaping"),
+        _("3. Coke Oven & Fuel"), _("4. Blast Furnace & Alloys"),
+        _("5. Anvil & Restoration"), _("6. Smelting Skill & Mastery"),
+        _("7. Minigames & Refinement"), _("8. Forgemaster's Secrets")]},
 }
 
 
@@ -560,6 +566,7 @@ class WikiMenu(Menu):
             (_("Magic"), _("Spells of Power"), self._open_magic, SECTION_THEMES["magic"]),
             (_("Alterations"), _("Curse & Blessing"), self._open_effects, SECTION_THEMES["effects"]),
             (_("Guide"), _("Adventurer's Handbook"), self._open_guide, SECTION_THEMES["guide"]),
+            (_("Smeltery"), _("Master's Forge"), self._open_smeltery, SECTION_THEMES["smeltery"]),
         ]
 
     def _open_bestiary(self):
@@ -581,6 +588,11 @@ class WikiMenu(Menu):
         self._transition_from = self._page; self._page = "guide"; self._sub_page = 0
         self._show_toc = True; self._page_enter_time = pygame.time.get_ticks()
         self._transition_progress = 0.0; self._emit_particles(SECTION_THEMES["guide"])
+
+    def _open_smeltery(self):
+        self._transition_from = self._page; self._page = "smeltery"; self._sub_page = 0
+        self._show_toc = True; self._page_enter_time = pygame.time.get_ticks()
+        self._transition_progress = 0.0; self._emit_particles(SECTION_THEMES["smeltery"])
 
     def _emit_particles(self, theme):
         sw, sh = cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT
@@ -628,7 +640,8 @@ class WikiMenu(Menu):
 
     def _get_content(self):
         fn = {"bestiary": self._bestiary_pages, "magic": self._magic_pages,
-              "effects": self._effects_pages, "guide": self._guide_pages}.get(self._page)
+              "effects": self._effects_pages, "guide": self._guide_pages,
+              "smeltery": self._smeltery_pages}.get(self._page)
         return fn() if fn else []
 
     def _get_meta(self):
@@ -781,6 +794,112 @@ class WikiMenu(Menu):
                 "The road ahead is long and lined with peril. You will fall. You will rise.\n\n"
                 "Their mistakes are your lessons. Their triumphs are your inheritance.\n\n"
                 "Now go. The realm awaits.")},
+        ]
+
+    def _smeltery_pages(self):
+        return [
+            {"title": _("1. The Smeltery Unveiled"), "body": _(
+                "Deep within the earth, where molten stone flows like rivers of fire, the first smeltery "
+                "was kindled by dwarven forgemasters of old. Today, you stand at the threshold of that "
+                "ancient craft.\n\n"
+                "The Smeltery is a workstation of unparalleled power. Approach any smeltery tile and "
+                "press E to open its panel. Within, four stations await:\n\n"
+                "\u2699 Workbench \u2014 Shape raw materials into tools of war.\n"
+                "\u2699 Coke Oven \u2014 Smelt ores with patient flame.\n"
+                "\u2699 Blast Furnace \u2014 Forge alloys of legend.\n"
+                "\u2699 Anvil \u2014 Restore the fallen to glory.\n\n"
+                "Each station serves a purpose. Master them all, and the very metal will bend to your will.")},
+            {"title": _("2. Workbench & Shaping"), "body": _(
+                "The Workbench is your foundation. Here, in the 3\u00d73 crafting grid, raw ingredients "
+                "are arranged in sacred patterns to produce arms, armor, and arcane components.\n\n"
+                "Unlike standard crafting, the smeltery workbench accesses recipes that require "
+                "smeltery-processed materials \u2014 ingots forged in the coke oven, alloys from the "
+                "blast furnace, and metals refined through the heat of experience.\n\n"
+                "Drag items between the grid and your inventory. The output slot will reveal the "
+                "result when the arrangement matches a known pattern. Experiment freely \u2014 the "
+                "forge rewards curiosity.\n\n"
+                "Tip: Keep your recipe book close. It highlights which recipes call for "
+                "smeltery-crafted components.")},
+            {"title": _("3. Coke Oven & Fuel"), "body": _(
+                "The Coke Oven is the first pillar of pyromancy. A simple furnace: input on the left, "
+                "output on the right, and a hungry flame between them.\n\n"
+                "Deposit raw ore into the input slot. The oven consumes it, and after a patient wait, "
+                "pure smelted material appears in the output. The progress bar glows with the heat of "
+                "your patience.\n\n"
+                "The oven's beauty lies in its simplicity. One input, one output, and the quiet "
+                "certainty of transformation. Load it with ore, tend to other stations, and return "
+                "to collect your bounty.\n\n"
+                "A single batch consumes one unit of input and produces one unit of refined material. "
+                "The oven will automatically resume the next batch if more input is waiting.")},
+            {"title": _("4. Blast Furnace & Alloys"), "body": _(
+                "Where the coke oven merely purifies, the Blast Furnace creates something greater "
+                "than the sum of its parts.\n\n"
+                "Two input slots: ore on top, fuel below. The furnace combines them in a roaring "
+                "marriage of elements, producing alloys of superior quality. Steel, darksteel, "
+                "and stranger metals await those who discover the right combinations.\n\n"
+                "The fuel slot accepts coal or other combustible materials. Each fuel has its own "
+                "burning properties. Experiment with different ore-fuel pairs to unlock new recipes.\n\n"
+                "High-tier alloys may trigger a Smeltery Minigame upon completion \u2014 a chance to "
+                "refine the batch further through quick thinking and steady hands. Success yields "
+                "bonus ingots and additional smelting experience.\n\n"
+                "The blast furnace also locks its input slots while a job runs. Plan your batches wisely.")},
+            {"title": _("5. Anvil & Restoration"), "body": _(
+                "The Anvil is a sanctuary for the broken. Here, damaged weapons, armor, and tools "
+                "are returned to their former glory.\n\n"
+                "Three slots serve this purpose:\n"
+                "\u2022 Damaged Item (left) \u2014 Place the battered weapon or armor here.\n"
+                "\u2022 Material (center) \u2014 Iron ingots, steel ingots, or other repair materials.\n"
+                "\u2022 Repaired Output (right) \u2014 Collect the restored item.\n\n"
+                "The anvil consumes the repair material immediately and begins its work. A progress "
+                "bar tracks the restoration. The status line below previews the durability recovery.\n\n"
+                "Not all items are repairable. Unbreakable artifacts and fully intact gear cannot be "
+                "placed on the anvil. Likewise, only certain materials can serve as repair agents.\n\n"
+                "A word of caution: removing the damaged item mid-repair cancels the job and the "
+                "material is lost. Choose your repairs with care.")},
+            {"title": _("6. Smelting Skill & Mastery"), "body": _(
+                "Every ingot forged, every alloy refined, every item repaired feeds your Smelting "
+                "Skill. This hidden art grows with you, granting greater rewards as your mastery "
+                "deepens.\n\n"
+                "The skill bar at the bottom of the smeltery panel shows your current level and "
+                "experience progress:\n\n"
+                "\u2022 Smelting Lv. X \u2014 Your current rank in the forgemaster's craft.\n"
+                "\u2022 Progress Bar \u2014 Tracks advancement to the next level.\n"
+                "\u2022 XP Counter \u2014 Current / required experience.\n\n"
+                "Higher levels unlock:\n"
+                "\u2022 Better minigame rewards (bonus ingots per success)\n"
+                "\u2022 Higher-tier item crafting chances\n"
+                "\u2022 Increased respect among the world's merchants\n\n"
+                "The path of the forgemaster is one of patience and persistence. Smelt often. "
+                "Smelt well. The metal remembers.")},
+            {"title": _("7. Minigames & Refinement"), "body": _(
+                "When the Blast Furnace completes a high-tier alloy, the forge itself may challenge "
+                "you to prove your worth through a Smeltery Minigame.\n\n"
+                "These are brief, interactive trials that test your reflexes and focus:\n\n"
+                "\u2022 Tending the Fire \u2014 Stoke the flames at just the right moment. "
+                "Too weak and the metal cools. Too strong and it burns.\n"
+                "\u2022 Iron Forge \u2014 Strike the glowing ingot while the hammer's rhythm "
+                "matches the heartbeat of the forge.\n"
+                "\u2022 Arcane Crucible \u2014 Channel magical energy into the molten pool, "
+                "stabilizing its arcane resonance.\n"
+                "\u2022 Quench & Temper \u2014 Plunge the hot metal into the quenching bath "
+                "at the precise temperature for optimal hardening.\n\n"
+                "Success yields bonus output \u2014 extra ingots, improved quality, and bonus "
+                "smelting XP. Failure grants nothing but experience. Every attempt refines "
+                "the forgemaster.")},
+            {"title": _("8. Forgemaster's Secrets"), "body": _(
+                "The greatest smelters know that the forge is not merely a tool \u2014 it is a "
+                "partner. Here are the secrets whispered among master forgemasters:\n\n"
+                "\u2726 The Blast Furnace respects efficiency. Fuel lasts longer when the "
+                "furnace is kept running. Batch processing is the mark of a master.\n\n"
+                "\u2726 Anvil repairs consume material upfront. Always inspect the preview "
+                "before committing. A single ingot can restore a legendary blade to full power.\n\n"
+                "\u2726 Minigames scale with your Smelting Level. A level 50 forgemaster "
+                "extracts far more bonus ingots than a novice. Persevere.\n\n"
+                "\u2726 The Workbench grid can combine smeltery outputs into finished gear. "
+                "Plan your production chain: mine \u2192 smelt \u2192 alloy \u2192 craft.\n\n"
+                "\u2726 Some recipes are not discovered but inherited. Seek ancient texts and "
+                "lost schematics in your adventures. The Codex Arcanum remembers all.\n\n"
+                "The forge awaits. Make it sing.")},
         ]
 
     # ─── Layout ─────────────────────────────────────────────
