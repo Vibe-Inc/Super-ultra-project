@@ -577,6 +577,204 @@ class QuenchMinigame:
 
 
 # ---------------------------------------------------------------------------
+# Minigame chain
+# ---------------------------------------------------------------------------
+
+CHAIN_STEP_NAMES = {
+    "tending": "Tending the Fire",
+    "forge": "Forging",
+    "quench": "Quenching",
+    "bellows": "Bellows Pump",
+    "pattern": "Pattern Hammer",
+    "temper": "Tempering",
+}
+
+CHAIN_TITLES = {
+    ("forge", "quench"): "Steel Forging",
+    ("forge", "pattern", "temper"): "Damascus Forging",
+    ("bellows", "temper"): "Steel Tempering",
+}
+
+
+class MinigameChain:
+    """Wrapper that plays several minigames in sequence.
+
+    Each step in the chain is a separate minigame.  When one finishes,
+    the next starts automatically.  Bonuses and XP multipliers are
+    accumulated across all steps; the final :meth:`on_close` callback
+    receives the aggregated results.
+
+    The chain shares the same ``update`` / ``draw`` / ``handle_event``
+    interface as individual minigames so the smeltery menu treats it
+    transparently.
+    """
+
+    PHASE_PLAYING = "playing"
+    PHASE_RESULT = "result"
+
+    STEP_MAP = {
+        "tending": TendingFireMinigame,
+        "forge": ForgeMinigame,
+        "quench": QuenchMinigame,
+        "bellows": BellowsMinigame,
+        "temper": TemperMinigame,
+    }
+
+    def __init__(self, app, chain_ids, *, on_close=None, smelting_level=1):
+        self.app = app
+        self.chain_ids = list(chain_ids)
+        self.final_on_close = on_close
+        self.smelting_level = max(1, int(smelting_level))
+
+        sw, sh = app.screen.get_size()
+        self.screen_w = sw
+        self.screen_h = sh
+
+        self.font_title = cfg.get_font(max(12, int(40 * cfg.ui_scale())))
+        self.font_large = cfg.get_font(max(11, int(30 * cfg.ui_scale())))
+        self.font_medium = cfg.get_font(max(10, int(22 * cfg.ui_scale())))
+        self.font_small = cfg.get_font(max(8, int(18 * cfg.ui_scale())))
+
+        self.phase = self.PHASE_PLAYING
+        self.current_index = 0
+        self.current_minigame = None
+        self._total_bonus = 0
+        self._total_xp_mult = 1.0
+        self._step_results = []
+        self._closed = False
+
+        chain_key = tuple(chain_ids)
+        self.chain_title = CHAIN_TITLES.get(chain_key, "Forging Chain")
+
+        self._step_labels = [
+            CHAIN_STEP_NAMES.get(mid, mid.replace("_", " ").title())
+            for mid in chain_ids
+        ]
+
+        self._start_current()
+
+    def _step_on_close(self, outcome, bonus_amount, xp_multiplier):
+        self._step_results.append((outcome, bonus_amount, xp_multiplier))
+        self._total_bonus += int(bonus_amount or 0)
+        self._total_xp_mult *= float(xp_multiplier or 1.0)
+        self.current_index += 1
+        self._start_current()
+
+    def _start_current(self):
+        if self.current_index >= len(self.chain_ids):
+            self._finish_chain()
+            return
+        mg_id = self.chain_ids[self.current_index]
+        cls = self.STEP_MAP.get(mg_id)
+        if cls is None:
+            logger.warning("MinigameChain: unknown minigame id %r, skipping", mg_id)
+            self.current_index += 1
+            self._start_current()
+            return
+        try:
+            self.current_minigame = cls(
+                self.app,
+                on_close=self._step_on_close,
+                smelting_level=self.smelting_level,
+            )
+        except Exception as exc:
+            logger.warning("MinigameChain: failed to create %s: %s", mg_id, exc)
+            self.current_index += 1
+            self._start_current()
+
+    def _finish_chain(self):
+        self.phase = self.PHASE_RESULT
+        if self._total_bonus > 0:
+            self._outcome = "Chain complete! (+%d bonus)" % self._total_bonus
+            self._outcome_color = TEXT_GOLD
+        else:
+            self._outcome = "Chain complete."
+            self._outcome_color = TEXT_LIGHT
+        self._result_timer = 2.0
+
+    def _close(self):
+        if self._closed:
+            return
+        self._closed = True
+        if callable(self.final_on_close):
+            try:
+                self.final_on_close(self._outcome, self._total_bonus, self._total_xp_mult)
+            except Exception as exc:
+                logger.warning("MinigameChain final on_close failed: %s", exc)
+        try:
+            self.app.current_dialog = None
+        except Exception:
+            pass
+
+    def _draw_chain_hud(self, surface):
+        total = len(self.chain_ids)
+        step = min(self.current_index + 1, total)
+        label = "Step %d/%d: %s" % (step, total, self._step_labels[self.current_index] if self.current_index < total else "")
+        suf = self.font_small.render(label, True, TEXT_GOLD)
+        surface.blit(suf, (self.screen_w // 2 - suf.get_width() // 2, int(20 * cfg.ui_scale())))
+
+        bar_w = int(240 * cfg.ui_scale())
+        bar_h = int(8 * cfg.ui_scale())
+        bar_x = self.screen_w // 2 - bar_w // 2
+        bar_y = int(20 * cfg.ui_scale()) + suf.get_height() + int(6 * cfg.ui_scale())
+        bar_rect = pygame.Rect(bar_x, bar_y, bar_w, bar_h)
+        pygame.draw.rect(surface, BAR_BG, bar_rect, border_radius=4)
+        pygame.draw.rect(surface, ANVIL_BORDER, bar_rect, width=1, border_radius=4)
+        fill_w = max(1, int(bar_w * step / total))
+        fill = pygame.Rect(bar_x, bar_y, fill_w, bar_h)
+        pygame.draw.rect(surface, BAR_BULLSEYE, fill, border_radius=4)
+
+    def update(self, dt):
+        if self.current_minigame is not None:
+            self.current_minigame.update(dt)
+        elif self.phase == self.PHASE_RESULT:
+            self._result_timer -= dt
+            if self._result_timer <= 0.0:
+                self._close()
+
+    def handle_event(self, event):
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            self.current_minigame = None
+            self._total_bonus = 0
+            self._total_xp_mult = 1.0
+            self._outcome = "Chain skipped"
+            self._outcome_color = TEXT_BAD
+            self._close()
+            return
+        if self.current_minigame is not None:
+            self.current_minigame.handle_event(event)
+
+    def draw(self, surface):
+        if self.current_minigame is not None:
+            self.current_minigame.draw(surface)
+            self._draw_chain_hud(surface)
+        elif self.phase == self.PHASE_RESULT:
+            overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 170))
+            surface.blit(overlay, (0, 0))
+            pr = pygame.Rect(
+                (self.screen_w - 500) // 2,
+                (self.screen_h - 200) // 2,
+                500, 200,
+            )
+            _draw_panel(
+                surface, pr,
+                self.chain_title,
+                self._outcome,
+                (self.font_title, self.font_medium),
+            )
+            if self._total_bonus > 0:
+                bonus = self.font_medium.render(
+                    "+%d bonus items (smelt XP x%g)" % (self._total_bonus, self._total_xp_mult),
+                    True, TEXT_GOOD,
+                )
+                surface.blit(bonus, (pr.centerx - bonus.get_width() // 2, pr.centery + 10))
+            else:
+                bonus = self.font_medium.render("No bonus -- base output only", True, TEXT_DIM)
+                surface.blit(bonus, (pr.centerx - bonus.get_width() // 2, pr.centery + 10))
+
+
+# ---------------------------------------------------------------------------
 # Factory
 # ---------------------------------------------------------------------------
 
@@ -597,6 +795,10 @@ def make_smeltery_minigame(app, recipe, *, on_close=None, smelting_level=1):
         return ForgeMinigame(app, on_close=on_close, smelting_level=smelting_level)
     if mg_id == "quench":
         return QuenchMinigame(app, on_close=on_close, smelting_level=smelting_level)
+    if mg_id == "bellows":
+        return BellowsMinigame(app, on_close=on_close, smelting_level=smelting_level)
+    if mg_id == "temper":
+        return TemperMinigame(app, on_close=on_close, smelting_level=smelting_level)
     return None
 
 
@@ -871,6 +1073,565 @@ class ForgeMinigame:
                 color = BAR_BULLSEYE if zone == "bullseye" else (BAR_GOOD if zone == "good" else BAR_MISS)
                 fs = self.font_medium.render(flash, True, color)
                 surface.blit(fs, (pr.centerx - fs.get_width() // 2, pr.bottom - 110))
+        elif self.phase == self.PHASE_RESULT:
+            out_surf = self.font_large.render(self._outcome, True, self._outcome_color)
+            surface.blit(out_surf, (pr.centerx - out_surf.get_width() // 2, pr.y + 130))
+            if self._bonus_amount > 0:
+                bonus = self.font_medium.render(
+                    "+%d bonus ingot (smelt XP x%g)" % (self._bonus_amount, self._xp_multiplier),
+                    True, TEXT_GOOD,
+                )
+            else:
+                bonus = self.font_medium.render("No bonus -- base output only", True, TEXT_DIM)
+            surface.blit(bonus, (pr.centerx - bonus.get_width() // 2, pr.y + 130 + out_surf.get_height() + 6))
+            btn_w = 160
+            btn_h = 38
+            cont = pygame.Rect(pr.centerx - btn_w // 2, pr.bottom - 60, btn_w, btn_h)
+            self._btn_skip = cont
+            _draw_button(surface, self.font_medium, cont, "Continue", cont.collidepoint(mouse_pos), TEXT_GOLD)
+            return  # end of file
+
+
+# ===========================================================================
+# Bellows Pump (iron-ore + coal -> iron-ingot blast furnace)
+# ===========================================================================
+
+class BellowsMinigame:
+    """Rapid-click pressure challenge for iron smelting.
+
+    A vertical pressure gauge with a needle that naturally falls. The
+    player must click / press SPACE to pump the bellows and keep the
+    pressure inside a gold target zone for a cumulative duration.  If
+    the pressure drops below a critical threshold the fire dies and the
+    batch yields no bonus.
+    """
+
+    PHASE_INTRO = "intro"
+    PHASE_ACTIVE = "active"
+    PHASE_RESULT = "result"
+
+    PUMP_FORCE = 0.14
+    DRAG = 0.10
+    HOLD_TARGET = 1.8
+    ZONE_CENTER = 0.55
+    ZONE_WIDTH = 0.24
+    CRITICAL_FLOOR = 0.08
+    CRITICAL_TOLERANCE = 0.6
+
+    def __init__(self, app, *, on_close=None, smelting_level=1):
+        self.app = app
+        self.on_close = on_close
+        self.smelting_level = max(1, int(smelting_level))
+
+        sw, sh = app.screen.get_size()
+        self.screen_w = sw
+        self.screen_h = sh
+
+        self.font_title  = cfg.get_font(max(12, int(40 * cfg.ui_scale())))
+        self.font_large  = cfg.get_font(max(11, int(30 * cfg.ui_scale())))
+        self.font_medium = cfg.get_font(max(10, int(22 * cfg.ui_scale())))
+        self.font_small  = cfg.get_font(max(8,  int(18 * cfg.ui_scale())))
+
+        panel_w = int(sw * 0.60)
+        panel_h = int(sh * 0.54)
+        self.panel_rect = pygame.Rect(
+            (sw - panel_w) // 2,
+            (sh - panel_h) // 2,
+            panel_w, panel_h,
+        )
+        gauge_w = 28
+        gauge_h = int(panel_h * 0.60)
+        gauge_x = self.panel_rect.centerx - gauge_w // 2
+        gauge_y = self.panel_rect.y + int(panel_h * 0.28)
+        self.gauge_rect = pygame.Rect(gauge_x, gauge_y, gauge_w, gauge_h)
+
+        self.phase = self.PHASE_INTRO
+        self.pressure = 0.5
+        self.hold_time = 0.0
+        self._critical_time = 0.0
+        self._intro_timer = 1.0
+        self._result_timer = 0.0
+        self._outcome = ""
+        self._outcome_color = TEXT_LIGHT
+        self._xp_multiplier = 1.0
+        self._bonus_amount = 0
+        self._btn_skip = None
+
+    def _finalise(self, perfect, success):
+        if perfect:
+            self._bonus_amount = 2
+            self._xp_multiplier = 2.0
+            self._outcome = "BELLOWS MASTERY!"
+            self._outcome_color = TEXT_GOLD
+        elif success:
+            self._bonus_amount = 1
+            self._xp_multiplier = 1.5
+            self._outcome = "Strong bellows work."
+            self._outcome_color = TEXT_GOOD
+        else:
+            self._bonus_amount = 0
+            self._xp_multiplier = 1.0
+            self._outcome = "The fire died out..."
+            self._outcome_color = TEXT_BAD
+        self._result_timer = 2.2
+        self.phase = self.PHASE_RESULT
+
+    def _close(self):
+        if callable(self.on_close):
+            try:
+                self.on_close(self._outcome, self._bonus_amount, self._xp_multiplier)
+            except Exception as exc:
+                logger.warning("bellows minigame on_close failed: %s", exc)
+        try:
+            self.app.current_dialog = None
+        except Exception:
+            pass
+
+    def handle_event(self, event):
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                self._bonus_amount = 0
+                self._xp_multiplier = 1.0
+                self._outcome = "Skipped"
+                self._close()
+                return
+            if self.phase == self.PHASE_ACTIVE and event.key in (pygame.K_SPACE, pygame.K_RETURN):
+                self.pressure = min(1.0, self.pressure + self.PUMP_FORCE)
+                return
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            pos = event.pos
+            if self.phase == self.PHASE_INTRO:
+                self.phase = self.PHASE_ACTIVE
+                return
+            if self.phase == self.PHASE_ACTIVE:
+                if self._btn_skip and self._btn_skip.collidepoint(pos):
+                    self._bonus_amount = 0
+                    self._xp_multiplier = 1.0
+                    self._outcome = "Skipped"
+                    self._close()
+                    return
+                self.pressure = min(1.0, self.pressure + self.PUMP_FORCE)
+                return
+            if self.phase == self.PHASE_RESULT:
+                if self._btn_skip and self._btn_skip.collidepoint(pos):
+                    self._close()
+                    return
+
+    def update(self, dt):
+        if self.phase == self.PHASE_INTRO:
+            self._intro_timer -= dt
+            if self._intro_timer <= 0.0:
+                self.phase = self.PHASE_ACTIVE
+            return
+        if self.phase == self.PHASE_RESULT:
+            self._result_timer -= dt
+            if self._result_timer <= 0.0:
+                self._close()
+            return
+        if self.phase != self.PHASE_ACTIVE:
+            return
+
+        self.pressure = max(0.0, self.pressure - self.DRAG * dt)
+
+        zone_low = self.ZONE_CENTER - self.ZONE_WIDTH * 0.5
+        zone_high = self.ZONE_CENTER + self.ZONE_WIDTH * 0.5
+        in_zone = zone_low <= self.pressure <= zone_high
+
+        if in_zone:
+            self.hold_time += dt
+            self._critical_time = 0.0
+        else:
+            self._critical_time += dt
+
+        if self.pressure < self.CRITICAL_FLOOR and self._critical_time > self.CRITICAL_TOLERANCE:
+            self._finalise(perfect=False, success=False)
+            return
+
+        if self.hold_time >= self.HOLD_TARGET:
+            perfect = self._critical_time < 0.1 and self.hold_time < self.HOLD_TARGET * 1.3
+            self._finalise(perfect=perfect, success=True)
+            return
+
+    def draw(self, surface):
+        overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 170))
+        surface.blit(overlay, (0, 0))
+
+        _draw_panel(
+            surface, self.panel_rect,
+            "Bellows Pump",
+            "Pump the bellows -- keep the pressure in the gold zone.",
+            (self.font_title, self.font_small),
+        )
+        pr = self.panel_rect
+        mouse_pos = pygame.mouse.get_pos()
+
+        gr = self.gauge_rect
+        gh = gr.height
+        pygame.draw.rect(surface, BAR_BG, gr, border_radius=8)
+
+        zone_low = int(gh * (1.0 - (self.ZONE_CENTER + self.ZONE_WIDTH * 0.5)))
+        zone_high = int(gh * (1.0 - (self.ZONE_CENTER - self.ZONE_WIDTH * 0.5)))
+        zone_rect = pygame.Rect(gr.x, gr.y + zone_low, gr.width, max(4, zone_high - zone_low))
+        pygame.draw.rect(surface, BAR_BULLSEYE, zone_rect, border_radius=4)
+
+        pressure_y = gr.bottom - int(self.pressure * gh) - 4
+        cursor_h = 10
+        cursor_rect = pygame.Rect(gr.x - 6, pressure_y, gr.width + 12, cursor_h)
+        pressure_color = (60, 200, 60) if self.pressure > 0.3 else (200, 60, 30)
+        pygame.draw.rect(surface, pressure_color, cursor_rect, border_radius=3)
+        pygame.draw.rect(surface, BAR_CURSOR, cursor_rect, width=1, border_radius=3)
+        pygame.draw.rect(surface, ANVIL_BORDER_LIGHT, gr, width=2, border_radius=8)
+
+        if self.pressure < self.CRITICAL_FLOOR:
+            warn = self.font_small.render("FIRE DYING!", True, TEXT_BAD)
+            surface.blit(warn, (gr.right + 24, pressure_y - warn.get_height() // 2))
+
+        bar_fill = int(gh * (self.hold_time / self.HOLD_TARGET))
+        if bar_fill > 0:
+            fill_rect = pygame.Rect(gr.x + 2, gr.bottom - bar_fill - 1, gr.width - 4, bar_fill)
+            pygame.draw.rect(surface, (100, 200, 220), fill_rect, border_radius=3)
+
+        if self.phase == self.PHASE_INTRO:
+            hint = self.font_medium.render("Click / SPACE to start pumping the bellows", True, TEXT_LIGHT)
+            surface.blit(hint, (pr.centerx - hint.get_width() // 2, pr.y + pr.height - 90))
+        elif self.phase == self.PHASE_ACTIVE:
+            btn_w = 130
+            btn_h = 38
+            skip_rect = pygame.Rect(pr.centerx - btn_w // 2, pr.bottom - 60, btn_w, btn_h)
+            self._btn_skip = skip_rect
+            _draw_button(surface, self.font_medium, skip_rect, "SKIP", skip_rect.collidepoint(mouse_pos))
+            tip = self.font_medium.render("PUMP!" if self.pressure < self.ZONE_CENTER else "Hold...", True, TEXT_GOOD)
+            surface.blit(tip, (pr.centerx - tip.get_width() // 2, pr.bottom - 110))
+        elif self.phase == self.PHASE_RESULT:
+            out_surf = self.font_large.render(self._outcome, True, self._outcome_color)
+            surface.blit(out_surf, (pr.centerx - out_surf.get_width() // 2, pr.y + 130))
+            if self._bonus_amount > 0:
+                bonus = self.font_medium.render(
+                    "+%d bonus ingot (smelt XP x%g)" % (self._bonus_amount, self._xp_multiplier),
+                    True, TEXT_GOOD,
+                )
+            else:
+                bonus = self.font_medium.render("No bonus -- base output only", True, TEXT_DIM)
+            surface.blit(bonus, (pr.centerx - bonus.get_width() // 2, pr.y + 130 + out_surf.get_height() + 6))
+            btn_w = 160
+            btn_h = 38
+            cont = pygame.Rect(pr.centerx - btn_w // 2, pr.bottom - 60, btn_w, btn_h)
+            self._btn_skip = cont
+            _draw_button(surface, self.font_medium, cont, "Continue", cont.collidepoint(mouse_pos), TEXT_GOLD)
+
+
+
+
+
+
+
+# ===========================================================================
+# Temper (iron-ingot + coke -> steel-ingot alternative / high-end)
+# ===========================================================================
+# Temper (iron-ingot + coke -> steel-ingot alternative / high-end)
+# ===========================================================================
+
+class TemperMinigame:
+    """Multi-stage colour-match tempering challenge for steel.
+
+    A glowing ingot cycles through colours as it heats and cools.  The
+    player must press SPACE / click when the ingot colour matches the
+    target colour shown above.  5 stages; the cycle speeds up each
+    stage.  Precision across all stages determines the bonus yield and
+    XP multiplier.
+    """
+
+    PHASE_INTRO = "intro"
+    PHASE_STAGE = "stage"
+    PHASE_RESULT = "result"
+
+    STAGES = 5
+    CYCLE_SPEED_BASE = 0.8
+    CYCLE_SPEED_INCREMENT = 0.3
+    MATCH_THRESHOLD = 0.10
+
+    COLOUR_CYCLE = [
+        (80, 20, 10),
+        (160, 40, 20),
+        (220, 100, 40),
+        (255, 180, 60),
+        (255, 220, 130),
+        (255, 240, 200),
+        (255, 220, 130),
+        (255, 180, 60),
+        (220, 100, 40),
+        (160, 40, 20),
+    ]
+
+    TARGET_COLOURS = [
+        (220, 100, 40),
+        (255, 180, 60),
+        (255, 220, 130),
+        (255, 240, 200),
+        (255, 180, 60),
+    ]
+
+    def __init__(self, app, *, on_close=None, smelting_level=1):
+        self.app = app
+        self.on_close = on_close
+        self.smelting_level = max(1, int(smelting_level))
+
+        sw, sh = app.screen.get_size()
+        self.screen_w = sw
+        self.screen_h = sh
+
+        self.font_title  = cfg.get_font(max(12, int(40 * cfg.ui_scale())))
+        self.font_large  = cfg.get_font(max(11, int(30 * cfg.ui_scale())))
+        self.font_medium = cfg.get_font(max(10, int(22 * cfg.ui_scale())))
+        self.font_small  = cfg.get_font(max(8,  int(18 * cfg.ui_scale())))
+
+        panel_w = int(sw * 0.60)
+        panel_h = int(sh * 0.52)
+        self.panel_rect = pygame.Rect(
+            (sw - panel_w) // 2,
+            (sh - panel_h) // 2,
+            panel_w, panel_h,
+        )
+
+        self.ingot_centre = (self.panel_rect.centerx, self.panel_rect.centery + 20)
+        self.ingot_radius = int(72 * cfg.ui_scale())
+
+        self.target_swatch_rect = pygame.Rect(
+            self.panel_rect.centerx - int(30 * cfg.ui_scale()),
+            self.panel_rect.y + int(28 * cfg.ui_scale()),
+            int(60 * cfg.ui_scale()),
+            int(24 * cfg.ui_scale()),
+        )
+
+        self.phase = self.PHASE_INTRO
+        self.stage_index = 0
+        self.results = []
+        self._cycle_t = 0.0
+        self._stage_timer = 0.0
+        self._input_locked_timer = 0.0
+        self._final_stage = False
+        self._intro_timer = 1.0
+        self._result_timer = 0.0
+        self._outcome = ""
+        self._outcome_color = TEXT_LIGHT
+        self._xp_multiplier = 1.0
+        self._bonus_amount = 0
+        self._btn_skip = None
+        self._last_result = ""
+
+    def _current_cycle_speed(self):
+        return self.CYCLE_SPEED_BASE + self.stage_index * self.CYCLE_SPEED_INCREMENT
+
+    def _ingot_colour(self):
+        t = self._cycle_t
+        idx = int(t) % len(self.COLOUR_CYCLE)
+        frac = t - int(t)
+        next_idx = (idx + 1) % len(self.COLOUR_CYCLE)
+        c1 = self.COLOUR_CYCLE[idx]
+        c2 = self.COLOUR_CYCLE[next_idx]
+        return (
+            int(c1[0] + (c2[0] - c1[0]) * frac),
+            int(c1[1] + (c2[1] - c1[1]) * frac),
+            int(c1[2] + (c2[2] - c1[2]) * frac),
+        )
+
+    def _colour_distance(self, c1, c2):
+        return math.sqrt(
+            (c1[0] - c2[0]) ** 2 +
+            (c1[1] - c2[1]) ** 2 +
+            (c1[2] - c2[2]) ** 2
+        ) / math.sqrt(3 * 255 ** 2)
+
+    def _attempt_match(self):
+        if self.phase != self.PHASE_STAGE:
+            return
+        if self._input_locked_timer > 0.0:
+            return
+        ingot_c = self._ingot_colour()
+        target_c = self.TARGET_COLOURS[self.stage_index % len(self.TARGET_COLOURS)]
+        dist = self._colour_distance(ingot_c, target_c)
+        if dist <= 0.08:
+            self.results.append("perfect")
+            self._last_result = "PERFECT!"
+        elif dist <= self.MATCH_THRESHOLD:
+            self.results.append("good")
+            self._last_result = "Good match"
+        else:
+            self.results.append("miss")
+            self._last_result = "Mismatch"
+        self._input_locked_timer = 0.4
+        self.stage_index += 1
+        if self.stage_index >= self.STAGES:
+            self._finalise()
+        else:
+            self._stage_timer = 1.2
+            self._cycle_t = 0.0
+
+    def _finalise(self):
+        perfects = sum(1 for r in self.results if r == "perfect")
+        goods = sum(1 for r in self.results if r == "good")
+        if perfects >= 4:
+            self._bonus_amount = 2
+            self._xp_multiplier = 2.5
+            self._outcome = "MASTER TEMPER!"
+            self._outcome_color = TEXT_GOLD
+        elif perfects >= 2:
+            self._bonus_amount = 1
+            self._xp_multiplier = 1.5
+            self._outcome = "Well tempered."
+            self._outcome_color = TEXT_GOOD
+        elif goods + perfects >= 3:
+            self._bonus_amount = 0
+            self._xp_multiplier = 1.2
+            self._outcome = "Adequate temper."
+            self._outcome_color = TEXT_LIGHT
+        else:
+            self._bonus_amount = 0
+            self._xp_multiplier = 1.0
+            self._outcome = "The steel became brittle..."
+            self._outcome_color = TEXT_BAD
+        self._result_timer = 2.4
+        self.phase = self.PHASE_RESULT
+
+    def _close(self):
+        if callable(self.on_close):
+            try:
+                self.on_close(self._outcome, self._bonus_amount, self._xp_multiplier)
+            except Exception as exc:
+                logger.warning("temper minigame on_close failed: %s", exc)
+        try:
+            self.app.current_dialog = None
+        except Exception:
+            pass
+
+    def handle_event(self, event):
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                self._bonus_amount = 0
+                self._xp_multiplier = 1.0
+                self._outcome = "Skipped"
+                self._close()
+                return
+            if self.phase == self.PHASE_STAGE and event.key in (pygame.K_SPACE, pygame.K_RETURN):
+                self._attempt_match()
+                return
+            if self.phase == self.PHASE_INTRO and event.key in (pygame.K_SPACE, pygame.K_RETURN):
+                self.phase = self.PHASE_STAGE
+                return
+            if self.phase == self.PHASE_RESULT and event.key in (pygame.K_SPACE, pygame.K_RETURN):
+                self._close()
+                return
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            pos = event.pos
+            if self.phase == self.PHASE_INTRO:
+                self.phase = self.PHASE_STAGE
+                return
+            if self.phase == self.PHASE_STAGE:
+                if self._btn_skip and self._btn_skip.collidepoint(pos):
+                    self._bonus_amount = 0
+                    self._xp_multiplier = 1.0
+                    self._outcome = "Skipped"
+                    self._close()
+                    return
+                if self._input_locked_timer <= 0.0:
+                    self._attempt_match()
+                return
+            if self.phase == self.PHASE_RESULT:
+                if self._btn_skip and self._btn_skip.collidepoint(pos):
+                    self._close()
+                    return
+
+    def update(self, dt):
+        if self.phase == self.PHASE_INTRO:
+            self._intro_timer -= dt
+            if self._intro_timer <= 0.0:
+                self.phase = self.PHASE_STAGE
+            return
+        if self.phase == self.PHASE_RESULT:
+            self._result_timer -= dt
+            if self._result_timer <= 0.0:
+                self._close()
+            return
+        if self.phase == self.PHASE_STAGE:
+            self._input_locked_timer = max(0.0, self._input_locked_timer - dt)
+            if self._stage_timer > 0.0:
+                self._stage_timer -= dt
+                if self._stage_timer <= 0.0:
+                    self._cycle_t = 0.0
+            else:
+                speed = self._current_cycle_speed()
+                self._cycle_t += dt * speed
+            return
+
+    def draw(self, surface):
+        overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 170))
+        surface.blit(overlay, (0, 0))
+
+        _draw_panel(
+            surface, self.panel_rect,
+            "Temper the Steel",
+            "Click when the ingot colour matches the target.",
+            (self.font_title, self.font_small),
+        )
+        pr = self.panel_rect
+        mouse_pos = pygame.mouse.get_pos()
+
+        ingot_c = self._ingot_colour()
+        target_c = self.TARGET_COLOURS[self.stage_index % len(self.TARGET_COLOURS)]
+
+        stage_str = "Stage %d / %d" % (self.stage_index + 1, self.STAGES)
+        ss = self.font_medium.render(stage_str, True, TEXT_LIGHT)
+        surface.blit(ss, (pr.centerx - ss.get_width() // 2, self.target_swatch_rect.bottom + 6))
+
+        pygame.draw.rect(surface, target_c, self.target_swatch_rect, border_radius=4)
+        pygame.draw.rect(surface, ANVIL_BORDER_LIGHT, self.target_swatch_rect, width=2, border_radius=4)
+        target_label = self.font_small.render("Target", True, TEXT_DIM)
+        surface.blit(target_label, (self.target_swatch_rect.centerx - target_label.get_width() // 2,
+                                    self.target_swatch_rect.top - target_label.get_height() - 2))
+
+        cx, cy = self.ingot_centre
+        r = self.ingot_radius
+        glow = pygame.Surface((r * 3, r * 3), pygame.SRCALPHA)
+        for ir in range(r, 0, -3):
+            alpha = max(0, int(120 * (1.0 - ir / r)))
+            pygame.draw.circle(glow, (*ingot_c, alpha), (r * 1.5, r * 1.5), ir)
+        surface.blit(glow, (cx - r * 1.5, cy - r * 1.5))
+
+        pygame.draw.circle(surface, ingot_c, (cx, cy), r)
+        pygame.draw.circle(surface, ANVIL_BORDER_LIGHT, (cx, cy), r, width=3)
+
+        highlight = (
+            min(255, ingot_c[0] + 80),
+            min(255, ingot_c[1] + 80),
+            min(255, ingot_c[2] + 80),
+        )
+        pygame.draw.circle(surface, highlight, (cx - r // 3, cy - r // 3), r // 3)
+
+        stage_results_x = pr.left + int(20 * cfg.ui_scale())
+        stage_results_y = pr.centery + r + int(30 * cfg.ui_scale())
+        for i, res in enumerate(self.results):
+            label = {"perfect": "O", "good": "o", "miss": "X"}.get(res, "?")
+            color = TEXT_GOLD if res == "perfect" else (TEXT_GOOD if res == "good" else TEXT_BAD)
+            surf = self.font_small.render(label, True, color)
+            surface.blit(surf, (stage_results_x + i * 24, stage_results_y))
+
+        if self.phase == self.PHASE_INTRO:
+            hint = self.font_medium.render("Click / SPACE to begin tempering", True, TEXT_LIGHT)
+            surface.blit(hint, (pr.centerx - hint.get_width() // 2, pr.y + pr.height - 90))
+        elif self.phase == self.PHASE_STAGE:
+            btn_w = 130
+            btn_h = 38
+            skip_rect = pygame.Rect(pr.centerx - btn_w // 2, pr.bottom - 60, btn_w, btn_h)
+            self._btn_skip = skip_rect
+            _draw_button(surface, self.font_medium, skip_rect, "SKIP", skip_rect.collidepoint(mouse_pos))
+            if self._input_locked_timer > 0.0:
+                tip_text = self._last_result
+            else:
+                tip_text = "MATCH COLOUR!"
+            tip = self.font_medium.render(tip_text, True, TEXT_GOLD)
+            surface.blit(tip, (pr.centerx - tip.get_width() // 2, pr.bottom - 110))
         elif self.phase == self.PHASE_RESULT:
             out_surf = self.font_large.render(self._outcome, True, self._outcome_color)
             surface.blit(out_surf, (pr.centerx - out_surf.get_width() // 2, pr.y + 130))

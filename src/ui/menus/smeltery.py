@@ -40,6 +40,7 @@ from database.smeltery_recipes_db import (
     get_blast_recipe_for_inputs,
     get_anvil_recipe_for_material,
     get_recipe_minigame_id,
+    get_recipe_minigame_chain,
     MINIGAME_NONE,
 )
 
@@ -557,9 +558,12 @@ class SmelteryMenu:
     # ------------------------------------------------------------------ #
 
     def update(self, dt):
-        """Tick smelting jobs. Called from :class:`Game.update` so the
-        timers keep advancing even while the smeltery overlay is closed.
+        """Tick smelting jobs and active minigame.
+        Called from :class:`Game.update` so the timers keep advancing
+        even while the smeltery overlay is closed.
         """
+        if self.active_minigame is not None:
+            self.active_minigame.update(dt)
         if self.coke_job is not None:
             self._tick_coke_oven(dt)
         if self.blast_job is not None:
@@ -616,6 +620,7 @@ class SmelteryMenu:
             )
             self.coke_output.set(self.coke_output.item, new_count)
 
+        recipe = job.recipe
         self.coke_job = None
         job.fired_flash = 0.6
 
@@ -672,8 +677,13 @@ class SmelteryMenu:
             )
             self.blast_output.set(self.blast_output.item, new_count)
 
+        recipe = job.recipe
         self.blast_job = None
         job.fired_flash = 0.6
+
+        # Launch the minigame chain for high-tier recipes (steel).
+        if recipe and get_recipe_minigame_chain(recipe):
+            self._launch_minigame_for(recipe, self.blast_output)
 
         # Auto-resume: kick off the next batch if more input/fuel is
         # waiting and the output slot can still accept the result.
@@ -711,24 +721,25 @@ class SmelteryMenu:
         smeltery via :py:meth:`_finalise_minigame` to apply the
         bonus output and award XP.
 
-        Recipes whose ``minigame`` field is missing or set to
-        :data:`MINIGAME_NONE` are silently ignored (no minigame
-        launched) so the existing flow continues to work.
+        Recipes that have a ``minigame_chain`` field will launch a
+        multi-stage :class:`MinigameChain` that plays several minigames
+        in sequence.  Recipes with a single ``minigame`` field launch
+        one minigame as before.
         """
         if not recipe:
             return False
-        mg_id = get_recipe_minigame_id(recipe)
-        if mg_id == MINIGAME_NONE:
-            return False
         if self.active_minigame is not None:
-            # Don't stack minigames; only one at a time. Drop the
-            # bonus in that case (caller will still have the base
-            # output already in the slot).
             logger.debug("Smeltery: minigame already running, skipping launch")
             return False
 
+        chain_ids = get_recipe_minigame_chain(recipe)
+        if not chain_ids:
+            mg_id = get_recipe_minigame_id(recipe)
+            if mg_id == MINIGAME_NONE:
+                return False
+
         try:
-            from src.minigames.smeltery_minigames import make_smeltery_minigame
+            from src.minigames.smeltery_minigames import make_smeltery_minigame, MinigameChain
         except Exception as exc:
             logger.warning("Smeltery: could not import smeltery minigames: %s", exc)
             return False
@@ -740,12 +751,18 @@ class SmelteryMenu:
             self._finalise_minigame(outcome, bonus_amount, xp_multiplier)
 
         try:
-            mg = make_smeltery_minigame(
-                self.app,
-                recipe,
-                on_close=on_close,
-                smelting_level=smelting_level,
-            )
+            if chain_ids:
+                mg = MinigameChain(
+                    self.app, chain_ids,
+                    on_close=on_close,
+                    smelting_level=smelting_level,
+                )
+            else:
+                mg = make_smeltery_minigame(
+                    self.app, recipe,
+                    on_close=on_close,
+                    smelting_level=smelting_level,
+                )
         except Exception as exc:
             logger.warning("Smeltery: failed to construct minigame: %s", exc)
             return False
@@ -755,16 +772,12 @@ class SmelteryMenu:
         self.active_minigame = mg
         self._active_minigame_recipe = recipe
         self._active_minigame_output_slot = output_slot
-        # Cache the base XP so a future recipe mutation doesn't change
-        # the awarded amount.
         try:
             from src.systems.smelting_skill import XP_PER_CRAFT
             self._active_minigame_base_xp = int(XP_PER_CRAFT)
         except Exception:
             self._active_minigame_base_xp = 0
         self._active_minigame_skill = skill
-        # Auto-open the smeltery panel if the player has walked away
-        # so they don't miss the bonus prompt.
         if not self.is_open:
             self.open()
         return True
@@ -1018,6 +1031,12 @@ class SmelteryMenu:
         """
         if not self.is_open:
             return False
+
+        # If a minigame is active, route all events to it exclusively
+        # and block the normal smeltery UI from receiving them.
+        if self.active_minigame is not None:
+            self.active_minigame.handle_event(event)
+            return True
 
         self._ensure_layout()
 
@@ -1360,6 +1379,12 @@ class SmelteryMenu:
 
         # Skill bar (shared by every tab).
         self._draw_skill_bar(screen)
+
+        # Draw the active minigame on top of everything else if one
+        # is running.  The minigame overlay captures its own events
+        # so the smeltery UI underneath is blocked.
+        if self.active_minigame is not None:
+            self.active_minigame.draw(screen)
 
     def _draw_workbench_body(self, screen):
         if self.crafting_grid is None:

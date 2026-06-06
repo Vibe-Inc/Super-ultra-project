@@ -14,12 +14,6 @@ Coke oven (single-input furnace):
         "primary_output_amount": int,
         "duration": float,           # seconds for one batch
         "heat_color": tuple,         # RGB used to tint the flame/progress
-        "minigame": str,             # (optional) id of a minigame that runs
-                                     # when this batch finishes. See
-                                     # :data:`MINIGAME_REGISTRY`.
-        "tier": str,                 # (optional) "iron"/"steel" tag used
-                                     # to pick tougher minigames for the
-                                     # high-end materials.
     }
 
 Blast furnace (two-input furnace: material + fuel):
@@ -32,17 +26,11 @@ Blast furnace (two-input furnace: material + fuel):
         "primary_output_amount": int,
         "duration": float,
         "heat_color": tuple,
-        "minigame": str,             # optional
         "tier": str,                 # optional
+        "minigame_chain": list,      # optional, list of minigame ids for
+                                     # multi-stage challenges on high-tier
+                                      # recipes (steel, etc.)
     }
-
-The base ``duration`` field is the *real-time* the smelt would take
-with no minigame and a level-1 blacksmith.  Tougher recipes (iron and
-steel) ship with a shorter base duration than the original "easy"
-numbers so the smeltery feels meaningfully faster; players who want
-to recover the lost throughput can use the new "Tending the Fire" and
-"Quench" minigames (see :data:`MINIGAME_REGISTRY`) to earn bonus
-output and XP.
 """
 
 # ---------------------------------------------------------------------------
@@ -75,12 +63,24 @@ MINIGAME_FORGE = "forge"
 #: Failure burns a fraction of the ingot.
 MINIGAME_QUENCH = "quench"
 
+#: Bellows pumping challenge for the iron-ore + coal -> iron-ingot path.
+#: Player must rhythmically pump (click / SPACE) to keep pressure in
+#: a target zone; the fire dies if pressure drops too low for too long.
+MINIGAME_BELLOWS = "bellows"
+
+#: Colour-match tempering challenge for high-end steel.  An ingot cycles
+#: through colours; the player clicks when it matches the target colour.
+#: 5 stages, increasing speed.
+MINIGAME_TEMPER = "temper"
+
 
 MINIGAME_REGISTRY = {
     MINIGAME_NONE: None,
     MINIGAME_TENDING: "tending",
     MINIGAME_FORGE: "forge",
     MINIGAME_QUENCH: "quench",
+    MINIGAME_BELLOWS: "bellows",
+    MINIGAME_TEMPER: "temper",
 }
 
 
@@ -90,11 +90,8 @@ COKE_OVEN_RECIPES = [
         "input_amount": 1,
         "primary_output_id": "coke",
         "primary_output_amount": 1,
-        # Coke needs to bake a while to drive off volatiles; even with
-        # the minigame the base duration is still meaningful.
         "duration": 18.0,
         "heat_color": (220, 80, 30),
-        "minigame": MINIGAME_TENDING,
     },
     {
         "input_id": "wood",
@@ -103,7 +100,6 @@ COKE_OVEN_RECIPES = [
         "primary_output_amount": 1,
         "duration": 12.0,
         "heat_color": (220, 80, 30),
-        "minigame": MINIGAME_TENDING,
     },
 ]
 
@@ -115,10 +111,19 @@ BLAST_FURNACE_RECIPES = [
         "input_fuel_amount": 1,
         "primary_output_id": "iron_ingot",
         "primary_output_amount": 1,
-        # Iron smelts quickly in a hot blast furnace.
         "duration": 20.0,
         "heat_color": (255, 130, 40),
-        "minigame": MINIGAME_FORGE,
+        "tier": "iron",
+    },
+    {
+        "input_item_id": "iron_ore",
+        "input_item_amount": 1,
+        "input_fuel_id": "coal",
+        "input_fuel_amount": 2,
+        "primary_output_id": "iron_ingot",
+        "primary_output_amount": 1,
+        "duration": 24.0,
+        "heat_color": (220, 100, 40),
         "tier": "iron",
     },
     {
@@ -128,12 +133,22 @@ BLAST_FURNACE_RECIPES = [
         "input_fuel_amount": 1,
         "primary_output_id": "steel_ingot",
         "primary_output_amount": 1,
-        # Steel is the high-end recipe: a short base duration but a
-        # very unforgiving Quench minigame on completion.
         "duration": 30.0,
         "heat_color": (255, 200, 90),
-        "minigame": MINIGAME_QUENCH,
         "tier": "steel",
+        "minigame_chain": ["forge", "quench"],
+    },
+    {
+        "input_item_id": "iron_ingot",
+        "input_item_amount": 1,
+        "input_fuel_id": "coke",
+        "input_fuel_amount": 2,
+        "primary_output_id": "steel_ingot",
+        "primary_output_amount": 1,
+        "duration": 35.0,
+        "heat_color": (255, 220, 150),
+        "tier": "steel",
+        "minigame_chain": ["bellows", "temper"],
     },
 ]
 
@@ -162,6 +177,19 @@ def get_recipe_minigame_id(recipe):
     if not recipe:
         return MINIGAME_NONE
     return recipe.get("minigame", MINIGAME_NONE) or MINIGAME_NONE
+
+
+def get_recipe_minigame_chain(recipe):
+    """Return the minigame chain list for ``recipe`` or an empty list
+    if the recipe doesn't have a multi-stage challenge.
+
+    A chain is a list of minigame IDs that play in sequence.
+    Each step must be completed before the next begins; the final
+    bonus and XP multiplier are aggregated across all steps.
+    """
+    if not recipe:
+        return []
+    return recipe.get("minigame_chain", []) or []
 
 
 # ---------------------------------------------------------------------------
