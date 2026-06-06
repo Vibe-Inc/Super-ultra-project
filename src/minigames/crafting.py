@@ -99,7 +99,9 @@ BUTTON_BORDER     = (160, 110, 50)
 NUM_STRIKES       = 3
 
 # Sweep speed in pixels per second (cursor bounces between the two ends).
-SWEEP_SPEED       = 620.0
+# Tuned up from 620 to 820 so the existing Tempering / "Tending the
+# Fire" challenge is meaningfully tougher for iron-tier crafts.
+SWEEP_SPEED       = 820.0
 
 
 # ---------------------------------------------------------------------------

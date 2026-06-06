@@ -39,6 +39,8 @@ from database.smeltery_recipes_db import (
     get_coke_recipe_for_input,
     get_blast_recipe_for_inputs,
     get_anvil_recipe_for_material,
+    get_recipe_minigame_id,
+    MINIGAME_NONE,
 )
 
 
@@ -178,6 +180,29 @@ class SmelteryMenu:
         # ``anvil_pending_item`` is set when a job starts and cleared
         # when the output is collected.
         self.anvil_pending_item = None
+
+        # Active smeltery minigame (Tending the Fire / Iron Forge /
+        # Quench). The instance drives its own update / draw / event
+        # loop; the smeltery is just a host. ``None`` when no minigame
+        # is running. While ``active_minigame`` is set, the smeltery
+        # blocks input on the rest of its UI and routes events
+        # exclusively to the minigame.
+        self.active_minigame = None
+        # Snapshot of the recipe the active minigame was launched
+        # for. Used to apply the bonus output and award XP on close.
+        self._active_minigame_recipe = None
+        # The output slot the bonus should be added to (coke vs.
+        # blast). Same key as the ``_FurnaceJob`` primary_item_id.
+        self._active_minigame_output_slot = None
+        # The amount of XP the batch itself will award once the
+        # minigame closes. Cached at launch time so we can apply the
+        # multiplier even if the recipe is mutated mid-minigame.
+        self._active_minigame_base_xp = 0
+        # The :class:`src.systems.smelting_skill.SmeltingSkill` instance
+        # that should receive the XP. We resolve the player character
+        # once at launch so a save / load during the minigame doesn't
+        # lose the reference.
+        self._active_minigame_skill = None
 
         # A dedicated 3x3 CraftingGrid for the workbench tab. Separate
         # from the player inventory's CraftingGrid so the worktable has
@@ -661,6 +686,150 @@ class SmelteryMenu:
         except Exception as exc:
             logger.warning(f"Smeltery: create_item({item_id!r}) failed: {exc}")
             return None
+
+    # ------------------------------------------------------------------ #
+    # Smeltery minigame plumbing                                          #
+    # ------------------------------------------------------------------ #
+
+    def _get_player_smelting_skill(self):
+        """Return the player's :class:`SmeltingSkill` instance or
+        ``None`` if it can't be resolved.
+        """
+        try:
+            gs = getattr(self.app.manager, "states", {}).get("gameplay")
+            char = getattr(gs, "character", None)
+            return getattr(char, "smelting_skill", None)
+        except Exception:
+            return None
+
+    def _launch_minigame_for(self, recipe, output_slot):
+        """Spawn the appropriate smeltery minigame for ``recipe``.
+
+        ``output_slot`` is one of the :class:`_FurnaceSlot` instances
+        (coke_output / blast_output) the bonus should be applied to.
+        The minigame's :py:meth:`on_close` callback re-enters the
+        smeltery via :py:meth:`_finalise_minigame` to apply the
+        bonus output and award XP.
+
+        Recipes whose ``minigame`` field is missing or set to
+        :data:`MINIGAME_NONE` are silently ignored (no minigame
+        launched) so the existing flow continues to work.
+        """
+        if not recipe:
+            return False
+        mg_id = get_recipe_minigame_id(recipe)
+        if mg_id == MINIGAME_NONE:
+            return False
+        if self.active_minigame is not None:
+            # Don't stack minigames; only one at a time. Drop the
+            # bonus in that case (caller will still have the base
+            # output already in the slot).
+            logger.debug("Smeltery: minigame already running, skipping launch")
+            return False
+
+        try:
+            from src.minigames.smeltery_minigames import make_smeltery_minigame
+        except Exception as exc:
+            logger.warning("Smeltery: could not import smeltery minigames: %s", exc)
+            return False
+
+        skill = self._get_player_smelting_skill()
+        smelting_level = int(getattr(skill, "level", 1) or 1) if skill is not None else 1
+
+        def on_close(outcome, bonus_amount, xp_multiplier):
+            self._finalise_minigame(outcome, bonus_amount, xp_multiplier)
+
+        try:
+            mg = make_smeltery_minigame(
+                self.app,
+                recipe,
+                on_close=on_close,
+                smelting_level=smelting_level,
+            )
+        except Exception as exc:
+            logger.warning("Smeltery: failed to construct minigame: %s", exc)
+            return False
+        if mg is None:
+            return False
+
+        self.active_minigame = mg
+        self._active_minigame_recipe = recipe
+        self._active_minigame_output_slot = output_slot
+        # Cache the base XP so a future recipe mutation doesn't change
+        # the awarded amount.
+        try:
+            from src.systems.smelting_skill import XP_PER_CRAFT
+            self._active_minigame_base_xp = int(XP_PER_CRAFT)
+        except Exception:
+            self._active_minigame_base_xp = 0
+        self._active_minigame_skill = skill
+        # Auto-open the smeltery panel if the player has walked away
+        # so they don't miss the bonus prompt.
+        if not self.is_open:
+            self.open()
+        return True
+
+    def _finalise_minigame(self, outcome, bonus_amount, xp_multiplier):
+        """Apply the bonus output and award XP after a minigame closes.
+
+        ``bonus_amount`` units of the recipe's primary output are added
+        to :py:attr:`_active_minigame_output_slot` (same slot the base
+        batch was placed in).  ``xp_multiplier`` scales the
+        :data:`XP_PER_CRAFT` grant.  A bonus of 0 and a multiplier of
+        1.0 is the "skipped" path -- the player still gets the base
+        batch output already in the slot, but no extra ingots / XP.
+        """
+        try:
+            recipe = self._active_minigame_recipe
+            output_slot = self._active_minigame_output_slot
+            skill = self._active_minigame_skill
+            base_xp = int(self._active_minigame_base_xp or 0)
+
+            # Apply the bonus output to the slot. We must be careful
+            # not to exceed the stack cap.
+            if recipe and output_slot is not None and bonus_amount and bonus_amount > 0:
+                try:
+                    primary_id = recipe["primary_output_id"]
+                except Exception:
+                    primary_id = None
+                if primary_id:
+                    # If the slot is empty, the bonus becomes the
+                    # *only* output of this batch.  The base output
+                    # would already be in the slot by this point, so
+                    # the more common case is "stack onto the existing
+                    # base output".
+                    if output_slot.is_empty():
+                        # Shouldn't happen -- the base batch output
+                        # was already placed -- but handle it anyway.
+                        bonus_item = self._make_item(primary_id)
+                        if bonus_item is not None:
+                            output_slot.set(bonus_item, int(bonus_amount))
+                    else:
+                        max_stack = getattr(output_slot.item, "max_stack", 64) or 64
+                        new_count = min(
+                            output_slot.count + int(bonus_amount),
+                            max_stack,
+                        )
+                        output_slot.set(output_slot.item, new_count)
+
+            # Award the (possibly multiplied) XP.
+            if skill is not None and base_xp > 0:
+                try:
+                    award = int(round(base_xp * float(xp_multiplier)))
+                    if award > 0:
+                        skill.add_xp(award)
+                except Exception:
+                    pass
+        except Exception as exc:
+            logger.warning("Smeltery: minigame finalise failed: %s", exc)
+        finally:
+            # Clear the active minigame state so the next batch can
+            # launch its own.
+            self.active_minigame = None
+            self._active_minigame_recipe = None
+            self._active_minigame_output_slot = None
+            self._active_minigame_base_xp = 0
+            self._active_minigame_skill = None
 
     # ------------------------------------------------------------------ #
     # Anvil repair flow                                                   #
