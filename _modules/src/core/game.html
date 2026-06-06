@@ -106,6 +106,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.blackjack</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlackjackGame</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.roulette</span><span class="w"> </span><span class="kn">import</span> <span class="n">RouletteGame</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.poker</span><span class="w"> </span><span class="kn">import</span> <span class="n">PokerGame</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.crafting</span><span class="w"> </span><span class="kn">import</span> <span class="n">CraftingMinigame</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.fishing</span><span class="w"> </span><span class="kn">import</span> <span class="n">FishingController</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.gathering</span><span class="w"> </span><span class="kn">import</span> <span class="n">GatheringController</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.world.gatherable_nodes</span><span class="w"> </span><span class="kn">import</span> <span class="n">GatherableNodeRegistry</span>
@@ -199,6 +200,8 @@
 <span class="sd">            Active roulette instance, or None.</span>
 <span class="sd">        poker_game (PokerGame):</span>
 <span class="sd">            Active poker instance, or None.</span>
+<span class="sd">        crafting_minigame (CraftingMinigame):</span>
+<span class="sd">            Active &quot;Tempering&quot; minigame instance, or None.</span>
 <span class="sd">        spawn_menu (SpawnMenu):</span>
 <span class="sd">            Debug menu for spawning enemies on demand.</span>
 <span class="sd">        game_time_seconds (float):</span>
@@ -235,6 +238,8 @@
 <span class="sd">            Toggle the merchant&#39;s trading interface.</span>
 <span class="sd">        open_blackjack():</span>
 <span class="sd">            Launch the blackjack minigame overlay.</span>
+<span class="sd">        open_crafting_minigame(crafted_item, consume_callback, smelting_level=1):</span>
+<span class="sd">            Launch the Tempering timing minigame for a workbench craft.</span>
 <span class="sd">        _get_card_npc_dialog():</span>
 <span class="sd">            Pick the right card-NPC dialog lines for the current state.</span>
 <span class="sd">        use_skill_slot(slot_index):</span>
@@ -786,6 +791,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">roulette_game</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">poker_game</span> <span class="o">=</span> <span class="kc">None</span>
 
+        <span class="c1"># Crafting &quot;Tempering&quot; minigame state (None when not playing)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">crafting_minigame</span> <span class="o">=</span> <span class="kc">None</span>
+
         <span class="c1"># Debug menu for spawning mobs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">spawn_menu</span> <span class="o">=</span> <span class="n">SpawnMenu</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">enemy_profile_names</span><span class="p">,</span>
@@ -1013,6 +1021,38 @@
                 <span class="n">on_close</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="p">,</span> <span class="s1">&#39;was_talked&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
             <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">poker_game</span> <span class="o">=</span> <span class="n">PokerGame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="n">on_close</span><span class="o">=</span><span class="n">on_close</span><span class="p">,</span> <span class="n">player_money</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Game.open_crafting_minigame">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.open_crafting_minigame">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">open_crafting_minigame</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">crafted_item</span><span class="p">,</span> <span class="n">consume_callback</span><span class="p">,</span> <span class="n">smelting_level</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Launch the Tempering timing minigame for a freshly crafted item.</span>
+
+<span class="sd">        ``crafted_item`` is the already-tiered item produced by</span>
+<span class="sd">        :meth:`src.inventory.system.CraftingGrid.check_recipes`.  The</span>
+<span class="sd">        minigame may further bias the tier up or down based on the</span>
+<span class="sd">        player&#39;s three hammer strikes.  On close, ``consume_callback``</span>
+<span class="sd">        is invoked with the final item and the XP multiplier; it is</span>
+<span class="sd">        expected to clear the crafting grid, place the item in the</span>
+<span class="sd">        player&#39;s cursor, and award the (multiplied) smelting XP.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">on_close</span><span class="p">(</span><span class="n">final_item</span><span class="p">,</span> <span class="n">xp_multiplier</span><span class="p">,</span> <span class="n">outcome</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">crafting_minigame</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Crafting minigame closed: outcome=</span><span class="si">{</span><span class="n">outcome</span><span class="si">}</span><span class="s2">, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;final_tier=</span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">final_item</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;tier&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;fine&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;xp_multiplier=</span><span class="si">{</span><span class="n">xp_multiplier</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">consume_callback</span><span class="p">(</span><span class="n">final_item</span><span class="p">,</span> <span class="n">xp_multiplier</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;crafting minigame consume callback failed: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">crafting_minigame</span> <span class="o">=</span> <span class="n">CraftingMinigame</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span>
+            <span class="n">crafted_item</span><span class="p">,</span>
+            <span class="n">on_close</span><span class="o">=</span><span class="n">on_close</span><span class="p">,</span>
+            <span class="n">smelting_level</span><span class="o">=</span><span class="n">smelting_level</span><span class="p">,</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Game._get_card_npc_dialog">
@@ -1944,6 +1984,13 @@
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">pass</span>
 
+        <span class="c1"># Tick the crafting tempering minigame (sweeping cursor, timers).</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;crafting_minigame&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">crafting_minigame</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
         <span class="c1"># Tick the smeltery overlay so coke oven / blast furnace jobs</span>
         <span class="c1"># continue to advance even while the overlay is closed.</span>
         <span class="k">try</span><span class="p">:</span>
@@ -2251,6 +2298,8 @@
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="k">pass</span>
         <span class="c1"># Smeltery workstation overlay (workbench / coke oven / blast furnace).</span>
+        <span class="c1"># Must draw BEFORE the crafting minigame so the Tempering overlay</span>
+        <span class="c1"># renders on top of the smeltery panel, not behind it.</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;smeltery&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">smeltery</span><span class="o">.</span><span class="n">is_open</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">smeltery</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
@@ -2262,6 +2311,13 @@
                     <span class="k">pass</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">pass</span>
+        <span class="c1"># Crafting &quot;Tempering&quot; minigame overlay (workbench tempering).</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;crafting_minigame&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">crafting_minigame</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>  <span class="c1"># safety: no-op if not running</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">crafting_minigame</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
         <span class="c1"># Draw debug spawn / effects menus</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">spawn_menu</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
@@ -2316,6 +2372,14 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">poker_game</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">poker_game</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+        <span class="c1"># If the crafting tempering minigame is active, route all events to it</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;crafting_minigame&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">crafting_minigame</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
                 <span class="k">return</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="k">pass</span>

@@ -101,7 +101,7 @@
 <span id="src-inventory-system-module"></span><h2>src.inventory.system module<a class="headerlink" href="#module-src.inventory.system" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="src.inventory.system.CraftingGrid">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.inventory.system.</span></span><span class="sig-name descname"><span class="pre">CraftingGrid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#CraftingGrid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.CraftingGrid" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.inventory.system.</span></span><span class="sig-name descname"><span class="pre">CraftingGrid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allow_advanced_crafting</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#CraftingGrid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.CraftingGrid" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#src.inventory.system.Inventory" title="src.inventory.system.Inventory"><code class="xref py py-class docutils literal notranslate"><span class="pre">Inventory</span></code></a></p>
 <p>Manages the 3x3 crafting grid interface.</p>
 <p>Handles recipe matching, ingredient validation, and item crafting mechanics.
@@ -222,6 +222,13 @@ Displays available recipes via a recipe book and processes crafting transactions
 <dt class="sig sig-object py" id="src.inventory.system.CraftingGrid.check_recipes">
 <span class="sig-name descname"><span class="pre">check_recipes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#CraftingGrid.check_recipes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.CraftingGrid.check_recipes" title="Link to this definition"></a></dt>
 <dd><p>Scan the crafting matrix for matching recipes and update the output slot.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.CraftingGrid._finalize_craft_after_minigame">
+<span class="sig-name descname"><span class="pre">_finalize_craft_after_minigame</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">crafted_item</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xp_multiplier</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#CraftingGrid._finalize_craft_after_minigame"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.CraftingGrid._finalize_craft_after_minigame" title="Link to this definition"></a></dt>
+<dd><p>Consume ingredients and place <code class="docutils literal notranslate"><span class="pre">crafted_item</span></code> on the cursor.
+Used as the on-close callback for the Tempering minigame.</p>
 </dd></dl>
 
 <dl class="py method">

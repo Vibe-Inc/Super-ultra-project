@@ -1018,12 +1018,15 @@
 <span class="sd">            Handle recipe book button clicks, output slot interactions, and crafting.</span>
 <span class="sd">        check_recipes():</span>
 <span class="sd">            Scan the crafting matrix for matching recipes and update the output slot.</span>
+<span class="sd">        _finalize_craft_after_minigame(crafted_item, xp_multiplier=1.0):</span>
+<span class="sd">            Consume ingredients and place ``crafted_item`` on the cursor.</span>
+<span class="sd">            Used as the on-close callback for the Tempering minigame.</span>
 <span class="sd">        _matrix_match(m1, m2):</span>
 <span class="sd">            Compare two 3x3 matrices for equality.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="CraftingGrid.__init__">
 <a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.CraftingGrid.__init__">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">,</span> <span class="n">allow_advanced_crafting</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="n">scale</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">()</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
             <span class="nb">int</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_slot_size</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>
@@ -1038,6 +1041,11 @@
         
         <span class="n">db</span> <span class="o">=</span> <span class="n">Gp_database</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">all_recipes</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">get_all_recipes</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">allow_advanced_crafting</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">all_recipes</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_recipes</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_recipe_uses_smeltery_materials</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+            <span class="p">]</span>
         <span class="n">db</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="n">btn_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">*</span> <span class="mf">0.85</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">book_button</span> <span class="o">=</span> <span class="n">Button</span><span class="p">(</span>
@@ -1050,6 +1058,14 @@
         <span class="p">)</span></div>
 
         
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_recipe_uses_smeltery_materials</span><span class="p">(</span><span class="n">recipe</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">recipe</span><span class="p">[</span><span class="s2">&quot;matrix&quot;</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">ingredient</span> <span class="ow">in</span> <span class="n">row</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">ingredient</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;iron_ingot&quot;</span><span class="p">,</span> <span class="s2">&quot;steel_ingot&quot;</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span>
 
 <div class="viewcode-block" id="CraftingGrid.open_recipe_menu">
 <a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.CraftingGrid.open_recipe_menu">[docs]</a>
@@ -1119,6 +1135,45 @@
                             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
                                 <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">check_recipes</span><span class="p">()</span>
+                <span class="c1"># Snapshot the crafted item so we can grant XP and log</span>
+                <span class="c1"># the rolled tier before the output slot is cleared.</span>
+                <span class="n">crafted_item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_slot</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_slot</span> <span class="k">else</span> <span class="kc">None</span>
+
+                <span class="c1"># If this is a weapon / armor / tool and the gameplay</span>
+                <span class="c1"># state exposes a crafting minigame launcher, route the</span>
+                <span class="c1"># pick-up through the Tempering timing minigame.  The</span>
+                <span class="c1"># minigame can shift the rolled tier up or down based on</span>
+                <span class="c1"># the player&#39;s three hammer strikes.  The minigame&#39;s</span>
+                <span class="c1"># ``on_close`` callback is responsible for consuming</span>
+                <span class="c1"># the grid ingredients, placing the (possibly re-tiered)</span>
+                <span class="c1"># item into the cursor, and awarding smelting XP.</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="kn">from</span><span class="w"> </span><span class="nn">src.items.items</span><span class="w"> </span><span class="kn">import</span> <span class="n">Weapon</span><span class="p">,</span> <span class="n">Armor</span><span class="p">,</span> <span class="n">Tool</span>
+                    <span class="n">gameplay</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gameplay&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+                    <span class="n">launcher</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">gameplay</span><span class="p">,</span> <span class="s2">&quot;open_crafting_minigame&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">if</span> <span class="n">gameplay</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+                    <span class="n">existing_minigame</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">gameplay</span><span class="p">,</span> <span class="s2">&quot;crafting_minigame&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">if</span> <span class="n">gameplay</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+                    <span class="k">if</span> <span class="p">(</span>
+                        <span class="n">crafted_item</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                        <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">crafted_item</span><span class="p">,</span> <span class="p">(</span><span class="n">Weapon</span><span class="p">,</span> <span class="n">Armor</span><span class="p">,</span> <span class="n">Tool</span><span class="p">))</span>
+                        <span class="ow">and</span> <span class="nb">callable</span><span class="p">(</span><span class="n">launcher</span><span class="p">)</span>
+                        <span class="ow">and</span> <span class="n">existing_minigame</span> <span class="ow">is</span> <span class="kc">None</span>
+                    <span class="p">):</span>
+                        <span class="n">smelting_level</span> <span class="o">=</span> <span class="mi">1</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="n">char</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">gameplay</span><span class="p">,</span> <span class="s2">&quot;character&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="n">char</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">char</span><span class="p">,</span> <span class="s2">&quot;smelting_skill&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                                <span class="n">smelting_level</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">char</span><span class="o">.</span><span class="n">smelting_skill</span><span class="o">.</span><span class="n">level</span> <span class="ow">or</span> <span class="mi">1</span><span class="p">)</span>
+                        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                            <span class="n">smelting_level</span> <span class="o">=</span> <span class="mi">1</span>
+                        <span class="n">launcher</span><span class="p">(</span><span class="n">crafted_item</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_finalize_craft_after_minigame</span><span class="p">,</span> <span class="n">smelting_level</span><span class="p">)</span>
+                        <span class="k">return</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="c1"># Fall through to the normal synchronous flow if</span>
+                    <span class="c1"># anything goes wrong while wiring up the minigame.</span>
+                    <span class="k">pass</span>
+
+                <span class="c1"># No minigame path: take the item immediately as before.</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_finalize_craft_after_minigame</span><span class="p">(</span><span class="n">crafted_item</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
             <span class="k">return</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">inventory_interactions</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">manager</span><span class="p">)</span>
@@ -1142,6 +1197,24 @@
 
         <span class="k">if</span> <span class="n">matched_recipe</span><span class="p">:</span>
             <span class="n">new_item</span> <span class="o">=</span> <span class="n">create_item</span><span class="p">(</span><span class="n">matched_recipe</span><span class="p">[</span><span class="s2">&quot;result_id&quot;</span><span class="p">])</span>
+            <span class="c1"># Apply a crafting tier.  The probability distribution</span>
+            <span class="c1"># depends on the player&#39;s smelting skill level (read from</span>
+            <span class="c1"># the character) so the same recipe at the same 3x3 grid</span>
+            <span class="c1"># can yield a horrendous, fine or legendary item.</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">database.crafting_tiers_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">roll_tier</span><span class="p">,</span> <span class="n">get_tier_name</span>
+                <span class="n">smelting_level</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">char</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gameplay&quot;</span><span class="p">),</span> <span class="s2">&quot;character&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">char</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">char</span><span class="p">,</span> <span class="s2">&quot;smelting_skill&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">smelting_level</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">char</span><span class="o">.</span><span class="n">smelting_skill</span><span class="o">.</span><span class="n">level</span> <span class="ow">or</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="n">smelting_level</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="n">tier_id</span> <span class="o">=</span> <span class="n">roll_tier</span><span class="p">(</span><span class="n">smelting_level</span><span class="p">)</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">src.items.items</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_tier_to_item</span>
+                <span class="n">apply_tier_to_item</span><span class="p">(</span><span class="n">new_item</span><span class="p">,</span> <span class="n">tier_id</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">output_slot</span> <span class="o">=</span> <span class="p">[</span><span class="n">new_item</span><span class="p">,</span> <span class="n">matched_recipe</span><span class="p">[</span><span class="s2">&quot;amount&quot;</span><span class="p">]]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">output_slot</span> <span class="o">=</span> <span class="kc">None</span></div>
@@ -1155,8 +1228,68 @@
                 <span class="k">if</span> <span class="n">m1</span><span class="p">[</span><span class="n">c</span><span class="p">][</span><span class="n">r</span><span class="p">]</span> <span class="o">!=</span> <span class="n">m2</span><span class="p">[</span><span class="n">c</span><span class="p">][</span><span class="n">r</span><span class="p">]:</span>
                     <span class="k">return</span> <span class="kc">False</span>
         <span class="k">return</span> <span class="kc">True</span></div>
-</div>
 
+
+<div class="viewcode-block" id="CraftingGrid._finalize_craft_after_minigame">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.CraftingGrid._finalize_craft_after_minigame">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_finalize_craft_after_minigame</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">crafted_item</span><span class="p">,</span> <span class="n">xp_multiplier</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Consume the grid ingredients and place ``crafted_item`` on the cursor.</span>
+
+<span class="sd">        Used both as the synchronous &quot;no minigame&quot; code path and as</span>
+<span class="sd">        the ``on_close`` callback for the Tempering timing minigame.</span>
+<span class="sd">        ``xp_multiplier`` scales the smelting XP awarded; ``1.0`` is</span>
+<span class="sd">        the default, ``1.5`` for a &quot;Good&quot; outcome and ``2.0`` for an</span>
+<span class="sd">        upgraded tier.  ``0.0`` would still be a valid multiplier</span>
+<span class="sd">        (denying XP) but isn&#39;t currently emitted by the minigame.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">manager</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_slot</span> <span class="ow">or</span> <span class="n">manager</span><span class="o">.</span><span class="n">selected_item</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Replace the item in the output slot with the (possibly</span>
+        <span class="c1"># re-tiered) instance coming back from the minigame.</span>
+        <span class="k">if</span> <span class="n">crafted_item</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">output_slot</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">crafted_item</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">output_slot</span> <span class="o">=</span> <span class="p">[</span><span class="n">crafted_item</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">manager</span><span class="o">.</span><span class="n">selected_item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_slot</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_slot</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Award smelting XP for the craft.  Only weapon / armor / tool</span>
+        <span class="c1"># crafts grant XP -- miscellaneous items that happen to share</span>
+        <span class="c1"># the workbench (e.g. potions) are excluded so skill grinding</span>
+        <span class="c1"># isn&#39;t trivially exploitable.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">src.systems.smelting_skill</span><span class="w"> </span><span class="kn">import</span> <span class="n">XP_PER_CRAFT</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">src.items.items</span><span class="w"> </span><span class="kn">import</span> <span class="n">Weapon</span><span class="p">,</span> <span class="n">Armor</span><span class="p">,</span> <span class="n">Tool</span>
+            <span class="k">if</span> <span class="n">crafted_item</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">crafted_item</span><span class="p">,</span> <span class="p">(</span><span class="n">Weapon</span><span class="p">,</span> <span class="n">Armor</span><span class="p">,</span> <span class="n">Tool</span><span class="p">)):</span>
+                <span class="n">char</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gameplay&quot;</span><span class="p">),</span> <span class="s2">&quot;character&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="n">skill</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">char</span><span class="p">,</span> <span class="s2">&quot;smelting_skill&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">if</span> <span class="n">char</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="k">if</span> <span class="n">skill</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">bonus</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">xp_multiplier</span> <span class="ow">or</span> <span class="mf">1.0</span><span class="p">))</span>
+                    <span class="n">scaled_xp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">XP_PER_CRAFT</span> <span class="o">*</span> <span class="n">bonus</span><span class="p">))</span> <span class="k">if</span> <span class="n">bonus</span> <span class="o">!=</span> <span class="mf">1.0</span> <span class="k">else</span> <span class="n">XP_PER_CRAFT</span>
+                    <span class="n">scaled_xp</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">scaled_xp</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">scaled_xp</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">levels_gained</span> <span class="o">=</span> <span class="n">skill</span><span class="o">.</span><span class="n">add_xp</span><span class="p">(</span><span class="n">scaled_xp</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">levels_gained</span><span class="p">:</span>
+                            <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span> <span class="k">as</span> <span class="n">_logger</span>
+                            <span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                                <span class="sa">f</span><span class="s2">&quot;Smelting skill reached level </span><span class="si">{</span><span class="n">skill</span><span class="o">.</span><span class="n">level</span><span class="si">}</span><span class="s2">&quot;</span>
+                            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_recipes</span><span class="p">()</span></div>
+</div>
 
 <div class="viewcode-block" id="CraftingLogic">
 <a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.CraftingLogic">[docs]</a>

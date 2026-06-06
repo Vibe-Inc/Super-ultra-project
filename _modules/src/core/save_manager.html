@@ -107,6 +107,23 @@
         <span class="k">pass</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_append_tier</span><span class="p">(</span><span class="n">entry</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Stamp the item&#39;s crafting tier (if any) onto a save entry.</span>
+
+<span class="sd">    Only weapons / armor / tools are tiered, so we look for the</span>
+<span class="sd">    ``tier`` attribute that :func:`src.items.items.apply_tier_to_item`</span>
+<span class="sd">    sets.  The plain ``&quot;fine&quot;`` baseline is also persisted (rather</span>
+<span class="sd">    than skipped) so the save file is self-describing.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tier_id</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;tier&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">tier_id</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">entry</span><span class="p">[</span><span class="s2">&quot;tier&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">tier_id</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_apply_durability</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">slot_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Restore a previously-saved durability value onto a freshly-</span>
 <span class="sd">    instantiated item, if the slot data carries one.</span>
@@ -143,6 +160,33 @@
         <span class="n">item</span><span class="o">.</span><span class="n">durability</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">saved_cur</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">durability</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;_was_broken&quot;</span><span class="p">):</span>
         <span class="n">item</span><span class="o">.</span><span class="n">_was_broken</span> <span class="o">=</span> <span class="kc">False</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_apply_tier</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">slot_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Restore a previously-saved crafting tier onto ``item``.</span>
+
+<span class="sd">    A new attribute ``tier`` is stamped on the item.  If the item</span>
+<span class="sd">    class supports tier scaling (Weapon / Armor / Tool), the saved</span>
+<span class="sd">    multiplier is *re-applied* on top of the base stats read from the</span>
+<span class="sd">    database.  Items that pre-date the tier system (no ``tier`` key</span>
+<span class="sd">    in the slot data) are left at the database baseline, so saves</span>
+<span class="sd">    stay forward-compatible.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">slot_data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">return</span>
+    <span class="n">tier_id</span> <span class="o">=</span> <span class="n">slot_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tier&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">tier_id</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">src.items.items</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_tier_to_item</span>
+        <span class="n">apply_tier_to_item</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">tier_id</span><span class="p">))</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="c1"># Tier module isn&#39;t importable (very old build): fall back to</span>
+        <span class="c1"># stamping just the attribute so the UI can still render a</span>
+        <span class="c1"># badge.</span>
+        <span class="n">item</span><span class="o">.</span><span class="n">tier</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">tier_id</span><span class="p">)</span>
+        <span class="n">item</span><span class="o">.</span><span class="n">tier_multiplier</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="n">item</span><span class="o">.</span><span class="n">tier_color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">240</span><span class="p">,</span> <span class="mi">240</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_skill_dicts_to_json</span><span class="p">(</span><span class="n">items</span><span class="p">):</span>
@@ -316,6 +360,7 @@
                     <span class="n">item</span><span class="p">,</span> <span class="n">count</span> <span class="o">=</span> <span class="n">slot</span>
                     <span class="n">entry</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="n">count</span><span class="p">}</span>
                     <span class="n">_append_durability</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+                    <span class="n">_append_tier</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
                     <span class="n">col_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">col_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
@@ -333,6 +378,7 @@
                     <span class="n">item</span><span class="p">,</span> <span class="n">count</span> <span class="o">=</span> <span class="n">slot</span>
                     <span class="n">entry</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="n">count</span><span class="p">}</span>
                     <span class="n">_append_durability</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+                    <span class="n">_append_tier</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
                     <span class="n">col_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">col_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
@@ -348,6 +394,7 @@
                     <span class="n">item</span><span class="p">,</span> <span class="n">count</span> <span class="o">=</span> <span class="n">slot</span>
                     <span class="n">entry</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="n">count</span><span class="p">}</span>
                     <span class="n">_append_durability</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+                    <span class="n">_append_tier</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
                     <span class="n">col_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">col_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
@@ -377,6 +424,15 @@
         <span class="n">char_state</span><span class="p">[</span><span class="s2">&quot;last_elemental_skill&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">char</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;last_elemental_skill&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="n">char_state</span><span class="p">[</span><span class="s2">&quot;spawn_point_x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">char</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;spawn_point&quot;</span><span class="p">,</span> <span class="n">char</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span><span class="o">.</span><span class="n">x</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">char</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;spawn_point&quot;</span><span class="p">,</span> <span class="n">char</span><span class="o">.</span><span class="n">pos</span><span class="p">),</span> <span class="s2">&quot;x&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="n">char</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span>
         <span class="n">char_state</span><span class="p">[</span><span class="s2">&quot;spawn_point_y&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">char</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;spawn_point&quot;</span><span class="p">,</span> <span class="n">char</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span><span class="o">.</span><span class="n">y</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">char</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;spawn_point&quot;</span><span class="p">,</span> <span class="n">char</span><span class="o">.</span><span class="n">pos</span><span class="p">),</span> <span class="s2">&quot;y&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="n">char</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span>
+        <span class="c1"># Smelting / crafting skill.  Serialised as a flat dict via</span>
+        <span class="c1"># :meth:`SmeltingSkill.to_dict` so the schema can grow in the</span>
+        <span class="c1"># future without breaking older saves.</span>
+        <span class="n">smelting_skill</span> <span class="o">=</span> <span class="n">char</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;smelting_skill&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">smelting_skill</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">smelting_skill</span><span class="p">,</span> <span class="s2">&quot;to_dict&quot;</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">char_state</span><span class="p">[</span><span class="s2">&quot;smelting_skill&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">smelting_skill</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
 
         <span class="n">save_data</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span><span class="p">),</span>
@@ -456,6 +512,7 @@
                     <span class="n">item</span> <span class="o">=</span> <span class="n">create_item</span><span class="p">(</span><span class="n">slot_data</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">])</span>
                     <span class="n">count</span> <span class="o">=</span> <span class="n">slot_data</span><span class="p">[</span><span class="s2">&quot;count&quot;</span><span class="p">]</span>
                     <span class="n">_apply_durability</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">slot_data</span><span class="p">)</span>
+                    <span class="n">_apply_tier</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">slot_data</span><span class="p">)</span>
                     <span class="n">app</span><span class="o">.</span><span class="n">MAIN_INV_items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="p">,</span> <span class="n">count</span><span class="p">]</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">app</span><span class="o">.</span><span class="n">MAIN_INV_items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
@@ -506,6 +563,15 @@
             <span class="k">if</span> <span class="s2">&quot;spawn_point_x&quot;</span> <span class="ow">in</span> <span class="n">char_state</span> <span class="ow">and</span> <span class="s2">&quot;spawn_point_y&quot;</span> <span class="ow">in</span> <span class="n">char_state</span><span class="p">:</span>
                 <span class="n">char</span><span class="o">.</span><span class="n">spawn_point</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">char_state</span><span class="p">[</span><span class="s2">&quot;spawn_point_x&quot;</span><span class="p">]</span>
                 <span class="n">char</span><span class="o">.</span><span class="n">spawn_point</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">char_state</span><span class="p">[</span><span class="s2">&quot;spawn_point_y&quot;</span><span class="p">]</span>
+            <span class="c1"># Smelting skill: replace the freshly-constructed default</span>
+            <span class="c1"># instance with the deserialised one so XP/level persist.</span>
+            <span class="k">if</span> <span class="s2">&quot;smelting_skill&quot;</span> <span class="ow">in</span> <span class="n">char_state</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="kn">from</span><span class="w"> </span><span class="nn">src.systems.smelting_skill</span><span class="w"> </span><span class="kn">import</span> <span class="n">SmeltingSkill</span>
+                    <span class="n">loaded</span> <span class="o">=</span> <span class="n">SmeltingSkill</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">char_state</span><span class="p">[</span><span class="s2">&quot;smelting_skill&quot;</span><span class="p">])</span>
+                    <span class="n">char</span><span class="o">.</span><span class="n">smelting_skill</span> <span class="o">=</span> <span class="n">loaded</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">pass</span>
             <span class="c1"># Recalculate derived stats</span>
             <span class="n">char</span><span class="o">.</span><span class="n">speed</span> <span class="o">=</span> <span class="n">char</span><span class="o">.</span><span class="n">base_speed</span> <span class="o">*</span> <span class="n">char</span><span class="o">.</span><span class="n">speed_multiplier</span>
             <span class="n">char</span><span class="o">.</span><span class="n">attack_damage</span> <span class="o">=</span> <span class="n">char</span><span class="o">.</span><span class="n">base_attack_damage</span>
@@ -526,6 +592,7 @@
                         <span class="n">item</span> <span class="o">=</span> <span class="n">create_item</span><span class="p">(</span><span class="n">slot_data</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">])</span>
                         <span class="n">count</span> <span class="o">=</span> <span class="n">slot_data</span><span class="p">[</span><span class="s2">&quot;count&quot;</span><span class="p">]</span>
                         <span class="n">_apply_durability</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">slot_data</span><span class="p">)</span>
+                        <span class="n">_apply_tier</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">slot_data</span><span class="p">)</span>
                         <span class="n">app</span><span class="o">.</span><span class="n">MAIN_HOTBAR_items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="p">,</span> <span class="n">count</span><span class="p">]</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">app</span><span class="o">.</span><span class="n">MAIN_HOTBAR_items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
@@ -540,6 +607,7 @@
                     <span class="n">item</span> <span class="o">=</span> <span class="n">create_item</span><span class="p">(</span><span class="n">slot_data</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">])</span>
                     <span class="n">count</span> <span class="o">=</span> <span class="n">slot_data</span><span class="p">[</span><span class="s2">&quot;count&quot;</span><span class="p">]</span>
                     <span class="n">_apply_durability</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">slot_data</span><span class="p">)</span>
+                    <span class="n">_apply_tier</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">slot_data</span><span class="p">)</span>
                     <span class="n">equip_inv</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="p">,</span> <span class="n">count</span><span class="p">]</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">equip_inv</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>

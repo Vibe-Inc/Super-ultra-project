@@ -91,6 +91,116 @@
         <span class="k">return</span> <span class="n">default</span>
 
 
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Crafting tier helpers</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># The workbench can roll any of the seven tiers (horrendous .. legendary)</span>
+<span class="c1"># defined in :mod:`database.crafting_tiers_db`.  Each tier carries a stat</span>
+<span class="c1"># multiplier and a colour that tints the prefix label in the tooltip.</span>
+<span class="c1">#</span>
+<span class="c1"># ``apply_tier_to_item`` is the single mutation point: callers (the</span>
+<span class="c1"># crafting grid, the anvil when re-forging, future quest rewards, ...)</span>
+<span class="c1"># call it on a freshly-built item and the helper scales the relevant</span>
+<span class="c1"># stat block, remembers the tier id on the item and clears the</span>
+<span class="c1"># ``_was_broken`` flag so a brand-new legendary sword is fully repaired.</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_import_tier_module</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Late import to avoid a circular import with the tier module.</span>
+
+<span class="sd">    The tier database pulls ``MAX_SMELTING_LEVEL`` from the smelting</span>
+<span class="sd">    skill module and vice versa would be ugly, so both modules</span>
+<span class="sd">    only need each other lazily.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">database</span><span class="w"> </span><span class="kn">import</span> <span class="n">crafting_tiers_db</span>
+    <span class="k">return</span> <span class="n">crafting_tiers_db</span>
+
+
+<div class="viewcode-block" id="apply_tier_to_item">
+<a class="viewcode-back" href="../../../src.items.html#src.items.items.apply_tier_to_item">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_tier_to_item</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">tier_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Scale ``item``&#39;s stats according to ``tier_id`` and stamp the</span>
+<span class="sd">    tier on the instance.</span>
+
+<span class="sd">    Returns the tier id actually applied (always equal to ``tier_id``</span>
+<span class="sd">    for valid input, ``&quot;fine&quot;`` for unknown tiers).</span>
+
+<span class="sd">    The helper is a no-op for items that aren&#39;t ``Weapon``/``Armor``/</span>
+<span class="sd">    ``Tool`` (e.g. resources, consumables), so it&#39;s safe to call on any</span>
+<span class="sd">    item produced by the crafting grid.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tier_module</span> <span class="o">=</span> <span class="n">_import_tier_module</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">tier_id</span><span class="p">:</span>
+        <span class="n">tier_id</span> <span class="o">=</span> <span class="s2">&quot;fine&quot;</span>
+    <span class="n">info</span> <span class="o">=</span> <span class="n">tier_module</span><span class="o">.</span><span class="n">get_tier_data</span><span class="p">(</span><span class="n">tier_id</span><span class="p">)</span>
+    <span class="n">multiplier</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;multiplier&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">multiplier</span> <span class="o">==</span> <span class="mf">1.0</span> <span class="ow">and</span> <span class="n">tier_id</span> <span class="o">==</span> <span class="s2">&quot;fine&quot;</span><span class="p">:</span>
+        <span class="c1"># Even at the baseline tier we still stamp the attribute so the</span>
+        <span class="c1"># UI can render the &quot;[Fine]&quot; badge consistently.</span>
+        <span class="k">pass</span>
+
+    <span class="n">item</span><span class="o">.</span><span class="n">tier</span> <span class="o">=</span> <span class="n">tier_id</span>
+    <span class="n">item</span><span class="o">.</span><span class="n">tier_multiplier</span> <span class="o">=</span> <span class="n">multiplier</span>
+    <span class="n">item</span><span class="o">.</span><span class="n">tier_color</span> <span class="o">=</span> <span class="n">tier_module</span><span class="o">.</span><span class="n">get_tier_color</span><span class="p">(</span><span class="n">tier_id</span><span class="p">)</span>
+
+    <span class="c1"># Weapons, armor and tools get their numeric stats scaled.</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;damage&quot;</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">base</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;_base_damage&quot;</span><span class="p">,</span> <span class="n">item</span><span class="o">.</span><span class="n">damage</span><span class="p">))</span> <span class="o">*</span> <span class="n">multiplier</span><span class="p">))</span>
+            <span class="n">item</span><span class="o">.</span><span class="n">damage</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">base</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;defense_value&quot;</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">base</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;_base_defense_value&quot;</span><span class="p">,</span> <span class="n">item</span><span class="o">.</span><span class="n">defense_value</span><span class="p">))</span> <span class="o">*</span> <span class="n">multiplier</span><span class="p">))</span>
+            <span class="n">item</span><span class="o">.</span><span class="n">defense_value</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">base</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;power&quot;</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">base</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;_base_power&quot;</span><span class="p">,</span> <span class="n">item</span><span class="o">.</span><span class="n">power</span><span class="p">))</span> <span class="o">*</span> <span class="n">multiplier</span><span class="p">))</span>
+            <span class="n">item</span><span class="o">.</span><span class="n">power</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">base</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+    <span class="c1"># Durability scales on the *max* value and is preserved as the same</span>
+    <span class="c1"># wear fraction so the wear bar reads the same percentage before /</span>
+    <span class="c1"># after re-rolling.  Unbreakable items skip the scaling entirely.</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;max_durability&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;unbreakable&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">old_max</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;_base_max_durability&quot;</span><span class="p">,</span> <span class="n">item</span><span class="o">.</span><span class="n">max_durability</span><span class="p">))</span>
+            <span class="n">new_max</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">old_max</span> <span class="o">*</span> <span class="n">multiplier</span><span class="p">))</span>
+            <span class="n">new_max</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">new_max</span><span class="p">)</span>
+            <span class="n">old_cur</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;durability&quot;</span><span class="p">,</span> <span class="n">new_max</span><span class="p">))</span>
+            <span class="n">old_max_safe</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">old_max</span><span class="p">)</span>
+            <span class="n">wear_fraction</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">old_cur</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">old_max_safe</span><span class="p">)))</span>
+            <span class="n">new_cur</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">new_max</span> <span class="o">*</span> <span class="n">wear_fraction</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">new_cur</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">old_cur</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">new_cur</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">item</span><span class="o">.</span><span class="n">max_durability</span> <span class="o">=</span> <span class="n">new_max</span>
+            <span class="n">item</span><span class="o">.</span><span class="n">durability</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">new_max</span><span class="p">,</span> <span class="n">new_cur</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">durability</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;_was_broken&quot;</span><span class="p">):</span>
+                <span class="n">item</span><span class="o">.</span><span class="n">_was_broken</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+    <span class="k">return</span> <span class="n">tier_id</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_stamp_tier</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">tier_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply a tier to ``item`` if it doesn&#39;t already have one stamped.</span>
+
+<span class="sd">    Items pulled from the database default to the ``&quot;fine&quot;`` baseline</span>
+<span class="sd">    tier so the tooltip is consistent.  The crafting grid, however,</span>
+<span class="sd">    stamps the *rolled* tier after the fact, and this helper avoids</span>
+<span class="sd">    double-stamping (which would scale the stats twice).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">current</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;tier&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">current</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">apply_tier_to_item</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">tier_id</span> <span class="ow">or</span> <span class="s2">&quot;fine&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">current</span>
+
+
 <div class="viewcode-block" id="DurabilityMixin">
 <a class="viewcode-back" href="../../../src.items.html#src.items.items.DurabilityMixin">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DurabilityMixin</span><span class="p">:</span>
@@ -402,6 +512,32 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">on_hit_effects</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw_on_hit</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">on_hit_effects</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">raw_on_hit</span><span class="p">)</span>
+        <span class="c1"># Crafting tier: a freshly-built weapon defaults to the &quot;fine&quot;</span>
+        <span class="c1"># baseline (1.0x) so existing items look the same in tooltips</span>
+        <span class="c1"># as before.  ``_base_*`` fields remember the un-scaled values</span>
+        <span class="c1"># so a later :func:`apply_tier_to_item` can rescale without</span>
+        <span class="c1"># compounding the multipliers.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tier</span> <span class="o">=</span> <span class="s2">&quot;fine&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tier_multiplier</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tier_color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">240</span><span class="p">,</span> <span class="mi">240</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_base_damage</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">damage</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_base_damage</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_base_max_durability</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_durability</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_base_max_durability</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">display_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Item name prefixed with the tier badge, e.g. ``[Legendary] Steel Sword``.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">database.crafting_tiers_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_tier_name</span><span class="p">,</span> <span class="n">get_tier_color</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="n">get_tier_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tier</span> <span class="ow">or</span> <span class="s2">&quot;fine&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
 
 <div class="viewcode-block" id="Weapon._get_base_stats_text">
 <a class="viewcode-back" href="../../../src.items.html#src.items.items.Weapon._get_base_stats_text">[docs]</a>
@@ -411,9 +547,19 @@
             <span class="n">dur_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Durability&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: ∞&quot;</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">dur_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Durability&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">durability</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_durability</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="c1"># If the tier was applied, show the *base* damage as a faint</span>
+        <span class="c1"># second line so the player can see how much the smith</span>
+        <span class="c1"># improved the blueprint.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">base_damage</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_base_damage&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">damage</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">base_damage</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">damage</span>
+        <span class="n">damage_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Damage&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">damage</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="n">base_damage</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">damage</span><span class="p">:</span>
+            <span class="n">damage_str</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;  (base </span><span class="si">{</span><span class="n">base_damage</span><span class="si">}</span><span class="s2">)&quot;</span>
         <span class="k">return</span> <span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Type&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">weapon_label</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Damage&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">damage</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">damage_str</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dur_str</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
         <span class="p">)</span></div>
 </div>
@@ -458,7 +604,7 @@
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Style&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">style_label</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;Price: $</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">price</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">stats</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span></div>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">display_name</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">stats</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span></div>
 </div>
 
 
@@ -494,11 +640,10 @@
         <span class="n">base_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_base_stats_text</span><span class="p">()</span>
         <span class="n">stats</span> <span class="o">=</span> <span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base_stats</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Range&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">range</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Proj. Speed&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">projectile_speed</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;Price: $</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">price</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">stats</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span></div>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">display_name</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">stats</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span></div>
 </div>
 
 
@@ -637,6 +782,30 @@
         <span class="k">if</span> <span class="n">max_dur</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">max_dur</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_durability&quot;</span><span class="p">,</span> <span class="n">current_dur</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_init_durability</span><span class="p">(</span><span class="n">current_dur</span> <span class="k">if</span> <span class="n">current_dur</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">100</span><span class="p">,</span> <span class="n">max_dur</span><span class="p">)</span>
+        <span class="c1"># Crafting tier: default to the &quot;fine&quot; baseline so a freshly-</span>
+        <span class="c1"># built armor piece has 1.0x stats.  The crafting grid calls</span>
+        <span class="c1"># :func:`apply_tier_to_item` to scale up/down after the roll.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tier</span> <span class="o">=</span> <span class="s2">&quot;fine&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tier_multiplier</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tier_color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">240</span><span class="p">,</span> <span class="mi">240</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_base_defense_value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">defense_value</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_base_defense_value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_base_max_durability</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_durability</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_base_max_durability</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">display_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Item name prefixed with the tier badge, e.g. ``[Masterwork] Steel Helmet``.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">database.crafting_tiers_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_tier_name</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="n">get_tier_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tier</span> <span class="ow">or</span> <span class="s2">&quot;fine&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
 
 <div class="viewcode-block" id="Armor.get_effective_defense">
 <a class="viewcode-back" href="../../../src.items.html#src.items.items.Armor.get_effective_defense">[docs]</a>
@@ -686,17 +855,23 @@
         <span class="c1"># Show the *effective* defense so the player understands why a</span>
         <span class="c1"># worn piece suddenly feels weaker than the displayed +N.</span>
         <span class="n">effective</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_effective_defense</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">base_defense</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_base_defense_value&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">defense_value</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">base_defense</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">defense_value</span>
         <span class="k">if</span> <span class="n">effective</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">defense_value</span><span class="p">:</span>
             <span class="n">defense_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Defense&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: +</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">defense_value</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">effective</span><span class="si">}</span><span class="s2"> effective)&quot;</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">defense_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Defense&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: +</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">defense_value</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="n">base_defense</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">defense_value</span><span class="p">:</span>
+            <span class="n">defense_str</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;  (base </span><span class="si">{</span><span class="n">base_defense</span><span class="si">}</span><span class="s2">)&quot;</span>
         <span class="n">stats</span> <span class="o">=</span> <span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Type&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Armor&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">slot_label</span><span class="si">}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">defense_str</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dur_str</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;Price: $</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">price</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">stats</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span></div>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">display_name</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">stats</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span></div>
 </div>
 
 
@@ -871,6 +1046,30 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">gather_type</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gather_type&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">gather_yield_min</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gather_yield_min&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">1</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">gather_yield_max</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gather_yield_max&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">gather_yield_min</span><span class="p">)</span>
+        <span class="c1"># Crafting tier: see :class:`Weapon` for the rationale.  The</span>
+        <span class="c1"># smeltery&#39;s crafting grid calls :func:`apply_tier_to_item` on</span>
+        <span class="c1"># the freshly-built tool to rescale ``power`` and durability.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tier</span> <span class="o">=</span> <span class="s2">&quot;fine&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tier_multiplier</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tier_color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">240</span><span class="p">,</span> <span class="mi">240</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_base_power</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">power</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_base_power</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_base_max_durability</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_durability</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_base_max_durability</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">display_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Item name prefixed with the tier badge, e.g. ``[Epic] Iron Pickaxe``.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">database.crafting_tiers_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_tier_name</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="n">get_tier_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tier</span> <span class="ow">or</span> <span class="s2">&quot;fine&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
 
 <div class="viewcode-block" id="Tool.get_tooltip_text">
 <a class="viewcode-back" href="../../../src.items.html#src.items.items.Tool.get_tooltip_text">[docs]</a>
@@ -880,10 +1079,17 @@
             <span class="n">dur_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Durability&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: ∞&quot;</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">dur_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Durability&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">durability</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_durability</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">base_power</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_base_power&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">power</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">base_power</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">power</span>
+        <span class="n">power_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Power&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: +</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">power</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="n">base_power</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">power</span><span class="p">:</span>
+            <span class="n">power_str</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;  (base </span><span class="si">{</span><span class="n">base_power</span><span class="si">}</span><span class="s2">)&quot;</span>
         <span class="n">stats</span> <span class="o">=</span> <span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Type&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Tool&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">type_label</span><span class="si">}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dur_str</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Power&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: +</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">power</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">power_str</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gather_type</span><span class="p">:</span>
             <span class="n">gather_label</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gather_type</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">title</span><span class="p">()</span>
@@ -893,7 +1099,7 @@
                 <span class="n">yield_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">gather_yield_min</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">gather_yield_max</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="n">stats</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Gathers&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">gather_label</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">yield_str</span><span class="si">}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span>
         <span class="n">stats</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;Price: $</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">price</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">stats</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span></div>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">display_name</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">stats</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span></div>
 </div>
 
 

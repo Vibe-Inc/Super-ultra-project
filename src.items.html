@@ -200,6 +200,12 @@ defense, and durability.</p>
 <span class="sig-name descname"><span class="pre">DEFENSE_SCALING_THRESHOLD</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.25</span></em><a class="headerlink" href="#src.items.items.Armor.DEFENSE_SCALING_THRESHOLD" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="src.items.items.Armor.display_name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">display_name</span></span><a class="headerlink" href="#src.items.items.Armor.display_name" title="Link to this definition"></a></dt>
+<dd><p>Item name prefixed with the tier badge, e.g. <code class="docutils literal notranslate"><span class="pre">[Masterwork]</span> <span class="pre">Steel</span> <span class="pre">Helmet</span></code>.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="id0">
 <span class="sig-name descname"><span class="pre">get_effective_defense</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/src/items/items.html#Armor.get_effective_defense"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
@@ -917,6 +923,12 @@ Initialize tool properties from a database row.</p>
 and the resource it gathers (if any).</p>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="src.items.items.Tool.display_name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">display_name</span></span><a class="headerlink" href="#src.items.items.Tool.display_name" title="Link to this definition"></a></dt>
+<dd><p>Item name prefixed with the tier badge, e.g. <code class="docutils literal notranslate"><span class="pre">[Epic]</span> <span class="pre">Iron</span> <span class="pre">Pickaxe</span></code>.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="id10">
 <span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Tool.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Link to this definition"></a></dt>
@@ -1024,6 +1036,24 @@ Initialize weapon properties from a database row.</p>
 <dd><p>Return formatted base stats text (type, damage, durability).</p>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="src.items.items.Weapon.display_name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">display_name</span></span><a class="headerlink" href="#src.items.items.Weapon.display_name" title="Link to this definition"></a></dt>
+<dd><p>Item name prefixed with the tier badge, e.g. <code class="docutils literal notranslate"><span class="pre">[Legendary]</span> <span class="pre">Steel</span> <span class="pre">Sword</span></code>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.items.items.apply_tier_to_item">
+<span class="sig-prename descclassname"><span class="pre">src.items.items.</span></span><span class="sig-name descname"><span class="pre">apply_tier_to_item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tier_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/src/items/items.html#apply_tier_to_item"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.apply_tier_to_item" title="Link to this definition"></a></dt>
+<dd><p>Scale <code class="docutils literal notranslate"><span class="pre">item</span></code>’s stats according to <code class="docutils literal notranslate"><span class="pre">tier_id</span></code> and stamp the
+tier on the instance.</p>
+<p>Returns the tier id actually applied (always equal to <code class="docutils literal notranslate"><span class="pre">tier_id</span></code>
+for valid input, <code class="docutils literal notranslate"><span class="pre">&quot;fine&quot;</span></code> for unknown tiers).</p>
+<p>The helper is a no-op for items that aren’t <code class="docutils literal notranslate"><span class="pre">Weapon</span></code>/<code class="docutils literal notranslate"><span class="pre">Armor</span></code>/
+<code class="docutils literal notranslate"><span class="pre">Tool</span></code> (e.g. resources, consumables), so it’s safe to call on any
+item produced by the crafting grid.</p>
 </dd></dl>
 
 <dl class="py function">
