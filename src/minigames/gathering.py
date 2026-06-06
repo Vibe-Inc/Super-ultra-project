@@ -59,6 +59,7 @@ GATHER_TILE_PROPERTY = {
     "wood":   "is_wood_gatherable",
     "stone":  "is_stone_gatherable",
     "ore":    "is_ore_gatherable",
+    "iron":   "is_iron_gatherable",
     "flint":  "is_flint_gatherable",
 }
 
@@ -70,6 +71,7 @@ GATHER_TILE_PROPERTY_FALLBACK = {
     "wood":   ("choppable",),
     "stone":  ("minable",),
     "ore":    ("minable",),
+    "iron":   (),
     "flint":  (),
 }
 
@@ -84,7 +86,17 @@ GATHER_DEFAULT_YIELD = {
     "wood":  "wood",
     "stone": "stone",
     "ore":   "iron_ore",
+    "iron":  "iron_ore",
     "flint": "flint",
+}
+
+# Maps a tool's declared ``gather_type`` to the list of tile gather
+# types the tool can actually harvest. A pickaxe (``gather_type="stone"``)
+# can mine both regular stone outcrops *and* iron ore veins
+# (``is_iron_gatherable``). The list is probed in order, so the tool
+# prefers the type it's primarily declared for.
+TOOL_GATHER_TYPE_ALIASES = {
+    "stone": ("stone", "iron"),
 }
 
 # How far (in tiles) the controller will search around the player for
@@ -127,6 +139,7 @@ GATHER_LABELS = {
     "wood":  "Chopping",
     "stone": "Mining",
     "ore":   "Mining",
+    "iron":  "Mining",
     "flint": "Picking up",
 }
 
@@ -232,6 +245,7 @@ class GatheringUI:
                 "wood":  "chop",
                 "stone": "mine",
                 "ore":   "crack",
+                "iron":  "mine",
                 "flint": "pick up",
             }.get(gather_type, "gather")
             msg = f"Press G to {verb}"
@@ -364,6 +378,22 @@ class GatheringController:
             return item
         except Exception:
             return None
+
+    def _tool_gather_types(self, tool) -> tuple:
+        """Return every tile gather type ``tool`` is allowed to harvest.
+
+        Most tools only handle their declared :py:attr:`gather_type`, but
+        some are extended via :data:`TOOL_GATHER_TYPE_ALIASES` (e.g. a
+        pickaxe's ``"stone"`` also covers ``"iron"`` so it can mine
+        ``is_iron_gatherable`` tiles for iron ore).
+        """
+        primary = getattr(tool, "gather_type", None)
+        if not primary:
+            return ()
+        aliases = TOOL_GATHER_TYPE_ALIASES.get(primary)
+        if aliases:
+            return tuple(aliases)
+        return (primary,)
 
     # ------------------------------------------------------------------
     # Tile-property detection
@@ -581,15 +611,17 @@ class GatheringController:
         """
         tool = self._get_active_tool()
         if tool:
-            gather_type = tool.gather_type
-            tile = self._find_target_tile(gather_type)
-            if tile is not None:
-                return (tile, gather_type)
-            # No ready tile -- surface a "Regrowing" prompt instead so the
-            # player understands why the hint isn't an actionable "Press G".
-            cooldown_tile = self._find_cooldown_tile(gather_type)
-            if cooldown_tile is not None:
-                return (cooldown_tile, gather_type)
+            for gather_type in self._tool_gather_types(tool):
+                tile = self._find_target_tile(gather_type)
+                if tile is not None:
+                    return (tile, gather_type)
+            # No ready tile across any alias -- surface a "Regrowing" prompt
+            # for the tool's primary type instead so the player understands
+            # why the usual hint isn't an actionable "Press G".
+            for gather_type in self._tool_gather_types(tool):
+                cooldown_tile = self._find_cooldown_tile(gather_type)
+                if cooldown_tile is not None:
+                    return (cooldown_tile, gather_type)
             return None
 
         # No tool equipped: fall back to the tool-less gather types
@@ -623,7 +655,10 @@ class GatheringController:
         tool = self._get_active_tool()
         gather_type: Optional[str] = None
         if tool:
-            gather_type = tool.gather_type
+            for gt in self._tool_gather_types(tool):
+                if self._find_target_tile(gt) is not None:
+                    gather_type = gt
+                    break
         else:
             for gt in GATHER_NO_TOOL_TYPES:
                 if self._find_target_tile(gt) is not None:
@@ -1047,7 +1082,7 @@ class GatheringController:
         # gathers have no tool to keep around so this check is skipped.
         if self.target_had_tool:
             tool = self._get_active_tool()
-            if not tool or tool.gather_type != self.target_gather_type:
+            if not tool or self.target_gather_type not in self._tool_gather_types(tool):
                 self.cancel()
                 return
 

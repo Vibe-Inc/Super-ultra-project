@@ -583,10 +583,10 @@ class SmelteryMenu:
                     return True
             elif self.active_station == STATION_BLAST_FURNACE:
                 if self._blast_item_rect.collidepoint((mx, my)):
-                    self._handle_furnace_slot_click(self.blast_item, allow_extract=False)
+                    self._handle_furnace_slot_click(self.blast_item, allow_extract=True)
                     return True
                 if self._blast_fuel_rect.collidepoint((mx, my)):
-                    self._handle_furnace_slot_click(self.blast_fuel, allow_extract=False)
+                    self._handle_furnace_slot_click(self.blast_fuel, allow_extract=True)
                     return True
                 if self._blast_output_rect.collidepoint((mx, my)):
                     self._handle_output_slot_click(self.blast_output)
