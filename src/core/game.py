@@ -217,6 +217,7 @@ class Game(State):
         initial_map_path = "maps/test-map-1.tmx"
         self.current_map_path = initial_map_path
         self.map = LocalMap("Level1", initial_map_path)
+        self.discovered_locations = {"peaceful_forest"}
 
         self.collision_handler = CollisionSystem()
         
@@ -1040,6 +1041,71 @@ class Game(State):
             return spawn
         return {"pos": spawn, "profile": "stalker"}
 
+    def _place_npcs_for_map(self, map_path):
+        if map_path in self.NPC_SPAWNS:
+            nx, ny = self.NPC_SPAWNS[map_path]
+            try:
+                if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                    mw = self.map.current_map.pixel_width
+                    mh = self.map.current_map.pixel_height
+                    nw = self.npc.image.get_width()
+                    nh = self.npc.image.get_height()
+                    nx = max(0, min(nx, mw - nw))
+                    ny = max(0, min(ny, mh - nh))
+            except Exception:
+                pass
+            self.npc.pos = pygame.Vector2(nx, ny)
+        else:
+            self.npc.pos = pygame.Vector2(-5000, -5000)
+
+        if map_path in self.CARD_NPC_SPAWNS:
+            cx, cy = self.CARD_NPC_SPAWNS[map_path]
+            try:
+                if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                    mw = self.map.current_map.pixel_width
+                    mh = self.map.current_map.pixel_height
+                    cw = self.card_npc.image.get_width()
+                    ch = self.card_npc.image.get_height()
+                    cx = max(0, min(cx, mw - cw))
+                    cy = max(0, min(cy, mh - ch))
+            except Exception:
+                pass
+            self.card_npc.pos = pygame.Vector2(cx, cy)
+        else:
+            self.card_npc.pos = pygame.Vector2(-5000, -5000)
+
+        if map_path in self.FISHING_NPC_SPAWNS:
+            fx, fy = self.FISHING_NPC_SPAWNS[map_path]
+            try:
+                if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                    mw = self.map.current_map.pixel_width
+                    mh = self.map.current_map.pixel_height
+                    fw = self.fishing_npc.image.get_width()
+                    fh = self.fishing_npc.image.get_height()
+                    fx = max(0, min(fx, mw - fw))
+                    fy = max(0, min(fy, mh - fh))
+            except Exception:
+                pass
+            self.fishing_npc.pos = pygame.Vector2(fx, fy)
+        else:
+            self.fishing_npc.pos = pygame.Vector2(-5000, -5000)
+
+        if map_path in self.MAGE_NPC_SPAWNS:
+            mx, my = self.MAGE_NPC_SPAWNS[map_path]
+            try:
+                if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                    mw = self.map.current_map.pixel_width
+                    mh = self.map.current_map.pixel_height
+                    mw_img = self.mage_npc.image.get_width()
+                    mh_img = self.mage_npc.image.get_height()
+                    mx = max(0, min(mx, mw - mw_img))
+                    my = max(0, min(my, mh - mh_img))
+            except Exception:
+                pass
+            self.mage_npc.pos = pygame.Vector2(mx, my)
+        else:
+            self.mage_npc.pos = pygame.Vector2(-5000, -5000)
+
     def _get_camera_offset(self) -> pygame.Vector2:
         viewport_width, viewport_height = self.app.screen.get_size()
 
@@ -1404,9 +1470,17 @@ class Game(State):
             logger.debug(f"Enemy '{getattr(enemy, 'ai_profile', 'unknown')}' had drop_chance entries but none rolled.")
 
     def update(self, dt):
-        switched_map_path = self.map.update(self.character)
+        result = self.map.update(self.character)
 
-        if switched_map_path:
+        if isinstance(result, tuple) and result[0] == "location_transition":
+            target_loc = result[1]
+            if target_loc not in self.discovered_locations:
+                self.discovered_locations.add(target_loc)
+            self.app.manager.set_state("location_map")
+            return
+
+        if result:
+            switched_map_path = result
             self.current_map_path = switched_map_path
             logger.info(f"Map switched to {switched_map_path}. Respawning enemy...")
             self.obstacles = self.map.get_obstacles()

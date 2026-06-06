@@ -18,6 +18,7 @@ from src.ui.menus.wiki_menu import WikiMenu
 from src.ui.menus.collection_book import CollectionBookMenu
 from src.ui.menus.arcane_quest_menu import ArcaneQuestMenu
 from src.ui.menus.mysterium_magnum import MysteriumMagnumMenu
+from src.ui.menus.location_map_menu import LocationMapMenu
 
 __all__ = [
     "Menu",
@@ -33,4 +34,5 @@ __all__ = [
     "CollectionBookMenu",
     "ArcaneQuestMenu",
     "MysteriumMagnumMenu",
+    "LocationMapMenu",
 ]

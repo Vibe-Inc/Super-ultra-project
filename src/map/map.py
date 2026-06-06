@@ -3,6 +3,7 @@ import pytmx
 import pygame
 from src.core.logger import logger
 import src.config as cfg
+from src.map.locations import get_location_id, get_location, LOCATION_DEFS
 
 class Map:
     FRINGE_LAYER_NAME = "details fringe layer"
@@ -551,7 +552,8 @@ class LocalMap:
     def __init__(self, name: str, map_file: str):
         self.name = name
         self.current_map = Map(map_file)
-        self.current_map_path = map_file 
+        self.current_map_path = map_file
+        self.current_location_id = get_location_id(map_file)
 
         self.transition_buffer = 80
         self.transit_exit_positions = {}
@@ -671,12 +673,23 @@ class LocalMap:
             transitions = self.map_transitions.get(self.current_map_path, {})
             trans = transitions.get(direction)
             if trans:
+                target_map = trans["map"]
+                target_loc = get_location_id(target_map)
+                if target_loc is not None and target_loc != self.current_location_id:
+                    if not hasattr(self, "location_exits"):
+                        self.location_exits = {}
+                    self.location_exits[self.current_location_id] = {
+                        "map_path": self.current_map_path,
+                        "pos": (player.pos.x, player.pos.y),
+                    }
+                    return ("location_transition", target_loc)
+
                 # remember previous position to pick nearest corner if needed
                 old_x = player.pos.x
                 old_y = player.pos.y
                 self.transit_exit_positions[self.current_map_path] = (old_x, old_y)
 
-                new_map = trans["map"]
+                new_map = target_map
                 self.switch_map(new_map)
                 # handle spawn
                 spawn = trans.get("spawn")
@@ -799,6 +812,19 @@ class LocalMap:
         logger.info(f"Switching map from {self.current_map_path} to {new_map_path}")
         self.current_map = Map(new_map_path)
         self.current_map_path = new_map_path
+        new_loc = get_location_id(new_map_path)
+        if new_loc is not None:
+            self.current_location_id = new_loc
+
+    def switch_to_location(self, location_id):
+        loc = get_location(location_id)
+        if not loc or not loc["maps"]:
+            logger.warning(f"Cannot switch to location '{location_id}': no maps available")
+            return None
+        entry_map = loc.get("entry_map") or loc["maps"][0]
+        self.current_location_id = location_id
+        self.switch_map(entry_map)
+        return entry_map
 
     def _player_overlaps_any_tile(self, player_rect, tile_width: int, tile_height: int, tile_positions: list[tuple[int, int]]) -> bool:
         for tile_x, tile_y in tile_positions:

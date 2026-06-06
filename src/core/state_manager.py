@@ -2,7 +2,7 @@ import pygame
 from typing import TYPE_CHECKING
 
 from src.core.logger import logger
-from src.ui.menus import MainMenu, SettingsMenu, CreditsMenu, PauseMenu, SaveLoadMenu, SkillbarMenu, SkillTreeMenu, RecipeBookMenu, WikiMenu, CollectionBookMenu, ArcaneQuestMenu, MysteriumMagnumMenu
+from src.ui.menus import MainMenu, SettingsMenu, CreditsMenu, PauseMenu, SaveLoadMenu, SkillbarMenu, SkillTreeMenu, RecipeBookMenu, WikiMenu, CollectionBookMenu, ArcaneQuestMenu, MysteriumMagnumMenu, LocationMapMenu
 from src.core.game import Game
 
 if TYPE_CHECKING:
@@ -50,6 +50,7 @@ class StateManager:
             "collection_book": CollectionBookMenu(app),
             "arcane_quest": ArcaneQuestMenu(app),
             "mysterium_magnum": MysteriumMagnumMenu(app),
+            "location_map": LocationMapMenu(app),
         }
         self.current_state = None
 
@@ -107,6 +108,7 @@ class StateManager:
             "collection_book": CollectionBookMenu(self.states["main"].app),
             "arcane_quest": ArcaneQuestMenu(self.states["main"].app),
             "mysterium_magnum": MysteriumMagnumMenu(self.states["main"].app),
+            "location_map": LocationMapMenu(self.states["main"].app),
         }
         
         # Restore quest data into the new quest menu
