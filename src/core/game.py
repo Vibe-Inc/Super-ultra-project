@@ -553,6 +553,7 @@ class Game(State):
             create_item("dull_sword"),
             create_item("wooden_bow"),
             create_item("apple"),
+            create_item("gay_ring"),
             create_item("hand_lamp"),
             create_item("lantern"),
             create_item("small_health_potion"),
