@@ -182,7 +182,7 @@ class MysteriumMagnumMenu(Menu):
         # ── Tarot cards ────────────────────────────────────────────────
         self.tarot_cards = []
         self._load_tarot_cards()
-
+        self._card_pentagram = self._load_pentagram()
 
         # ── Reveal state ───────────────────────────────────────────────
         self.revealed_cards = []
@@ -280,6 +280,15 @@ class MysteriumMagnumMenu(Menu):
                 "phase": random.uniform(0, math.pi * 2),
                 "color": random.choice([(255, 200, 80), (255, 170, 60), (240, 220, 120)]),
             })
+
+    def _load_pentagram(self):
+        path = "assets/tarot/pentagram.png"
+        if not os.path.exists(path):
+            return None
+        try:
+            return pygame.image.load(path).convert_alpha()
+        except Exception:
+            return None
 
     def _init_pentagrams(self):
         pentagram_palette = [
@@ -1798,6 +1807,16 @@ class MysteriumMagnumMenu(Menu):
             ga = int(10 * (1.0 - y / glass.get_height()) * ease)
             pygame.draw.line(glass, (100, 70, 140, ga), (0, y), (panel_w, y))
         screen.blit(glass, (px, py))
+
+        # Pentagram watermark
+        if self._card_pentagram is not None:
+            pw, ph = self._card_pentagram.get_size()
+            p_scale = panel_h * 0.5 / max(pw, ph)
+            p_size = (int(pw * p_scale), int(ph * p_scale))
+            p_rot = (t * 6.0) % 360
+            p_surf = pygame.transform.rotate(pygame.transform.smoothscale(self._card_pentagram, p_size), p_rot)
+            p_surf.set_alpha(35)
+            screen.blit(p_surf, p_surf.get_rect(center=(cx, cy)))
 
         # Corner-to-corner decorative diagonal lines
         diag_a = int(6 + 4 * math.sin(t * 0.5))
