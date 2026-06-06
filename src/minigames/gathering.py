@@ -950,6 +950,8 @@ class GatheringController:
                 f"yield={added} apple={apple_added} "
                 f"cooldown={GATHER_COOLDOWN_DURATION:.0f}s"
             )
+            if self.target_gather_type == "wood" and hasattr(self.game.app, "achievement_manager"):
+                self.game.app.achievement_manager.add_progress("lumberjack", 1, 10)
 
         if self.target_had_tool:
             self._damage_tool()

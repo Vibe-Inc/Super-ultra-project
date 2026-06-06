@@ -6,6 +6,7 @@ from src.core.state_manager import StateManager
 from src.core.save_manager import SaveManager
 from src.core.profiling import FrameProfiler, FpsCounter
 from src.core.article_tracker import ArticleUnlockTracker
+from src.core.achievements import AchievementManager
 from src.inventory.inventory_manager import INVENTORY_manager
 from src.items.items import create_item
 from database.item_db.weapons_db import seed_weapons
@@ -171,7 +172,7 @@ class App:
         add_item(6, 3, "steel_leggings")
         add_item(7, 3, "steel_boots")
         
-        self.money = 100
+        self._money = 100
         self.purple_stars = 0
         self.revealed_tarot_cards: set[int] = set()
 
@@ -201,6 +202,19 @@ class App:
         self.article_tracker = ArticleUnlockTracker()
         self.article_notifications: list[dict] = []
         self.guide_intro_shown = False
+        
+        # Achievements manager
+        self.achievement_manager = AchievementManager(self)
+
+    @property
+    def money(self):
+        return self._money
+
+    @money.setter
+    def money(self, value):
+        self._money = value
+        if hasattr(self, 'achievement_manager') and self._money >= 1000:
+            self.achievement_manager.unlock("wealthy")
 
     def _get_dir_mask(self, radius: int, dir_x: float, dir_y: float) -> "pygame.Surface":
         """Return a cached hemisphere mask that attenuates light behind the character.

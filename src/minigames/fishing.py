@@ -809,6 +809,10 @@ class FishingController:
                             f"Caught {fish.name}!  (\u00d7{count})",
                             success=True, duration=3.0,
                         )
+                    
+                    total_fish = sum(app.caught_fish.values())
+                    if hasattr(app, "achievement_manager") and total_fish >= 10:
+                        app.achievement_manager.unlock("master_angler")
                 else:
                     self.ui.show_result(
                         f"Caught {fish.name}!", success=True, duration=3.0

@@ -1710,6 +1710,7 @@ class Game(State):
             if enemy.is_dead():
                 logger.info("Enemy defeated!")
                 self._kill_count += 1
+                self.app.achievement_manager.unlock("first_blood")
 
                 # Bestiary: open article for this enemy type
                 vs = getattr(enemy, "visual_style", None) or getattr(enemy, "ai_profile", "")
