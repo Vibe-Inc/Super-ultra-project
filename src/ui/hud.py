@@ -447,6 +447,469 @@ class HUD:
         """Return total duration of the effect."""
         return max(0.001, effect.duration)
 
+    def _draw_effect_icon(self, surface, cx, cy, radius, key, tint):
+        """Draw a polished, unique icon for each effect type at (cx, cy)."""
+        import math as _m
+        r = radius
+        highlight = tuple(min(255, c + 70) for c in tint)
+        shadow = tuple(max(0, c - 60) for c in tint)
+        bright = tuple(min(255, c + 120) for c in tint)
+
+        # Helper: draw a smooth outlined polygon
+        def _filled(poly, col, outline_col=None, width=1):
+            pygame.draw.polygon(surface, col, poly)
+            if outline_col:
+                pygame.draw.polygon(surface, outline_col, poly, width)
+
+        # Helper: draw a small 4-point star
+        def _star4(sx, sy, outer_r, inner_r, col):
+            pts = []
+            for i in range(8):
+                a = i * _m.pi / 4 - _m.pi / 2
+                rd = outer_r if i % 2 == 0 else inner_r
+                pts.append((sx + int(_m.cos(a) * rd), sy + int(_m.sin(a) * rd)))
+            if len(pts) >= 3:
+                pygame.draw.polygon(surface, col, pts)
+
+        # Helper: smooth almond / eye shape
+        def _eye_shape(ex, cy2, ew, eh, col, outline=None, lw=1):
+            pts = []
+            for i in range(24):
+                a = i * _m.pi * 2 / 24
+                factor = 1.0 - abs(_m.cos(a)) * 0.6
+                px = ex + int(_m.cos(a) * ew)
+                py = cy2 + int(_m.sin(a) * eh * factor)
+                pts.append((px, py))
+            if len(pts) >= 3:
+                _filled(pts, col, outline, lw)
+            return pts
+
+        # Small ambient glow behind icon
+        glow_r = int(r * 0.55)
+        glow_surf = pygame.Surface((glow_r * 4, glow_r * 4), pygame.SRCALPHA)
+        for gr in range(glow_r, 0, -3):
+            alpha = int(25 * (1 - gr / glow_r))
+            if alpha > 0:
+                pygame.draw.circle(glow_surf, (*tint, alpha), (glow_r * 2, glow_r * 2), gr)
+        surface.blit(glow_surf, (cx - glow_r * 2, cy - glow_r * 2), special_flags=pygame.BLEND_RGBA_ADD)
+
+        lw_main = max(1, int(r * 0.07))
+        lw_thin = max(1, int(r * 0.05))
+        lw_bold = max(2, int(r * 0.10))
+
+        if key == "regeneration":
+            # Polished heart with outline
+            hr = max(3, r * 0.38)
+            ox = int(hr * 0.38)
+            oy = int(r * 0.12)
+            pygame.draw.circle(surface, highlight, (cx - ox, cy - oy), int(hr) + 1)
+            pygame.draw.circle(surface, highlight, (cx + ox, cy - oy), int(hr) + 1)
+            pygame.draw.circle(surface, tint, (cx - ox, cy - oy), int(hr))
+            pygame.draw.circle(surface, tint, (cx + ox, cy - oy), int(hr))
+            bot_pts = [
+                (cx - int(hr * 1.15), cy - oy + int(hr * 0.2)),
+                (cx + int(hr * 1.15), cy - oy + int(hr * 0.2)),
+                (cx, cy + int(hr * 1.1)),
+            ]
+            _filled(bot_pts, tint, shadow, lw_thin)
+            # Small white highlight
+            pygame.draw.circle(surface, bright, (cx - ox - max(1, int(hr * 0.2)), cy - oy - max(1, int(hr * 0.25))), max(1, int(hr * 0.18)))
+
+        elif key == "poison":
+            # Rounded skull with jaw and dark eyes
+            sk_r = int(r * 0.42)
+            pygame.draw.circle(surface, shadow, (cx, cy - int(r * 0.12) + 1), sk_r + 1)
+            pygame.draw.circle(surface, tint, (cx, cy - int(r * 0.12)), sk_r)
+            # Jaw (rounded rect)
+            jaw = pygame.Rect(cx - int(r * 0.28), cy + int(r * 0.15), int(r * 0.56), int(r * 0.22))
+            pygame.draw.rect(surface, tint, jaw, border_radius=int(r * 0.06))
+            pygame.draw.rect(surface, shadow, jaw, lw_thin, border_radius=int(r * 0.06))
+            # Eyes
+            er = max(2, int(r * 0.11))
+            eye_y = cy - int(r * 0.18)
+            pygame.draw.circle(surface, shadow, (cx - int(r * 0.14), eye_y), er + 1)
+            pygame.draw.circle(surface, (10, 10, 15), (cx - int(r * 0.14), eye_y), er)
+            pygame.draw.circle(surface, shadow, (cx + int(r * 0.14), eye_y), er + 1)
+            pygame.draw.circle(surface, (10, 10, 15), (cx + int(r * 0.14), eye_y), er)
+            # Nose
+            pygame.draw.circle(surface, shadow, (cx, cy - int(r * 0.03)), max(1, int(r * 0.04)))
+
+        elif key == "burn":
+            # Smooth flame with glow
+            fh = int(r * 0.55)
+            # Outer (darker)
+            outer_pts = [
+                (cx, cy - fh),
+                (cx - int(r * 0.15), cy - int(r * 0.25)),
+                (cx - int(r * 0.4), cy + int(r * 0.35)),
+                (cx - int(r * 0.1), cy + int(r * 0.42)),
+                (cx + int(r * 0.1), cy + int(r * 0.42)),
+                (cx + int(r * 0.4), cy + int(r * 0.35)),
+                (cx + int(r * 0.15), cy - int(r * 0.25)),
+            ]
+            _filled(outer_pts, tint, shadow, lw_thin)
+            # Mid flame
+            mid_pts = [
+                (cx, cy - int(r * 0.45)),
+                (cx - int(r * 0.22), cy + int(r * 0.25)),
+                (cx, cy + int(r * 0.35)),
+                (cx + int(r * 0.22), cy + int(r * 0.25)),
+            ]
+            _filled(mid_pts, highlight, None)
+            # Bright core
+            core_pts = [
+                (cx, cy - int(r * 0.2)),
+                (cx - int(r * 0.08), cy + int(r * 0.3)),
+                (cx + int(r * 0.08), cy + int(r * 0.3)),
+            ]
+            _filled(core_pts, bright, None)
+
+        elif key == "confusion":
+            # Smooth spiral with dot
+            spiral_pts = []
+            for i in range(40):
+                t2 = i / 40.0
+                angle = t2 * _m.pi * 3.5
+                dist = r * (0.08 + t2 * 0.38)
+                px = cx + int(_m.cos(angle) * dist)
+                py = cy - int(r * 0.05) + int(_m.sin(angle) * dist)
+                spiral_pts.append((px, py))
+            if len(spiral_pts) > 1:
+                # Glow
+                pygame.draw.lines(surface, shadow, False, spiral_pts, lw_bold)
+                pygame.draw.lines(surface, tint, False, spiral_pts, lw_main)
+            # Dot
+            pygame.draw.circle(surface, shadow, (cx, cy + int(r * 0.38)), max(2, int(r * 0.08)) + 1)
+            pygame.draw.circle(surface, tint, (cx, cy + int(r * 0.38)), max(2, int(r * 0.08)))
+
+        elif key == "dizziness":
+            # 5 orbiting 4-point stars
+            for i in range(5):
+                ang = i * _m.pi * 2 / 5 - _m.pi / 2
+                sx = cx + int(_m.cos(ang) * r * 0.38)
+                sy = cy + int(_m.sin(ang) * r * 0.38)
+                sr = max(2, int(r * 0.14))
+                _star4(sx, sy, sr, sr // 2 + 1, shadow)
+                _star4(sx, sy, sr - 1, sr // 2, highlight)
+
+        elif key == "slow":
+            # Hourglass with rounded bars
+            hw = int(r * 0.42)
+            hh = int(r * 0.6)
+            bar_w = max(2, int(r * 0.08))
+            # Top triangle
+            pts_t = [(cx - hw, cy - hh), (cx + hw, cy - hh), (cx, cy - int(r * 0.05))]
+            _filled(pts_t, tint, shadow, lw_thin)
+            # Bottom triangle
+            pts_b = [(cx - hw, cy + hh), (cx + hw, cy + hh), (cx, cy + int(r * 0.05))]
+            _filled(pts_b, tint, shadow, lw_thin)
+            # Bars
+            pygame.draw.line(surface, highlight, (cx - hw, cy - hh), (cx + hw, cy - hh), bar_w)
+            pygame.draw.line(surface, highlight, (cx - hw, cy + hh), (cx + hw, cy + hh), bar_w)
+            # Sand dots
+            for dx in [-int(r * 0.1), 0, int(r * 0.1)]:
+                pygame.draw.circle(surface, bright, (cx + dx, cy + int(r * 0.2)), max(1, int(r * 0.03)))
+
+        elif key == "freeze":
+            # 6-armed snowflake with branching
+            for i in range(6):
+                ang = i * _m.pi / 6
+                dx = int(_m.cos(ang) * r * 0.55)
+                dy = int(_m.sin(ang) * r * 0.55)
+                # Main arm (shadow then highlight)
+                pygame.draw.line(surface, shadow, (cx - dx, cy - dy), (cx + dx, cy + dy), lw_bold)
+                pygame.draw.line(surface, tint, (cx - dx, cy - dy), (cx + dx, cy + dy), lw_main)
+                # Branches at 60%
+                bx = cx + int(dx * 0.6)
+                by = cy + int(dy * 0.6)
+                b_len = int(r * 0.2)
+                for side in [-1, 1]:
+                    ba = ang + side * _m.pi / 5
+                    ex = bx + int(_m.cos(ba) * b_len)
+                    ey = by + int(_m.sin(ba) * b_len)
+                    pygame.draw.line(surface, tint, (bx, by), (ex, ey), lw_thin)
+            # Center dot
+            pygame.draw.circle(surface, highlight, (cx, cy), max(2, int(r * 0.07)))
+
+        elif key == "root":
+            # Organic tree with curved branches
+            lw_t = lw_bold
+            # Trunk
+            pygame.draw.line(surface, shadow, (cx + 1, cy + int(r * 0.52)), (cx + 1, cy - int(r * 0.08)), lw_t)
+            pygame.draw.line(surface, tint, (cx, cy + int(r * 0.5)), (cx, cy - int(r * 0.1)), lw_t)
+            # Branches (two layers)
+            for dy_off, spread, arm_lw in [(-int(r * 0.1), 0.38, lw_main), (-int(r * 0.28), 0.28, lw_thin)]:
+                for side in [-1, 1]:
+                    bx = cx + side * int(r * spread)
+                    by = cy + dy_off - int(r * 0.28)
+                    pygame.draw.line(surface, tint, (cx, cy + dy_off), (bx, by), arm_lw)
+            # Leaf blobs
+            leaf_r = max(2, int(r * 0.1))
+            for dx, dy in [(-int(r * 0.35), -int(r * 0.38)), (int(r * 0.35), -int(r * 0.38)), (0, -int(r * 0.42))]:
+                pygame.draw.circle(surface, highlight, (cx + dx, cy + dy), leaf_r)
+                pygame.draw.circle(surface, tint, (cx + dx, cy + dy), leaf_r - 1)
+            # Roots
+            for side in [-1, 1]:
+                rx = cx + side * int(r * 0.22)
+                ry = cy + int(r * 0.6)
+                pygame.draw.line(surface, tint, (cx, cy + int(r * 0.4)), (rx, ry), lw_thin)
+
+        elif key == "radiant_fortitude":
+            # Glowing sun with rays
+            sun_cy = cy - int(r * 0.05)
+            sun_r = int(r * 0.3)
+            # Outer glow ring
+            pygame.draw.circle(surface, shadow, (cx, sun_cy), sun_r + 3)
+            pygame.draw.circle(surface, tint, (cx, sun_cy), sun_r)
+            pygame.draw.circle(surface, highlight, (cx, sun_cy), max(2, int(sun_r * 0.5)))
+            # 8 rays with alternating lengths
+            for i in range(8):
+                a = i * _m.pi / 4
+                inner = sun_r + 3
+                outer = sun_r + int(r * (0.22 if i % 2 == 0 else 0.15))
+                rx1 = cx + int(_m.cos(a) * inner)
+                ry1 = sun_cy + int(_m.sin(a) * inner)
+                rx2 = cx + int(_m.cos(a) * outer)
+                ry2 = sun_cy + int(_m.sin(a) * outer)
+                pygame.draw.line(surface, tint, (rx1, ry1), (rx2, ry2), max(1, int(r * 0.05)))
+            # Bright center
+            pygame.draw.circle(surface, bright, (cx, sun_cy), max(1, int(sun_r * 0.25)))
+
+        elif key == "vampiric_edge":
+            # Two polished fangs with a gum line
+            gum_y = cy - int(r * 0.22)
+            fw = int(r * 0.14)
+            fh = int(r * 0.45)
+            for side in [-1, 1]:
+                base_x = cx + side * int(r * 0.22)
+                # Gum line
+                pygame.draw.line(surface, shadow, (base_x - fw, gum_y), (base_x + fw, gum_y), lw_thin)
+                # Fang triangle
+                fang_pts = [
+                    (base_x - fw, gum_y),
+                    (base_x + fw, gum_y),
+                    (base_x, cy + fh),
+                ]
+                _filled(fang_pts, highlight, shadow, lw_thin)
+                # Bright tip
+                pygame.draw.circle(surface, bright, (base_x, cy + fh - max(1, int(r * 0.06))), max(1, int(r * 0.04)))
+            # Connecting gum
+            pygame.draw.line(surface, tint, (cx - int(r * 0.36), gum_y), (cx + int(r * 0.36), gum_y), lw_thin)
+
+        elif key == "keen_insight":
+            # Polished eye with iris and highlight
+            _eye_shape(cx, cy, int(r * 0.65), int(r * 0.32), tint, shadow, lw_thin)
+            # Iris
+            ir_r = max(3, int(r * 0.22))
+            pygame.draw.circle(surface, shadow, (cx, cy), ir_r + 1)
+            pygame.draw.circle(surface, tint, (cx, cy), ir_r)
+            # Pupil
+            pr = max(2, int(r * 0.12))
+            pygame.draw.circle(surface, (10, 10, 15), (cx, cy), pr)
+            # Catchlight
+            pygame.draw.circle(surface, (255, 255, 255), (cx - max(1, int(r * 0.08)), cy - max(1, int(r * 0.08))), max(1, int(r * 0.06)))
+
+        elif key == "bleed":
+            # Smooth teardrop
+            drop_pts = []
+            for i in range(28):
+                a = i * _m.pi * 2 / 28
+                s_val = _m.sin(a)
+                if s_val < 0:
+                    factor = 1.0 + s_val * 0.6
+                else:
+                    factor = 1.0
+                dx = int(_m.cos(a) * r * 0.32 * factor)
+                dy = int(_m.sin(a) * r * 0.42)
+                drop_pts.append((cx + dx, cy + dy - int(r * 0.05)))
+            if len(drop_pts) >= 3:
+                _filled(drop_pts, tint, shadow, lw_thin)
+                # Bright highlight on left
+                pygame.draw.circle(surface, highlight, (cx - int(r * 0.1), cy - int(r * 0.12)), max(1, int(r * 0.06)))
+
+        elif key == "strength":
+            # Bold upward arrow with outline
+            shaft_w = lw_bold
+            # Shaft
+            pygame.draw.line(surface, shadow, (cx + 1, cy + int(r * 0.45)), (cx + 1, cy - int(r * 0.15)), shaft_w + 1)
+            pygame.draw.line(surface, tint, (cx, cy + int(r * 0.45)), (cx, cy - int(r * 0.15)), shaft_w)
+            # Arrowhead
+            head_pts = [
+                (cx, cy - int(r * 0.58)),
+                (cx - int(r * 0.32), cy - int(r * 0.12)),
+                (cx + int(r * 0.32), cy - int(r * 0.12)),
+            ]
+            _filled(head_pts, tint, shadow, lw_thin)
+            # Bright tip
+            pygame.draw.circle(surface, highlight, (cx, cy - int(r * 0.48)), max(1, int(r * 0.05)))
+
+        elif key == "momentum":
+            # Stylized lightning bolt
+            pts = [
+                (cx - int(r * 0.02), cy - int(r * 0.52)),
+                (cx - int(r * 0.22), cy - int(r * 0.02)),
+                (cx - int(r * 0.02), cy - int(r * 0.02)),
+                (cx - int(r * 0.12), cy + int(r * 0.52)),
+                (cx + int(r * 0.18), cy + int(r * 0.0)),
+                (cx - int(r * 0.0), cy + int(r * 0.0)),
+            ]
+            # Outline then fill
+            pygame.draw.polygon(surface, shadow, [(x + 1, y + 1) for x, y in pts])
+            _filled(pts, highlight, shadow, lw_thin)
+            # Bright center line
+            bright_pts = [
+                (cx - int(r * 0.02), cy - int(r * 0.35)),
+                (cx - int(r * 0.12), cy - int(r * 0.05)),
+                (cx + int(r * 0.02), cy + int(r * 0.05)),
+                (cx - int(r * 0.06), cy + int(r * 0.35)),
+            ]
+            if len(bright_pts) > 1:
+                pygame.draw.lines(surface, bright, False, bright_pts, lw_thin)
+
+        elif key == "blind":
+            # Eye with slash through it
+            _eye_shape(cx, cy, int(r * 0.52), int(r * 0.28), tint, shadow, lw_thin)
+            # Pupil
+            pygame.draw.circle(surface, shadow, (cx, cy), max(2, int(r * 0.1)))
+            pygame.draw.circle(surface, (10, 10, 15), (cx, cy), max(1, int(r * 0.07)))
+            # Slash
+            pygame.draw.line(surface, shadow, (cx - int(r * 0.52), cy + int(r * 0.42)),
+                             (cx + int(r * 0.52), cy - int(r * 0.42)), lw_bold)
+
+        elif key == "haste":
+            # Wing with feathers + speed lines
+            lw_h = lw_main
+            # Wing base
+            base = (cx + int(r * 0.05), cy + int(r * 0.15))
+            feathers = [(-0.42, -0.08), (-0.28, -0.32), (-0.10, -0.48)]
+            for i, (dx, dy) in enumerate(feathers):
+                ex = cx + int(dx * r * 2)
+                ey = cy + int(dy * r * 2)
+                # Each feather is a thin filled triangle
+                mid_x = (base[0] + ex) // 2
+                mid_y = (base[1] + ey) // 2
+                side = 1 if i % 2 == 0 else -1
+                f_pts = [
+                    base,
+                    (ex, ey),
+                    (mid_x + side * int(r * 0.08), mid_y + side * int(r * 0.08)),
+                ]
+                pygame.draw.polygon(surface, shadow, f_pts)
+                pygame.draw.polygon(surface, tint, f_pts, lw_thin)
+            # Speed lines
+            for j, dy_off in enumerate([-int(r * 0.22), 0, int(r * 0.22)]):
+                sx = cx + int(r * 0.18)
+                line_len = int(r * (0.38 - j * 0.05))
+                pygame.draw.line(surface, tint, (sx, cy + dy_off), (sx + line_len, cy + dy_off), lw_thin)
+
+        elif key == "weaken":
+            # Cracked shield outline
+            shield_pts = [
+                (cx, cy + int(r * 0.48)),
+                (cx - int(r * 0.42), cy - int(r * 0.08)),
+                (cx - int(r * 0.3), cy - int(r * 0.45)),
+                (cx + int(r * 0.3), cy - int(r * 0.45)),
+                (cx + int(r * 0.42), cy - int(r * 0.08)),
+            ]
+            pygame.draw.polygon(surface, tint, shield_pts, lw_bold)
+            # Zigzag crack
+            crack_pts = [
+                (cx, cy - int(r * 0.35)),
+                (cx + int(r * 0.08), cy - int(r * 0.15)),
+                (cx - int(r * 0.05), cy + int(r * 0.1)),
+                (cx + int(r * 0.05), cy + int(r * 0.25)),
+                (cx - int(r * 0.03), cy + int(r * 0.38)),
+            ]
+            pygame.draw.lines(surface, shadow, False, crack_pts, lw_main)
+
+        elif key == "curse":
+            # Demonic skull with horns
+            sk_r = int(r * 0.38)
+            head_cy = cy + int(r * 0.05)
+            pygame.draw.circle(surface, shadow, (cx, head_cy + 1), sk_r + 1)
+            pygame.draw.circle(surface, tint, (cx, head_cy), sk_r)
+            # Jaw
+            jaw = pygame.Rect(cx - int(r * 0.22), cy + int(r * 0.22), int(r * 0.44), int(r * 0.18))
+            pygame.draw.rect(surface, tint, jaw, border_radius=int(r * 0.05))
+            pygame.draw.rect(surface, shadow, jaw, lw_thin, border_radius=int(r * 0.05))
+            # Eyes (glowing)
+            er = max(2, int(r * 0.09))
+            eye_y2 = cy - int(r * 0.02)
+            pygame.draw.circle(surface, bright, (cx - int(r * 0.13), eye_y2), er + 1)
+            pygame.draw.circle(surface, (255, 220, 60), (cx - int(r * 0.13), eye_y2), er)
+            pygame.draw.circle(surface, bright, (cx + int(r * 0.13), eye_y2), er + 1)
+            pygame.draw.circle(surface, (255, 220, 60), (cx + int(r * 0.13), eye_y2), er)
+            # Horns (curved via two line segments)
+            for side in [-1, 1]:
+                hx1 = cx + side * int(r * 0.28)
+                hy1 = cy - int(r * 0.25)
+                hx2 = cx + side * int(r * 0.4)
+                hy2 = cy - int(r * 0.45)
+                hx3 = cx + side * int(r * 0.48)
+                hy3 = cy - int(r * 0.52)
+                pygame.draw.line(surface, tint, (hx1, hy1), (hx2, hy2), lw_bold)
+                pygame.draw.line(surface, highlight, (hx2, hy2), (hx3, hy3), lw_main)
+
+        elif key == "lethargy":
+            # Weight with handle
+            lw_l = lw_bold
+            # Handle (arc)
+            arc_rect = pygame.Rect(cx - int(r * 0.14), cy - int(r * 0.45), int(r * 0.28), int(r * 0.2))
+            pygame.draw.arc(surface, tint, arc_rect, _m.pi, _m.pi * 2, lw_l)
+            # Rope
+            pygame.draw.line(surface, tint, (cx, cy - int(r * 0.35)), (cx, cy - int(r * 0.05)), lw_main)
+            # Weight body (rounded trapezoid)
+            w_pts = [
+                (cx - int(r * 0.12), cy - int(r * 0.05)),
+                (cx + int(r * 0.12), cy - int(r * 0.05)),
+                (cx + int(r * 0.32), cy + int(r * 0.32)),
+                (cx - int(r * 0.32), cy + int(r * 0.32)),
+            ]
+            _filled(w_pts, tint, shadow, lw_thin)
+            # Highlight on body
+            hl_pts = [
+                (cx - int(r * 0.08), cy + int(r * 0.02)),
+                (cx + int(r * 0.08), cy + int(r * 0.02)),
+                (cx + int(r * 0.18), cy + int(r * 0.22)),
+                (cx - int(r * 0.18), cy + int(r * 0.22)),
+            ]
+            pygame.draw.polygon(surface, highlight, hl_pts)
+
+        elif key == "shield":
+            # Full filled shield with cross
+            shield_pts = [
+                (cx, cy + int(r * 0.52)),
+                (cx - int(r * 0.42), cy - int(r * 0.08)),
+                (cx - int(r * 0.32), cy - int(r * 0.48)),
+                (cx, cy - int(r * 0.58)),
+                (cx + int(r * 0.32), cy - int(r * 0.48)),
+                (cx + int(r * 0.42), cy - int(r * 0.08)),
+            ]
+            # Shadow outline
+            pygame.draw.polygon(surface, shadow, [(x + 1, y + 1) for x, y in shield_pts])
+            _filled(shield_pts, tint, shadow, lw_thin)
+            # Inner highlight half
+            inner_hl = [
+                (cx, cy + int(r * 0.35)),
+                (cx - int(r * 0.22), cy - int(r * 0.02)),
+                (cx, cy - int(r * 0.38)),
+            ]
+            pygame.draw.polygon(surface, highlight, inner_hl)
+            # Center cross
+            cr_w = max(1, int(r * 0.06))
+            pygame.draw.line(surface, bright, (cx, cy - int(r * 0.25)), (cx, cy + int(r * 0.25)), cr_w)
+            pygame.draw.line(surface, bright, (cx - int(r * 0.15), cy - int(r * 0.05)), (cx + int(r * 0.15), cy - int(r * 0.05)), cr_w)
+
+        else:
+            # Default: polished diamond
+            pts = [
+                (cx, cy - int(r * 0.52)),
+                (cx + int(r * 0.42), cy),
+                (cx, cy + int(r * 0.52)),
+                (cx - int(r * 0.42), cy),
+            ]
+            _filled(pts, tint, shadow, lw_thin)
+
     def _draw_effect_bar(self, screen: pygame.Surface):
         """Draw the active-effect bar below the HP bar (left side)."""
         effects = getattr(self.character, "effects", [])
@@ -550,22 +1013,11 @@ class HUD:
                 border_radius=cfg.EFFECT_BAR_BORDER_RADIUS,
             )
 
-            # ── Coloured centre icon (small circle) ─────────────────
-            icon_r = max(3, slot_size // 5)
+            # ── Unique icon for each effect ────────────────────────
+            icon_r = max(3, slot_size // 3)
             icon_cx = slot_rect.centerx
             icon_cy = slot_rect.centery - max(2, int(4 * scale))
-            pygame.draw.circle(screen, tint, (icon_cx, icon_cy), icon_r)
-
-            # ── Letter inside the icon ──────────────────────────────
-            letter = cfg.EFFECT_BAR_LABELS.get(key, key[:4])
-            # Draw first 1-2 chars
-            if len(letter) > 2:
-                letter = letter[:2]
-            letter_surf = label_font.render(letter, True, (255, 255, 255))
-            screen.blit(
-                letter_surf,
-                letter_surf.get_rect(center=(icon_cx, icon_cy)),
-            )
+            self._draw_effect_icon(screen, icon_cx, icon_cy, icon_r, key, tint)
 
             # ── Timer bar at the bottom of the slot ─────────────────
             remaining = self._get_effect_remaining(effect)
