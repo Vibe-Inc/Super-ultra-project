@@ -153,7 +153,6 @@ class MainMenu(Menu):
         self._cached_title_chars = {}
         self._orn_cache = None
         self._orn_key = None
-        self._skip_rect = pygame.Rect(0, 0, 0, 0)
 
     def on_enter(self):
         self._anim_time = 0.0
@@ -517,33 +516,18 @@ class MainMenu(Menu):
             ov.fill((0, 0, 0, max(0, min(255, int(255 * (1.0 - lp))))))
             screen.blit(ov, (0, 0))
 
-        if t < 3.0:
-            mp = pygame.mouse.get_pos()
-            skip_text = "SKIP >>"
-            skip_color = GOLD_BRIGHT if self._skip_rect.collidepoint(mp) else GOLD_DARK
-            skip_surf = self.font_small.render(skip_text, True, skip_color)
-            self._skip_rect = skip_surf.get_rect(bottomright=(sw - max(20, int(30 * scale)),
-                                                              sh - max(20, int(30 * scale))))
-            if self._skip_rect.collidepoint(mp):
-                gs = pygame.Surface((self._skip_rect.w + 16, self._skip_rect.h + 8), pygame.SRCALPHA)
-                pygame.draw.rect(gs, (*GOLD, 30), gs.get_rect(), border_radius=6)
-                screen.blit(gs, (self._skip_rect.x - 8, self._skip_rect.y - 4))
-            screen.blit(skip_surf, self._skip_rect)
-
-    def handle_event(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if hasattr(self, '_skip_rect') and self._skip_rect.collidepoint(event.pos):
-                self._anim_time = 10.0
-                self._launch_phase = 1.0
-                return
-        super().handle_event(event)
-
     def start_game(self):
         logger.info("Start game requested from MainMenu")
+        self.app.guide_intro_shown = False
+        self.app.article_tracker.seen_articles.discard(("guide", "1. movement & navigation"))
         quest_state = self.app.manager.states.get("arcane_quest")
         if quest_state and hasattr(quest_state, "reset_quests"):
             quest_state.reset_quests()
         self.app.manager.set_state("gameplay")
+        wiki = self.app.manager.states["wiki"]
+        wiki._skip_to_gameplay = True
+        wiki._open_guide()
+        self.app.manager.set_state("wiki")
 
     def exit_game(self):
         logger.info("Exit requested from MainMenu")

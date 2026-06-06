@@ -533,6 +533,10 @@ class WikiMenu(Menu):
         self.section_buttons = []
         self._build_main_page()
         self._toc_hover = -1
+        self._skip_to_gameplay = False
+        self.begin_btn = Button(pygame.Rect(0, 0, bw, bh), _(">> BEGIN ADVENTURE"),
+            (100, 75, 25), (160, 120, 40),
+            cfg.button_font, GOLD_BRIGHT, cfg.corner_radius, on_click=self._begin_adventure)
 
     def on_enter(self):
         self._anim_time = 0.0
@@ -600,6 +604,10 @@ class WikiMenu(Menu):
         self._show_toc = not self._show_toc
         if self._show_toc: self._sub_page = 0
         self._page_enter_time = pygame.time.get_ticks(); self._transition_progress = 0.0
+
+    def _begin_adventure(self):
+        self._skip_to_gameplay = False
+        self.app.manager.set_state("gameplay")
 
     def _prev_page(self):
         if self._sub_page > 0:
@@ -800,7 +808,7 @@ class WikiMenu(Menu):
             self.toc_btn.rect = pygame.Rect(mx + bw + max(8, int(10 * scale)), by2, bw, bh)
             self.prev_btn.rect = pygame.Rect(mx, ny, bw, bh)
             self.next_btn.rect = pygame.Rect(sw - bw - mx, ny, bw, bh)
-        for b in (self.back_btn, self.prev_btn, self.next_btn, self.toc_btn):
+        for b in (self.back_btn, self.prev_btn, self.next_btn, self.toc_btn, self.begin_btn):
             try: b._update_text_surface()
             except: pass
 
@@ -1042,6 +1050,15 @@ class WikiMenu(Menu):
         hs.set_alpha(int(140 + 60 * math.sin(t * 0.8)))
         screen.blit(hs, (inner.x + (inner.width - hs.get_width()) // 2,
                          inner.y + inner.height - hs.get_height() - 10))
+
+        if self._skip_to_gameplay and self._page == "guide":
+            btn_w = max(1, int(340 * scale))
+            btn_h = max(1, int(62 * scale))
+            btn_x = inner.x + (inner.width - btn_w) // 2
+            btn_y = inner.y + inner.height - btn_h - int(60 * scale)
+            self.begin_btn.rect = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
+            self.begin_btn.draw(screen)
+
         self.back_btn.draw(screen)
 
     # ─── Content Page ───────────────────────────────────────
@@ -1237,6 +1254,9 @@ class WikiMenu(Menu):
             self._handle_main_click(event)
             return
         if event.type == pygame.MOUSEBUTTONDOWN:
+            if self._skip_to_gameplay and self._page == "guide" and self._show_toc:
+                if self.begin_btn.rect.collidepoint(event.pos):
+                    self.begin_btn.on_click(); return
             if self.back_btn.rect.collidepoint(event.pos):
                 self.back_btn.on_click(); return
             if self._page != "main":
