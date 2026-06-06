@@ -88,6 +88,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">database.item_db.resources_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_resources</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">database.item_db.smeltery_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_smeltery</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">database.item_db.flint_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_flint_items</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">database.item_db.materials_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_materials</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">database.crafting_recepies_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_recipes</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">database.GP_database</span><span class="w"> </span><span class="kn">import</span> <span class="n">Gp_database</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">src.config</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cfg</span>
@@ -195,6 +196,7 @@
         <span class="n">seed_resources</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
         <span class="n">seed_smeltery</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
         <span class="n">seed_flint_items</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
+        <span class="n">seed_materials</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
         <span class="n">seed_recipes</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
         <span class="n">db</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
@@ -217,8 +219,6 @@
         <span class="n">add_item</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;steel_ingot&quot;</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
         <span class="c1"># Row 1 — Ranged weapons + accessories</span>
         <span class="c1"># Row 1 — Ranged weapons + gathering tools</span>
-        <span class="n">add_item</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;wooden_bow&quot;</span><span class="p">)</span>
-        <span class="n">add_item</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;hunting_bow&quot;</span><span class="p">)</span>
         <span class="n">add_item</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;longbow&quot;</span><span class="p">)</span>
         <span class="n">add_item</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;crossbow&quot;</span><span class="p">)</span>
         <span class="n">add_item</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;throwing_dagger&quot;</span><span class="p">)</span>
