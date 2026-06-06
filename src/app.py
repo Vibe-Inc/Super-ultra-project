@@ -429,7 +429,9 @@ class App:
 
             if effective_brightness < 1 and not _skip_night_overlay:
                 overlay_alpha = int((1 - effective_brightness) * 255)
-                # Use the environment tint color computed by the game state for dawn/dusk/night
+                # Use the majestic multi-stop tint from the DayNightVisuals
+                # controller (deep indigo at night, warm orange at dawn/dusk,
+                # purple at twilight, etc.)
                 if night_tint:
                     tint = cfg.ENVIRONMENT_TINT
                 else:
@@ -540,6 +542,15 @@ class App:
                     overlay = self._brightness_overlay
 
                 self.screen.blit(overlay, (0, 0))
+
+                # Draw majestic atmospheric effects on top of the overlay:
+                # golden-hour glow, twinkling stars, firefly particles, vignette
+                try:
+                    gs = self.manager.states.get("gameplay")
+                    if gs and hasattr(gs, 'day_night') and gs.day_night:
+                        gs.day_night.draw(self.screen)
+                except Exception:
+                    pass
             self.profiler.end_section("postfx")
 
             if self.manager.get_state() == "gameplay":

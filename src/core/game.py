@@ -13,6 +13,7 @@ import random
 
 from src.core.logger import logger
 import src.config as cfg
+from src.core.day_night import DayNightVisuals
 from src.core.state import State
 from src.core.save_manager import SaveManager
 from src.entities.character import Character
@@ -250,6 +251,9 @@ class Game(State):
         self.NIGHT_START = 18 * 3600
         self.DAWN_START = 4 * 3600
         self.NIGHT_BRIGHTNESS = 0.15
+
+        # Majestic day-night visual controller
+        self.day_night = DayNightVisuals()
 
         self.enemy_profiles = {
             "brute": {
@@ -1025,24 +1029,8 @@ class Game(State):
         if not self._triggered_guide_daynight and not was_day and not self.is_daytime():
             self._triggered_guide_daynight = True
             self.app.article_tracker.try_open(self.app, "guide", "7. Day & Night Cycle")
-        # Smooth brightness interpolation across dawn/dusk and compute a tint color
-        def lerp_color(a: tuple[int, int, int], b: tuple[int, int, int], t: float) -> tuple[int, int, int]:
-            return (int(a[0] + (b[0] - a[0]) * t), int(a[1] + (b[1] - a[1]) * t), int(a[2] + (b[2] - a[2]) * t))
 
-        if self.DUSK_START <= self.game_time_seconds < self.NIGHT_START:
-            t = (self.game_time_seconds - self.DUSK_START) / (self.NIGHT_START - self.DUSK_START)
-            cfg.ENVIRONMENT_BRIGHTNESS = 1.0 - t * (1.0 - self.NIGHT_BRIGHTNESS)
-            cfg.ENVIRONMENT_TINT = lerp_color(cfg.ENVIRONMENT_DAY_COLOR, cfg.ENVIRONMENT_NIGHT_COLOR, t)
-        elif self.NIGHT_START <= self.game_time_seconds or self.game_time_seconds < self.DAWN_START:
-            cfg.ENVIRONMENT_BRIGHTNESS = self.NIGHT_BRIGHTNESS
-            cfg.ENVIRONMENT_TINT = cfg.ENVIRONMENT_NIGHT_COLOR
-        elif self.DAWN_START <= self.game_time_seconds < self.DAY_START:
-            t = (self.game_time_seconds - self.DAWN_START) / (self.DAY_START - self.DAWN_START)
-            cfg.ENVIRONMENT_BRIGHTNESS = self.NIGHT_BRIGHTNESS + t * (1.0 - self.NIGHT_BRIGHTNESS)
-            cfg.ENVIRONMENT_TINT = lerp_color(cfg.ENVIRONMENT_NIGHT_COLOR, cfg.ENVIRONMENT_DAY_COLOR, t)
-        else:
-            cfg.ENVIRONMENT_BRIGHTNESS = 1.0
-            cfg.ENVIRONMENT_TINT = cfg.ENVIRONMENT_DAY_COLOR
+        self.day_night.update(dt, self.game_time_seconds, self.GAME_DAY_SECONDS)
 
         self.app.profiler.set_gauge("game_time", self._format_game_time())
 
