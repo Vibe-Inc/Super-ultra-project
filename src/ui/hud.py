@@ -132,7 +132,7 @@ class HUD:
         self._toast_timer = 0.0
 
         try:
-            self.hp_icon = pygame.image.load("assets/heart.png")
+            self.hp_icon = pygame.image.load("assets/ui/heart.png")
             ico = max(8,int(50 * cfg.ui_scale()))
             self.hp_icon = pygame.transform.scale(self.hp_icon, (ico, ico))
         except FileNotFoundError:
@@ -141,7 +141,7 @@ class HUD:
             pygame.draw.circle(self.hp_icon, (255, 0, 0), (ico//2, ico//2), ico//2)
 
         try:
-            self.life_icon = pygame.image.load("assets/skull.png")
+            self.life_icon = pygame.image.load("assets/ui/skull.png")
             ico = max(8,int(50 * cfg.ui_scale()))
             self.life_icon = pygame.transform.scale(self.life_icon, (ico, ico))
         except FileNotFoundError:
