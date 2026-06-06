@@ -188,7 +188,7 @@ class MysteriumMagnumMenu(Menu):
         self.revealed_cards = []
         self._revealed_numbers = set(self.app.revealed_tarot_cards)
         self._rebuild_revealed_cards()
-        self._reveal_bursts: list[dict] = []
+
 
         # ── Selection overlay ──────────────────────────────────────────
         self._selected_card = None
@@ -202,6 +202,13 @@ class MysteriumMagnumMenu(Menu):
         self._entrance_active = False
         self._star_glow_cache: dict[tuple, pygame.Surface] = {}
         self._card_ring_glow_cache: list[pygame.Surface | None] = [None, None, None, None]
+        self._card_info_stars: list[tuple[float, float, float]] = []
+        for si in range(40):
+            fx = ((si * 137.5 + 50) % 1000) / 1000.0
+            fy = ((si * 97.3 + 20) % 1000) / 1000.0
+            phase_s = si * 2.1
+            phase_r = si
+            self._card_info_stars.append((fx, fy, phase_s, phase_r))
 
         # ── Entrance speed multiplier (2.5 for repeat visits) ──────────
         self._entrance_speed_mult = 1.0
@@ -462,20 +469,6 @@ class MysteriumMagnumMenu(Menu):
                 return available[i]
         return available[-1]
 
-    def _spawn_burst(self, x, y, color, n=20):
-        for _ in range(n):
-            ang = random.uniform(0, math.pi * 2)
-            speed = random.uniform(20, 120)
-            self._reveal_bursts.append({
-                "x": float(x), "y": float(y),
-                "vx": math.cos(ang) * speed,
-                "vy": math.sin(ang) * speed,
-                "life": random.uniform(0.3, 1.2),
-                "max_life": 1.2,
-                "color": color,
-                "size": random.uniform(2, 6),
-            })
-
     def _reveal_secret(self):
         stars = getattr(self.app, "purple_stars", 0)
         if stars < self._reveal_cost:
@@ -511,10 +504,6 @@ class MysteriumMagnumMenu(Menu):
         tx = cx + math.cos(angle) * radius
         ty = cy + math.sin(angle) * radius
 
-        # Burst effects – two waves for dramatic reveal
-        self._spawn_burst(cx, cy, (255, 215, 100), n=35)
-        self._spawn_burst(int(tx), int(ty), (200, 130, 255), n=25)
-
         # Apply card gameplay effects
         eff = self.card_effects.get(card["num"])
         if eff:
@@ -541,16 +530,6 @@ class MysteriumMagnumMenu(Menu):
                         ch.stamina_regen_rate += eff["stam"]
             except Exception:
                 pass
-
-        # Extra explosion wave
-        self._spawn_burst(cx, cy, (255, 255, 255), n=60)
-        for _ in range(20):
-            self._spawn_burst(
-                cx + random.uniform(-100, 100),
-                cy + random.uniform(-100, 100),
-                random.choice([(255, 215, 100), (200, 130, 255), (140, 220, 255)]),
-                n=8,
-            )
 
     def _get_reveal_card_rects(self):
         rects = []
@@ -653,7 +632,6 @@ class MysteriumMagnumMenu(Menu):
             self._build_cache(sw, sh)
 
     def on_enter(self):
-        self._reveal_bursts.clear()
         self._revealed_numbers = set(self.app.revealed_tarot_cards)
         self._rebuild_revealed_cards()
 
@@ -1100,13 +1078,6 @@ class MysteriumMagnumMenu(Menu):
             self._sel_progress = min(1.0, self._sel_progress + dt * 3.0)
         else:
             self._sel_progress = max(0.0, self._sel_progress - dt * 4.0)
-
-        # Burst particles
-        for b in self._reveal_bursts:
-            b["x"] += b["vx"] * dt
-            b["y"] += b["vy"] * dt
-            b["life"] -= dt
-        self._reveal_bursts = [b for b in self._reveal_bursts if b["life"] > 0]
 
         # Rune spirits
         for s in list(self._rune_spirits):
@@ -1818,46 +1789,39 @@ class MysteriumMagnumMenu(Menu):
         gold_a = int(140 * ease * (0.6 + 0.4 * math.sin(t * 1.0)))
         pygame.draw.rect(screen, (*tier_color, gold_a), outer, width=max(1, int(1.5 * scale)), border_radius=22)
 
-        # ── Panel body with mystical arcane background ──────────────────
-        self._draw_gradient_rect(screen, panel_rect, (22, 10, 38), (10, 4, 20), border_radius=20)
+        # ── Panel body ─────────────────────────────────────────────────
+        self._draw_gradient_rect(screen, panel_rect, (24, 12, 40), (8, 3, 16), border_radius=20)
 
-        # Nebulous color wash using tier color
-        for gr in range(300, 0, -30):
-            ga = int((1.0 - gr / 300) * 12 * ease)
-            pygame.draw.circle(screen, (*tier_glow, ga), (cx, cy), gr)
-        for gr in range(200, 0, -20):
-            ga = int((1.0 - gr / 200) * 8 * ease)
-            pygame.draw.circle(screen, (*tier_color, ga), (cx, cy), gr)
+        # Subtle glass highlight at top
+        glass = pygame.Surface((panel_w, int(panel_h * 0.4)), pygame.SRCALPHA)
+        for y in range(glass.get_height()):
+            ga = int(10 * (1.0 - y / glass.get_height()) * ease)
+            pygame.draw.line(glass, (100, 70, 140, ga), (0, y), (panel_w, y))
+        screen.blit(glass, (px, py))
 
-        # Subtle arcane concentric rings (mandala-like)
-        for ri in range(3):
-            rr = int(80 + ri * 60 + 20 * math.sin(t * 0.3 + ri))
-            ring_a = int(8 + 6 * math.sin(t * 0.5 + ri * 1.7))
-            pygame.draw.circle(screen, (*tier_color, ring_a), (cx, cy), rr, 1)
-            # Tiny dots on rings
-            for di in range(6 + ri * 2):
-                da = t * 0.2 + di * math.pi * 2 / (6 + ri * 2)
-                dx = cx + math.cos(da) * rr
-                dy = cy + math.sin(da) * rr
-                pygame.draw.circle(screen, (*tier_glow, int(ring_a * 2)), (int(dx), int(dy)), max(1, int(1.2)))
+        # Corner-to-corner decorative diagonal lines
+        diag_a = int(6 + 4 * math.sin(t * 0.5))
+        pts_pairs = [
+            ((px + 20, py + 20), (px + int(panel_w * 0.25), py + 20)),
+            ((px + 20, py + 20), (px + 20, py + int(panel_h * 0.25))),
+            ((panel_rect.right - 20, py + 20), (panel_rect.right - int(panel_w * 0.25), py + 20)),
+            ((panel_rect.right - 20, py + 20), (panel_rect.right - 20, py + int(panel_h * 0.25))),
+            ((px + 20, panel_rect.bottom - 20), (px + int(panel_w * 0.25), panel_rect.bottom - 20)),
+            ((px + 20, panel_rect.bottom - 20), (px + 20, panel_rect.bottom - int(panel_h * 0.25))),
+            ((panel_rect.right - 20, panel_rect.bottom - 20), (panel_rect.right - int(panel_w * 0.25), panel_rect.bottom - 20)),
+            ((panel_rect.right - 20, panel_rect.bottom - 20), (panel_rect.right - 20, panel_rect.bottom - int(panel_h * 0.25))),
+        ]
+        for p1, p2 in pts_pairs:
+            pygame.draw.line(screen, (*tier_color, diag_a), p1, p2, 1)
 
-        # Delicate crossing lines (arcane seal)
-        for li in range(6):
-            la = t * 0.1 + li * math.pi / 3
-            l_len = int(120 + 60 * math.sin(t * 0.4 + li))
-            lx = cx + math.cos(la) * l_len
-            ly = cy + math.sin(la) * l_len
-            line_a = int(6 + 4 * math.sin(t * 0.6 + li * 2.1))
-            pygame.draw.line(screen, (*tier_color, line_a), (cx, cy), (int(lx), int(ly)), 1)
-
-        # Bright twinkling stars
-        for si in range(40):
-            sx = px + int((panel_w * ((si * 137.5 + 50) % 1000) / 1000)) % panel_w
-            sy = py + int((panel_h * ((si * 97.3 + 20) % 1000) / 1000)) % panel_h
-            sp = math.sin(t * 0.7 + si * 2.1) * 0.5 + 0.5
-            sa = int(25 + 50 * sp)
-            sr = max(1, int(1.2 + 0.8 * math.sin(t * 0.9 + si)))
-            pygame.draw.circle(screen, (255, 255, 255, sa), (sx, sy), sr)
+        # Twinkling stars (cached)
+        for fx, fy, phase_s, phase_r in self._card_info_stars:
+            sx = px + int(panel_w * fx) % panel_w
+            sy = py + int(panel_h * fy) % panel_h
+            sp = math.sin(t * 0.7 + phase_s) * 0.5 + 0.5
+            sa = int(15 + 35 * sp)
+            sr = max(1, int(1.0 + 0.6 * math.sin(t * 0.9 + phase_r)))
+            pygame.draw.circle(screen, (220, 210, 240, sa), (sx, sy), sr)
 
         bw = max(2, int(2.5 * scale))
         border_pulse = int((160 + 60 * math.sin(t * 1.2)) * ease)
@@ -2652,12 +2616,6 @@ class MysteriumMagnumMenu(Menu):
             self._draw_hover_sparkles(screen)
         if la.get('rune_spirits', 1.0) > 0.01:
             self._draw_rune_spirits(screen)
-        for b in self._reveal_bursts:
-            if self.tree_rect.collidepoint(b["x"], b["y"]):
-                frac = b["life"] / b["max_life"]
-                sz = max(1, int(b["size"] * frac))
-                a = int(255 * frac)
-                pygame.draw.circle(screen, (*b["color"], a), (int(b["x"]), int(b["y"])), sz)
         screen.set_clip(old_clip)
 
         # ── UI panels ──────────────────────────────────────────────────
