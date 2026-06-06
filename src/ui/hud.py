@@ -336,6 +336,31 @@ class HUD:
         inner_rect = rect.inflate(-4, -4)
         pygame.draw.rect(surface, cfg.INV_SLOT_INNER_SHADOW, inner_rect, border_radius=cfg.INV_SLOT_INNER_BORDER_RADIUS)
 
+        if skill:
+            cooldown_percent = self.character.get_skill_cooldown_percent(skill)
+
+            if cooldown_percent > 0.0:
+                center = (rect.width // 2, rect.height // 2)
+                radius = max(rect.width, rect.height)
+                dark_color = cfg.COOLDOWN_RADIAL_COLOR
+                start_angle = -math.pi / 2
+                dark_sweep = cooldown_percent * 2 * math.pi
+
+                if dark_sweep >= 2 * math.pi - 0.001:
+                    overlay_surf = pygame.Surface(rect.size, pygame.SRCALPHA)
+                    pygame.draw.rect(overlay_surf, dark_color, overlay_surf.get_rect(), border_radius=cfg.INV_SLOT_BORDER_RADIUS)
+                    surface.blit(overlay_surf, rect.topleft)
+                elif dark_sweep > 0.01:
+                    overlay_surf = pygame.Surface(rect.size, pygame.SRCALPHA)
+                    angle_start = start_angle + (1 - cooldown_percent) * 2 * math.pi
+                    points = [center]
+                    num_steps = max(6, int(dark_sweep / (2 * math.pi) * 60))
+                    for i in range(num_steps + 1):
+                        angle = angle_start + dark_sweep * i / num_steps
+                        points.append((center[0] + radius * math.cos(angle), center[1] + radius * math.sin(angle)))
+                    pygame.draw.polygon(overlay_surf, dark_color, points)
+                    surface.blit(overlay_surf, rect.topleft)
+
         # Border
         final_border = border_color
         if skill:
@@ -343,37 +368,41 @@ class HUD:
         pygame.draw.rect(surface, final_border, rect, 2, border_radius=cfg.INV_SLOT_BORDER_RADIUS)
 
         if skill:
-            # Get cooldown percentage (0.0 = ready, 1.0 = just used)
-            cooldown_percent = self.character.get_skill_cooldown_percent(skill)
-            
-            # Draw cooldown overlay if skill is on cooldown
             if cooldown_percent > 0.0:
-                # Tinted overlay using skill's theme color (more visually interesting than pure black)
-                overlay_surf = pygame.Surface(rect.size, pygame.SRCALPHA)
-                skill_color = skill.get("color", theme["primary"])
-                tint_strength = cfg.COOLDOWN_OVERLAY_TINT_STRENGTH
-                overlay_color = tuple(int(c * tint_strength) for c in skill_color[:3])
-                overlay_color = overlay_color + (140,)
-                pygame.draw.rect(overlay_surf, overlay_color, overlay_surf.get_rect(), border_radius=cfg.INV_SLOT_BORDER_RADIUS)
-                surface.blit(overlay_surf, rect.topleft)
-                
-                # Progress bar at bottom of slot
+                def _cd_color(p):
+                    if p > 0.5:
+                        t2 = (p - 0.5) * 2
+                        return (255, int(200 - 120 * t2), int(50 + 30 * t2))
+                    t2 = p * 2
+                    return (int(80 + 175 * t2), int(255 - 55 * t2), int(120 - 70 * t2))
+
+                cd_col = _cd_color(cooldown_percent)
+                cd_highlight = tuple(min(255, c + 60) for c in cd_col)
+
+                ring_sweep = (1.0 - cooldown_percent) * 2 * math.pi
+                if ring_sweep > 0.02:
+                    ring_rect = rect.inflate(-4, -4)
+                    pygame.draw.arc(surface, (*cd_col, 200), ring_rect, -math.pi / 2, -math.pi / 2 + ring_sweep, cfg.COOLDOWN_RING_WIDTH)
+
                 bar_height = cfg.COOLDOWN_BAR_HEIGHT
                 bar_rect = pygame.Rect(rect.left + 2, rect.bottom - bar_height - 2, rect.width - 4, bar_height)
-                
-                # Background of progress bar
                 pygame.draw.rect(surface, cfg.COOLDOWN_BAR_BG_COLOR, bar_rect, border_radius=3)
-                
-                # Fill showing remaining cooldown (fills from left as cooldown recovers)
+
                 fill_width = int((1.0 - cooldown_percent) * bar_rect.width)
                 if fill_width > 0:
                     fill_rect = pygame.Rect(bar_rect.left, bar_rect.top, fill_width, bar_rect.height)
-                    pygame.draw.rect(surface, cfg.COOLDOWN_BAR_FILL_COLOR, fill_rect, border_radius=3)
-                    # Highlight on top half for subtle gradient effect
+                    pygame.draw.rect(surface, (*cd_col, 220), fill_rect, border_radius=3)
                     highlight_rect = pygame.Rect(bar_rect.left, bar_rect.top, fill_width, max(1, bar_rect.height // 2))
-                    pygame.draw.rect(surface, cfg.COOLDOWN_BAR_FILL_HIGHLIGHT, highlight_rect, border_radius=3)
-                
-                # Display cooldown time remaining with background pill
+                    pygame.draw.rect(surface, (*cd_highlight, 180), highlight_rect, border_radius=3)
+
+                if cooldown_percent < 0.25:
+                    ap = (math.sin(t * 4.0) + 1.0) * 0.5
+                    anticipation_rect = rect.inflate(4, 4)
+                    anticipation_surf = pygame.Surface(anticipation_rect.size, pygame.SRCALPHA)
+                    anticipation_color = (*theme["accent"][:3], int(20 + 35 * ap))
+                    pygame.draw.rect(anticipation_surf, anticipation_color, anticipation_surf.get_rect(), border_radius=cfg.INV_SLOT_BORDER_RADIUS + 1, width=1)
+                    surface.blit(anticipation_surf, anticipation_rect.topleft)
+
                 skill_id = skill.get("skill_id", "")
                 if skill_id == "berserkers_rage":
                     cooldown = self.character.berserkers_rage_cooldown + getattr(self.character, "berserkers_rage_cooldown_bonus", 0)
@@ -382,14 +411,13 @@ class HUD:
                 else:
                     cooldown = getattr(self.character, f"{skill_id}_cooldown", 0)
                 cooldown_time = cooldown / 1000.0
-                
+
                 remaining_time = cooldown_time * cooldown_percent
                 if remaining_time > 0.0:
                     cooldown_font = cfg.get_font(max(8, int(cfg.COOLDOWN_TEXT_SIZE * cfg.ui_scale())))
                     time_text = f"{remaining_time:.1f}s"
                     time_surf = cooldown_font.render(time_text, True, cfg.COOLDOWN_TEXT_COLOR)
-                    
-                    # Dark pill background behind text for readability
+
                     text_padding = int(4 * cfg.ui_scale())
                     text_bg_rect = time_surf.get_rect().inflate(text_padding * 2, text_padding)
                     y_offset = int(10 * cfg.ui_scale())
@@ -397,32 +425,32 @@ class HUD:
                     bg_surf = pygame.Surface(text_bg_rect.size, pygame.SRCALPHA)
                     pygame.draw.rect(bg_surf, cfg.COOLDOWN_TEXT_BG_COLOR, bg_surf.get_rect(), border_radius=cfg.COOLDOWN_TEXT_BORDER_RADIUS)
                     surface.blit(bg_surf, text_bg_rect.topleft)
-                    
+
+                    if cooldown_percent < 0.3:
+                        time_surf.set_alpha(int(200 + 55 * (math.sin(t * 6.0) + 1.0) * 0.5))
+
                     time_rect = time_surf.get_rect(center=(rect.centerx, rect.centery + y_offset))
                     surface.blit(time_surf, time_rect)
             else:
-                # Skill is ready - pulsing border glow and bar
                 ready_pulse = (math.sin(t * 3.0) + 1.0) * 0.5
                 glow_alpha = int(40 + 50 * ready_pulse)
                 ready_glow_color = (*theme["accent"][:3], glow_alpha)
-                
-                # Pulsing glow ring around the slot
+
                 glow_rect = rect.inflate(6, 6)
                 glow_surf = pygame.Surface(glow_rect.size, pygame.SRCALPHA)
                 pygame.draw.rect(glow_surf, ready_glow_color, glow_surf.get_rect(), border_radius=cfg.INV_SLOT_BORDER_RADIUS + 2, width=2)
                 surface.blit(glow_surf, glow_rect.topleft)
-                
-                # Ready bar at the bottom
+
                 ready_alpha = int(60 + 60 * ready_pulse)
                 ready_surf = pygame.Surface((rect.width - 4, cfg.COOLDOWN_BAR_HEIGHT), pygame.SRCALPHA)
                 ready_color = (*cfg.COOLDOWN_BAR_READY_COLOR[:3], ready_alpha)
                 pygame.draw.rect(ready_surf, ready_color, ready_surf.get_rect(), border_radius=3)
                 surface.blit(ready_surf, (rect.left + 2, rect.bottom - cfg.COOLDOWN_BAR_HEIGHT - 2))
-            
+
             small_font = cfg.get_font(max(8, int(16 * cfg.ui_scale())))
             name = small_font.render(skill.get("name", ""), True, cfg.INV_ITEM_TEXT_COLOR)
             surface.blit(name, name.get_rect(center=(rect.centerx, rect.centery - 4)))
-            
+
             ident = small_font.render(str(idx + 1), True, cfg.INV_ITEM_TEXT_COLOR)
             surface.blit(ident, ident.get_rect(bottomright=(rect.right - 6, rect.bottom - 6)))
 
