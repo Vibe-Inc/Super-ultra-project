@@ -692,6 +692,11 @@ class GatheringController:
     def _compute_nearest_gatherable(self):
         """Uncached body of :py:meth:`get_nearest_gatherable`."""
         tool = self._get_active_tool()
+        # A broken tool is the same as no tool for hint purposes --
+        # the player should still see the bare-hands "Press G" prompt
+        # for flints when their active hotbar slot is a broken pickaxe.
+        if tool and callable(getattr(tool, "is_broken", None)) and tool.is_broken():
+            tool = None
         if tool:
             for gather_type in self._tool_gather_types(tool):
                 tile = self._find_target_tile(gather_type)
@@ -704,6 +709,14 @@ class GatheringController:
                 cooldown_tile = self._find_cooldown_tile(gather_type)
                 if cooldown_tile is not None:
                     return (cooldown_tile, gather_type)
+            # Tool is equipped but has nothing to do right now -- the
+            # player may still be standing next to a flint they want
+            # to pick up with bare hands.  Probe the no-tool types as
+            # a courtesy before giving up.
+            for gather_type in GATHER_NO_TOOL_TYPES:
+                tile = self._find_target_tile(gather_type)
+                if tile is not None:
+                    return (tile, gather_type)
             return None
 
         # No tool equipped: fall back to the tool-less gather types
@@ -726,31 +739,55 @@ class GatheringController:
         Returns ``True`` if a gather started, ``False`` otherwise (no
         gather tool, no matching tile, or a minigame already running).
 
-        If no tool is equipped, the controller falls back to the
-        tool-less gather types declared in :data:`GATHER_NO_TOOL_TYPES`
-        (currently ``flint``), so the player can still pick up loose
-        surface resources with bare hands.
+        Resolution order:
+
+        1. If the active slot holds a tool whose ``gather_type`` matches
+           a tile adjacent to the player, use the tool.
+        2. Otherwise, fall through to the tool-less gather types
+           declared in :data:`GATHER_NO_TOOL_TYPES` (currently
+           ``flint``), so the player can always pick up loose surface
+           resources with their bare hands even when the active
+           hotbar slot holds an unrelated tool (a pickaxe standing
+           next to a flint, for instance).
+
+        A tool with zero durability is treated as if it weren't there
+        at all -- a broken pickaxe would otherwise lock the player
+        out of bare-hands pickup until they manually removed it from
+        the active slot.
         """
         if self.state != "idle":
             logger.debug(f"gather.start: rejected, state={self.state}")
             return False
         tool = self._get_active_tool()
+        # Broken tools are dead weight -- skip them so a zero-durability
+        # pickaxe can't block the player from using bare hands to pick
+        # up flints.  This also matches the combat-side rule that a
+        # broken weapon reverts to bare-handed damage.
+        if tool and callable(getattr(tool, "is_broken", None)) and tool.is_broken():
+            logger.debug("gather.start: active tool is broken, falling back to bare hands")
+            tool = None
         gather_type: Optional[str] = None
         if tool:
             for gt in self._tool_gather_types(tool):
                 if self._find_target_tile(gt) is not None:
                     gather_type = gt
                     break
+            # No tool-relevant tile nearby -> still check the bare-hands
+            # types so the player isn't stuck holding a tool that has
+            # nothing to do.  This is the common "I have a pickaxe in
+            # the hotbar but I just want to pick up a flint" case.
+            if gather_type is None:
+                for gt in GATHER_NO_TOOL_TYPES:
+                    if self._find_target_tile(gt) is not None:
+                        gather_type = gt
+                        break
         else:
             for gt in GATHER_NO_TOOL_TYPES:
                 if self._find_target_tile(gt) is not None:
                     gather_type = gt
                     break
         if not gather_type:
-            if not tool:
-                logger.debug("gather.start: rejected, no active tool or bare-hand gatherable")
-            else:
-                logger.debug(f"gather.start: rejected, tool gather_type={gather_type!r} invalid")
+            logger.debug("gather.start: rejected, no matching gatherable tile")
             return False
 
         tile = self._find_target_tile(gather_type)
@@ -933,6 +970,12 @@ class GatheringController:
     def _damage_tool(self) -> None:
         """Reduce the active tool's durability by one and remove it
         from the hotbar if it broke.
+
+        Prefers :py:meth:`DurabilityMixin.apply_durability_damage` when
+        available so unbreakable tools and the broken-once signal work
+        consistently with the weapon code.  Falls back to the legacy
+        in-place subtraction for any custom tool that doesn't mix in
+        :class:`DurabilityMixin`.
         """
         try:
             inv_manager = getattr(self.game.app, "INV_manager", None)
@@ -948,11 +991,16 @@ class GatheringController:
             if not slot:
                 return
             tool = slot[0]
-            if hasattr(tool, "durability"):
+            apply = getattr(tool, "apply_durability_damage", None)
+            broke = False
+            if callable(apply):
+                broke = bool(apply(1))
+            elif hasattr(tool, "durability"):
                 tool.durability = max(0, int(tool.durability) - 1)
-                if tool.durability <= 0:
-                    hotbar.items[active][0] = None
-                    self.result = GatheringResult("Tool broke!", success=False, duration=2.0)
+                broke = tool.durability <= 0
+            if broke:
+                hotbar.items[active][0] = None
+                self.result = GatheringResult("Tool broke!", success=False, duration=2.0)
         except Exception:
             pass
 

@@ -91,6 +91,7 @@ class Gp_database:
                 weapon_class TEXT,
                 damage INT DEFAULT 1,
                 durability INT DEFAULT 100,
+                max_durability INT DEFAULT 100,
                 range INT,
                 projectile_speed INT DEFAULT 0,
                 cooldown INT DEFAULT 500,
@@ -105,6 +106,19 @@ class Gp_database:
         # Backwards-compatible column adds for existing databases.
         self._ensure_column("weapons", "on_hit_effects", "TEXT DEFAULT NULL")
         self._ensure_column("weapons", "combat_style", "TEXT DEFAULT 'sword'")
+        # max_durability lets us track the *original* durability of a weapon
+        # even as the current `durability` ticks down. We seed it with the
+        # existing `durability` value on first migration so legacy rows
+        # behave the same as before.
+        self._ensure_column("weapons", "max_durability", "INT DEFAULT NULL")
+        try:
+            self.cursor.execute(
+                "UPDATE weapons SET max_durability = durability "
+                "WHERE max_durability IS NULL"
+            )
+            self.conn.commit()
+        except sqlite3.Error:
+            self.conn.rollback()
 
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS consumables (
@@ -128,6 +142,7 @@ class Gp_database:
                 item_id TEXT PRIMARY KEY,
                 tool_type TEXT NOT NULL DEFAULT 'generic',
                 durability INT DEFAULT 100,
+                max_durability INT DEFAULT 100,
                 power INT DEFAULT 0,
                 FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE
             )
@@ -149,6 +164,17 @@ class Gp_database:
         self._ensure_column("tools", "gather_type", "TEXT DEFAULT NULL")
         self._ensure_column("tools", "gather_yield_min", "INT DEFAULT 1")
         self._ensure_column("tools", "gather_yield_max", "INT DEFAULT 1")
+        # max_durability is the pristine reference value; the existing
+        # `durability` column is the live (ticking-down) value.
+        self._ensure_column("tools", "max_durability", "INT DEFAULT NULL")
+        try:
+            self.cursor.execute(
+                "UPDATE tools SET max_durability = durability "
+                "WHERE max_durability IS NULL"
+            )
+            self.conn.commit()
+        except sqlite3.Error:
+            self.conn.rollback()
 
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS consumable_effects (
@@ -334,10 +360,10 @@ class Gp_database:
             ''', (item_id, name, image_path, price, description))
 
             self.cursor.execute('''
-                INSERT INTO weapons (item_id, weapon_class, damage, durability, range,
+                INSERT INTO weapons (item_id, weapon_class, damage, durability, max_durability, range,
                                     projectile_speed, cooldown, spread_degrees, cone_degrees, on_hit_effects, combat_style)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (item_id, weapon_class, damage, durability, range_val,
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (item_id, weapon_class, damage, durability, durability, range_val,
                   projectile_speed, cooldown, spread_degrees, cone_degrees, None if on_hit_effects is None else repr(on_hit_effects), combat_style))
 
             self.conn.commit()
@@ -440,10 +466,10 @@ class Gp_database:
             ''', (item_id, name, image_path, price, max_stack, description))
 
             self.cursor.execute('''
-                INSERT INTO tools (item_id, tool_type, durability, power,
+                INSERT INTO tools (item_id, tool_type, durability, max_durability, power,
                                    gather_type, gather_yield_min, gather_yield_max)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (item_id, tool_type, durability, power,
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (item_id, tool_type, durability, durability, power,
                   gather_type, gather_yield_min, gather_yield_max))
 
             self.conn.commit()
@@ -588,12 +614,14 @@ class Gp_database:
         """
         self.cursor.execute('''
             SELECT items.*,
-                   weapons.weapon_class, weapons.damage, weapons.durability, weapons.range,
+                   weapons.weapon_class, weapons.damage, weapons.durability,
+                   weapons.max_durability AS weapon_max_durability, weapons.range,
                    weapons.projectile_speed, weapons.cooldown, weapons.spread_degrees,
                    weapons.cone_degrees, weapons.on_hit_effects, weapons.combat_style,
                    consumables.heal_amount,
                    armor.slot_type, armor.defense_value,
-                   "tools".tool_type, "tools".durability AS tool_durability, "tools".power,
+                   "tools".tool_type, "tools".durability AS tool_durability,
+                   "tools".max_durability AS tool_max_durability, "tools".power,
                    "tools".gather_type, "tools".gather_yield_min, "tools".gather_yield_max,
                    fish.rarity, fish.difficulty, fish.speed AS fish_speed,
                    fish.spawn_weight, fish.base_price AS fish_base_price

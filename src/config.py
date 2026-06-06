@@ -327,6 +327,29 @@ COOLDOWN_TEXT_SIZE = 14
 COOLDOWN_TEXT_BG_COLOR = (0, 0, 0, 160)
 COOLDOWN_TEXT_BORDER_RADIUS = 6
 
+# ============== DURABILITY BAR (TOOLS / WEAPONS) ==============
+# Slim wear bar overlaid on item slots (inventory, hotbar, equipment).
+# The fill colour is picked from DURABILITY_BAR_COLORS based on the
+# item's :py:meth:`DurabilityMixin.durability_state` so the player can
+# read wear at a glance.
+DURABILITY_BAR_HEIGHT = 4
+DURABILITY_BAR_BG_COLOR = (15, 15, 20, 220)
+DURABILITY_BAR_BORDER_RADIUS = 2
+DURABILITY_BAR_INSET = 3
+# Tier colours keyed by ``durability_state()``:
+#   full  -> bright green, plenty of life left
+#   good  -> lime, slightly worn
+#   worn  -> amber, getting risky
+#   low   -> orange, almost gone
+#   broken -> red (paired with a desaturated item render)
+DURABILITY_BAR_COLORS = {
+    "full":   (80, 220, 110, 230),
+    "good":   (170, 220, 80, 230),
+    "worn":   (240, 200, 60, 230),
+    "low":    (240, 140, 60, 230),
+    "broken": (220, 70, 70, 230),
+}
+
 def set_screen_size(screen_width, screen_height):
     global SCREEN_WIDTH, SCREEN_HEIGHT, bg
     SCREEN_WIDTH = int(screen_width)

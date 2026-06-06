@@ -2,6 +2,191 @@ import pygame
 from src.core.logger import logger
 from database.effects import create_effect
 
+
+def _coerce_int(value, default: int = 0) -> int:
+    """Best-effort int coercion that tolerates ``None`` and strings.
+
+    Item rows come from SQLite and may store integers as floats (because
+    :py:meth:`sqlite3.Row.is_integer` returns ``True`` for whole-number
+    floats).  ``max_stack`` / ``durability`` can also arrive as ``None``
+    from LEFT JOINs when the row isn't a weapon/tool.  This helper keeps
+    the constructor of every item class readable.
+    """
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+class DurabilityMixin:
+    """Shared durability state and behaviour for ``Weapon`` and ``Tool``.
+
+    The mixin centralises every durability concern so the two concrete
+    item classes don't have to duplicate it:
+
+    * ``max_durability`` is the pristine value the item started with.
+    * ``durability`` is the live, ticking-down value.  It is **clamped
+      to ``[0, max_durability]`` on assignment** so callers can't push
+      the item into negative or super-repaired states.
+    * Items with ``unbreakable = True`` never lose durability and
+      always report as fully repaired.
+    * ``apply_durability_damage`` returns ``True`` exactly once, on the
+      call that drove durability to zero, so the caller can fire
+      "your X broke!" feedback precisely.
+    * ``repair`` clamps to the max and returns the amount actually
+      applied, useful for tooltips ("Repaired 12/30").
+    * ``get_effective_damage`` scales weapon damage by remaining
+      durability so a worn blade actually feels worn: at 0% it deals
+      roughly 50% damage (floor 1); above 25% it deals full damage.
+    * ``durability_percent`` is used by the UI for the bar fill.
+    """
+
+    #: Damage scaling threshold.  Below this fraction of max durability
+    #: the weapon starts to lose damage output.
+    DAMAGE_SCALING_THRESHOLD: float = 0.25
+    #: Damage multiplier at 0% durability (the floor).  Between the
+    #: threshold and 0% the multiplier interpolates linearly.
+    DAMAGE_SCALING_FLOOR: float = 0.5
+
+    def _init_durability(self, current: int, maximum, *, unbreakable: bool = False) -> None:
+        max_val = _coerce_int(maximum, _coerce_int(current, 0))
+        if max_val < 0:
+            max_val = 0
+        if max_val == 0 and not unbreakable:
+            # Avoid silently creating an item that "starts broken":
+            # fall back to the live value so the item is at least usable.
+            max_val = max(_coerce_int(current, 0), 1)
+        self.max_durability: int = max_val
+        cur = _coerce_int(current, max_val)
+        if cur < 0:
+            cur = 0
+        if cur > self.max_durability:
+            cur = self.max_durability
+        self.durability: int = cur
+        self.unbreakable: bool = bool(unbreakable)
+        self._was_broken: bool = self.durability <= 0 and not self.unbreakable
+
+    @property
+    def durability_max(self) -> int:
+        """Read-only alias used by UI/serialisation code."""
+        return self.max_durability
+
+    def is_broken(self) -> bool:
+        """``True`` when the item has no durability left and can no longer
+        be used for its primary action (attack, chop, mine, ...).
+        """
+        if self.unbreakable:
+            return False
+        return self.durability <= 0
+
+    def durability_percent(self) -> float:
+        """Current durability as a ``0.0``..``1.0`` fraction of max.
+
+        Returns ``1.0`` for unbreakable items so UI bars don't render
+        them as empty.
+        """
+        if self.unbreakable or self.max_durability <= 0:
+            return 1.0
+        return max(0.0, min(1.0, self.durability / self.max_durability))
+
+    def apply_durability_damage(self, amount: int = 1) -> bool:
+        """Reduce ``durability`` by ``amount`` and report whether the
+        item *just* broke on this call.
+
+        Returns ``True`` exactly once per item lifetime: the call that
+        brought ``durability`` from ``>0`` to ``<=0``.  Subsequent calls
+        while already broken also return ``True`` until you ``repair``
+        above zero, but UI feedback is normally only fired off the
+        first transition.
+
+        Unbreakable items never lose durability and always return
+        ``False``.
+        """
+        if self.unbreakable or amount <= 0:
+            return False
+        if self.durability <= 0:
+            # Already broken: still report broken so callers can clean
+            # up stale references, but don't double-decrement the bar.
+            return True
+        self.durability = max(0, self.durability - int(amount))
+        if self.durability <= 0:
+            self._was_broken = True
+            return True
+        return False
+
+    def repair(self, amount: int) -> int:
+        """Add ``amount`` durability, clamping to ``max_durability``.
+
+        Returns the amount actually applied (useful for tooltips
+        showing "Repaired 12/40").  ``repair`` clears the broken flag
+        so future damage can fire the "broke!" transition again.
+        """
+        if amount is None or amount <= 0:
+            return 0
+        if self.unbreakable:
+            return 0
+        before = self.durability
+        self.durability = min(self.max_durability, self.durability + int(amount))
+        if self.durability > 0:
+            self._was_broken = False
+        return self.durability - before
+
+    def get_effective_damage(self, base_damage: int) -> int:
+        """Scale ``base_damage`` by remaining durability.
+
+        Above :py:attr:`DAMAGE_SCALING_THRESHOLD` (25% by default) the
+        weapon deals its full base damage.  Between the threshold and
+        0% the damage scales linearly from 100% down to
+        :py:attr:`DAMAGE_SCALING_FLOOR` (50% by default), and is
+        floored at 1 so a worn weapon still chips the enemy.
+
+        Broken items (``durability == 0``) are treated as "bare
+        hands" -- they still hit, but for the floor value.
+        """
+        if self.unbreakable:
+            return int(base_damage)
+        pct = self.durability_percent()
+        if pct >= self.DAMAGE_SCALING_THRESHOLD:
+            return int(base_damage)
+        if pct <= 0.0:
+            scale = self.DAMAGE_SCALING_FLOOR
+        else:
+            t = pct / self.DAMAGE_SCALING_THRESHOLD
+            scale = self.DAMAGE_SCALING_FLOOR + (1.0 - self.DAMAGE_SCALING_FLOOR) * t
+        return max(1, int(round(base_damage * scale)))
+
+    def durability_label(self) -> str:
+        """Short ``"cur/max"`` label, used by tooltips.
+
+        Unbreakable items return ``"∞"`` so the player can see at a
+        glance that the item never wears out.
+        """
+        if self.unbreakable:
+            return "∞"
+        return f"{int(self.durability)}/{int(self.max_durability)}"
+
+    def durability_state(self) -> str:
+        """Coarse wear tier for UI tinting.
+
+        Returns one of ``"full"`` (>= 75%), ``"good"`` (>= 50%),
+        ``"worn"`` (>= 25%), ``"low"`` (> 0%), ``"broken"``.
+        Unbreakable items always report ``"full"``.
+        """
+        if self.unbreakable:
+            return "full"
+        pct = self.durability_percent()
+        if pct <= 0.0:
+            return "broken"
+        if pct < 0.25:
+            return "low"
+        if pct < 0.50:
+            return "worn"
+        if pct < 0.75:
+            return "good"
+        return "full"
+
 class Item:
     """
     Base class for all game items.
@@ -56,13 +241,18 @@ class Item:
         pass
 
 
-class Weapon(Item):
+class Weapon(Item, DurabilityMixin):
     """
     Base class for weapon items, providing shared combat statistics.
 
     Attributes:
         damage (int): Base damage dealt by the weapon.
         durability (int): Current weapon durability points.
+        max_durability (int): Original (pristine) durability the weapon
+            started with.  Lets the UI render an accurate wear bar
+            even as the live ``durability`` ticks down.
+        unbreakable (bool): When ``True`` the weapon never loses
+            durability (reserved for quest/event weapons).
         cooldown (int): Attack cooldown in milliseconds.
         weapon_class (str): Classification (e.g., melee, ranged).
         on_hit_effects (list): Optional list of effect dicts applied to a
@@ -78,9 +268,17 @@ class Weapon(Item):
     def __init__(self, row: dict):
         super().__init__(row)
         self.damage = row["damage"]
-        self.durability = row["durability"]
         self.cooldown = row["cooldown"]
         self.weapon_class = row["weapon_class"]
+        # ``max_durability`` is read from the joined row as
+        # ``weapon_max_durability`` (it shares its base name with the
+        # tool table).  When the column doesn't exist (older DB) the
+        # live ``durability`` value doubles as the max so behaviour
+        # matches the pre-durability-system code.
+        max_dur = row.get("weapon_max_durability", None)
+        if max_dur is None:
+            max_dur = row.get("max_durability", row["durability"])
+        self._init_durability(row["durability"], max_dur)
         # Per-weapon on-hit effects (list of effect dicts).
         # We keep it as a plain attribute even if the column is missing so
         # that existing items (with no on-hit effects) keep working.
@@ -98,10 +296,14 @@ class Weapon(Item):
 
     def _get_base_stats_text(self):
         weapon_label = f"{_('Weapon')} ({self.weapon_class.capitalize()})"
+        if self.unbreakable:
+            dur_str = f"{_('Durability')}: ∞"
+        else:
+            dur_str = f"{_('Durability')}: {int(self.durability)}/{int(self.max_durability)}"
         return (
             f"{_('Type')}: {weapon_label}\n"
             f"{_('Damage')}: {self.damage}\n"
-            f"{_('Durability')}: {self.durability}\n"
+            f"{dur_str}\n"
         )
 
 
@@ -381,7 +583,7 @@ class LightRing(Armor):
         return f"{self.name}\n{stats}\n{self.description}"
 
 
-class Tool(Item):
+class Tool(Item, DurabilityMixin):
     """
     Represents a utility tool used to perform a specific in-world action
     (fishing, mining, woodcutting, etc.). Tools are not weapons, not
@@ -390,7 +592,10 @@ class Tool(Item):
     Attributes:
         tool_type (str): Sub-category of the tool
             (e.g. "fishing", "pickaxe", "axe").
-        durability (int): Current durability points.
+        durability (int): Current durability points (live value).
+        max_durability (int): Pristine durability the tool started with;
+            used to draw the wear bar in the inventory / hotbar.
+        unbreakable (bool): ``True`` for tools that never wear down.
         power (int): Generic effectiveness multiplier (e.g. catch power
             bonus for a fishing rod, mining speed for a pickaxe).
         gather_type (str | None): Resource type this tool can gather.
@@ -410,8 +615,15 @@ class Tool(Item):
     def __init__(self, row: dict):
         super().__init__(row)
         self.tool_type = row.get("tool_type", "generic") or "generic"
-        self.durability = row.get("tool_durability",
-                                  row.get("durability", 100)) or 100
+        current_dur = row.get("tool_durability", row.get("durability", 100)) or 100
+        # ``tool_max_durability`` is the alias used by the DB query's
+        # LEFT JOIN on the ``tools`` table.  Fall back to ``max_durability``
+        # for callers that pre-compute a flat row, and finally to the
+        # current value so the item is at least "fully repaired".
+        max_dur = row.get("tool_max_durability", None)
+        if max_dur is None:
+            max_dur = row.get("max_durability", current_dur)
+        self._init_durability(current_dur, max_dur)
         self.power = row.get("power", 0) or 0
         self.gather_type = row.get("gather_type") or None
         self.gather_yield_min = int(row.get("gather_yield_min") or 1)
@@ -419,9 +631,13 @@ class Tool(Item):
 
     def get_tooltip_text(self):
         type_label = self.tool_type.replace("_", " ").title()
+        if self.unbreakable:
+            dur_str = f"{_('Durability')}: ∞"
+        else:
+            dur_str = f"{_('Durability')}: {int(self.durability)}/{int(self.max_durability)}"
         stats = (
             f"{_('Type')}: {_('Tool')} ({type_label})\n"
-            f"{_('Durability')}: {self.durability}\n"
+            f"{dur_str}\n"
             f"{_('Power')}: +{self.power}\n"
         )
         if self.gather_type:

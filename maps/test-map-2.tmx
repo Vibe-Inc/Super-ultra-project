@@ -91,21 +91,25 @@
   <tile id="1588">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1589">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1590">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1591">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1593">
@@ -125,31 +129,37 @@
   <tile id="1623">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1624">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1761">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1762">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1763">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1764">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1773">
@@ -181,21 +191,25 @@
   <tile id="1795">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1796">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1797">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1798">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1806">
@@ -321,41 +335,49 @@
   <tile id="1898">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1899">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1931">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1932">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1933">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1934">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1947">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1948">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1951">
@@ -371,11 +393,13 @@
   <tile id="1955">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1956">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1959">
@@ -392,31 +416,37 @@
   <tile id="1965">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1966">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1967">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1968">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1981">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1982">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1985">
@@ -432,11 +462,13 @@
   <tile id="1989">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1990">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1994">
@@ -454,11 +486,13 @@
   <tile id="2000">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2001">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2010">
