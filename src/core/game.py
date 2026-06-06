@@ -964,8 +964,8 @@ class Game(State):
         screen_x = int(tile_pos.x - camera_offset.x)
         screen_y = int(tile_pos.y - camera_offset.y)
         font = cfg.tooltip_font_CREDITS
-        text = font.render(_("Press E to use Smeltery"), True, (255, 240, 200))
-        shadow = font.render(_("Press E to use Smeltery"), True, (0, 0, 0))
+        text = font.render(("Press E to use Smeltery"), True, (255, 240, 200))
+        shadow = font.render(("Press E to use Smeltery"), True, (0, 0, 0))
         text_rect = text.get_rect(midbottom=(screen_x, screen_y - 8))
         # Soft backdrop pill for legibility.
         pad_x = int(8 * cfg.ui_scale())
