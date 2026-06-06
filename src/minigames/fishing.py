@@ -809,6 +809,15 @@ class FishingController:
                             f"Caught {fish.name}!  (\u00d7{count})",
                             success=True, duration=3.0,
                         )
+                    
+                    total_fish = sum(app.caught_fish.values())
+                    if hasattr(app, "achievement_manager"):
+                        if total_fish >= 10:
+                            app.achievement_manager.unlock("master_angler")
+                        app.achievement_manager.add_progress("aquatic_menace", 1, 50)
+                        app.achievement_manager.add_progress("legendary_angler", 1, 150)
+                        if getattr(fish, "rarity", "").lower() in ("rare", "legendary", "epic"):
+                            app.achievement_manager.unlock("lucky_catch")
                 else:
                     self.ui.show_result(
                         f"Caught {fish.name}!", success=True, duration=3.0

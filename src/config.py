@@ -19,6 +19,16 @@ SCREEN_WIDTH, SCREEN_HEIGHT = DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT
 FPS = 0
 
 def _load_background(screen_width, screen_height):
+    """Load and scale the background image for the current screen size.
+
+    Args:
+        screen_width (int): Target width for the background.
+        screen_height (int): Target height for the background.
+
+    Returns:
+        pygame.Surface: The scaled background surface, or a fallback black surface
+        if the image file is missing.
+    """
     try:
         bg_path = os.path.join(BASE_DIR, "assets", "ui", "bg_menu.jpg")
         return pygame.transform.scale(pygame.image.load(bg_path), (screen_width, screen_height))
@@ -76,6 +86,11 @@ def ui_scale() -> float:
 
 # Default fonts and colors — fonts are updated by `update_scaled_fonts()`.
 def update_scaled_fonts():
+    """Recompute all scaled font instances for the current screen size and language.
+
+    Global fonts (myfont, button_font, etc.) are rebuilt so they match the
+    current UI scale factor.
+    """
     global myfont, button_font, inventory_tooltip_font, tooltip_font_CREDITS, INV_nums_font
     scale = ui_scale()
     # Base sizes (authored for 1920x1080)
@@ -87,6 +102,10 @@ def update_scaled_fonts():
 
 
 def update_brightness():
+    """Clamp and apply the user's configured screen brightness.
+
+    Updates the global SCREEN_BRIGHTNESS so that it stays within [0.0, 1.0].
+    """
     global SCREEN_BRIGHTNESS
     SCREEN_BRIGHTNESS = max(0.0, min(1.0, USER_SCREEN_BRIGHTNESS))
 
@@ -155,6 +174,11 @@ MAIN_INV_equipment_pos_x = 0
 MAIN_INV_equipment_pos_y = 0
 
 def recalculate_inventory_positions():
+    """Recalculate the pixel positions of inventory grids based on the current UI scale.
+
+    Updates global position variables for the main inventory grid and the equipment
+    grid so that they remain centred and properly aligned when the window is resized.
+    """
     global MAIN_INV_pos_x, MAIN_INV_pos_y, MAIN_INV_equipment_pos_x, MAIN_INV_equipment_pos_y
     
     scale = ui_scale()
@@ -326,6 +350,10 @@ COOLDOWN_TEXT_COLOR = (255, 255, 255)
 COOLDOWN_TEXT_SIZE = 14
 COOLDOWN_TEXT_BG_COLOR = (0, 0, 0, 160)
 COOLDOWN_TEXT_BORDER_RADIUS = 6
+COOLDOWN_RADIAL_COLOR = (0, 0, 0, 175)
+COOLDOWN_RING_COLOR = (255, 210, 120, 220)
+COOLDOWN_RING_WIDTH = 2
+COOLDOWN_SHIMMER_SPEED = 2.0
 
 # ============== DURABILITY BAR (TOOLS / WEAPONS) ==============
 # Slim wear bar overlaid on item slots (inventory, hotbar, equipment).
@@ -351,6 +379,12 @@ DURABILITY_BAR_COLORS = {
 }
 
 def set_screen_size(screen_width, screen_height):
+    """Update the global screen dimensions and recalculate dependent values.
+
+    Args:
+        screen_width (int): New screen width in pixels.
+        screen_height (int): New screen height in pixels.
+    """
     global SCREEN_WIDTH, SCREEN_HEIGHT, bg
     SCREEN_WIDTH = int(screen_width)
     SCREEN_HEIGHT = int(screen_height)
@@ -362,3 +396,75 @@ def set_screen_size(screen_width, screen_height):
         update_scaled_fonts()
     except Exception:
         pass
+
+
+# ============== EFFECT BAR STYLING ==============
+EFFECT_BAR_SLOT_SIZE = 72
+EFFECT_BAR_PADDING = 6
+EFFECT_BAR_MAX_VISIBLE = 12          # max icons shown before wrapping
+EFFECT_BAR_GAP = 4                   # gap between rows (for multi-row)
+EFFECT_BAR_BG_COLOR = (18, 20, 28, 200)
+EFFECT_BAR_BORDER_COLOR = (60, 68, 80, 200)
+EFFECT_BAR_BORDER_RADIUS = 6
+
+# Buff = positive effect, Debuff = negative effect
+EFFECT_BAR_BUFF_COLOR = (40, 160, 80)       # green tint
+EFFECT_BAR_DEBUFF_COLOR = (180, 50, 50)     # red tint
+EFFECT_BAR_TIMER_BG_COLOR = (30, 30, 35, 180)
+EFFECT_BAR_TIMER_FILL_COLOR = (255, 220, 80, 220)
+
+# Effect type classification
+EFFECT_BAR_BUFF_TYPES = {
+    "regeneration", "radiant_fortitude", "vampiric_edge", "keen_insight",
+    "strength", "momentum", "haste", "shield",
+}
+EFFECT_BAR_DEBUFF_TYPES = {
+    "poison", "burn", "confusion", "dizziness", "slow", "freeze", "root",
+    "bleed", "blind", "weaken", "curse", "lethargy",
+}
+
+# Short display labels for effects (class name -> label)
+EFFECT_BAR_LABELS = {
+    "regeneration": "Regen",
+    "poison": "Poisn",
+    "burn": "Burn",
+    "confusion": "Conf",
+    "dizziness": "Dizz",
+    "slow": "Slow",
+    "freeze": "Freeze",
+    "root": "Root",
+    "radiant_fortitude": "RFort",
+    "vampiric_edge": "Vamp",
+    "keen_insight": "KIns",
+    "strength": "Str",
+    "momentum": "Momt",
+    "blind": "Bln",
+    "haste": "Haste",
+    "weaken": "Weak",
+    "curse": "Curse",
+    "lethargy": "Leth",
+    "shield": "Shld",
+}
+
+# Hex-like colors for each effect (icon tint)
+EFFECT_BAR_COLORS = {
+    "regeneration": (80, 220, 100),
+    "poison": (120, 200, 40),
+    "burn": (255, 100, 30),
+    "confusion": (200, 130, 255),
+    "dizziness": (180, 180, 200),
+    "slow": (100, 140, 220),
+    "freeze": (60, 180, 255),
+    "root": (60, 160, 60),
+    "radiant_fortitude": (255, 220, 80),
+    "vampiric_edge": (200, 30, 60),
+    "keen_insight": (220, 180, 255),
+    "strength": (200, 80, 60),
+    "momentum": (255, 160, 40),
+    "blind": (100, 100, 120),
+    "haste": (255, 240, 80),
+    "weaken": (160, 80, 80),
+    "curse": (140, 40, 180),
+    "lethargy": (80, 100, 140),
+    "shield": (80, 180, 240),
+}

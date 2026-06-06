@@ -97,7 +97,8 @@ class MainMenu(Menu):
         exit_rect = pygame.Rect(center_x - tot_width // 2 + button_width + gap, int(650 * scale), button_width, button_height)
         settings_rect = pygame.Rect(center_x - tot_width // 2, int(800 * scale), button_width, button_height)
         credits_rect = pygame.Rect(center_x - tot_width // 2 + button_width + gap, int(800 * scale), button_width, button_height)
-        load_rect = pygame.Rect(center_x - button_width // 2, int(520 * scale), button_width, button_height)
+        achievements_rect = pygame.Rect(center_x - tot_width // 2 + button_width + gap, int(520 * scale), button_width, button_height)
+        load_rect = pygame.Rect(center_x - tot_width // 2, int(520 * scale), button_width, button_height)
 
         self.buttons = [
             Button(start_rect, _("START"), cfg.button_color_START,
@@ -106,15 +107,18 @@ class MainMenu(Menu):
             Button(load_rect, _("LOAD"), cfg.button_color_SETTINGS,
                    cfg.button_hover_color_SETTINGS, cfg.button_font,
                    cfg.text_color, cfg.corner_radius, on_click=self.open_load_menu, shape=shield),
-            Button(exit_rect, _("EXIT"), cfg.button_color_EXIT,
-                   cfg.button_hover_color_EXIT, cfg.button_font,
-                   cfg.text_color, cfg.corner_radius, on_click=self.exit_game, shape=shield),
+            Button(achievements_rect, _("ACHIEVEMENTS"), cfg.button_color_SETTINGS,
+                   cfg.button_hover_color_SETTINGS, cfg.button_font,
+                   cfg.text_color, cfg.corner_radius, on_click=self.open_achievements, shape=shield),
             Button(settings_rect, _("SETTINGS"), cfg.button_color_SETTINGS,
                    cfg.button_hover_color_SETTINGS, cfg.button_font,
                    cfg.text_color, cfg.corner_radius, on_click=self.open_settings, shape=shield),
             Button(credits_rect, _("CREDITS"), cfg.button_color_CREDITS,
                    cfg.button_hover_color_CREDITS, cfg.button_font,
                    cfg.text_color, cfg.corner_radius, on_click=self.open_credits, shape=shield),
+            Button(exit_rect, _("EXIT"), cfg.button_color_EXIT,
+                   cfg.button_hover_color_EXIT, cfg.button_font,
+                   cfg.text_color, cfg.corner_radius, on_click=self.exit_game, shape=shield),
         ]
         self.beta_logo_img = pygame.image.load("assets/ui/beta_logo.png")
         logo_size = max(8, int(280 * cfg.ui_scale()))
@@ -274,11 +278,12 @@ class MainMenu(Menu):
         center_x = sw // 2
 
         positions = [
-            pygame.Rect(center_x - tot_width // 2, int(sh * 0.60), button_width, button_height),
-            pygame.Rect(center_x - button_width // 2, int(sh * 0.48), button_width, button_height),
-            pygame.Rect(center_x - tot_width // 2 + button_width + gap, int(sh * 0.60), button_width, button_height),
-            pygame.Rect(center_x - tot_width // 2, int(sh * 0.75), button_width, button_height),
-            pygame.Rect(center_x - tot_width // 2 + button_width + gap, int(sh * 0.75), button_width, button_height),
+            pygame.Rect(center_x - button_width // 2, int(sh * 0.42), button_width, button_height), # start
+            pygame.Rect(center_x - tot_width // 2, int(sh * 0.54), button_width, button_height), # load
+            pygame.Rect(center_x - tot_width // 2 + button_width + gap, int(sh * 0.54), button_width, button_height), # achievements
+            pygame.Rect(center_x - tot_width // 2, int(sh * 0.66), button_width, button_height), # settings
+            pygame.Rect(center_x - tot_width // 2 + button_width + gap, int(sh * 0.66), button_width, button_height), # credits
+            pygame.Rect(center_x - button_width // 2, int(sh * 0.78), button_width, button_height), # exit
         ]
         for button, rect in zip(self.buttons, positions):
             self._apply_button_size(button, rect)
@@ -384,26 +389,7 @@ class MainMenu(Menu):
 
         self._clock.draw(screen, t, sw, sh, scale)
 
-        logo_progress = min(1.0, max(0, (t - 0.2) / 0.8))
-        logo_scale_eased = ease_out_back(logo_progress)
-        logo_base_w = self.beta_logo_img.get_width()
-        logo_base_h = self.beta_logo_img.get_height()
-        logo_float = math.sin(t * 0.7) * 5 * scale
-        lw = max(1, int(logo_base_w * logo_scale_eased))
-        lh = max(1, int(logo_base_h * logo_scale_eased))
-        logo_scaled = pygame.transform.smoothscale(self.beta_logo_img, (lw, lh))
-        logo_cy = int(sh * 0.18) + int(logo_float)
-        logo_rect = logo_scaled.get_rect(center=(sw // 2, logo_cy))
-
-        if logo_progress > 0.05:
-            glow_sz = max(lw, lh) + int(50 * scale * logo_scale_eased)
-            glow = pygame.Surface((glow_sz, glow_sz), pygame.SRCALPHA)
-            ga = int(35 + 20 * math.sin(t * 1.3)) if logo_progress > 0.5 else int(60 * logo_progress)
-            pygame.draw.circle(glow, (*GOLD, max(0, min(60, ga))), (glow_sz // 2, glow_sz // 2), glow_sz // 2)
-            screen.blit(glow, (logo_rect.centerx - glow_sz // 2, logo_rect.centery - glow_sz // 2))
-
-        logo_scaled.set_alpha(int(255 * min(1.0, logo_progress * 2)))
-        screen.blit(logo_scaled, logo_rect)
+        # (Removed floating logo above the title)
 
         title_text = "CODEX ARCANUM"
         title_y = int(sh * 0.35)
@@ -518,10 +504,13 @@ class MainMenu(Menu):
 
     def start_game(self):
         logger.info("Start game requested from MainMenu")
+        self.app.article_tracker.seen_articles.discard(("guide", "1. movement & navigation"))
         quest_state = self.app.manager.states.get("arcane_quest")
         if quest_state and hasattr(quest_state, "reset_quests"):
             quest_state.reset_quests()
-        self.app.manager.set_state("gameplay")
+        self.app.achievement_manager.unlock("first_step")
+        # Transition via the cinematic intro instead of jumping straight to gameplay
+        self.app.manager.set_state("intro_animation")
 
     def exit_game(self):
         logger.info("Exit requested from MainMenu")
@@ -542,3 +531,8 @@ class MainMenu(Menu):
         self.app.manager.states["save_load"].mode = "load"
         self.app.manager.states["save_load"].refresh_saves()
         self.app.manager.set_state("save_load")
+
+    def open_achievements(self):
+        logger.info("Open Achievements from MainMenu")
+        self.app.manager.set_state("achievements")
+

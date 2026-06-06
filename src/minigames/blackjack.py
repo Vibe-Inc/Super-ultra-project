@@ -251,7 +251,10 @@ class BlackjackGame:
         self._btn_play: pygame.Rect | None = None
         self._btn_close: pygame.Rect | None = None
         self._btn_deal: pygame.Rect | None = None
+        self._btn_rules: pygame.Rect | None = None
         self._chip_rects: list[tuple[pygame.Rect, int]] = []  # (rect, chip_value)
+
+        self.show_rules = False
 
     # ------------------------------------------------------------------
     # Tablecloth rendering
@@ -336,6 +339,9 @@ class BlackjackGame:
             # Blackjack pays 3:2
             winnings = int(self.bet_amount * 1.5)
             self.net_change += winnings
+            if hasattr(self.app, "achievement_manager"):
+                self.app.achievement_manager.add_progress("card_shark", 1, 5)
+                self.app.achievement_manager.add_progress("casino_regular", 1, 25)
             self._round_outcome = "win"
             self.phase = self.PHASE_RESULT
             self.result_text = f"Blackjack! +{winnings} gold!"
@@ -379,11 +385,17 @@ class BlackjackGame:
         pv = _hand_value(self.player_hand)
         if dv > 21:
             self.net_change += self.bet_amount
+            if hasattr(self.app, "achievement_manager"):
+                self.app.achievement_manager.add_progress("card_shark", 1, 5)
+                self.app.achievement_manager.add_progress("casino_regular", 1, 25)
             self._round_outcome = "win"
             self.result_text = f"Dealer busts! +{self.bet_amount} gold!"
             self.result_color = GREEN_TEXT
         elif pv > dv:
             self.net_change += self.bet_amount
+            if hasattr(self.app, "achievement_manager"):
+                self.app.achievement_manager.add_progress("card_shark", 1, 5)
+                self.app.achievement_manager.add_progress("casino_regular", 1, 25)
             self._round_outcome = "win"
             self.result_text = f"You win! +{self.bet_amount} gold!"
             self.result_color = GREEN_TEXT
@@ -429,6 +441,14 @@ class BlackjackGame:
 
     def handle_event(self, event: pygame.event.Event):
         """Process a pygame event for the blackjack UI."""
+        if self.show_rules:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                self.show_rules = False
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                # Close rules if clicking outside the modal or clicking a close button (handled in draw or just any click closes)
+                self.show_rules = False
+            return
+
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self._close("quit")
@@ -449,6 +469,10 @@ class BlackjackGame:
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             pos = event.pos
+            if self._btn_rules and self._btn_rules.collidepoint(pos):
+                self.show_rules = True
+                return
+                
             if self.phase == self.PHASE_BETTING:
                 # Check chip clicks
                 for rect, value in self._chip_rects:
@@ -516,6 +540,50 @@ class BlackjackGame:
                 img = _card_back_image()
             surface.blit(img, (cx, y))
 
+    def _draw_rules(self, surface: pygame.Surface, tr: pygame.Rect):
+        """Draw the rules modal."""
+        overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
+        surface.blit(overlay, (0, 0))
+
+        # Modal rect
+        mw, mh = int(tr.width * 0.7), int(tr.height * 0.7)
+        m_rect = pygame.Rect(tr.centerx - mw // 2, tr.centery - mh // 2, mw, mh)
+        pygame.draw.rect(surface, BUTTON_BG, m_rect, border_radius=12)
+        pygame.draw.rect(surface, BUTTON_BORDER, m_rect, width=3, border_radius=12)
+
+        # Title
+        title = self.font_large.render("Blackjack Rules", True, GOLD)
+        surface.blit(title, (m_rect.centerx - title.get_width() // 2, m_rect.y + 20))
+
+        # Rules text
+        rules = [
+            "Goal: Beat the dealer's hand without going over 21.",
+            "Card Values:",
+            "  - Face cards (J, Q, K) are worth 10.",
+            "  - Aces are worth 1 or 11, whichever makes a better hand.",
+            "  - All other cards are their face value.",
+            "",
+            "Actions:",
+            "  - Hit: Draw another card.",
+            "  - Stand: Stop drawing cards and let the dealer play.",
+            "",
+            "Dealer Rules:",
+            "  - The dealer must hit until their cards total 17 or higher.",
+            "  - If you and the dealer tie, it is a 'Push' (bets are returned).",
+            "  - A 'Blackjack' (an Ace and a 10-value card) pays 3:2."
+        ]
+
+        ty = m_rect.y + 80
+        for line in rules:
+            if line:
+                txt = self.font_small.render(line, True, WHITE)
+                surface.blit(txt, (m_rect.x + 40, ty))
+            ty += 24
+
+        hint = self.font_small.render("Click anywhere to close", True, (150, 150, 150))
+        surface.blit(hint, (m_rect.centerx - hint.get_width() // 2, m_rect.bottom - 40))
+
     # ------------------------------------------------------------------
     # Main draw
     # ------------------------------------------------------------------
@@ -536,6 +604,12 @@ class BlackjackGame:
         # Title
         title = self.font_large.render("Blackjack", True, GOLD)
         surface.blit(title, (tr.centerx - title.get_width() // 2, tr.y + 16))
+
+        # Rules button
+        btn_w = max(90, int(120 * cfg.ui_scale()))
+        btn_h = max(30, int(40 * cfg.ui_scale()))
+        self._btn_rules = pygame.Rect(tr.x + 20, tr.y + 20, btn_w, btn_h)
+        self._draw_button(surface, self._btn_rules, "Rules (R)", self._btn_rules.collidepoint(mouse_pos), GOLD)
 
         # ---- Money display (top-right) ----
         # Use dynamic spacing based on actual font heights to avoid overlap on larger displays
@@ -641,6 +715,9 @@ class BlackjackGame:
         # ---- Hint ----
         hint = self.font_small.render("ESC to cash out", True, (180, 180, 180))
         surface.blit(hint, (tr.right - hint.get_width() - 20, tr.bottom - hint.get_height() - 8))
+
+        if self.show_rules:
+            self._draw_rules(surface, tr)
 
     def _draw_betting_phase(self, surface, tr, mouse_pos):
         """Draw the betting phase UI."""

@@ -222,20 +222,26 @@ class RecipeBookMenu(Menu):
         book_h = int(600 * scale)
         btn_w, btn_h = int(160 * scale), int(42 * scale)
 
-        back_rect = pygame.Rect(cx - btn_w // 2, cy + book_h // 2 - int(50 * scale), btn_w, btn_h)
+        back_x = cx + book_w // 2 - btn_w - int(30 * scale)
+        back_y = cy + book_h // 2 - btn_h - int(30 * scale)
+        back_rect = pygame.Rect(back_x, back_y, btn_w, btn_h)
         self.buttons.append(Button(
             back_rect, _("CLOSE BOOK"), cfg.button_color_EXIT, cfg.button_hover_color_EXIT,
             cfg.button_font, cfg.text_color, cfg.corner_radius, on_click=self.close_menu
         ))
 
         if self.current_spread > 0:
-            prev_rect = pygame.Rect(cx - book_w // 2 + int(30 * scale), cy + book_h // 2 - int(50 * scale), btn_w, btn_h)
+            prev_x = cx - book_w // 2 + int(30 * scale)
+            prev_y = cy + book_h // 2 - btn_h - int(30 * scale)
+            prev_rect = pygame.Rect(prev_x, prev_y, btn_w, btn_h)
             self.buttons.append(Button(
                 prev_rect, _("<- PREV"), (80, 60, 40), (120, 90, 60),
                 cfg.button_font, cfg.text_color, cfg.corner_radius, on_click=self.prev_page
             ))
         if self.current_spread < self.max_spreads - 1:
-            next_rect = pygame.Rect(cx + book_w // 2 - btn_w - int(30 * scale), cy + book_h // 2 - int(50 * scale), btn_w, btn_h)
+            next_x = cx + book_w // 2 - btn_w * 2 - int(40 * scale)
+            next_y = cy + book_h // 2 - btn_h - int(30 * scale)
+            next_rect = pygame.Rect(next_x, next_y, btn_w, btn_h)
             self.buttons.append(Button(
                 next_rect, _("NEXT ->"), (80, 60, 40), (120, 90, 60),
                 cfg.button_font, cfg.text_color, cfg.corner_radius, on_click=self.next_page
@@ -336,6 +342,9 @@ class RecipeBookMenu(Menu):
             color = (bright, bright, random.randint(150, 200))
             size = random.randint(2, 4)
             self.star_particles.append(Particle(x, y, vx, vy, lifetime, color, size, star=True))
+
+    def on_enter(self):
+        self._setup_buttons()
 
     def close_menu(self):
         self.app.manager.set_state("gameplay")

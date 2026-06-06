@@ -644,6 +644,9 @@ class MAIN_player_inventory_equipment(Inventory):
             if isinstance(item, Consumable):
                 game_state = getattr(manager.app.manager.states.get("gameplay"), 'character', None)
                 if game_state and item.use(game_state):
+                    if hasattr(manager.app, "achievement_manager"):
+                        manager.app.achievement_manager.add_progress("thirsty", 1, 10)
+                        manager.app.achievement_manager.add_progress("potion_addict", 1, 50)
                     slot[1] -= 1
                     if slot[1] <= 0:
                         self.items[x][y] = None
@@ -752,6 +755,9 @@ class MAIN_player_hotbar(Inventory):
         if slot and isinstance(slot[0], Consumable):
             game_state = self.app.manager.states.get("gameplay")
             if game_state and slot[0].use(game_state.character):
+                if hasattr(self.app, "achievement_manager"):
+                    self.app.achievement_manager.add_progress("thirsty", 1, 10)
+                    self.app.achievement_manager.add_progress("potion_addict", 1, 50)
                 slot[1] -= 1
                 if slot[1] <= 0: self.items[col][0] = None
         elif slot and isinstance(slot[0], Armor):
@@ -933,6 +939,22 @@ class CraftingGrid(Inventory):
         output_rect = pygame.Rect(self.output_pos_x, self.output_pos_y, self.slot_size, self.slot_size)
         if output_rect.collidepoint(mouse_x, mouse_y) and event.button == 1:
             if self.output_slot and not manager.selected_item:
+                manager.selected_item = self.output_slot
+                self.output_slot = None
+                
+                # Guide: Crafting & Recipes — first item crafted
+                gs = self.app.manager.states.get("gameplay")
+                if gs and not gs._triggered_guide_crafting:
+                    gs._triggered_guide_crafting = True
+                    self.app.article_tracker.try_open(self.app, "guide", "5. Crafting & Recipes")
+                
+                for col in range(3):
+                    for row in range(3):
+                        if self.items[col][row]:
+                            self.items[col][row][1] -= 1
+                            if self.items[col][row][1] <= 0:
+                                self.items[col][row] = None
+                self.check_recipes()
                 # Snapshot the crafted item so we can grant XP and log
                 # the rolled tier before the output slot is cleared.
                 crafted_item = self.output_slot[0] if self.output_slot else None

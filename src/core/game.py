@@ -14,6 +14,7 @@ import random
 from src.core.logger import logger
 import src.config as cfg
 from src.core.state import State
+from src.core.save_manager import SaveManager
 from src.entities.character import Character
 from src.map.map import LocalMap
 from src.inventory.system import MAIN_player_inventory, MAIN_player_inventory_equipment, ShopInventory, MAIN_player_hotbar
@@ -32,6 +33,8 @@ from src.entities.monster_visuals import build_monster_animations
 from src.entities.monster_attacks import build_attack_controller, AttackContext
 from src.combat.base_player_combat import PlayerCombatController
 from src.minigames.blackjack import BlackjackGame
+from src.minigames.roulette import RouletteGame
+from src.minigames.poker import PokerGame
 from src.minigames.crafting import CraftingMinigame
 from src.minigames.fishing import FishingController
 from src.minigames.gathering import GatheringController
@@ -120,6 +123,10 @@ class Game(State):
             Merchant shop inventory used by the NPC.
         blackjack_game (BlackjackGame):
             Active blackjack instance, or None.
+        roulette_game (RouletteGame):
+            Active roulette instance, or None.
+        poker_game (PokerGame):
+            Active poker instance, or None.
         crafting_minigame (CraftingMinigame):
             Active "Tempering" minigame instance, or None.
         spawn_menu (SpawnMenu):
@@ -221,6 +228,8 @@ class Game(State):
 
         initial_map_path = "maps/test-map-1.tmx"
         self.current_map_path = initial_map_path
+        self.intro_played = False
+        self._intro_sequence_active = False
         self.map = LocalMap("Level1", initial_map_path)
 
         self.collision_handler = CollisionSystem()
@@ -590,13 +599,13 @@ class Game(State):
 
         self.card_npc_first_dialog = [
             "Well, well — a fresh face in the tavern!",
-            "Name's Ren. I pass the time with a bit of cards.",
-            "Care for a round of Blackjack? I promise I don't cheat... much."
+            "Name's Ren. I pass the time with some casino games.",
+            "Care for a round of Blackjack, Roulette, or Poker? I promise I don't cheat... much."
         ]
         self.card_npc_repeat_dialog = [
             "Back again? I knew you'd come around.",
-            "The cards have been waiting for you.",
-            "How about another round of Blackjack?"
+            "The tables are waiting for you.",
+            "Would you like to play Blackjack, Roulette, or Poker?"
         ]
         self.card_npc_post_game_dialog = [
             "Thanks for playing! That was a fine round.",
@@ -702,8 +711,10 @@ class Game(State):
         except Exception:
             pass
 
-        # Blackjack game state (None when not playing)
+        # Blackjack, Roulette & Poker game state (None when not playing)
         self.blackjack_game = None
+        self.roulette_game = None
+        self.poker_game = None
 
         # Crafting "Tempering" minigame state (None when not playing)
         self.crafting_minigame = None
@@ -732,24 +743,34 @@ class Game(State):
         except Exception:
             self.fishing = None
 
+        # Guide article one-shot trigger flags
+        self._triggered_guide_combat = False
+        self._triggered_guide_inventory = False
+        self._triggered_guide_crafting = False
+        self._triggered_guide_leveling = False
+        self._triggered_guide_daynight = False
+        self._triggered_guide_enemies = False
+        self._triggered_guide_skills = False
+        self._triggered_guide_respec = False
+        self._triggered_guide_final = False
+        self._bestiary_encountered = set()
+        self._dusk_was_reached = False
+        self._kill_count = 0
+
         # Gathering minigame controller (chop / mine)
         try:
             self.gathering = GatheringController(self)
         except Exception:
             self.gathering = None
 
-        # Smeltery workstation overlay (workbench + coke oven + blast furnace).
-        # The instance is owned by Game so that smelting jobs keep ticking
-        # even while the overlay is closed.
+        # Smeltery workstation overlay (workbench + coke oven + blast furnace)
         try:
             self.smeltery = SmelteryMenu(app)
         except Exception as exc:
             logger.warning(f"Failed to initialise SmelteryMenu: {exc}")
             self.smeltery = None
 
-        # Per-map gatherable node registries (currently empty: gathering
-        # is driven entirely by the is_*_gatherable tile properties on
-        # the .tmx files -- see src.world.gatherable_nodes).
+        # Per-map gatherable node registries
         self.gatherables: dict[str, GatherableNodeRegistry] = {}
         try:
             self._build_gatherable_registries()
@@ -757,13 +778,6 @@ class Game(State):
             logger.warning(f"Failed to build gatherable node registries: {exc}")
 
     def _build_gatherable_registries(self) -> None:
-        """Read :mod:`data.gatherable_nodes` once and group the entries
-        by ``map_path`` into :class:`GatherableNodeRegistry` instances.
-
-        The data file is intentionally empty now; the registries exist
-        so the per-map update / draw hooks in :meth:`Game.update` and
-        :meth:`Game.draw_scene` keep working without a guard.
-        """
         try:
             from data.gatherable_nodes import load_gatherable_node_defs
         except Exception as exc:
@@ -814,6 +828,10 @@ class Game(State):
 
     def toggle_player_inventory(self):
         self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
+        # Guide: Inventory & Items — first inventory open
+        if not self._triggered_guide_inventory:
+            self._triggered_guide_inventory = True
+            self.app.article_tracker.try_open(self.app, "guide", "4. Inventory & Items")
 
     def open_shop(self):
         try:
@@ -848,6 +866,68 @@ class Game(State):
                 on_close=lambda: setattr(self.card_npc, 'was_talked', True),
             )
         self.blackjack_game = BlackjackGame(self.app, on_close=on_close, player_money=self.app.money)
+
+    def open_roulette(self):
+        def on_close(outcome, net_change):
+            self.roulette_game = None
+            self.app.money += net_change
+            if self.app.money < 0:
+                self.app.money = 0
+            logger.info(f"Roulette closed: outcome={outcome}, net_change={net_change}, money now={self.app.money}")
+            if net_change > 0:
+                post_lines = [
+                    "Thanks for playing! That was a fine round.",
+                    f"You walked away {net_change} gold richer!",
+                    "Come back anytime — the wheel is always spinning."
+                ]
+            elif net_change < 0:
+                post_lines = [
+                    "Thanks for playing! That was a fine round.",
+                    f"Tough luck — you lost {abs(net_change)} gold.",
+                    "Come back anytime — the wheel is always spinning."
+                ]
+            else:
+                post_lines = [
+                    "Thanks for playing! That was a fine round.",
+                    "Come back anytime — the wheel is always spinning."
+                ]
+            self.app.current_dialog = Dialog(
+                self.app,
+                post_lines,
+                on_close=lambda: setattr(self.card_npc, 'was_talked', True),
+            )
+        self.roulette_game = RouletteGame(self.app, on_close=on_close, player_money=self.app.money)
+
+    def open_poker(self):
+        def on_close(outcome, net_change):
+            self.poker_game = None
+            self.app.money += net_change
+            if self.app.money < 0:
+                self.app.money = 0
+            logger.info(f"Poker closed: outcome={outcome}, net_change={net_change}, money now={self.app.money}")
+            if net_change > 0:
+                post_lines = [
+                    "Thanks for playing! That was a fine round.",
+                    f"You walked away {net_change} gold richer!",
+                    "Come back anytime — the cards are always dealt."
+                ]
+            elif net_change < 0:
+                post_lines = [
+                    "Thanks for playing! That was a fine round.",
+                    f"Tough luck — you lost {abs(net_change)} gold.",
+                    "Come back anytime — the cards are always dealt."
+                ]
+            else:
+                post_lines = [
+                    "Thanks for playing! That was a fine round.",
+                    "Come back anytime — the cards are always dealt."
+                ]
+            self.app.current_dialog = Dialog(
+                self.app,
+                post_lines,
+                on_close=lambda: setattr(self.card_npc, 'was_talked', True),
+            )
+        self.poker_game = PokerGame(self.app, on_close=on_close, player_money=self.app.money)
 
     def open_crafting_minigame(self, crafted_item, consume_callback, smelting_level: int = 1):
         """Launch the Tempering timing minigame for a freshly crafted item.
@@ -1047,7 +1127,12 @@ class Game(State):
         return self.DAY_START <= self.game_time_seconds < self.NIGHT_START
 
     def _update_game_time(self, dt: float):
+        was_day = self.is_daytime()
         self.game_time_seconds = (self.game_time_seconds + dt * self.GAME_SECONDS_PER_REAL_SECOND) % self.GAME_DAY_SECONDS
+        # Guide: Day & Night Cycle — first time dusk/night is reached
+        if not self._triggered_guide_daynight and not was_day and not self.is_daytime():
+            self._triggered_guide_daynight = True
+            self.app.article_tracker.try_open(self.app, "guide", "7. Day & Night Cycle")
         # Smooth brightness interpolation across dawn/dusk and compute a tint color
         def lerp_color(a: tuple[int, int, int], b: tuple[int, int, int], t: float) -> tuple[int, int, int]:
             return (int(a[0] + (b[0] - a[0]) * t), int(a[1] + (b[1] - a[1]) * t), int(a[2] + (b[2] - a[2]) * t))
@@ -1440,7 +1525,36 @@ class Game(State):
         if placed == 0:
             logger.debug(f"Enemy '{getattr(enemy, 'ai_profile', 'unknown')}' had drop_chance entries but none rolled.")
 
+    def _finish_intro(self):
+        """Callback to finish the intro sequence and unlock the game."""
+        self.intro_played = True
+        self._intro_sequence_active = False
+
     def update(self, dt):
+        # Intro Sequence for test-map-1
+        if self.current_map_path == "maps/test-map-1.tmx" and not getattr(self, "intro_played", False) and not getattr(self, "_intro_sequence_active", False):
+            self._intro_sequence_active = True
+            
+            # Set player lying down (facing down, frame 0)
+            self.character.direction = "down"
+            self.character.frame_index = 0
+            self.character.image = self.character.animations["down"][0]
+
+            dialog_lines = [
+                '"Arise, Chosen One."',
+                '"I sense the latent magic humming in your blood. You have been selected for a sacred mission."',
+                '"Far to the east, a great dragon slumbers in a mountain cave. You must slay it, or the realm will burn."'
+            ]
+            self.app.current_dialog = Dialog(self.app, dialog_lines, on_close=self._finish_intro)
+
+        tr = self.app.article_tracker
+
+        # Guide intro — only on the very first-ever game start
+        if not self.app.guide_intro_shown:
+            self.app.guide_intro_shown = True
+            SaveManager.save_settings(self.app)
+            tr.try_open(self.app, "guide", "1. Movement & Navigation")
+
         switched_map_path = self.map.update(self.character)
 
         if switched_map_path:
@@ -1632,7 +1746,34 @@ class Game(State):
         for enemy in self.enemies[:]:
             if enemy.is_dead():
                 logger.info("Enemy defeated!")
-                
+                self._kill_count += 1
+                self.app.achievement_manager.unlock("first_blood")
+                self.app.achievement_manager.add_progress("exterminator", 1, 50)
+                self.app.achievement_manager.add_progress("monster_hunter", 1, 200)
+
+                # Bestiary: open article for this enemy type
+                vs = getattr(enemy, "visual_style", None) or getattr(enemy, "ai_profile", "")
+                bestiary_title = {
+                    "brute": "The Brute", "venomous": "The Venomous",
+                    "arcanist": "The Arcanist", "trickster": "The Trickster",
+                    "bomber": "The Bomber", "stalker": "The Stalker",
+                    "skirmisher": "The Skirmisher", "guardian": "The Guardian",
+                }.get(vs.lower() if vs else "")
+                if bestiary_title:
+                    tr.try_open(self.app, "bestiary", bestiary_title)
+
+                # Guide: Combat Basics — first kill
+                if not self._triggered_guide_combat:
+                    self._triggered_guide_combat = True
+                    tr.try_open(self.app, "guide", "2. Combat Basics")
+
+                # Guide: Enemies & Threat Assessment — after 3+ different types encountered
+                if vs:
+                    self._bestiary_encountered.add(vs.lower())
+                    if not self._triggered_guide_enemies and len(self._bestiary_encountered) >= 3:
+                        self._triggered_guide_enemies = True
+                        tr.try_open(self.app, "guide", "8. Enemies & Threat Assessment")
+
                 # Reward scaling based on enemy difficulty (using max_hp as proxy)
                 # Base reward ranges
                 _base_xp_min, _base_xp_max = 30, 60
@@ -1969,10 +2110,20 @@ class Game(State):
                 self.app.current_dialog.draw(screen)
             except Exception:
                 pass
-        # Draw blackjack overlay on top of everything
+        # Draw blackjack, roulette, or poker overlay on top of everything
         if self.blackjack_game:
             try:
                 self.blackjack_game.draw(screen)
+            except Exception:
+                pass
+        if self.roulette_game:
+            try:
+                self.roulette_game.draw(screen)
+            except Exception:
+                pass
+        if self.poker_game:
+            try:
+                self.poker_game.draw(screen)
             except Exception:
                 pass
         # Smeltery workstation overlay (workbench / coke oven / blast furnace).
@@ -2028,10 +2179,22 @@ class Game(State):
                 self.effects_menu.handle_event(event)
                 return
 
-        # If blackjack game is active, route all events to it
+        # If blackjack, roulette, or poker game is active, route all events to it
         if self.blackjack_game:
             try:
                 self.blackjack_game.handle_event(event)
+                return
+            except Exception:
+                pass
+        if self.roulette_game:
+            try:
+                self.roulette_game.handle_event(event)
+                return
+            except Exception:
+                pass
+        if self.poker_game:
+            try:
+                self.poker_game.handle_event(event)
                 return
             except Exception:
                 pass
@@ -2165,6 +2328,10 @@ class Game(State):
                         on_close=on_card_close,
                         on_play_cards=self.open_blackjack,
                         show_play_cards=True,
+                        on_play_roulette=self.open_roulette,
+                        show_play_roulette=True,
+                        on_play_poker=self.open_poker,
+                        show_play_poker=True,
                     )
                 elif self.fishing_npc.is_interactable:
                     self.app.manager.set_state("collection_book")

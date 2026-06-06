@@ -343,6 +343,11 @@ class SkillTreeMenu(Menu):
         self.target_pan_offset = pygame.Vector2(0, 0)
         self.zoom = 1.0
         self.pan_offset = pygame.Vector2(0, 0)
+        # Guide: Respeccing & Strategy — first skill tree open
+        gs = self.app.manager.states.get("gameplay")
+        if gs and not gs._triggered_guide_respec:
+            gs._triggered_guide_respec = True
+            self.app.article_tracker.try_open(self.app, "guide", "9. Respeccing & Strategy")
         # Only play the entrance animation the first time the skill tree is opened
         if not self._entrance_animation_played:
             self.trigger_entrance_animation()
@@ -3337,11 +3342,12 @@ class SkillTreeMenu(Menu):
 
         selected_node = self.nodes_by_id.get(self.selected_node_id)
         self._draw_sidebar(screen, selected_node)
-        # draw sidebar buttons
-        try:
-            self.unlock_button.draw(screen)
-        except Exception:
-            pass
+        # draw sidebar buttons (unlock button only visible when a node is selected)
+        if selected_node is not None:
+            try:
+                self.unlock_button.draw(screen)
+            except Exception:
+                pass
         self.exit_button.draw(screen)
 
         # Draw dialog on top if one is active

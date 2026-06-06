@@ -360,6 +360,7 @@ class SaveManager:
             "revealed_tarot_cards": list(app.revealed_tarot_cards),
             "arcane_quests_unlocked": getattr(app, 'arcane_quests_unlocked', False),
             "mysterium_magnum_unlocked": getattr(app, 'mysterium_magnum_unlocked', False),
+            "seen_articles": app.article_tracker.serialize(),
             "player": {
                 "pos_x": char.pos.x,
                 "pos_y": char.pos.y,
@@ -370,6 +371,7 @@ class SaveManager:
                 "xp_to_next_level": char.xp_to_next_level,
                 "map_path": game_state.current_map_path if hasattr(game_state, "current_map_path") else "maps/test-map-1.tmx",
                 "character_state": char_state,
+                "intro_played": getattr(game_state, "intro_played", False),
             },
             "inventory": serialized_inv,
             "hotbar": serialized_hotbar,
@@ -454,6 +456,7 @@ class SaveManager:
         char.xp = player_data.get("xp", 0)
         char.level = player_data.get("level", 1)
         char.xp_to_next_level = player_data.get("xp_to_next_level", 100)
+        game_state.intro_played = player_data.get("intro_played", False)
 
         # Restore extended character state
         char_state = player_data.get("character_state", {})
@@ -532,6 +535,12 @@ class SaveManager:
             if quest_state and hasattr(quest_state, "set_quest_data"):
                 quest_state.set_quest_data(quest_data)
 
+        # Restore seen articles
+        seen_articles = data.get("seen_articles", [])
+        if seen_articles:
+            app.article_tracker.deserialize(seen_articles)
+            logger.info(f"Restored {len(seen_articles)} seen articles from save.")
+
         # Sync character defense from loaded equipment
         equip_inv.sync_character_defense(char)
 
@@ -576,6 +585,7 @@ class SaveManager:
             "brightness": cfg.USER_SCREEN_BRIGHTNESS,
             "music_volume": cfg.MUSIC_VOLUME,
             "profiler_enabled": cfg.PROFILER_ENABLED,
+            "guide_intro_shown": app.guide_intro_shown,
         }
         with open(SETTINGS_FILE, 'w') as f:
             json.dump(data, f, indent=4)
@@ -616,6 +626,9 @@ class SaveManager:
         # Windowed size
         if "windowed_width" in data and "windowed_height" in data:
             app.windowed_size = (data["windowed_width"], data["windowed_height"])
+
+        # Guide intro one-time flag
+        app.guide_intro_shown = data.get("guide_intro_shown", False)
 
         # Fullscreen — apply after windowed_size is restored
         if data.get("fullscreen", False):
