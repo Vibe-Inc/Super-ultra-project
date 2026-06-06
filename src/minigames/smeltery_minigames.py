@@ -22,6 +22,31 @@ import math
 import random
 import pygame
 
+def _draw_majestic_background(surface):
+    import math, pygame
+    w, h = surface.get_size()
+    overlay = pygame.Surface((w, h), pygame.SRCALPHA)
+    overlay.fill((10, 5, 20, 180)) # Deep violet-black base
+    time_ms = pygame.time.get_ticks()
+    pulse = math.sin(time_ms * 0.001) * 20
+    center_glow = pygame.Surface((w, h), pygame.SRCALPHA)
+    pygame.draw.circle(center_glow, (80, 20, 100, int(40 + pulse)), (w//2, h//2), int(h*0.8))
+    pygame.draw.circle(center_glow, (120, 60, 20, int(30 + pulse)), (w//2, h), int(h*0.6))
+    overlay.blit(center_glow, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+    
+    # Tiny floating embers in the background
+    for i in range(40):
+        seed = i * 7331
+        speed = 10 + (seed % 20)
+        x = (seed * 19) % w
+        y = h - ((time_ms / 1000.0 * speed + seed * 83) % (h + 50))
+        wobble = math.sin(time_ms * 0.0015 + i) * 20
+        alpha = int(abs(math.sin(time_ms * 0.002 + i)) * 100) + 20
+        pygame.draw.circle(overlay, (255, 120, 50, alpha), (int(x + wobble), int(y)), 1)
+        
+    surface.blit(overlay, (0, 0))
+
+
 import src.config as cfg
 from src.core.logger import logger
 
@@ -60,54 +85,88 @@ def _draw_button(surface, font, rect, text, hovered=False, text_color=None):
 
 
 def _draw_panel(surface, panel_rect, title, subtitle, fonts, majestic=True):
-    shadow = panel_rect.move(6, 8)
-    sh_surf = pygame.Surface(shadow.size, pygame.SRCALPHA)
-    pygame.draw.rect(sh_surf, (0, 0, 0, 110), sh_surf.get_rect(), border_radius=18)
-    surface.blit(sh_surf, shadow.topleft)
-    pygame.draw.rect(surface, ANVIL_BG, panel_rect, border_radius=18)
-    pygame.draw.rect(surface, ANVIL_BORDER, panel_rect, width=3, border_radius=18)
+    import math
+    
+    # 1. Soft, realistic multi-layered drop shadow
+    for i in range(4):
+        offset = (i + 1) * 4
+        sh_surf = pygame.Surface((panel_rect.width + offset*2, panel_rect.height + offset*2), pygame.SRCALPHA)
+        alpha = 60 - i * 12
+        pygame.draw.rect(sh_surf, (0, 0, 0, alpha), sh_surf.get_rect(), border_radius=24)
+        surface.blit(sh_surf, (panel_rect.x - offset, panel_rect.y - offset + 6))
 
+    # 2. Base Panel with Rich Vertical Gradient
+    panel_surf = pygame.Surface(panel_rect.size, pygame.SRCALPHA)
+    color_top = (28, 30, 42)
+    color_bottom = (14, 15, 22)
+    for y in range(panel_rect.height):
+        ratio = y / float(panel_rect.height)
+        r = int(color_top[0] * (1 - ratio) + color_bottom[0] * ratio)
+        g = int(color_top[1] * (1 - ratio) + color_bottom[1] * ratio)
+        b = int(color_top[2] * (1 - ratio) + color_bottom[2] * ratio)
+        pygame.draw.line(panel_surf, (r, g, b, 245), (0, y), (panel_rect.width, y))
+        
+    # 3. Majestic Magical & Forge Glows
     if majestic:
         time_ms = pygame.time.get_ticks()
-        effect_surface = pygame.Surface(panel_rect.size, pygame.SRCALPHA)
+        pulse = (math.sin(time_ms * 0.002) + 1) / 2
         
-        # Gentle warm corner glows instead of spinning rays
-        glow_alpha = int(10 + math.sin(time_ms * 0.002) * 5)
-        pygame.draw.circle(effect_surface, (255, 180, 80, glow_alpha), (0, 0), int(panel_rect.width * 0.8))
-        pygame.draw.circle(effect_surface, (255, 100, 50, glow_alpha), (panel_rect.width, panel_rect.height), int(panel_rect.width * 0.8))
+        # Subtle violet magical inner tint
+        pygame.draw.rect(panel_surf, (110, 60, 180, int(20 + 15 * pulse)), panel_surf.get_rect(), border_radius=20)
         
-        # Subtle rising embers
-        for i in range(25):
-            seed = i * 1337
-            speed = 20 + (seed % 30)
-            x = (seed * 17) % panel_rect.width
-            y = panel_rect.height - ((time_ms / 1000.0 * speed + seed * 91) % (panel_rect.height + 50))
-            wobble = math.sin(time_ms * 0.002 + i) * 15
-            alpha = int(abs(math.sin(time_ms * 0.003 + i)) * 150) + 50
-            pygame.draw.circle(effect_surface, (255, 150, 50, alpha), (int(x + wobble), int(y)), 2)
-            
-        surface.blit(effect_surface, panel_rect.topleft, special_flags=pygame.BLEND_RGBA_ADD)
+        # Warm forge bottom glow
+        glow_bottom = pygame.Surface(panel_rect.size, pygame.SRCALPHA)
+        for y in range(int(panel_rect.height * 0.4), panel_rect.height):
+            alpha = int(((y - panel_rect.height * 0.4) / (panel_rect.height * 0.6)) * (90 + 30 * pulse))
+            pygame.draw.line(glow_bottom, (255, 110, 20, alpha), (0, y), (panel_rect.width, y))
+        panel_surf.blit(glow_bottom, (0, 0))
+        
+        # Corner ambient sparks
+        for i in range(15):
+            seed = i * 4321
+            speed = 15 + (seed % 20)
+            x = (seed * 37) % panel_rect.width
+            y = panel_rect.height - ((time_ms / 1000.0 * speed + seed * 73) % (panel_rect.height * 0.6))
+            wobble = math.sin(time_ms * 0.003 + i) * 10
+            alpha = int(abs(math.sin(time_ms * 0.004 + i)) * 180)
+            pygame.draw.circle(panel_surf, (255, 180, 80, alpha), (int(x + wobble), int(y)), 1)
 
-    inner = panel_rect.inflate(-10, -10)
-    pygame.draw.rect(surface, ANVIL_BORDER_LIGHT, inner, width=1, border_radius=14)
-    for i in range(40):
-        alpha = max(0, 80 - i * 2)
-        band = pygame.Surface((panel_rect.width - 20, 1), pygame.SRCALPHA)
-        band.fill((ANVIL_GLOW[0], ANVIL_GLOW[1], ANVIL_GLOW[2], alpha))
-        surface.blit(band, (panel_rect.x + 10, panel_rect.y + 10 + i))
+    # 4. Clip the panel to a smooth rounded rectangle
+    mask = pygame.Surface(panel_rect.size, pygame.SRCALPHA)
+    pygame.draw.rect(mask, (255, 255, 255, 255), mask.get_rect(), border_radius=20)
+    panel_surf.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
+    
+    # 5. Draw the panel onto the screen
+    surface.blit(panel_surf, panel_rect.topleft)
 
+    # 6. Beautiful Metallic Borders
+    pygame.draw.rect(surface, (70, 75, 90), panel_rect, width=2, border_radius=20) # Outer rim
+    inner_rect = panel_rect.inflate(-12, -12)
+    pygame.draw.rect(surface, (45, 48, 60), inner_rect, width=1, border_radius=16) # Inner dark rim
+    
+    # Subtle top highlight to simulate bevel
+    pygame.draw.line(surface, (120, 125, 140), (panel_rect.x + 25, panel_rect.y + 2), (panel_rect.right - 25, panel_rect.y + 2), 1)
+
+    # 7. Typography and Divider
     font_title, font_sub = fonts
-    title_surf = font_title.render(title, True, TEXT_GOLD)
-    surface.blit(title_surf, (panel_rect.centerx - title_surf.get_width() // 2,
-                              panel_rect.y + 18))
-    sub_surf = font_sub.render(subtitle, True, TEXT_DIM)
-    surface.blit(sub_surf, (panel_rect.centerx - sub_surf.get_width() // 2,
-                            panel_rect.y + 18 + title_surf.get_height() + 4))
+    title_surf = font_title.render(title, True, (255, 215, 100))
+    # Render title drop shadow
+    shadow_surf = font_title.render(title, True, (0, 0, 0))
+    surface.blit(shadow_surf, (panel_rect.centerx - shadow_surf.get_width() // 2 + 2, panel_rect.y + 22))
+    surface.blit(title_surf, (panel_rect.centerx - title_surf.get_width() // 2, panel_rect.y + 20))
 
+    # Elegant divider under title
+    div_y = panel_rect.y + 20 + title_surf.get_height() + 10
+    div_w = int(panel_rect.width * 0.6)
+    div_rect = pygame.Rect(panel_rect.centerx - div_w // 2, div_y, div_w, 2)
+    pygame.draw.rect(surface, (100, 105, 120), div_rect)
+    pygame.draw.circle(surface, (255, 215, 100), (panel_rect.centerx, div_y + 1), 4)
 
-# ===========================================================================
-# Tending the Fire (coke oven)
-# ===========================================================================
+    # Subtitle
+    if subtitle:
+        sub_surf = font_sub.render(subtitle, True, (180, 185, 200))
+        surface.blit(sub_surf, (panel_rect.centerx - sub_surf.get_width() // 2, div_y + 15))
+
 
 class TendingFireMinigame:
     PHASE_INTRO = "intro"
@@ -274,9 +333,7 @@ class TendingFireMinigame:
                 return
 
     def draw(self, surface):
-        overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 170))
-        surface.blit(overlay, (0, 0))
+        _draw_majestic_background(surface)
 
         _draw_panel(
             surface, self.panel_rect,
@@ -535,9 +592,7 @@ class QuenchMinigame:
                 self._close()
 
     def draw(self, surface):
-        overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 170))
-        surface.blit(overlay, (0, 0))
+        _draw_majestic_background(surface)
 
         _draw_panel(
             surface, self.panel_rect,
@@ -827,32 +882,41 @@ class PatternMinigame:
                 self._close()
 
     def draw(self, surface):
-        overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 170))
-        surface.blit(overlay, (0, 0))
+        _draw_majestic_background(surface)
+
+        shake_x = 0
+        shake_y = 0
+        if self.phase == self.PHASE_ACTIVE and getattr(self, '_flash_timer', 0.0) > 0.0 and getattr(self, '_last_zone_flash', '') == 'miss':
+            import random
+            intensity = int(self._flash_timer * 15)
+            shake_x = random.randint(-intensity, intensity)
+            shake_y = random.randint(-intensity, intensity)
+            
+        pr = self.panel_rect.move(shake_x, shake_y)
+        tr = self.track_rect.move(shake_x, shake_y)
+        target_x = self.target_x + shake_x
 
         _draw_panel(
-            surface, self.panel_rect,
+            surface, pr,
             "Pattern Hammer",
             "Strike (SPACE/Click) when glowing runes enter the target zone.",
             (self.font_title, self.font_small),
         )
-        pr = self.panel_rect
         mouse_pos = pygame.mouse.get_pos()
 
-        pygame.draw.rect(surface, BAR_BG, self.track_rect, border_radius=8)
-        pygame.draw.rect(surface, ANVIL_BORDER_LIGHT, self.track_rect, width=2, border_radius=8)
+        pygame.draw.rect(surface, BAR_BG, tr, border_radius=8)
+        pygame.draw.rect(surface, ANVIL_BORDER_LIGHT, tr, width=2, border_radius=8)
         
-        target_rect = pygame.Rect(self.target_x - 15, self.track_rect.y - 4, 30, self.track_rect.height + 8)
+        target_rect = pygame.Rect(target_x - 15, tr.y - 4, 30, tr.height + 8)
         pygame.draw.rect(surface, BAR_BULLSEYE, target_rect, border_radius=4)
         pygame.draw.rect(surface, BAR_CURSOR_GLOW, target_rect, width=2, border_radius=4)
 
         if self.phase == self.PHASE_ACTIVE:
             for note in self.active_notes:
                 if not note["hit"] and not note["missed"]:
-                    note_x = self.track_rect.x + (self.t - note["time"]) * self.speed + (self.target_x - self.track_rect.x)
-                    if self.track_rect.x <= note_x <= self.track_rect.right + 20:
-                        n_rect = pygame.Rect(int(note_x) - 10, self.track_rect.y + 4, 20, self.track_rect.height - 8)
+                    note_x = tr.x + (self.t - note["time"]) * self.speed + (target_x - tr.x)
+                    if tr.x <= note_x <= tr.right + 20:
+                        n_rect = pygame.Rect(int(note_x) - 10, tr.y + 4, 20, tr.height - 8)
                         pygame.draw.rect(surface, (100, 220, 255), n_rect, border_radius=4)
                         pygame.draw.rect(surface, (200, 255, 255), n_rect, width=2, border_radius=4)
                         
@@ -1053,9 +1117,7 @@ class MinigameChain:
             self.current_minigame.draw(surface)
             self._draw_chain_hud(surface)
         elif self.phase == self.PHASE_RESULT:
-            overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
-            overlay.fill((0, 0, 0, 170))
-            surface.blit(overlay, (0, 0))
+            _draw_majestic_background(surface)
             pr = pygame.Rect(
                 (self.screen_w - 500) // 2,
                 (self.screen_h - 200) // 2,
@@ -1306,9 +1368,7 @@ class ForgeMinigame:
                 self._close()
 
     def draw(self, surface):
-        overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 170))
-        surface.blit(overlay, (0, 0))
+        _draw_majestic_background(surface)
 
         _draw_panel(
             surface, self.panel_rect,
@@ -1559,9 +1619,7 @@ class BellowsMinigame:
             return
 
     def draw(self, surface):
-        overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 170))
-        surface.blit(overlay, (0, 0))
+        _draw_majestic_background(surface)
 
         _draw_panel(
             surface, self.panel_rect,
@@ -1871,9 +1929,7 @@ class TemperMinigame:
             return
 
     def draw(self, surface):
-        overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 170))
-        surface.blit(overlay, (0, 0))
+        _draw_majestic_background(surface)
 
         _draw_panel(
             surface, self.panel_rect,

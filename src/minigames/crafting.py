@@ -9,6 +9,31 @@ import math
 import random
 import pygame
 
+def _draw_majestic_background(surface):
+    import math, pygame
+    w, h = surface.get_size()
+    overlay = pygame.Surface((w, h), pygame.SRCALPHA)
+    overlay.fill((10, 5, 20, 180)) # Deep violet-black base
+    time_ms = pygame.time.get_ticks()
+    pulse = math.sin(time_ms * 0.001) * 20
+    center_glow = pygame.Surface((w, h), pygame.SRCALPHA)
+    pygame.draw.circle(center_glow, (80, 20, 100, int(40 + pulse)), (w//2, h//2), int(h*0.8))
+    pygame.draw.circle(center_glow, (120, 60, 20, int(30 + pulse)), (w//2, h), int(h*0.6))
+    overlay.blit(center_glow, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+    
+    # Tiny floating embers in the background
+    for i in range(40):
+        seed = i * 7331
+        speed = 10 + (seed % 20)
+        x = (seed * 19) % w
+        y = h - ((time_ms / 1000.0 * speed + seed * 83) % (h + 50))
+        wobble = math.sin(time_ms * 0.0015 + i) * 20
+        alpha = int(abs(math.sin(time_ms * 0.002 + i)) * 100) + 20
+        pygame.draw.circle(overlay, (255, 120, 50, alpha), (int(x + wobble), int(y)), 1)
+        
+    surface.blit(overlay, (0, 0))
+
+
 import src.config as cfg
 from src.core.logger import logger
 from database.crafting_tiers_db import TIER_ORDER, get_tier_name
@@ -72,7 +97,7 @@ class CraftingMinigame(MinigameChain):
         except Exception as exc:
             logger.warning(f"Failed to apply tier to item in crafting minigame: {exc}")
 
-        self._result_timer = 3.0
+        self._result_timer = 9999.0
 
     def _close(self):
         if self._closed:
@@ -102,9 +127,7 @@ class CraftingMinigame(MinigameChain):
             self.current_minigame.draw(surface)
             self._draw_chain_hud(surface)
         elif self.phase == self.PHASE_RESULT:
-            overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
-            overlay.fill((0, 0, 0, 170))
-            surface.blit(overlay, (0, 0))
+            _draw_majestic_background(surface)
             
             pr = pygame.Rect(
                 (self.screen_w - int(600 * cfg.ui_scale())) // 2,
@@ -136,10 +159,13 @@ class CraftingMinigame(MinigameChain):
             tier_surf = self.font_medium.render(tier_text, True, TEXT_LIGHT)
             surface.blit(tier_surf, (pr.centerx - tier_surf.get_width() // 2, pr.y + int(100 * cfg.ui_scale()) + title.get_height() + 10))
 
-            try:
-                item_name = self.item.name() if hasattr(self.item, "name") else str(self.item)
-            except Exception:
-                item_name = str(self.item)
+            if hasattr(self.item, "name"):
+                if callable(self.item.name):
+                    item_name = str(self.item.name())
+                else:
+                    item_name = str(self.item.name)
+            else:
+                item_name = "Forged Item"
             name_surf = self.font_medium.render(item_name, True, TEXT_GOLD)
             surface.blit(name_surf, (pr.centerx - name_surf.get_width() // 2, pr.y + int(100 * cfg.ui_scale()) + title.get_height() + 14 + tier_surf.get_height()))
 
