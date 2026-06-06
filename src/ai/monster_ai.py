@@ -36,6 +36,14 @@ class AIContext:
 
 
 def _entity_center(entity: object) -> pygame.Vector2:
+    """Get the center position of an entity.
+
+    Args:
+        entity (object): An object with a ``get_rect()`` method or a ``pos`` attribute.
+
+    Returns:
+        pygame.Vector2: The center point of the entity.
+    """
     if hasattr(entity, "get_rect"):
         rect = entity.get_rect()
         return pygame.Vector2(rect.centerx, rect.centery)
@@ -43,6 +51,16 @@ def _entity_center(entity: object) -> pygame.Vector2:
 
 
 def has_line_of_sight(start: pygame.Vector2, end: pygame.Vector2, obstacles: list[pygame.Rect]) -> bool:
+    """Check whether a straight line between two points is unobstructed.
+
+    Args:
+        start (pygame.Vector2): Starting world position.
+        end (pygame.Vector2): Ending world position.
+        obstacles (list[pygame.Rect]): List of wall rectangles to test against.
+
+    Returns:
+        bool: True if no wall intersects the line segment, False otherwise.
+    """
     for wall in obstacles:
         if wall.clipline(start, end):
             return False
@@ -538,6 +556,17 @@ class GuardianBrain(BaseBrain):
 
 
 def build_brain(profile: str | None, config: dict | None = None) -> BaseBrain:
+    """Factory function that returns the appropriate AI brain for a profile name.
+
+    Args:
+        profile (str | None): The AI profile name (e.g. ``"stalker"``, ``"skirmisher"``,
+                               ``"guardian"``). Defaults to ``"stalker"`` when None.
+        config (dict | None): Optional configuration dictionary passed to the brain.
+
+    Returns:
+        BaseBrain: An instance of the matching brain class (StalkerBrain, SkirmisherBrain,
+                   or GuardianBrain).
+    """
     name = (profile or "stalker").lower()
     if name == "skirmisher":
         return SkirmisherBrain(config)

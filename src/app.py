@@ -91,6 +91,12 @@ class App:
     """
 
     def __init__(self):
+        """Initialize the application, window, inventory, and state manager.
+
+        Sets up the Pygame display, loads the database with seeded items,
+        creates the inventory manager, populates the starter gear grid,
+        configures audio, the frame profiler, and the state manager.
+        """
         logger.info("Initializing Application...")
         # Create the window at the exact configured resolution.
         # DPI awareness is enabled in `main.py`, so we want 1:1 pixels here.
@@ -240,10 +246,19 @@ class App:
         return mask
 
     def create_logo(self):
+        """Render and position the main logo text (\"Codex Arcanum\")."""
         self.text_logo = cfg.myfont.render(_('Codex Arcanum'), True, (255, 215, 0))
         self.text_rect = self.text_logo.get_rect(center=(cfg.SCREEN_WIDTH // 2, int(cfg.SCREEN_HEIGHT * 0.12)))
 
     def update_language(self, lang_code):
+        """Change the application language and update fonts/UI.
+
+        Args:
+            lang_code (str): The language code to switch to (e.g. 'en', 'ua').
+
+        Raises:
+            Exception: If font re-scaling fails, it is silently caught.
+        """
         if lang_code in cfg.SUPPORTED_LANGUAGES:
             cfg.LANGUAGE = lang_code
             i18n.install_language(lang_code)
@@ -260,13 +275,25 @@ class App:
             self.fps_counter.refresh_fonts()
 
     def set_profiler_enabled(self, enabled: bool):
+        """Enable or disable the frame profiler.
+
+        Args:
+            enabled (bool): True to enable, False to disable.
+        """
         cfg.PROFILER_ENABLED = bool(enabled)
         self.profiler.set_enabled(cfg.PROFILER_ENABLED)
 
     def toggle_profiler(self):
+        """Toggle the profiler on/off."""
         self.set_profiler_enabled(not cfg.PROFILER_ENABLED)
 
     def _get_fullscreen_size(self):
+        """Get the native desktop resolution.
+
+        Returns:
+            tuple[int, int]: The (width, height) of the primary display
+            in pixels. Falls back to the configured SCREEN_WIDTH/HEIGHT.
+        """
         try:
             desktop_sizes = pygame.display.get_desktop_sizes()
             if desktop_sizes:
@@ -278,6 +305,13 @@ class App:
         return info.current_w or cfg.SCREEN_WIDTH, info.current_h or cfg.SCREEN_HEIGHT
 
     def _apply_display_mode(self, fullscreen: bool, update_windowed_size: bool = True):
+        """Apply fullscreen or windowed display mode.
+
+        Args:
+            fullscreen (bool): True for fullscreen, False for windowed.
+            update_windowed_size (bool): Whether to store the current window
+                size before switching. Defaults to True.
+        """
         if update_windowed_size and not self.is_fullscreen:
             self.windowed_size = self.screen.get_size()
 
@@ -297,9 +331,16 @@ class App:
             gameplay_state.reinit_ui()
 
     def toggle_display_mode(self):
+        """Toggle between fullscreen and windowed mode."""
         self._apply_display_mode(not self.is_fullscreen)
 
     def sync_display_size(self, width: int, height: int):
+        """Update window size from a resize event.
+
+        Args:
+            width (int): New window width in pixels.
+            height (int): New window height in pixels.
+        """
         if self.is_fullscreen:
             return
 
@@ -315,11 +356,24 @@ class App:
             gameplay_state.reinit_ui()
 
     def music_play(self):
+        """Load and start the background music.
+
+        Uses the configured MUSIC_VOLUME unless audio is turned off.
+        The track loops indefinitely.
+        """
         pygame.mixer.music.load('sounds/LIFE (Instrumental).wav')
         pygame.mixer.music.set_volume(cfg.MUSIC_VOLUME if self.audio == "on" else 0.0)
         pygame.mixer.music.play(-1)
 
     def run(self):
+        """Main loop of the application.
+
+        Loads persisted settings, initialises the main menu, plays music,
+        then enters the frame loop — handling events, drawing the scene,
+        overlaying UI and post-processing effects (day/night, light sources),
+        and finally flipping the display.  Pressing F3 toggles the profiler,
+        F11 toggles fullscreen.
+        """
         SaveManager.load_settings(self)
         self.manager.set_state("main")
         self.music_play()

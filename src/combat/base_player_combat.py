@@ -54,9 +54,19 @@ class PlayerCombatController:
                 mouse_pos (tuple[int, int]): The target coordinates for the attack.
     """
     def __init__(self, game_state):
+        """Initialize the player combat controller.
+
+        Args:
+            game_state (State): The main game state containing the player and world data.
+        """
         self.game = game_state
 
     def get_equipped_weapon(self):
+        """Retrieve the weapon item currently selected in the player's hotbar.
+
+        Returns:
+            Item | None: The equipped weapon, or None if no weapon is selected.
+        """
         if not getattr(self.game, 'hotbar', None):
             return None
             
@@ -70,6 +80,11 @@ class PlayerCombatController:
         return None
 
     def sync_weapon_stats(self):
+        """Update the player character's attack damage, range, and cooldown based on the equipped weapon.
+
+        Handles broken weapons by reverting to bare-handed fallback stats.
+        Also exposes the equipped weapon on the character for on-hit enchantments.
+        """
         weapon = self.get_equipped_weapon()
         self.game.equipped_weapon = weapon
 
@@ -141,12 +156,30 @@ class PlayerCombatController:
         return True
 
     def get_attack_direction(self):
+        """Get the current forward-facing direction of the player character.
+
+        Returns:
+            pygame.Vector2: The forward direction vector.
+        """
         return self.game.character.get_forward_direction()
 
     def get_attack_origin(self):
+        """Get the center coordinates of the player character used as the origin for attacks.
+
+        Returns:
+            pygame.Vector2: The attack origin point.
+        """
         return self.game.character.get_center()
 
     def get_mouse_aim_direction(self, mouse_pos):
+        """Calculate the normalized direction vector from the attack origin to the mouse position.
+
+        Args:
+            mouse_pos (tuple[int, int]): The current screen coordinates of the mouse.
+
+        Returns:
+            pygame.Vector2: The normalized aiming direction.
+        """
         origin = self.get_attack_origin()
         direction = pygame.Vector2(mouse_pos) - origin
         if direction.length_squared() == 0:
@@ -154,6 +187,16 @@ class PlayerCombatController:
         return direction.normalize()
 
     def clamp_direction_to_cone(self, aim_dir, forward_dir, half_angle_deg):
+        """Restrict the attack direction to remain within a specific angle cone.
+
+        Args:
+            aim_dir (pygame.Vector2): The intended aiming direction.
+            forward_dir (pygame.Vector2): The current forward direction of the character.
+            half_angle_deg (float): Half of the total allowed cone angle in degrees.
+
+        Returns:
+            pygame.Vector2: The clamped direction vector.
+        """
         if half_angle_deg <= 0:
             return pygame.Vector2(forward_dir)
 
@@ -176,6 +219,12 @@ class PlayerCombatController:
         return forward_dir.rotate(half_angle_deg if angle > 0 else -half_angle_deg)
 
     def spawn_arrow(self, weapon, direction):
+        """Instantiate a projectile entity and add it to the game state's active projectiles.
+
+        Args:
+            weapon (Item): The ranged weapon used to fire the projectile.
+            direction (pygame.Vector2): The normalized direction vector for the projectile.
+        """
         direction = pygame.Vector2(direction)
         if direction.length_squared() == 0:
             direction = pygame.Vector2(1, 0)
@@ -190,6 +239,11 @@ class PlayerCombatController:
         self.game.projectiles.append(Arrow(spawn_pos, direction, speed, max_range, damage))
 
     def handle_player_attack(self, mouse_pos):
+        """Execute the combat action (melee swing or ranged shot) directed at the specified coordinates.
+
+        Args:
+            mouse_pos (tuple[int, int]): The target coordinates for the attack.
+        """
         weapon = self.game.equipped_weapon or self.get_equipped_weapon()
         if not weapon:
             return
