@@ -337,6 +337,9 @@ class RecipeBookMenu(Menu):
             size = random.randint(2, 4)
             self.star_particles.append(Particle(x, y, vx, vy, lifetime, color, size, star=True))
 
+    def on_enter(self):
+        self._setup_buttons()
+
     def close_menu(self):
         self.app.manager.set_state("gameplay")
 
