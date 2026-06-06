@@ -244,6 +244,9 @@ class CollectionBookMenu(Menu):
         self._setup_buttons()
         self._emit_page_particles()
 
+    def on_enter(self):
+        self._setup_buttons()
+
     def close_menu(self):
         """Return to the gameplay state."""
         self.app.manager.set_state("gameplay")
