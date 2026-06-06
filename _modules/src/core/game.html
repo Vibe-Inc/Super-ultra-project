@@ -104,6 +104,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.monster_attacks</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_attack_controller</span><span class="p">,</span> <span class="n">AttackContext</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.combat.base_player_combat</span><span class="w"> </span><span class="kn">import</span> <span class="n">PlayerCombatController</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.blackjack</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlackjackGame</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.roulette</span><span class="w"> </span><span class="kn">import</span> <span class="n">RouletteGame</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.poker</span><span class="w"> </span><span class="kn">import</span> <span class="n">PokerGame</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.fishing</span><span class="w"> </span><span class="kn">import</span> <span class="n">FishingController</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.gathering</span><span class="w"> </span><span class="kn">import</span> <span class="n">GatheringController</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.world.gatherable_nodes</span><span class="w"> </span><span class="kn">import</span> <span class="n">GatherableNodeRegistry</span>
@@ -193,6 +195,10 @@
 <span class="sd">            Merchant shop inventory used by the NPC.</span>
 <span class="sd">        blackjack_game (BlackjackGame):</span>
 <span class="sd">            Active blackjack instance, or None.</span>
+<span class="sd">        roulette_game (RouletteGame):</span>
+<span class="sd">            Active roulette instance, or None.</span>
+<span class="sd">        poker_game (PokerGame):</span>
+<span class="sd">            Active poker instance, or None.</span>
 <span class="sd">        spawn_menu (SpawnMenu):</span>
 <span class="sd">            Debug menu for spawning enemies on demand.</span>
 <span class="sd">        game_time_seconds (float):</span>
@@ -292,6 +298,8 @@
 
         <span class="n">initial_map_path</span> <span class="o">=</span> <span class="s2">&quot;maps/test-map-1.tmx&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="o">=</span> <span class="n">initial_map_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">intro_played</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_intro_sequence_active</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">map</span> <span class="o">=</span> <span class="n">LocalMap</span><span class="p">(</span><span class="s2">&quot;Level1&quot;</span><span class="p">,</span> <span class="n">initial_map_path</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">collision_handler</span> <span class="o">=</span> <span class="n">CollisionSystem</span><span class="p">()</span>
@@ -661,13 +669,13 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">card_npc_first_dialog</span> <span class="o">=</span> <span class="p">[</span>
             <span class="s2">&quot;Well, well — a fresh face in the tavern!&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Name&#39;s Ren. I pass the time with a bit of cards.&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Care for a round of Blackjack? I promise I don&#39;t cheat... much.&quot;</span>
+            <span class="s2">&quot;Name&#39;s Ren. I pass the time with some casino games.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Care for a round of Blackjack, Roulette, or Poker? I promise I don&#39;t cheat... much.&quot;</span>
         <span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">card_npc_repeat_dialog</span> <span class="o">=</span> <span class="p">[</span>
             <span class="s2">&quot;Back again? I knew you&#39;d come around.&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;The cards have been waiting for you.&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;How about another round of Blackjack?&quot;</span>
+            <span class="s2">&quot;The tables are waiting for you.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Would you like to play Blackjack, Roulette, or Poker?&quot;</span>
         <span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">card_npc_post_game_dialog</span> <span class="o">=</span> <span class="p">[</span>
             <span class="s2">&quot;Thanks for playing! That was a fine round.&quot;</span><span class="p">,</span>
@@ -773,8 +781,10 @@
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">pass</span>
 
-        <span class="c1"># Blackjack game state (None when not playing)</span>
+        <span class="c1"># Blackjack, Roulette &amp; Poker game state (None when not playing)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">blackjack_game</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">roulette_game</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">poker_game</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="c1"># Debug menu for spawning mobs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">spawn_menu</span> <span class="o">=</span> <span class="n">SpawnMenu</span><span class="p">(</span>
@@ -935,6 +945,74 @@
                 <span class="n">on_close</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="p">,</span> <span class="s1">&#39;was_talked&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
             <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">blackjack_game</span> <span class="o">=</span> <span class="n">BlackjackGame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="n">on_close</span><span class="o">=</span><span class="n">on_close</span><span class="p">,</span> <span class="n">player_money</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Game.open_roulette">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.open_roulette">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">open_roulette</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">on_close</span><span class="p">(</span><span class="n">outcome</span><span class="p">,</span> <span class="n">net_change</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">roulette_game</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span> <span class="o">+=</span> <span class="n">net_change</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Roulette closed: outcome=</span><span class="si">{</span><span class="n">outcome</span><span class="si">}</span><span class="s2">, net_change=</span><span class="si">{</span><span class="n">net_change</span><span class="si">}</span><span class="s2">, money now=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">net_change</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">post_lines</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="s2">&quot;Thanks for playing! That was a fine round.&quot;</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s2">&quot;You walked away </span><span class="si">{</span><span class="n">net_change</span><span class="si">}</span><span class="s2"> gold richer!&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;Come back anytime — the wheel is always spinning.&quot;</span>
+                <span class="p">]</span>
+            <span class="k">elif</span> <span class="n">net_change</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">post_lines</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="s2">&quot;Thanks for playing! That was a fine round.&quot;</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s2">&quot;Tough luck — you lost </span><span class="si">{</span><span class="nb">abs</span><span class="p">(</span><span class="n">net_change</span><span class="p">)</span><span class="si">}</span><span class="s2"> gold.&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;Come back anytime — the wheel is always spinning.&quot;</span>
+                <span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">post_lines</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="s2">&quot;Thanks for playing! That was a fine round.&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;Come back anytime — the wheel is always spinning.&quot;</span>
+                <span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">current_dialog</span> <span class="o">=</span> <span class="n">Dialog</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span>
+                <span class="n">post_lines</span><span class="p">,</span>
+                <span class="n">on_close</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="p">,</span> <span class="s1">&#39;was_talked&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">roulette_game</span> <span class="o">=</span> <span class="n">RouletteGame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="n">on_close</span><span class="o">=</span><span class="n">on_close</span><span class="p">,</span> <span class="n">player_money</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Game.open_poker">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.open_poker">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">open_poker</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">on_close</span><span class="p">(</span><span class="n">outcome</span><span class="p">,</span> <span class="n">net_change</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">poker_game</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span> <span class="o">+=</span> <span class="n">net_change</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Poker closed: outcome=</span><span class="si">{</span><span class="n">outcome</span><span class="si">}</span><span class="s2">, net_change=</span><span class="si">{</span><span class="n">net_change</span><span class="si">}</span><span class="s2">, money now=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">net_change</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">post_lines</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="s2">&quot;Thanks for playing! That was a fine round.&quot;</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s2">&quot;You walked away </span><span class="si">{</span><span class="n">net_change</span><span class="si">}</span><span class="s2"> gold richer!&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;Come back anytime — the cards are always dealt.&quot;</span>
+                <span class="p">]</span>
+            <span class="k">elif</span> <span class="n">net_change</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">post_lines</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="s2">&quot;Thanks for playing! That was a fine round.&quot;</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s2">&quot;Tough luck — you lost </span><span class="si">{</span><span class="nb">abs</span><span class="p">(</span><span class="n">net_change</span><span class="p">)</span><span class="si">}</span><span class="s2"> gold.&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;Come back anytime — the cards are always dealt.&quot;</span>
+                <span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">post_lines</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="s2">&quot;Thanks for playing! That was a fine round.&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;Come back anytime — the cards are always dealt.&quot;</span>
+                <span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">current_dialog</span> <span class="o">=</span> <span class="n">Dialog</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span>
+                <span class="n">post_lines</span><span class="p">,</span>
+                <span class="n">on_close</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="p">,</span> <span class="s1">&#39;was_talked&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">poker_game</span> <span class="o">=</span> <span class="n">PokerGame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="n">on_close</span><span class="o">=</span><span class="n">on_close</span><span class="p">,</span> <span class="n">player_money</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Game._get_card_npc_dialog">
@@ -1558,9 +1636,30 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Enemy &#39;</span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">enemy</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;ai_profile&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;unknown&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39; had drop_chance entries but none rolled.&quot;</span><span class="p">)</span></div>
 
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_finish_intro</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Callback to finish the intro sequence and unlock the game.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">intro_played</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_intro_sequence_active</span> <span class="o">=</span> <span class="kc">False</span>
+
 <div class="viewcode-block" id="Game.update">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.update">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+        <span class="c1"># Intro Sequence for test-map-1</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="o">==</span> <span class="s2">&quot;maps/test-map-1.tmx&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;intro_played&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_intro_sequence_active&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_intro_sequence_active</span> <span class="o">=</span> <span class="kc">True</span>
+            
+            <span class="c1"># Set player lying down (facing down, frame 0)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;down&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">frame_index</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">animations</span><span class="p">[</span><span class="s2">&quot;down&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="n">dialog_lines</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="s1">&#39;&quot;Arise, Chosen One.&quot;&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;&quot;I sense the latent magic humming in your blood. You have been selected for a sacred mission.&quot;&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;&quot;Far to the east, a great dragon slumbers in a mountain cave. You must slay it, or the realm will burn.&quot;&#39;</span>
+            <span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">current_dialog</span> <span class="o">=</span> <span class="n">Dialog</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="n">dialog_lines</span><span class="p">,</span> <span class="n">on_close</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_finish_intro</span><span class="p">)</span>
+
         <span class="n">tr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">article_tracker</span>
 
         <span class="c1"># Guide intro — only on the very first-ever game start</span>
@@ -1761,6 +1860,9 @@
             <span class="k">if</span> <span class="n">enemy</span><span class="o">.</span><span class="n">is_dead</span><span class="p">():</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Enemy defeated!&quot;</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_kill_count</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">achievement_manager</span><span class="o">.</span><span class="n">unlock</span><span class="p">(</span><span class="s2">&quot;first_blood&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">achievement_manager</span><span class="o">.</span><span class="n">add_progress</span><span class="p">(</span><span class="s2">&quot;exterminator&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">achievement_manager</span><span class="o">.</span><span class="n">add_progress</span><span class="p">(</span><span class="s2">&quot;monster_hunter&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
 
                 <span class="c1"># Bestiary: open article for this enemy type</span>
                 <span class="n">vs</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">enemy</span><span class="p">,</span> <span class="s2">&quot;visual_style&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">enemy</span><span class="p">,</span> <span class="s2">&quot;ai_profile&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
@@ -2132,10 +2234,20 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">current_dialog</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="k">pass</span>
-        <span class="c1"># Draw blackjack overlay on top of everything</span>
+        <span class="c1"># Draw blackjack, roulette, or poker overlay on top of everything</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">blackjack_game</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">blackjack_game</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">roulette_game</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">roulette_game</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">poker_game</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">poker_game</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="k">pass</span>
         <span class="c1"># Smeltery workstation overlay (workbench / coke oven / blast furnace).</span>
@@ -2188,10 +2300,22 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">effects_menu</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
                 <span class="k">return</span>
 
-        <span class="c1"># If blackjack game is active, route all events to it</span>
+        <span class="c1"># If blackjack, roulette, or poker game is active, route all events to it</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">blackjack_game</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">blackjack_game</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">roulette_game</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">roulette_game</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">poker_game</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">poker_game</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
                 <span class="k">return</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="k">pass</span>
@@ -2317,6 +2441,10 @@
                         <span class="n">on_close</span><span class="o">=</span><span class="n">on_card_close</span><span class="p">,</span>
                         <span class="n">on_play_cards</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">open_blackjack</span><span class="p">,</span>
                         <span class="n">show_play_cards</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">on_play_roulette</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">open_roulette</span><span class="p">,</span>
+                        <span class="n">show_play_roulette</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">on_play_poker</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">open_poker</span><span class="p">,</span>
+                        <span class="n">show_play_poker</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                     <span class="p">)</span>
                 <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span><span class="o">.</span><span class="n">is_interactable</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;collection_book&quot;</span><span class="p">)</span>

@@ -1,0 +1,771 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.ui.menus.intro_animation &mdash; Super-ultra-project  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Super-ultra-project
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">src</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Super-ultra-project</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">src.ui.menus.intro_animation</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.ui.menus.intro_animation</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Intro Animation State — &quot;The Awakening&quot;</span>
+
+<span class="sd">A multi-phase full-screen cinematic that plays once when the player starts</span>
+<span class="sd">a new game.  After the sequence finishes (or is skipped), the state</span>
+<span class="sd">transitions to the gameplay state.</span>
+
+<span class="sd">Phases</span>
+<span class="sd">------</span>
+<span class="sd">0  BLACK  — 1.0 s  — pure black hold</span>
+<span class="sd">1  RUNES  — 2.5 s  — ancient rune symbols fade in from darkness, pulse</span>
+<span class="sd">2  VOICE1 — 3.0 s  — &quot;Arise, Chosen One.&quot; typewriter + Voice echo effect</span>
+<span class="sd">3  VOICE2 — 3.5 s  — &quot;I sense the latent magic…&quot; typewriter</span>
+<span class="sd">4  VOICE3 — 4.0 s  — &quot;Far to the east…&quot; typewriter</span>
+<span class="sd">5  BURST  — 2.0 s  — full golden shockwave / particle eruption</span>
+<span class="sd">6  FADE   — 1.5 s  — fade to black → switch to gameplay</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">src.config</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cfg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.effects</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">GOLD</span><span class="p">,</span> <span class="n">GOLD_BRIGHT</span><span class="p">,</span> <span class="n">GOLD_DARK</span><span class="p">,</span>
+    <span class="n">ease_out_cubic</span><span class="p">,</span> <span class="n">ease_out_elastic</span><span class="p">,</span> <span class="n">ease_out_back</span><span class="p">,</span>
+    <span class="n">Star</span><span class="p">,</span> <span class="n">AmbientEmber</span><span class="p">,</span> <span class="n">LaunchBurst</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">src.app</span><span class="w"> </span><span class="kn">import</span> <span class="n">App</span>
+
+
+<span class="c1"># ─── Palette ──────────────────────────────────────────────────────────────────</span>
+<span class="n">VOID</span>       <span class="o">=</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span>  <span class="mi">3</span><span class="p">,</span>  <span class="mi">10</span><span class="p">)</span>
+<span class="n">DEEP_BLUE</span>  <span class="o">=</span> <span class="p">(</span><span class="mi">8</span><span class="p">,</span>  <span class="mi">10</span><span class="p">,</span> <span class="mi">28</span><span class="p">)</span>
+<span class="n">MYSTIC</span>     <span class="o">=</span> <span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">220</span><span class="p">)</span>
+<span class="n">VOICE_CLR</span>  <span class="o">=</span> <span class="p">(</span><span class="mi">210</span><span class="p">,</span> <span class="mi">195</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>   <span class="c1"># soft lavender — the entity&#39;s text</span>
+<span class="n">GOLD_TEXT</span>  <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">215</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
+<span class="n">WHITE_GLOW</span> <span class="o">=</span> <span class="p">(</span><span class="mi">220</span><span class="p">,</span> <span class="mi">230</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+
+<span class="c1"># Phase durations (seconds) — voice phases are minimum durations;</span>
+<span class="c1"># they extend until typewriter is done + a hold period.</span>
+<span class="n">_PHASE_DUR</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="mf">1.0</span><span class="p">,</span>   <span class="c1"># 0: black hold</span>
+    <span class="mf">2.5</span><span class="p">,</span>   <span class="c1"># 1: runes fade in</span>
+    <span class="mf">2.0</span><span class="p">,</span>   <span class="c1"># 2: voice line 1 (min; extends until typed + hold)</span>
+    <span class="mf">2.0</span><span class="p">,</span>   <span class="c1"># 3: voice line 2 (min; extends until typed + hold)</span>
+    <span class="mf">2.0</span><span class="p">,</span>   <span class="c1"># 4: voice line 3 (min; extends until typed + hold)</span>
+    <span class="mf">3.0</span><span class="p">,</span>   <span class="c1"># 5: burst</span>
+    <span class="mf">1.8</span><span class="p">,</span>   <span class="c1"># 6: fade out</span>
+<span class="p">]</span>
+
+<span class="c1"># After the typewriter finishes, hold for this many seconds before advancing.</span>
+<span class="n">_VOICE_HOLD</span> <span class="o">=</span> <span class="mf">1.5</span>
+
+<span class="n">_VOICE_LINES</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;&quot;Arise, Chosen One.&quot;&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;&quot;I sense the latent magic humming in your blood.</span><span class="se">\n</span><span class="s1">You have been selected for a sacred mission.&quot;&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;&quot;Far to the east, a great dragon slumbers in a</span><span class="se">\n</span><span class="s1">mountain cave. You must slay it, or the realm will burn.&quot;&#39;</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="c1"># ─── Helper particle classes ───────────────────────────────────────────────────</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_RuneSymbol</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;One glowing rune character drawn at a random screen position.&quot;&quot;&quot;</span>
+    <span class="n">_CHARS</span> <span class="o">=</span> <span class="s2">&quot;ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟ&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sw</span><span class="p">,</span> <span class="n">sh</span><span class="p">,</span> <span class="n">font</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">char</span>  <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_CHARS</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span>     <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">sw</span> <span class="o">*</span> <span class="mf">0.05</span><span class="p">,</span> <span class="n">sw</span> <span class="o">*</span> <span class="mf">0.95</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span>     <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">sh</span> <span class="o">*</span> <span class="mf">0.05</span><span class="p">,</span> <span class="n">sh</span> <span class="o">*</span> <span class="mf">0.95</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">size</span>  <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.4</span><span class="p">)</span>   <span class="c1"># scale multiplier for pulse</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phase</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">6.28</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">base_alpha</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">160</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="n">GOLD</span><span class="p">,</span> <span class="n">MYSTIC</span><span class="p">[:</span><span class="mi">3</span><span class="p">],</span> <span class="n">WHITE_GLOW</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_surf</span> <span class="o">=</span> <span class="n">font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">char</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">color</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">global_alpha</span><span class="p">):</span>
+        <span class="n">pulse</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">t</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">phase</span><span class="p">)</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base_alpha</span> <span class="o">*</span> <span class="n">pulse</span> <span class="o">*</span> <span class="n">global_alpha</span> <span class="o">/</span> <span class="mi">255</span><span class="p">)</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="n">a</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">a</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">*</span> <span class="p">(</span><span class="mf">0.85</span> <span class="o">+</span> <span class="mf">0.15</span> <span class="o">*</span> <span class="n">pulse</span><span class="p">)</span>
+        <span class="n">w</span><span class="p">,</span> <span class="n">h</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_surf</span><span class="o">.</span><span class="n">get_size</span><span class="p">()</span>
+        <span class="n">nw</span>    <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">w</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
+        <span class="n">nh</span>    <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">h</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
+        <span class="n">scaled</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">smoothscale</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_surf</span><span class="p">,</span> <span class="p">(</span><span class="n">nw</span><span class="p">,</span> <span class="n">nh</span><span class="p">))</span>
+        <span class="n">scaled</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+        <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">scaled</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">nw</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">nh</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)))</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_VoiceParticle</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A single drifting particle emitted from the screen centre during voice phases.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sw</span><span class="p">,</span> <span class="n">sh</span><span class="p">):</span>
+        <span class="n">angle</span>  <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+        <span class="n">speed</span>  <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">110</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">sw</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">30</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">sh</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">30</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vx</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="o">*</span> <span class="n">speed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vy</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="o">*</span> <span class="n">speed</span> <span class="o">-</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">life</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_life</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">life</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">4.5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="n">GOLD_BRIGHT</span><span class="p">,</span> <span class="n">MYSTIC</span><span class="p">[:</span><span class="mi">3</span><span class="p">],</span> <span class="n">WHITE_GLOW</span><span class="p">,</span> <span class="p">(</span><span class="mi">180</span><span class="p">,</span> <span class="mi">140</span><span class="p">,</span> <span class="mi">255</span><span class="p">)])</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span>  <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vx</span> <span class="o">*</span> <span class="n">dt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vx</span> <span class="o">*=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">dt</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span>  <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vy</span> <span class="o">*</span> <span class="n">dt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vy</span> <span class="o">*=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">dt</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">life</span> <span class="o">-=</span> <span class="n">dt</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">life</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">ratio</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">life</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_life</span>
+        <span class="n">a</span>  <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">220</span> <span class="o">*</span> <span class="n">ratio</span> <span class="o">*</span> <span class="n">ratio</span><span class="p">)</span>
+        <span class="n">sz</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">*</span> <span class="n">ratio</span><span class="p">))</span>
+        <span class="n">s</span>  <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">sz</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="n">sz</span> <span class="o">*</span> <span class="mi">2</span><span class="p">),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">circle</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">color</span><span class="p">,</span> <span class="n">a</span><span class="p">),</span> <span class="p">(</span><span class="n">sz</span><span class="p">,</span> <span class="n">sz</span><span class="p">),</span> <span class="n">sz</span><span class="p">)</span>
+        <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="n">sz</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">)</span> <span class="o">-</span> <span class="n">sz</span><span class="p">))</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_ShockwaveRing</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Expanding circle ring used in the burst phase.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">speed</span><span class="p">,</span> <span class="n">max_radius</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cx</span> <span class="o">=</span> <span class="n">cx</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cy</span> <span class="o">=</span> <span class="n">cy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">color</span>  <span class="o">=</span> <span class="n">color</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">speed</span>  <span class="o">=</span> <span class="n">speed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">radius</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_r</span>  <span class="o">=</span> <span class="n">max_radius</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">width</span>  <span class="o">=</span> <span class="n">width</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delay</span>  <span class="o">=</span> <span class="n">delay</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_alive</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">alive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alive</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">delay</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">delay</span> <span class="o">-=</span> <span class="n">dt</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">radius</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">*</span> <span class="n">dt</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_r</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_alive</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">delay</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">ratio</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_r</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">220</span> <span class="o">*</span> <span class="n">ratio</span> <span class="o">*</span> <span class="n">ratio</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radius</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span> <span class="o">&lt;</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">a</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">r</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">4</span><span class="p">,</span> <span class="n">r</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">4</span><span class="p">),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">circle</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">color</span><span class="p">,</span> <span class="n">a</span><span class="p">),</span> <span class="p">(</span><span class="n">r</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span> <span class="n">r</span> <span class="o">+</span> <span class="mi">2</span><span class="p">),</span> <span class="n">r</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">)</span>
+        <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cx</span> <span class="o">-</span> <span class="n">r</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cy</span> <span class="o">-</span> <span class="n">r</span> <span class="o">-</span> <span class="mi">2</span><span class="p">))</span>
+
+
+<span class="c1"># ─── Main state ───────────────────────────────────────────────────────────────</span>
+
+<div class="viewcode-block" id="IntroAnimation">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.IntroAnimation">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">IntroAnimation</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Full-screen cinematic intro that plays once when the player starts the game.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        app (App): Main application reference.</span>
+<span class="sd">        _phase (int): Current animation phase index.</span>
+<span class="sd">        _phase_t (float): Time elapsed inside the current phase.</span>
+<span class="sd">        _t (float): Global accumulated time.</span>
+<span class="sd">        _done (bool): True once the sequence has completed.</span>
+<span class="sd">        _skip_requested (bool): Set to True if the player presses SPACE/ENTER.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        on_enter(): Reset all state; called when the StateManager activates us.</span>
+<span class="sd">        handle_event(event): Handle SPACE/ENTER skip.</span>
+<span class="sd">        update(dt): Advance animation timers and particles.</span>
+<span class="sd">        draw(screen): Render the current frame.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="s2">&quot;App&quot;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="o">=</span> <span class="n">app</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_phase</span>   <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_phase_t</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_t</span>       <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_done</span>    <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_skip_requested</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># Particle lists</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_runes</span><span class="p">:</span>      <span class="nb">list</span><span class="p">[</span><span class="n">_RuneSymbol</span><span class="p">]</span>   <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_parts</span><span class="p">:</span>    <span class="nb">list</span><span class="p">[</span><span class="n">_VoiceParticle</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bursts</span><span class="p">:</span>     <span class="nb">list</span><span class="p">[</span><span class="n">LaunchBurst</span><span class="p">]</span>   <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_shockwaves</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">_ShockwaveRing</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_embers</span><span class="p">:</span>     <span class="nb">list</span><span class="p">[</span><span class="n">AmbientEmber</span><span class="p">]</span>  <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stars</span><span class="p">:</span>      <span class="nb">list</span><span class="p">[</span><span class="n">Star</span><span class="p">]</span>          <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Typewriter state per voice line</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tw_chars</span>   <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]</span>   <span class="c1"># fractional char count shown</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tw_speed</span>   <span class="o">=</span> <span class="mf">22.0</span>               <span class="c1"># chars per second</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tw_hold</span>    <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]</span>   <span class="c1"># hold-timer after line finishes</span>
+
+        <span class="c1"># Fonts</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_font_voice</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get_font</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">26</span> <span class="o">*</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">())))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_font_rune</span>  <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get_font</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">36</span> <span class="o">*</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">())))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_font_skip</span>  <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get_font</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">16</span> <span class="o">*</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">())))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_font_arise</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get_font</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">22</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">52</span> <span class="o">*</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">())))</span>
+
+        <span class="c1"># Cache</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bg</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_skip_surf</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flash_alpha</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c1"># ── Lifecycle ─────────────────────────────────────────────────────────────</span>
+
+<div class="viewcode-block" id="IntroAnimation.on_enter">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.IntroAnimation.on_enter">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_enter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset everything so the intro is fresh each time.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_phase</span>   <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_phase_t</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_t</span>       <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_done</span>    <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_skip_requested</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flash_alpha</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+        <span class="n">sw</span><span class="p">,</span> <span class="n">sh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sw</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sh</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_runes</span> <span class="o">=</span> <span class="p">[</span><span class="n">_RuneSymbol</span><span class="p">(</span><span class="n">sw</span><span class="p">,</span> <span class="n">sh</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_font_rune</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">45</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_embers</span> <span class="o">=</span> <span class="p">[</span><span class="n">AmbientEmber</span><span class="p">(</span><span class="n">sw</span><span class="p">,</span> <span class="n">sh</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">20</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stars</span>  <span class="o">=</span> <span class="p">[</span><span class="n">Star</span><span class="p">(</span><span class="n">sw</span><span class="p">,</span> <span class="n">sh</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">120</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_parts</span>    <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bursts</span>     <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_shockwaves</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tw_chars</span>   <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tw_hold</span>    <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]</span>
+
+        <span class="c1"># Pre-render skip hint</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_skip_surf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_font_skip</span><span class="o">.</span><span class="n">render</span><span class="p">(</span>
+            <span class="s2">&quot;SPACE / ENTER — skip&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="p">(</span><span class="mi">160</span><span class="p">,</span> <span class="mi">150</span><span class="p">,</span> <span class="mi">130</span><span class="p">))</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[IntroAnimation] Sequence started.&quot;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sw</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">screen</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">screen</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
+
+    <span class="c1"># ── Event handling ────────────────────────────────────────────────────────</span>
+
+<div class="viewcode-block" id="IntroAnimation.handle_event">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.IntroAnimation.handle_event">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">handle_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">Event</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">KEYDOWN</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">K_SPACE</span><span class="p">,</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_RETURN</span><span class="p">,</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_ESCAPE</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_skip_requested</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">MOUSEBUTTONDOWN</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_skip_requested</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+    <span class="c1"># ── Update ─────────────────────────────────────────────────────────────────</span>
+
+<div class="viewcode-block" id="IntroAnimation.update">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.IntroAnimation.update">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_t</span>       <span class="o">+=</span> <span class="n">dt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_phase_t</span> <span class="o">+=</span> <span class="n">dt</span>
+
+        <span class="n">sw</span><span class="p">,</span> <span class="n">sh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sw</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sh</span><span class="p">()</span>
+        <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span> <span class="o">=</span> <span class="n">sw</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">sh</span> <span class="o">//</span> <span class="mi">2</span>
+
+        <span class="c1"># Skip: jump straight to fade-out phase</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_skip_requested</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_phase</span> <span class="o">&lt;</span> <span class="mi">6</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_phase</span>   <span class="o">=</span> <span class="mi">6</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_phase_t</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_skip_requested</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># ── Done check BEFORE resetting phase_t ───────────────────────────────</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_phase</span> <span class="o">==</span> <span class="mi">6</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_phase_t</span> <span class="o">&gt;=</span> <span class="n">_PHASE_DUR</span><span class="p">[</span><span class="mi">6</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_done</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_done</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[IntroAnimation] Sequence complete → switching to gameplay.&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;gameplay&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="c1"># ── Typewriter update for current voice phase ─────────────────────────</span>
+        <span class="n">voice_phase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_phase</span> <span class="o">-</span> <span class="mi">2</span>   <span class="c1"># 0,1,2 for phases 2,3,4</span>
+        <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">voice_phase</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">line_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">_VOICE_LINES</span><span class="p">[</span><span class="n">voice_phase</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_tw_chars</span><span class="p">[</span><span class="n">voice_phase</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+                <span class="n">line_len</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_tw_chars</span><span class="p">[</span><span class="n">voice_phase</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tw_speed</span> <span class="o">*</span> <span class="n">dt</span>
+            <span class="p">)</span>
+            <span class="c1"># Advance hold timer once the line is fully typed</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tw_chars</span><span class="p">[</span><span class="n">voice_phase</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">line_len</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_tw_hold</span><span class="p">[</span><span class="n">voice_phase</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dt</span>
+
+        <span class="c1"># ── Phase advancement ─────────────────────────────────────────────────</span>
+        <span class="n">ready_to_advance</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_phase</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>   <span class="c1"># voice phases: must type + hold</span>
+            <span class="n">vp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_phase</span> <span class="o">-</span> <span class="mi">2</span>
+            <span class="n">typed_done</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tw_chars</span><span class="p">[</span><span class="n">vp</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">_VOICE_LINES</span><span class="p">[</span><span class="n">vp</span><span class="p">])</span>
+            <span class="n">held_enough</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tw_hold</span><span class="p">[</span><span class="n">vp</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">_VOICE_HOLD</span>
+            <span class="n">ready_to_advance</span> <span class="o">=</span> <span class="n">typed_done</span> <span class="ow">and</span> <span class="n">held_enough</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ready_to_advance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_phase_t</span> <span class="o">&gt;=</span> <span class="n">_PHASE_DUR</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_phase</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">ready_to_advance</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_phase_t</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_phase</span>  <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="c1"># Phase entry side-effects</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_phase</span> <span class="o">==</span> <span class="mi">5</span><span class="p">:</span>   <span class="c1"># burst eruption</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_spawn_burst</span><span class="p">(</span><span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">)</span>
+
+        <span class="c1"># ── Particles ─────────────────────────────────────────────────────────</span>
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_embers</span><span class="p">:</span>
+            <span class="n">e</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v_parts</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_parts</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">life</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_parts</span><span class="p">:</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+
+        <span class="c1"># Spawn voice particles during voice &amp; burst phases</span>
+        <span class="k">if</span> <span class="mi">2</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_phase</span> <span class="o">&lt;=</span> <span class="mi">5</span><span class="p">:</span>
+            <span class="n">rate</span> <span class="o">=</span> <span class="mi">3</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_phase</span> <span class="o">&lt;</span> <span class="mi">5</span> <span class="k">else</span> <span class="mi">12</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rate</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_v_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_VoiceParticle</span><span class="p">(</span><span class="n">sw</span><span class="p">,</span> <span class="n">sh</span><span class="p">))</span>
+
+        <span class="c1"># Burst particles</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bursts</span> <span class="o">=</span> <span class="p">[</span><span class="n">b</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bursts</span> <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">lt</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bursts</span><span class="p">:</span>
+            <span class="n">b</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+
+        <span class="c1"># Shockwaves</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_shockwaves</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shockwaves</span> <span class="k">if</span> <span class="n">w</span><span class="o">.</span><span class="n">alive</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shockwaves</span><span class="p">:</span>
+            <span class="n">w</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+
+        <span class="c1"># Flash alpha — always decays regardless of phase</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flash_alpha</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_flash_alpha</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flash_alpha</span> <span class="o">-</span> <span class="n">dt</span> <span class="o">*</span> <span class="mi">220</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_spawn_burst</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Spawn the big particle eruption for phase 5.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flash_alpha</span> <span class="o">=</span> <span class="mf">180.0</span>   <span class="c1"># softer initial flash — not blinding white</span>
+
+        <span class="c1"># Shockwave rings — gold and white only (no purple)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="n">spd</span><span class="p">,</span> <span class="n">wr</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">([</span>
+            <span class="p">(</span><span class="n">GOLD_BRIGHT</span><span class="p">,</span>  <span class="mi">520</span><span class="p">,</span> <span class="mi">900</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">WHITE_GLOW</span><span class="p">,</span>   <span class="mi">380</span><span class="p">,</span> <span class="mi">700</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">GOLD</span><span class="p">,</span>         <span class="mi">260</span><span class="p">,</span> <span class="mi">550</span><span class="p">),</span>
+            <span class="p">((</span><span class="mi">255</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">80</span><span class="p">),</span> <span class="mi">180</span><span class="p">,</span> <span class="mi">400</span><span class="p">),</span>
+        <span class="p">]):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_shockwaves</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_ShockwaveRing</span><span class="p">(</span><span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">spd</span><span class="p">,</span> <span class="n">wr</span><span class="p">,</span>
+                                                   <span class="n">width</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span> <span class="o">-</span> <span class="n">i</span><span class="p">),</span>
+                                                   <span class="n">delay</span><span class="o">=</span><span class="n">i</span> <span class="o">*</span> <span class="mf">0.12</span><span class="p">))</span>
+
+        <span class="c1"># Burst particles — warm gold and white only</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">180</span><span class="p">):</span>
+            <span class="n">angle</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+            <span class="n">speed</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="mi">380</span><span class="p">)</span>
+            <span class="n">vx</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="o">*</span> <span class="n">speed</span>
+            <span class="n">vy</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="o">*</span> <span class="n">speed</span> <span class="o">-</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">60</span><span class="p">)</span>
+            <span class="n">col</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="n">GOLD_BRIGHT</span><span class="p">,</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="mi">60</span><span class="p">),</span> <span class="n">WHITE_GLOW</span><span class="p">,</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">220</span><span class="p">,</span> <span class="mi">120</span><span class="p">)])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_bursts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">LaunchBurst</span><span class="p">(</span>
+                    <span class="n">cx</span> <span class="o">+</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">15</span><span class="p">,</span> <span class="mi">15</span><span class="p">),</span>
+                    <span class="n">cy</span> <span class="o">+</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">15</span><span class="p">,</span> <span class="mi">15</span><span class="p">),</span>
+                    <span class="n">vx</span><span class="p">,</span> <span class="n">vy</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span>
+                    <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+                    <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">2.2</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+    <span class="c1"># ── Draw ──────────────────────────────────────────────────────────────────</span>
+
+<div class="viewcode-block" id="IntroAnimation.draw">
+<a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.IntroAnimation.draw">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">clock</span><span class="o">.</span><span class="n">get_time</span><span class="p">()</span> <span class="o">/</span> <span class="mf">1000.0</span><span class="p">)</span>
+        <span class="n">sw</span><span class="p">,</span> <span class="n">sh</span> <span class="o">=</span> <span class="n">screen</span><span class="o">.</span><span class="n">get_width</span><span class="p">(),</span> <span class="n">screen</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
+        <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span> <span class="o">=</span> <span class="n">sw</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">sh</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t</span>
+        <span class="n">phase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_phase</span>
+        <span class="n">pt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_phase_t</span>
+
+        <span class="c1"># 1. Background ───────────────────────────────────────────────────────</span>
+        <span class="n">screen</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">VOID</span><span class="p">)</span>
+
+        <span class="c1"># Subtle nebula gradient</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_draw_nebula</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">sw</span><span class="p">,</span> <span class="n">sh</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+
+        <span class="c1"># Stars (visible from phase 1 onwards)</span>
+        <span class="k">if</span> <span class="n">phase</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">star_a</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">255</span> <span class="o">*</span> <span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">pt</span> <span class="o">/</span> <span class="mf">1.5</span><span class="p">))</span> <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">255</span>
+            <span class="n">star_surf</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">sw</span><span class="p">,</span> <span class="n">sh</span><span class="p">),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">star</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stars</span><span class="p">:</span>
+                <span class="n">star</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">star_surf</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+            <span class="n">star_surf</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="n">star_a</span><span class="p">)</span>
+            <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">star_surf</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+        <span class="c1"># 2. Runes ────────────────────────────────────────────────────────────</span>
+        <span class="k">if</span> <span class="n">phase</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">rune_global</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">255</span> <span class="o">*</span> <span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">pt</span> <span class="o">/</span> <span class="mf">1.0</span><span class="p">))</span> <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">255</span>
+            <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="mi">6</span><span class="p">:</span>
+                <span class="n">rune_global</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">255</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">pt</span> <span class="o">/</span> <span class="n">_PHASE_DUR</span><span class="p">[</span><span class="mi">6</span><span class="p">]))</span>
+            <span class="k">for</span> <span class="n">rune</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_runes</span><span class="p">:</span>
+                <span class="n">rune</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">rune_global</span><span class="p">)</span>
+
+        <span class="c1"># 3. Embers ───────────────────────────────────────────────────────────</span>
+        <span class="n">ember_surf</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">sw</span><span class="p">,</span> <span class="n">sh</span><span class="p">),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_embers</span><span class="p">:</span>
+            <span class="n">e</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">ember_surf</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">phase</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">ember_surf</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+        <span class="c1"># 4. Voice particles ──────────────────────────────────────────────────</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_parts</span><span class="p">:</span>
+            <span class="n">vp_surf</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">sw</span><span class="p">,</span> <span class="n">sh</span><span class="p">),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v_parts</span><span class="p">:</span>
+                <span class="n">p</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">vp_surf</span><span class="p">)</span>
+            <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">vp_surf</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+        <span class="c1"># 5. Centre glow / orb ────────────────────────────────────────────────</span>
+        <span class="k">if</span> <span class="n">phase</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_draw_centre_glow</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">phase</span><span class="p">,</span> <span class="n">pt</span><span class="p">)</span>
+
+        <span class="c1"># 6. Voice lines ──────────────────────────────────────────────────────</span>
+        <span class="k">if</span> <span class="mi">2</span> <span class="o">&lt;=</span> <span class="n">phase</span> <span class="o">&lt;=</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="n">line_idx</span> <span class="o">=</span> <span class="n">phase</span> <span class="o">-</span> <span class="mi">2</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_draw_voice_line</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">sw</span><span class="p">,</span> <span class="n">sh</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">line_idx</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">pt</span><span class="p">,</span> <span class="n">phase</span><span class="p">)</span>
+
+        <span class="c1"># 7. &quot;Arise, Chosen One&quot; grand title (burst phase) ────────────────────</span>
+        <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="mi">5</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_draw_arise_title</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">sw</span><span class="p">,</span> <span class="n">sh</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">pt</span><span class="p">)</span>
+
+        <span class="c1"># 8. Shockwaves &amp; burst particles ─────────────────────────────────────</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shockwaves</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bursts</span><span class="p">:</span>
+            <span class="n">fx_surf</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">sw</span><span class="p">,</span> <span class="n">sh</span><span class="p">),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shockwaves</span><span class="p">:</span>
+                <span class="n">w</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">fx_surf</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bursts</span><span class="p">:</span>
+                <span class="n">b</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">fx_surf</span><span class="p">)</span>
+            <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">fx_surf</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+        <span class="c1"># 9. Flash (burst entry) ──────────────────────────────────────────────</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flash_alpha</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">flash</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">sw</span><span class="p">,</span> <span class="n">sh</span><span class="p">))</span>
+            <span class="n">flash</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">WHITE_GLOW</span><span class="p">)</span>
+            <span class="n">flash</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_flash_alpha</span><span class="p">))</span>
+            <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">flash</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+        <span class="c1"># 10. Fade overlays ────────────────────────────────────────────────────</span>
+        <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Pure black — full opacity</span>
+            <span class="n">screen</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">phase</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># Fade from black: alpha decreases as pt increases</span>
+            <span class="n">fade_a</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">255</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">ease_out_cubic</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">pt</span> <span class="o">/</span> <span class="mf">1.5</span><span class="p">)))))</span>
+            <span class="k">if</span> <span class="n">fade_a</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">ov</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">sw</span><span class="p">,</span> <span class="n">sh</span><span class="p">))</span>
+                <span class="n">ov</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+                <span class="n">ov</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="n">fade_a</span><span class="p">)</span>
+                <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">ov</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">phase</span> <span class="o">==</span> <span class="mi">6</span><span class="p">:</span>
+            <span class="c1"># Fade to black</span>
+            <span class="n">fade_a</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">255</span> <span class="o">*</span> <span class="n">ease_out_cubic</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">pt</span> <span class="o">/</span> <span class="n">_PHASE_DUR</span><span class="p">[</span><span class="mi">6</span><span class="p">])))</span>
+            <span class="k">if</span> <span class="n">fade_a</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">ov</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">sw</span><span class="p">,</span> <span class="n">sh</span><span class="p">))</span>
+                <span class="n">ov</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+                <span class="n">ov</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="n">fade_a</span><span class="p">)</span>
+                <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">ov</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+        <span class="c1"># 11. Skip hint ────────────────────────────────────────────────────────</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_skip_surf</span> <span class="ow">and</span> <span class="mi">1</span> <span class="o">&lt;=</span> <span class="n">phase</span> <span class="o">&lt;=</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="n">skip_a</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">130</span> <span class="o">*</span> <span class="p">(</span><span class="mf">0.5</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">t</span> <span class="o">*</span> <span class="mf">1.8</span><span class="p">)))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_skip_surf</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="n">skip_a</span><span class="p">)))</span>
+            <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_skip_surf</span><span class="p">,</span>
+                <span class="p">(</span><span class="n">sw</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_skip_surf</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span> <span class="o">-</span> <span class="mi">20</span><span class="p">,</span>
+                 <span class="n">sh</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_skip_surf</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span> <span class="o">-</span> <span class="mi">16</span><span class="p">)</span>
+            <span class="p">)</span></div>
+
+
+    <span class="c1"># ── Sub-draw helpers ──────────────────────────────────────────────────────</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_draw_nebula</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">,</span> <span class="n">sw</span><span class="p">,</span> <span class="n">sh</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Draw a gently pulsing coloured nebula in the background.&quot;&quot;&quot;</span>
+        <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span> <span class="o">=</span> <span class="n">sw</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">sh</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="n">phase_shift</span> <span class="o">=</span> <span class="n">t</span> <span class="o">*</span> <span class="mf">0.07</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">rx</span><span class="p">,</span> <span class="n">ry_off</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">base_a</span><span class="p">)</span> <span class="ow">in</span> <span class="p">[</span>
+            <span class="p">(</span><span class="mf">0.40</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.12</span><span class="p">,</span> <span class="mf">0.35</span><span class="p">,</span> <span class="p">(</span><span class="mi">40</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span> <span class="mi">18</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.60</span><span class="p">,</span>  <span class="mf">0.10</span><span class="p">,</span> <span class="mf">0.30</span><span class="p">,</span> <span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span>  <span class="mi">80</span><span class="p">),</span> <span class="mi">14</span><span class="p">),</span>
+            <span class="p">(</span><span class="o">-</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span>  <span class="mf">0.25</span><span class="p">,</span> <span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">120</span><span class="p">),</span> <span class="mi">10</span><span class="p">),</span>
+        <span class="p">]:</span>
+            <span class="n">ncx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cx</span> <span class="o">+</span> <span class="n">sw</span> <span class="o">*</span> <span class="n">rx</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phase_shift</span><span class="p">))</span>
+            <span class="n">ncy</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cy</span> <span class="o">+</span> <span class="n">sh</span> <span class="o">*</span> <span class="n">ry_off</span> <span class="o">+</span> <span class="n">sh</span> <span class="o">*</span> <span class="mf">0.08</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phase_shift</span> <span class="o">*</span> <span class="mf">1.3</span><span class="p">))</span>
+            <span class="n">nr</span>  <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">sw</span><span class="p">,</span> <span class="n">sh</span><span class="p">)</span> <span class="o">*</span> <span class="n">r</span><span class="p">)</span>
+            <span class="n">a</span>   <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">base_a</span> <span class="o">+</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">t</span> <span class="o">*</span> <span class="mf">0.3</span> <span class="o">+</span> <span class="n">rx</span> <span class="o">*</span> <span class="mi">5</span><span class="p">))</span>
+            <span class="n">a</span>   <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="n">a</span><span class="p">))</span>
+            <span class="n">ns</span>  <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">nr</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="n">nr</span> <span class="o">*</span> <span class="mi">2</span><span class="p">),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">circle</span><span class="p">(</span><span class="n">ns</span><span class="p">,</span> <span class="p">(</span><span class="o">*</span><span class="n">col</span><span class="p">,</span> <span class="n">a</span><span class="p">),</span> <span class="p">(</span><span class="n">nr</span><span class="p">,</span> <span class="n">nr</span><span class="p">),</span> <span class="n">nr</span><span class="p">)</span>
+            <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">ns</span><span class="p">,</span> <span class="p">(</span><span class="n">ncx</span> <span class="o">-</span> <span class="n">nr</span><span class="p">,</span> <span class="n">ncy</span> <span class="o">-</span> <span class="n">nr</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_draw_centre_glow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">phase</span><span class="p">,</span> <span class="n">pt</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Pulsing glow orb at the screen centre.&quot;&quot;&quot;</span>
+        <span class="n">base_r</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sw</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sh</span><span class="p">())</span> <span class="o">*</span> <span class="mf">0.18</span><span class="p">)</span>
+        <span class="n">pulse</span>  <span class="o">=</span> <span class="mf">0.85</span> <span class="o">+</span> <span class="mf">0.15</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">t</span> <span class="o">*</span> <span class="mf">1.4</span><span class="p">)</span>
+        <span class="n">r</span>      <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">base_r</span> <span class="o">*</span> <span class="n">pulse</span><span class="p">)</span>
+        <span class="n">a_mult</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">pt</span> <span class="o">/</span> <span class="mf">0.8</span><span class="p">)</span> <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="mi">2</span> <span class="k">else</span> <span class="mf">1.0</span>
+        <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="mi">6</span><span class="p">:</span>
+            <span class="n">a_mult</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">pt</span> <span class="o">/</span> <span class="n">_PHASE_DUR</span><span class="p">[</span><span class="mi">6</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">ri</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">4</span><span class="p">):</span>
+            <span class="n">ratio</span> <span class="o">=</span> <span class="n">ri</span> <span class="o">/</span> <span class="n">r</span>
+            <span class="c1"># Inner: bright lavender → outer: dark purple</span>
+            <span class="n">base_a</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">40</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">ratio</span><span class="p">)</span> <span class="o">*</span> <span class="n">a_mult</span><span class="p">)</span>
+            <span class="n">col</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">80</span> <span class="o">+</span> <span class="mi">140</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">ratio</span><span class="p">)))),</span>
+                <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">40</span> <span class="o">+</span>  <span class="mi">80</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">ratio</span><span class="p">)))),</span>
+                <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">180</span> <span class="o">+</span> <span class="mi">60</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">ratio</span><span class="p">)))),</span>
+                <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="n">base_a</span><span class="p">))</span>
+            <span class="p">)</span>
+            <span class="n">ns</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">ri</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="n">ri</span> <span class="o">*</span> <span class="mi">2</span><span class="p">),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">circle</span><span class="p">(</span><span class="n">ns</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="p">(</span><span class="n">ri</span><span class="p">,</span> <span class="n">ri</span><span class="p">),</span> <span class="n">ri</span><span class="p">)</span>
+            <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">ns</span><span class="p">,</span> <span class="p">(</span><span class="n">cx</span> <span class="o">-</span> <span class="n">ri</span><span class="p">,</span> <span class="n">cy</span> <span class="o">-</span> <span class="n">ri</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_draw_voice_line</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">,</span> <span class="n">sw</span><span class="p">,</span> <span class="n">sh</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">line_idx</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">pt</span><span class="p">,</span> <span class="n">phase</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Draw a single voice line using a typewriter effect.</span>
+<span class="sd">        The text is centred vertically around the middle of the screen with a</span>
+<span class="sd">        panel and decorative border.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">full_text</span> <span class="o">=</span> <span class="n">_VOICE_LINES</span><span class="p">[</span><span class="n">line_idx</span><span class="p">]</span>
+        <span class="n">shown_chars</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tw_chars</span><span class="p">[</span><span class="n">line_idx</span><span class="p">])</span>
+        <span class="n">display</span> <span class="o">=</span> <span class="n">full_text</span><span class="p">[:</span><span class="n">shown_chars</span><span class="p">]</span>
+
+        <span class="c1"># Split on actual newlines</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">display</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">lh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_font_voice</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span> <span class="o">+</span> <span class="mi">4</span>
+        <span class="n">total_h</span> <span class="o">=</span> <span class="n">lh</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+
+        <span class="c1"># Panel bounds</span>
+        <span class="n">max_line_w</span> <span class="o">=</span> <span class="nb">max</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_font_voice</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">ln</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">ln</span> <span class="ow">in</span> <span class="n">full_text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)),</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">pad_x</span><span class="p">,</span> <span class="n">pad_y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">40</span> <span class="o">*</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">()),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">20</span> <span class="o">*</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">())</span>
+        <span class="n">panel_w</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">max_line_w</span> <span class="o">+</span> <span class="n">pad_x</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="n">sw</span> <span class="o">-</span> <span class="mi">80</span><span class="p">)</span>
+        <span class="n">panel_h</span> <span class="o">=</span> <span class="n">total_h</span> <span class="o">+</span> <span class="n">pad_y</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">30</span> <span class="o">*</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">())</span>
+        <span class="n">panel_x</span> <span class="o">=</span> <span class="n">cx</span> <span class="o">-</span> <span class="n">panel_w</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="n">panel_y</span> <span class="o">=</span> <span class="n">cy</span> <span class="o">-</span> <span class="n">panel_h</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">sh</span> <span class="o">*</span> <span class="mf">0.18</span><span class="p">)</span>
+
+        <span class="c1"># Fade-in during first 0.4 s of this phase</span>
+        <span class="n">text_alpha</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">255</span> <span class="o">*</span> <span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">pt</span> <span class="o">/</span> <span class="mf">0.4</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">phase</span> <span class="o">&gt;</span> <span class="n">line_idx</span> <span class="o">+</span> <span class="mi">2</span><span class="p">:</span>   <span class="c1"># next phase has begun → text should fade out</span>
+            <span class="k">pass</span>   <span class="c1"># we simply stop showing it (phase guard above)</span>
+
+        <span class="n">panel_surf</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">panel_w</span><span class="p">,</span> <span class="n">panel_h</span><span class="p">),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+
+        <span class="c1"># Dark glass background</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">panel_surf</span><span class="p">,</span> <span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">190</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">panel_w</span><span class="p">,</span> <span class="n">panel_h</span><span class="p">),</span> <span class="n">border_radius</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+
+        <span class="c1"># Gold border — animated glow</span>
+        <span class="n">bord_a</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">160</span> <span class="o">+</span> <span class="mi">60</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">t</span> <span class="o">*</span> <span class="mf">1.5</span><span class="p">))</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">panel_surf</span><span class="p">,</span> <span class="p">(</span><span class="o">*</span><span class="n">GOLD</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="n">bord_a</span><span class="p">))),</span>
+                         <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">panel_w</span><span class="p">,</span> <span class="n">panel_h</span><span class="p">),</span> <span class="mi">2</span><span class="p">,</span> <span class="n">border_radius</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+
+        <span class="c1"># Top accent bar</span>
+        <span class="n">bar_w</span> <span class="o">=</span> <span class="n">panel_w</span> <span class="o">-</span> <span class="mi">40</span>
+        <span class="n">bar_surf</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">bar_w</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">bx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">bar_w</span><span class="p">):</span>
+            <span class="n">ratio</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="nb">abs</span><span class="p">(</span><span class="n">bx</span> <span class="o">/</span> <span class="n">bar_w</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>
+            <span class="n">ba</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">200</span> <span class="o">*</span> <span class="n">ratio</span> <span class="o">*</span> <span class="n">ratio</span><span class="p">)</span>
+            <span class="n">bar_surf</span><span class="o">.</span><span class="n">set_at</span><span class="p">((</span><span class="n">bx</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="o">*</span><span class="n">GOLD_BRIGHT</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="n">ba</span><span class="p">))))</span>
+        <span class="n">panel_surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">bar_surf</span><span class="p">,</span> <span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+
+        <span class="c1"># Entity tag</span>
+        <span class="n">tag_font</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get_font</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">14</span> <span class="o">*</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">())))</span>
+        <span class="n">tag</span> <span class="o">=</span> <span class="n">tag_font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="s2">&quot;⟨ THE VOICE ⟩&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="p">(</span><span class="o">*</span><span class="n">GOLD</span><span class="p">,</span> <span class="mi">180</span><span class="p">))</span>
+        <span class="n">panel_surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">tag</span><span class="p">,</span> <span class="p">(</span><span class="n">panel_w</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">tag</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+
+        <span class="c1"># Text lines with shimmer</span>
+        <span class="n">ty</span> <span class="o">=</span> <span class="n">pad_y</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">20</span> <span class="o">*</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">ln</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">ln</span><span class="p">:</span>
+                <span class="n">ty</span> <span class="o">+=</span> <span class="n">lh</span>
+                <span class="k">continue</span>
+            <span class="n">txt_surf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_font_voice</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">ln</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">VOICE_CLR</span><span class="p">)</span>
+            <span class="c1"># Add a subtle shimmer</span>
+            <span class="n">shimmer_phase</span> <span class="o">=</span> <span class="p">(</span><span class="n">t</span> <span class="o">*</span> <span class="mi">80</span> <span class="o">+</span> <span class="mi">0</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="n">txt_surf</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span> <span class="o">+</span> <span class="mi">40</span><span class="p">)</span>
+            <span class="n">sh_w</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">txt_surf</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span> <span class="o">*</span> <span class="mf">0.12</span><span class="p">))</span>
+            <span class="n">sh_band</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">sh_w</span><span class="p">,</span> <span class="n">txt_surf</span><span class="o">.</span><span class="n">get_height</span><span class="p">()),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">sx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">sh_w</span><span class="p">):</span>
+                <span class="n">ratio</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="nb">abs</span><span class="p">(</span><span class="n">sx</span> <span class="o">-</span> <span class="n">sh_w</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">sh_w</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">sa</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">60</span> <span class="o">*</span> <span class="n">ratio</span><span class="p">)</span>
+                <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">sh_band</span><span class="p">,</span> <span class="p">(</span><span class="o">*</span><span class="n">WHITE_GLOW</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">sa</span><span class="p">))),</span> <span class="p">(</span><span class="n">sx</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="n">sx</span><span class="p">,</span> <span class="n">txt_surf</span><span class="o">.</span><span class="n">get_height</span><span class="p">()))</span>
+            <span class="n">txt_surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">sh_band</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">shimmer_phase</span> <span class="o">-</span> <span class="n">sh_w</span><span class="p">),</span> <span class="mi">0</span><span class="p">),</span> <span class="n">special_flags</span><span class="o">=</span><span class="n">pygame</span><span class="o">.</span><span class="n">BLEND_RGBA_ADD</span><span class="p">)</span>
+
+            <span class="n">panel_surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">txt_surf</span><span class="p">,</span> <span class="p">(</span><span class="n">panel_w</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">txt_surf</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">ty</span><span class="p">))</span>
+            <span class="n">ty</span> <span class="o">+=</span> <span class="n">lh</span>
+
+        <span class="n">panel_surf</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="n">text_alpha</span><span class="p">)</span>
+        <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">panel_surf</span><span class="p">,</span> <span class="p">(</span><span class="n">panel_x</span><span class="p">,</span> <span class="n">panel_y</span><span class="p">))</span>
+
+        <span class="c1"># Cursor blink</span>
+        <span class="k">if</span> <span class="n">shown_chars</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">full_text</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">t</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">cur_x</span> <span class="o">=</span> <span class="n">panel_x</span> <span class="o">+</span> <span class="n">panel_w</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_font_voice</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">3</span>
+                <span class="n">cur_y</span> <span class="o">=</span> <span class="n">panel_y</span> <span class="o">+</span> <span class="n">pad_y</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">20</span> <span class="o">*</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">())</span> <span class="o">+</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">lh</span>
+                <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="p">(</span><span class="o">*</span><span class="n">GOLD_BRIGHT</span><span class="p">,</span> <span class="mi">200</span><span class="p">),</span>
+                                 <span class="p">(</span><span class="n">cur_x</span><span class="p">,</span> <span class="n">cur_y</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">())),</span> <span class="n">lh</span> <span class="o">-</span> <span class="mi">4</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_draw_arise_title</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">,</span> <span class="n">sw</span><span class="p">,</span> <span class="n">sh</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">pt</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Render the grand &#39;ARISE, CHOSEN ONE.&#39; text that dominates the burst phase.</span>
+<span class="sd">        Each letter drops in elastically, then glows.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dur</span> <span class="o">=</span> <span class="n">_PHASE_DUR</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+        <span class="n">t_local</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">pt</span> <span class="o">/</span> <span class="p">(</span><span class="n">dur</span> <span class="o">*</span> <span class="mf">0.6</span><span class="p">))</span>
+
+        <span class="n">text1</span> <span class="o">=</span> <span class="s2">&quot;ARISE,&quot;</span>
+        <span class="n">text2</span> <span class="o">=</span> <span class="s2">&quot;CHOSEN ONE.&quot;</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_render_word</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">base_y</span><span class="p">,</span> <span class="n">delay_mult</span><span class="p">):</span>
+            <span class="n">chars</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+            <span class="n">char_surfs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_font_arise</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">GOLD_BRIGHT</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">chars</span><span class="p">]</span>
+            <span class="n">total_w</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">char_surfs</span><span class="p">)</span>
+            <span class="n">sx</span> <span class="o">=</span> <span class="n">cx</span> <span class="o">-</span> <span class="n">total_w</span> <span class="o">//</span> <span class="mi">2</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">cs</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">chars</span><span class="p">,</span> <span class="n">char_surfs</span><span class="p">)):</span>
+                <span class="n">c_delay</span> <span class="o">=</span> <span class="n">delay_mult</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="mf">0.06</span>
+                <span class="n">c_t</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="p">(</span><span class="n">pt</span> <span class="o">-</span> <span class="n">c_delay</span><span class="p">)</span> <span class="o">/</span> <span class="mf">0.35</span><span class="p">))</span>
+                <span class="n">c_eased</span> <span class="o">=</span> <span class="n">ease_out_elastic</span><span class="p">(</span><span class="n">c_t</span><span class="p">)</span>
+                <span class="n">c_off_y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">c_eased</span><span class="p">)</span> <span class="o">*</span> <span class="mi">80</span><span class="p">)</span>
+                <span class="n">c_alpha</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">255</span> <span class="o">*</span> <span class="n">c_eased</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">c_alpha</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">:</span>
+                    <span class="n">sx</span> <span class="o">+=</span> <span class="n">cs</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># Glow halo</span>
+                <span class="k">if</span> <span class="n">c_eased</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">:</span>
+                    <span class="n">glow_a</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">80</span> <span class="o">*</span> <span class="p">(</span><span class="n">c_eased</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="mf">0.7</span> <span class="o">+</span> <span class="mf">0.3</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_t</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="n">i</span><span class="p">)))</span>
+                    <span class="n">glow_s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_font_arise</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">80</span><span class="p">))</span>
+                    <span class="n">glow_s</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mi">120</span><span class="p">,</span> <span class="n">glow_a</span><span class="p">)))</span>
+                    <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">glow_s</span><span class="p">,</span> <span class="p">(</span><span class="n">sx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">base_y</span> <span class="o">+</span> <span class="n">c_off_y</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+
+                <span class="n">cs</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="n">c_alpha</span><span class="p">)</span>
+                <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">cs</span><span class="p">,</span> <span class="p">(</span><span class="n">sx</span><span class="p">,</span> <span class="n">base_y</span> <span class="o">+</span> <span class="n">c_off_y</span><span class="p">))</span>
+                <span class="n">sx</span> <span class="o">+=</span> <span class="n">cs</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>
+
+        <span class="n">lh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_font_arise</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
+        <span class="n">_render_word</span><span class="p">(</span><span class="n">text1</span><span class="p">,</span> <span class="n">cy</span> <span class="o">-</span> <span class="n">lh</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="mi">8</span> <span class="o">*</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">()),</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">_render_word</span><span class="p">(</span><span class="n">text2</span><span class="p">,</span> <span class="n">cy</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">8</span> <span class="o">*</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">()),</span> <span class="mf">0.2</span><span class="p">)</span>
+
+        <span class="c1"># Decorative horizontal line beneath</span>
+        <span class="n">line_t</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="p">(</span><span class="n">pt</span> <span class="o">-</span> <span class="mf">0.8</span><span class="p">)</span> <span class="o">/</span> <span class="mf">0.4</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">line_t</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">lw</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">sw</span> <span class="o">*</span> <span class="mf">0.55</span> <span class="o">*</span> <span class="n">ease_out_cubic</span><span class="p">(</span><span class="n">line_t</span><span class="p">))</span>
+            <span class="n">lx</span> <span class="o">=</span> <span class="n">cx</span> <span class="o">-</span> <span class="n">lw</span> <span class="o">//</span> <span class="mi">2</span>
+            <span class="n">ly</span> <span class="o">=</span> <span class="n">cy</span> <span class="o">+</span> <span class="n">lh</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mi">16</span> <span class="o">*</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">())</span>
+            <span class="n">la</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">200</span> <span class="o">*</span> <span class="n">line_t</span><span class="p">)</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="p">(</span><span class="o">*</span><span class="n">GOLD</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="n">la</span><span class="p">))),</span> <span class="p">(</span><span class="n">lx</span><span class="p">,</span> <span class="n">ly</span><span class="p">),</span> <span class="p">(</span><span class="n">lx</span> <span class="o">+</span> <span class="n">lw</span><span class="p">,</span> <span class="n">ly</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">())))</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="p">(</span><span class="o">*</span><span class="n">GOLD_BRIGHT</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="n">la</span> <span class="o">//</span> <span class="mi">2</span><span class="p">))),</span> <span class="p">(</span><span class="n">lx</span><span class="p">,</span> <span class="n">ly</span> <span class="o">-</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="n">lx</span> <span class="o">+</span> <span class="n">lw</span><span class="p">,</span> <span class="n">ly</span> <span class="o">-</span> <span class="mi">2</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Vibe-inc.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

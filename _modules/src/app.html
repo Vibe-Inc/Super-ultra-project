@@ -77,6 +77,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.save_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">SaveManager</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.profiling</span><span class="w"> </span><span class="kn">import</span> <span class="n">FrameProfiler</span><span class="p">,</span> <span class="n">FpsCounter</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.article_tracker</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArticleUnlockTracker</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.achievements</span><span class="w"> </span><span class="kn">import</span> <span class="n">AchievementManager</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.inventory.inventory_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">INVENTORY_manager</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.items.items</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_item</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">database.item_db.weapons_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_weapons</span>
@@ -246,7 +247,7 @@
         <span class="n">add_item</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;steel_leggings&quot;</span><span class="p">)</span>
         <span class="n">add_item</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;steel_boots&quot;</span><span class="p">)</span>
         
-        <span class="bp">self</span><span class="o">.</span><span class="n">money</span> <span class="o">=</span> <span class="mi">100</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_money</span> <span class="o">=</span> <span class="mi">100</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">purple_stars</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">revealed_tarot_cards</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
 
@@ -275,8 +276,24 @@
         <span class="c1"># Article unlock tracker for auto-opening wiki articles</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">article_tracker</span> <span class="o">=</span> <span class="n">ArticleUnlockTracker</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">article_notifications</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">guide_intro_shown</span> <span class="o">=</span> <span class="kc">False</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">guide_intro_shown</span> <span class="o">=</span> <span class="kc">False</span>
+        
+        <span class="c1"># Achievements manager</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">achievement_manager</span> <span class="o">=</span> <span class="n">AchievementManager</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">money</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_money</span>
+
+    <span class="nd">@money</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">money</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_money</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;achievement_manager&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_money</span> <span class="o">&gt;=</span> <span class="mi">1000</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">achievement_manager</span><span class="o">.</span><span class="n">unlock</span><span class="p">(</span><span class="s2">&quot;wealthy&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_money</span> <span class="o">&gt;=</span> <span class="mi">10000</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">achievement_manager</span><span class="o">.</span><span class="n">unlock</span><span class="p">(</span><span class="s2">&quot;tycoon&quot;</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_dir_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">radius</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">dir_x</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">dir_y</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;pygame.Surface&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a cached hemisphere mask that attenuates light behind the character.</span>
@@ -510,6 +527,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">start_section</span><span class="p">(</span><span class="s2">&quot;postfx&quot;</span><span class="p">)</span>
             <span class="n">effective_brightness</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">USER_SCREEN_BRIGHTNESS</span>
             <span class="n">night_tint</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">_is_intro</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;intro_animation&quot;</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;gameplay&quot;</span><span class="p">:</span>
                 <span class="n">effective_brightness</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">USER_SCREEN_BRIGHTNESS</span> <span class="o">*</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ENVIRONMENT_BRIGHTNESS</span>
                 <span class="n">night_tint</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ENVIRONMENT_BRIGHTNESS</span> <span class="o">&lt;=</span> <span class="mf">0.55</span>
@@ -532,7 +550,7 @@
                 <span class="k">if</span> <span class="n">gs</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">gs</span><span class="p">,</span> <span class="s1">&#39;current_map_path&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;maps/tavern.tmx&quot;</span><span class="p">:</span>
                     <span class="n">_skip_night_overlay</span> <span class="o">=</span> <span class="kc">True</span>
 
-            <span class="k">if</span> <span class="n">effective_brightness</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">_skip_night_overlay</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">effective_brightness</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">_skip_night_overlay</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">_is_intro</span><span class="p">:</span>
                 <span class="n">overlay_alpha</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">effective_brightness</span><span class="p">)</span> <span class="o">*</span> <span class="mi">255</span><span class="p">)</span>
                 <span class="c1"># Use the environment tint color computed by the game state for dawn/dusk/night</span>
                 <span class="k">if</span> <span class="n">night_tint</span><span class="p">:</span>
