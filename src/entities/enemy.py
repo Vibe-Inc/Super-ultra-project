@@ -1,3 +1,4 @@
+import math
 from typing import TYPE_CHECKING
 
 import pygame
@@ -44,11 +45,17 @@ def _load_sprite_animations(
     return animations, flipped
 
 
+ATTACK_PHASE_IDLE = 0
+ATTACK_PHASE_WIND_UP = 1
+ATTACK_PHASE_TELEGRAPH = 2
+ATTACK_PHASE_STRIKE = 3
+
+
 class Enemy:
     """
     Represents an enemy character that can patrol, detect, chase, and attack the player.
 
-    This class handles enemy movement, animation, AI state transitions, health, and combat logic.
+    This class handles enemy movement, AI state transitions, health, and combat logic.
 
     Attributes:
         pos (pygame.Vector2):
@@ -204,6 +211,23 @@ class Enemy:
         self.attack_anim_origin: pygame.Vector2 = pygame.Vector2(0, 0)
         self.attack_anim_strength: float = 1.0
 
+        # Three-phase attack system
+        self.attack_phase: int = ATTACK_PHASE_IDLE
+        self.attack_phase_timer: float = 0.0
+        self.wind_up_duration: float = 0.25
+        self.telegraph_duration: float = 0.30
+        self.attack_telegraph_range: float = 0.0
+        self.attack_telegraph_angle: float = 130.0
+        self.attack_telegraph_color: tuple = (255, 100, 100, 80)
+        self.attack_damage_pending: int = 0
+        self.attack_knockback_pending: float = 0.0
+        self.attack_effect_pending = None
+
+        # Stun state
+        self.stun_timer: float = 0.0
+        # Strike consumption flag — prevents applying damage multiple times in STRIKE phase
+        self.attack_strike_consumed: bool = False
+
         self.effects = []
         # Status effect container (matches the player's API so weapons
         # can apply burn / poison / etc. by calling enemy.add_effect()).
@@ -300,6 +324,62 @@ class Enemy:
             self.attack_anim_elapsed = 0.0
             self.attack_anim_duration = 0.0
 
+    def _tick_attack_phase(self, dt: float):
+        if self.attack_phase == ATTACK_PHASE_IDLE:
+            return
+        self.attack_phase_timer -= dt
+        if self.attack_phase_timer <= 0:
+            if self.attack_phase == ATTACK_PHASE_WIND_UP:
+                self.attack_phase = ATTACK_PHASE_TELEGRAPH
+                self.attack_phase_timer = self.telegraph_duration
+                self.attack_strike_consumed = False
+            elif self.attack_phase == ATTACK_PHASE_TELEGRAPH:
+                self.attack_phase = ATTACK_PHASE_STRIKE
+                self.attack_phase_timer = 0.05
+                self.attack_strike_consumed = False
+            elif self.attack_phase == ATTACK_PHASE_STRIKE:
+                self.attack_phase = ATTACK_PHASE_IDLE
+                self.attack_phase_timer = 0.0
+                self.attack_strike_consumed = False
+
+    def start_attack_phase(self, wind_up: float = 0.25, telegraph: float = 0.30,
+                           telegraph_range: float = 0.0, telegraph_angle: float = 130.0,
+                           telegraph_color: tuple = (255, 100, 100, 80),
+                           damage: int = 0, knockback: float = 0.0, effect=None):
+        self.attack_phase = ATTACK_PHASE_WIND_UP
+        self.attack_phase_timer = wind_up
+        self.wind_up_duration = wind_up
+        self.telegraph_duration = telegraph
+        self.attack_telegraph_range = telegraph_range
+        self.attack_telegraph_angle = telegraph_angle
+        self.attack_telegraph_color = telegraph_color
+        self.attack_damage_pending = damage
+        self.attack_knockback_pending = knockback
+        self.attack_effect_pending = effect
+
+    def is_attack_telegraphing(self) -> bool:
+        return self.attack_phase == ATTACK_PHASE_TELEGRAPH
+
+    def is_attack_wind_up(self) -> bool:
+        return self.attack_phase == ATTACK_PHASE_WIND_UP
+
+    def is_attack_striking(self) -> bool:
+        return self.attack_phase == ATTACK_PHASE_STRIKE
+
+    def consume_strike(self) -> bool:
+        if self.attack_phase == ATTACK_PHASE_STRIKE and not self.attack_strike_consumed:
+            self.attack_strike_consumed = True
+            return True
+        return False
+
+    def is_in_attack(self) -> bool:
+        return self.attack_phase != ATTACK_PHASE_IDLE
+
+    def stun(self, duration: float = 1.0):
+        self.stun_timer = max(self.stun_timer, duration)
+        self.attack_phase = ATTACK_PHASE_IDLE
+        self.attack_phase_timer = 0.0
+
     def update(self, dt: float, collision_system, obstacles, nav_grid=None, attack_context=None, active: bool = True):
         if self.hit_flash_timer > 0:
             self.hit_flash_timer -= dt
@@ -315,6 +395,19 @@ class Enemy:
 
         # Advance any active close-range attack animation overlay.
         self._tick_attack_anim(dt)
+        # Advance three-phase attack system
+        self._tick_attack_phase(dt)
+
+        # Handle stun
+        if self.stun_timer > 0:
+            self.stun_timer -= dt
+            self.speed_multiplier = 0.0
+            self.velocity = pygame.Vector2(0, 0)
+            self.moving = False
+            self.speed = 0.0
+            collision_system.handle_movement_and_collision(self, dt, obstacles)
+            self._update_animation(dt)
+            return
 
         if not active:
             self.time_accumulator += dt * 0.2
@@ -324,8 +417,11 @@ class Enemy:
             self.image = self.animations[self.direction][self.frame_index]
             return
 
-        # Skip AI and attacks while frozen (speed_multiplier == 0)
-        if self.speed_multiplier > 0:
+        # Skip AI and attacks while frozen (speed_multiplier == 0) or during attack wind-up/telegraph
+        in_attack_anim = self.is_in_attack()
+        move_blocked = self.speed_multiplier <= 0 or (in_attack_anim and self.attack_phase != ATTACK_PHASE_STRIKE)
+
+        if not move_blocked:
             self._ai_context.dt = dt
             self._ai_context.nav_grid = nav_grid
             self._ai_context.obstacles = obstacles
@@ -340,6 +436,9 @@ class Enemy:
             self.speed = self.base_speed * self.speed_multiplier
             self._move(dt)
         else:
+            # Still allow brain/attack updates even when movement is blocked by attack phase
+            if self.attack_controller and attack_context and self.attack_phase == ATTACK_PHASE_IDLE:
+                self.attack_controller.update(self, attack_context)
             self.speed = 0.0
             self.velocity = pygame.Vector2(0, 0)
             self.moving = False
@@ -405,6 +504,30 @@ class Enemy:
         # Procedural close-range attack animation overlay
         if self.attack_anim_type:
             draw_attack_animation(screen, self, camera_offset)
+
+        # Telegraph visualization during WIND_UP and TELEGRAPH phases
+        if self.attack_phase in (ATTACK_PHASE_WIND_UP, ATTACK_PHASE_TELEGRAPH) and self.attack_telegraph_range > 0:
+            center = self.get_rect().center
+            sx = int(center[0] - camera_offset.x)
+            sy = int(center[1] - camera_offset.y)
+            direction = self._facing_vector()
+            if self.attack_anim_dir.length_squared() > 0:
+                direction = self.attack_anim_dir
+            fwd_angle = math.degrees(math.atan2(direction.y, direction.x))
+            half_angle = self.attack_telegraph_angle * 0.5
+            alpha_mult = 0.4 if self.attack_phase == ATTACK_PHASE_WIND_UP else 1.0
+            col = self.attack_telegraph_color
+            a = int(col[3] * alpha_mult) if len(col) > 3 else 80
+            r = self.attack_telegraph_range
+            surf_size = int(r * 2 + 20)
+            surf = pygame.Surface((surf_size, surf_size), pygame.SRCALPHA)
+            pygame.draw.arc(surf, (col[0], col[1], col[2], a),
+                            pygame.Rect(10, 10, surf_size - 20, surf_size - 20),
+                            math.radians(fwd_angle - half_angle),
+                            math.radians(fwd_angle + half_angle),
+                            max(2, int(r * 0.08)))
+            screen.blit(surf, (sx - surf_size // 2, sy - surf_size // 2),
+                        special_flags=pygame.BLEND_ALPHA_SDL2)
 
         bar_width = 40
         bar_height = 5

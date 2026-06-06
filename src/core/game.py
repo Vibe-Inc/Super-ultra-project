@@ -997,8 +997,23 @@ class Game(State):
         if not self.enemy_projectiles:
             return
 
-        for projectile in self.enemy_projectiles:
+        for projectile in self.enemy_projectiles[:]:
             projectile.update(dt, self.obstacles, self.character)
+            # Parry projectile: if player is in parry window and projectile is close
+            if self.character.is_in_parry_window() and projectile.alive:
+                p_center = self.character.get_center()
+                p_pos = getattr(projectile, "pos", None)
+                if p_pos and p_center.distance_to(p_pos) < 40:
+                    if self.character.reflect_projectile(projectile):
+                        # Destroy the projectile and damage nearby enemies instead
+                        projectile.alive = False
+                        parry_damage = max(1, int(self.character.get_effective_attack_damage() * 0.5))
+                        for enemy in self.enemies:
+                            e_center = pygame.Vector2(enemy.get_rect().center)
+                            if p_center.distance_to(e_center) < 150:
+                                enemy.take_damage(parry_damage)
+                                if hasattr(enemy, "stun"):
+                                    enemy.stun(1.0)
 
         self.enemy_projectiles = [projectile for projectile in self.enemy_projectiles if projectile.alive]
 
@@ -1566,6 +1581,18 @@ class Game(State):
             ediff = enemy.pos - player_pos
             active = ediff.length_squared() <= lod_sq
             enemy.update(dt, self.collision_handler, self.obstacles, self.nav_grid, attack_context, active=active)
+
+        # Parry check: if player is in parry window and enemy is telegraphing
+        if self.character.is_in_parry_window():
+            for enemy in self.enemies:
+                if hasattr(enemy, "is_attack_telegraphing") and enemy.is_attack_telegraphing():
+                    e_center = pygame.Vector2(enemy.get_rect().center)
+                    p_center = self.character.get_center()
+                    dist = e_center.distance_to(p_center)
+                    atk_range = getattr(enemy, "attack_telegraph_range", enemy.attack_range)
+                    if dist <= atk_range * 1.5:
+                        self.character.do_parry(enemy)
+                        enemy.attack_phase = 0
 
         self._update_projectiles(dt)
         self._update_enemy_projectiles(dt)
@@ -2179,6 +2206,17 @@ class Game(State):
             if event.key == pygame.K_F10:
                 self.spawn_menu.toggle()
 
+            if event.key == pygame.K_p:
+                if not self.app.INV_manager.player_inventory_opened:
+                    mouse_pos = pygame.mouse.get_pos()
+                    mouse_world_pos = pygame.Vector2(mouse_pos) + self._get_camera_offset()
+                    self.player_combat.handle_throw_weapon(mouse_world_pos)
+
+        if event.type == pygame.MOUSEMOTION:
+            if self.character.blocking:
+                mouse_world_pos = pygame.Vector2(event.pos) + self._get_camera_offset()
+                self.character.update_block_direction(mouse_world_pos)
+
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
                 if not self.app.INV_manager.player_inventory_opened:
@@ -2188,10 +2226,28 @@ class Game(State):
                     if not hud_click:
                         mouse_world_pos = pygame.Vector2(event.pos) + self._get_camera_offset()
                         self.player_combat.handle_player_attack(mouse_world_pos)
-            
+
             elif event.button == 3:
                 if not self.app.INV_manager.player_inventory_opened:
-                    if getattr(self.app.INV_manager, 'hotbar', None):
-                        self.app.INV_manager.hotbar.use_active_slot()
+                    # Start blocking
+                    mouse_world_pos = pygame.Vector2(event.pos) + self._get_camera_offset()
+                    self.character.start_block()
+                    self.character.update_block_direction(mouse_world_pos)
+
+            elif event.button == 2:
+                # Middle mouse = fast attack
+                if not self.app.INV_manager.player_inventory_opened:
+                    mouse_world_pos = pygame.Vector2(event.pos) + self._get_camera_offset()
+                    self.player_combat.handle_fast_attack(mouse_world_pos)
+
+        elif event.type == pygame.MOUSEBUTTONUP:
+            if event.button == 1:
+                if self.character.is_charging:
+                    mouse_world_pos = pygame.Vector2(event.pos) + self._get_camera_offset()
+                    self.player_combat.handle_player_attack_release(mouse_world_pos)
+            elif event.button == 3:
+                was_click = self.character.stop_block()
+                if was_click and getattr(self.app.INV_manager, 'hotbar', None):
+                    self.app.INV_manager.hotbar.use_active_slot()
 
         self.app.INV_manager.PLAYER_inventory_open(event, self.MAIN_player_inv, self.PLAYER_inventory_equipment)

@@ -105,6 +105,7 @@ class BaseAttack:
 class BruteAttack(BaseAttack):
     """
     Heavy melee attack pattern that charges and slams the player.
+    Uses a three-phase system for the slam: wind_up → telegraph → strike.
 
     Attributes:
         charge_cooldown_ms (int):
@@ -142,7 +143,7 @@ class BruteAttack(BaseAttack):
         _charge_ready(now_ms):
             Check whether a new charge may start.
         _slam(enemy, player, enemy_pos, player_pos, now_ms):
-            Apply slam damage, knockback, and slow.
+            Apply slam damage, knockback, and slow via phase system.
     """
     is_close_melee = True
 
@@ -158,6 +159,8 @@ class BruteAttack(BaseAttack):
         self.slow_duration = float(self.config.get("slow_duration", 1.3))
         self.slow_factor = float(self.config.get("slow_factor", 0.6))
         self.slam_anim_duration = float(self.config.get("slam_anim_duration", 0.55))
+        self.slam_wind_up = float(self.config.get("slam_wind_up", 0.35))
+        self.slam_telegraph = float(self.config.get("slam_telegraph", 0.30))
 
         self.last_charge_time = -self.charge_cooldown_ms
         self.charge_timer = 0.0
@@ -174,13 +177,25 @@ class BruteAttack(BaseAttack):
         diff = player_pos - enemy_pos
         distance_sq = diff.length_squared()
 
+        # Handle strike phase for slam (one-shot)
+        if hasattr(enemy, "consume_strike") and enemy.consume_strike():
+            direction = player_pos - enemy_pos
+            if direction.length_squared() == 0:
+                direction = pygame.Vector2(1, 0)
+            direction = direction.normalize()
+            self._do_slam_damage(enemy, player, direction, context.now_ms)
+            return
+
+        if hasattr(enemy, "is_in_attack") and enemy.is_in_attack():
+            return
+
         if self.charge_timer > 0:
             self.charge_timer -= context.dt
             enemy.speed_multiplier = self.charge_speed_mult
             enemy.ai_state = "charge"
             enemy.target = enemy.pos + self.charge_direction * self.charge_distance
             if distance_sq <= (enemy.attack_range * 1.1) * (enemy.attack_range * 1.1) and self.ready(context.now_ms):
-                self._slam(enemy, player, enemy_pos, player_pos, context.now_ms)
+                self._start_slam_phase(enemy, enemy_pos, player_pos)
                 self.charge_timer = 0.0
             if self.charge_timer <= 0:
                 enemy.speed_multiplier = 1.0
@@ -189,7 +204,7 @@ class BruteAttack(BaseAttack):
         enemy.speed_multiplier = 1.0
 
         if distance_sq <= (enemy.attack_range * enemy.attack_range) and self.ready(context.now_ms):
-            self._slam(enemy, player, enemy_pos, player_pos, context.now_ms)
+            self._start_slam_phase(enemy, enemy_pos, player_pos)
             return
 
         if distance_sq <= (self.charge_trigger_range * self.charge_trigger_range) and self._charge_ready(context.now_ms):
@@ -203,17 +218,33 @@ class BruteAttack(BaseAttack):
     def _charge_ready(self, now_ms: int) -> bool:
         return now_ms - self.last_charge_time >= self.charge_cooldown_ms
 
-    def _slam(self, enemy: object, player: object, enemy_pos: pygame.Vector2, player_pos: pygame.Vector2, now_ms: int):
+    def _start_slam_phase(self, enemy, enemy_pos, player_pos):
         direction = player_pos - enemy_pos
         if direction.length_squared() == 0:
             direction = pygame.Vector2(1, 0)
-        direction = direction.normalize()
+        else:
+            direction = direction.normalize()
+        damage = int(enemy.damage * self.slam_damage_mult)
+        if hasattr(enemy, "start_attack_phase"):
+            enemy.start_attack_phase(
+                wind_up=self.slam_wind_up,
+                telegraph=self.slam_telegraph,
+                telegraph_range=enemy.attack_range * 1.1,
+                telegraph_angle=140.0,
+                telegraph_color=(255, 120, 30, 100),
+                damage=damage,
+                knockback=self.knockback_force,
+            )
+            # Store direction for the strike
+            enemy.attack_anim_dir = direction
 
+    def _do_slam_damage(self, enemy, player, direction, now_ms):
         damage = int(enemy.damage * self.slam_damage_mult)
         player.take_damage(damage)
         player.add_effect(SlowEffect(self.slow_duration, self.slow_factor))
         player.pos += direction * self.knockback_force
         self.last_attack_time = now_ms
+        enemy_pos = _entity_center(enemy)
         if hasattr(enemy, "trigger_attack_anim"):
             enemy.trigger_attack_anim(
                 "brute_slam",
@@ -227,6 +258,7 @@ class BruteAttack(BaseAttack):
 class VenomousAttack(BaseAttack):
     """
     Melee attack pattern that applies poison to the player.
+    Uses a three-phase system: wind_up → telegraph → strike.
 
     Attributes:
         poison_duration (float):
@@ -242,7 +274,7 @@ class VenomousAttack(BaseAttack):
         __init__(config=None):
             Initialize venomous-specific tuning values.
         update(enemy, context):
-            Apply poison if the player is in range and cooldown allows it.
+            Drive three-phase attack cycle with poison.
     """
     is_close_melee = True
 
@@ -253,6 +285,8 @@ class VenomousAttack(BaseAttack):
         self.strike_damage_mult = float(self.config.get("strike_damage_mult", 0.9))
         self.strike_range = float(self.config.get("strike_range", 0.0))
         self.strike_anim_duration = float(self.config.get("strike_anim_duration", 0.4))
+        self.wind_up_duration = float(self.config.get("wind_up_duration", 0.20))
+        self.telegraph_duration = float(self.config.get("telegraph_duration", 0.25))
 
     def update(self, enemy: object, context: AttackContext):
         player = context.player
@@ -265,27 +299,53 @@ class VenomousAttack(BaseAttack):
         distance_sq = diff.length_squared()
 
         effective_range = self.strike_range or float(enemy.attack_range)
+
+        # Handle strike phase (one-shot)
+        if hasattr(enemy, "consume_strike") and enemy.consume_strike():
+            if distance_sq <= (effective_range * effective_range):
+                damage = int(enemy.damage * self.strike_damage_mult)
+                if damage > 0:
+                    player.take_damage(damage)
+                player.add_effect(PoisonEffect(self.poison_duration, self.poison_dps))
+                self.last_attack_time = context.now_ms
+                if hasattr(enemy, "trigger_attack_anim"):
+                    direction = player_pos - enemy_pos
+                    if direction.length_squared() == 0:
+                        direction = pygame.Vector2(1, 0)
+                    enemy.trigger_attack_anim(
+                        "venomous_strike",
+                        self.strike_anim_duration,
+                        direction=direction,
+                        origin=enemy_pos,
+                        strength=1.0,
+                    )
+            return
+
+        if hasattr(enemy, "is_in_attack") and enemy.is_in_attack():
+            return
+
+        # Check if we should start an attack
         if distance_sq > (effective_range * effective_range):
             return
 
         if not self.ready(context.now_ms):
             return
 
+        direction = player_pos - enemy_pos
+        if direction.length_squared() == 0:
+            direction = pygame.Vector2(1, 0)
+        else:
+            direction = direction.normalize()
+
         damage = int(enemy.damage * self.strike_damage_mult)
-        if damage > 0:
-            player.take_damage(damage)
-        player.add_effect(PoisonEffect(self.poison_duration, self.poison_dps))
-        self.last_attack_time = context.now_ms
-        if hasattr(enemy, "trigger_attack_anim"):
-            direction = player_pos - enemy_pos
-            if direction.length_squared() == 0:
-                direction = pygame.Vector2(1, 0)
-            enemy.trigger_attack_anim(
-                "venomous_strike",
-                self.strike_anim_duration,
-                direction=direction,
-                origin=enemy_pos,
-                strength=1.0,
+        if hasattr(enemy, "start_attack_phase"):
+            enemy.start_attack_phase(
+                wind_up=self.wind_up_duration,
+                telegraph=self.telegraph_duration,
+                telegraph_range=effective_range,
+                telegraph_angle=100.0,
+                telegraph_color=(80, 200, 80, 100),
+                damage=damage,
             )
 
 
@@ -471,6 +531,7 @@ class TricksterAttack(BaseAttack):
 class MeleeAttack(BaseAttack):
     """
     Generic melee attack pattern that strikes the player within an attack area.
+    Uses a three-phase system: wind_up → telegraph → strike.
 
     Attributes:
         strike_range (float):
@@ -481,12 +542,16 @@ class MeleeAttack(BaseAttack):
             Optional knockback distance applied to the player.
         require_line_of_sight (bool):
             Whether obstacles between enemy and player block the strike.
+        wind_up_duration (float):
+            Duration of the preparation phase before telegraph.
+        telegraph_duration (float):
+            Duration of the telegraph phase showing the attack area.
 
     Methods:
         __init__(config=None):
             Initialize melee-specific tuning values.
         update(enemy, context):
-            Damage the player if they stand inside the attack area and cooldown allows.
+            Drive three-phase attack cycle.
     """
     is_close_melee = True
 
@@ -499,6 +564,8 @@ class MeleeAttack(BaseAttack):
         self.strike_anim_duration = float(self.config.get("strike_anim_duration", 0.35))
         self.anim_type = str(self.config.get("anim_type", "")).lower()
         self.anim_strength = float(self.config.get("anim_strength", 1.0))
+        self.wind_up_duration = float(self.config.get("wind_up_duration", 0.25))
+        self.telegraph_duration = float(self.config.get("telegraph_duration", 0.30))
 
     def update(self, enemy: object, context: AttackContext):
         player = context.player
@@ -511,6 +578,36 @@ class MeleeAttack(BaseAttack):
         distance_sq = diff.length_squared()
 
         effective_range = self.strike_range or float(enemy.attack_range)
+
+        # If enemy is already in an attack phase, don't re-trigger
+        if hasattr(enemy, "is_in_attack") and enemy.is_in_attack():
+            # Check for strike phase to apply damage (one-shot)
+            if hasattr(enemy, "consume_strike") and enemy.consume_strike():
+                if distance_sq <= (effective_range * effective_range):
+                    if not self.require_line_of_sight or _has_line_of_sight(enemy_pos, player_pos, context.obstacles):
+                        damage = max(1, int(enemy.damage * self.damage_mult))
+                        player.take_damage(damage)
+                        direction = player_pos - enemy_pos
+                        if direction.length_squared() == 0:
+                            direction = pygame.Vector2(1, 0)
+                        else:
+                            direction = direction.normalize()
+                        if self.knockback_force > 0:
+                            player.pos += direction * self.knockback_force
+                        self.last_attack_time = context.now_ms
+                        # Play the strike animation
+                        if hasattr(enemy, "trigger_attack_anim"):
+                            anim_type = self.anim_type or self._default_anim_for(enemy)
+                            enemy.trigger_attack_anim(
+                                anim_type,
+                                self.strike_anim_duration,
+                                direction=direction,
+                                origin=enemy_pos,
+                                strength=self.anim_strength,
+                            )
+            return
+
+        # Not in attack phase — check if we should start one
         if distance_sq > (effective_range * effective_range):
             return
 
@@ -520,28 +617,23 @@ class MeleeAttack(BaseAttack):
         if self.require_line_of_sight and not _has_line_of_sight(enemy_pos, player_pos, context.obstacles):
             return
 
-        damage = max(1, int(enemy.damage * self.damage_mult))
-        player.take_damage(damage)
-
         direction = player_pos - enemy_pos
         if direction.length_squared() == 0:
             direction = pygame.Vector2(1, 0)
         else:
             direction = direction.normalize()
 
-        if self.knockback_force > 0:
-            player.pos += direction * self.knockback_force
-
-        self.last_attack_time = context.now_ms
-
-        if hasattr(enemy, "trigger_attack_anim"):
-            anim_type = self.anim_type or self._default_anim_for(enemy)
-            enemy.trigger_attack_anim(
-                anim_type,
-                self.strike_anim_duration,
-                direction=direction,
-                origin=enemy_pos,
-                strength=self.anim_strength,
+        # Start three-phase attack
+        damage = max(1, int(enemy.damage * self.damage_mult))
+        if hasattr(enemy, "start_attack_phase"):
+            enemy.start_attack_phase(
+                wind_up=self.wind_up_duration,
+                telegraph=self.telegraph_duration,
+                telegraph_range=effective_range,
+                telegraph_angle=130.0,
+                telegraph_color=(255, 100, 100, 100),
+                damage=damage,
+                knockback=self.knockback_force,
             )
 
     @staticmethod
