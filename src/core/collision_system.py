@@ -36,11 +36,30 @@ class CollisionSystem:
         self._obstacle_cell_size = 192
 
     def rect_of(self, entity: object) -> pygame.Rect:
+        """Return the collision rectangle for an entity.
+
+        Args:
+            entity (object): An object that provides a ``get_rect()`` method.
+
+        Returns:
+            pygame.Rect: The collision rectangle of the entity.
+
+        Raises:
+            AttributeError: If the entity does not have a ``get_rect()`` method.
+        """
         if hasattr(entity, "get_rect"):
             return entity.get_rect()
         raise AttributeError("Entity must have get_rect()")
 
     def _build_obstacle_index(self, obstacles: list[pygame.Rect]):
+        """Build the spatial index from a list of obstacle rects.
+
+        Populates a dictionary mapping cell coordinates to the obstacle
+        rectangles that overlap those cells.
+
+        Args:
+            obstacles (list[pygame.Rect]): List of wall/obstacle rectangles.
+        """
         self._obstacle_spatial_index = {}
         for obstacle in obstacles:
             min_cell_x = obstacle.left // self._obstacle_cell_size
@@ -53,6 +72,17 @@ class CollisionSystem:
                     self._obstacle_spatial_index.setdefault((cell_x, cell_y), []).append(obstacle)
 
     def _get_nearby_obstacles(self, rect: pygame.Rect, obstacles: list[pygame.Rect]) -> list[pygame.Rect]:
+        """Get obstacles near a given rect using the spatial index.
+
+        Rebuilds the spatial index if the obstacle list reference has changed.
+
+        Args:
+            rect (pygame.Rect): The query rectangle.
+            obstacles (list[pygame.Rect]): The full list of obstacles.
+
+        Returns:
+            list[pygame.Rect]: Obstacles whose cells overlap the query rectangle.
+        """
         cache_key = id(obstacles)
         if cache_key != self._obstacle_cache_key:
             self._obstacle_cache_key = cache_key
@@ -77,6 +107,16 @@ class CollisionSystem:
         return nearby
 
     def handle_movement_and_collision(self, entity: object, dt: float, obstacles: list[pygame.Rect]):
+        """Move an entity and resolve wall collisions.
+
+        Separates X and Y movement so the entity can slide along walls
+        when only one axis is blocked.
+
+        Args:
+            entity (object): The moving entity (must have ``pos``, ``velocity``, ``speed``, ``get_rect()``).
+            dt (float): Delta time in seconds.
+            obstacles (list[pygame.Rect]): List of wall rectangles.
+        """
         movement = entity.velocity * entity.speed * dt
 
         if movement.x != 0:
@@ -115,7 +155,44 @@ class CollisionSystem:
 
         self.resolve_static_collision(entity, obstacles)
 
+    def resolve_teleport_collision(self, entity: object, obstacles: list[pygame.Rect], direction: pygame.Vector2):
+        """Push an entity out of overlapping walls after a teleport.
+
+        Moves the entity iteratively in the given direction until it no
+        longer overlaps any obstacle, up to 500 steps.
+
+        Args:
+            entity (object): The teleported entity.
+            obstacles (list[pygame.Rect]): List of wall rectangles.
+            direction (pygame.Vector2): Direction to push the entity.
+        """
+        rect = self.rect_of(entity)
+        nearby = self._get_nearby_obstacles(rect, obstacles)
+
+        if not any(rect.colliderect(w) for w in nearby):
+            return
+
+        if direction.length_squared() == 0:
+            direction = pygame.Vector2(1, 0)
+        direction = direction.normalize()
+
+        for _ in range(500):
+            entity.pos += direction
+            rect = self.rect_of(entity)
+            nearby = self._get_nearby_obstacles(rect, obstacles)
+            if not any(rect.colliderect(w) for w in nearby):
+                break
+
     def resolve_static_collision(self, entity: object, obstacles: list[pygame.Rect]):
+        """Push an entity out of all overlapping walls iteratively.
+
+        Uses up to 10 iterations to resolve overlaps by finding the
+        smallest overlap axis on each pass.
+
+        Args:
+            entity (object): The entity to resolve.
+            obstacles (list[pygame.Rect]): List of wall rectangles.
+        """
         rect = self.rect_of(entity)
         nearby_obstacles = self._get_nearby_obstacles(rect, obstacles)
 
@@ -148,6 +225,16 @@ class CollisionSystem:
                 break
 
     def check_interactions(self, player: object, enemies: list, items: list):
+        """Process player collisions with enemies and loose items.
+
+        Handles item pickup (calling ``on_pickup``) and contact damage
+        from enemies (calling ``take_damage`` on the player).
+
+        Args:
+            player (object): The player character.
+            enemies (list): List of enemy entities.
+            items (list): List of dropped items (modified in-place).
+        """
         player_rect = self.rect_of(player)
 
         for item in items[:]:

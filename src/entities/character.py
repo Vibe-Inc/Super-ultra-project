@@ -6,6 +6,7 @@ from database.effects import PoisonEffect
 from src.core.logger import logger
 from src.entities.projectile import Fireball, GlacialCascade, FrostNova, ChainLightning, Thunderstrike, EntanglingRoots, NatureBolt, DarkPact, ArcaneMissile
 from src.entities.nature_spirit import NatureSpirit
+from src.mana.mana_system import ManaSystem
 
 class Character:
     """
@@ -443,11 +444,14 @@ class Character:
         self.is_sprinting = False
         self.can_sprint = True
 
-        # Mana / Energy system
-        self.max_mana = 50
-        self.mana = self.max_mana
+        # Mana system (using ManaSystem component)
+        # Regen rate reduced 4x (10.0 -> 2.5) so mana regenerates much
+        # more slowly and the magical crumble animation has time to play out.
+        self.mana_system = ManaSystem(max_mana=100, mana_regen_rate=2.5)
+        self.max_mana = self.mana_system.max_mana
+        self.mana = self.mana_system.current_mana
         self.mana_drain_rate = 20.0
-        self.mana_regen_rate = 10.0
+        self.mana_regen_rate = self.mana_system.mana_regen_rate
         # energy is an alias to support systems that use "energy"
         self.energy = self.stamina
         # Armor / defense system (consumed by Armor items)
@@ -753,6 +757,11 @@ class Character:
             },
         ]
 
+    def _try_open_magic_article(self, title):
+        gs = getattr(self, "game_state", None)
+        if gs and hasattr(gs, "app") and hasattr(gs.app, "article_tracker"):
+            gs.app.article_tracker.try_open(gs.app, "magic", title)
+
     def learn_fireball(self):
         """Add the fireball skill to the skillbook if not already present."""
         for skill in self.skillbook:
@@ -764,8 +773,10 @@ class Character:
             "description": "Launch an explosive fireball dealing 28 damage with area effect and knockback.",
             "color": (188, 82, 35),
             "accent": (255, 214, 120),
+            "manaCost": 20,
         })
         logger.info("Player learned Fireball!")
+        self._try_open_magic_article("Fireball")
 
     def learn_flame_shield(self):
         """Add the Flame Shield skill to the skillbook if not already present."""
@@ -778,8 +789,10 @@ class Character:
             "description": "Surrounds you with flames, dealing 8 damage/sec to nearby enemies.",
             "color": (220, 80, 20),
             "accent": (255, 180, 60),
+            "manaCost": 15,
         })
         logger.info("Player learned Flame Shield!")
+        self._try_open_magic_article("Flame Shield")
 
     def learn_pyromancers_fury(self):
         """Activate the Pyromancer's Fury passive: fire skills deal 25% more damage and have 15% larger area."""
@@ -797,8 +810,10 @@ class Character:
             "description": "Freeze all enemies within radius for 3 seconds.",
             "color": (60, 140, 255),
             "accent": (180, 220, 255),
+            "manaCost": 25,
         })
         logger.info("Player learned Frost Nova!")
+        self._try_open_magic_article("Frost Nova")
 
     def learn_ice_armor(self):
         """Add the Ice Armor skill to the skillbook if not already present."""
@@ -811,8 +826,10 @@ class Character:
             "description": "Grants a shield of ice absorbing 30 damage and slowing attackers.",
             "color": (40, 100, 220),
             "accent": (140, 200, 255),
+            "manaCost": 30,
         })
         logger.info("Player learned Ice Armor!")
+        self._try_open_magic_article("Ice Armor")
 
     def learn_glacial_cascade(self):
         """Add the Glacial Cascade skill to the skillbook if not already present."""
@@ -825,8 +842,10 @@ class Character:
             "description": "Ice shards cascade outward dealing 35 damage and freezing enemies.",
             "color": (80, 160, 240),
             "accent": (200, 230, 255),
+            "manaCost": 22,
         })
         logger.info("Player learned Glacial Cascade!")
+        self._try_open_magic_article("Glacial Cascade")
 
     def learn_chain_lightning(self):
         for skill in self.skillbook:
@@ -838,8 +857,10 @@ class Character:
             "description": "Fires a lightning bolt that jumps between up to 5 enemies.",
             "color": (255, 220, 50),
             "accent": (255, 255, 180),
+            "manaCost": 18,
         })
         logger.info("Player learned Chain Lightning!")
+        self._try_open_magic_article("Chain Lightning")
 
     def learn_static_field(self):
         self.static_field = True
@@ -855,8 +876,10 @@ class Character:
             "description": "Call down lightning from above for 55 damage in a column.",
             "color": (200, 180, 255),
             "accent": (255, 230, 255),
+            "manaCost": 28,
         })
         logger.info("Player learned Thunderstrike!")
+        self._try_open_magic_article("Thunderstrike")
 
     def learn_entangling_roots(self):
         for skill in self.skillbook:
@@ -868,8 +891,10 @@ class Character:
             "description": "Unleash roots that immobilize enemies for 4 seconds.",
             "color": (60, 180, 60),
             "accent": (160, 255, 140),
+            "manaCost": 22,
         })
         logger.info("Player learned Entangling Roots!")
+        self._try_open_magic_article("Entangling Roots")
 
     def learn_regeneration(self):
         self.regeneration = True
@@ -885,8 +910,10 @@ class Character:
             "description": "Summon a nature spirit that attacks for 15 damage.",
             "color": (100, 220, 120),
             "accent": (200, 255, 200),
+            "manaCost": 35,
         })
         logger.info("Player learned Summon Spirit!")
+        self._try_open_magic_article("Summon Spirit")
 
     def learn_shadow_step(self):
         for skill in self.skillbook:
@@ -898,8 +925,10 @@ class Character:
             "description": "Teleport through shadows, becoming invulnerable briefly.",
             "color": (100, 50, 140),
             "accent": (200, 160, 255),
+            "manaCost": 20,
         })
         logger.info("Player learned Shadow Step!")
+        self._try_open_magic_article("Shadow Step")
 
     def learn_poison_blade(self):
         self.poison_blade = True
@@ -915,8 +944,10 @@ class Character:
             "description": "Sacrifice 10% HP to deal 60 shadow damage to all nearby enemies.",
             "color": (140, 60, 180),
             "accent": (220, 160, 255),
+            "manaCost": 25,
         })
         logger.info("Player learned Dark Pact!")
+        self._try_open_magic_article("Dark Pact")
 
     def learn_arcane_missiles(self):
         for skill in self.skillbook:
@@ -928,8 +959,10 @@ class Character:
             "description": "Fire homing arcane missiles dealing 22 damage each.",
             "color": (140, 60, 120),
             "accent": (255, 180, 240),
+            "manaCost": 24,
         })
         logger.info("Player learned Arcane Missiles!")
+        self._try_open_magic_article("Arcane Missiles")
 
     def learn_mana_flow(self):
         self.mana_flow = True
@@ -945,8 +978,10 @@ class Character:
             "description": "Creates a barrier that reflects 30% of incoming damage.",
             "color": (180, 80, 160),
             "accent": (255, 200, 240),
+            "manaCost": 25,
         })
         logger.info("Player learned Mystic Barrier!")
+        self._try_open_magic_article("Mystic Barrier")
 
     def learn_berserkers_rage(self):
         for skill in self.skillbook:
@@ -958,8 +993,10 @@ class Character:
             "description": "+50% damage dealt, +20% damage taken. The fury consumes you.",
             "color": (200, 50, 30),
             "accent": (255, 160, 60),
+            "manaCost": 30,
         })
         logger.info("Player learned Berserker's Rage!")
+        self._try_open_magic_article("Berserker's Rage")
 
     def learn_eternal_fortress(self):
         if self.eternal_fortress:
@@ -999,8 +1036,10 @@ class Character:
             "description": "Slow time for 3 seconds. +25% attack speed. Cooldown: 30s.",
             "color": (100, 160, 220),
             "accent": (200, 230, 255),
+            "manaCost": 40,
         })
         logger.info("Player learned Chrono Shift!")
+        self._try_open_magic_article("Chrono Shift")
 
     def get_skill_in_slot(self, slot_index):
         if 0 <= slot_index < len(self.skillbar):
@@ -1055,14 +1094,82 @@ class Character:
     def is_skill_ready(self, skill):
         """
         Check if a skill is ready to use (cooldown expired).
-        
+
         Args:
             skill (dict): The skill dictionary with skill_id.
-            
+
         Returns:
             bool: True if skill is ready, False if on cooldown.
         """
         return self.get_skill_cooldown_percent(skill) == 0.0
+
+    def _is_skill_on_cooldown(self, skill_id, current_time):
+        """
+        Internal cooldown gate that mirrors the per-skill cooldown logic
+        in ``use_skill``. Returns True when the skill is still on cooldown.
+
+        This lets us reject a cast *before* spending mana, so the player
+        doesn't get penalised for trying to fire a skill they couldn't use.
+
+        Args:
+            skill_id (str): The skill identifier (e.g. "fireball").
+            current_time (int): ``pygame.time.get_ticks()`` value in ms.
+
+        Returns:
+            bool: True if the skill is on cooldown, False if it's ready.
+        """
+        # Skills with dynamic cooldown (may include cooldown reduction bonuses)
+        if skill_id == "berserkers_rage":
+            cooldown = self.berserkers_rage_cooldown + getattr(self, "berserkers_rage_cooldown_bonus", 0)
+        elif skill_id == "chrono_shift":
+            cooldown = self.chrono_shift_cooldown + getattr(self, "chrono_shift_cooldown_bonus", 0)
+        else:
+            cooldown = getattr(self, f"{skill_id}_cooldown", 0)
+
+        if cooldown is None or cooldown <= 0:
+            return False
+
+        last_used = getattr(self, f"{skill_id}_last_used", None)
+        if last_used is None:
+            return False
+        return current_time - last_used < cooldown
+
+    def _is_skill_state_blocked(self, skill_id):
+        """
+        Return True if the skill can't be used due to a non-cooldown state
+        condition (e.g. toggle already active). Mirrors the early ``if ...:
+        return False`` guards inside ``use_skill``.
+        """
+        if skill_id == "flame_shield" and getattr(self, "flame_shield_active", False):
+            return True
+        if skill_id == "ice_armor" and getattr(self, "ice_armor_active", False):
+            return True
+        if skill_id == "mystic_barrier" and getattr(self, "mystic_barrier_active", False):
+            return True
+        if skill_id == "berserkers_rage" and getattr(self, "berserkers_rage_active", False):
+            return True
+        if skill_id == "chrono_shift" and getattr(self, "chrono_shift_active", False):
+            return True
+        return False
+
+    def get_skill_mana_cost(self, skill):
+        """
+        Return the mana cost of a skill (read from the skill dict's ``manaCost`` key).
+
+        Falls back to 0 for skills that don't define one (e.g., passives, dash).
+
+        Args:
+            skill (dict): The skill dictionary with a ``manaCost`` field.
+
+        Returns:
+            int: Mana required to cast the skill (>= 0).
+        """
+        if skill is None:
+            return 0
+        try:
+            return int(skill.get("manaCost", 0) or 0)
+        except (TypeError, ValueError):
+            return 0
 
     def use_skill(self, skill, aim_direction=None):
         if skill is None:
@@ -1070,6 +1177,49 @@ class Character:
 
         skill_id = skill.get("skill_id", "")
         current_time = pygame.time.get_ticks()
+
+        # ─── ManaSystem integration ────────────────────────────────────
+        # Cast gating order (matches the inner skill branches' return-False
+        # checks so mana is only spent on a *successful* cast):
+        #   1. Cooldown   — don't penalise the player for trying a skill
+        #                    they can't use yet.
+        #   2. State      — e.g. an already-active Flame Shield / Ice Armor.
+        #   3. Mana       — only checked once we know the cast can actually
+        #                    happen, then deducted at the same time.
+        # Anything that fails steps 1/2 returns ``False`` *without* touching
+        # the player's mana pool.
+        if self._is_skill_on_cooldown(skill_id, current_time):
+            return False
+        if self._is_skill_state_blocked(skill_id):
+            return False
+
+        mana_cost = self.get_skill_mana_cost(skill)
+        if mana_cost > 0 and not self.mana_system.has_enough_mana(mana_cost):
+            logger.info(
+                f"Cannot cast '{skill_id}': not enough mana "
+                f"(need {mana_cost}, have {int(self.mana_system.current_mana)})."
+            )
+            try:
+                self.add_floating_text(
+                    "Not enough mana!",
+                    self.pos.x,
+                    self.pos.y - 50,
+                    (180, 120, 255),
+                    1.2,
+                    20,
+                )
+            except Exception:
+                pass
+            return False
+
+        # Mana is sufficient (or the skill is free) and the cooldown/state
+        # gates have passed — deduct it so the inner branch commits. If the
+        # inner branch still bails (e.g. missing game_state, no projectiles
+        # container) the cost is not refunded; this matches typical ARPG
+        # design where paying mana and missing is a player mistake.
+        if mana_cost > 0:
+            self.consume_mana(mana_cost)
+        # ───────────────────────────────────────────────────────────────
 
         # Elemental Mastery: dual-element combo tracking
         if self.elemental_mastery:
@@ -1109,6 +1259,14 @@ class Character:
             self.dash_active_time = self.dash_duration
             self.dash_last_used = current_time
             logger.info("Player used Dash.")
+            # Dash magic article + guide: Skills & Hotbar (first use)
+            gs = getattr(self, "game_state", None)
+            if gs and hasattr(gs, "app") and hasattr(gs.app, "article_tracker"):
+                tr = gs.app.article_tracker
+                tr.try_open(gs.app, "magic", "Dash")
+                if not gs._triggered_guide_skills:
+                    gs._triggered_guide_skills = True
+                    tr.try_open(gs.app, "guide", "3. Skills & Hotbar")
             return True
 
         if skill_id == "fireball":
@@ -1321,7 +1479,7 @@ class Character:
             teleport_offset = direction.normalize() * self.shadow_step_range
             self.pos += teleport_offset
             if getattr(self, '_obstacles', None):
-                self._collision_system.resolve_static_collision(self, self._obstacles)
+                self._collision_system.resolve_teleport_collision(self, self._obstacles, direction)
             end_pos = self.get_center()
 
             self.invulnerable = True
@@ -1586,6 +1744,23 @@ class Character:
         # Otherwise append new effect
         self.effects.append(effect)
 
+        # Effects article: open on first application to the player
+        _effect_article_map = {
+            "RegenerationEffect": "Boon: Regeneration",
+            "PoisonEffect": "Bane: Poison",
+            "BurnEffect": "Bane: Burn",
+            "ConfusionEffect": "Bane: Confusion",
+            "DizzinessEffect": "Bane: Dizziness",
+            "SlowEffect": "Bane: Slow",
+            "FreezeEffect": "Bane: Freeze & Root",
+            "RootEffect": "Bane: Freeze & Root",
+        }
+        art_title = _effect_article_map.get(cls_name)
+        if art_title:
+            gs = getattr(self, "game_state", None)
+            if gs and hasattr(gs, "app") and hasattr(gs.app, "article_tracker"):
+                gs.app.article_tracker.try_open(gs.app, "effects", art_title)
+
     def gain_xp(self, amount):
         self.xp += amount
         logger.info(f"Gained {amount} XP. Current XP: {self.xp}/{self.xp_to_next_level}")
@@ -1594,6 +1769,7 @@ class Character:
             self.level_up()
 
     def level_up(self):
+        prev_level = self.level
         self.level += 1
         self.xp_to_next_level = int(self.xp_to_next_level * 1.5)
         self.max_hp += 20
@@ -1601,6 +1777,16 @@ class Character:
         self.skill_tree_points += 1
         logger.info(f"Level Up! Level: {self.level}, Max HP: {self.max_hp}, Skill points: {self.skill_tree_points}")
         print(f"Level Up! Level: {self.level}, Max HP: {self.max_hp}, Skill points: {self.skill_tree_points}")
+        # Article triggers
+        gs = getattr(self, "game_state", None)
+        if gs and hasattr(gs, "app") and hasattr(gs.app, "article_tracker"):
+            tr = gs.app.article_tracker
+            if not gs._triggered_guide_leveling:
+                gs._triggered_guide_leveling = True
+                tr.try_open(gs.app, "guide", "6. Leveling & Experience")
+            if self.level >= 10 and not gs._triggered_guide_final:
+                gs._triggered_guide_final = True
+                tr.try_open(gs.app, "guide", "10. Final Words")
 
     def can_attack(self, current_time=None):
         if current_time is None:
@@ -2104,12 +2290,12 @@ class Character:
                 self.stamina = self.max_stamina
                 self.can_sprint = True
 
-        # Mana regeneration
-        if getattr(self, "mana", None) is not None:
-            if self.mana < self.max_mana:
-                self.mana += self.mana_regen_rate * dt
-                if self.mana > self.max_mana:
-                    self.mana = self.max_mana
+        # Mana regeneration (using ManaSystem)
+        if hasattr(self, "mana_system"):
+            self.mana_system.update(dt)
+            # Sync with legacy attributes for compatibility
+            self.mana = self.mana_system.current_mana
+            self.max_mana = self.mana_system.max_mana
 
         # KEY IMPLEMENTATION STEP: Single function call for collision-aware movement
         collision_system.handle_movement_and_collision(self, dt, obstacles)
@@ -2164,8 +2350,10 @@ class Character:
                 old_center = self.get_center()
                 # Teleport in a random direction
                 angle = random.uniform(0, math.pi * 2)
-                offset = pygame.Vector2(math.cos(angle), math.sin(angle)) * self.void_walker_teleport_range
-                self.pos += offset
+                direction = pygame.Vector2(math.cos(angle), math.sin(angle))
+                self.pos += direction * self.void_walker_teleport_range
+                if getattr(self, '_obstacles', None):
+                    self._collision_system.resolve_teleport_collision(self, self._obstacles, direction)
                 # Spawn afterimage at old center position
                 game_state = getattr(self, "game_state", None)
                 if game_state is not None and hasattr(game_state, "projectiles"):
@@ -2250,6 +2438,57 @@ class Character:
 
         self.hp -= amount
 
+        # ─── Armor durability damage ─────────────────────────────────
+        # Every incoming hit chips a point off *each* equipped armor
+        # piece so the player can see their gear take real wear over
+        # the course of a fight.  We do this *after* HP is decremented
+        # (and only when the hit actually connected) so dodges, full
+        # blocks and pre-HP deaths don't burn durability for free.
+        #
+        # The damage is gated on:
+        #   * amount > 0   -- ignore 0-damage "hits" (e.g. post-ice-armor
+        #                     zero-damage echoes),
+        #   * not ignore_invulnerability  -- mirror the rest of the
+        #                     durability system: scripted "true damage"
+        #                     hits still wear armor down (no cheat).
+        if amount > 0 and not ignore_invulnerability:
+            equip_inv = None
+            game_state = getattr(self, "game_state", None)
+            if game_state is not None:
+                equip_inv = getattr(game_state, "PLAYER_inventory_equipment", None)
+            if equip_inv is not None and hasattr(equip_inv, "damage_equipped_armor"):
+                try:
+                    broken_pieces = equip_inv.damage_equipped_armor(1, source="hit")
+                except Exception:
+                    broken_pieces = []
+                for col, row, item, _broke in broken_pieces:
+                    try:
+                        self.add_floating_text(
+                            f"{getattr(item, 'name', 'Armor')} broke!",
+                            self.pos.x,
+                            self.pos.y - 40,
+                            (220, 90, 90),
+                            1.6,
+                            20,
+                        )
+                    except Exception:
+                        pass
+                    try:
+                        logger.info(
+                            f"Armor piece broke: id={getattr(item, 'id', '?')} "
+                            f"slot=({col},{row}) defense={getattr(item, 'defense_value', 0)}"
+                        )
+                    except Exception:
+                        pass
+                # Re-sync the live defense so the *next* hit in the
+                # same frame is reduced by the new (lower) armor
+                # value rather than the stale pre-wear one.
+                if broken_pieces and hasattr(equip_inv, "sync_character_defense"):
+                    try:
+                        equip_inv.sync_character_defense(self)
+                    except Exception:
+                        pass
+
         if not ignore_invulnerability:
             self.invulnerable = True
             self.invulnerability_timer = self.invulnerability_duration
@@ -2299,9 +2538,16 @@ class Character:
     def consume_mana(self, amount):
         """
         Attempt to consume mana. Returns True if enough mana was available.
+        Uses the ManaSystem component if available.
         """
         if amount <= 0:
             return True
+        if hasattr(self, "mana_system"):
+            result = self.mana_system.consume_mana(amount)
+            # Sync with legacy attributes
+            self.mana = self.mana_system.current_mana
+            return result
+        # Fallback if mana_system not initialized
         if getattr(self, "mana", 0) >= amount:
             self.mana -= amount
             logger.debug(f"Consumed {amount} mana. Mana: {int(self.mana)}/{self.max_mana}")
@@ -2312,9 +2558,16 @@ class Character:
     def restore_mana(self, amount):
         """
         Restore mana (clamped to max_mana).
+        Uses the ManaSystem component if available.
         """
         if amount <= 0:
             return
+        if hasattr(self, "mana_system"):
+            self.mana_system.restore_mana(amount)
+            # Sync with legacy attributes
+            self.mana = self.mana_system.current_mana
+            return
+        # Fallback if mana_system not initialized
         prev = int(getattr(self, "mana", 0))
         self.mana = min(self.max_mana, self.mana + amount)
         logger.info(f"Player restored {int(self.mana) - prev} mana. Mana: {int(self.mana)}/{self.max_mana}")
@@ -2491,6 +2744,123 @@ class Character:
                     pos = base_anchor + d * (30 + 40 * lp)
                     c = (160, 200, 255)
                     dot(to_screen(pos), c, int(100 * (1 - lp) * fade), 1 + int(3 * (1 - lp)))
+
+            elif combat_style == "dagger":
+                # A realistic dagger slash. The blade is a shaded steel polygon
+                # sweeping the full 80° attack cone, with a 2-frame motion blur,
+                # a single brief tip glint, a thin pale air-arc tracing the path,
+                # and a few dust motes kicked up by the strike. No glow ribbons,
+                # no laser core — just a fast piece of metal cutting air.
+                half_cone = 40.0
+                blade_len = float(self.attack_range)
+
+                def _swing_angle(sp):
+                    if sp < 0.15:
+                        return -half_cone * 1.25
+                    if sp < 0.70:
+                        wp = (sp - 0.15) / 0.55
+                        return -half_cone + 2.0 * half_cone * (wp * wp * (3.0 - 2.0 * wp))
+                    wp = (sp - 0.70) / 0.30
+                    return half_cone + 8.0 * wp
+
+                def _draw_blade(swing_a, alpha):
+                    if alpha <= 0.02:
+                        return None
+                    swing_dir = attack_dir.rotate(swing_a)
+                    perp = pygame.Vector2(-swing_dir.y, swing_dir.x)
+
+                    tip    = base_anchor + swing_dir * blade_len
+                    mid    = base_anchor + swing_dir * (blade_len * 0.45)
+                    hilt   = base_anchor + swing_dir * 5.0
+                    top_m  = mid  + perp * 1.8
+                    top_h  = hilt + perp * 2.5
+                    bot_m  = mid  - perp * 1.3
+                    bot_h  = hilt - perp * 2.0
+
+                    tip_s   = to_screen(tip)
+                    top_m_s = to_screen(top_m)
+                    top_h_s = to_screen(top_h)
+                    bot_m_s = to_screen(bot_m)
+                    bot_h_s = to_screen(bot_h)
+
+                    # Steel body fill.
+                    pygame.draw.polygon(
+                        screen,
+                        (190, 200, 215, int(225 * alpha)),
+                        [tip_s, top_m_s, top_h_s, bot_h_s, bot_m_s],
+                        0,
+                    )
+                    # Lit (top) edge highlight.
+                    pygame.draw.line(screen, (232, 238, 248, int(195 * alpha)),
+                                     top_h_s, top_m_s, 1)
+                    pygame.draw.line(screen, (242, 246, 252, int(155 * alpha)),
+                                     top_m_s, tip_s, 1)
+                    # Shadow (bottom) edge.
+                    pygame.draw.line(screen, (100, 110, 130, int(160 * alpha)),
+                                     bot_h_s, bot_m_s, 1)
+                    # Thin bright cutting edge along the leading (top) edge.
+                    pygame.draw.line(screen, (248, 250, 253, int(210 * alpha)),
+                                     top_h_s, tip_s, 1)
+                    return tip_s
+
+                # 1. Motion blur: two ghost positions at older swing angles.
+                _draw_blade(_swing_angle(max(0.15, p - 0.06)), 0.22)
+                _draw_blade(_swing_angle(max(0.15, p - 0.03)), 0.40)
+
+                # 2. Thin pale air-arc tracing the swing path (wake disturbance).
+                if 0.18 < p < 0.95:
+                    n_arc = 10
+                    prev = None
+                    for i in range(n_arc + 1):
+                        sp = i / n_arc
+                        if sp > p:
+                            break
+                        sa = _swing_angle(sp)
+                        sdir = attack_dir.rotate(sa)
+                        pt = to_screen(base_anchor + sdir * blade_len)
+                        if prev is not None:
+                            cd = abs(sp - 0.5) * 2
+                            arc_alpha = int(38 * (1 - cd * 0.5) *
+                                            (1.0 - max(0, p - 0.78) * 3))
+                            if arc_alpha > 0:
+                                pygame.draw.line(screen,
+                                                 (170, 180, 195, arc_alpha),
+                                                 prev, pt, 1)
+                        prev = pt
+
+                # 3. The main blade (full opacity).
+                tip_s = _draw_blade(_swing_angle(p), 1.0)
+
+                # 4. Brief tip glint — a quick reflection, not a sustained glow.
+                glint = max(0.0, 1.0 - abs(p - 0.45) * 4.5)
+                if glint > 0 and tip_s is not None:
+                    pygame.draw.circle(screen,
+                                       (255, 255, 255, int(220 * glint)),
+                                       tip_s, max(1, int(2.5 * glint)))
+
+                # 5. Dust motes kicked up by the strike (warm grey, not sparks).
+                dust_specs = [
+                    (0.28, -half_cone * 0.40, 3.0, 1.0),
+                    (0.38, -half_cone * 0.10, 3.5, 0.9),
+                    (0.45,  half_cone * 0.30, 3.0, 0.8),
+                    (0.55,  half_cone * 0.65, 3.5, 0.9),
+                    (0.62,  half_cone * 0.85, 4.0, 1.0),
+                ]
+                for start_p, ang_off, drift, base_size in dust_specs:
+                    lifetime = 0.25
+                    if p < start_p or p > start_p + lifetime:
+                        continue
+                    age = (p - start_p) / lifetime
+                    sa = _swing_angle(start_p) + ang_off
+                    sdir = attack_dir.rotate(sa)
+                    base_pos = base_anchor + sdir * blade_len
+                    drift_vec = sdir * (drift * age) + pygame.Vector2(0, -2.0 * age)
+                    dust_pos = base_pos + drift_vec
+                    d_alpha = int(150 * (1 - age))
+                    d_size = max(1, int(base_size * (1 - age * 0.3)))
+                    if d_alpha > 0:
+                        dot(to_screen(dust_pos), (165, 155, 140),
+                            d_alpha, d_size)
 
             elif combat_style == "mace":
                 ip = base_anchor + attack_dir * (self.attack_range * min(1.0, p * 1.5))

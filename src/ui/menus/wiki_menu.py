@@ -533,6 +533,10 @@ class WikiMenu(Menu):
         self.section_buttons = []
         self._build_main_page()
         self._toc_hover = -1
+        self._skip_to_gameplay = False
+        self.begin_btn = Button(pygame.Rect(0, 0, bw, bh), _(">> BEGIN ADVENTURE"),
+            (100, 75, 25), (160, 120, 40),
+            cfg.button_font, cfg.text_color, cfg.corner_radius, on_click=self._begin_adventure)
 
     def on_enter(self):
         self._anim_time = 0.0
@@ -600,6 +604,10 @@ class WikiMenu(Menu):
         self._show_toc = not self._show_toc
         if self._show_toc: self._sub_page = 0
         self._page_enter_time = pygame.time.get_ticks(); self._transition_progress = 0.0
+
+    def _begin_adventure(self):
+        self._skip_to_gameplay = False
+        self.app.manager.set_state("gameplay")
 
     def _prev_page(self):
         if self._sub_page > 0:
@@ -784,15 +792,37 @@ class WikiMenu(Menu):
         if self._page == "main":
             self.back_btn.rect = pygame.Rect(sw - bw - max(20, int(40 * scale)),
                                              sh - bh - max(20, int(28 * scale)), bw, bh)
-        else:
+        elif self._show_toc:
             ny = sh - bh - max(16, int(24 * scale))
-            by2 = ny - bh - max(4, int(8 * scale))
+            by2 = ny - bh - max(2, int(4 * scale))
             mx = max(20, int(30 * scale))
             self.back_btn.rect = pygame.Rect(mx, by2, bw, bh)
             self.toc_btn.rect = pygame.Rect(mx + bw + max(8, int(10 * scale)), by2, bw, bh)
             self.prev_btn.rect = pygame.Rect(mx, ny, bw, bh)
             self.next_btn.rect = pygame.Rect(sw - bw - mx, ny, bw, bh)
-        for b in (self.back_btn, self.prev_btn, self.next_btn, self.toc_btn):
+            if self._skip_to_gameplay and self._page == "guide":
+                pad2 = max(8, int(24 * scale))
+                box2 = pygame.Rect(pad2, pad2, sw - 2 * pad2, sh - 2 * pad2)
+                inner2 = box2.inflate(-int(60 * scale), -int(100 * scale))
+                btn_w2 = max(1, int(340 * scale))
+                btn_h2 = max(1, int(62 * scale))
+                btn_x2 = inner2.x + (inner2.width - btn_w2) // 2
+                btn_y2 = inner2.y + inner2.height - btn_h2 - int(60 * scale)
+                self.begin_btn.rect = pygame.Rect(btn_x2, btn_y2, btn_w2, btn_h2)
+        else:
+            ny = sh - bh - max(40, int(60 * scale))
+            by2 = ny - bh - max(20, int(24 * scale))
+            mx = max(40, int(60 * scale))
+            self.back_btn.rect = pygame.Rect(mx, by2, bw, bh)
+            self.toc_btn.rect = pygame.Rect(mx + bw + max(8, int(10 * scale)), by2, bw, bh)
+            self.prev_btn.rect = pygame.Rect(mx, ny, bw, bh)
+            self.next_btn.rect = pygame.Rect(sw - bw - mx, ny, bw, bh)
+            if self._skip_to_gameplay and self._page == "guide":
+                btn_w = max(1, int(340 * scale))
+                btn_h = max(1, int(62 * scale))
+                btn_x = (sw - btn_w) // 2
+                self.begin_btn.rect = pygame.Rect(btn_x, ny, btn_w, btn_h)
+        for b in (self.back_btn, self.prev_btn, self.next_btn, self.toc_btn, self.begin_btn):
             try: b._update_text_surface()
             except: pass
 
@@ -975,29 +1005,55 @@ class WikiMenu(Menu):
             ey = toc_top + i * (entry_h + gap) + sl
             er = pygame.Rect(inner.x + int(10 * scale), ey, inner.width - int(20 * scale), entry_h)
             hov = i == self._toc_hover
+            locked = self._page != "guide" and not self.app.article_tracker.already_seen(self._page, et)
 
             ns = pygame.Surface(er.size, pygame.SRCALPHA)
             bc = theme["accent"]
-            ns.fill((bc[0] // 3 + 50, bc[1] // 3 + 40, bc[2] // 3 + 50, 140) if hov else
-                    (bc[0] // 6 + 20, bc[1] // 6 + 15, bc[2] // 6 + 20, 60))
+            if locked:
+                ns.fill((bc[0] // 8 + 10, bc[1] // 8 + 8, bc[2] // 8 + 10, 80) if hov else
+                        (bc[0] // 10 + 5, bc[1] // 10 + 4, bc[2] // 10 + 5, 40))
+            else:
+                ns.fill((bc[0] // 3 + 50, bc[1] // 3 + 40, bc[2] // 3 + 50, 140) if hov else
+                        (bc[0] // 6 + 20, bc[1] // 6 + 15, bc[2] // 6 + 20, 60))
 
-            if hov:
+            if hov and not locked:
                 gs2 = pygame.Surface((er.w + 12, er.h + 12), pygame.SRCALPHA)
                 pygame.draw.rect(gs2, (*theme["glow"], max(0, min(60, int(50 + 20 * math.sin(t * 3))))),
                                  gs2.get_rect(), border_radius=12)
                 screen.blit(gs2, (er.x - 6, er.y - 6))
 
-            pygame.draw.rect(ns, GOLD if hov else GOLD_DARK, ns.get_rect(), 1, border_radius=10)
+            pygame.draw.rect(ns, GOLD if hov and not locked else GOLD_DARK, ns.get_rect(), 1, border_radius=10)
             screen.blit(ns, er.topleft)
 
-            ns2 = self.font_small.render(f"{i+1}.", True, GOLD_BRIGHT)
+            if locked:
+                ns2 = self.font_small.render("?", True, GOLD_DARK)
+            else:
+                ns2 = self.font_small.render(f"{i+1}.", True, GOLD_BRIGHT)
             screen.blit(ns2, (er.x + 12, er.y + (er.height - ns2.get_height()) // 2))
 
             tc = GOLD_BRIGHT if hov else self.ink_color
+            if locked:
+                tc = tuple(c // 2 + 30 for c in self.ink_color)
             es = self.font_toc.render(et, True, tc)
             screen.blit(es, (er.x + 48, er.y + (er.height - es.get_height()) // 2))
 
-            if hov:
+            if locked:
+                seal_size = max(1, int(entry_h * 0.55))
+                sc = seal_size // 2
+                ga = int(18 + 14 * math.sin(t * 2))
+                gs2 = pygame.Surface((seal_size + 6, seal_size + 6), pygame.SRCALPHA)
+                pygame.draw.circle(gs2, (*theme["glow"], ga), (gs2.get_width() // 2, gs2.get_height() // 2), sc)
+                ss = pygame.Surface((seal_size, seal_size), pygame.SRCALPHA)
+                pygame.draw.circle(ss, theme["accent"], (sc, sc), sc, max(1, int(2 * scale)))
+                pygame.draw.circle(ss, theme["accent"], (sc, sc), sc - max(2, int(3 * scale)), 1)
+                si = self.font_small.render(theme.get("icon", "?"), True, theme["accent"])
+                si.set_alpha(180)
+                ss.blit(si, (sc - si.get_width() // 2, sc - si.get_height() // 2))
+                gx = er.right - seal_size - 14 - 3
+                gy = er.y + (er.height - seal_size) // 2 - 3
+                screen.blit(gs2, (gx, gy))
+                screen.blit(ss, (er.right - seal_size - 14, er.y + (er.height - seal_size) // 2))
+            elif hov:
                 ar = self.font_small.render("\u2192", True, GOLD_BRIGHT)
                 screen.blit(ar, (er.right - ar.get_width() - 14,
                                  er.y + (er.height - ar.get_height()) // 2 + int(math.sin(t * 4) * 3)))
@@ -1008,6 +1064,10 @@ class WikiMenu(Menu):
         hs.set_alpha(int(140 + 60 * math.sin(t * 0.8)))
         screen.blit(hs, (inner.x + (inner.width - hs.get_width()) // 2,
                          inner.y + inner.height - hs.get_height() - 10))
+
+        if self._skip_to_gameplay and self._page == "guide":
+            self.begin_btn.draw(screen)
+
         self.back_btn.draw(screen)
 
     # ─── Content Page ───────────────────────────────────────
@@ -1021,6 +1081,11 @@ class WikiMenu(Menu):
         body = pd.get("body", "")
         ps = pd.get("portrait", None)
         t = self._anim_time
+
+        locked = self._page != "guide" and not self.app.article_tracker.already_seen(self._page, title)
+        if locked:
+            body = "???\n\nThis knowledge has not yet been unlocked.\nBrave the wilds and earn this entry."
+            ps = None
 
         _draw_deep_bg(screen, sw, sh, t, theme)
         pad = max(8, int(20 * scale))
@@ -1041,7 +1106,8 @@ class WikiMenu(Menu):
         taw = inner.width - (ps2 + int(24 * scale) if pimg else 0)
         tt = max(0, min(1.0, t * 5.0))
         tsl = int((1.0 - _eased_out_cubic(tt)) * 30 * scale)
-        ts = _render_shimmer_text(self.font_title, title, INK, t, 0.1)
+        title_color = tuple(c // 2 + 40 for c in INK) if locked else INK
+        ts = _render_shimmer_text(self.font_title, title, title_color, t, 0.1)
         tx = inner.x + (taw - ts.get_width()) // 2
 
         for ox, oy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
@@ -1058,37 +1124,106 @@ class WikiMenu(Menu):
         # Body text
         tt2 = dy + int(18 * scale)
         taw2 = inner.width - (ps2 + int(24 * scale) if pimg else 0)
-        tah = inner.y + inner.height - tt2
-        bf = self.font_body
-        lh = bf.get_height() + max(2, int(3 * scale))
-        bl = _wrap_text(body, bf, taw2)
-        vl = max(0, (tah - int(40 * scale)) // lh)
+        if locked:
+            dark_accent = tuple(max(0, c // 4) for c in theme["accent"])
+            cx = inner.x + taw2 // 2
+            cy = tt2 + int(60 * scale) + int(math.sin(t * 0.8) * 4 * scale)
 
-        for i in range(vl):
-            if i >= len(bl): break
-            line = bl[i]
-            if not line.strip(): continue
-            ld = i * 0.02
-            lt2 = max(0, min(1.0, (t - 0.1 - ld) * 4.0))
-            la = int(255 * _eased_out_cubic(lt2))
+            seal_radius = max(30, int(55 * scale))
+            sc = seal_radius
+            ring = pygame.Surface((sc * 2, sc * 2), pygame.SRCALPHA)
+            # Outer ring
+            pygame.draw.circle(ring, (*dark_accent, 60), (sc, sc), sc, max(1, int(2 * scale)))
+            # Inner ring
+            pygame.draw.circle(ring, (*dark_accent, 40), (sc, sc), int(sc * 0.7), max(1, int(scale)))
+            # Compass rays
+            for ang in range(0, 360, 90):
+                rad = math.radians(ang + t * 30)
+                ex = sc + math.cos(rad) * sc
+                ey = sc + math.sin(rad) * sc
+                pygame.draw.line(ring, (*dark_accent, 35), (sc, sc), (ex, ey), max(1, int(scale)))
+            # Mid-point ticks
+            for ang in range(45, 360, 90):
+                rad = math.radians(ang - t * 20)
+                tx = sc + math.cos(rad) * sc * 0.85
+                ty = sc + math.sin(rad) * sc * 0.85
+                pygame.draw.circle(ring, (*dark_accent, 50), (int(tx), int(ty)), max(1, int(2 * scale)))
 
-            if i == 0 and line.strip():
-                fc = line[0]; rest = line[1:]
-                cs = int(bf.get_height() * 1.8)
-                try: cf = cfg.get_font(cs)
-                except: cf = bf
-                cap = cf.render(fc, True, theme["accent"])
-                cap.set_alpha(la)
-                screen.blit(cap, (inner.x + int(10 * scale), tt2))
-                if rest:
-                    rs = bf.render(rest, True, self.ink_color)
-                    rs.set_alpha(la)
-                    screen.blit(rs, (inner.x + int(10 * scale) + cap.get_width() + 2,
-                                     tt2 + int((cs - bf.get_height()) * 0.6)))
-            else:
-                sf = bf.render(line, True, self.ink_color)
-                sf.set_alpha(la)
-                screen.blit(sf, (inner.x + int(10 * scale), tt2 + i * lh))
+            # Glow
+            glow_r = int(sc * 1.4)
+            gs = pygame.Surface((glow_r * 2, glow_r * 2), pygame.SRCALPHA)
+            ga = int(10 + 8 * math.sin(t * 1.5))
+            pygame.draw.circle(gs, (*theme["glow"], ga), (glow_r, glow_r), glow_r)
+            screen.blit(gs, (cx - glow_r, cy - glow_r))
+            screen.blit(ring, (cx - sc, cy - sc))
+
+            # Section icon in center
+            icon_char = theme.get("icon", "?")
+            icon_sz = max(1, int(36 * scale))
+            icon_fnt = cfg.get_font(icon_sz)
+            icon_surf = icon_fnt.render(icon_char, True, theme["accent"])
+            icon_surf.set_alpha(int(70 + 40 * math.sin(t * 1.5)))
+            screen.blit(icon_surf, (cx - icon_surf.get_width() // 2, cy - icon_surf.get_height() // 2))
+
+            # Orbital wisps — outer ring
+            for i in range(4):
+                ang = t * 0.8 + i * math.pi * 0.5
+                d = sc * 0.85
+                wpx = cx + math.cos(ang) * d
+                wpy = cy + math.sin(ang) * d
+                wa = int(40 + 30 * math.sin(t * 1.2 + i * 1.5))
+                ws = pygame.Surface((6, 6), pygame.SRCALPHA)
+                pygame.draw.circle(ws, (*theme["glow"], wa), (3, 3), 3)
+                screen.blit(ws, (wpx - 3, wpy - 3))
+            # Orbital wisps — inner ring
+            for i in range(3):
+                ang = t * 1.1 + i * math.pi * 0.667 + 0.5
+                d = sc * 0.55
+                wpx = cx + math.cos(ang) * d
+                wpy = cy + math.sin(ang) * d
+                wa = int(25 + 20 * math.sin(t * 1.5 + i * 2.0))
+                ws = pygame.Surface((4, 4), pygame.SRCALPHA)
+                pygame.draw.circle(ws, (*theme["accent"], wa), (2, 2), 2)
+                screen.blit(ws, (wpx - 2, wpy - 2))
+
+            sub = self.font_subtitle.render("Not yet discovered", True,
+                                             tuple(c // 2 + 40 for c in self.ink_light))
+            sub.set_alpha(int(130 + 50 * math.sin(t * 0.7)))
+            sub_x = inner.x + (taw2 - sub.get_width()) // 2
+            sub_y = cy + sc + int(30 * scale)
+            screen.blit(sub, (sub_x, sub_y))
+        else:
+            tah = inner.y + inner.height - tt2
+            bf = self.font_body
+            lh = bf.get_height() + max(2, int(3 * scale))
+            bl = _wrap_text(body, bf, taw2)
+            vl = max(0, (tah - int(40 * scale)) // lh)
+
+            for i in range(vl):
+                if i >= len(bl): break
+                line = bl[i]
+                if not line.strip(): continue
+                ld = i * 0.02
+                lt2 = max(0, min(1.0, (t - 0.1 - ld) * 4.0))
+                la = int(255 * _eased_out_cubic(lt2))
+
+                if i == 0 and line.strip():
+                    fc = line[0]; rest = line[1:]
+                    cs = int(bf.get_height() * 1.8)
+                    try: cf = cfg.get_font(cs)
+                    except: cf = bf
+                    cap = cf.render(fc, True, theme["accent"])
+                    cap.set_alpha(la)
+                    screen.blit(cap, (inner.x + int(10 * scale), tt2))
+                    if rest:
+                        rs = bf.render(rest, True, self.ink_color)
+                        rs.set_alpha(la)
+                        screen.blit(rs, (inner.x + int(10 * scale) + cap.get_width() + 2,
+                                         tt2 + int((cs - bf.get_height()) * 0.6)))
+                else:
+                    sf = bf.render(line, True, self.ink_color)
+                    sf.set_alpha(la)
+                    screen.blit(sf, (inner.x + int(10 * scale), tt2 + i * lh))
 
         # Portrait
         if pimg:
@@ -1121,6 +1256,8 @@ class WikiMenu(Menu):
         if mp > 0:
             if self._sub_page > 0: self.prev_btn.draw(screen)
             if self._sub_page < mp: self.next_btn.draw(screen)
+        if self._skip_to_gameplay and self._page == "guide":
+            self.begin_btn.draw(screen)
 
     # ─── Events ─────────────────────────────────────────────
     def handle_event(self, event):
@@ -1128,6 +1265,9 @@ class WikiMenu(Menu):
             self._handle_main_click(event)
             return
         if event.type == pygame.MOUSEBUTTONDOWN:
+            if self._skip_to_gameplay and self._page == "guide":
+                if self.begin_btn.rect.collidepoint(event.pos):
+                    self.begin_btn.on_click(); return
             if self.back_btn.rect.collidepoint(event.pos):
                 self.back_btn.on_click(); return
             if self._page != "main":

@@ -134,6 +134,8 @@ class CollectionBookMenu(Menu):
             self.max_spreads = 1
 
         self.buttons = []
+        self.hovered_card_index = -1
+        self.card_hover_animations: dict[int, float] = {}
         self._setup_buttons()
 
     @staticmethod
@@ -244,6 +246,9 @@ class CollectionBookMenu(Menu):
         self._setup_buttons()
         self._emit_page_particles()
 
+    def on_enter(self):
+        self._setup_buttons()
+
     def close_menu(self):
         """Return to the gameplay state."""
         self.app.manager.set_state("gameplay")
@@ -295,6 +300,13 @@ class CollectionBookMenu(Menu):
         self.page_particles = [p for p in self.page_particles if p.lifetime > 0]
         for p in self.ambient_particles + self.page_particles:
             p.update(dt)
+        for card_idx in list(self.card_hover_animations.keys()):
+            if card_idx == self.hovered_card_index:
+                self.card_hover_animations[card_idx] = min(1.0, self.card_hover_animations[card_idx] + 3 * dt)
+            else:
+                self.card_hover_animations[card_idx] -= 3 * dt
+                if self.card_hover_animations[card_idx] <= 0:
+                    del self.card_hover_animations[card_idx]
 
     def handle_event(self, event):
         """Process keyboard and UI events.
@@ -311,6 +323,34 @@ class CollectionBookMenu(Menu):
                 self.prev_page()
             elif event.key == pygame.K_RIGHT:
                 self.next_page()
+        elif event.type == pygame.MOUSEMOTION:
+            self._update_hovered_card(event.pos)
+
+    def _update_hovered_card(self, mouse_pos):
+        scale = cfg.ui_scale() * self.book_magnifier
+        cx, cy = cfg.SCREEN_WIDTH // 2, cfg.SCREEN_HEIGHT // 2
+        book_w = int(860 * scale)
+        book_h = int(600 * scale)
+        book_x = cx - book_w // 2
+        book_y = cy - book_h // 2
+        card_w = int(340 * scale)
+        card_h = int(420 * scale)
+        card_y = int(80 * scale)
+        start_idx = self.current_spread * 2
+        end_idx = min(start_idx + 2, len(self.fish_entries))
+        self.hovered_card_index = -1
+        for i in range(start_idx, end_idx):
+            local_idx = i - start_idx
+            if local_idx == 0:
+                card_x = (book_w // 2 - card_w) // 2
+            else:
+                card_x = book_w // 2 + (book_w // 2 - card_w) // 2
+            card_rect = pygame.Rect(book_x + card_x, book_y + card_y, card_w, card_h)
+            if card_rect.collidepoint(mouse_pos):
+                self.hovered_card_index = i
+                if i not in self.card_hover_animations:
+                    self.card_hover_animations[i] = 0
+                break
 
     def draw(self, screen):
         """Render the entire book interface onto the screen.
@@ -651,12 +691,12 @@ class CollectionBookMenu(Menu):
             card_y = int(80 * scale)
 
             self._draw_fish_card(content, card_x, card_y, card_w, card_h,
-                                 fish, scale, caught)
+                                 fish, scale, caught, i)
 
         content.set_alpha(alpha)
         surf.blit(content, (0, 0))
 
-    def _draw_fish_card(self, surf, x, y, w, h, fish, scale, caught):
+    def _draw_fish_card(self, surf, x, y, w, h, fish, scale, caught, card_idx):
         """Draw a single fish card on the page.
 
         Caught fish are shown in full colour with their image and stats;
@@ -670,27 +710,54 @@ class CollectionBookMenu(Menu):
         :param fish: Fish entry dict (id, name, rarity, difficulty, speed, base_price, description, image)
         :param scale: UI scale factor
         :param caught: Dict mapping fish_id -> catch count from the app
+        :param card_idx: Index of this card in fish_entries for hover lookup
         """
         fish_id = fish["id"]
         count = caught.get(fish_id, 0)
         is_caught = count > 0
 
-        shadow = pygame.Rect(x + int(4 * scale), y + int(4 * scale), w, h)
-        pygame.draw.rect(surf, (0, 0, 0, 40), shadow, border_radius=int(10 * scale))
+        hover_amount = self.card_hover_animations.get(card_idx, 0.0)
+        scale_amount = 1.0 + hover_amount * 0.06
+        offset_y = int(hover_amount * -8 * scale)
+        scaled_rect = pygame.Rect(
+            int(x + (w * (1 - scale_amount)) / 2),
+            int(y + offset_y),
+            int(w * scale_amount),
+            int(h * scale_amount)
+        )
+        sx, sy, sw, sh = scaled_rect
 
-        card_bg = (238, 225, 198) if is_caught else (225, 215, 195)
-        card_rect = pygame.Rect(x, y, w, h)
+        shadow = pygame.Rect(sx + int(4 * scale), sy + int(4 * scale), sw, sh)
+        shadow_alpha = int(40 + 80 * hover_amount)
+        pygame.draw.rect(surf, (0, 0, 0, shadow_alpha), shadow, border_radius=int(10 * scale))
+
+        bg_lift = int(20 * hover_amount)
+        if is_caught:
+            card_bg = (238 + bg_lift, 225 + bg_lift // 2, 198 + bg_lift)
+        else:
+            card_bg = (225 + bg_lift, 215 + bg_lift // 2, 195 + bg_lift)
+        card_rect = pygame.Rect(sx, sy, sw, sh)
         pygame.draw.rect(surf, card_bg, card_rect, border_radius=int(10 * scale))
 
-        border = (180, 195, 210) if is_caught else (140, 150, 160)
+        if is_caught:
+            border = (180 + int(40 * hover_amount), 195 + int(40 * hover_amount), 210 + int(45 * hover_amount))
+        else:
+            border = (140 + int(40 * hover_amount), 150 + int(50 * hover_amount), 160 + int(60 * hover_amount))
         pygame.draw.rect(surf, border, card_rect, width=2, border_radius=int(10 * scale))
 
         inner = card_rect.inflate(-int(5 * scale), -int(5 * scale))
         pygame.draw.rect(surf, border, inner, width=1, border_radius=int(8 * scale))
 
+        if hover_amount > 0.2:
+            glow_clr = (100, 200, 240, int(100 * hover_amount))
+            glow_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            pygame.draw.rect(glow_surf, glow_clr, glow_surf.get_rect(),
+                             width=max(1, int(2 * scale)), border_radius=int(10 * scale))
+            surf.blit(glow_surf, (sx, sy))
+
         img_size = int(80 * scale)
-        img_x = x + (w - img_size) // 2
-        img_y = y + int(20 * scale)
+        img_x = sx + (sw - img_size) // 2
+        img_y = sy + int(20 * scale)
         img_rect = pygame.Rect(img_x, img_y, img_size, img_size)
 
         if is_caught:
@@ -702,6 +769,13 @@ class CollectionBookMenu(Menu):
 
         pygame.draw.ellipse(surf, circle_color, img_rect)
         pygame.draw.ellipse(surf, img_border, img_rect, width=2)
+
+        if hover_amount > 0.1:
+            ring_alpha = int(80 * hover_amount)
+            ring_surf = pygame.Surface((img_size + 8, img_size + 8), pygame.SRCALPHA)
+            pygame.draw.ellipse(ring_surf, (100, 200, 240, ring_alpha),
+                                ring_surf.get_rect(), width=max(1, int(2 * scale)))
+            surf.blit(ring_surf, (img_x - 4, img_y - 4))
 
         raw_img = fish.get("image")
         cx = img_rect.centerx
@@ -720,36 +794,36 @@ class CollectionBookMenu(Menu):
 
         name_color = (25, 50, 80) if is_caught else (90, 90, 95)
         name = self._render_text(cfg.INV_nums_font, fish["name"], name_color)
-        nx = x + (w - name.get_width()) // 2
+        nx = sx + (sw - name.get_width()) // 2
         ny = img_y + img_size + int(10 * scale)
         surf.blit(name, (nx, ny))
 
         rarity_color = (100, 130, 160) if is_caught else (90, 90, 95)
         rarity = self._render_text(cfg.INV_nums_font,
                                    _("Rarity: {r}").format(r=fish["rarity"]), rarity_color)
-        surf.blit(rarity, (x + int(15 * scale), ny + int(22 * scale)))
+        surf.blit(rarity, (sx + int(15 * scale), ny + int(22 * scale)))
 
         diff = self._render_text(cfg.INV_nums_font,
                                  _("Difficulty: {d:.2f}").format(d=fish["difficulty"]),
                                  rarity_color)
-        surf.blit(diff, (x + int(15 * scale), ny + int(38 * scale)))
+        surf.blit(diff, (sx + int(15 * scale), ny + int(38 * scale)))
 
         spd = self._render_text(cfg.INV_nums_font,
                                 _("Speed: {s:.2f}").format(s=fish["speed"]),
                                 rarity_color)
-        surf.blit(spd, (x + int(15 * scale), ny + int(54 * scale)))
+        surf.blit(spd, (sx + int(15 * scale), ny + int(54 * scale)))
 
         price = self._render_text(cfg.INV_nums_font,
                                   _("Price: {p}g").format(p=fish["base_price"]),
                                   rarity_color)
-        surf.blit(price, (x + int(15 * scale), ny + int(70 * scale)))
+        surf.blit(price, (sx + int(15 * scale), ny + int(70 * scale)))
 
         desc_text = fish.get("description", "")
         if is_caught and desc_text:
             desc_color = (80, 90, 100)
-            max_desc_w = w - int(30 * scale)
+            max_desc_w = sw - int(30 * scale)
             line_h = int(18 * scale)
-            desc_x = x + int(15 * scale)
+            desc_x = sx + int(15 * scale)
             desc_y = ny + int(90 * scale)
             words = desc_text.split(" ")
             line = ""
@@ -770,7 +844,7 @@ class CollectionBookMenu(Menu):
             desc_color = (120, 120, 125)
             placeholder = self._render_text(cfg.INV_nums_font,
                                             "???", desc_color)
-            surf.blit(placeholder, (x + int(15 * scale),
+            surf.blit(placeholder, (sx + int(15 * scale),
                                     ny + int(90 * scale)))
 
         if is_caught:
@@ -779,13 +853,13 @@ class CollectionBookMenu(Menu):
             badge_bg = pygame.Surface((badge.get_width() + 8, badge.get_height() + 4))
             badge_bg.fill((180, 200, 220))
             badge_bg.blit(badge, (4, 2))
-            bx = x + w - badge_bg.get_width() - int(8 * scale)
-            by = y + h - badge_bg.get_height() - int(8 * scale)
+            bx = sx + sw - badge_bg.get_width() - int(8 * scale)
+            by = sy + sh - badge_bg.get_height() - int(8 * scale)
             surf.blit(badge_bg, (bx, by))
         else:
             nc = self._render_text(cfg.INV_nums_font, _("Not yet caught"), (120, 120, 125))
-            surf.blit(nc, (x + (w - nc.get_width()) // 2,
-                           y + h - nc.get_height() - int(8 * scale)))
+            surf.blit(nc, (sx + (sw - nc.get_width()) // 2,
+                           sy + sh - nc.get_height() - int(8 * scale)))
 
     def _render_text(self, font, text, color):
         """Render text with optional scaling via the book magnifier.

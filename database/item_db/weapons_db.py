@@ -1,6 +1,14 @@
 def seed_weapons(db):
     # ------------------ Melee weapons ------------------
     db.add_weapon(
+        item_id="wooden_sword",
+        name="Wooden Sword",
+        image_path="assets/items/weapons/swords/wooden_sword.png",
+        weapon_class="melee",
+        damage=12, durability=40, range_val=70, cone_degrees=110.0, cooldown=520, price=20,
+        description="A basic wooden sword. Easy to craft, but it won't last long in a real fight."
+    )
+    db.add_weapon(
         item_id="dull_sword",
         name="Dull Sword",
         image_path="assets/items/weapons/swords/dull_sword.png",

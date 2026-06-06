@@ -408,17 +408,41 @@ class MAIN_player_inventory(Inventory):
         
         self.open_skillbar_btn = Button(
             rect=pygame.Rect(0, 0, btn_w, btn_h),
-            text=_("SKILLS & MAGIC"), color=cfg.INV_SKILLBAR_BTN_COLOR, 
+            text=_("SKILLS & MAGIC"), color=cfg.INV_SKILLBAR_BTN_COLOR,
             hover_color=cfg.INV_SKILLBAR_BTN_HOVER_COLOR,
             font=cfg.get_font(max(10, int(22 * scale))), font_color=cfg.INV_SKILLBAR_BTN_FONT_COLOR,
             corner_width=max(2, int(8 * scale)), on_click=None
         )
         self.open_skilltree_btn = Button(
             rect=pygame.Rect(0, 0, btn_w, btn_h),
-            text=_("TALENT TREE"), color=cfg.INV_SKILLTREE_BTN_COLOR, 
+            text=_("TALENT TREE"), color=cfg.INV_SKILLTREE_BTN_COLOR,
             hover_color=cfg.INV_SKILLTREE_BTN_HOVER_COLOR,
             font=cfg.get_font(max(10, int(22 * scale))), font_color=cfg.INV_SKILLTREE_BTN_FONT_COLOR,
             corner_width=max(2, int(8 * scale)), on_click=None
+        )
+        # Magical ARCANE QUESTS button (gold & purple theme) — opens the new
+        # ArcaneQuestMenu (registered in StateManager as the "arcane_quest" state).
+        self.open_arcane_quest_btn = Button(
+            rect=pygame.Rect(0, 0, btn_w, btn_h),
+            text=_("ARCANE QUESTS"),
+            color=cfg.INV_ARCANEQUEST_BTN_COLOR,
+            hover_color=cfg.INV_ARCANEQUEST_BTN_HOVER_COLOR,
+            font=cfg.get_font(max(10, int(22 * scale))),
+            font_color=cfg.INV_ARCANEQUEST_BTN_FONT_COLOR,
+            corner_width=max(2, int(8 * scale)),
+            on_click=None,
+        )
+        # Mystical MYSTERIUM MAGNUM button (cards theme) — opens the
+        # MysteriumMagnumMenu (registered in StateManager as "mysterium_magnum").
+        self.open_mysterium_magnum_btn = Button(
+            rect=pygame.Rect(0, 0, btn_w, btn_h),
+            text=_("MYSTERIUM MAGNUM"),
+            color=cfg.INV_MYSTERIUMMAGNUM_BTN_COLOR,
+            hover_color=cfg.INV_MYSTERIUMMAGNUM_BTN_HOVER_COLOR,
+            font=cfg.get_font(max(10, int(22 * scale))),
+            font_color=cfg.INV_MYSTERIUMMAGNUM_BTN_FONT_COLOR,
+            corner_width=max(2, int(8 * scale)),
+            on_click=None,
         )
 
     def inventory_interactions(self, event, manager):
@@ -432,6 +456,16 @@ class MAIN_player_inventory(Inventory):
                 if hasattr(self, 'open_skillbar_btn') and self.open_skillbar_btn.rect.collidepoint(mouse_pos):
                     try: self.app.manager.set_state("skillbar")
                     except Exception: pass
+                    return
+                if hasattr(self, 'open_arcane_quest_btn') and self.open_arcane_quest_btn.rect.collidepoint(mouse_pos):
+                    if getattr(self.app, 'arcane_quests_unlocked', False):
+                        try: self.app.manager.set_state("arcane_quest")
+                        except Exception: pass
+                    return
+                if hasattr(self, 'open_mysterium_magnum_btn') and self.open_mysterium_magnum_btn.rect.collidepoint(mouse_pos):
+                    if getattr(self.app, 'mysterium_magnum_unlocked', False):
+                        try: self.app.manager.set_state("mysterium_magnum")
+                        except Exception: pass
                     return
         return super().inventory_interactions(event, manager)
 
@@ -475,18 +509,85 @@ class MAIN_player_inventory_equipment(Inventory):
         return "unknown"
 
     def get_total_defense(self) -> int:
-        """Sum the defense_value of all equipped Armor items."""
+        """Sum the *effective* defense of all equipped Armor items.
+
+        Each :class:`Armor` instance scales its ``defense_value`` by
+        the remaining durability via
+        :py:meth:`src.items.items.Armor.get_effective_defense`, so a
+        worn-down chestplate contributes proportionally less -- and a
+        broken piece contributes the floor value (50% by default)
+        rather than zero.  The sum is what gets written to
+        ``character.defense`` by :py:meth:`sync_character_defense`.
+        """
         total = 0
         for col in range(self.columns):
             for row in range(self.rows):
                 slot = self.items[col][row]
                 if slot and isinstance(slot[0], Armor):
-                    total += slot[0].defense_value
+                    total += slot[0].get_effective_defense()
         return total
 
     def sync_character_defense(self, character) -> None:
-        """Recalculate character.defense from all equipped armor."""
+        """Recalculate character.defense from all equipped armor.
+
+        Uses the durability-scaled (effective) defense, not the raw
+        ``defense_value``, so worn pieces immediately show up in the
+        player's stat without waiting for the next equip change.
+        """
         character.defense = self.get_total_defense()
+
+    def damage_equipped_armor(self, amount: int = 1, source: str = "hit") -> list:
+        """Reduce the durability of every equipped armor piece by
+        ``amount``.
+
+        Called from :py:meth:`src.entities.character.Character.take_damage`
+        so each incoming hit chips a point off every worn piece.  A
+        broken piece (zero durability) is left alone -- we already
+        reported the break to the player; a second hit shouldn't
+        re-fire the same floating text.  Unbreakable pieces are
+        skipped entirely.
+
+        After damage is applied the function re-syncs ``character.defense``
+        via :py:meth:`sync_character_defense` so the in-flight
+        :py:meth:`take_damage` reduction picks up the new (lower) defense
+        on subsequent hits in the same frame.
+
+        Args:
+            amount: How many durability points to subtract per piece.
+                Must be a positive integer; non-positive values are a
+                no-op.
+            source: Short string used only for log messages ("hit",
+                "fall", ...).  Doesn't change behaviour.
+
+        Returns:
+            A list of ``(col, row, item, broke_now)`` tuples for every
+            piece that lost durability on this call, so the caller can
+            fire "X just broke!" popups without having to re-walk the
+            grid.  An empty list means nothing was equipped (or every
+            piece was unbreakable).
+        """
+        if amount is None or amount <= 0:
+            return []
+        results: list = []
+        for col in range(self.columns):
+            for row in range(self.rows):
+                slot = self.items[col][row]
+                if not slot:
+                    continue
+                item = slot[0]
+                if not isinstance(item, Armor):
+                    continue
+                if getattr(item, "unbreakable", False):
+                    continue
+                was_broken = bool(getattr(item, "is_broken", lambda: False)())
+                apply = getattr(item, "apply_durability_damage", None)
+                if not callable(apply):
+                    continue
+                apply(int(amount))
+                is_broken_now = bool(getattr(item, "is_broken", lambda: False)())
+                if not was_broken and is_broken_now:
+                    results.append((col, row, item, True))
+        return results
 
     def inventory_interactions(self, event, manager):
         if event.type != pygame.MOUSEBUTTONDOWN:
@@ -818,6 +919,12 @@ class CraftingGrid(Inventory):
             if self.output_slot and not manager.selected_item:
                 manager.selected_item = self.output_slot
                 self.output_slot = None
+                
+                # Guide: Crafting & Recipes — first item crafted
+                gs = self.app.manager.states.get("gameplay")
+                if gs and not gs._triggered_guide_crafting:
+                    gs._triggered_guide_crafting = True
+                    self.app.article_tracker.try_open(self.app, "guide", "5. Crafting & Recipes")
                 
                 for col in range(3):
                     for row in range(3):

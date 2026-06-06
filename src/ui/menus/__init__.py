@@ -1,8 +1,9 @@
 """
-Menus package for the game UI.
+Menu screens module for all game menu interfaces.
 
-This package contains all menu classes used in the game, split into separate modules
-for better organization and maintainability.
+Provides base menu class, main menu, settings, credits, pause, skillbar,
+skilltree, recipe book, wiki, collection book, arcane quests, mysterium
+magnum, save/load, and smeltery workstation menus.
 """
 
 from src.ui.menus.base import Menu
@@ -16,6 +17,8 @@ from src.ui.menus.save_load_menu import SaveLoadMenu
 from src.ui.menus.recipe_book import RecipeBookMenu
 from src.ui.menus.wiki_menu import WikiMenu
 from src.ui.menus.collection_book import CollectionBookMenu
+from src.ui.menus.arcane_quest_menu import ArcaneQuestMenu
+from src.ui.menus.mysterium_magnum import MysteriumMagnumMenu
 
 __all__ = [
     "Menu",
@@ -29,4 +32,6 @@ __all__ = [
     "RecipeBookMenu",
     "WikiMenu",
     "CollectionBookMenu",
+    "ArcaneQuestMenu",
+    "MysteriumMagnumMenu",
 ]

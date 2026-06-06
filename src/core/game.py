@@ -1,5 +1,6 @@
 import math
 import pygame
+import pytmx
 import os
 import sys
 # Ensure project root is on sys.path if this module is executed directly
@@ -13,6 +14,7 @@ import random
 from src.core.logger import logger
 import src.config as cfg
 from src.core.state import State
+from src.core.save_manager import SaveManager
 from src.entities.character import Character
 from src.map.map import LocalMap
 from src.inventory.system import MAIN_player_inventory, MAIN_player_inventory_equipment, ShopInventory, MAIN_player_hotbar
@@ -20,6 +22,7 @@ from src.items.items import create_item, LightRing
 from database.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, DizzinessEffect, SlowEffect
 from src.entities.enemy import Enemy
 from src.entities.npc import NPC
+from src.entities.mage_npc import MageNPC
 from src.entities.projectile import Arrow
 from src.ui.hud import HUD
 from src.ui.widgets import Dialog
@@ -31,6 +34,9 @@ from src.entities.monster_attacks import build_attack_controller, AttackContext
 from src.combat.base_player_combat import PlayerCombatController
 from src.minigames.blackjack import BlackjackGame
 from src.minigames.fishing import FishingController
+from src.minigames.gathering import GatheringController
+from src.world.gatherable_nodes import GatherableNodeRegistry
+from src.ui.menus.smeltery import SmelteryMenu
 import inspect
 import database.effects as effects_db
 
@@ -486,6 +492,13 @@ class Game(State):
             "maps/test-map-1.tmx": (1120, 1024),
         }
 
+        # Mage NPC spawn positions (pixels) — placed near trees on test-map-2
+        # The center of the map (cols 50-64, rows 40-54) is the lake; this
+        # position is on solid ground near the upper-right detail objects.
+        self.MAGE_NPC_SPAWNS = {
+            "maps/test-map-2.tmx": (2240, 640),
+        }
+
         # Maps where enemy spawning (both default and random) is disabled
         self.NO_ENEMY_SPAWN_MAPS = {"maps/tavern.tmx", "maps/test-map-1.tmx"}
 
@@ -555,6 +568,12 @@ class Game(State):
             create_item("defense_charm"),
             create_item("leather_gloves"),
             create_item("fishing_rod"),
+            create_item("stone_axe"),
+            create_item("iron_axe"),
+            create_item("stone_pickaxe"),
+            create_item("iron_pickaxe"),
+            create_item("stone_hammer"),
+            create_item("iron_hammer"),
             ]
 
         self.shop_inv = ShopInventory(self.app, shop_items)
@@ -634,6 +653,51 @@ class Game(State):
         except Exception:
             pass
 
+        # ---- Mage NPC (Arcane Quests / Mysterium Magnum gatekeeper) ----
+        if initial_map_path in self.MAGE_NPC_SPAWNS:
+            mg_x, mg_y = self.MAGE_NPC_SPAWNS[initial_map_path]
+        else:
+            mg_x, mg_y = -5000, -5000
+
+        self.mage_npc_first_dialog = [
+            "I sense a great power within you... something ancient, something waiting.",
+            "You must collect the souls of the monsters you defeat.",
+            "Bring them to me, and I shall unlock the Arcane Quests — a path to harness that power."
+        ]
+        self.mage_npc_repeat_dialog = [
+            "The winds whisper of your progress.",
+            "Keep collecting monster souls. The Arcane Quests await."
+        ]
+        self.mage_npc_post_unlock_dialog = [
+            "You have gathered the souls. I can feel their energy resonating.",
+            "Now you must tap into your inner world and transform these souls into a tarot deck.",
+            "This is the Mysterium Magnum — a deck of power, fate, and transformation.",
+            "I shall open the way for you."
+        ]
+        self.mage_npc_post_unlock_repeat_dialog = [
+            "The Mysterium Magnum is now open to you.",
+            "Transform your collected souls into cards of destiny."
+        ]
+
+        self.mage_npc = MageNPC(
+            x=mg_x, y=mg_y,
+            dialog_lines=self.mage_npc_first_dialog,
+            gender='female',
+        )
+
+        # Clamp mage NPC to map bounds
+        try:
+            if initial_map_path in self.MAGE_NPC_SPAWNS and self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                map_w = self.map.current_map.pixel_width
+                map_h = self.map.current_map.pixel_height
+                mg_w = self.mage_npc.image.get_width()
+                mg_h = self.mage_npc.image.get_height()
+                mg_x = max(0, min(mg_x, map_w - mg_w))
+                mg_y = max(0, min(mg_y, map_h - mg_h))
+                self.mage_npc.pos = pygame.Vector2(mg_x, mg_y)
+        except Exception:
+            pass
+
         # Blackjack game state (None when not playing)
         self.blackjack_game = None
 
@@ -660,6 +724,60 @@ class Game(State):
             self.fishing = FishingController(self)
         except Exception:
             self.fishing = None
+
+        # Guide article one-shot trigger flags
+        self._triggered_guide_combat = False
+        self._triggered_guide_inventory = False
+        self._triggered_guide_crafting = False
+        self._triggered_guide_leveling = False
+        self._triggered_guide_daynight = False
+        self._triggered_guide_enemies = False
+        self._triggered_guide_skills = False
+        self._triggered_guide_respec = False
+        self._triggered_guide_final = False
+        self._bestiary_encountered = set()
+        self._dusk_was_reached = False
+        self._kill_count = 0
+
+        # Gathering minigame controller (chop / mine)
+        try:
+            self.gathering = GatheringController(self)
+        except Exception:
+            self.gathering = None
+
+        # Smeltery workstation overlay (workbench + coke oven + blast furnace)
+        try:
+            self.smeltery = SmelteryMenu(app)
+        except Exception as exc:
+            logger.warning(f"Failed to initialise SmelteryMenu: {exc}")
+            self.smeltery = None
+
+        # Per-map gatherable node registries
+        self.gatherables: dict[str, GatherableNodeRegistry] = {}
+        try:
+            self._build_gatherable_registries()
+        except Exception as exc:
+            logger.warning(f"Failed to build gatherable node registries: {exc}")
+
+    def _build_gatherable_registries(self) -> None:
+        try:
+            from data.gatherable_nodes import load_gatherable_node_defs
+        except Exception as exc:
+            logger.warning(f"Could not import data.gatherable_nodes: {exc}")
+            return
+        try:
+            definitions = load_gatherable_node_defs()
+        except Exception as exc:
+            logger.warning(f"load_gatherable_node_defs() failed: {exc}")
+            return
+        for definition in definitions:
+            registry = self.gatherables.get(definition.map_path)
+            if registry is None:
+                registry = GatherableNodeRegistry(definition.map_path)
+                self.gatherables[definition.map_path] = registry
+            registry.add_def(definition)
+        total = sum(len(reg.nodes) for reg in self.gatherables.values())
+        logger.info(f"Loaded {total} gatherable node(s) across {len(self.gatherables)} map(s)")
 
     def reinit_ui(self):
         self.hud = HUD(self.character, self.app, self.toggle_player_inventory, self.use_skill_slot, open_shop_callback=self.open_shop)
@@ -692,6 +810,10 @@ class Game(State):
 
     def toggle_player_inventory(self):
         self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
+        # Guide: Inventory & Items — first inventory open
+        if not self._triggered_guide_inventory:
+            self._triggered_guide_inventory = True
+            self.app.article_tracker.try_open(self.app, "guide", "4. Inventory & Items")
 
     def open_shop(self):
         try:
@@ -732,6 +854,25 @@ class Game(State):
             return self.card_npc_first_dialog
         return self.card_npc_repeat_dialog
 
+    def _get_mage_npc_dialog(self):
+        """Pick the right mage NPC dialog lines based on the current unlock state."""
+        if not self.app.arcane_quests_unlocked:
+            # First conversation: senses power, tells player to collect souls
+            if not self.mage_npc.was_talked:
+                return self.mage_npc_first_dialog
+            return self.mage_npc_repeat_dialog
+        elif not self.app.mysterium_magnum_unlocked:
+            # Arcane quests unlocked, but Mysterium Magnum not yet
+            # Check if player has at least 1 purple star
+            if getattr(self.app, 'purple_stars', 0) >= 1:
+                if not getattr(self, '_mage_mysterium_dialog_shown', False):
+                    self._mage_mysterium_dialog_shown = True
+                    return self.mage_npc_post_unlock_dialog
+            return self.mage_npc_post_unlock_repeat_dialog if getattr(self, '_mage_mysterium_dialog_shown', False) else self.mage_npc_post_unlock_repeat_dialog
+        else:
+            # Both unlocked
+            return self.mage_npc_post_unlock_repeat_dialog
+
     def use_skill_slot(self, slot_index):
         mouse_screen_pos = pygame.mouse.get_pos()
         camera_offset = self._get_camera_offset()
@@ -742,6 +883,106 @@ class Game(State):
             aim_direction = self.character.get_forward_direction()
         return self.character.use_skill_from_slot(slot_index, aim_direction=aim_direction)
 
+    # ------------------------------------------------------------------ #
+    # Smeltery workstation helpers                                        #
+    # ------------------------------------------------------------------ #
+
+    SMELTERY_TILE_PROPERTY = "Is_smeltery_workstation"
+    SMELTERY_INTERACT_RADIUS = 48.0
+
+    def _is_smeltery_tile(self, world_pos):
+        """Return True if the map tile at ``world_pos`` carries the
+        smeltery-workstation custom property."""
+        try:
+            if not getattr(self, "map", None) or not getattr(self.map, "current_map", None):
+                return False
+            tmx_map = self.map.current_map
+            tmx = getattr(tmx_map, "tmxdata", None) or getattr(tmx_map, "get_tmx_data", lambda: None)()
+            if not tmx:
+                return False
+            tile_x = int(world_pos.x // tmx.tilewidth)
+            tile_y = int(world_pos.y // tmx.tileheight)
+            for layer in tmx.layers:
+                if not isinstance(layer, pytmx.TiledTileLayer):
+                    continue
+                try:
+                    gid = layer.data[tile_y][tile_x]
+                except (IndexError, TypeError):
+                    continue
+                if not gid:
+                    continue
+                tile_properties = tmx.get_tile_properties_by_gid(gid)
+                if not tile_properties:
+                    continue
+                val = tile_properties.get(self.SMELTERY_TILE_PROPERTY)
+                if isinstance(val, str):
+                    if val.strip().lower() in ("true", "1", "yes"):
+                        return True
+                elif val:
+                    return True
+        except Exception:
+            pass
+        return False
+
+    def _find_nearby_smeltery_tile(self):
+        """Return the world-space position of the closest smeltery
+        tile within :pyattr:`SMELTERY_INTERACT_RADIUS`, or ``None`` if
+        the player is not standing near one."""
+        try:
+            tmx_map = getattr(self.map, "current_map", None)
+            if not tmx_map:
+                return None
+            tmx = getattr(tmx_map, "tmxdata", None) or tmx_map.get_tmx_data()
+            if not tmx:
+                return None
+            tile_w = tmx.tilewidth
+            tile_h = tmx.tileheight
+            center = self.character.get_center()
+            cx = int(center.x // tile_w)
+            cy = int(center.y // tile_h)
+            r = 2
+            best_pos = None
+            best_dist = None
+            for ty in range(max(0, cy - r), cy + r + 1):
+                for tx in range(max(0, cx - r), cx + r + 1):
+                    world_x = tx * tile_w + tile_w // 2
+                    world_y = ty * tile_h + tile_h // 2
+                    if self._is_smeltery_tile(pygame.Vector2(world_x, world_y)):
+                        d = (world_x - center.x) ** 2 + (world_y - center.y) ** 2
+                        if best_dist is None or d < best_dist:
+                            best_dist = d
+                            best_pos = pygame.Vector2(world_x, world_y)
+            if best_pos is None:
+                return None
+            if best_dist is not None and best_dist > (self.SMELTERY_INTERACT_RADIUS ** 2):
+                return None
+            return best_pos
+        except Exception:
+            return None
+
+    def _draw_smeltery_hint(self, screen, camera_offset):
+        """Show a floating 'Press E to use Smeltery' hint above the
+        nearest smeltery tile when the player is in range."""
+        if not getattr(self, "smeltery", None) or self.smeltery.is_open:
+            return
+        tile_pos = self._find_nearby_smeltery_tile()
+        if tile_pos is None:
+            return
+        screen_x = int(tile_pos.x - camera_offset.x)
+        screen_y = int(tile_pos.y - camera_offset.y)
+        font = cfg.tooltip_font_CREDITS
+        text = font.render(_("Press E to use Smeltery"), True, (255, 240, 200))
+        shadow = font.render(_("Press E to use Smeltery"), True, (0, 0, 0))
+        text_rect = text.get_rect(midbottom=(screen_x, screen_y - 8))
+        # Soft backdrop pill for legibility.
+        pad_x = int(8 * cfg.ui_scale())
+        pad_y = int(4 * cfg.ui_scale())
+        bg_rect = text_rect.inflate(pad_x * 2, pad_y * 2)
+        bg_surf = pygame.Surface(bg_rect.size, pygame.SRCALPHA)
+        pygame.draw.rect(bg_surf, (0, 0, 0, 160), bg_surf.get_rect(), border_radius=6)
+        screen.blit(bg_surf, bg_rect.topleft)
+        screen.blit(shadow, (text_rect.x + 1, text_rect.y + 1))
+        screen.blit(text, text_rect)
 
     def _update_projectiles(self, dt):
         if not self.projectiles:
@@ -777,7 +1018,12 @@ class Game(State):
         return self.DAY_START <= self.game_time_seconds < self.NIGHT_START
 
     def _update_game_time(self, dt: float):
+        was_day = self.is_daytime()
         self.game_time_seconds = (self.game_time_seconds + dt * self.GAME_SECONDS_PER_REAL_SECOND) % self.GAME_DAY_SECONDS
+        # Guide: Day & Night Cycle — first time dusk/night is reached
+        if not self._triggered_guide_daynight and not was_day and not self.is_daytime():
+            self._triggered_guide_daynight = True
+            self.app.article_tracker.try_open(self.app, "guide", "7. Day & Night Cycle")
         # Smooth brightness interpolation across dawn/dusk and compute a tint color
         def lerp_color(a: tuple[int, int, int], b: tuple[int, int, int], t: float) -> tuple[int, int, int]:
             return (int(a[0] + (b[0] - a[0]) * t), int(a[1] + (b[1] - a[1]) * t), int(a[2] + (b[2] - a[2]) * t))
@@ -1017,6 +1263,7 @@ class Game(State):
             visual_style=visual_style,
         )
         enemy.target_entity = self.character
+        enemy.profile_name = profile_name
         return enemy
 
     def spawn_random_enemy(self):
@@ -1170,6 +1417,14 @@ class Game(State):
             logger.debug(f"Enemy '{getattr(enemy, 'ai_profile', 'unknown')}' had drop_chance entries but none rolled.")
 
     def update(self, dt):
+        tr = self.app.article_tracker
+
+        # Guide intro — only on the very first-ever game start
+        if not self.app.guide_intro_shown:
+            self.app.guide_intro_shown = True
+            SaveManager.save_settings(self.app)
+            tr.try_open(self.app, "guide", "1. Movement & Navigation")
+
         switched_map_path = self.map.update(self.character)
 
         if switched_map_path:
@@ -1244,6 +1499,25 @@ class Game(State):
             else:
                 self.fishing_npc.pos = pygame.Vector2(-5000, -5000)
                 logger.info(f"No fishing NPC spawn for map {switched_map_path}; hiding fishing NPC")
+
+            # Place mage NPC on the new map (or hide if not present)
+            if switched_map_path in self.MAGE_NPC_SPAWNS:
+                mg_x, mg_y = self.MAGE_NPC_SPAWNS[switched_map_path]
+                try:
+                    if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                        map_w = self.map.current_map.pixel_width
+                        map_h = self.map.current_map.pixel_height
+                        mg_w = self.mage_npc.image.get_width()
+                        mg_h = self.mage_npc.image.get_height()
+                        mg_x = max(0, min(mg_x, map_w - mg_w))
+                        mg_y = max(0, min(mg_y, map_h - mg_h))
+                except Exception:
+                    pass
+                self.mage_npc.pos = pygame.Vector2(mg_x, mg_y)
+                logger.info(f"Placed mage NPC for map {switched_map_path} at ({mg_x},{mg_y})")
+            else:
+                self.mage_npc.pos = pygame.Vector2(-5000, -5000)
+                logger.info(f"No mage NPC spawn for map {switched_map_path}; hiding mage NPC")
 
         self.map.update_animation(dt)
 
@@ -1342,7 +1616,31 @@ class Game(State):
         for enemy in self.enemies[:]:
             if enemy.is_dead():
                 logger.info("Enemy defeated!")
-                
+                self._kill_count += 1
+
+                # Bestiary: open article for this enemy type
+                vs = getattr(enemy, "visual_style", None) or getattr(enemy, "ai_profile", "")
+                bestiary_title = {
+                    "brute": "The Brute", "venomous": "The Venomous",
+                    "arcanist": "The Arcanist", "trickster": "The Trickster",
+                    "bomber": "The Bomber", "stalker": "The Stalker",
+                    "skirmisher": "The Skirmisher", "guardian": "The Guardian",
+                }.get(vs.lower() if vs else "")
+                if bestiary_title:
+                    tr.try_open(self.app, "bestiary", bestiary_title)
+
+                # Guide: Combat Basics — first kill
+                if not self._triggered_guide_combat:
+                    self._triggered_guide_combat = True
+                    tr.try_open(self.app, "guide", "2. Combat Basics")
+
+                # Guide: Enemies & Threat Assessment — after 3+ different types encountered
+                if vs:
+                    self._bestiary_encountered.add(vs.lower())
+                    if not self._triggered_guide_enemies and len(self._bestiary_encountered) >= 3:
+                        self._triggered_guide_enemies = True
+                        tr.try_open(self.app, "guide", "8. Enemies & Threat Assessment")
+
                 # Reward scaling based on enemy difficulty (using max_hp as proxy)
                 # Base reward ranges
                 _base_xp_min, _base_xp_max = 30, 60
@@ -1363,6 +1661,19 @@ class Game(State):
                 self.app.money += gold_gain
                 logger.info(f"Gained {gold_gain} gold. Total: {self.app.money}")
 
+                # Update quest progress for the killed mob type
+                mob_type = getattr(enemy, 'profile_name', None)
+                if mob_type:
+                    quest_state = self.app.manager.states.get("arcane_quest")
+                    if quest_state and hasattr(quest_state, "quests"):
+                        for q in quest_state.quests:
+                            if q.claimed:
+                                continue
+                            if q.target_type == mob_type:
+                                q.progress = min(q.target_count, q.progress + 1)
+                                if q.progress >= q.target_count:
+                                    q.completed = True
+
                 # Spawn loot drops at the enemy's death location (Python-configured, no JSON)
                 self._drop_enemy_loot(enemy)
 
@@ -1371,11 +1682,35 @@ class Game(State):
         self.npc.update(self.character.pos)
         self.card_npc.update(self.character.pos)
         self.fishing_npc.update(self.character.pos)
+        self.mage_npc.update(self.character.pos)
 
         # Update fishing controller
         try:
             if getattr(self, 'fishing', None):
                 self.fishing.update(dt)
+        except Exception:
+            pass
+
+        # Update gathering controller
+        try:
+            if getattr(self, 'gathering', None):
+                self.gathering.update(dt)
+        except Exception:
+            pass
+
+        # Tick the smeltery overlay so coke oven / blast furnace jobs
+        # continue to advance even while the overlay is closed.
+        try:
+            if getattr(self, 'smeltery', None):
+                self.smeltery.update(dt)
+        except Exception:
+            pass
+
+        # Tick gatherable node respawn timers for the current map.
+        try:
+            active_registry = self.gatherables.get(self.current_map_path)
+            if active_registry is not None:
+                active_registry.update(dt)
         except Exception:
             pass
 
@@ -1403,6 +1738,15 @@ class Game(State):
                 fnx, fny = self.FISHING_NPC_SPAWNS[self.current_map_path]
                 self.fishing_npc.pos = pygame.Vector2(fnx, fny)
                 logger.info(f"Safety placed fishing NPC on {self.current_map_path} at ({fnx},{fny})")
+        except Exception:
+            pass
+
+        # Safety: place mage NPC if it should be on this map but is far away
+        try:
+            if self.current_map_path in self.MAGE_NPC_SPAWNS and (self.mage_npc.pos.x < -1000 or self.mage_npc.pos.y < -1000):
+                mgx, mgy = self.MAGE_NPC_SPAWNS[self.current_map_path]
+                self.mage_npc.pos = pygame.Vector2(mgx, mgy)
+                logger.info(f"Safety placed mage NPC on {self.current_map_path} at ({mgx},{mgy})")
         except Exception:
             pass
 
@@ -1529,6 +1873,10 @@ class Game(State):
             fishing_npc_vis = _is_visible(self.fishing_npc)
         except Exception:
             fishing_npc_vis = False
+        try:
+            mage_npc_vis = _is_visible(self.mage_npc)
+        except Exception:
+            mage_npc_vis = False
 
         # Collect all visible entities with their y-position for sorting.
         draw_entities = []
@@ -1538,6 +1886,8 @@ class Game(State):
             draw_entities.append((self.card_npc.pos.y, 'card_npc'))
         if fishing_npc_vis:
             draw_entities.append((self.fishing_npc.pos.y, 'fishing_npc'))
+        if mage_npc_vis:
+            draw_entities.append((self.mage_npc.pos.y, 'mage_npc'))
         draw_entities.append((self.character.pos.y, 'player'))
         for item in self.items:
             try:
@@ -1557,6 +1907,8 @@ class Game(State):
                 self.card_npc.draw(screen, camera_offset)
             elif kind == 'fishing_npc':
                 self.fishing_npc.draw(screen, camera_offset)
+            elif kind == 'mage_npc':
+                self.mage_npc.draw(screen, camera_offset)
             elif kind == 'player':
                 self.character.draw(screen, camera_offset)
             elif kind == 'item':
@@ -1567,7 +1919,34 @@ class Game(State):
                 self.fishing.draw(screen, camera_offset)
         except Exception:
             pass
+
+        # Draw coordinate-based gatherable nodes (trees/rocks/ore veins)
+        # on the current map so they appear in the world.
+        try:
+            active_registry = self.gatherables.get(self.current_map_path)
+            if active_registry is not None:
+                active_registry.draw(screen, camera_offset)
+        except Exception:
+            pass
+
+        # Draw the fringe (upper-details) overlay BEFORE the gathering
+        # UI so the bar and "Press G to ..." hint sit on top of the
+        # upper halves of trees / rocks and never get hidden behind
+        # tall tile art.
         self.map.draw_fringe_overlay(screen, camera_offset, self.character)
+
+        try:
+            if getattr(self, 'gathering', None):
+                self.gathering.draw(screen, camera_offset)
+        except Exception:
+            pass
+
+        # "Press E to use Smeltery" hint above the nearest workstation tile.
+        try:
+            if getattr(self, 'smeltery', None) and not self.smeltery.is_open:
+                self._draw_smeltery_hint(screen, camera_offset)
+        except Exception:
+            pass
 
         if not self.npc.is_interactable:
             if getattr(self.app.INV_manager, 'current_shop_inv', None) is not None:
@@ -1597,6 +1976,18 @@ class Game(State):
                 self.blackjack_game.draw(screen)
             except Exception:
                 pass
+        # Smeltery workstation overlay (workbench / coke oven / blast furnace).
+        try:
+            if getattr(self, 'smeltery', None) and self.smeltery.is_open:
+                self.smeltery.draw(screen)
+                # Re-draw the inventory's held item on top of the smeltery
+                # panel so dragged items stay visible above the overlay.
+                try:
+                    self.app.INV_manager.draw_held_item(screen)
+                except Exception:
+                    pass
+        except Exception:
+            pass
         # Draw debug spawn / effects menus
         self.spawn_menu.draw(screen)
         try:
@@ -1654,6 +2045,24 @@ class Game(State):
             except Exception:
                 pass
 
+        # Route events to gathering controller (G to gather, K to cancel)
+        if getattr(self, 'gathering', None):
+            try:
+                handled = self.gathering.handle_event(event)
+                if handled:
+                    return
+            except Exception:
+                pass
+
+        # Route events to the smeltery overlay (workbench / coke oven / blast furnace).
+        if getattr(self, 'smeltery', None) and self.smeltery.is_open:
+            try:
+                handled = self.smeltery.handle_event(event)
+                if handled:
+                    return
+            except Exception:
+                pass
+
         if event.type == pygame.MOUSEWHEEL:
             if getattr(self.app.INV_manager, 'hotbar', None):
                 self.app.INV_manager.hotbar.scroll_active_slot(event.y)
@@ -1701,8 +2110,31 @@ class Game(State):
                 self.use_skill_slot(5)
             
             if event.key == pygame.K_e:
-                # Card NPC interaction takes priority if both are nearby
-                if self.card_npc.is_interactable:
+                # Mage NPC interaction (highest priority)
+                if self.mage_npc.is_interactable:
+                    dialog_lines = self._get_mage_npc_dialog()
+
+                    def on_mage_close():
+                        try:
+                            self.mage_npc.was_talked = True
+                            # On first talk: unlock Arcane Quests
+                            if not self.app.arcane_quests_unlocked:
+                                self.app.arcane_quests_unlocked = True
+                                logger.info("Arcane Quests UNLOCKED by mage NPC!")
+                            # If arcane quests already unlocked and player has purple star: unlock Mysterium Magnum
+                            elif not self.app.mysterium_magnum_unlocked and getattr(self.app, 'purple_stars', 0) >= 1:
+                                self.app.mysterium_magnum_unlocked = True
+                                logger.info("Mysterium Magnum UNLOCKED by mage NPC!")
+                        except Exception:
+                            pass
+
+                    self.app.current_dialog = Dialog(
+                        self.app,
+                        dialog_lines,
+                        on_close=on_mage_close,
+                    )
+                # Card NPC interaction
+                elif self.card_npc.is_interactable:
                     dialog_lines = self._get_card_npc_dialog()
 
                     def on_card_close():
@@ -1730,6 +2162,8 @@ class Game(State):
 
                     # show shop button inside dialog only for merchant NPCs
                     self.app.current_dialog = Dialog(self.app, self.npc.dialog_lines, on_close=on_close, on_shop=self.open_shop, show_shop=self.npc.is_merchant)
+                elif self._find_nearby_smeltery_tile() is not None and getattr(self, "smeltery", None):
+                    self.smeltery.open()
                 else:
                     # Otherwise toggle the player's inventory (open/close)
                     self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
@@ -1756,7 +2190,8 @@ class Game(State):
                         self.player_combat.handle_player_attack(mouse_world_pos)
             
             elif event.button == 3:
-                if getattr(self.app.INV_manager, 'hotbar', None):
-                    self.app.INV_manager.hotbar.use_active_slot()
+                if not self.app.INV_manager.player_inventory_opened:
+                    if getattr(self.app.INV_manager, 'hotbar', None):
+                        self.app.INV_manager.hotbar.use_active_slot()
 
         self.app.INV_manager.PLAYER_inventory_open(event, self.MAIN_player_inv, self.PLAYER_inventory_equipment)

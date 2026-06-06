@@ -19,6 +19,16 @@ SCREEN_WIDTH, SCREEN_HEIGHT = DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT
 FPS = 0
 
 def _load_background(screen_width, screen_height):
+    """Load and scale the background image for the current screen size.
+
+    Args:
+        screen_width (int): Target width for the background.
+        screen_height (int): Target height for the background.
+
+    Returns:
+        pygame.Surface: The scaled background surface, or a fallback black surface
+        if the image file is missing.
+    """
     try:
         bg_path = os.path.join(BASE_DIR, "assets", "ui", "bg_menu.jpg")
         return pygame.transform.scale(pygame.image.load(bg_path), (screen_width, screen_height))
@@ -76,6 +86,11 @@ def ui_scale() -> float:
 
 # Default fonts and colors — fonts are updated by `update_scaled_fonts()`.
 def update_scaled_fonts():
+    """Recompute all scaled font instances for the current screen size and language.
+
+    Global fonts (myfont, button_font, etc.) are rebuilt so they match the
+    current UI scale factor.
+    """
     global myfont, button_font, inventory_tooltip_font, tooltip_font_CREDITS, INV_nums_font
     scale = ui_scale()
     # Base sizes (authored for 1920x1080)
@@ -87,6 +102,10 @@ def update_scaled_fonts():
 
 
 def update_brightness():
+    """Clamp and apply the user's configured screen brightness.
+
+    Updates the global SCREEN_BRIGHTNESS so that it stays within [0.0, 1.0].
+    """
     global SCREEN_BRIGHTNESS
     SCREEN_BRIGHTNESS = max(0.0, min(1.0, USER_SCREEN_BRIGHTNESS))
 
@@ -155,6 +174,11 @@ MAIN_INV_equipment_pos_x = 0
 MAIN_INV_equipment_pos_y = 0
 
 def recalculate_inventory_positions():
+    """Recalculate the pixel positions of inventory grids based on the current UI scale.
+
+    Updates global position variables for the main inventory grid and the equipment
+    grid so that they remain centred and properly aligned when the window is resized.
+    """
     global MAIN_INV_pos_x, MAIN_INV_pos_y, MAIN_INV_equipment_pos_x, MAIN_INV_equipment_pos_y
     
     scale = ui_scale()
@@ -288,6 +312,18 @@ INV_SKILLTREE_BTN_COLOR = (55, 45, 75)
 INV_SKILLTREE_BTN_HOVER_COLOR = (80, 65, 105)
 INV_SKILLTREE_BTN_FONT_COLOR = (240, 230, 255)
 
+# ============== ARCANE QUESTS BUTTON (right-side, below Talent Tree) ==============
+# Gold & purple magical theme on a near-black base.
+INV_ARCANEQUEST_BTN_COLOR        = (38, 22, 60)
+INV_ARCANEQUEST_BTN_HOVER_COLOR  = (62, 38, 100)
+INV_ARCANEQUEST_BTN_FONT_COLOR   = (255, 220, 140)
+
+# ============== MYSTERIUM MAGNUM BUTTON (right-side, below Arcane Quests) ==============
+# Magical cards theme: deep teal base with gold/cyan accents.
+INV_MYSTERIUMMAGNUM_BTN_COLOR        = (15, 40, 55)
+INV_MYSTERIUMMAGNUM_BTN_HOVER_COLOR  = (25, 65, 85)
+INV_MYSTERIUMMAGNUM_BTN_FONT_COLOR   = (180, 230, 255)
+
 # ============== INVENTORY OVERLAY AND SELECTED ITEM ==============
 INV_OVERLAY_ALPHA = 160
 INV_OVERLAY_COLOR = (5, 8, 12)
@@ -303,15 +339,52 @@ INV_SELECTED_ITEM_TEXT_OFFSET_X = 12
 INV_SELECTED_ITEM_TEXT_OFFSET_Y = 10
 
 # ============== SKILL COOLDOWN INDICATORS ==============
-COOLDOWN_BAR_HEIGHT = 4
+COOLDOWN_BAR_HEIGHT = 5
 COOLDOWN_BAR_BG_COLOR = (20, 20, 25, 200)
 COOLDOWN_BAR_FILL_COLOR = (255, 80, 80, 220)
+COOLDOWN_BAR_FILL_HIGHLIGHT = (255, 160, 160, 180)
 COOLDOWN_BAR_READY_COLOR = (80, 255, 120, 180)
 COOLDOWN_OVERLAY_COLOR = (0, 0, 0, 140)
+COOLDOWN_OVERLAY_TINT_STRENGTH = 0.3
 COOLDOWN_TEXT_COLOR = (255, 255, 255)
 COOLDOWN_TEXT_SIZE = 14
+COOLDOWN_TEXT_BG_COLOR = (0, 0, 0, 160)
+COOLDOWN_TEXT_BORDER_RADIUS = 6
+COOLDOWN_RADIAL_COLOR = (0, 0, 0, 175)
+COOLDOWN_RING_COLOR = (255, 210, 120, 220)
+COOLDOWN_RING_WIDTH = 2
+COOLDOWN_SHIMMER_SPEED = 2.0
+
+# ============== DURABILITY BAR (TOOLS / WEAPONS) ==============
+# Slim wear bar overlaid on item slots (inventory, hotbar, equipment).
+# The fill colour is picked from DURABILITY_BAR_COLORS based on the
+# item's :py:meth:`DurabilityMixin.durability_state` so the player can
+# read wear at a glance.
+DURABILITY_BAR_HEIGHT = 4
+DURABILITY_BAR_BG_COLOR = (15, 15, 20, 220)
+DURABILITY_BAR_BORDER_RADIUS = 2
+DURABILITY_BAR_INSET = 3
+# Tier colours keyed by ``durability_state()``:
+#   full  -> bright green, plenty of life left
+#   good  -> lime, slightly worn
+#   worn  -> amber, getting risky
+#   low   -> orange, almost gone
+#   broken -> red (paired with a desaturated item render)
+DURABILITY_BAR_COLORS = {
+    "full":   (80, 220, 110, 230),
+    "good":   (170, 220, 80, 230),
+    "worn":   (240, 200, 60, 230),
+    "low":    (240, 140, 60, 230),
+    "broken": (220, 70, 70, 230),
+}
 
 def set_screen_size(screen_width, screen_height):
+    """Update the global screen dimensions and recalculate dependent values.
+
+    Args:
+        screen_width (int): New screen width in pixels.
+        screen_height (int): New screen height in pixels.
+    """
     global SCREEN_WIDTH, SCREEN_HEIGHT, bg
     SCREEN_WIDTH = int(screen_width)
     SCREEN_HEIGHT = int(screen_height)

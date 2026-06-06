@@ -5,6 +5,7 @@ from src.core.logger import logger
 from src.core.state_manager import StateManager
 from src.core.save_manager import SaveManager
 from src.core.profiling import FrameProfiler, FpsCounter
+from src.core.article_tracker import ArticleUnlockTracker
 from src.inventory.inventory_manager import INVENTORY_manager
 from src.items.items import create_item
 from database.item_db.weapons_db import seed_weapons
@@ -12,6 +13,9 @@ from database.item_db.consumables_db import seed_consumables
 from database.item_db.armor_db import seed_armor
 from database.item_db.tools_db import seed_tools
 from database.item_db.fish_db import seed_fish
+from database.item_db.resources_db import seed_resources
+from database.item_db.smeltery_db import seed_smeltery
+from database.item_db.flint_db import seed_flint_items
 from database.crafting_recepies_db import seed_recipes
 from database.GP_database import Gp_database
 import src.config as cfg
@@ -87,6 +91,12 @@ class App:
     """
 
     def __init__(self):
+        """Initialize the application, window, inventory, and state manager.
+
+        Sets up the Pygame display, loads the database with seeded items,
+        creates the inventory manager, populates the starter gear grid,
+        configures audio, the frame profiler, and the state manager.
+        """
         logger.info("Initializing Application...")
         # Create the window at the exact configured resolution.
         # DPI awareness is enabled in `main.py`, so we want 1:1 pixels here.
@@ -106,6 +116,9 @@ class App:
         seed_armor(db)
         seed_tools(db)
         seed_fish(db)
+        seed_resources(db)
+        seed_smeltery(db)
+        seed_flint_items(db)
         seed_recipes(db)
         db.close()
 
@@ -126,6 +139,7 @@ class App:
         add_item(5, 0, "mace")
         add_item(6, 0, "spear")
         # Row 1 — Ranged weapons + accessories
+        # Row 1 — Ranged weapons + gathering tools
         add_item(0, 1, "wooden_bow")
         add_item(1, 1, "hunting_bow")
         add_item(2, 1, "longbow")
@@ -134,6 +148,8 @@ class App:
         add_item(6, 1, "gay_ring")
         add_item(7, 1, "light_ring")
         add_item(5, 1, "fishing_rod")
+        add_item(6, 1, "stone_axe")
+        add_item(7, 1, "iron_pickaxe")
 
         # Row 2 — Potions
         add_item(0, 2, "small_health_potion", 3)
@@ -156,6 +172,12 @@ class App:
         add_item(7, 3, "steel_boots")
         
         self.money = 100
+        self.purple_stars = 0
+        self.revealed_tarot_cards: set[int] = set()
+
+        # Unlock flags for mage-NPC gated features
+        self.arcane_quests_unlocked = False
+        self.mysterium_magnum_unlocked = False
 
         # Dialog state: current active dialog UI and last NPC the player talked to
         self.current_dialog = None
@@ -174,6 +196,11 @@ class App:
 
         # State manager
         self.manager = StateManager(self)
+
+        # Article unlock tracker for auto-opening wiki articles
+        self.article_tracker = ArticleUnlockTracker()
+        self.article_notifications: list[dict] = []
+        self.guide_intro_shown = False
 
     def _get_dir_mask(self, radius: int, dir_x: float, dir_y: float) -> "pygame.Surface":
         """Return a cached hemisphere mask that attenuates light behind the character.
@@ -219,10 +246,19 @@ class App:
         return mask
 
     def create_logo(self):
+        """Render and position the main logo text (\"Codex Arcanum\")."""
         self.text_logo = cfg.myfont.render(_('Codex Arcanum'), True, (255, 215, 0))
         self.text_rect = self.text_logo.get_rect(center=(cfg.SCREEN_WIDTH // 2, int(cfg.SCREEN_HEIGHT * 0.12)))
 
     def update_language(self, lang_code):
+        """Change the application language and update fonts/UI.
+
+        Args:
+            lang_code (str): The language code to switch to (e.g. 'en', 'ua').
+
+        Raises:
+            Exception: If font re-scaling fails, it is silently caught.
+        """
         if lang_code in cfg.SUPPORTED_LANGUAGES:
             cfg.LANGUAGE = lang_code
             i18n.install_language(lang_code)
@@ -239,13 +275,25 @@ class App:
             self.fps_counter.refresh_fonts()
 
     def set_profiler_enabled(self, enabled: bool):
+        """Enable or disable the frame profiler.
+
+        Args:
+            enabled (bool): True to enable, False to disable.
+        """
         cfg.PROFILER_ENABLED = bool(enabled)
         self.profiler.set_enabled(cfg.PROFILER_ENABLED)
 
     def toggle_profiler(self):
+        """Toggle the profiler on/off."""
         self.set_profiler_enabled(not cfg.PROFILER_ENABLED)
 
     def _get_fullscreen_size(self):
+        """Get the native desktop resolution.
+
+        Returns:
+            tuple[int, int]: The (width, height) of the primary display
+            in pixels. Falls back to the configured SCREEN_WIDTH/HEIGHT.
+        """
         try:
             desktop_sizes = pygame.display.get_desktop_sizes()
             if desktop_sizes:
@@ -257,6 +305,13 @@ class App:
         return info.current_w or cfg.SCREEN_WIDTH, info.current_h or cfg.SCREEN_HEIGHT
 
     def _apply_display_mode(self, fullscreen: bool, update_windowed_size: bool = True):
+        """Apply fullscreen or windowed display mode.
+
+        Args:
+            fullscreen (bool): True for fullscreen, False for windowed.
+            update_windowed_size (bool): Whether to store the current window
+                size before switching. Defaults to True.
+        """
         if update_windowed_size and not self.is_fullscreen:
             self.windowed_size = self.screen.get_size()
 
@@ -276,9 +331,16 @@ class App:
             gameplay_state.reinit_ui()
 
     def toggle_display_mode(self):
+        """Toggle between fullscreen and windowed mode."""
         self._apply_display_mode(not self.is_fullscreen)
 
     def sync_display_size(self, width: int, height: int):
+        """Update window size from a resize event.
+
+        Args:
+            width (int): New window width in pixels.
+            height (int): New window height in pixels.
+        """
         if self.is_fullscreen:
             return
 
@@ -294,11 +356,24 @@ class App:
             gameplay_state.reinit_ui()
 
     def music_play(self):
+        """Load and start the background music.
+
+        Uses the configured MUSIC_VOLUME unless audio is turned off.
+        The track loops indefinitely.
+        """
         pygame.mixer.music.load('sounds/LIFE (Instrumental).wav')
         pygame.mixer.music.set_volume(cfg.MUSIC_VOLUME if self.audio == "on" else 0.0)
         pygame.mixer.music.play(-1)
 
     def run(self):
+        """Main loop of the application.
+
+        Loads persisted settings, initialises the main menu, plays music,
+        then enters the frame loop — handling events, drawing the scene,
+        overlaying UI and post-processing effects (day/night, light sources),
+        and finally flipping the display.  Pressing F3 toggles the profiler,
+        F11 toggles fullscreen.
+        """
         SaveManager.load_settings(self)
         self.manager.set_state("main")
         self.music_play()
