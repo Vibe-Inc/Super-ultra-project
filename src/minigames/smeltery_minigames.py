@@ -59,13 +59,36 @@ def _draw_button(surface, font, rect, text, hovered=False, text_color=None):
     surface.blit(txt_surf, txt_rect)
 
 
-def _draw_panel(surface, panel_rect, title, subtitle, fonts):
+def _draw_panel(surface, panel_rect, title, subtitle, fonts, majestic=True):
     shadow = panel_rect.move(6, 8)
     sh_surf = pygame.Surface(shadow.size, pygame.SRCALPHA)
     pygame.draw.rect(sh_surf, (0, 0, 0, 110), sh_surf.get_rect(), border_radius=18)
     surface.blit(sh_surf, shadow.topleft)
     pygame.draw.rect(surface, ANVIL_BG, panel_rect, border_radius=18)
     pygame.draw.rect(surface, ANVIL_BORDER, panel_rect, width=3, border_radius=18)
+
+    if majestic:
+        time_ms = pygame.time.get_ticks()
+        ray_surface = pygame.Surface(panel_rect.size, pygame.SRCALPHA)
+        for i in range(12):
+            angle = (time_ms * 0.02 + i * 30) % 360
+            rad = math.radians(angle)
+            rad2 = math.radians(angle + 10)
+            length = panel_rect.width
+            p1 = (panel_rect.width // 2, panel_rect.height // 2)
+            p2 = (p1[0] + math.cos(rad) * length, p1[1] + math.sin(rad) * length)
+            p3 = (p1[0] + math.cos(rad2) * length, p1[1] + math.sin(rad2) * length)
+            pygame.draw.polygon(ray_surface, (255, 200, 50, 10), [p1, p2, p3])
+        for i in range(25):
+            seed = i * 1337
+            speed = 20 + (seed % 30)
+            x = (seed * 17) % panel_rect.width
+            y = panel_rect.height - ((time_ms / 1000.0 * speed + seed * 91) % (panel_rect.height + 50))
+            wobble = math.sin(time_ms * 0.002 + i) * 15
+            alpha = int(abs(math.sin(time_ms * 0.003 + i)) * 150) + 50
+            pygame.draw.circle(ray_surface, (255, 150, 50, alpha), (int(x + wobble), int(y)), 2)
+        surface.blit(ray_surface, panel_rect.topleft, special_flags=pygame.BLEND_RGBA_ADD)
+
     inner = panel_rect.inflate(-10, -10)
     pygame.draw.rect(surface, ANVIL_BORDER_LIGHT, inner, width=1, border_radius=14)
     for i in range(40):
@@ -595,6 +618,289 @@ CHAIN_TITLES = {
     ("bellows", "temper"): "Steel Tempering",
 }
 
+# ===========================================================================
+# Pattern Hammer (Damascus Patterning)
+# ===========================================================================
+
+class PatternMinigame:
+    """A majestic rhythm-based pattern forging challenge.
+    
+    Glowing runes (notes) slide towards a target strike zone. The player
+    must press SPACE or click right as the rune enters the target zone
+    to hammer the pattern into the metal. The precision of strikes 
+    determines the overall score.
+    """
+
+    PHASE_INTRO = "intro"
+    PHASE_ACTIVE = "active"
+    PHASE_RESULT = "result"
+
+    def __init__(self, app, *, on_close=None, smelting_level=1):
+        self.app = app
+        self.on_close = on_close
+        self.smelting_level = max(1, int(smelting_level))
+
+        sw, sh = app.screen.get_size()
+        self.screen_w = sw
+        self.screen_h = sh
+
+        self.font_title  = cfg.get_font(max(12, int(40 * cfg.ui_scale())))
+        self.font_large  = cfg.get_font(max(11, int(30 * cfg.ui_scale())))
+        self.font_medium = cfg.get_font(max(10, int(22 * cfg.ui_scale())))
+        self.font_small  = cfg.get_font(max(8,  int(18 * cfg.ui_scale())))
+
+        panel_w = int(sw * 0.72)
+        panel_h = int(sh * 0.52)
+        self.panel_rect = pygame.Rect(
+            (sw - panel_w) // 2,
+            (sh - panel_h) // 2,
+            panel_w, panel_h,
+        )
+
+        self.track_rect = pygame.Rect(
+            self.panel_rect.x + int(40 * cfg.ui_scale()),
+            self.panel_rect.centery - int(10 * cfg.ui_scale()),
+            self.panel_rect.width - int(80 * cfg.ui_scale()),
+            int(36 * cfg.ui_scale()),
+        )
+        self.target_x = self.track_rect.right - int(50 * cfg.ui_scale())
+        
+        self.phase = self.PHASE_INTRO
+        self._intro_timer = 1.0
+        self._result_timer = 0.0
+        self._outcome = ""
+        self._outcome_color = TEXT_LIGHT
+        self._xp_multiplier = 1.0
+        self._bonus_amount = 0
+        self._btn_skip = None
+        self._btn_strike = None
+        
+        self.t = 0.0
+        self.notes = [1.0, 1.8, 2.4, 2.7, 3.5, 4.0, 4.4, 4.6, 5.0, 5.8]
+        self.active_notes = []
+        for n in self.notes:
+            self.active_notes.append({"time": n, "hit": False, "missed": False, "flash": 0.0})
+        
+        self.speed = 300.0 * cfg.ui_scale()
+        self.max_time = 7.0
+        self.results = []
+        self._last_zone_flash = ""
+        self._flash_timer = 0.0
+
+    def _finalise(self):
+        score = 0
+        for r in self.results:
+            if r == "perfect": score += 2
+            elif r == "good": score += 1
+            
+        max_score = len(self.notes) * 2
+        
+        if score >= max_score * 0.8:
+            self._bonus_amount = 2
+            self._xp_multiplier = 2.0
+            self._outcome = "MAJESTIC PATTERN!"
+            self._outcome_color = TEXT_GOLD
+        elif score >= max_score * 0.5:
+            self._bonus_amount = 1
+            self._xp_multiplier = 1.5
+            self._outcome = "Solid pattern."
+            self._outcome_color = TEXT_GOOD
+        elif score >= max_score * 0.2:
+            self._bonus_amount = 0
+            self._xp_multiplier = 1.0
+            self._outcome = "Acceptable pattern."
+            self._outcome_color = TEXT_LIGHT
+        else:
+            self._bonus_amount = 0
+            self._xp_multiplier = 1.0
+            self._outcome = "The pattern is deeply flawed..."
+            self._outcome_color = TEXT_BAD
+            
+        self._result_timer = 2.4
+        self.phase = self.PHASE_RESULT
+
+    def _close(self):
+        if callable(self.on_close):
+            try:
+                self.on_close(self._outcome, self._bonus_amount, self._xp_multiplier)
+            except Exception as exc:
+                logger.warning("pattern minigame on_close failed: %s", exc)
+        try:
+            self.app.current_dialog = None
+        except Exception:
+            pass
+
+    def _attempt_strike(self):
+        if self.phase != self.PHASE_ACTIVE:
+            return
+            
+        closest = None
+        min_dist = 9999
+        for note in self.active_notes:
+            if not note["hit"] and not note["missed"]:
+                note_x = self.track_rect.x + (self.t - note["time"]) * self.speed + (self.target_x - self.track_rect.x)
+                dist = abs(note_x - self.target_x)
+                if dist < min_dist:
+                    min_dist = dist
+                    closest = note
+                    
+        if closest and min_dist < int(40 * cfg.ui_scale()):
+            if min_dist < int(15 * cfg.ui_scale()):
+                self.results.append("perfect")
+                self._last_zone_flash = "perfect"
+                closest["flash"] = 1.0
+            else:
+                self.results.append("good")
+                self._last_zone_flash = "good"
+                closest["flash"] = 0.5
+            closest["hit"] = True
+            self._flash_timer = 0.5
+        else:
+            self.results.append("miss")
+            self._last_zone_flash = "miss"
+            self._flash_timer = 0.5
+
+    def handle_event(self, event):
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                self._bonus_amount = 0
+                self._xp_multiplier = 1.0
+                self._outcome = "Skipped"
+                self._close()
+                return
+            if self.phase == self.PHASE_ACTIVE and event.key in (pygame.K_SPACE, pygame.K_RETURN):
+                self._attempt_strike()
+                return
+            if self.phase == self.PHASE_INTRO and event.key in (pygame.K_SPACE, pygame.K_RETURN):
+                self.phase = self.PHASE_ACTIVE
+                return
+            if self.phase == self.PHASE_RESULT and event.key in (pygame.K_SPACE, pygame.K_RETURN):
+                self._close()
+                return
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            pos = event.pos
+            if self.phase == self.PHASE_INTRO:
+                self.phase = self.PHASE_ACTIVE
+                return
+            if self.phase == self.PHASE_ACTIVE:
+                if self._btn_skip and self._btn_skip.collidepoint(pos):
+                    self._bonus_amount = 0
+                    self._xp_multiplier = 1.0
+                    self._outcome = "Skipped"
+                    self._close()
+                    return
+                if self._btn_strike and self._btn_strike.collidepoint(pos):
+                    self._attempt_strike()
+                    return
+                if self.track_rect.inflate(20, 40).collidepoint(pos):
+                    self._attempt_strike()
+                    return
+            if self.phase == self.PHASE_RESULT:
+                if self._btn_skip and self._btn_skip.collidepoint(pos):
+                    self._close()
+                    return
+
+    def update(self, dt):
+        if self.phase == self.PHASE_INTRO:
+            self._intro_timer -= dt
+            if self._intro_timer <= 0.0:
+                self.phase = self.PHASE_ACTIVE
+            return
+        if self.phase == self.PHASE_ACTIVE:
+            self.t += dt
+            self._flash_timer = max(0.0, self._flash_timer - dt)
+            
+            for note in self.active_notes:
+                if not note["hit"] and not note["missed"]:
+                    note_x = self.track_rect.x + (self.t - note["time"]) * self.speed + (self.target_x - self.track_rect.x)
+                    if note_x > self.target_x + int(40 * cfg.ui_scale()):
+                        note["missed"] = True
+                        self.results.append("miss")
+                        self._last_zone_flash = "miss"
+                        self._flash_timer = 0.5
+            
+            if self.t >= self.max_time:
+                self._finalise()
+            return
+        if self.phase == self.PHASE_RESULT:
+            self._result_timer -= dt
+            if self._result_timer <= 0.0:
+                self._close()
+
+    def draw(self, surface):
+        overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 170))
+        surface.blit(overlay, (0, 0))
+
+        _draw_panel(
+            surface, self.panel_rect,
+            "Pattern Hammer",
+            "Strike (SPACE/Click) when glowing runes enter the target zone.",
+            (self.font_title, self.font_small),
+        )
+        pr = self.panel_rect
+        mouse_pos = pygame.mouse.get_pos()
+
+        pygame.draw.rect(surface, BAR_BG, self.track_rect, border_radius=8)
+        pygame.draw.rect(surface, ANVIL_BORDER_LIGHT, self.track_rect, width=2, border_radius=8)
+        
+        target_rect = pygame.Rect(self.target_x - 15, self.track_rect.y - 4, 30, self.track_rect.height + 8)
+        pygame.draw.rect(surface, BAR_BULLSEYE, target_rect, border_radius=4)
+        pygame.draw.rect(surface, BAR_CURSOR_GLOW, target_rect, width=2, border_radius=4)
+
+        if self.phase == self.PHASE_ACTIVE:
+            for note in self.active_notes:
+                if not note["hit"] and not note["missed"]:
+                    note_x = self.track_rect.x + (self.t - note["time"]) * self.speed + (self.target_x - self.track_rect.x)
+                    if self.track_rect.x <= note_x <= self.track_rect.right + 20:
+                        n_rect = pygame.Rect(int(note_x) - 10, self.track_rect.y + 4, 20, self.track_rect.height - 8)
+                        pygame.draw.rect(surface, (100, 220, 255), n_rect, border_radius=4)
+                        pygame.draw.rect(surface, (200, 255, 255), n_rect, width=2, border_radius=4)
+                        
+                        letter = "R"
+                        t = self.font_small.render(letter, True, (255, 255, 255))
+                        surface.blit(t, t.get_rect(center=n_rect.center))
+
+        if self.phase == self.PHASE_INTRO:
+            hint = self.font_medium.render("Click / SPACE to start the rhythm forge", True, TEXT_LIGHT)
+            surface.blit(hint, (pr.centerx - hint.get_width() // 2, pr.y + pr.height - 90))
+        elif self.phase == self.PHASE_ACTIVE:
+            btn_w = 130
+            btn_h = 38
+            strike_rect = pygame.Rect(pr.centerx - btn_w - 10, pr.bottom - 60, btn_w, btn_h)
+            skip_rect = pygame.Rect(pr.centerx + 10, pr.bottom - 60, btn_w, btn_h)
+            self._btn_strike = strike_rect
+            self._btn_skip = skip_rect
+            _draw_button(surface, self.font_medium, strike_rect, "STRIKE", strike_rect.collidepoint(mouse_pos), TEXT_GOLD)
+            _draw_button(surface, self.font_medium, skip_rect, "SKIP", skip_rect.collidepoint(mouse_pos))
+            
+            if self._flash_timer > 0.0:
+                zone = self._last_zone_flash
+                flash = {"perfect": "MAJESTIC!", "good": "GOOD", "miss": "MISS"}.get(zone, "")
+                color = BAR_BULLSEYE if zone == "perfect" else (BAR_GOOD if zone == "good" else BAR_MISS)
+                fs = self.font_medium.render(flash, True, color)
+                alpha = int(255 * (self._flash_timer / 0.5))
+                fs.set_alpha(alpha)
+                surface.blit(fs, (pr.centerx - fs.get_width() // 2, pr.bottom - 110))
+                
+        elif self.phase == self.PHASE_RESULT:
+            out_surf = self.font_large.render(self._outcome, True, self._outcome_color)
+            surface.blit(out_surf, (pr.centerx - out_surf.get_width() // 2, pr.y + 130))
+            if self._bonus_amount > 0:
+                bonus = self.font_medium.render(
+                    "+%d pattern quality (smelt XP x%g)" % (self._bonus_amount, self._xp_multiplier),
+                    True, TEXT_GOOD,
+                )
+            else:
+                bonus = self.font_medium.render("No bonus -- basic pattern only", True, TEXT_DIM)
+            surface.blit(bonus, (pr.centerx - bonus.get_width() // 2, pr.y + 130 + out_surf.get_height() + 6))
+            btn_w = 160
+            btn_h = 38
+            cont = pygame.Rect(pr.centerx - btn_w // 2, pr.bottom - 60, btn_w, btn_h)
+            self._btn_skip = cont
+            _draw_button(surface, self.font_medium, cont, "Continue", cont.collidepoint(mouse_pos), TEXT_GOLD)
+
+
 
 class MinigameChain:
     """Wrapper that plays several minigames in sequence.
@@ -611,14 +917,6 @@ class MinigameChain:
 
     PHASE_PLAYING = "playing"
     PHASE_RESULT = "result"
-
-    STEP_MAP = {
-        "tending": TendingFireMinigame,
-        "forge": ForgeMinigame,
-        "quench": QuenchMinigame,
-        "bellows": BellowsMinigame,
-        "temper": TemperMinigame,
-    }
 
     def __init__(self, app, chain_ids, *, on_close=None, smelting_level=1):
         self.app = app
@@ -665,7 +963,14 @@ class MinigameChain:
             self._finish_chain()
             return
         mg_id = self.chain_ids[self.current_index]
-        cls = self.STEP_MAP.get(mg_id)
+        cls = None
+        if mg_id == "tending": cls = TendingFireMinigame
+        elif mg_id == "forge": cls = ForgeMinigame
+        elif mg_id == "quench": cls = QuenchMinigame
+        elif mg_id == "bellows": cls = BellowsMinigame
+        elif mg_id == "temper": cls = TemperMinigame
+        elif mg_id == "pattern": cls = PatternMinigame
+        
         if cls is None:
             logger.warning("MinigameChain: unknown minigame id %r, skipping", mg_id)
             self.current_index += 1
@@ -799,6 +1104,8 @@ def make_smeltery_minigame(app, recipe, *, on_close=None, smelting_level=1):
         return BellowsMinigame(app, on_close=on_close, smelting_level=smelting_level)
     if mg_id == "temper":
         return TemperMinigame(app, on_close=on_close, smelting_level=smelting_level)
+    if mg_id == "pattern":
+        return PatternMinigame(app, on_close=on_close, smelting_level=smelting_level)
     return None
 
 
