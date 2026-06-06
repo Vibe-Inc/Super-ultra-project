@@ -1356,6 +1356,106 @@ class HUD:
                 pygame.draw.circle(screen, (255, 240, 255, int(alpha * 0.7)),
                                    (int(px), py), max(1, int(size * 0.55)))
 
+    def _draw_minimap(self, screen: pygame.Surface, game_state):
+        if not game_state or not getattr(game_state, 'map', None) or not getattr(game_state.map, 'current_map', None):
+            return
+
+        map_w = game_state.map.current_map.pixel_width
+        map_h = game_state.map.current_map.pixel_height
+        if map_w <= 0 or map_h <= 0:
+            return
+
+        sw, sh = screen.get_size()
+        mm_w = int(200 * cfg.ui_scale())
+        mm_h = int(200 * cfg.ui_scale())
+        mm_x = sw - mm_w - 20
+        mm_y = self.xp_bar_rect.bottom + 20
+
+        # Background with glassmorphism
+        bg_surf = pygame.Surface((mm_w, mm_h), pygame.SRCALPHA)
+        pygame.draw.rect(bg_surf, (20, 20, 30, 200), bg_surf.get_rect(), border_radius=12)
+        
+        scale_x = mm_w / map_w
+        scale_y = mm_h / map_h
+
+        # Draw map background (water/grass)
+        pygame.draw.rect(bg_surf, (30, 45, 60, 220), bg_surf.get_rect(), border_radius=12)
+        
+        # Draw obstacles
+        if hasattr(game_state, 'obstacles'):
+            for obs in game_state.obstacles:
+                ox = int(obs.x * scale_x)
+                oy = int(obs.y * scale_y)
+                ow = max(1, int(obs.width * scale_x))
+                oh = max(1, int(obs.height * scale_y))
+                pygame.draw.rect(bg_surf, (50, 60, 80, 200), (ox, oy, ow, oh))
+
+        screen.blit(bg_surf, (mm_x, mm_y))
+
+        # Helper to draw blips
+        def draw_blip(world_x, world_y, color, size, pulse=False):
+            bx = mm_x + int(world_x * scale_x)
+            by = mm_y + int(world_y * scale_y)
+            
+            if pulse:
+                p_size = size + int(math.sin(self.animation_time * 5.0) * 2)
+                if p_size > 0:
+                    p_alpha = int(100 + 50 * math.sin(self.animation_time * 5.0))
+                    p_surf = pygame.Surface((p_size*2, p_size*2), pygame.SRCALPHA)
+                    pygame.draw.circle(p_surf, (*color[:3], p_alpha), (p_size, p_size), p_size)
+                    screen.blit(p_surf, (bx - p_size, by - p_size))
+
+            pygame.draw.circle(screen, color, (bx, by), size)
+            pygame.draw.circle(screen, (255, 255, 255), (bx, by), max(1, size // 2))
+
+        # Transitions
+        if hasattr(game_state.map, 'map_transitions') and hasattr(game_state.map, 'current_map_path'):
+            transitions = game_state.map.map_transitions.get(game_state.map.current_map_path, {})
+            for direction, trans in transitions.items():
+                tx, ty = mm_x, mm_y
+                tw, th = mm_w, mm_h
+                t_color = (100, 200, 255, 150)
+                t_rect = None
+                thickness = max(2, int(4 * cfg.ui_scale()))
+                if direction == "left":
+                    t_rect = pygame.Rect(tx, ty, thickness, th)
+                elif direction == "right":
+                    t_rect = pygame.Rect(tx + tw - thickness, ty, thickness, th)
+                elif direction == "up":
+                    t_rect = pygame.Rect(tx, ty, tw, thickness)
+                elif direction == "down":
+                    t_rect = pygame.Rect(tx, ty + th - thickness, tw, thickness)
+                
+                if t_rect:
+                    glow = pygame.Surface((t_rect.width, t_rect.height), pygame.SRCALPHA)
+                    pygame.draw.rect(glow, t_color, glow.get_rect(), border_radius=4)
+                    screen.blit(glow, t_rect.topleft)
+
+        # Draw enemies
+        if hasattr(game_state, 'enemies'):
+            for e in game_state.enemies:
+                if getattr(e, 'hp', 1) > 0:
+                    draw_blip(e.pos.x, e.pos.y, (255, 50, 50), max(2, int(3 * cfg.ui_scale())))
+
+        # Draw NPCs
+        npcs = []
+        if hasattr(game_state, 'npc'): npcs.append(game_state.npc)
+        if hasattr(game_state, 'card_npc'): npcs.append(game_state.card_npc)
+        if hasattr(game_state, 'fishing_npc'): npcs.append(game_state.fishing_npc)
+        if hasattr(game_state, 'mage_npc'): npcs.append(game_state.mage_npc)
+        for n in npcs:
+            if n and hasattr(n, 'pos') and n.pos.x >= 0 and n.pos.y >= 0:
+                draw_blip(n.pos.x, n.pos.y, (255, 215, 0), max(2, int(4 * cfg.ui_scale())), pulse=True)
+
+        # Draw player
+        if hasattr(self, 'character') and hasattr(self.character, 'pos'):
+            draw_blip(self.character.pos.x, self.character.pos.y, (50, 255, 50), max(3, int(5 * cfg.ui_scale())), pulse=True)
+
+        # Majestic border
+        border_color = (212, 175, 55)
+        pygame.draw.rect(screen, border_color, (mm_x - 2, mm_y - 2, mm_w + 4, mm_h + 4), 2, border_radius=14)
+        pygame.draw.rect(screen, (255, 230, 100), (mm_x, mm_y, mm_w, mm_h), 1, border_radius=12)
+
     def draw(self, screen: pygame.Surface):
         # Update animation time using the game clock for smooth animations
         try:
@@ -1599,7 +1699,10 @@ class HUD:
         screen.blit(level_text, level_text_rect)
 
         self.inv_button.draw(screen)
-        pass
+        
+        game_state = self.app.manager.states.get("gameplay")
+        if game_state:
+            self._draw_minimap(screen, game_state)
 
         stamina_bar_x = self.stamina_bar_rect.x
         stamina_bar_y = self.stamina_bar_rect.y

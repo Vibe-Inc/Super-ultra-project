@@ -54,6 +54,9 @@ class ArticleUnlockTracker:
         self.seen_articles.add((section, title_lower))
         if hasattr(app, 'article_notifications'):
             app.article_notifications.append({"section": section, "title": title})
+        if hasattr(app, "achievement_manager"):
+            app.achievement_manager.add_progress("bookworm", 1, 5)
+            app.achievement_manager.add_progress("scholar", 1, 20)
         logger.info(f"ArticleUnlockTracker: unlocked '{title}' in section '{section}'")
         return True
 
