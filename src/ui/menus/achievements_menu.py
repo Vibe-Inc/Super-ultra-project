@@ -156,13 +156,65 @@ class AchievementsMenu(Menu):
                 b.draw(burst_surf)
             screen.blit(burst_surf, (0, 0))
 
+    def _draw_badge(self, surface, cx, cy, size, alpha, t, is_unlocked):
+        if not is_unlocked:
+            # Draw locked lock
+            pygame.draw.circle(surface, (50, 50, 50, alpha), (cx, cy), size // 2)
+            pygame.draw.rect(surface, (80, 80, 80, alpha), (cx - size//6, cy - size//6, size//3, size//3), border_radius=2)
+            pygame.draw.circle(surface, (80, 80, 80, alpha), (cx, cy - size//6), size//6, width=2)
+            return
+
+        # Animate the badge slightly
+        bob = math.sin(t * 3.0 + cx) * 3
+        cy += int(bob)
+
+        # Draw ribbons
+        ribbon_color = (220, 50, 50, alpha)
+        ribbon_dark = (180, 30, 30, alpha)
+        rw = size // 2.5
+        rh = size // 1.2
+        
+        # left ribbon
+        pygame.draw.polygon(surface, ribbon_color, [
+            (cx - rw//1.5, cy), (cx - rw, cy + rh), (cx - rw//1.5, cy + rh - size//8), (cx - rw//3, cy + rh), (cx - rw//3, cy)
+        ])
+        # right ribbon
+        pygame.draw.polygon(surface, ribbon_dark, [
+            (cx + rw//3, cy), (cx + rw//1.5, cy + rh), (cx + rw//3, cy + rh - size//8), (cx + rw, cy + rh), (cx + rw//1.5, cy)
+        ])
+        
+        # Draw gold sunburst seal
+        gold_points = []
+        rays = 16
+        rot = t * 0.5  # slowly spin
+        for i in range(rays * 2):
+            r = size // 2 if i % 2 == 0 else size // 2.5
+            angle = i * math.pi / rays + rot
+            gold_points.append((cx + math.cos(angle) * r, cy + math.sin(angle) * r))
+        
+        pygame.draw.polygon(surface, (255, 215, 0, alpha), gold_points)
+        pygame.draw.polygon(surface, (218, 165, 32, alpha), gold_points, max(1, int(size / 15)))
+        
+        # Inner circle
+        pygame.draw.circle(surface, (255, 250, 220, alpha), (cx, cy), size // 3)
+        pygame.draw.circle(surface, (255, 215, 0, alpha), (cx, cy), size // 3, max(1, int(size / 15)))
+        
+        # Cute star inside
+        star_points = []
+        star_rot = -t * 1.0
+        for i in range(10):
+            r = size // 4.5 if i % 2 == 0 else size // 10
+            angle = i * math.pi / 5 - math.pi / 2 + star_rot
+            star_points.append((cx + math.cos(angle) * r, cy + math.sin(angle) * r))
+        pygame.draw.polygon(surface, (255, 140, 0, alpha), star_points)
+
     def _draw_achievements_box(self, screen, sw, sh, t, lp):
         scale = cfg.ui_scale()
         
         pad_x = int(60 * scale)
         pad_y = int(40 * scale)
-        gap = int(14 * scale)
-        item_h = int(100 * scale)
+        gap = int(20 * scale)
+        item_h = int(130 * scale)
 
         box_w = min(sw - int(100 * scale), int(1000 * scale))
         
@@ -263,39 +315,51 @@ class AchievementsMenu(Menu):
             pygame.draw.rect(item_surf, bg_color, (0, 0, item_rect.width, item_rect.height), border_radius=int(8*scale))
             pygame.draw.rect(item_surf, border_color, (0, 0, item_rect.width, item_rect.height), width=max(1, int(2*scale)), border_radius=int(8*scale))
             
-            screen.blit(item_surf, item_rect)
+            # Draw badge onto item_surf
+            icon_size = int(70 * scale)
+            icon_cx = int(60 * scale)
+            icon_cy = item_h // 2
             
-            # Draw icon placeholder
-            icon_size = item_h - int(20 * scale)
-            icon_rect = pygame.Rect(item_rect.x + int(10 * scale), item_rect.y + int(10 * scale), icon_size, icon_size)
+            self._draw_badge(item_surf, icon_cx, icon_cy, icon_size, line_alpha, t + i*0.2, ach.unlocked)
             
-            icon_color = (255, 215, 0, max(0, min(255, line_alpha))) if ach.unlocked else (80, 80, 80, max(0, min(255, line_alpha)))
-            pygame.draw.circle(screen, icon_color, icon_rect.center, icon_size // 2)
-            
-            if ach.unlocked:
-                star_pts = []
-                num_points = 5
-                outer_r = icon_size // 3
-                inner_r = icon_size // 6
-                for p in range(num_points * 2):
-                    angle = p * math.pi / num_points - math.pi / 2
-                    r = outer_r if p % 2 == 0 else inner_r
-                    star_pts.append((icon_rect.centerx + math.cos(angle) * r, icon_rect.centery + math.sin(angle) * r))
-                pygame.draw.polygon(screen, (255, 255, 255, line_alpha), star_pts)
-            
-            # Draw text
-            text_x = icon_rect.right + int(20 * scale)
+            # Draw text onto item_surf
+            text_x = icon_cx + int(60 * scale)
             
             name_color = GOLD_BRIGHT if ach.unlocked else (150, 150, 150)
             name_s = self._name_font.render(ach.name if ach.unlocked or True else "???", True, name_color)
             name_s.set_alpha(line_alpha)
-            screen.blit(name_s, (text_x, item_rect.y + int(15 * scale)))
+            item_surf.blit(name_s, (text_x, int(15 * scale)))
             
             desc_color = (210, 205, 195) if ach.unlocked else (100, 100, 100)
             desc_text = ach.description if ach.unlocked else _("Keep playing to reveal this achievement.")
             desc_s = self._desc_font.render(desc_text, True, desc_color)
             desc_s.set_alpha(line_alpha)
-            screen.blit(desc_s, (text_x, item_rect.y + item_h - desc_s.get_height() - int(15 * scale)))
+            item_surf.blit(desc_s, (text_x, int(50 * scale)))
+            
+            # Progress bar
+            if ach.max_progress > 1:
+                pb_w = item_rect.width - text_x - int(30 * scale)
+                pb_h = int(14 * scale)
+                pb_x = text_x
+                pb_y = item_h - int(30 * scale)
+                
+                # Background
+                pygame.draw.rect(item_surf, (40, 35, 50, line_alpha), (pb_x, pb_y, pb_w, pb_h), border_radius=pb_h//2)
+                
+                # Fill
+                fill_pct = min(1.0, ach.progress / ach.max_progress)
+                if fill_pct > 0:
+                    fill_w = max(pb_h, int(pb_w * fill_pct))
+                    fill_color = (100, 200, 100, line_alpha) if ach.unlocked else (200, 150, 50, line_alpha)
+                    pygame.draw.rect(item_surf, fill_color, (pb_x, pb_y, fill_w, pb_h), border_radius=pb_h//2)
+                
+                # Text
+                prog_str = f"{ach.progress} / {ach.max_progress}"
+                prog_s = self.font_small.render(prog_str, True, (255, 255, 255, line_alpha))
+                item_surf.blit(prog_s, (pb_x + pb_w // 2 - prog_s.get_width() // 2, pb_y - int(1 * scale)))
+            
+            # Blit the entire item surface
+            screen.blit(item_surf, item_rect)
             
             current_y += item_h + gap
 

@@ -213,8 +213,11 @@ class App:
     @money.setter
     def money(self, value):
         self._money = value
-        if hasattr(self, 'achievement_manager') and self._money >= 1000:
-            self.achievement_manager.unlock("wealthy")
+        if hasattr(self, 'achievement_manager'):
+            if self._money >= 1000:
+                self.achievement_manager.unlock("wealthy")
+            if self._money >= 10000:
+                self.achievement_manager.unlock("tycoon")
 
     def _get_dir_mask(self, radius: int, dir_x: float, dir_y: float) -> "pygame.Surface":
         """Return a cached hemisphere mask that attenuates light behind the character.

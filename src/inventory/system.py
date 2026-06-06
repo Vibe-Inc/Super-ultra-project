@@ -644,6 +644,9 @@ class MAIN_player_inventory_equipment(Inventory):
             if isinstance(item, Consumable):
                 game_state = getattr(manager.app.manager.states.get("gameplay"), 'character', None)
                 if game_state and item.use(game_state):
+                    if hasattr(manager.app, "achievement_manager"):
+                        manager.app.achievement_manager.add_progress("thirsty", 1, 10)
+                        manager.app.achievement_manager.add_progress("potion_addict", 1, 50)
                     slot[1] -= 1
                     if slot[1] <= 0:
                         self.items[x][y] = None
@@ -752,6 +755,9 @@ class MAIN_player_hotbar(Inventory):
         if slot and isinstance(slot[0], Consumable):
             game_state = self.app.manager.states.get("gameplay")
             if game_state and slot[0].use(game_state.character):
+                if hasattr(self.app, "achievement_manager"):
+                    self.app.achievement_manager.add_progress("thirsty", 1, 10)
+                    self.app.achievement_manager.add_progress("potion_addict", 1, 50)
                 slot[1] -= 1
                 if slot[1] <= 0: self.items[col][0] = None
         elif slot and isinstance(slot[0], Armor):

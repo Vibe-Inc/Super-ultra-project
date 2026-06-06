@@ -284,6 +284,10 @@ class RouletteGame:
         round_net = winnings - total_bet
         self.net_change += round_net
         
+        if round_net > 0 and hasattr(self.app, "achievement_manager"):
+            self.app.achievement_manager.unlock("jackpot")
+            self.app.achievement_manager.add_progress("casino_regular", 1, 25)
+            
         self.phase = self.PHASE_RESULT
         if round_net > 0:
             self.result_text = f"You won +{round_net} gold!"

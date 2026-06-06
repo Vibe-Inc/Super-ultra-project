@@ -256,6 +256,10 @@ class PokerGame:
         winnings = self.bet_amount * mult
         self.net_change += winnings
         
+        if winnings > 0 and hasattr(self.app, "achievement_manager"):
+            self.app.achievement_manager.add_progress("card_shark", 1, 5)
+            self.app.achievement_manager.add_progress("casino_regular", 1, 25)
+        
         self.phase = self.PHASE_RESULT
         if winnings > 0:
             self.result_text = f"{hand_name}! You won +{winnings} gold!"

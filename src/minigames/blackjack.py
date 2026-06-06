@@ -339,6 +339,9 @@ class BlackjackGame:
             # Blackjack pays 3:2
             winnings = int(self.bet_amount * 1.5)
             self.net_change += winnings
+            if hasattr(self.app, "achievement_manager"):
+                self.app.achievement_manager.add_progress("card_shark", 1, 5)
+                self.app.achievement_manager.add_progress("casino_regular", 1, 25)
             self._round_outcome = "win"
             self.phase = self.PHASE_RESULT
             self.result_text = f"Blackjack! +{winnings} gold!"
@@ -382,11 +385,17 @@ class BlackjackGame:
         pv = _hand_value(self.player_hand)
         if dv > 21:
             self.net_change += self.bet_amount
+            if hasattr(self.app, "achievement_manager"):
+                self.app.achievement_manager.add_progress("card_shark", 1, 5)
+                self.app.achievement_manager.add_progress("casino_regular", 1, 25)
             self._round_outcome = "win"
             self.result_text = f"Dealer busts! +{self.bet_amount} gold!"
             self.result_color = GREEN_TEXT
         elif pv > dv:
             self.net_change += self.bet_amount
+            if hasattr(self.app, "achievement_manager"):
+                self.app.achievement_manager.add_progress("card_shark", 1, 5)
+                self.app.achievement_manager.add_progress("casino_regular", 1, 25)
             self._round_outcome = "win"
             self.result_text = f"You win! +{self.bet_amount} gold!"
             self.result_color = GREEN_TEXT

@@ -7,11 +7,12 @@ from src.core.logger import logger
 ACHIEVEMENTS_FILE = "saves/achievements.json"
 
 class Achievement:
-    def __init__(self, id_str, name, description, icon_name="default_icon"):
+    def __init__(self, id_str, name, description, icon_name="default_icon", max_progress=0):
         self.id = id_str
         self.name = name
         self.description = description
         self.icon_name = icon_name
+        self.max_progress = max_progress
         self.unlocked = False
         self.progress = 0
 
@@ -26,12 +27,32 @@ class AchievementManager:
         self.load()
 
     def _register_default_achievements(self):
-        # Register standard achievements
+        # Base Achievements
         self.register(Achievement("first_step", _("The Journey Begins"), _("Start a new game.")))
         self.register(Achievement("first_blood", _("First Blood"), _("Defeat your first enemy.")))
-        self.register(Achievement("wealthy", _("Wealthy"), _("Accumulate 1,000 gold.")))
-        self.register(Achievement("lumberjack", _("Lumberjack"), _("Chop down 10 trees.")))
-        self.register(Achievement("master_angler", _("Master Angler"), _("Catch 10 fish.")))
+        self.register(Achievement("wealthy", _("Wealthy"), _("Accumulate 1,000 gold."), max_progress=1000))
+        self.register(Achievement("lumberjack", _("Lumberjack"), _("Chop down 10 trees."), max_progress=10))
+        self.register(Achievement("master_angler", _("Master Angler"), _("Catch 10 fish."), max_progress=10))
+
+        # Expanded Achievements
+        self.register(Achievement("novice_blacksmith", _("Novice Blacksmith"), _("Craft or smelt 5 items."), max_progress=5))
+        self.register(Achievement("master_crafter", _("Master Crafter"), _("Craft or smelt 50 items."), max_progress=50))
+        self.register(Achievement("exterminator", _("Exterminator"), _("Defeat 50 enemies."), max_progress=50))
+        self.register(Achievement("monster_hunter", _("Monster Hunter"), _("Defeat 200 enemies."), max_progress=200))
+        self.register(Achievement("high_roller", _("High Roller"), _("Accumulate 10,000 gold."), max_progress=10000))
+        self.register(Achievement("tycoon", _("Tycoon"), _("Accumulate 50,000 gold."), max_progress=50000))
+        self.register(Achievement("card_shark", _("Card Shark"), _("Win 5 hands in gambling minigames."), max_progress=5))
+        self.register(Achievement("casino_regular", _("Casino Regular"), _("Win 25 hands in gambling minigames."), max_progress=25))
+        self.register(Achievement("jackpot", _("Jackpot"), _("Win any bet at the Roulette table.")))
+        self.register(Achievement("deforestation", _("Deforestation"), _("Chop down 50 trees."), max_progress=50))
+        self.register(Achievement("industrial_logger", _("Industrial Logger"), _("Chop down 200 trees."), max_progress=200))
+        self.register(Achievement("aquatic_menace", _("Aquatic Menace"), _("Catch 50 fish."), max_progress=50))
+        self.register(Achievement("legendary_angler", _("Legendary Angler"), _("Catch 150 fish."), max_progress=150))
+        self.register(Achievement("thirsty", _("Thirsty"), _("Drink 10 health or buff potions."), max_progress=10))
+        self.register(Achievement("potion_addict", _("Potion Addict"), _("Drink 50 potions."), max_progress=50))
+        self.register(Achievement("avid_reader", _("Avid Reader"), _("Read or unlock 5 wiki/guide articles."), max_progress=5))
+        self.register(Achievement("scholar", _("Scholar"), _("Read or unlock 20 wiki/guide articles."), max_progress=20))
+        self.register(Achievement("lucky_catch", _("Lucky Catch"), _("Catch a Rare or Legendary fish.")))
 
     def register(self, achievement: Achievement):
         self.achievements[achievement.id] = achievement

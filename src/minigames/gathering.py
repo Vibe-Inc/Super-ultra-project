@@ -952,6 +952,8 @@ class GatheringController:
             )
             if self.target_gather_type == "wood" and hasattr(self.game.app, "achievement_manager"):
                 self.game.app.achievement_manager.add_progress("lumberjack", 1, 10)
+                self.game.app.achievement_manager.add_progress("deforestation", 1, 50)
+                self.game.app.achievement_manager.add_progress("industrial_logger", 1, 200)
 
         if self.target_had_tool:
             self._damage_tool()

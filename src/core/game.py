@@ -1711,6 +1711,8 @@ class Game(State):
                 logger.info("Enemy defeated!")
                 self._kill_count += 1
                 self.app.achievement_manager.unlock("first_blood")
+                self.app.achievement_manager.add_progress("exterminator", 1, 50)
+                self.app.achievement_manager.add_progress("monster_hunter", 1, 200)
 
                 # Bestiary: open article for this enemy type
                 vs = getattr(enemy, "visual_style", None) or getattr(enemy, "ai_profile", "")
