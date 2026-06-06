@@ -660,17 +660,58 @@ class HUD:
         pygame.draw.rect(hp_bg_surf, (40, 40, 50, 200), hp_bg_surf.get_rect(), border_radius=8)
         screen.blit(hp_bg_surf, (bar_x, bar_y))
 
-        # HP Bar Fill (Rounded)
+        # HP Bar Fill (Rounded with gradient and shimmer)
         if current_bar_width > 0:
-            # Clamp radius to avoid distortion on small widths
             fill_radius = min(8, current_bar_width // 2)
             hp_fill_surf = pygame.Surface((current_bar_width, bar_height), pygame.SRCALPHA)
-            pygame.draw.rect(hp_fill_surf, (220, 30, 60), hp_fill_surf.get_rect(), border_radius=fill_radius)
+            for x in range(current_bar_width):
+                t = x / max(1, current_bar_width)
+                r = int(140 + 100 * t)
+                g = int(10 + 40 * t)
+                b = int(30 + 40 * t)
+                pygame.draw.line(hp_fill_surf, (r, g, b, 240), (x, 0), (x, bar_height - 1))
+            shimmer_offset = int((self.animation_time * 40) % (current_bar_width + 60)) - 30
+            for sx in range(max(0, shimmer_offset), min(current_bar_width, shimmer_offset + 30)):
+                shimmer_alpha = int(80 * (1 - abs(sx - shimmer_offset - 15) / 15))
+                if shimmer_alpha > 0 and sx < current_bar_width:
+                    pygame.draw.line(hp_fill_surf, (255, 200, 200, shimmer_alpha), (sx, 1), (sx, 2))
+            clip_surf = pygame.Surface((current_bar_width, bar_height), pygame.SRCALPHA)
+            pygame.draw.rect(clip_surf, (255, 255, 255, 255), clip_surf.get_rect(), border_radius=fill_radius)
+            hp_fill_surf.blit(clip_surf, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
             screen.blit(hp_fill_surf, (bar_x, bar_y))
 
-        # HP Bar Border (Rounded)
-        pygame.draw.rect(screen, (255, 255, 255), (bar_x, bar_y, bar_width, bar_height), 2, border_radius=8)
-        
+        # Double Border (dark red outer, bright red inner)
+        hp_border_outer = (140, 15, 35)
+        hp_border_inner = (255, 60, 80)
+        pygame.draw.rect(screen, hp_border_outer, (bar_x - 1, bar_y - 1, bar_width + 2, bar_height + 2), 2, border_radius=9)
+        pygame.draw.rect(screen, hp_border_inner, (bar_x, bar_y, bar_width, bar_height), 1, border_radius=8)
+
+        # Twinkling sparkles
+        t = self.animation_time
+        hp_star_positions = [
+            (0.1, 0.3), (0.3, 0.7), (0.5, 0.2), (0.7, 0.8), (0.9, 0.4),
+            (0.15, 0.6), (0.45, 0.5), (0.75, 0.3), (0.85, 0.7)
+        ]
+        for sx_pct, sy_pct in hp_star_positions:
+            sx = bar_x + int(sx_pct * bar_width)
+            sy = bar_y + int(sy_pct * bar_height)
+            twinkle = (math.sin(t * 4.0 + sx_pct * 10) + 1.0) * 0.5
+            if twinkle > 0.6:
+                star_alpha = int(200 * (twinkle - 0.6) * 2.5)
+                star_size = 1 + int(twinkle * 2)
+                star_color = (255, 220, 200, star_alpha)
+                pygame.draw.line(screen, star_color[:3], (sx - star_size, sy), (sx + star_size, sy), 1)
+                pygame.draw.line(screen, star_color[:3], (sx, sy - star_size), (sx, sy + star_size), 1)
+
+        # Corner glow orbs
+        gem_glow = int(100 + 60 * math.sin(t * 3.0))
+        for gx, gy in [(bar_x + 4, bar_y + bar_height // 2),
+                       (bar_x + bar_width - 4, bar_y + bar_height // 2)]:
+            gem_surf = pygame.Surface((8, 8), pygame.SRCALPHA)
+            pygame.draw.circle(gem_surf, (220, 30, 60, gem_glow), (4, 4), 4)
+            pygame.draw.circle(gem_surf, (255, 100, 120, gem_glow), (4, 4), 2)
+            screen.blit(gem_surf, (gx - 4, gy - 4))
+
         # Draw HP Text
         hp_text = cfg.INV_nums_font.render(f"{self.character.hp}/{self.character.max_hp}", True, (255, 255, 255))
         screen.blit(hp_text, (bar_x + bar_width // 2 - hp_text.get_width() // 2, bar_y + 5))
@@ -842,22 +883,62 @@ class HUD:
         stamina_percent = max(0, self.character.stamina / self.character.max_stamina)
         current_stamina_width = int(stamina_bar_width * stamina_percent)
 
-        stamina_color = (50, 200, 50)  # Always green
-
         # Stamina Bar Background (Rounded)
         stam_bg_surf = pygame.Surface((stamina_bar_width, stamina_bar_height), pygame.SRCALPHA)
         pygame.draw.rect(stam_bg_surf, (30, 30, 40, 200), stam_bg_surf.get_rect(), border_radius=6)
         screen.blit(stam_bg_surf, (stamina_bar_x, stamina_bar_y))
 
-        # Stamina Bar Fill (Rounded)
+        # Stamina Bar Fill (Rounded with gradient and shimmer)
         if current_stamina_width > 0:
             fill_radius = min(6, current_stamina_width // 2)
             stam_fill_surf = pygame.Surface((current_stamina_width, stamina_bar_height), pygame.SRCALPHA)
-            pygame.draw.rect(stam_fill_surf, stamina_color, stam_fill_surf.get_rect(), border_radius=fill_radius)
+            for x in range(current_stamina_width):
+                t = x / max(1, current_stamina_width)
+                r = int(20 + 60 * t)
+                g = int(130 + 110 * t)
+                b = int(30 + 50 * t)
+                pygame.draw.line(stam_fill_surf, (r, g, b, 240), (x, 0), (x, stamina_bar_height - 1))
+            shimmer_offset = int((self.animation_time * 40) % (current_stamina_width + 60)) - 30
+            for sx in range(max(0, shimmer_offset), min(current_stamina_width, shimmer_offset + 30)):
+                shimmer_alpha = int(80 * (1 - abs(sx - shimmer_offset - 15) / 15))
+                if shimmer_alpha > 0 and sx < current_stamina_width:
+                    pygame.draw.line(stam_fill_surf, (200, 255, 200, shimmer_alpha), (sx, 1), (sx, 2))
+            clip_surf = pygame.Surface((current_stamina_width, stamina_bar_height), pygame.SRCALPHA)
+            pygame.draw.rect(clip_surf, (255, 255, 255, 255), clip_surf.get_rect(), border_radius=fill_radius)
+            stam_fill_surf.blit(clip_surf, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
             screen.blit(stam_fill_surf, (stamina_bar_x, stamina_bar_y))
 
-        # Stamina Bar Border (Rounded)
-        pygame.draw.rect(screen, (200, 200, 200), (stamina_bar_x, stamina_bar_y, stamina_bar_width, stamina_bar_height), 1, border_radius=6)
+        # Double Border (dark green outer, bright green inner)
+        stam_border_outer = (25, 120, 25)
+        stam_border_inner = (100, 255, 100)
+        pygame.draw.rect(screen, stam_border_outer, (stamina_bar_x - 1, stamina_bar_y - 1, stamina_bar_width + 2, stamina_bar_height + 2), 2, border_radius=7)
+        pygame.draw.rect(screen, stam_border_inner, (stamina_bar_x, stamina_bar_y, stamina_bar_width, stamina_bar_height), 1, border_radius=6)
+
+        # Twinkling sparkles
+        t = self.animation_time
+        stam_star_positions = [
+            (0.1, 0.3), (0.3, 0.7), (0.5, 0.2), (0.7, 0.8), (0.9, 0.4),
+            (0.15, 0.6), (0.45, 0.5), (0.75, 0.3), (0.85, 0.7)
+        ]
+        for sx_pct, sy_pct in stam_star_positions:
+            sx = stamina_bar_x + int(sx_pct * stamina_bar_width)
+            sy = stamina_bar_y + int(sy_pct * stamina_bar_height)
+            twinkle = (math.sin(t * 4.0 + sx_pct * 10) + 1.0) * 0.5
+            if twinkle > 0.6:
+                star_alpha = int(200 * (twinkle - 0.6) * 2.5)
+                star_size = 1 + int(twinkle * 2)
+                star_color = (200, 255, 200, star_alpha)
+                pygame.draw.line(screen, star_color[:3], (sx - star_size, sy), (sx + star_size, sy), 1)
+                pygame.draw.line(screen, star_color[:3], (sx, sy - star_size), (sx, sy + star_size), 1)
+
+        # Corner glow orbs
+        gem_glow = int(100 + 60 * math.sin(t * 3.0))
+        for gx, gy in [(stamina_bar_x + 4, stamina_bar_y + stamina_bar_height // 2),
+                       (stamina_bar_x + stamina_bar_width - 4, stamina_bar_y + stamina_bar_height // 2)]:
+            gem_surf = pygame.Surface((8, 8), pygame.SRCALPHA)
+            pygame.draw.circle(gem_surf, (50, 200, 50, gem_glow), (4, 4), 4)
+            pygame.draw.circle(gem_surf, (120, 255, 120, gem_glow), (4, 4), 2)
+            screen.blit(gem_surf, (gx - 4, gy - 4))
 
         # ═══════════════════════════════════════════════════════════════
         # MANA BAR - Magical Purple-Blue with Gold Trim and Stars
