@@ -52,18 +52,9 @@ class ArticleUnlockTracker:
             return False
         idx = mapping[title_lower]
         self.seen_articles.add((section, title_lower))
-        wiki = app.manager.states.get("wiki")
-        if wiki is None:
-            logger.warning("ArticleUnlockTracker: wiki state not found")
-            return False
-        wiki._page = section
-        wiki._sub_page = idx
-        wiki._show_toc = False
-        wiki._transition_progress = 0.0
-        wiki._page_enter_time = __import__("pygame").time.get_ticks()
-        wiki._emit_particles(wiki._theme())
-        app.manager.set_state("wiki")
-        logger.info(f"ArticleUnlockTracker: opened '{title}' in section '{section}'")
+        if hasattr(app, 'article_notifications'):
+            app.article_notifications.append({"section": section, "title": title})
+        logger.info(f"ArticleUnlockTracker: unlocked '{title}' in section '{section}'")
         return True
 
     def mark_seen(self, section: str, title: str):

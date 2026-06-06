@@ -184,6 +184,7 @@ class App:
 
         # Article unlock tracker for auto-opening wiki articles
         self.article_tracker = ArticleUnlockTracker()
+        self.article_notifications: list[dict] = []
         self.guide_intro_shown = False
 
     def _get_dir_mask(self, radius: int, dir_x: float, dir_y: float) -> "pygame.Surface":
