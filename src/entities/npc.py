@@ -75,6 +75,11 @@ class NPC:
         self.prompt_bg_color = (0, 0, 0)
 
     def update(self, player_pos: pygame.Vector2):
+        """Check distance to player and update interaction status.
+
+        Args:
+            player_pos (pygame.Vector2): The current world position of the player.
+        """
         diff = player_pos - self.pos
         self.is_interactable = diff.length_squared() <= (self.interaction_range * self.interaction_range)
         # Keep rect in sync with float position so callers using get_rect() work
@@ -92,6 +97,12 @@ class NPC:
         return self.rect
 
     def draw(self, screen: pygame.Surface, camera_offset=None):
+        """Draw the NPC and the interaction prompt if applicable.
+
+        Args:
+            screen (pygame.Surface): The surface to draw onto.
+            camera_offset (pygame.Vector2 | None): Camera offset for world-to-screen coordinates.
+        """
         if camera_offset is None:
             camera_offset = pygame.Vector2(0, 0)
 

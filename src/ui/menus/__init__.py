@@ -1,8 +1,9 @@
 """
-Menus package for the game UI.
+Menu screens module for all game menu interfaces.
 
-This package contains all menu classes used in the game, split into separate modules
-for better organization and maintainability.
+Provides base menu class, main menu, settings, credits, pause, skillbar,
+skilltree, recipe book, wiki, collection book, arcane quests, mysterium
+magnum, save/load, and smeltery workstation menus.
 """
 
 from src.ui.menus.base import Menu

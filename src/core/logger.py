@@ -1,3 +1,10 @@
+"""
+Logging module for the Super Ultra Project.
+
+Provides a configured logger instance with console and file output,
+including a separate error log file for WARNING and above messages.
+"""
+
 import logging
 import os
 import sys
@@ -6,6 +13,7 @@ from datetime import datetime
 LOGS_DIR = "logs"
 if not os.path.exists(LOGS_DIR):
     os.makedirs(LOGS_DIR)
+
 
 def setup_logger(name="GameLogger", log_file=None, level=logging.DEBUG):
     """
@@ -55,5 +63,6 @@ def setup_logger(name="GameLogger", log_file=None, level=logging.DEBUG):
         logger.addHandler(e_handler)
 
     return logger
+
 
 logger = setup_logger()

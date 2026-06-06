@@ -19,6 +19,16 @@ SCREEN_WIDTH, SCREEN_HEIGHT = DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT
 FPS = 0
 
 def _load_background(screen_width, screen_height):
+    """Load and scale the background image for the current screen size.
+
+    Args:
+        screen_width (int): Target width for the background.
+        screen_height (int): Target height for the background.
+
+    Returns:
+        pygame.Surface: The scaled background surface, or a fallback black surface
+        if the image file is missing.
+    """
     try:
         bg_path = os.path.join(BASE_DIR, "assets", "ui", "bg_menu.jpg")
         return pygame.transform.scale(pygame.image.load(bg_path), (screen_width, screen_height))
@@ -76,6 +86,11 @@ def ui_scale() -> float:
 
 # Default fonts and colors — fonts are updated by `update_scaled_fonts()`.
 def update_scaled_fonts():
+    """Recompute all scaled font instances for the current screen size and language.
+
+    Global fonts (myfont, button_font, etc.) are rebuilt so they match the
+    current UI scale factor.
+    """
     global myfont, button_font, inventory_tooltip_font, tooltip_font_CREDITS, INV_nums_font
     scale = ui_scale()
     # Base sizes (authored for 1920x1080)
@@ -87,6 +102,10 @@ def update_scaled_fonts():
 
 
 def update_brightness():
+    """Clamp and apply the user's configured screen brightness.
+
+    Updates the global SCREEN_BRIGHTNESS so that it stays within [0.0, 1.0].
+    """
     global SCREEN_BRIGHTNESS
     SCREEN_BRIGHTNESS = max(0.0, min(1.0, USER_SCREEN_BRIGHTNESS))
 
@@ -155,6 +174,11 @@ MAIN_INV_equipment_pos_x = 0
 MAIN_INV_equipment_pos_y = 0
 
 def recalculate_inventory_positions():
+    """Recalculate the pixel positions of inventory grids based on the current UI scale.
+
+    Updates global position variables for the main inventory grid and the equipment
+    grid so that they remain centred and properly aligned when the window is resized.
+    """
     global MAIN_INV_pos_x, MAIN_INV_pos_y, MAIN_INV_equipment_pos_x, MAIN_INV_equipment_pos_y
     
     scale = ui_scale()
@@ -355,6 +379,12 @@ DURABILITY_BAR_COLORS = {
 }
 
 def set_screen_size(screen_width, screen_height):
+    """Update the global screen dimensions and recalculate dependent values.
+
+    Args:
+        screen_width (int): New screen width in pixels.
+        screen_height (int): New screen height in pixels.
+    """
     global SCREEN_WIDTH, SCREEN_HEIGHT, bg
     SCREEN_WIDTH = int(screen_width)
     SCREEN_HEIGHT = int(screen_height)
