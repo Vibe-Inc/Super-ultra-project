@@ -1459,6 +1459,7 @@ class Game(State):
                 if dist_sq > 0:
                     push_dir = (enemy_center - center).normalize()
                     enemy.pos += push_dir * 8 * dt
+                    self.collision_handler.resolve_static_collision(enemy, self.obstacles)
 
     def _apply_regeneration(self, dt):
         acc = getattr(self.character, "regeneration_acc", 0.0)

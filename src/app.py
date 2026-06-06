@@ -131,8 +131,8 @@ class App:
         add_item(2, 1, "longbow")
         add_item(3, 1, "crossbow")
         add_item(4, 1, "throwing_dagger")
-        add_item(5, 1, "light_ring")
         add_item(6, 1, "gay_ring")
+        add_item(7, 1, "light_ring")
         add_item(5, 1, "fishing_rod")
 
         # Row 2 — Potions

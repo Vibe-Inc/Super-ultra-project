@@ -269,6 +269,9 @@ class Map:
         fringe_components = []
         tilewidth = self.game_map.tilewidth
         tileheight = self.game_map.tileheight
+        window_surf = pygame.Surface((self.pixel_width, self.pixel_height), pygame.SRCALPHA)
+        orange_cache = {}
+        window_positions = []
         for layer in self.game_map.visible_layers:
             if isinstance(layer, pytmx.TiledTileLayer):
                 if self._is_fringe_layer(layer):
@@ -310,6 +313,21 @@ class Map:
                     tile = self.game_map.get_tile_image_by_gid(gid)
                     if tile:
                         surface.blit(tile, (x * tilewidth, y * tileheight))
+                    if not gid:
+                        continue
+                    props = self.game_map.get_tile_properties_by_gid(gid)
+                    if props and props.get("id") in self.WINDOW_LOCAL_IDS:
+                        window_positions.append((x * tilewidth + tilewidth // 2, y * tileheight + tileheight // 2))
+                        if gid not in orange_cache and tile:
+                            orange = tile.copy()
+                            px = pygame.PixelArray(orange)
+                            px.replace((99, 96, 159), (180, 100, 40))
+                            px.replace((123, 133, 195), (210, 145, 65))
+                            px.replace((138, 177, 219), (235, 185, 100))
+                            del px
+                            orange_cache[gid] = orange
+                        if gid in orange_cache:
+                            window_surf.blit(orange_cache[gid], (x * tilewidth, y * tileheight))
         self._base_render_cache = surface
         self._fringe_components = fringe_components
         self._window_overlay = window_surf if orange_cache else None

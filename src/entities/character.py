@@ -1320,6 +1320,8 @@ class Character:
             start_pos = self.get_center()
             teleport_offset = direction.normalize() * self.shadow_step_range
             self.pos += teleport_offset
+            if getattr(self, '_obstacles', None):
+                self._collision_system.resolve_static_collision(self, self._obstacles)
             end_pos = self.get_center()
 
             self.invulnerable = True
@@ -1695,6 +1697,8 @@ class Character:
 
             knockback_force = 20
             enemy.pos += knock_dir * knockback_force
+            if getattr(self, '_obstacles', None):
+                self._collision_system.resolve_static_collision(enemy, self._obstacles)
 
     def _apply_weapon_enchantments(self, enemy):
         """
@@ -1763,6 +1767,8 @@ class Character:
 
             knock_dir = to_impact.normalize() if dist_sq > 0 else pygame.Vector2(aim_dir)
             enemy.pos += knock_dir * knockback_force
+            if getattr(self, '_obstacles', None):
+                self._collision_system.resolve_static_collision(enemy, self._obstacles)
 
     def attack_axe(self, enemies, aim_direction=None):
         """Full 360° spinning sweep. Hits all enemies within range regardless of direction."""
@@ -1802,6 +1808,8 @@ class Character:
 
             knock_dir = to_enemy.normalize() if dist_sq > 0 else pygame.Vector2(aim_dir)
             enemy.pos += knock_dir * knockback_force
+            if getattr(self, '_obstacles', None):
+                self._collision_system.resolve_static_collision(enemy, self._obstacles)
 
     def attack_spear(self, enemies, aim_direction=None):
         """Long narrow piercing line. Hits enemies in a thin rectangle extending forward."""
@@ -1847,6 +1855,8 @@ class Character:
                 enemy.add_effect(PoisonEffect(self.poison_blade_duration, self.poison_blade_damage_per_sec))
 
             enemy.pos += aim_dir * knockback_force
+            if getattr(self, '_obstacles', None):
+                self._collision_system.resolve_static_collision(enemy, self._obstacles)
 
     def attack_war_hammer(self, enemies, aim_direction=None):
         """Heavy slam with small AoE. Deals high damage and stuns enemies in a radius."""
@@ -1892,6 +1902,8 @@ class Character:
 
             knock_dir = to_impact.normalize() if dist_sq > 0 else pygame.Vector2(aim_dir)
             enemy.pos += knock_dir * knockback_force
+            if getattr(self, '_obstacles', None):
+                self._collision_system.resolve_static_collision(enemy, self._obstacles)
 
     def get_rect(self):
         """Returns the collision rectangle (hitbox), updated to the current float position."""
@@ -1983,6 +1995,8 @@ class Character:
         Updates the character's state, sets desired movement, and applies movement
         using the external collision system.
         """
+        self._collision_system = collision_system
+        self._obstacles = obstacles
         # Reset attacking flag after short duration
         if self.is_attacking and pygame.time.get_ticks() - self.last_attack_time > 200:
             self.is_attacking = False

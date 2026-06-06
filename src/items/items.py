@@ -377,6 +377,10 @@ class LightRing(Armor):
             f"{_('Defense')}: +{self.defense_value}\n"
             f"+{self.light_radius_bonus} {_('Light Radius')}\n"
             f"+{self.light_intensity_bonus} {_('Light Intensity')}\n"
+        )
+        return f"{self.name}\n{stats}\n{self.description}"
+
+
 class Tool(Item):
     """
     Represents a utility tool used to perform a specific in-world action
@@ -459,6 +463,10 @@ class GayRing(Armor):
             f"{_('Defense')}: +{self.defense_value}\n"
             f"{rainbow_charm}\n"
             f"{_('Gloving Rainbow Aura')}\n"
+        )
+        return f"{self.name}\n{stats}\n{self.description}"
+
+
 class Fish(Item):
     """
     Represents a fish caught via the fishing minigame.
