@@ -782,12 +782,12 @@ class WikiMenu(Menu):
         bw = max(1, int(220 * scale))
         bh = max(1, int(62 * scale))
         if self._page == "main":
-            self.back_btn.rect = pygame.Rect(sw - bw - max(20, int(40 * scale)),
-                                             sh - bh - max(20, int(28 * scale)), bw, bh)
+            self.back_btn.rect = pygame.Rect(sw - bw - max(40, int(80 * scale)),
+                                             sh - bh - max(40, int(60 * scale)), bw, bh)
         else:
-            ny = sh - bh - max(16, int(24 * scale))
-            by2 = ny - bh - max(4, int(8 * scale))
-            mx = max(20, int(30 * scale))
+            ny = sh - bh - max(40, int(60 * scale))
+            by2 = ny - bh - max(20, int(24 * scale))
+            mx = max(40, int(60 * scale))
             self.back_btn.rect = pygame.Rect(mx, by2, bw, bh)
             self.toc_btn.rect = pygame.Rect(mx + bw + max(8, int(10 * scale)), by2, bw, bh)
             self.prev_btn.rect = pygame.Rect(mx, ny, bw, bh)
