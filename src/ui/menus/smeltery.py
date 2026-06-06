@@ -199,20 +199,50 @@ class SmelteryMenu:
             return cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT
 
     def _ensure_layout(self):
-        """Build the buttons and (re)compute rects on size change."""
+        """Build the buttons and (re)compute rects on size or inventory
+        position change.
+
+        The smeltery panel is anchored to the left side of the player
+        inventory and spans the full vertical length of the inventory's
+        visual background (the tall panel that holds the portrait,
+        grid, and equipment).  This mirrors the shop layout, where the
+        merchant panel sits on the right of the inventory.
+        """
         sw, sh = self._screen_size()
-        if self._buttons_built and self._layout_size == (sw, sh):
+        pl_inv = self._player_inventory()
+        inv_pos = (pl_inv.pos_x, pl_inv.pos_y) if pl_inv is not None else None
+        cache_key = (sw, sh, inv_pos)
+        if self._buttons_built and self._layout_size == cache_key:
             return
 
-        self._layout_size = (sw, sh)
+        self._layout_size = cache_key
         scale = cfg.ui_scale()
         Button = self._ButtonCls
 
         # Outer panel that contains the tab bar + the active station.
-        panel_w = int(720 * scale)
-        panel_h = int(360 * scale)
-        panel_x = (sw - panel_w) // 2
-        panel_y = int(60 * scale)
+        # The smeltery docks to the left edge of the screen and extends
+        # rightward until it slightly touches the left edge of the
+        # inventory's visual background, spanning the full vertical
+        # length of that background.  The inventory stays in its default
+        # centered position.
+        panel_w = int(520 * scale)
+        if pl_inv is not None:
+            slot_size = pl_inv.slot_size
+            border = pl_inv.border
+            inv_grid_h = (slot_size + border) * pl_inv.rows + border
+            inv_bg_top = pl_inv.pos_y - int(340 * scale)
+            inv_bg_h = inv_grid_h + int(364 * scale)
+            inv_bg_left = pl_inv.pos_x - int(24 * scale)
+
+            panel_h = inv_bg_h
+            panel_y = inv_bg_top
+            panel_x = inv_bg_left - panel_w
+            if panel_x < int(20 * scale):
+                panel_x = int(20 * scale)
+        else:
+            panel_h = int(360 * scale)
+            panel_x = int(20 * scale)
+            panel_y = int(60 * scale)
         self._panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
 
         # Tab bar at the top of the panel.
@@ -364,11 +394,14 @@ class SmelteryMenu:
 
     def open(self):
         self.is_open = True
-        self._ensure_layout()
+        # Open (and horizontally shift) the player inventory first so the
+        # smeltery panel can anchor to its new position.
         self._sync_inv_manager_inventory_open(True)
+        self._ensure_layout()
 
     def close(self):
         self.is_open = False
+        # Closing restores the player inventory to its default position.
         self._sync_inv_manager_inventory_open(False)
 
     def _sync_inv_manager_inventory_open(self, want_open):
@@ -390,6 +423,8 @@ class SmelteryMenu:
                 inv_manager.toggle_inventory(pl_inv, equip_inv)
             elif not want_open and currently_open:
                 inv_manager.toggle_inventory(pl_inv, equip_inv)
+            # Apply smeltery-specific horizontal shift so the smeltery
+            # panel has room on the left (mirror of the shop's left-shift).
         except Exception as exc:
             logger.debug(f"Smeltery: failed to sync inv manager: {exc}")
 
@@ -726,11 +761,6 @@ class SmelteryMenu:
             return
 
         self._ensure_layout()
-
-        # Dim background.
-        overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 140))
-        screen.blit(overlay, (0, 0))
 
         # Outer panel with rounded corners + shadow.
         draw_panel_with_shadow(
