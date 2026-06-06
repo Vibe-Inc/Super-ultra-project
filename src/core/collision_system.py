@@ -115,6 +115,24 @@ class CollisionSystem:
 
         self.resolve_static_collision(entity, obstacles)
 
+    def resolve_teleport_collision(self, entity: object, obstacles: list[pygame.Rect], direction: pygame.Vector2):
+        rect = self.rect_of(entity)
+        nearby = self._get_nearby_obstacles(rect, obstacles)
+
+        if not any(rect.colliderect(w) for w in nearby):
+            return
+
+        if direction.length_squared() == 0:
+            direction = pygame.Vector2(1, 0)
+        direction = direction.normalize()
+
+        for _ in range(500):
+            entity.pos += direction
+            rect = self.rect_of(entity)
+            nearby = self._get_nearby_obstacles(rect, obstacles)
+            if not any(rect.colliderect(w) for w in nearby):
+                break
+
     def resolve_static_collision(self, entity: object, obstacles: list[pygame.Rect]):
         rect = self.rect_of(entity)
         nearby_obstacles = self._get_nearby_obstacles(rect, obstacles)
