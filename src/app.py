@@ -150,10 +150,10 @@ class App:
         add_item(3, 1, "crossbow")
         add_item(4, 1, "throwing_dagger")
         add_item(6, 1, "gay_ring")
-        add_item(7, 1, "light_ring")
         add_item(5, 1, "fishing_rod")
         add_item(6, 1, "stone_axe")
         add_item(7, 1, "iron_pickaxe")
+        add_item(7, 0, "light_ring")
 
         # Row 2 — Potions
         add_item(0, 2, "small_health_potion", 3)
@@ -450,7 +450,9 @@ class App:
 
             if effective_brightness < 1 and not _skip_night_overlay and not _is_intro:
                 overlay_alpha = int((1 - effective_brightness) * 255)
-                # Use the environment tint color computed by the game state for dawn/dusk/night
+                # Use the majestic multi-stop tint from the DayNightVisuals
+                # controller (deep indigo at night, warm orange at dawn/dusk,
+                # purple at twilight, etc.)
                 if night_tint:
                     tint = cfg.ENVIRONMENT_TINT
                 else:
@@ -561,6 +563,15 @@ class App:
                     overlay = self._brightness_overlay
 
                 self.screen.blit(overlay, (0, 0))
+
+                # Draw majestic atmospheric effects on top of the overlay:
+                # golden-hour glow, twinkling stars, firefly particles, vignette
+                try:
+                    gs = self.manager.states.get("gameplay")
+                    if gs and hasattr(gs, 'day_night') and gs.day_night:
+                        gs.day_night.draw(self.screen)
+                except Exception:
+                    pass
             self.profiler.end_section("postfx")
 
             if self.manager.get_state() == "gameplay":
