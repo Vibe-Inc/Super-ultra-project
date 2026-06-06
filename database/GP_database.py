@@ -91,6 +91,7 @@ class Gp_database:
                 weapon_class TEXT,
                 damage INT DEFAULT 1,
                 durability INT DEFAULT 100,
+                max_durability INT DEFAULT 100,
                 range INT,
                 projectile_speed INT DEFAULT 0,
                 cooldown INT DEFAULT 500,
@@ -105,6 +106,19 @@ class Gp_database:
         # Backwards-compatible column adds for existing databases.
         self._ensure_column("weapons", "on_hit_effects", "TEXT DEFAULT NULL")
         self._ensure_column("weapons", "combat_style", "TEXT DEFAULT 'sword'")
+        # max_durability lets us track the *original* durability of a weapon
+        # even as the current `durability` ticks down. We seed it with the
+        # existing `durability` value on first migration so legacy rows
+        # behave the same as before.
+        self._ensure_column("weapons", "max_durability", "INT DEFAULT NULL")
+        try:
+            self.cursor.execute(
+                "UPDATE weapons SET max_durability = durability "
+                "WHERE max_durability IS NULL"
+            )
+            self.conn.commit()
+        except sqlite3.Error:
+            self.conn.rollback()
 
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS consumables (
@@ -119,15 +133,35 @@ class Gp_database:
                 item_id TEXT PRIMARY KEY,
                 slot_type TEXT NOT NULL DEFAULT 'helmet',
                 defense_value INT DEFAULT 0,
+                durability INT DEFAULT 100,
                 FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE
             )
         ''')
+        # max_durability is the pristine reference value for armor pieces
+        # (mirrors what the weapons/tools tables already track). The
+        # live ``durability`` column ticks down as the player takes
+        # damage; ``max_durability`` stays put so the wear bar can
+        # render an accurate "cur / max" indicator.  Both columns need
+        # an explicit migration: the table existed before this
+        # feature was added, so the ``CREATE TABLE IF NOT EXISTS`` above
+        # does not retro-add them to old databases.
+        self._ensure_column("armor", "durability", "INT DEFAULT 100")
+        self._ensure_column("armor", "max_durability", "INT DEFAULT NULL")
+        try:
+            self.cursor.execute(
+                "UPDATE armor SET max_durability = durability "
+                "WHERE max_durability IS NULL"
+            )
+            self.conn.commit()
+        except sqlite3.Error:
+            self.conn.rollback()
 
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS tools (
                 item_id TEXT PRIMARY KEY,
                 tool_type TEXT NOT NULL DEFAULT 'generic',
                 durability INT DEFAULT 100,
+                max_durability INT DEFAULT 100,
                 power INT DEFAULT 0,
                 FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE
             )
@@ -144,6 +178,22 @@ class Gp_database:
                 FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE
             )
         ''')
+
+        # Backwards-compatible column adds for gathering tools.
+        self._ensure_column("tools", "gather_type", "TEXT DEFAULT NULL")
+        self._ensure_column("tools", "gather_yield_min", "INT DEFAULT 1")
+        self._ensure_column("tools", "gather_yield_max", "INT DEFAULT 1")
+        # max_durability is the pristine reference value; the existing
+        # `durability` column is the live (ticking-down) value.
+        self._ensure_column("tools", "max_durability", "INT DEFAULT NULL")
+        try:
+            self.cursor.execute(
+                "UPDATE tools SET max_durability = durability "
+                "WHERE max_durability IS NULL"
+            )
+            self.conn.commit()
+        except sqlite3.Error:
+            self.conn.rollback()
 
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS consumable_effects (
@@ -329,10 +379,10 @@ class Gp_database:
             ''', (item_id, name, image_path, price, description))
 
             self.cursor.execute('''
-                INSERT INTO weapons (item_id, weapon_class, damage, durability, range,
+                INSERT INTO weapons (item_id, weapon_class, damage, durability, max_durability, range,
                                     projectile_speed, cooldown, spread_degrees, cone_degrees, on_hit_effects, combat_style)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (item_id, weapon_class, damage, durability, range_val,
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (item_id, weapon_class, damage, durability, durability, range_val,
                   projectile_speed, cooldown, spread_degrees, cone_degrees, None if on_hit_effects is None else repr(on_hit_effects), combat_style))
 
             self.conn.commit()
@@ -347,7 +397,8 @@ class Gp_database:
 
     def add_armor(self, item_id: str, name: str, image_path: str,
                    slot_type: str = "helmet", defense_value: int = 0,
-                   price: int = 0, max_stack: int = 1, description: str = "") -> bool:
+                   price: int = 0, max_stack: int = 1, description: str = "",
+                   durability: int = 100) -> bool:
         """
         Add an armor item to the database.
 
@@ -361,6 +412,11 @@ class Gp_database:
             price (int): Monetary value.
             max_stack (int): Maximum stack size (usually 1).
             description (str): Description text.
+            durability (int): Maximum durability points.  Each time the
+                wearer takes damage the equipped armor's live durability
+                ticks down by one; the wear bar in the inventory renders
+                ``durability / max_durability`` and a broken (zero)
+                armor contributes 0 defense.
 
         Returns:
             bool: True if successful.
@@ -374,9 +430,9 @@ class Gp_database:
             ''', (item_id, name, image_path, price, max_stack, description))
 
             self.cursor.execute('''
-                INSERT INTO armor (item_id, slot_type, defense_value)
-                VALUES (?, ?, ?)
-            ''', (item_id, slot_type, defense_value))
+                INSERT INTO armor (item_id, slot_type, defense_value, durability, max_durability)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (item_id, slot_type, defense_value, durability, durability))
 
             self.conn.commit()
             print(f"Armor '{item_id}' added successfully.")
@@ -391,7 +447,8 @@ class Gp_database:
     def add_tool(self, item_id: str, name: str, image_path: str,
                  tool_type: str = "generic", durability: int = 100,
                  power: int = 0, price: int = 0, max_stack: int = 1,
-                 description: str = "") -> bool:
+                 description: str = "", gather_type: str = None,
+                 gather_yield_min: int = 1, gather_yield_max: int = 1) -> bool:
         """
         Add a tool item to the database.
 
@@ -411,6 +468,16 @@ class Gp_database:
             price (int): Monetary value.
             max_stack (int): Maximum stack size (usually 1).
             description (str): Description text.
+            gather_type (str | None): If set, the resource type this tool
+                gathers ("wood", "stone", "ore", etc.). The GatheringController
+                uses this to match a tool against tile properties such as
+                ``choppable`` (matched by "wood") or ``minable`` (matched by
+                "stone" or "ore"). ``None`` means the tool does not gather
+                (e.g. a fishing rod).
+            gather_yield_min (int): Lower bound of resource items produced
+                per successful gather.
+            gather_yield_max (int): Upper bound of resource items produced
+                per successful gather.
 
         Returns:
             bool: True if successful, False otherwise.
@@ -424,9 +491,11 @@ class Gp_database:
             ''', (item_id, name, image_path, price, max_stack, description))
 
             self.cursor.execute('''
-                INSERT INTO tools (item_id, tool_type, durability, power)
-                VALUES (?, ?, ?, ?)
-            ''', (item_id, tool_type, durability, power))
+                INSERT INTO tools (item_id, tool_type, durability, max_durability, power,
+                                   gather_type, gather_yield_min, gather_yield_max)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (item_id, tool_type, durability, durability, power,
+                  gather_type, gather_yield_min, gather_yield_max))
 
             self.conn.commit()
             print(f"Tool '{item_id}' added successfully.")
@@ -570,19 +639,24 @@ class Gp_database:
         """
         self.cursor.execute('''
             SELECT items.*,
-                   weapons.weapon_class, weapons.damage, weapons.durability, weapons.range,
+                   weapons.weapon_class, weapons.damage, weapons.durability,
+                   weapons.max_durability AS weapon_max_durability, weapons.range,
                    weapons.projectile_speed, weapons.cooldown, weapons.spread_degrees,
                    weapons.cone_degrees, weapons.on_hit_effects, weapons.combat_style,
                    consumables.heal_amount,
                    armor.slot_type, armor.defense_value,
-                   tools.tool_type, tools.durability AS tool_durability, tools.power,
+                   armor.durability AS armor_durability,
+                   armor.max_durability AS armor_max_durability,
+                   "tools".tool_type, "tools".durability AS tool_durability,
+                   "tools".max_durability AS tool_max_durability, "tools".power,
+                   "tools".gather_type, "tools".gather_yield_min, "tools".gather_yield_max,
                    fish.rarity, fish.difficulty, fish.speed AS fish_speed,
                    fish.spawn_weight, fish.base_price AS fish_base_price
             FROM items
             LEFT JOIN weapons ON items.id = weapons.item_id
             LEFT JOIN consumables ON items.id = consumables.item_id
             LEFT JOIN armor ON items.id = armor.item_id
-            LEFT JOIN tools ON items.id = tools.item_id
+            LEFT JOIN "tools" ON items.id = "tools".item_id
             LEFT JOIN fish ON items.id = fish.item_id
             WHERE items.id = ?
         ''', (item_id,))

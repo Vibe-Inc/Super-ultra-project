@@ -3342,11 +3342,12 @@ class SkillTreeMenu(Menu):
 
         selected_node = self.nodes_by_id.get(self.selected_node_id)
         self._draw_sidebar(screen, selected_node)
-        # draw sidebar buttons
-        try:
-            self.unlock_button.draw(screen)
-        except Exception:
-            pass
+        # draw sidebar buttons (unlock button only visible when a node is selected)
+        if selected_node is not None:
+            try:
+                self.unlock_button.draw(screen)
+            except Exception:
+                pass
         self.exit_button.draw(screen)
 
         # Draw dialog on top if one is active
