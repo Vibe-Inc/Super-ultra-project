@@ -1476,6 +1476,17 @@ class Game(State):
             target_loc = result[1]
             if target_loc not in self.discovered_locations:
                 self.discovered_locations.add(target_loc)
+            tmx = self.map.current_map.get_tmx_data()
+            if tmx:
+                mw = tmx.width * tmx.tilewidth
+                mh = tmx.height * tmx.tileheight
+                cx, cy = mw // 2, mh // 2
+                dx = cx - self.character.pos.x
+                dy = cy - self.character.pos.y
+                dist = max(1, (dx * dx + dy * dy) ** 0.5)
+                push = 120.0
+                self.character.pos.x += (dx / dist) * push
+                self.character.pos.y += (dy / dist) * push
             self.app.manager.set_state("location_map")
             return
 
