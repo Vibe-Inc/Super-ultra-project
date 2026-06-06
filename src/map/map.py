@@ -582,6 +582,12 @@ class LocalMap:
     def get_obstacles(self):
         return self.current_map.get_obstacles()
 
+    def get_window_positions(self):
+        """Return list of (world_x, world_y) center positions for all window tiles."""
+        if self.current_map is None:
+            return []
+        return self.current_map.get_window_positions()
+
     def update_animation(self, dt):
         if self.current_map:
             self.current_map.update_animation(dt)

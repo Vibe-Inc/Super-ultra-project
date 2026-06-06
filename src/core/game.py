@@ -1212,9 +1212,10 @@ class Game(State):
                         screen_pos = (int(wx - camera.x), int(wy - camera.y))
                         lights.append({
                             'pos': screen_pos,
-                            'radius': 100,
-                            'intensity': 0.9,
+                            'radius': 140,
+                            'intensity': 1.1,
                             'full_360': True,
+                            'color': (255, 180, 80),
                         })
             except Exception:
                 pass
