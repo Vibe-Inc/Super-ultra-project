@@ -240,6 +240,17 @@ class SmelteryMenu:
         self._buttons_built = False
         self._ButtonCls = Button
 
+        # One-shot article unlock flags.
+        self._triggered_smeltery_open = False
+        self._triggered_workbench = False
+        self._triggered_coke_job = False
+        self._triggered_blast_job = False
+        self._triggered_anvil_job = False
+        self._triggered_minigame = False
+        self._triggered_skill_mastery = False
+        self._triggered_forgemaster_secrets = False
+        self._pending_minigame_unlock = False
+
     # ------------------------------------------------------------------ #
     # Layout                                                              #
     # ------------------------------------------------------------------ #
@@ -519,6 +530,9 @@ class SmelteryMenu:
         # smeltery panel can anchor to its new position.
         self._sync_inv_manager_inventory_open(True)
         self._ensure_layout()
+        if not self._triggered_smeltery_open:
+            self._triggered_smeltery_open = True
+            self.app.article_tracker.try_open(self.app, "smeltery", "1. The Smeltery Unveiled")
 
     def close(self):
         self.is_open = False
@@ -623,6 +637,10 @@ class SmelteryMenu:
         recipe = job.recipe
         self.coke_job = None
         job.fired_flash = 0.6
+
+        if not self._triggered_skill_mastery:
+            self._triggered_skill_mastery = True
+            self.app.article_tracker.try_open(self.app, "smeltery", "6. Smelting Skill & Mastery")
 
         # Auto-resume: kick off the next batch if more input is waiting
         # and the output slot can still accept the result.
@@ -833,6 +851,9 @@ class SmelteryMenu:
                         skill.add_xp(award)
                 except Exception:
                     pass
+            if not self._triggered_minigame:
+                self._triggered_minigame = True
+                self.app.article_tracker.try_open(self.app, "smeltery", "7. Minigames & Refinement")
         except Exception as exc:
             logger.warning("Smeltery: minigame finalise failed: %s", exc)
         finally:
@@ -1014,6 +1035,9 @@ class SmelteryMenu:
         # the finish handler can read it without growing the schema.
         self.anvil_job.target_item_id = item.id
         self.anvil_job.repair_amount = int(repair_amount)
+        if not self._triggered_anvil_job:
+            self._triggered_anvil_job = True
+            self.app.article_tracker.try_open(self.app, "smeltery", "5. Anvil & Restoration")
         self.anvil_job.heat_color = recipe.get("heat_color", (255, 150, 60))
 
     # ------------------------------------------------------------------ #
@@ -1065,6 +1089,9 @@ class SmelteryMenu:
                     inv = self._inv_manager()
                     if inv is not None:
                         self.crafting_grid.inventory_interactions(event, inv)
+                    if not self._triggered_workbench:
+                        self._triggered_workbench = True
+                        self.app.article_tracker.try_open(self.app, "smeltery", "2. Workbench & Shaping")
                     return True
             elif self.active_station == STATION_COKE_OVEN:
                 if self._coke_input_rect.collidepoint((mx, my)):
@@ -1282,6 +1309,9 @@ class SmelteryMenu:
         if self.coke_input.count <= 0:
             self.coke_input.clear()
         self.coke_job = _FurnaceJob(recipe)
+        if not self._triggered_coke_job:
+            self._triggered_coke_job = True
+            self.app.article_tracker.try_open(self.app, "smeltery", "3. Coke Oven & Fuel")
 
     def _try_start_blast_job(self):
         if self.blast_job is not None:
@@ -1308,6 +1338,9 @@ class SmelteryMenu:
         if self.blast_fuel.count <= 0:
             self.blast_fuel.clear()
         self.blast_job = _FurnaceJob(recipe)
+        if not self._triggered_blast_job:
+            self._triggered_blast_job = True
+            self.app.article_tracker.try_open(self.app, "smeltery", "4. Blast Furnace & Alloys")
 
     # ------------------------------------------------------------------ #
     # Drawing                                                             #
@@ -1709,6 +1742,11 @@ class SmelteryMenu:
         if skill is None:
             from src.systems.smelting_skill import SmeltingSkill
             skill = SmeltingSkill()
+
+        # Forgemaster's Secrets — unlock at smelting level 5+.
+        if not self._triggered_forgemaster_secrets and int(skill.level) >= 5:
+            self._triggered_forgemaster_secrets = True
+            self.app.article_tracker.try_open(self.app, "smeltery", "8. Forgemaster's Secrets")
 
         # Left: "Smelting Lv. N" label.
         try:

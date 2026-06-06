@@ -26,6 +26,12 @@ SECTION_ARTICLE_MAP = {
         "7. day & night cycle": 6, "8. enemies & threat assessment": 7,
         "9. respeccing & strategy": 8, "10. final words": 9,
     },
+    "smeltery": {
+        "1. the smeltery unveiled": 0, "2. workbench & shaping": 1,
+        "3. coke oven & fuel": 2, "4. blast furnace & alloys": 3,
+        "5. anvil & restoration": 4, "6. smelting skill & mastery": 5,
+        "7. minigames & refinement": 6, "8. forgemaster's secrets": 7,
+    },
 }
 
 
