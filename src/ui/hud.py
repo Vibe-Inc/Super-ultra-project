@@ -6,6 +6,13 @@ from src.entities.character import Character
 from src.ui.widgets import Button
 import src.config as cfg
 from src.core.logger import logger
+from database.effects import (
+    Effect, RegenerationEffect, PoisonEffect, BurnEffect, ConfusionEffect,
+    DizzinessEffect, SlowEffect, FreezeEffect, RootEffect, RadiantFortitude,
+    VampiricEdge, KeenInsight, BleedEffect, StrengthEffect, Momentum,
+    BlindEffect, HasteEffect, WeakenEffect, ShieldEffect, CurseEffect,
+    LethargyEffect, Effect_list,
+)
 
 # Ensure _ is available for gettext translations
 try:
@@ -407,6 +414,274 @@ class HUD:
             except Exception:
                 pass
 
+    # ─── Effect Bar helpers ───────────────────────────────────────────────
+    # Map effect class -> config key used in EFFECT_BAR_* dicts
+    _EFFECT_CLASS_TO_KEY = {}
+
+    @classmethod
+    def _build_effect_key_map(cls):
+        """Build mapping from effect class to lowercase key (called once)."""
+        if cls._EFFECT_CLASS_TO_KEY:
+            return
+        # Use the reverse of Effect_list (name -> class) to build class -> name
+        for name, klass in Effect_list.items():
+            cls._EFFECT_CLASS_TO_KEY[klass] = name
+
+    def _get_effect_key(self, effect) -> str:
+        """Return the config key string for an effect instance."""
+        self._build_effect_key_map()
+        key = self._EFFECT_CLASS_TO_KEY.get(type(effect))
+        if key:
+            return key
+        # Fallback: lowercase class name without 'Effect' suffix
+        cls_name = type(effect).__name__
+        if cls_name.endswith("Effect"):
+            cls_name = cls_name[:-6]
+        return cls_name.lower()
+
+    def _get_effect_remaining(self, effect) -> float:
+        """Return remaining seconds for the effect."""
+        return max(0.0, effect.duration - effect.timer)
+
+    def _get_effect_total(self, effect) -> float:
+        """Return total duration of the effect."""
+        return max(0.001, effect.duration)
+
+    def _draw_effect_bar(self, screen: pygame.Surface):
+        """Draw the active-effect bar below the HP bar (left side)."""
+        effects = getattr(self.character, "effects", [])
+        if not effects:
+            return
+
+        scale = cfg.ui_scale()
+        slot_size = max(12, int(cfg.EFFECT_BAR_SLOT_SIZE * scale))
+        padding = max(2, int(cfg.EFFECT_BAR_PADDING * scale))
+        gap = max(1, int(cfg.EFFECT_BAR_GAP * scale))
+        max_per_row = cfg.EFFECT_BAR_MAX_VISIBLE
+
+        # Position: bottom-left corner, above the hotbar
+        try:
+            sw, sh = screen.get_size()
+        except Exception:
+            sw, sh = cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT
+
+        hotbar_scale = cfg.INV_HOTBAR_SCALE * cfg.ui_scale()
+        hotbar_slot_size = int(cfg.BASE_INV_slot_size * hotbar_scale)
+        hotbar_border = cfg.BASE_INV_border
+        hotbar_columns = getattr(cfg, 'INV_HOTBAR_COLUMNS', 10)
+        hotbar_total_width = (hotbar_slot_size + hotbar_border) * hotbar_columns + hotbar_border
+        hotbar_top = sh + cfg.INV_HOTBAR_Y_OFFSET - hotbar_slot_size
+
+        bar_x = 20  # left margin
+        bar_y = hotbar_top - gap  # stack upward from above hotbar
+
+        # Font for effect labels and timers (scales with slot size)
+        label_size = max(8, int(slot_size * 0.28))
+        label_font = cfg.get_font(label_size)
+
+        mouse_pos = pygame.mouse.get_pos()
+        hovered_effect = None
+
+        cols = min(len(effects), max_per_row)
+        total_w = cols * slot_size + (cols - 1) * padding
+        rows = (len(effects) + max_per_row - 1) // max_per_row
+        total_h = rows * slot_size + (rows - 1) * gap
+
+        # Draw a subtle background panel behind the effect icons
+        panel_rect = pygame.Rect(
+            bar_x - padding,
+            bar_y - padding,
+            total_w + padding * 2,
+            total_h + padding * 2,
+        )
+        panel_bg = pygame.Surface(panel_rect.size, pygame.SRCALPHA)
+        pygame.draw.rect(
+            panel_bg,
+            cfg.EFFECT_BAR_BG_COLOR,
+            panel_bg.get_rect(),
+            border_radius=cfg.EFFECT_BAR_BORDER_RADIUS,
+        )
+        screen.blit(panel_bg, panel_rect.topleft)
+        pygame.draw.rect(
+            screen,
+            cfg.EFFECT_BAR_BORDER_COLOR[:3],
+            panel_rect,
+            1,
+            border_radius=cfg.EFFECT_BAR_BORDER_RADIUS,
+        )
+
+        for idx, effect in enumerate(effects):
+            row = idx // max_per_row
+            col = idx % max_per_row
+            sx = bar_x + col * (slot_size + padding)
+            sy = bar_y + row * (slot_size + padding)
+            slot_rect = pygame.Rect(sx, sy, slot_size, slot_size)
+
+            key = self._get_effect_key(effect)
+            is_buff = key in cfg.EFFECT_BAR_BUFF_TYPES
+            is_debuff = key in cfg.EFFECT_BAR_DEBUFF_TYPES
+
+            # Base tint colour
+            tint = cfg.EFFECT_BAR_COLORS.get(key, (120, 120, 140))
+
+            # ── Slot background ──────────────────────────────────────
+            slot_bg = pygame.Surface((slot_size, slot_size), pygame.SRCALPHA)
+            # Dark semi-transparent background
+            pygame.draw.rect(
+                slot_bg,
+                (10, 12, 18, 200),
+                slot_bg.get_rect(),
+                border_radius=cfg.EFFECT_BAR_BORDER_RADIUS,
+            )
+            screen.blit(slot_bg, slot_rect.topleft)
+
+            # Subtle coloured border (buff=green, debuff=red, else grey)
+            if is_buff:
+                border_col = cfg.EFFECT_BAR_BUFF_COLOR
+            elif is_debuff:
+                border_col = cfg.EFFECT_BAR_DEBUFF_COLOR
+            else:
+                border_col = cfg.EFFECT_BAR_BORDER_COLOR[:3]
+            pygame.draw.rect(
+                screen,
+                border_col,
+                slot_rect,
+                1,
+                border_radius=cfg.EFFECT_BAR_BORDER_RADIUS,
+            )
+
+            # ── Coloured centre icon (small circle) ─────────────────
+            icon_r = max(3, slot_size // 5)
+            icon_cx = slot_rect.centerx
+            icon_cy = slot_rect.centery - max(2, int(4 * scale))
+            pygame.draw.circle(screen, tint, (icon_cx, icon_cy), icon_r)
+
+            # ── Letter inside the icon ──────────────────────────────
+            letter = cfg.EFFECT_BAR_LABELS.get(key, key[:4])
+            # Draw first 1-2 chars
+            if len(letter) > 2:
+                letter = letter[:2]
+            letter_surf = label_font.render(letter, True, (255, 255, 255))
+            screen.blit(
+                letter_surf,
+                letter_surf.get_rect(center=(icon_cx, icon_cy)),
+            )
+
+            # ── Timer bar at the bottom of the slot ─────────────────
+            remaining = self._get_effect_remaining(effect)
+            total = self._get_effect_total(effect)
+            pct = max(0.0, min(1.0, remaining / total))
+
+            timer_h = max(2, int(slot_size * 0.15))
+            timer_rect = pygame.Rect(
+                slot_rect.left + 2,
+                slot_rect.bottom - timer_h - 2,
+                slot_rect.width - 4,
+                timer_h,
+            )
+            # Background
+            pygame.draw.rect(screen, (30, 30, 35), timer_rect, border_radius=1)
+            # Fill
+            fill_w = int(timer_rect.width * pct)
+            if fill_w > 0:
+                fill_r = pygame.Rect(timer_rect.left, timer_rect.top, fill_w, timer_rect.height)
+                pygame.draw.rect(screen, tint, fill_r, border_radius=1)
+
+            # ── Remaining time text below the timer bar ─────────────
+            time_text = f"{remaining:.1f}s"
+            time_surf = label_font.render(time_text, True, (200, 200, 210))
+            # Only draw if there's room below the timer bar
+            time_y = slot_rect.bottom + 1
+            if time_y + time_surf.get_height() < screen.get_height():
+                screen.blit(
+                    time_surf,
+                    time_surf.get_rect(centerx=slot_rect.centerx, top=time_y),
+                )
+
+            # ── Hover detection for tooltip ─────────────────────────
+            if slot_rect.collidepoint(mouse_pos):
+                hovered_effect = (effect, key, slot_rect)
+
+        # ── Draw tooltip for hovered effect ──────────────────────────
+        if hovered_effect:
+            effect, key, slot_rect = hovered_effect
+            remaining = self._get_effect_remaining(effect)
+            total = self._get_effect_total(effect)
+            is_buff = key in cfg.EFFECT_BAR_BUFF_TYPES
+
+            # Build tooltip lines
+            display_name = cfg.EFFECT_BAR_LABELS.get(key, key.replace("_", " ").title())
+            # Try to get a prettier name from the class
+            cls_name = type(effect).__name__
+            if cls_name.endswith("Effect"):
+                cls_name = cls_name[:-6]
+            # Insert spaces before capitals for CamelCase
+            pretty_name = ""
+            for i, ch in enumerate(cls_name):
+                if i > 0 and ch.isupper():
+                    pretty_name += " "
+                pretty_name += ch
+
+            lines = [
+                pretty_name,
+                f"Remaining: {remaining:.1f}s / {total:.1f}s",
+            ]
+            # Add extra info if available
+            if hasattr(effect, "damage_per_sec"):
+                lines.append(f"Damage: {effect.damage_per_sec:.1f}/s")
+            if hasattr(effect, "amount_per_sec"):
+                lines.append(f"Heal: {effect.amount_per_sec:.1f}/s")
+            if hasattr(effect, "speed_multiplier") and effect.speed_multiplier != 1.0:
+                lines.append(f"Speed: ×{effect.speed_multiplier:.2f}")
+            if hasattr(effect, "heal_mult"):
+                lines.append(f"Heal mult: ×{effect.heal_mult:.2f}")
+            if hasattr(effect, "damage_mult"):
+                lines.append(f"Damage mult: ×{effect.damage_mult:.2f}")
+            if hasattr(effect, "absorb_amount"):
+                lines.append(f"Shield: {effect.remaining:.0f}/{effect.absorb_amount:.0f}")
+            if hasattr(effect, "crit_bonus"):
+                lines.append(f"Crit: +{effect.crit_bonus*100:.0f}%")
+            if hasattr(effect, "vampiric_pct"):
+                lines.append(f"Lifesteal: {effect.vampiric_pct*100:.0f}%")
+            if hasattr(effect, "damage_bonus"):
+                lines.append(f"Damage: +{effect.damage_bonus}")
+            if hasattr(effect, "damage_pct"):
+                lines.append(f"Damage: +{effect.damage_pct*100:.0f}%")
+
+            tip_font = cfg.get_font(max(8, int(12 * scale)))
+            line_surfs = [tip_font.render(l, True, (240, 240, 245)) for l in lines]
+            max_w = max(s.get_width() for s in line_surfs) if line_surfs else 100
+            line_h = tip_font.get_linesize()
+            tip_pad = max(3, int(6 * scale))
+            tip_w = max_w + tip_pad * 2
+            tip_h = len(line_surfs) * line_h + tip_pad * 2
+
+            # Position tooltip to the right of the slot, or left if near edge
+            tip_x = slot_rect.right + 6
+            tip_y = slot_rect.top
+            sw, sh = screen.get_size()
+            if tip_x + tip_w > sw:
+                tip_x = slot_rect.left - tip_w - 6
+            if tip_y + tip_h > sh:
+                tip_y = sh - tip_h
+            if tip_y < 0:
+                tip_y = 0
+
+            tip_rect = pygame.Rect(tip_x, tip_y, tip_w, tip_h)
+            tip_bg = pygame.Surface(tip_rect.size, pygame.SRCALPHA)
+            pygame.draw.rect(
+                tip_bg,
+                (15, 18, 25, 230),
+                tip_bg.get_rect(),
+                border_radius=6,
+            )
+            screen.blit(tip_bg, tip_rect.topleft)
+            border_col = cfg.EFFECT_BAR_BUFF_COLOR if is_buff else cfg.EFFECT_BAR_DEBUFF_COLOR
+            pygame.draw.rect(screen, border_col, tip_rect, 1, border_radius=6)
+
+            for i, s in enumerate(line_surfs):
+                screen.blit(s, (tip_rect.left + tip_pad, tip_rect.top + tip_pad + i * line_h))
+
     def draw(self, screen: pygame.Surface):
         # Update animation time using the game clock for smooth animations
         try:
@@ -655,3 +930,6 @@ class HUD:
                 self._draw_hud_skill_slot(screen, slot, skill, idx)
 
         # top skillbar removed
+
+        # ── Active Effects Bar ──────────────────────────────────────
+        self._draw_effect_bar(screen)
