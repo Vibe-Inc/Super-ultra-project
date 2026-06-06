@@ -688,6 +688,41 @@ slot_type may be placed in each slot.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.MAIN_player_inventory_equipment.damage_equipped_armor">
+<span class="sig-name descname"><span class="pre">damage_equipped_armor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'hit'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_inventory_equipment.damage_equipped_armor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.MAIN_player_inventory_equipment.damage_equipped_armor" title="Link to this definition"></a></dt>
+<dd><p>Reduce the durability of every equipped armor piece by
+<code class="docutils literal notranslate"><span class="pre">amount</span></code>.</p>
+<p>Called from <a class="reference internal" href="src.entities.html#id52" title="src.entities.character.Character.take_damage"><code class="xref py py-meth docutils literal notranslate"><span class="pre">src.entities.character.Character.take_damage()</span></code></a>
+so each incoming hit chips a point off every worn piece.  A
+broken piece (zero durability) is left alone – we already
+reported the break to the player; a second hit shouldn’t
+re-fire the same floating text.  Unbreakable pieces are
+skipped entirely.</p>
+<p>After damage is applied the function re-syncs <code class="docutils literal notranslate"><span class="pre">character.defense</span></code>
+via <a class="reference internal" href="#id19" title="src.inventory.system.MAIN_player_inventory_equipment.sync_character_defense"><code class="xref py py-meth docutils literal notranslate"><span class="pre">sync_character_defense()</span></code></a> so the in-flight
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">take_damage()</span></code> reduction picks up the new (lower) defense
+on subsequent hits in the same frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>amount</strong> – How many durability points to subtract per piece.
+Must be a positive integer; non-positive values are a
+no-op.</p></li>
+<li><p><strong>source</strong> – Short string used only for log messages (“hit”,
+“fall”, …).  Doesn’t change behaviour.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A list of <code class="docutils literal notranslate"><span class="pre">(col,</span> <span class="pre">row,</span> <span class="pre">item,</span> <span class="pre">broke_now)</span></code> tuples for every
+piece that lost durability on this call, so the caller can
+fire “X just broke!” popups without having to re-walk the
+grid.  An empty list means nothing was equipped (or every
+piece was unbreakable).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="id16">
 <span class="sig-name descname"><span class="pre">get_slot_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_inventory_equipment.get_slot_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id16" title="Link to this definition"></a></dt>
 <dd><p>Return the slot type for the given grid position.</p>
@@ -696,7 +731,14 @@ slot_type may be placed in each slot.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="id17">
 <span class="sig-name descname"><span class="pre">get_total_defense</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_inventory_equipment.get_total_defense"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id17" title="Link to this definition"></a></dt>
-<dd><p>Sum the defense_value of all equipped Armor items.</p>
+<dd><p>Sum the <em>effective</em> defense of all equipped Armor items.</p>
+<p>Each <code class="xref py py-class docutils literal notranslate"><span class="pre">Armor</span></code> instance scales its <code class="docutils literal notranslate"><span class="pre">defense_value</span></code> by
+the remaining durability via
+<a class="reference internal" href="src.items.html#id0" title="src.items.items.Armor.get_effective_defense"><code class="xref py py-meth docutils literal notranslate"><span class="pre">src.items.items.Armor.get_effective_defense()</span></code></a>, so a
+worn-down chestplate contributes proportionally less – and a
+broken piece contributes the floor value (50% by default)
+rather than zero.  The sum is what gets written to
+<code class="docutils literal notranslate"><span class="pre">character.defense</span></code> by <a class="reference internal" href="#id19" title="src.inventory.system.MAIN_player_inventory_equipment.sync_character_defense"><code class="xref py py-meth docutils literal notranslate"><span class="pre">sync_character_defense()</span></code></a>.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -708,6 +750,9 @@ slot_type may be placed in each slot.</p>
 <dt class="sig sig-object py" id="id19">
 <span class="sig-name descname"><span class="pre">sync_character_defense</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">character</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/src/inventory/system.html#MAIN_player_inventory_equipment.sync_character_defense"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id19" title="Link to this definition"></a></dt>
 <dd><p>Recalculate character.defense from all equipped armor.</p>
+<p>Uses the durability-scaled (effective) defense, not the raw
+<code class="docutils literal notranslate"><span class="pre">defense_value</span></code>, so worn pieces immediately show up in the
+player’s stat without waiting for the next equip change.</p>
 </dd></dl>
 
 </dd></dl>

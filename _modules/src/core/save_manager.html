@@ -80,6 +80,71 @@
 <span class="n">SAVES_DIR</span> <span class="o">=</span> <span class="s2">&quot;saves&quot;</span>
 <span class="n">SETTINGS_FILE</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">SAVES_DIR</span><span class="p">,</span> <span class="s2">&quot;settings.json&quot;</span><span class="p">)</span>
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_append_durability</span><span class="p">(</span><span class="n">entry</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Stamp the item&#39;s live durability onto a save entry.</span>
+
+<span class="sd">    Tools and weapons both expose ``durability`` and ``max_durability``</span>
+<span class="sd">    (set by ``DurabilityMixin``).  We persist both so a save file</span>
+<span class="sd">    survives a database schema bump (e.g. a future item tweak that</span>
+<span class="sd">    raises the pristine max).</span>
+
+<span class="sd">    Only entries that actually carry the durability protocol are</span>
+<span class="sd">    annotated; consumables, armor, etc. are left untouched so older</span>
+<span class="sd">    saves keep loading identically.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">callable</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;durability_percent&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)):</span>
+        <span class="k">return</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;max_durability&quot;</span><span class="p">):</span>
+        <span class="k">return</span>
+    <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;unbreakable&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="c1"># Nothing to persist; the DB row already says the item is</span>
+        <span class="c1"># unbreakable and reloading from the DB will re-establish that.</span>
+        <span class="k">return</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">entry</span><span class="p">[</span><span class="s2">&quot;durability&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;durability&quot;</span><span class="p">))</span>
+        <span class="n">entry</span><span class="p">[</span><span class="s2">&quot;max_durability&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;max_durability&quot;</span><span class="p">))</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_apply_durability</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">slot_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Restore a previously-saved durability value onto a freshly-</span>
+<span class="sd">    instantiated item, if the slot data carries one.</span>
+
+<span class="sd">    Silently no-ops on items that don&#39;t expose ``durability`` /</span>
+<span class="sd">    ``max_durability`` (consumables, armor, etc.) and on save files</span>
+<span class="sd">    predating the durability system -- both cases fall through to the</span>
+<span class="sd">    item&#39;s natural pristine state.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">slot_data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">return</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;durability&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;max_durability&quot;</span><span class="p">):</span>
+        <span class="k">return</span>
+    <span class="n">saved_cur</span> <span class="o">=</span> <span class="n">slot_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;durability&quot;</span><span class="p">)</span>
+    <span class="n">saved_max</span> <span class="o">=</span> <span class="n">slot_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_durability&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">saved_cur</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">saved_cur</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">saved_cur</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+        <span class="k">return</span>
+    <span class="k">if</span> <span class="n">saved_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">saved_max</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">saved_max</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+            <span class="n">saved_max</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># Clamp into a valid range so a tampered or partially-migrated</span>
+    <span class="c1"># save can&#39;t push the item into a broken / over-repaired state.</span>
+    <span class="k">if</span> <span class="n">saved_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">saved_max</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">item</span><span class="o">.</span><span class="n">max_durability</span> <span class="o">=</span> <span class="n">saved_max</span>
+    <span class="k">if</span> <span class="n">saved_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">saved_max</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">item</span><span class="o">.</span><span class="n">durability</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">saved_max</span><span class="p">,</span> <span class="n">saved_cur</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">item</span><span class="o">.</span><span class="n">durability</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">saved_cur</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">durability</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;_was_broken&quot;</span><span class="p">):</span>
+        <span class="n">item</span><span class="o">.</span><span class="n">_was_broken</span> <span class="o">=</span> <span class="kc">False</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_skill_dicts_to_json</span><span class="p">(</span><span class="n">items</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert tuple RGB values to lists for JSON serialization.&quot;&quot;&quot;</span>
     <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
@@ -249,7 +314,9 @@
                 <span class="n">slot</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">MAIN_INV_items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span>
                 <span class="k">if</span> <span class="n">slot</span><span class="p">:</span>
                     <span class="n">item</span><span class="p">,</span> <span class="n">count</span> <span class="o">=</span> <span class="n">slot</span>
-                    <span class="n">col_data</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="n">count</span><span class="p">})</span>
+                    <span class="n">entry</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="n">count</span><span class="p">}</span>
+                    <span class="n">_append_durability</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+                    <span class="n">col_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">col_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
             <span class="n">serialized_inv</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">col_data</span><span class="p">)</span>
@@ -264,7 +331,9 @@
                 <span class="n">slot</span> <span class="o">=</span> <span class="n">equip_inv</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span>
                 <span class="k">if</span> <span class="n">slot</span><span class="p">:</span>
                     <span class="n">item</span><span class="p">,</span> <span class="n">count</span> <span class="o">=</span> <span class="n">slot</span>
-                    <span class="n">col_data</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="n">count</span><span class="p">})</span>
+                    <span class="n">entry</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="n">count</span><span class="p">}</span>
+                    <span class="n">_append_durability</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+                    <span class="n">col_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">col_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
             <span class="n">serialized_equip</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">col_data</span><span class="p">)</span>
@@ -277,7 +346,9 @@
                 <span class="n">slot</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">MAIN_HOTBAR_items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span>
                 <span class="k">if</span> <span class="n">slot</span><span class="p">:</span>
                     <span class="n">item</span><span class="p">,</span> <span class="n">count</span> <span class="o">=</span> <span class="n">slot</span>
-                    <span class="n">col_data</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="n">count</span><span class="p">})</span>
+                    <span class="n">entry</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="n">count</span><span class="p">}</span>
+                    <span class="n">_append_durability</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+                    <span class="n">col_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">col_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
             <span class="n">serialized_hotbar</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">col_data</span><span class="p">)</span>
@@ -382,6 +453,7 @@
                 <span class="k">if</span> <span class="n">slot_data</span><span class="p">:</span>
                     <span class="n">item</span> <span class="o">=</span> <span class="n">create_item</span><span class="p">(</span><span class="n">slot_data</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">])</span>
                     <span class="n">count</span> <span class="o">=</span> <span class="n">slot_data</span><span class="p">[</span><span class="s2">&quot;count&quot;</span><span class="p">]</span>
+                    <span class="n">_apply_durability</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">slot_data</span><span class="p">)</span>
                     <span class="n">app</span><span class="o">.</span><span class="n">MAIN_INV_items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="p">,</span> <span class="n">count</span><span class="p">]</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">app</span><span class="o">.</span><span class="n">MAIN_INV_items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
@@ -450,6 +522,7 @@
                     <span class="k">if</span> <span class="n">slot_data</span><span class="p">:</span>
                         <span class="n">item</span> <span class="o">=</span> <span class="n">create_item</span><span class="p">(</span><span class="n">slot_data</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">])</span>
                         <span class="n">count</span> <span class="o">=</span> <span class="n">slot_data</span><span class="p">[</span><span class="s2">&quot;count&quot;</span><span class="p">]</span>
+                        <span class="n">_apply_durability</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">slot_data</span><span class="p">)</span>
                         <span class="n">app</span><span class="o">.</span><span class="n">MAIN_HOTBAR_items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="p">,</span> <span class="n">count</span><span class="p">]</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">app</span><span class="o">.</span><span class="n">MAIN_HOTBAR_items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
@@ -463,6 +536,7 @@
                 <span class="k">if</span> <span class="n">slot_data</span><span class="p">:</span>
                     <span class="n">item</span> <span class="o">=</span> <span class="n">create_item</span><span class="p">(</span><span class="n">slot_data</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">])</span>
                     <span class="n">count</span> <span class="o">=</span> <span class="n">slot_data</span><span class="p">[</span><span class="s2">&quot;count&quot;</span><span class="p">]</span>
+                    <span class="n">_apply_durability</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">slot_data</span><span class="p">)</span>
                     <span class="n">equip_inv</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="p">,</span> <span class="n">count</span><span class="p">]</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">equip_inv</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>

@@ -73,6 +73,215 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">database.effects</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_effect</span>
 
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_coerce_int</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Best-effort int coercion that tolerates ``None`` and strings.</span>
+
+<span class="sd">    Item rows come from SQLite and may store integers as floats (because</span>
+<span class="sd">    :py:meth:`sqlite3.Row.is_integer` returns ``True`` for whole-number</span>
+<span class="sd">    floats).  ``max_stack`` / ``durability`` can also arrive as ``None``</span>
+<span class="sd">    from LEFT JOINs when the row isn&#39;t a weapon/tool.  This helper keeps</span>
+<span class="sd">    the constructor of every item class readable.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">default</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">default</span>
+
+
+<div class="viewcode-block" id="DurabilityMixin">
+<a class="viewcode-back" href="../../../src.items.html#src.items.items.DurabilityMixin">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DurabilityMixin</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Shared durability state and behaviour for ``Weapon`` and ``Tool``.</span>
+
+<span class="sd">    The mixin centralises every durability concern so the two concrete</span>
+<span class="sd">    item classes don&#39;t have to duplicate it:</span>
+
+<span class="sd">    * ``max_durability`` is the pristine value the item started with.</span>
+<span class="sd">    * ``durability`` is the live, ticking-down value.  It is **clamped</span>
+<span class="sd">      to ``[0, max_durability]`` on assignment** so callers can&#39;t push</span>
+<span class="sd">      the item into negative or super-repaired states.</span>
+<span class="sd">    * Items with ``unbreakable = True`` never lose durability and</span>
+<span class="sd">      always report as fully repaired.</span>
+<span class="sd">    * ``apply_durability_damage`` returns ``True`` exactly once, on the</span>
+<span class="sd">      call that drove durability to zero, so the caller can fire</span>
+<span class="sd">      &quot;your X broke!&quot; feedback precisely.</span>
+<span class="sd">    * ``repair`` clamps to the max and returns the amount actually</span>
+<span class="sd">      applied, useful for tooltips (&quot;Repaired 12/30&quot;).</span>
+<span class="sd">    * ``get_effective_damage`` scales weapon damage by remaining</span>
+<span class="sd">      durability so a worn blade actually feels worn: at 0% it deals</span>
+<span class="sd">      roughly 50% damage (floor 1); above 25% it deals full damage.</span>
+<span class="sd">    * ``durability_percent`` is used by the UI for the bar fill.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1">#: Damage scaling threshold.  Below this fraction of max durability</span>
+    <span class="c1">#: the weapon starts to lose damage output.</span>
+    <span class="n">DAMAGE_SCALING_THRESHOLD</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.25</span>
+    <span class="c1">#: Damage multiplier at 0% durability (the floor).  Between the</span>
+    <span class="c1">#: threshold and 0% the multiplier interpolates linearly.</span>
+    <span class="n">DAMAGE_SCALING_FLOOR</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_init_durability</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">maximum</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">unbreakable</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">max_val</span> <span class="o">=</span> <span class="n">_coerce_int</span><span class="p">(</span><span class="n">maximum</span><span class="p">,</span> <span class="n">_coerce_int</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">max_val</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">max_val</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">max_val</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">unbreakable</span><span class="p">:</span>
+            <span class="c1"># Avoid silently creating an item that &quot;starts broken&quot;:</span>
+            <span class="c1"># fall back to the live value so the item is at least usable.</span>
+            <span class="n">max_val</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">_coerce_int</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_durability</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">max_val</span>
+        <span class="n">cur</span> <span class="o">=</span> <span class="n">_coerce_int</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="n">max_val</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cur</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">cur</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">cur</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_durability</span><span class="p">:</span>
+            <span class="n">cur</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_durability</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">durability</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">cur</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unbreakable</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">unbreakable</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_was_broken</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">durability</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">unbreakable</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">durability_max</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read-only alias used by UI/serialisation code.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_durability</span>
+
+<div class="viewcode-block" id="DurabilityMixin.is_broken">
+<a class="viewcode-back" href="../../../src.items.html#src.items.items.DurabilityMixin.is_broken">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_broken</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;``True`` when the item has no durability left and can no longer</span>
+<span class="sd">        be used for its primary action (attack, chop, mine, ...).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unbreakable</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">durability</span> <span class="o">&lt;=</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="DurabilityMixin.durability_percent">
+<a class="viewcode-back" href="../../../src.items.html#src.items.items.DurabilityMixin.durability_percent">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">durability_percent</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Current durability as a ``0.0``..``1.0`` fraction of max.</span>
+
+<span class="sd">        Returns ``1.0`` for unbreakable items so UI bars don&#39;t render</span>
+<span class="sd">        them as empty.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unbreakable</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_durability</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">1.0</span>
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">durability</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_durability</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="DurabilityMixin.apply_durability_damage">
+<a class="viewcode-back" href="../../../src.items.html#src.items.items.DurabilityMixin.apply_durability_damage">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_durability_damage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reduce ``durability`` by ``amount`` and report whether the</span>
+<span class="sd">        item *just* broke on this call.</span>
+
+<span class="sd">        Returns ``True`` exactly once per item lifetime: the call that</span>
+<span class="sd">        brought ``durability`` from ``&gt;0`` to ``&lt;=0``.  Subsequent calls</span>
+<span class="sd">        while already broken also return ``True`` until you ``repair``</span>
+<span class="sd">        above zero, but UI feedback is normally only fired off the</span>
+<span class="sd">        first transition.</span>
+
+<span class="sd">        Unbreakable items never lose durability and always return</span>
+<span class="sd">        ``False``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unbreakable</span> <span class="ow">or</span> <span class="n">amount</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">durability</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Already broken: still report broken so callers can clean</span>
+            <span class="c1"># up stale references, but don&#39;t double-decrement the bar.</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">durability</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">durability</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">amount</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">durability</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_was_broken</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="DurabilityMixin.repair">
+<a class="viewcode-back" href="../../../src.items.html#src.items.items.DurabilityMixin.repair">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">repair</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add ``amount`` durability, clamping to ``max_durability``.</span>
+
+<span class="sd">        Returns the amount actually applied (useful for tooltips</span>
+<span class="sd">        showing &quot;Repaired 12/40&quot;).  ``repair`` clears the broken flag</span>
+<span class="sd">        so future damage can fire the &quot;broke!&quot; transition again.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">amount</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">amount</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unbreakable</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="n">before</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">durability</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">durability</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_durability</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">durability</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">amount</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">durability</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_was_broken</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">durability</span> <span class="o">-</span> <span class="n">before</span></div>
+
+
+<div class="viewcode-block" id="DurabilityMixin.get_effective_damage">
+<a class="viewcode-back" href="../../../src.items.html#src.items.items.DurabilityMixin.get_effective_damage">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_effective_damage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_damage</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Scale ``base_damage`` by remaining durability.</span>
+
+<span class="sd">        Above :py:attr:`DAMAGE_SCALING_THRESHOLD` (25% by default) the</span>
+<span class="sd">        weapon deals its full base damage.  Between the threshold and</span>
+<span class="sd">        0% the damage scales linearly from 100% down to</span>
+<span class="sd">        :py:attr:`DAMAGE_SCALING_FLOOR` (50% by default), and is</span>
+<span class="sd">        floored at 1 so a worn weapon still chips the enemy.</span>
+
+<span class="sd">        Broken items (``durability == 0``) are treated as &quot;bare</span>
+<span class="sd">        hands&quot; -- they still hit, but for the floor value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unbreakable</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">base_damage</span><span class="p">)</span>
+        <span class="n">pct</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">durability_percent</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">pct</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">DAMAGE_SCALING_THRESHOLD</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">base_damage</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">pct</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">DAMAGE_SCALING_FLOOR</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">pct</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">DAMAGE_SCALING_THRESHOLD</span>
+            <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">DAMAGE_SCALING_FLOOR</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">DAMAGE_SCALING_FLOOR</span><span class="p">)</span> <span class="o">*</span> <span class="n">t</span>
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">base_damage</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="DurabilityMixin.durability_label">
+<a class="viewcode-back" href="../../../src.items.html#src.items.items.DurabilityMixin.durability_label">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">durability_label</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Short ``&quot;cur/max&quot;`` label, used by tooltips.</span>
+
+<span class="sd">        Unbreakable items return ``&quot;∞&quot;`` so the player can see at a</span>
+<span class="sd">        glance that the item never wears out.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unbreakable</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;∞&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">durability</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_durability</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+<div class="viewcode-block" id="DurabilityMixin.durability_state">
+<a class="viewcode-back" href="../../../src.items.html#src.items.items.DurabilityMixin.durability_state">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">durability_state</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Coarse wear tier for UI tinting.</span>
+
+<span class="sd">        Returns one of ``&quot;full&quot;`` (&gt;= 75%), ``&quot;good&quot;`` (&gt;= 50%),</span>
+<span class="sd">        ``&quot;worn&quot;`` (&gt;= 25%), ``&quot;low&quot;`` (&gt; 0%), ``&quot;broken&quot;``.</span>
+<span class="sd">        Unbreakable items always report ``&quot;full&quot;``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unbreakable</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;full&quot;</span>
+        <span class="n">pct</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">durability_percent</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">pct</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;broken&quot;</span>
+        <span class="k">if</span> <span class="n">pct</span> <span class="o">&lt;</span> <span class="mf">0.25</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;low&quot;</span>
+        <span class="k">if</span> <span class="n">pct</span> <span class="o">&lt;</span> <span class="mf">0.50</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;worn&quot;</span>
+        <span class="k">if</span> <span class="n">pct</span> <span class="o">&lt;</span> <span class="mf">0.75</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;good&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;full&quot;</span></div>
+</div>
+
+
 <div class="viewcode-block" id="Item">
 <a class="viewcode-back" href="../../../src.items.html#src.items.items.Item">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Item</span><span class="p">:</span>
@@ -141,13 +350,18 @@
 
 <div class="viewcode-block" id="Weapon">
 <a class="viewcode-back" href="../../../src.items.html#src.items.items.Weapon">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">Weapon</span><span class="p">(</span><span class="n">Item</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Weapon</span><span class="p">(</span><span class="n">Item</span><span class="p">,</span> <span class="n">DurabilityMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Base class for weapon items, providing shared combat statistics.</span>
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        damage (int): Base damage dealt by the weapon.</span>
 <span class="sd">        durability (int): Current weapon durability points.</span>
+<span class="sd">        max_durability (int): Original (pristine) durability the weapon</span>
+<span class="sd">            started with.  Lets the UI render an accurate wear bar</span>
+<span class="sd">            even as the live ``durability`` ticks down.</span>
+<span class="sd">        unbreakable (bool): When ``True`` the weapon never loses</span>
+<span class="sd">            durability (reserved for quest/event weapons).</span>
 <span class="sd">        cooldown (int): Attack cooldown in milliseconds.</span>
 <span class="sd">        weapon_class (str): Classification (e.g., melee, ranged).</span>
 <span class="sd">        on_hit_effects (list): Optional list of effect dicts applied to a</span>
@@ -163,9 +377,17 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">damage</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;damage&quot;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">durability</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;durability&quot;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cooldown</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;cooldown&quot;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">weapon_class</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;weapon_class&quot;</span><span class="p">]</span>
+        <span class="c1"># ``max_durability`` is read from the joined row as</span>
+        <span class="c1"># ``weapon_max_durability`` (it shares its base name with the</span>
+        <span class="c1"># tool table).  When the column doesn&#39;t exist (older DB) the</span>
+        <span class="c1"># live ``durability`` value doubles as the max so behaviour</span>
+        <span class="c1"># matches the pre-durability-system code.</span>
+        <span class="n">max_dur</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;weapon_max_durability&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">max_dur</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">max_dur</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_durability&quot;</span><span class="p">,</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;durability&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_durability</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;durability&quot;</span><span class="p">],</span> <span class="n">max_dur</span><span class="p">)</span>
         <span class="c1"># Per-weapon on-hit effects (list of effect dicts).</span>
         <span class="c1"># We keep it as a plain attribute even if the column is missing so</span>
         <span class="c1"># that existing items (with no on-hit effects) keep working.</span>
@@ -185,10 +407,14 @@
 <a class="viewcode-back" href="../../../src.items.html#src.items.items.Weapon._get_base_stats_text">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_base_stats_text</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">weapon_label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Weapon&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">weapon_class</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unbreakable</span><span class="p">:</span>
+            <span class="n">dur_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Durability&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: ∞&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dur_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Durability&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">durability</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_durability</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">return</span> <span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Type&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">weapon_label</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Damage&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">damage</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Durability&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">durability</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dur_str</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
         <span class="p">)</span></div>
 </div>
 
@@ -354,26 +580,94 @@
 
 <div class="viewcode-block" id="Armor">
 <a class="viewcode-back" href="../../../src.items.html#src.items.items.Armor">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">Armor</span><span class="p">(</span><span class="n">Item</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Armor</span><span class="p">(</span><span class="n">Item</span><span class="p">,</span> <span class="n">DurabilityMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Represents an armor item that can be equipped in a specific equipment slot.</span>
+
+<span class="sd">    Armor inherits from :class:`DurabilityMixin` so it shares the same</span>
+<span class="sd">    wear-bar UX as weapons and tools: each time the wearer takes a hit</span>
+<span class="sd">    the equipped piece loses a point of ``durability``; the wear bar in</span>
+<span class="sd">    the inventory/hotbar renders the live value, and a piece that has</span>
+<span class="sd">    hit zero contributes 0 defense.  Armor that has never been hit stays</span>
+<span class="sd">    at ``max_durability`` for its entire lifetime.</span>
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        slot_type (str): The equipment slot this armor belongs to</span>
 <span class="sd">                         (&quot;helmet&quot;, &quot;chestplate&quot;, &quot;leggings&quot;, &quot;boots&quot;,</span>
 <span class="sd">                          &quot;charm&quot;, &quot;gloves&quot;, &quot;ring&quot;, &quot;belt&quot;).</span>
-<span class="sd">        defense_value (int): Flat damage reduction this armor provides.</span>
+<span class="sd">        defense_value (int): Pristine flat damage reduction this armor</span>
+<span class="sd">            provides.  The *effective* contribution to the player&#39;s</span>
+<span class="sd">            ``character.defense`` is scaled by the remaining</span>
+<span class="sd">            durability via :py:meth:`get_effective_defense` so a worn</span>
+<span class="sd">            chestplate still feels worn.</span>
+<span class="sd">        durability (int): Current wear points (set by</span>
+<span class="sd">            :py:meth:`DurabilityMixin._init_durability`).</span>
+<span class="sd">        max_durability (int): Pristine wear budget.</span>
 
 <span class="sd">    Methods:</span>
 <span class="sd">        __init__(row: dict):</span>
 <span class="sd">            Initialize armor properties from a database row.</span>
+<span class="sd">        get_effective_defense():</span>
+<span class="sd">            Return the damage-reduction contribution of this piece,</span>
+<span class="sd">            scaled by remaining durability.</span>
 <span class="sd">        get_tooltip_text():</span>
-<span class="sd">            Return formatted tooltip text including armor type and defense.</span>
+<span class="sd">            Return formatted tooltip text including armor type,</span>
+<span class="sd">            defense, and durability.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Defense scaling curve mirrors the weapon damage curve so a worn</span>
+    <span class="c1"># armor piece feels the same as a worn weapon: above 25% durability</span>
+    <span class="c1"># you get the full defense, between 0% and 25% the contribution</span>
+    <span class="c1"># interpolates down to the floor (50% by default), and broken</span>
+    <span class="c1"># pieces (0% durability) contribute the floor value too -- never</span>
+    <span class="c1"># zero, so a broken chestplate is still slightly better than</span>
+    <span class="c1"># nothing.</span>
+    <span class="n">DEFENSE_SCALING_THRESHOLD</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.25</span>
+    <span class="n">DEFENSE_SCALING_FLOOR</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">slot_type</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;slot_type&quot;</span><span class="p">,</span> <span class="s2">&quot;helmet&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">defense_value</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;defense_value&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="c1"># ``armor_durability`` is the alias used by the DB query&#39;s LEFT</span>
+        <span class="c1"># JOIN on the ``armor`` table.  Fall back to ``max_durability``</span>
+        <span class="c1"># (flat row variant) and finally to the live value so the item</span>
+        <span class="c1"># is at least &quot;fully repaired&quot; out of the box.</span>
+        <span class="n">current_dur</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;armor_durability&quot;</span><span class="p">,</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;durability&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+        <span class="n">max_dur</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;armor_max_durability&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">max_dur</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">max_dur</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_durability&quot;</span><span class="p">,</span> <span class="n">current_dur</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_durability</span><span class="p">(</span><span class="n">current_dur</span> <span class="k">if</span> <span class="n">current_dur</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">100</span><span class="p">,</span> <span class="n">max_dur</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Armor.get_effective_defense">
+<a class="viewcode-back" href="../../../src.items.html#src.items.items.Armor.get_effective_defense">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_effective_defense</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the damage-reduction contribution of this piece,</span>
+<span class="sd">        scaled by remaining durability.</span>
+
+<span class="sd">        Mirrors :py:meth:`DurabilityMixin.get_effective_damage` for</span>
+<span class="sd">        weapons: above :py:attr:`DEFENSE_SCALING_THRESHOLD` the piece</span>
+<span class="sd">        provides its full ``defense_value``; between 0% and the</span>
+<span class="sd">        threshold it interpolates linearly down to</span>
+<span class="sd">        :py:attr:`DEFENSE_SCALING_FLOOR` (50% by default).  Broken</span>
+<span class="sd">        pieces (0% durability) still provide the floor value, floored</span>
+<span class="sd">        at 1 so a worn-down chestplate never becomes literal dead</span>
+<span class="sd">        weight that *reduces* the player&#39;s defense.</span>
+
+<span class="sd">        Unbreakable armor pieces always return the full</span>
+<span class="sd">        ``defense_value``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unbreakable</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">defense_value</span><span class="p">)</span>
+        <span class="n">pct</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">durability_percent</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">pct</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">DEFENSE_SCALING_THRESHOLD</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">defense_value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">pct</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">DEFENSE_SCALING_FLOOR</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">pct</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">DEFENSE_SCALING_THRESHOLD</span>
+            <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">DEFENSE_SCALING_FLOOR</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">DEFENSE_SCALING_FLOOR</span><span class="p">)</span> <span class="o">*</span> <span class="n">t</span>
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">defense_value</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)))</span></div>
+
 
 <div class="viewcode-block" id="Armor.get_tooltip_text">
 <a class="viewcode-back" href="../../../src.items.html#src.items.items.Armor.get_tooltip_text">[docs]</a>
@@ -385,9 +679,21 @@
             <span class="s2">&quot;ring&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Ring&quot;</span><span class="p">),</span> <span class="s2">&quot;belt&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Belt&quot;</span><span class="p">),</span>
         <span class="p">}</span>
         <span class="n">slot_label</span> <span class="o">=</span> <span class="n">slot_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slot_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">slot_type</span><span class="o">.</span><span class="n">capitalize</span><span class="p">())</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unbreakable</span><span class="p">:</span>
+            <span class="n">dur_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Durability&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: ∞&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dur_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Durability&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">durability</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_durability</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="c1"># Show the *effective* defense so the player understands why a</span>
+        <span class="c1"># worn piece suddenly feels weaker than the displayed +N.</span>
+        <span class="n">effective</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_effective_defense</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">effective</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">defense_value</span><span class="p">:</span>
+            <span class="n">defense_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Defense&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: +</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">defense_value</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">effective</span><span class="si">}</span><span class="s2"> effective)&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">defense_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Defense&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: +</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">defense_value</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="n">stats</span> <span class="o">=</span> <span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Type&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Armor&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">slot_label</span><span class="si">}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Defense&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: +</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">defense_value</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">defense_str</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dur_str</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;Price: $</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">price</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">stats</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span></div>
@@ -520,7 +826,7 @@
 
 <div class="viewcode-block" id="Tool">
 <a class="viewcode-back" href="../../../src.items.html#src.items.items.Tool">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">Tool</span><span class="p">(</span><span class="n">Item</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Tool</span><span class="p">(</span><span class="n">Item</span><span class="p">,</span> <span class="n">DurabilityMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Represents a utility tool used to perform a specific in-world action</span>
 <span class="sd">    (fishing, mining, woodcutting, etc.). Tools are not weapons, not</span>
@@ -529,33 +835,64 @@
 <span class="sd">    Attributes:</span>
 <span class="sd">        tool_type (str): Sub-category of the tool</span>
 <span class="sd">            (e.g. &quot;fishing&quot;, &quot;pickaxe&quot;, &quot;axe&quot;).</span>
-<span class="sd">        durability (int): Current durability points.</span>
+<span class="sd">        durability (int): Current durability points (live value).</span>
+<span class="sd">        max_durability (int): Pristine durability the tool started with;</span>
+<span class="sd">            used to draw the wear bar in the inventory / hotbar.</span>
+<span class="sd">        unbreakable (bool): ``True`` for tools that never wear down.</span>
 <span class="sd">        power (int): Generic effectiveness multiplier (e.g. catch power</span>
 <span class="sd">            bonus for a fishing rod, mining speed for a pickaxe).</span>
+<span class="sd">        gather_type (str | None): Resource type this tool can gather.</span>
+<span class="sd">            ``&quot;wood&quot;`` matches ``choppable`` tiles; ``&quot;stone&quot;`` or</span>
+<span class="sd">            ``&quot;ore&quot;`` matches ``minable`` tiles. ``None`` means the</span>
+<span class="sd">            tool does not gather (e.g. a fishing rod).</span>
+<span class="sd">        gather_yield_min (int): Minimum items produced per gather.</span>
+<span class="sd">        gather_yield_max (int): Maximum items produced per gather.</span>
 
 <span class="sd">    Methods:</span>
 <span class="sd">        __init__(row: dict):</span>
 <span class="sd">            Initialize tool properties from a database row.</span>
 <span class="sd">        get_tooltip_text():</span>
-<span class="sd">            Return formatted tooltip text including tool type and power.</span>
+<span class="sd">            Return formatted tooltip text including tool type, power,</span>
+<span class="sd">            and the resource it gathers (if any).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tool_type</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tool_type&quot;</span><span class="p">,</span> <span class="s2">&quot;generic&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;generic&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">durability</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tool_durability&quot;</span><span class="p">,</span>
-                                  <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;durability&quot;</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span> <span class="ow">or</span> <span class="mi">100</span>
+        <span class="n">current_dur</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tool_durability&quot;</span><span class="p">,</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;durability&quot;</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span> <span class="ow">or</span> <span class="mi">100</span>
+        <span class="c1"># ``tool_max_durability`` is the alias used by the DB query&#39;s</span>
+        <span class="c1"># LEFT JOIN on the ``tools`` table.  Fall back to ``max_durability``</span>
+        <span class="c1"># for callers that pre-compute a flat row, and finally to the</span>
+        <span class="c1"># current value so the item is at least &quot;fully repaired&quot;.</span>
+        <span class="n">max_dur</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tool_max_durability&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">max_dur</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">max_dur</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_durability&quot;</span><span class="p">,</span> <span class="n">current_dur</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_durability</span><span class="p">(</span><span class="n">current_dur</span><span class="p">,</span> <span class="n">max_dur</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">power</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;power&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gather_type</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gather_type&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gather_yield_min</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gather_yield_min&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gather_yield_max</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gather_yield_max&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">gather_yield_min</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Tool.get_tooltip_text">
 <a class="viewcode-back" href="../../../src.items.html#src.items.items.Tool.get_tooltip_text">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_tooltip_text</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">type_label</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tool_type</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">title</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unbreakable</span><span class="p">:</span>
+            <span class="n">dur_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Durability&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: ∞&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dur_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Durability&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">durability</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_durability</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="n">stats</span> <span class="o">=</span> <span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Type&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Tool&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">type_label</span><span class="si">}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Durability&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">durability</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dur_str</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Power&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: +</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">power</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;Price: $</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">price</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gather_type</span><span class="p">:</span>
+            <span class="n">gather_label</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gather_type</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">title</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gather_yield_min</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">gather_yield_max</span><span class="p">:</span>
+                <span class="n">yield_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gather_yield_min</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">yield_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">gather_yield_min</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">gather_yield_max</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">stats</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Gathers&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">gather_label</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">yield_str</span><span class="si">}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="n">stats</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;Price: $</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">price</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">stats</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span></div>
 </div>
 
@@ -711,6 +1048,8 @@
         <span class="k">return</span> <span class="n">Armor</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">item_type</span> <span class="o">==</span> <span class="s2">&quot;tool&quot;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">Tool</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">item_type</span> <span class="o">==</span> <span class="s2">&quot;resource&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Item</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">item_type</span> <span class="o">==</span> <span class="s2">&quot;fish&quot;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">Fish</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>

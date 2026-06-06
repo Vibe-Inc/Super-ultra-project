@@ -108,8 +108,14 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="src.items.items.Armor">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.items.items.</span></span><span class="sig-name descname"><span class="pre">Armor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">row</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Armor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.Armor" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#src.items.items.Item" title="src.items.items.Item"><code class="xref py py-class docutils literal notranslate"><span class="pre">Item</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#src.items.items.Item" title="src.items.items.Item"><code class="xref py py-class docutils literal notranslate"><span class="pre">Item</span></code></a>, <a class="reference internal" href="#src.items.items.DurabilityMixin" title="src.items.items.DurabilityMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">DurabilityMixin</span></code></a></p>
 <p>Represents an armor item that can be equipped in a specific equipment slot.</p>
+<p>Armor inherits from <a class="reference internal" href="#src.items.items.DurabilityMixin" title="src.items.items.DurabilityMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">DurabilityMixin</span></code></a> so it shares the same
+wear-bar UX as weapons and tools: each time the wearer takes a hit
+the equipped piece loses a point of <code class="docutils literal notranslate"><span class="pre">durability</span></code>; the wear bar in
+the inventory/hotbar renders the live value, and a piece that has
+hit zero contributes 0 defense.  Armor that has never been hit stays
+at <code class="docutils literal notranslate"><span class="pre">max_durability</span></code> for its entire lifetime.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="src.items.items.Armor.slot_type">
 <span class="sig-name descname"><span class="pre">slot_type</span></span><a class="headerlink" href="#src.items.items.Armor.slot_type" title="Link to this definition"></a></dt>
@@ -128,7 +134,34 @@
 <dl class="py attribute">
 <dt class="sig sig-object py" id="src.items.items.Armor.defense_value">
 <span class="sig-name descname"><span class="pre">defense_value</span></span><a class="headerlink" href="#src.items.items.Armor.defense_value" title="Link to this definition"></a></dt>
-<dd><p>Flat damage reduction this armor provides.</p>
+<dd><p>Pristine flat damage reduction this armor
+provides.  The <em>effective</em> contribution to the player’s
+<code class="docutils literal notranslate"><span class="pre">character.defense</span></code> is scaled by the remaining
+durability via <a class="reference internal" href="#id0" title="src.items.items.Armor.get_effective_defense"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_effective_defense()</span></code></a> so a worn
+chestplate still feels worn.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.Armor.durability">
+<span class="sig-name descname"><span class="pre">durability</span></span><a class="headerlink" href="#src.items.items.Armor.durability" title="Link to this definition"></a></dt>
+<dd><p>Current wear points (set by
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">DurabilityMixin._init_durability()</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.Armor.max_durability">
+<span class="sig-name descname"><span class="pre">max_durability</span></span><a class="headerlink" href="#src.items.items.Armor.max_durability" title="Link to this definition"></a></dt>
+<dd><p>Pristine wear budget.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>int</p>
@@ -144,14 +177,49 @@ Initialize armor properties from a database row.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="src.items.items.Armor.get_tooltip_text">
-<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Armor.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.Armor.get_tooltip_text" title="Link to this definition"></a></dt>
-<dd><p>Return formatted tooltip text including armor type and defense.</p>
+<dt class="sig sig-object py" id="src.items.items.Armor.get_effective_defense">
+<span class="sig-name descname"><span class="pre">get_effective_defense</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Armor.get_effective_defense"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.Armor.get_effective_defense" title="Link to this definition"></a></dt>
+<dd><p>Return the damage-reduction contribution of this piece,
+scaled by remaining durability.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="src.items.items.Armor.get_tooltip_text">
+<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Armor.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.Armor.get_tooltip_text" title="Link to this definition"></a></dt>
+<dd><p>Return formatted tooltip text including armor type,
+defense, and durability.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.Armor.DEFENSE_SCALING_FLOOR">
+<span class="sig-name descname"><span class="pre">DEFENSE_SCALING_FLOOR</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.5</span></em><a class="headerlink" href="#src.items.items.Armor.DEFENSE_SCALING_FLOOR" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.Armor.DEFENSE_SCALING_THRESHOLD">
+<span class="sig-name descname"><span class="pre">DEFENSE_SCALING_THRESHOLD</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.25</span></em><a class="headerlink" href="#src.items.items.Armor.DEFENSE_SCALING_THRESHOLD" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="id0">
-<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Armor.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_effective_defense</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/src/items/items.html#Armor.get_effective_defense"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dd><p>Return the damage-reduction contribution of this piece,
+scaled by remaining durability.</p>
+<p>Mirrors <a class="reference internal" href="#src.items.items.DurabilityMixin.get_effective_damage" title="src.items.items.DurabilityMixin.get_effective_damage"><code class="xref py py-meth docutils literal notranslate"><span class="pre">DurabilityMixin.get_effective_damage()</span></code></a> for
+weapons: above <a class="reference internal" href="#src.items.items.Armor.DEFENSE_SCALING_THRESHOLD" title="src.items.items.Armor.DEFENSE_SCALING_THRESHOLD"><code class="xref py py-attr docutils literal notranslate"><span class="pre">DEFENSE_SCALING_THRESHOLD</span></code></a> the piece
+provides its full <code class="docutils literal notranslate"><span class="pre">defense_value</span></code>; between 0% and the
+threshold it interpolates linearly down to
+<a class="reference internal" href="#src.items.items.Armor.DEFENSE_SCALING_FLOOR" title="src.items.items.Armor.DEFENSE_SCALING_FLOOR"><code class="xref py py-attr docutils literal notranslate"><span class="pre">DEFENSE_SCALING_FLOOR</span></code></a> (50% by default).  Broken
+pieces (0% durability) still provide the floor value, floored
+at 1 so a worn-down chestplate never becomes literal dead
+weight that <em>reduces</em> the player’s defense.</p>
+<p>Unbreakable armor pieces always return the full
+<code class="docutils literal notranslate"><span class="pre">defense_value</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Armor.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -205,16 +273,130 @@ least one effect was applied.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id1">
-<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Consumable.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Consumable.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id2">
-<span class="sig-name descname"><span class="pre">use</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Consumable.use"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">use</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Consumable.use"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
 <dd><p>Apply the consumable’s effects to the target.</p>
 <p>Returns True when at least one effect was applied (HP, mana, or
 a status effect), False otherwise.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.items.items.DurabilityMixin">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.items.items.</span></span><span class="sig-name descname"><span class="pre">DurabilityMixin</span></span><a class="reference internal" href="_modules/src/items/items.html#DurabilityMixin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.DurabilityMixin" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Shared durability state and behaviour for <code class="docutils literal notranslate"><span class="pre">Weapon</span></code> and <code class="docutils literal notranslate"><span class="pre">Tool</span></code>.</p>
+<p>The mixin centralises every durability concern so the two concrete
+item classes don’t have to duplicate it:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">max_durability</span></code> is the pristine value the item started with.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">durability</span></code> is the live, ticking-down value.  It is <strong>clamped
+to ``[0, max_durability]`` on assignment</strong> so callers can’t push
+the item into negative or super-repaired states.</p></li>
+<li><p>Items with <code class="docutils literal notranslate"><span class="pre">unbreakable</span> <span class="pre">=</span> <span class="pre">True</span></code> never lose durability and
+always report as fully repaired.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">apply_durability_damage</span></code> returns <code class="docutils literal notranslate"><span class="pre">True</span></code> exactly once, on the
+call that drove durability to zero, so the caller can fire
+“your X broke!” feedback precisely.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">repair</span></code> clamps to the max and returns the amount actually
+applied, useful for tooltips (“Repaired 12/30”).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">get_effective_damage</span></code> scales weapon damage by remaining
+durability so a worn blade actually feels worn: at 0% it deals
+roughly 50% damage (floor 1); above 25% it deals full damage.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">durability_percent</span></code> is used by the UI for the bar fill.</p></li>
+</ul>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.DurabilityMixin.DAMAGE_SCALING_FLOOR">
+<span class="sig-name descname"><span class="pre">DAMAGE_SCALING_FLOOR</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.5</span></em><a class="headerlink" href="#src.items.items.DurabilityMixin.DAMAGE_SCALING_FLOOR" title="Link to this definition"></a></dt>
+<dd><p>Damage multiplier at 0% durability (the floor).  Between the
+threshold and 0% the multiplier interpolates linearly.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.DurabilityMixin.DAMAGE_SCALING_THRESHOLD">
+<span class="sig-name descname"><span class="pre">DAMAGE_SCALING_THRESHOLD</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.25</span></em><a class="headerlink" href="#src.items.items.DurabilityMixin.DAMAGE_SCALING_THRESHOLD" title="Link to this definition"></a></dt>
+<dd><p>Damage scaling threshold.  Below this fraction of max durability
+the weapon starts to lose damage output.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.items.items.DurabilityMixin.apply_durability_damage">
+<span class="sig-name descname"><span class="pre">apply_durability_damage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/src/items/items.html#DurabilityMixin.apply_durability_damage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.DurabilityMixin.apply_durability_damage" title="Link to this definition"></a></dt>
+<dd><p>Reduce <code class="docutils literal notranslate"><span class="pre">durability</span></code> by <code class="docutils literal notranslate"><span class="pre">amount</span></code> and report whether the
+item <em>just</em> broke on this call.</p>
+<p>Returns <code class="docutils literal notranslate"><span class="pre">True</span></code> exactly once per item lifetime: the call that
+brought <code class="docutils literal notranslate"><span class="pre">durability</span></code> from <code class="docutils literal notranslate"><span class="pre">&gt;0</span></code> to <code class="docutils literal notranslate"><span class="pre">&lt;=0</span></code>.  Subsequent calls
+while already broken also return <code class="docutils literal notranslate"><span class="pre">True</span></code> until you <code class="docutils literal notranslate"><span class="pre">repair</span></code>
+above zero, but UI feedback is normally only fired off the
+first transition.</p>
+<p>Unbreakable items never lose durability and always return
+<code class="docutils literal notranslate"><span class="pre">False</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.items.items.DurabilityMixin.durability_label">
+<span class="sig-name descname"><span class="pre">durability_label</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/src/items/items.html#DurabilityMixin.durability_label"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.DurabilityMixin.durability_label" title="Link to this definition"></a></dt>
+<dd><p>Short <code class="docutils literal notranslate"><span class="pre">&quot;cur/max&quot;</span></code> label, used by tooltips.</p>
+<p>Unbreakable items return <code class="docutils literal notranslate"><span class="pre">&quot;∞&quot;</span></code> so the player can see at a
+glance that the item never wears out.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="src.items.items.DurabilityMixin.durability_max">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">durability_max</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#src.items.items.DurabilityMixin.durability_max" title="Link to this definition"></a></dt>
+<dd><p>Read-only alias used by UI/serialisation code.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.items.items.DurabilityMixin.durability_percent">
+<span class="sig-name descname"><span class="pre">durability_percent</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/src/items/items.html#DurabilityMixin.durability_percent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.DurabilityMixin.durability_percent" title="Link to this definition"></a></dt>
+<dd><p>Current durability as a <code class="docutils literal notranslate"><span class="pre">0.0</span></code>..``1.0`` fraction of max.</p>
+<p>Returns <code class="docutils literal notranslate"><span class="pre">1.0</span></code> for unbreakable items so UI bars don’t render
+them as empty.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.items.items.DurabilityMixin.durability_state">
+<span class="sig-name descname"><span class="pre">durability_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/src/items/items.html#DurabilityMixin.durability_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.DurabilityMixin.durability_state" title="Link to this definition"></a></dt>
+<dd><p>Coarse wear tier for UI tinting.</p>
+<p>Returns one of <code class="docutils literal notranslate"><span class="pre">&quot;full&quot;</span></code> (&gt;= 75%), <code class="docutils literal notranslate"><span class="pre">&quot;good&quot;</span></code> (&gt;= 50%),
+<code class="docutils literal notranslate"><span class="pre">&quot;worn&quot;</span></code> (&gt;= 25%), <code class="docutils literal notranslate"><span class="pre">&quot;low&quot;</span></code> (&gt; 0%), <code class="docutils literal notranslate"><span class="pre">&quot;broken&quot;</span></code>.
+Unbreakable items always report <code class="docutils literal notranslate"><span class="pre">&quot;full&quot;</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.items.items.DurabilityMixin.get_effective_damage">
+<span class="sig-name descname"><span class="pre">get_effective_damage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_damage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/src/items/items.html#DurabilityMixin.get_effective_damage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.DurabilityMixin.get_effective_damage" title="Link to this definition"></a></dt>
+<dd><p>Scale <code class="docutils literal notranslate"><span class="pre">base_damage</span></code> by remaining durability.</p>
+<p>Above <a class="reference internal" href="#src.items.items.DurabilityMixin.DAMAGE_SCALING_THRESHOLD" title="src.items.items.DurabilityMixin.DAMAGE_SCALING_THRESHOLD"><code class="xref py py-attr docutils literal notranslate"><span class="pre">DAMAGE_SCALING_THRESHOLD</span></code></a> (25% by default) the
+weapon deals its full base damage.  Between the threshold and
+0% the damage scales linearly from 100% down to
+<a class="reference internal" href="#src.items.items.DurabilityMixin.DAMAGE_SCALING_FLOOR" title="src.items.items.DurabilityMixin.DAMAGE_SCALING_FLOOR"><code class="xref py py-attr docutils literal notranslate"><span class="pre">DAMAGE_SCALING_FLOOR</span></code></a> (50% by default), and is
+floored at 1 so a worn weapon still chips the enemy.</p>
+<p>Broken items (<code class="docutils literal notranslate"><span class="pre">durability</span> <span class="pre">==</span> <span class="pre">0</span></code>) are treated as “bare
+hands” – they still hit, but for the floor value.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.items.items.DurabilityMixin.is_broken">
+<span class="sig-name descname"><span class="pre">is_broken</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/src/items/items.html#DurabilityMixin.is_broken"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.DurabilityMixin.is_broken" title="Link to this definition"></a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">True</span></code> when the item has no durability left and can no longer
+be used for its primary action (attack, chop, mine, …).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.items.items.DurabilityMixin.repair">
+<span class="sig-name descname"><span class="pre">repair</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/src/items/items.html#DurabilityMixin.repair"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.DurabilityMixin.repair" title="Link to this definition"></a></dt>
+<dd><p>Add <code class="docutils literal notranslate"><span class="pre">amount</span></code> durability, clamping to <code class="docutils literal notranslate"><span class="pre">max_durability</span></code>.</p>
+<p>Returns the amount actually applied (useful for tooltips
+showing “Repaired 12/40”).  <code class="docutils literal notranslate"><span class="pre">repair</span></code> clears the broken flag
+so future damage can fire the “broke!” transition again.</p>
 </dd></dl>
 
 </dd></dl>
@@ -425,18 +607,18 @@ that follow the player character.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="id3">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">description</span></span><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id4">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">description</span></span><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id4">
-<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Item.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Item.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="id5">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id6">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -445,8 +627,8 @@ that follow the player character.</p>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id6">
-<span class="sig-name descname"><span class="pre">use</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Item.use"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id7">
+<span class="sig-name descname"><span class="pre">use</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Item.use"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -545,8 +727,8 @@ Initialize melee weapon properties from a database row.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id7">
-<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#MeleeWeapon.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id8">
+<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#MeleeWeapon.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -614,8 +796,8 @@ Initialize ranged weapon properties from a database row.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id8">
-<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#RangedWeapon.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id9">
+<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#RangedWeapon.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -623,7 +805,7 @@ Initialize ranged weapon properties from a database row.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="src.items.items.Tool">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.items.items.</span></span><span class="sig-name descname"><span class="pre">Tool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">row</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Tool"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.Tool" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#src.items.items.Item" title="src.items.items.Item"><code class="xref py py-class docutils literal notranslate"><span class="pre">Item</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#src.items.items.Item" title="src.items.items.Item"><code class="xref py py-class docutils literal notranslate"><span class="pre">Item</span></code></a>, <a class="reference internal" href="#src.items.items.DurabilityMixin" title="src.items.items.DurabilityMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">DurabilityMixin</span></code></a></p>
 <p>Represents a utility tool used to perform a specific in-world action
 (fishing, mining, woodcutting, etc.). Tools are not weapons, not
 consumables, and usually do not stack.</p>
@@ -642,10 +824,33 @@ consumables, and usually do not stack.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="src.items.items.Tool.durability">
 <span class="sig-name descname"><span class="pre">durability</span></span><a class="headerlink" href="#src.items.items.Tool.durability" title="Link to this definition"></a></dt>
-<dd><p>Current durability points.</p>
+<dd><p>Current durability points (live value).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.Tool.max_durability">
+<span class="sig-name descname"><span class="pre">max_durability</span></span><a class="headerlink" href="#src.items.items.Tool.max_durability" title="Link to this definition"></a></dt>
+<dd><p>Pristine durability the tool started with;
+used to draw the wear bar in the inventory / hotbar.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.Tool.unbreakable">
+<span class="sig-name descname"><span class="pre">unbreakable</span></span><a class="headerlink" href="#src.items.items.Tool.unbreakable" title="Link to this definition"></a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">True</span></code> for tools that never wear down.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
 </dd>
 </dl>
 </dd></dl>
@@ -655,6 +860,42 @@ consumables, and usually do not stack.</p>
 <span class="sig-name descname"><span class="pre">power</span></span><a class="headerlink" href="#src.items.items.Tool.power" title="Link to this definition"></a></dt>
 <dd><p>Generic effectiveness multiplier (e.g. catch power
 bonus for a fishing rod, mining speed for a pickaxe).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.Tool.gather_type">
+<span class="sig-name descname"><span class="pre">gather_type</span></span><a class="headerlink" href="#src.items.items.Tool.gather_type" title="Link to this definition"></a></dt>
+<dd><p>Resource type this tool can gather.
+<code class="docutils literal notranslate"><span class="pre">&quot;wood&quot;</span></code> matches <code class="docutils literal notranslate"><span class="pre">choppable</span></code> tiles; <code class="docutils literal notranslate"><span class="pre">&quot;stone&quot;</span></code> or
+<code class="docutils literal notranslate"><span class="pre">&quot;ore&quot;</span></code> matches <code class="docutils literal notranslate"><span class="pre">minable</span></code> tiles. <code class="docutils literal notranslate"><span class="pre">None</span></code> means the
+tool does not gather (e.g. a fishing rod).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.Tool.gather_yield_min">
+<span class="sig-name descname"><span class="pre">gather_yield_min</span></span><a class="headerlink" href="#src.items.items.Tool.gather_yield_min" title="Link to this definition"></a></dt>
+<dd><p>Minimum items produced per gather.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.Tool.gather_yield_max">
+<span class="sig-name descname"><span class="pre">gather_yield_max</span></span><a class="headerlink" href="#src.items.items.Tool.gather_yield_max" title="Link to this definition"></a></dt>
+<dd><p>Maximum items produced per gather.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>int</p>
@@ -672,12 +913,13 @@ Initialize tool properties from a database row.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="src.items.items.Tool.get_tooltip_text">
 <span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Tool.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.Tool.get_tooltip_text" title="Link to this definition"></a></dt>
-<dd><p>Return formatted tooltip text including tool type and power.</p>
+<dd><p>Return formatted tooltip text including tool type, power,
+and the resource it gathers (if any).</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id9">
-<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Tool.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id10">
+<span class="sig-name descname"><span class="pre">get_tooltip_text</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Tool.get_tooltip_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -685,7 +927,7 @@ Initialize tool properties from a database row.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="src.items.items.Weapon">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.items.items.</span></span><span class="sig-name descname"><span class="pre">Weapon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">row</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/items/items.html#Weapon"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.items.items.Weapon" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#src.items.items.Item" title="src.items.items.Item"><code class="xref py py-class docutils literal notranslate"><span class="pre">Item</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#src.items.items.Item" title="src.items.items.Item"><code class="xref py py-class docutils literal notranslate"><span class="pre">Item</span></code></a>, <a class="reference internal" href="#src.items.items.DurabilityMixin" title="src.items.items.DurabilityMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">DurabilityMixin</span></code></a></p>
 <p>Base class for weapon items, providing shared combat statistics.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="src.items.items.Weapon.damage">
@@ -705,6 +947,31 @@ Initialize tool properties from a database row.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.Weapon.max_durability">
+<span class="sig-name descname"><span class="pre">max_durability</span></span><a class="headerlink" href="#src.items.items.Weapon.max_durability" title="Link to this definition"></a></dt>
+<dd><p>Original (pristine) durability the weapon
+started with.  Lets the UI render an accurate wear bar
+even as the live <code class="docutils literal notranslate"><span class="pre">durability</span></code> ticks down.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.items.items.Weapon.unbreakable">
+<span class="sig-name descname"><span class="pre">unbreakable</span></span><a class="headerlink" href="#src.items.items.Weapon.unbreakable" title="Link to this definition"></a></dt>
+<dd><p>When <code class="docutils literal notranslate"><span class="pre">True</span></code> the weapon never loses
+durability (reserved for quest/event weapons).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
 </dd>
 </dl>
 </dd></dl>

@@ -71,6 +71,7 @@
   <h1>Source code for src.core.game</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pytmx</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 <span class="c1"># Ensure project root is on sys.path if this module is executed directly</span>
@@ -103,6 +104,9 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.combat.base_player_combat</span><span class="w"> </span><span class="kn">import</span> <span class="n">PlayerCombatController</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.blackjack</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlackjackGame</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.fishing</span><span class="w"> </span><span class="kn">import</span> <span class="n">FishingController</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.gathering</span><span class="w"> </span><span class="kn">import</span> <span class="n">GatheringController</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.world.gatherable_nodes</span><span class="w"> </span><span class="kn">import</span> <span class="n">GatherableNodeRegistry</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.menus.smeltery</span><span class="w"> </span><span class="kn">import</span> <span class="n">SmelteryMenu</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">database.effects</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">effects_db</span>
 
@@ -638,6 +642,12 @@
             <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;defense_charm&quot;</span><span class="p">),</span>
             <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;leather_gloves&quot;</span><span class="p">),</span>
             <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;fishing_rod&quot;</span><span class="p">),</span>
+            <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;stone_axe&quot;</span><span class="p">),</span>
+            <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;iron_axe&quot;</span><span class="p">),</span>
+            <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;stone_pickaxe&quot;</span><span class="p">),</span>
+            <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;iron_pickaxe&quot;</span><span class="p">),</span>
+            <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;stone_hammer&quot;</span><span class="p">),</span>
+            <span class="n">create_item</span><span class="p">(</span><span class="s2">&quot;iron_hammer&quot;</span><span class="p">),</span>
             <span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">shop_inv</span> <span class="o">=</span> <span class="n">ShopInventory</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="n">shop_items</span><span class="p">)</span>
@@ -787,8 +797,59 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">fishing</span> <span class="o">=</span> <span class="n">FishingController</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">fishing</span> <span class="o">=</span> <span class="kc">None</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fishing</span> <span class="o">=</span> <span class="kc">None</span>
 
+        <span class="c1"># Gathering minigame controller (chop / mine)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gathering</span> <span class="o">=</span> <span class="n">GatheringController</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gathering</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Smeltery workstation overlay (workbench + coke oven + blast furnace).</span>
+        <span class="c1"># The instance is owned by Game so that smelting jobs keep ticking</span>
+        <span class="c1"># even while the overlay is closed.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">smeltery</span> <span class="o">=</span> <span class="n">SmelteryMenu</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to initialise SmelteryMenu: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">smeltery</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Per-map gatherable node registries (currently empty: gathering</span>
+        <span class="c1"># is driven entirely by the is_*_gatherable tile properties on</span>
+        <span class="c1"># the .tmx files -- see src.world.gatherable_nodes).</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gatherables</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">GatherableNodeRegistry</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_build_gatherable_registries</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to build gatherable node registries: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_gatherable_registries</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read :mod:`data.gatherable_nodes` once and group the entries</span>
+<span class="sd">        by ``map_path`` into :class:`GatherableNodeRegistry` instances.</span>
+
+<span class="sd">        The data file is intentionally empty now; the registries exist</span>
+<span class="sd">        so the per-map update / draw hooks in :meth:`Game.update` and</span>
+<span class="sd">        :meth:`Game.draw_scene` keep working without a guard.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">data.gatherable_nodes</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_gatherable_node_defs</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not import data.gatherable_nodes: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">definitions</span> <span class="o">=</span> <span class="n">load_gatherable_node_defs</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;load_gatherable_node_defs() failed: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">for</span> <span class="n">definition</span> <span class="ow">in</span> <span class="n">definitions</span><span class="p">:</span>
+            <span class="n">registry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gatherables</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">definition</span><span class="o">.</span><span class="n">map_path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">registry</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">registry</span> <span class="o">=</span> <span class="n">GatherableNodeRegistry</span><span class="p">(</span><span class="n">definition</span><span class="o">.</span><span class="n">map_path</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">gatherables</span><span class="p">[</span><span class="n">definition</span><span class="o">.</span><span class="n">map_path</span><span class="p">]</span> <span class="o">=</span> <span class="n">registry</span>
+            <span class="n">registry</span><span class="o">.</span><span class="n">add_def</span><span class="p">(</span><span class="n">definition</span><span class="p">)</span>
+        <span class="n">total</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">reg</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span> <span class="k">for</span> <span class="n">reg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">gatherables</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loaded </span><span class="si">{</span><span class="n">total</span><span class="si">}</span><span class="s2"> gatherable node(s) across </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gatherables</span><span class="p">)</span><span class="si">}</span><span class="s2"> map(s)&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Game.reinit_ui">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.reinit_ui">[docs]</a>
@@ -908,6 +969,106 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">use_skill_from_slot</span><span class="p">(</span><span class="n">slot_index</span><span class="p">,</span> <span class="n">aim_direction</span><span class="o">=</span><span class="n">aim_direction</span><span class="p">)</span></div>
 
 
+    <span class="c1"># ------------------------------------------------------------------ #</span>
+    <span class="c1"># Smeltery workstation helpers                                        #</span>
+    <span class="c1"># ------------------------------------------------------------------ #</span>
+
+    <span class="n">SMELTERY_TILE_PROPERTY</span> <span class="o">=</span> <span class="s2">&quot;Is_smeltery_workstation&quot;</span>
+    <span class="n">SMELTERY_INTERACT_RADIUS</span> <span class="o">=</span> <span class="mf">48.0</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_is_smeltery_tile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world_pos</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True if the map tile at ``world_pos`` carries the</span>
+<span class="sd">        smeltery-workstation custom property.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;map&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="p">,</span> <span class="s2">&quot;current_map&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="n">tmx_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span>
+            <span class="n">tmx</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tmx_map</span><span class="p">,</span> <span class="s2">&quot;tmxdata&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tmx_map</span><span class="p">,</span> <span class="s2">&quot;get_tmx_data&quot;</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="kc">None</span><span class="p">)()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">tmx</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="n">tile_x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">world_pos</span><span class="o">.</span><span class="n">x</span> <span class="o">//</span> <span class="n">tmx</span><span class="o">.</span><span class="n">tilewidth</span><span class="p">)</span>
+            <span class="n">tile_y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">world_pos</span><span class="o">.</span><span class="n">y</span> <span class="o">//</span> <span class="n">tmx</span><span class="o">.</span><span class="n">tileheight</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">tmx</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">pytmx</span><span class="o">.</span><span class="n">TiledTileLayer</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">gid</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">tile_y</span><span class="p">][</span><span class="n">tile_x</span><span class="p">]</span>
+                <span class="k">except</span> <span class="p">(</span><span class="ne">IndexError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">gid</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">tile_properties</span> <span class="o">=</span> <span class="n">tmx</span><span class="o">.</span><span class="n">get_tile_properties_by_gid</span><span class="p">(</span><span class="n">gid</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">tile_properties</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="n">tile_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SMELTERY_TILE_PROPERTY</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">val</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;true&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;yes&quot;</span><span class="p">):</span>
+                        <span class="k">return</span> <span class="kc">True</span>
+                <span class="k">elif</span> <span class="n">val</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_find_nearby_smeltery_tile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the world-space position of the closest smeltery</span>
+<span class="sd">        tile within :pyattr:`SMELTERY_INTERACT_RADIUS`, or ``None`` if</span>
+<span class="sd">        the player is not standing near one.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">tmx_map</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="p">,</span> <span class="s2">&quot;current_map&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">tmx_map</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="n">tmx</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tmx_map</span><span class="p">,</span> <span class="s2">&quot;tmxdata&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">tmx_map</span><span class="o">.</span><span class="n">get_tmx_data</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">tmx</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="n">tile_w</span> <span class="o">=</span> <span class="n">tmx</span><span class="o">.</span><span class="n">tilewidth</span>
+            <span class="n">tile_h</span> <span class="o">=</span> <span class="n">tmx</span><span class="o">.</span><span class="n">tileheight</span>
+            <span class="n">center</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">get_center</span><span class="p">()</span>
+            <span class="n">cx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">center</span><span class="o">.</span><span class="n">x</span> <span class="o">//</span> <span class="n">tile_w</span><span class="p">)</span>
+            <span class="n">cy</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">center</span><span class="o">.</span><span class="n">y</span> <span class="o">//</span> <span class="n">tile_h</span><span class="p">)</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="n">best_pos</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">best_dist</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">for</span> <span class="n">ty</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">cy</span> <span class="o">-</span> <span class="n">r</span><span class="p">),</span> <span class="n">cy</span> <span class="o">+</span> <span class="n">r</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">tx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">cx</span> <span class="o">-</span> <span class="n">r</span><span class="p">),</span> <span class="n">cx</span> <span class="o">+</span> <span class="n">r</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="n">world_x</span> <span class="o">=</span> <span class="n">tx</span> <span class="o">*</span> <span class="n">tile_w</span> <span class="o">+</span> <span class="n">tile_w</span> <span class="o">//</span> <span class="mi">2</span>
+                    <span class="n">world_y</span> <span class="o">=</span> <span class="n">ty</span> <span class="o">*</span> <span class="n">tile_h</span> <span class="o">+</span> <span class="n">tile_h</span> <span class="o">//</span> <span class="mi">2</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_smeltery_tile</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">world_x</span><span class="p">,</span> <span class="n">world_y</span><span class="p">)):</span>
+                        <span class="n">d</span> <span class="o">=</span> <span class="p">(</span><span class="n">world_x</span> <span class="o">-</span> <span class="n">center</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">world_y</span> <span class="o">-</span> <span class="n">center</span><span class="o">.</span><span class="n">y</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+                        <span class="k">if</span> <span class="n">best_dist</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">d</span> <span class="o">&lt;</span> <span class="n">best_dist</span><span class="p">:</span>
+                            <span class="n">best_dist</span> <span class="o">=</span> <span class="n">d</span>
+                            <span class="n">best_pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">world_x</span><span class="p">,</span> <span class="n">world_y</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">best_pos</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">best_dist</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">best_dist</span> <span class="o">&gt;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SMELTERY_INTERACT_RADIUS</span> <span class="o">**</span> <span class="mi">2</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">return</span> <span class="n">best_pos</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_draw_smeltery_hint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Show a floating &#39;Press E to use Smeltery&#39; hint above the</span>
+<span class="sd">        nearest smeltery tile when the player is in range.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;smeltery&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">smeltery</span><span class="o">.</span><span class="n">is_open</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">tile_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_nearby_smeltery_tile</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">tile_pos</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">screen_x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tile_pos</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">camera_offset</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">screen_y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tile_pos</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">camera_offset</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">font</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">tooltip_font_CREDITS</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">&quot;Press E to use Smeltery&quot;</span><span class="p">),</span> <span class="kc">True</span><span class="p">,</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">240</span><span class="p">,</span> <span class="mi">200</span><span class="p">))</span>
+        <span class="n">shadow</span> <span class="o">=</span> <span class="n">font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">&quot;Press E to use Smeltery&quot;</span><span class="p">),</span> <span class="kc">True</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="n">text_rect</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">get_rect</span><span class="p">(</span><span class="n">midbottom</span><span class="o">=</span><span class="p">(</span><span class="n">screen_x</span><span class="p">,</span> <span class="n">screen_y</span> <span class="o">-</span> <span class="mi">8</span><span class="p">))</span>
+        <span class="c1"># Soft backdrop pill for legibility.</span>
+        <span class="n">pad_x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">8</span> <span class="o">*</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">())</span>
+        <span class="n">pad_y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">())</span>
+        <span class="n">bg_rect</span> <span class="o">=</span> <span class="n">text_rect</span><span class="o">.</span><span class="n">inflate</span><span class="p">(</span><span class="n">pad_x</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="n">pad_y</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">bg_surf</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">(</span><span class="n">bg_rect</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">bg_surf</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">160</span><span class="p">),</span> <span class="n">bg_surf</span><span class="o">.</span><span class="n">get_rect</span><span class="p">(),</span> <span class="n">border_radius</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+        <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">bg_surf</span><span class="p">,</span> <span class="n">bg_rect</span><span class="o">.</span><span class="n">topleft</span><span class="p">)</span>
+        <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">shadow</span><span class="p">,</span> <span class="p">(</span><span class="n">text_rect</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">text_rect</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">text_rect</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Game._update_projectiles">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game._update_projectiles">[docs]</a>
@@ -1629,6 +1790,29 @@
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">pass</span>
 
+        <span class="c1"># Update gathering controller</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;gathering&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">gathering</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="c1"># Tick the smeltery overlay so coke oven / blast furnace jobs</span>
+        <span class="c1"># continue to advance even while the overlay is closed.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;smeltery&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">smeltery</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="c1"># Tick gatherable node respawn timers for the current map.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">active_registry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gatherables</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">active_registry</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">active_registry</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
         <span class="c1"># Safety: if current map defines an NPC spawn but NPC is far away (not placed), place it</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">NPC_SPAWNS</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">1000</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">1000</span><span class="p">):</span>
@@ -1849,7 +2033,34 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">fishing</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">pass</span>
+
+        <span class="c1"># Draw coordinate-based gatherable nodes (trees/rocks/ore veins)</span>
+        <span class="c1"># on the current map so they appear in the world.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">active_registry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gatherables</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">active_registry</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">active_registry</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="c1"># Draw the fringe (upper-details) overlay BEFORE the gathering</span>
+        <span class="c1"># UI so the bar and &quot;Press G to ...&quot; hint sit on top of the</span>
+        <span class="c1"># upper halves of trees / rocks and never get hidden behind</span>
+        <span class="c1"># tall tile art.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">draw_fringe_overlay</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;gathering&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">gathering</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="c1"># &quot;Press E to use Smeltery&quot; hint above the nearest workstation tile.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;smeltery&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">smeltery</span><span class="o">.</span><span class="n">is_open</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_draw_smeltery_hint</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">is_interactable</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="p">,</span> <span class="s1">&#39;current_shop_inv&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -1882,6 +2093,18 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">blackjack_game</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="k">pass</span>
+        <span class="c1"># Smeltery workstation overlay (workbench / coke oven / blast furnace).</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;smeltery&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">smeltery</span><span class="o">.</span><span class="n">is_open</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">smeltery</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+                <span class="c1"># Re-draw the inventory&#39;s held item on top of the smeltery</span>
+                <span class="c1"># panel so dragged items stay visible above the overlay.</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">draw_held_item</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">pass</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
         <span class="c1"># Draw debug spawn / effects menus</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">spawn_menu</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
@@ -1940,6 +2163,24 @@
         <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;fishing&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">handled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fishing</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">handled</span><span class="p">:</span>
+                    <span class="k">return</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+        <span class="c1"># Route events to gathering controller (G to gather, K to cancel)</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;gathering&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">handled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gathering</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">handled</span><span class="p">:</span>
+                    <span class="k">return</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+        <span class="c1"># Route events to the smeltery overlay (workbench / coke oven / blast furnace).</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;smeltery&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">smeltery</span><span class="o">.</span><span class="n">is_open</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">handled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">smeltery</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">handled</span><span class="p">:</span>
                     <span class="k">return</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -2044,6 +2285,8 @@
 
                     <span class="c1"># show shop button inside dialog only for merchant NPCs</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">current_dialog</span> <span class="o">=</span> <span class="n">Dialog</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">dialog_lines</span><span class="p">,</span> <span class="n">on_close</span><span class="o">=</span><span class="n">on_close</span><span class="p">,</span> <span class="n">on_shop</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">open_shop</span><span class="p">,</span> <span class="n">show_shop</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">is_merchant</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_nearby_smeltery_tile</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;smeltery&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">smeltery</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="c1"># Otherwise toggle the player&#39;s inventory (open/close)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">toggle_inventory</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">MAIN_player_inv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PLAYER_inventory_equipment</span><span class="p">)</span>
@@ -2070,8 +2313,9 @@
                         <span class="bp">self</span><span class="o">.</span><span class="n">player_combat</span><span class="o">.</span><span class="n">handle_player_attack</span><span class="p">(</span><span class="n">mouse_world_pos</span><span class="p">)</span>
             
             <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="p">,</span> <span class="s1">&#39;hotbar&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">hotbar</span><span class="o">.</span><span class="n">use_active_slot</span><span class="p">()</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">player_inventory_opened</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="p">,</span> <span class="s1">&#39;hotbar&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">hotbar</span><span class="o">.</span><span class="n">use_active_slot</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">PLAYER_inventory_open</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAIN_player_inv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PLAYER_inventory_equipment</span><span class="p">)</span></div>
 </div>

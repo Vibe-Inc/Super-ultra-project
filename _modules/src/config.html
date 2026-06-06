@@ -413,6 +413,29 @@
 <span class="n">COOLDOWN_TEXT_BG_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">160</span><span class="p">)</span>
 <span class="n">COOLDOWN_TEXT_BORDER_RADIUS</span> <span class="o">=</span> <span class="mi">6</span>
 
+<span class="c1"># ============== DURABILITY BAR (TOOLS / WEAPONS) ==============</span>
+<span class="c1"># Slim wear bar overlaid on item slots (inventory, hotbar, equipment).</span>
+<span class="c1"># The fill colour is picked from DURABILITY_BAR_COLORS based on the</span>
+<span class="c1"># item&#39;s :py:meth:`DurabilityMixin.durability_state` so the player can</span>
+<span class="c1"># read wear at a glance.</span>
+<span class="n">DURABILITY_BAR_HEIGHT</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">DURABILITY_BAR_BG_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">220</span><span class="p">)</span>
+<span class="n">DURABILITY_BAR_BORDER_RADIUS</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">DURABILITY_BAR_INSET</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="c1"># Tier colours keyed by ``durability_state()``:</span>
+<span class="c1">#   full  -&gt; bright green, plenty of life left</span>
+<span class="c1">#   good  -&gt; lime, slightly worn</span>
+<span class="c1">#   worn  -&gt; amber, getting risky</span>
+<span class="c1">#   low   -&gt; orange, almost gone</span>
+<span class="c1">#   broken -&gt; red (paired with a desaturated item render)</span>
+<span class="n">DURABILITY_BAR_COLORS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;full&quot;</span><span class="p">:</span>   <span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="mi">220</span><span class="p">,</span> <span class="mi">110</span><span class="p">,</span> <span class="mi">230</span><span class="p">),</span>
+    <span class="s2">&quot;good&quot;</span><span class="p">:</span>   <span class="p">(</span><span class="mi">170</span><span class="p">,</span> <span class="mi">220</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">230</span><span class="p">),</span>
+    <span class="s2">&quot;worn&quot;</span><span class="p">:</span>   <span class="p">(</span><span class="mi">240</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">230</span><span class="p">),</span>
+    <span class="s2">&quot;low&quot;</span><span class="p">:</span>    <span class="p">(</span><span class="mi">240</span><span class="p">,</span> <span class="mi">140</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">230</span><span class="p">),</span>
+    <span class="s2">&quot;broken&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">220</span><span class="p">,</span> <span class="mi">70</span><span class="p">,</span> <span class="mi">70</span><span class="p">,</span> <span class="mi">230</span><span class="p">),</span>
+<span class="p">}</span>
+
 <div class="viewcode-block" id="set_screen_size">
 <a class="viewcode-back" href="../../src.html#src.config.set_screen_size">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_screen_size</span><span class="p">(</span><span class="n">screen_width</span><span class="p">,</span> <span class="n">screen_height</span><span class="p">):</span>
