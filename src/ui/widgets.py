@@ -228,6 +228,12 @@ class Button:
                 alive.append(p)
         self._hover_particles = alive
 
+        # Keep text position in sync with the current button rect so that
+        # callers may freely reassign ``self.rect`` (e.g. layout code that
+        # resizes / moves buttons each frame) without leaving the label
+        # stranded at its previous coordinates.
+        self.text_rect = self.text_surf.get_rect(center=self.rect.center)
+
         ts = self.text_surf
         tr = self.text_rect
         shd = ts.copy()
