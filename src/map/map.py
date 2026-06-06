@@ -553,7 +553,8 @@ class LocalMap:
         self.current_map = Map(map_file)
         self.current_map_path = map_file 
 
-        self.transition_buffer = 150 
+        self.transition_buffer = 80
+        self.transit_exit_positions = {}
         # Define directional transitions for maps.
         # Each entry maps a direction ('left','right','up','down') to a dict with:
         #  - 'map': target map path
@@ -566,10 +567,10 @@ class LocalMap:
             },
             "maps/test-map-2.tmx": {
                 "left": {"map": "maps/test-map-1.tmx", "spawn": {"type": "side", "side": "right"}},
-                "right": {"map": "maps/test-map-3.tmx", "spawn": {"type": "side", "side": "left"}},
+                "up": {"map": "maps/test-map-3.tmx", "spawn": {"type": "side", "side": "bottom_center"}},
             },
             "maps/test-map-3.tmx": {
-                "left": {"map": "maps/test-map-2.tmx", "spawn": {"type": "side", "side": "right"}},
+                "down": {"map": "maps/test-map-2.tmx", "spawn": {"type": "return"}},
             },
         }
 
@@ -649,14 +650,22 @@ class LocalMap:
             h = player.image.get_height()
 
         direction = None
-        if x + w >= map_width - self.transition_buffer:
-            direction = "right"
-        elif x <= self.transition_buffer:
-            direction = "left"
-        elif player.pos.y + h >= (tmx_data.height * tile_height) - self.transition_buffer:
-            direction = "down"
-        elif player.pos.y <= self.transition_buffer:
-            direction = "up"
+        if (self.current_map_path == "maps/test-map-2.tmx"
+                and player.pos.y <= 10):
+            zone_width = map_width / 12.0
+            player_center_x = x + w / 2
+            if 7 * zone_width <= player_center_x < 9 * zone_width:
+                direction = "up"
+        if direction is None:
+            if x + w >= map_width - self.transition_buffer:
+                direction = "right"
+            elif x <= self.transition_buffer:
+                direction = "left"
+            elif player.pos.y + h >= (tmx_data.height * tile_height) - self.transition_buffer:
+                direction = "down"
+            elif (player.pos.y <= self.transition_buffer
+                  and self.current_map_path != "maps/test-map-2.tmx"):
+                direction = "up"
 
         if direction is not None:
             transitions = self.map_transitions.get(self.current_map_path, {})
@@ -665,6 +674,7 @@ class LocalMap:
                 # remember previous position to pick nearest corner if needed
                 old_x = player.pos.x
                 old_y = player.pos.y
+                self.transit_exit_positions[self.current_map_path] = (old_x, old_y)
 
                 new_map = trans["map"]
                 self.switch_map(new_map)
@@ -749,6 +759,21 @@ class LocalMap:
                             else:
                                 player.pos.y = desired_y
                                 player.pos.x = max(allowed_x_min, min(player.pos.x, allowed_x_max))
+                        elif side == "center":
+                            player.pos.x = (allowed_x_min + allowed_x_max) / 2
+                            player.pos.y = (allowed_y_min + allowed_y_max) / 2
+                        elif side == "bottom_center":
+                            player.pos.x = (allowed_x_min + allowed_x_max) / 2
+                            player.pos.y = bottom_y
+                    elif spawn.get("type") == "return":
+                        saved = self.transit_exit_positions.get(new_map)
+                        if saved:
+                            saved_x, saved_y = saved
+                            player.pos.x = max(allowed_x_min, min(saved_x, allowed_x_max))
+                            player.pos.y = max(allowed_y_min, min(saved_y, allowed_y_max))
+                        else:
+                            player.pos.x = (allowed_x_min + allowed_x_max) / 2
+                            player.pos.y = (allowed_y_min + allowed_y_max) / 2
                     elif spawn.get("type") == "tile":
                         sx = spawn.get("x")
                         sy = spawn.get("y")
