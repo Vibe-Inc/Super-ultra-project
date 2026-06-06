@@ -2383,7 +2383,7 @@
   <image source="tilesets/smoke.png" width="1152" height="192"/>
  </tileset>
  <tileset firstgid="5971" name="Furnace" tilewidth="32" tileheight="32" tilecount="288" columns="12">
-  <image source="../../../../Documents/Pixel Crawler - Free Pack/Environment/Structures/Stations/Furnace/Furnace.png" width="384" height="768"/>
+  <image source="tilesets/Furnace.png" width="384" height="768"/>
   <tile id="60">
    <properties>
     <property name="Is_smeltery_workstation" type="bool" value="true"/>
@@ -2549,9 +2549,6 @@
     <property name="collidable" type="bool" value="true"/>
    </properties>
   </tile>
- </tileset>
- <tileset firstgid="6523" name="test" tilewidth="32" tileheight="32" tilecount="170" columns="17">
-  <image source="../../../../Documents/Pixel Crawler - Free Pack/Environment/Structures/Stations/Anvil/test.png" width="544" height="320"/>
  </tileset>
  <layer id="1" name="Ground" width="90" height="60" locked="1">
   <data encoding="csv">
