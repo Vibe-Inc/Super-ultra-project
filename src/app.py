@@ -125,12 +125,14 @@ class App:
         add_item(4, 0, "war_hammer")
         add_item(5, 0, "mace")
         add_item(6, 0, "spear")
-        # Row 1 — Ranged weapons + food
+        # Row 1 — Ranged weapons + accessories
         add_item(0, 1, "wooden_bow")
         add_item(1, 1, "hunting_bow")
         add_item(2, 1, "longbow")
         add_item(3, 1, "crossbow")
         add_item(4, 1, "throwing_dagger")
+        add_item(6, 1, "gay_ring")
+        add_item(7, 1, "light_ring")
         add_item(5, 1, "fishing_rod")
 
         # Row 2 — Potions
@@ -172,6 +174,49 @@ class App:
 
         # State manager
         self.manager = StateManager(self)
+
+    def _get_dir_mask(self, radius: int, dir_x: float, dir_y: float) -> "pygame.Surface":
+        """Return a cached hemisphere mask that attenuates light behind the character.
+
+        The mask is a ``(2*radius, 2*radius)`` SRCALPHA surface where pixels
+        in the *facing* direction are fully white (keep light) and pixels
+        behind are dark (suppress light), with a smooth transition on the
+        sides.  Results are cached by ``(radius, dir_x, dir_y)`` so the
+        mask is only built once per unique combination.
+        """
+        if not hasattr(self, '_dir_mask_cache'):
+            self._dir_mask_cache = {}
+        key = (radius, round(dir_x, 4), round(dir_y, 4))
+        if key in self._dir_mask_cache:
+            return self._dir_mask_cache[key]
+
+        size = radius * 2
+        mask = pygame.Surface((size, size), pygame.SRCALPHA)
+        cx = cy = radius
+        # Use a step size that balances quality vs. build time
+        step = max(1, radius // 15)
+        for y in range(0, size, step):
+            for x in range(0, size, step):
+                px = x - cx
+                py = y - cy
+                dist_sq = px * px + py * py
+                if dist_sq > radius * radius:
+                    continue
+                dist = dist_sq ** 0.5
+                if dist < 1:
+                    dot = 0.0
+                else:
+                    dot = (px * dir_x + py * dir_y) / dist
+                # Map dot [-1, 1] → attenuation [0, 1.0]
+                # 0 at the back = no illumination behind the character
+                atten = max(0.0, dot * 0.5 + 0.5)
+                a = int(atten * 255)
+                pygame.draw.rect(mask, (255, 255, 255, a), (x, y, step, step))
+        # Smooth the mask with a cheap down-scale / up-scale blur
+        small = pygame.transform.smoothscale(mask, (size // 4 or 1, size // 4 or 1))
+        mask = pygame.transform.smoothscale(small, (size, size))
+        self._dir_mask_cache[key] = mask
+        return mask
 
     def create_logo(self):
         self.text_logo = cfg.myfont.render(_('Codex Arcanum'), True, (255, 215, 0))
@@ -289,15 +334,137 @@ class App:
                 effective_brightness = cfg.USER_SCREEN_BRIGHTNESS * cfg.ENVIRONMENT_BRIGHTNESS
                 night_tint = cfg.ENVIRONMENT_BRIGHTNESS <= 0.55
 
-            if effective_brightness < 1:
-                if self._brightness_overlay is None or self._brightness_overlay.get_size() != (cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT):
-                    self._brightness_overlay = pygame.Surface((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT))
-                self._brightness_overlay.set_alpha(int((1 - effective_brightness) * 255))
+            # Collect local light sources (lantern, lamp, etc.)
+            local_lights = []
+            if self.manager.get_state() == "gameplay":
+                gameplay_state = self.manager.states.get("gameplay")
+                try:
+                    local_lights = gameplay_state.get_light_sources() if gameplay_state and hasattr(gameplay_state, 'get_light_sources') else []
+                except Exception:
+                    pass
+
+            has_lights = bool(local_lights)
+
+            # Skip day-night overlay entirely for interior maps (e.g. tavern)
+            _skip_night_overlay = False
+            if self.manager.get_state() == "gameplay":
+                gs = self.manager.states.get("gameplay")
+                if gs and getattr(gs, 'current_map_path', '') == "maps/tavern.tmx":
+                    _skip_night_overlay = True
+
+            if effective_brightness < 1 and not _skip_night_overlay:
+                overlay_alpha = int((1 - effective_brightness) * 255)
+                # Use the environment tint color computed by the game state for dawn/dusk/night
                 if night_tint:
-                    self._brightness_overlay.fill((10, 24, 80))
+                    tint = cfg.ENVIRONMENT_TINT
                 else:
-                    self._brightness_overlay.fill((0, 0, 0))
-                self.screen.blit(self._brightness_overlay, (0, 0))
+                    tint = (0, 0, 0)
+
+                if has_lights:
+                    # Per-pixel alpha overlay: light sources make the overlay
+                    # transparent so the original scene shows through (soft glow).
+                    overlay = pygame.Surface(
+                        (cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT), pygame.SRCALPHA
+                    )
+                    overlay.fill((tint[0], tint[1], tint[2], overlay_alpha))
+
+                    # Determine character facing direction for directional light
+                    dir_x, dir_y = 0.0, 1.0  # default: facing down
+                    try:
+                        char = getattr(gameplay_state, 'character', None)
+                        if char:
+                            facing = getattr(char, 'direction', 'down')
+                            flip = getattr(char, 'flip', False)
+                            if facing == 'up':
+                                dir_x, dir_y = 0.0, -1.0
+                            elif facing == 'side':
+                                dir_x = -1.0 if flip else 1.0
+                                dir_y = 0.0
+                            # 'down' stays (0, 1)
+                    except Exception:
+                        pass
+
+                    for l in local_lights:
+                        lx, ly = l.get('pos', (0, 0))
+                        radius = int(l.get('radius', 120))
+                        intensity = float(l.get('intensity', 1.0))
+                        even = l.get('even', False)
+                        if radius <= 0:
+                            continue
+                        # Build a soft alpha-reduction gradient.
+                        # Centre is fully transparent (reveals scene),
+                        # edges keep the overlay darkness.
+                        grad = pygame.Surface(
+                            (radius * 2, radius * 2), pygame.SRCALPHA
+                        )
+                        steps = max(1, radius)
+                        for i in range(steps, 0, -1):
+                            frac = i / steps          # 1 at edge, 0 at centre
+                            r = int(frac * radius)
+                            # Alpha to SUBTRACT from the overlay: high at centre
+                            if even:
+                                a = int(overlay_alpha * intensity)
+                            else:
+                                a = int((1.0 - frac) * overlay_alpha * intensity)
+                            a = max(0, min(255, a))
+                            pygame.draw.circle(
+                                grad, (0, 0, 0, a), (radius, radius), r
+                            )
+                        # Smooth the gradient to remove concentric banding
+                        small = pygame.transform.smoothscale(
+                            grad, (max(1, radius // 2), max(1, radius // 2))
+                        )
+                        grad = pygame.transform.smoothscale(
+                            small, (radius * 2, radius * 2)
+                        )
+
+                        # Apply directional hemisphere mask so the light
+                        # only illuminates in front and sides, not behind.
+                        if not l.get('full_360'):
+                            mask = self._get_dir_mask(radius, dir_x, dir_y)
+                            grad.blit(
+                                mask, (0, 0),
+                                special_flags=pygame.BLEND_RGBA_MULT,
+                            )
+
+                        gx = lx - radius
+                        gy = ly - radius
+                        try:
+                            overlay.blit(
+                                grad, (gx, gy),
+                                special_flags=pygame.BLEND_RGBA_SUB,
+                            )
+                        except Exception:
+                            pass
+
+                        # Colored light overlay (e.g. rainbow GayRing)
+                        light_color = l.get('color')
+                        if light_color:
+                            clr = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+                            for i in range(steps, 0, -1):
+                                frac = i / steps
+                                r = int(frac * radius)
+                                ca = int((1.0 - frac) * 80 * intensity)
+                                ca = max(0, min(255, ca))
+                                pygame.draw.circle(clr, (*light_color, ca), (radius, radius), r)
+                            small = pygame.transform.smoothscale(clr, (max(1, radius // 2), max(1, radius // 2)))
+                            clr = pygame.transform.smoothscale(small, (radius * 2, radius * 2))
+                            if not l.get('full_360'):
+                                mask = self._get_dir_mask(radius, dir_x, dir_y)
+                                clr.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+                            try:
+                                overlay.blit(clr, (gx, gy), special_flags=pygame.BLEND_RGBA_ADD)
+                            except Exception:
+                                pass
+                else:
+                    # No local lights – simple uniform darkening
+                    if self._brightness_overlay is None or self._brightness_overlay.get_size() != (cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT):
+                        self._brightness_overlay = pygame.Surface((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT))
+                    self._brightness_overlay.set_alpha(overlay_alpha)
+                    self._brightness_overlay.fill(tint)
+                    overlay = self._brightness_overlay
+
+                self.screen.blit(overlay, (0, 0))
             self.profiler.end_section("postfx")
 
             if self.manager.get_state() == "gameplay":

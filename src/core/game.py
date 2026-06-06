@@ -16,7 +16,7 @@ from src.core.state import State
 from src.entities.character import Character
 from src.map.map import LocalMap
 from src.inventory.system import MAIN_player_inventory, MAIN_player_inventory_equipment, ShopInventory, MAIN_player_hotbar
-from src.items.items import create_item
+from src.items.items import create_item, LightRing
 from database.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, DizzinessEffect, SlowEffect
 from src.entities.enemy import Enemy
 from src.entities.npc import NPC
@@ -243,7 +243,7 @@ class Game(State):
         self.DUSK_START = 16 * 3600
         self.NIGHT_START = 18 * 3600
         self.DAWN_START = 4 * 3600
-        self.NIGHT_BRIGHTNESS = 0.4
+        self.NIGHT_BRIGHTNESS = 0.15
 
         self.enemy_profiles = {
             "brute": {
@@ -540,6 +540,8 @@ class Game(State):
             create_item("dull_sword"),
             create_item("wooden_bow"),
             create_item("apple"),
+            create_item("hand_lamp"),
+            create_item("lantern"),
             create_item("small_health_potion"),
             create_item("large_health_potion"),
             create_item("large_health_potion"),
@@ -776,17 +778,24 @@ class Game(State):
 
     def _update_game_time(self, dt: float):
         self.game_time_seconds = (self.game_time_seconds + dt * self.GAME_SECONDS_PER_REAL_SECOND) % self.GAME_DAY_SECONDS
+        # Smooth brightness interpolation across dawn/dusk and compute a tint color
+        def lerp_color(a: tuple[int, int, int], b: tuple[int, int, int], t: float) -> tuple[int, int, int]:
+            return (int(a[0] + (b[0] - a[0]) * t), int(a[1] + (b[1] - a[1]) * t), int(a[2] + (b[2] - a[2]) * t))
 
         if self.DUSK_START <= self.game_time_seconds < self.NIGHT_START:
             t = (self.game_time_seconds - self.DUSK_START) / (self.NIGHT_START - self.DUSK_START)
             cfg.ENVIRONMENT_BRIGHTNESS = 1.0 - t * (1.0 - self.NIGHT_BRIGHTNESS)
+            cfg.ENVIRONMENT_TINT = lerp_color(cfg.ENVIRONMENT_DAY_COLOR, cfg.ENVIRONMENT_NIGHT_COLOR, t)
         elif self.NIGHT_START <= self.game_time_seconds or self.game_time_seconds < self.DAWN_START:
             cfg.ENVIRONMENT_BRIGHTNESS = self.NIGHT_BRIGHTNESS
+            cfg.ENVIRONMENT_TINT = cfg.ENVIRONMENT_NIGHT_COLOR
         elif self.DAWN_START <= self.game_time_seconds < self.DAY_START:
             t = (self.game_time_seconds - self.DAWN_START) / (self.DAY_START - self.DAWN_START)
             cfg.ENVIRONMENT_BRIGHTNESS = self.NIGHT_BRIGHTNESS + t * (1.0 - self.NIGHT_BRIGHTNESS)
+            cfg.ENVIRONMENT_TINT = lerp_color(cfg.ENVIRONMENT_NIGHT_COLOR, cfg.ENVIRONMENT_DAY_COLOR, t)
         else:
             cfg.ENVIRONMENT_BRIGHTNESS = 1.0
+            cfg.ENVIRONMENT_TINT = cfg.ENVIRONMENT_DAY_COLOR
 
         self.app.profiler.set_gauge("game_time", self._format_game_time())
 
@@ -835,6 +844,136 @@ class Game(State):
             (center.x + radius, center.y + radius),
             (center.x - radius, center.y + radius),
         ]
+
+    def get_light_sources(self) -> list:
+        """Return a list of light sources in screen coordinates.
+
+        Each source is a dict: { 'pos': (x,y), 'radius': int, 'intensity': float }
+        The Game computes camera offset and converts world positions to screen space.
+        Only returns lights during night/dusk/dawn — illumination turns on at night.
+        """
+        if self.is_daytime():
+            return []
+        lights = []
+        try:
+            camera = self._get_camera_offset()
+            # Player light: if player has an active lamp, use it
+            player_center = self.character.get_center()
+            if getattr(self.character, 'active_lamp', None) and getattr(self.character.active_lamp, 'lit', False):
+                lamp = self.character.active_lamp
+                screen_pos = (int(player_center.x - camera.x), int(player_center.y - camera.y))
+                lights.append({
+                    'pos': screen_pos,
+                    'radius': int(lamp.light_radius),
+                    'intensity': float(lamp.intensity)
+                })
+
+            # Lantern: emit light when the lantern is in the active hotbar slot
+            try:
+                hb = getattr(self, 'hotbar', None)
+                if hb:
+                    slot_data = hb.items[hb.active_slot_index][0]
+                    if slot_data:
+                        held_item = slot_data[0] if isinstance(slot_data, (list, tuple)) else slot_data
+                        if getattr(held_item, 'emits_light', False):
+                            radius = getattr(held_item, 'light_radius', 160)
+                            intensity = getattr(held_item, 'intensity', 0.9)
+
+                            # Check if a LightRing is equipped in the ring slot
+                            try:
+                                eq = getattr(self, 'PLAYER_inventory_equipment', None)
+                                if eq:
+                                    for ex in range(eq.columns):
+                                        for ey in range(eq.rows):
+                                            eq_slot = eq.items[ex][ey]
+                                            if eq_slot:
+                                                eq_item = eq_slot[0] if isinstance(eq_slot, (list, tuple)) else eq_slot
+                                                if isinstance(eq_item, LightRing):
+                                                    radius += getattr(eq_item, 'light_radius_bonus', 0)
+                                                    intensity += getattr(eq_item, 'light_intensity_bonus', 0)
+                            except Exception:
+                                pass
+
+                            screen_pos = (int(player_center.x - camera.x), int(player_center.y - camera.y))
+                            lights.append({
+                                'pos': screen_pos,
+                                'radius': int(radius),
+                                'intensity': float(min(intensity, 2.0)),
+                            })
+            except Exception:
+                pass
+
+            # LightRing: emits its own light when equipped in ring slot
+            try:
+                eq = getattr(self, 'PLAYER_inventory_equipment', None)
+                if eq:
+                    for ex in range(eq.columns):
+                        for ey in range(eq.rows):
+                            eq_slot = eq.items[ex][ey]
+                            if eq_slot:
+                                eq_item = eq_slot[0] if isinstance(eq_slot, (list, tuple)) else eq_slot
+                                if isinstance(eq_item, LightRing) and getattr(eq_item, 'emits_light', False):
+                                    screen_pos = (int(player_center.x - camera.x), int(player_center.y - camera.y))
+                                    lights.append({
+                                        'pos': screen_pos,
+                                        'radius': int(getattr(eq_item, 'light_radius', 160)),
+                                        'intensity': float(getattr(eq_item, 'light_intensity', 0.6)),
+                                    })
+            except Exception:
+                pass
+
+
+            # GayRing: emits its own soft rainbow light when equipped in ring slot
+            from src.items.items import GayRing
+            try:
+                eq = getattr(self, 'PLAYER_inventory_equipment', None)
+                if eq:
+                    for ex in range(eq.columns):
+                        for ey in range(eq.rows):
+                            eq_slot = eq.items[ex][ey]
+                            if eq_slot:
+                                eq_item = eq_slot[0] if isinstance(eq_slot, (list, tuple)) else eq_slot
+                                if isinstance(eq_item, GayRing) and getattr(eq_item, 'emits_light', False):
+                                    screen_pos = (int(player_center.x - camera.x), int(player_center.y - camera.y))
+                                    lights.append({
+                                        'pos': screen_pos,
+                                        'radius': int(getattr(eq_item, 'light_radius', 130)),
+                                        'intensity': float(getattr(eq_item, 'light_intensity', 1.6)),
+                                        'full_360': True,
+                                    })
+            except Exception:
+                pass
+
+            # Optional: existing dropped items that emit light
+            for it in getattr(self, 'items', []):
+                try:
+                    if getattr(it, 'emits_light', False):
+                        world_pos = pygame.Vector2(getattr(it, 'pos', it.get('pos', pygame.Vector2(0,0))))
+                        screen_pos = (int(world_pos.x - camera.x), int(world_pos.y - camera.y))
+                        lights.append({'pos': screen_pos, 'radius': int(getattr(it, 'light_radius', 120)), 'intensity': float(getattr(it, 'intensity', 0.8))})
+                except Exception:
+                    pass
+
+            # Window illumination: windows emit warm light at night
+            # Skip for interior maps (e.g. tavern) where windows are on internal walls
+            _NO_WINDOW_LIGHT_MAPS = {"maps/tavern.tmx"}
+            try:
+                game_map = getattr(self, 'map', None)
+                if game_map and self.current_map_path not in _NO_WINDOW_LIGHT_MAPS:
+                    window_positions = game_map.get_window_positions()
+                    for wx, wy in window_positions:
+                        screen_pos = (int(wx - camera.x), int(wy - camera.y))
+                        lights.append({
+                            'pos': screen_pos,
+                            'radius': 100,
+                            'intensity': 0.9,
+                            'full_360': True,
+                        })
+            except Exception:
+                pass
+        except Exception:
+            pass
+        return lights
 
     def _create_enemy(self, x: float, y: float, profile: str | None = None) -> Enemy:
         profile_name = profile or random.choice(self.enemy_profile_names)
@@ -1168,6 +1307,26 @@ class Game(State):
         if self.character.ice_armor_active:
             self._apply_ice_armor_slow(dt)
 
+        # GayRing: check if equipped in ring slot and toggle rainbow aura
+        from src.items.items import GayRing
+        try:
+            eq = getattr(self, 'PLAYER_inventory_equipment', None)
+            gay_ring_equipped = False
+            if eq:
+                for ex in range(eq.columns):
+                    for ey in range(eq.rows):
+                        eq_slot = eq.items[ex][ey]
+                        if eq_slot:
+                            eq_item = eq_slot[0] if isinstance(eq_slot, (list, tuple)) else eq_slot
+                            if isinstance(eq_item, GayRing):
+                                gay_ring_equipped = True
+                                break
+                    if gay_ring_equipped:
+                        break
+            self.character.rainbow_aura_active = gay_ring_equipped
+        except Exception:
+            pass
+
         # Regeneration passive
         if self.character.regeneration:
             self._apply_regeneration(dt)
@@ -1300,6 +1459,7 @@ class Game(State):
                 if dist_sq > 0:
                     push_dir = (enemy_center - center).normalize()
                     enemy.pos += push_dir * 8 * dt
+                    self.collision_handler.resolve_static_collision(enemy, self.obstacles)
 
     def _apply_regeneration(self, dt):
         acc = getattr(self.character, "regeneration_acc", 0.0)

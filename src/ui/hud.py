@@ -1,4 +1,5 @@
 import math
+import random
 import pygame
 from typing import TYPE_CHECKING
 from src.entities.character import Character
@@ -459,22 +460,120 @@ class HUD:
             time_string = game_state._format_game_time()
             is_day = game_state.is_daytime()
 
-        icon_radius = max(6, int(14 * cfg.ui_scale()))
-        icon_center = (bar_x + bar_width + icon_radius + 20, bar_y + bar_height // 2)
-        if is_day:
-            pygame.draw.circle(screen, (255, 220, 110), icon_center, icon_radius)
-            for angle in (0, 90, 180, 270):
-                radians = math.radians(angle)
-                dx = int(math.cos(radians) * (icon_radius + 6))
-                dy = int(math.sin(radians) * (icon_radius + 6))
-                pygame.draw.line(screen, (255, 220, 110), icon_center, (icon_center[0] + dx, icon_center[1] + dy), 2)
-        else:
-            pygame.draw.circle(screen, (225, 225, 230), icon_center, icon_radius)
-            moon_offset = (int(icon_radius * 0.4), -int(icon_radius * 0.2))
-            pygame.draw.circle(screen, (30, 30, 50), (icon_center[0] + moon_offset[0], icon_center[1] + moon_offset[1]), int(icon_radius * 0.8))
+        # Prettier circular day/night clock
+        icon_radius = max(10, int(20 * cfg.ui_scale()))
+        icon_center = (bar_x + bar_width + icon_radius + 28, bar_y + bar_height // 2)
 
-        time_text = self.font.render(time_string, True, (255, 255, 255))
-        screen.blit(time_text, (icon_center[0] + icon_radius + 8, icon_center[1] - time_text.get_height() // 2))
+        # Background ring with subtle tint
+        ring_surf = pygame.Surface((icon_radius*2+8, icon_radius*2+8), pygame.SRCALPHA)
+        ring_rect = ring_surf.get_rect(center=icon_center)
+        bg_col = tuple(min(255, int(c * 0.9)) for c in cfg.ENVIRONMENT_TINT)
+        pygame.draw.circle(ring_surf, (*bg_col, 120), (ring_rect.width//2, ring_rect.height//2), icon_radius+4)
+        pygame.draw.circle(ring_surf, (10,10,12,200), (ring_rect.width//2, ring_rect.height//2), icon_radius+2)
+
+        # Draw sun/moon position along the top half of the clock
+        try:
+            if game_state:
+                frac = (game_state.game_time_seconds % game_state.GAME_DAY_SECONDS) / game_state.GAME_DAY_SECONDS
+            else:
+                frac = 0.25
+        except Exception:
+            frac = 0.25
+        # Convert fraction to angle (0 at midnight -> sun at top moving clockwise)
+        angle = frac * 360.0 - 90.0
+        rad = math.radians(angle)
+        orbit_r = icon_radius - 4
+        sun_x = ring_rect.centerx + int(math.cos(rad) * orbit_r)
+        sun_y = ring_rect.centery + int(math.sin(rad) * orbit_r)
+
+        # Draw the background ring and the sun/moon
+        screen.blit(ring_surf, ring_rect.topleft)
+
+        # Sun or moon body with icon style
+        if is_day:
+            # --- Sun with rays ---
+            sun_color = (255, 210, 60)
+            ray_color = (255, 200, 80)
+            core_r = max(3, int(icon_radius * 0.38))
+            ray_count = 8
+            ray_inner = core_r + 2
+            ray_outer = icon_radius - 2
+
+            # Animated rotation for the rays
+            rot = self.animation_time * 0.4  # slow rotation
+
+            # Glow behind sun
+            glow_surf = pygame.Surface((icon_radius * 4, icon_radius * 4), pygame.SRCALPHA)
+            grect = glow_surf.get_rect(center=(sun_x, sun_y))
+            for r in range(core_r * 3, 0, -4):
+                a = int(35 * (1 - r / (core_r * 3)))
+                if a > 0:
+                    pygame.draw.circle(glow_surf, (255, 220, 110, a), (grect.width // 2, grect.height // 2), r)
+            screen.blit(glow_surf, grect.topleft, special_flags=pygame.BLEND_RGBA_ADD)
+
+            # Draw rays as small triangles / lines radiating outward
+            for i in range(ray_count):
+                a_rad = rot + (math.pi * 2 * i / ray_count)
+                rx = sun_x + int(math.cos(a_rad) * ray_inner)
+                ry = sun_y + int(math.sin(a_rad) * ray_inner)
+                rx2 = sun_x + int(math.cos(a_rad) * ray_outer)
+                ry2 = sun_y + int(math.sin(a_rad) * ray_outer)
+                ray_w = max(1, int(core_r * 0.35))
+                # Perpendicular offset for thickness
+                px = int(-math.sin(a_rad) * ray_w)
+                py = int(math.cos(a_rad) * ray_w)
+                pts = [(rx + px, ry + py), (rx2, ry2), (rx - px, ry - py)]
+                pygame.draw.polygon(screen, ray_color, pts)
+
+            # Sun core
+            pygame.draw.circle(screen, sun_color, (sun_x, sun_y), core_r)
+            # Bright highlight
+            highlight_r = max(1, core_r // 2)
+            hx = sun_x - max(1, core_r // 4)
+            hy = sun_y - max(1, core_r // 4)
+            pygame.draw.circle(screen, (255, 245, 170), (hx, hy), highlight_r)
+        else:
+            # --- Crescent Moon ---
+            moon_r = max(4, int(icon_radius * 0.44))
+            moon_color = (220, 225, 245)
+            shadow_color = (40, 42, 60)
+
+            # Gentle glow behind moon
+            glow_surf = pygame.Surface((icon_radius * 4, icon_radius * 4), pygame.SRCALPHA)
+            grect = glow_surf.get_rect(center=(sun_x, sun_y))
+            for r in range(moon_r * 3, 0, -4):
+                a = int(25 * (1 - r / (moon_r * 3)))
+                if a > 0:
+                    pygame.draw.circle(glow_surf, (180, 190, 255, a), (grect.width // 2, grect.height // 2), r)
+            screen.blit(glow_surf, grect.topleft, special_flags=pygame.BLEND_RGBA_ADD)
+
+            # Main moon disc
+            pygame.draw.circle(screen, moon_color, (sun_x, sun_y), moon_r)
+            # Shadow circle offset to create crescent
+            offset_x = int(moon_r * 0.55)
+            offset_y = int(-moon_r * 0.25)
+            pygame.draw.circle(screen, shadow_color, (sun_x + offset_x, sun_y + offset_y), int(moon_r * 0.80))
+
+            # Tiny stars around the moon
+            _rng = random.Random(int(game_state.game_time_seconds // 30) if game_state else 0)
+            star_positions = [(_rng.randint(-icon_radius - 4, icon_radius + 4),
+                               _rng.randint(-icon_radius - 4, icon_radius + 4)) for _ in range(4)]
+            for dx, dy in star_positions:
+                sx2, sy2 = sun_x + dx, sun_y + dy
+                # Skip stars that overlap the moon body
+                dist_sq = (dx * dx + dy * dy)
+                if dist_sq < (moon_r + 2) ** 2:
+                    continue
+                star_size = _rng.choice([1, 1, 1, 2])
+                twinkle = (math.sin(self.animation_time * 3.0 + dx * 0.5 + dy * 0.7) + 1.0) * 0.5
+                alpha = int(120 + 135 * twinkle)
+                star_surf = pygame.Surface((4, 4), pygame.SRCALPHA)
+                pygame.draw.circle(star_surf, (255, 255, 230, alpha), (2, 2), star_size)
+                screen.blit(star_surf, (sx2 - 2, sy2 - 2))
+
+        # Time text
+        time_text = self.font.render(time_string, True, (245, 245, 245))
+        screen.blit(time_text, (icon_center[0] + icon_radius + 12, icon_center[1] - time_text.get_height() // 2))
 
         lives_icon_x, lives_icon_y = self.life_icon_pos
 

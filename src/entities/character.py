@@ -490,6 +490,9 @@ class Character:
         self.fireball_knockback = 18.0
         self.game_state = None
 
+        # Light/lamp support
+        self.active_lamp = None
+
         # Flame Shield skill
         self.flame_shield_duration = 6.0       # seconds active
         self.flame_shield_cooldown = 14000      # ms cooldown
@@ -661,6 +664,10 @@ class Character:
         self.chrono_shift_cooldown = 30000
         self.chrono_shift_last_used = -self.chrono_shift_cooldown
         self.chrono_shift_particles = []
+
+        # Rainbow aura (Gay Ring)
+        self.rainbow_aura_active = False
+        self.rainbow_aura_particles = []
 
         self.dash_speed_multiplier = 3.0
         self.dash_duration = 0.14
@@ -1313,6 +1320,8 @@ class Character:
             start_pos = self.get_center()
             teleport_offset = direction.normalize() * self.shadow_step_range
             self.pos += teleport_offset
+            if getattr(self, '_obstacles', None):
+                self._collision_system.resolve_static_collision(self, self._obstacles)
             end_pos = self.get_center()
 
             self.invulnerable = True
@@ -1688,6 +1697,8 @@ class Character:
 
             knockback_force = 20
             enemy.pos += knock_dir * knockback_force
+            if getattr(self, '_obstacles', None):
+                self._collision_system.resolve_static_collision(enemy, self._obstacles)
 
     def _apply_weapon_enchantments(self, enemy):
         """
@@ -1756,6 +1767,8 @@ class Character:
 
             knock_dir = to_impact.normalize() if dist_sq > 0 else pygame.Vector2(aim_dir)
             enemy.pos += knock_dir * knockback_force
+            if getattr(self, '_obstacles', None):
+                self._collision_system.resolve_static_collision(enemy, self._obstacles)
 
     def attack_axe(self, enemies, aim_direction=None):
         """Full 360° spinning sweep. Hits all enemies within range regardless of direction."""
@@ -1795,6 +1808,8 @@ class Character:
 
             knock_dir = to_enemy.normalize() if dist_sq > 0 else pygame.Vector2(aim_dir)
             enemy.pos += knock_dir * knockback_force
+            if getattr(self, '_obstacles', None):
+                self._collision_system.resolve_static_collision(enemy, self._obstacles)
 
     def attack_spear(self, enemies, aim_direction=None):
         """Long narrow piercing line. Hits enemies in a thin rectangle extending forward."""
@@ -1840,6 +1855,8 @@ class Character:
                 enemy.add_effect(PoisonEffect(self.poison_blade_duration, self.poison_blade_damage_per_sec))
 
             enemy.pos += aim_dir * knockback_force
+            if getattr(self, '_obstacles', None):
+                self._collision_system.resolve_static_collision(enemy, self._obstacles)
 
     def attack_war_hammer(self, enemies, aim_direction=None):
         """Heavy slam with small AoE. Deals high damage and stuns enemies in a radius."""
@@ -1885,6 +1902,8 @@ class Character:
 
             knock_dir = to_impact.normalize() if dist_sq > 0 else pygame.Vector2(aim_dir)
             enemy.pos += knock_dir * knockback_force
+            if getattr(self, '_obstacles', None):
+                self._collision_system.resolve_static_collision(enemy, self._obstacles)
 
     def get_rect(self):
         """Returns the collision rectangle (hitbox), updated to the current float position."""
@@ -1976,6 +1995,8 @@ class Character:
         Updates the character's state, sets desired movement, and applies movement
         using the external collision system.
         """
+        self._collision_system = collision_system
+        self._obstacles = obstacles
         # Reset attacking flag after short duration
         if self.is_attacking and pygame.time.get_ticks() - self.last_attack_time > 200:
             self.is_attacking = False
@@ -2052,6 +2073,10 @@ class Character:
 
         # Update Summon Spirit particles
         self._update_summon_spirit_particles(dt)
+
+        # Update Rainbow Aura particles
+        if self.rainbow_aura_active:
+            self._update_rainbow_aura_particles(dt)
 
         # Update invulnerability
         if self.invulnerable:
@@ -2360,6 +2385,23 @@ class Character:
             img = self.image
             if self.direction == "side" and self.flip:
                 img = self.animations_flipped["side"][self.frame_index]
+            if self.rainbow_aura_active:
+                from src.items.items import GayRing
+                colors = GayRing.RAINBOW_COLORS
+                t = pygame.time.get_ticks() / 1000.0
+                n = len(colors)
+                phase = (t * 3.0) % n
+                ci = int(phase)
+                frac = phase - ci
+                c1 = colors[ci]
+                c2 = colors[(ci + 1) % n]
+                r = int(c1[0] + (c2[0] - c1[0]) * frac)
+                g = int(c1[1] + (c2[1] - c1[1]) * frac)
+                b = int(c1[2] + (c2[2] - c1[2]) * frac)
+                tint = pygame.Surface(img.get_size(), pygame.SRCALPHA)
+                tint.fill((r, g, b, 140))
+                img = img.copy()
+                img.blit(tint, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
             screen.blit(img, draw_pos)
         
         # Draw attack visual based on equipped weapon's combat style — wind-swoosh effects
@@ -2657,6 +2699,10 @@ class Character:
 
         # Draw Summon Spirit visual effect
         self._draw_summon_spirit(screen, camera_offset)
+
+        # Draw Rainbow Aura (Gay Ring)
+        if self.rainbow_aura_active:
+            self._draw_rainbow_aura(screen, camera_offset)
 
         # Draw floating texts
         self._draw_floating_texts(screen, camera_offset)
@@ -3579,6 +3625,136 @@ class Character:
                 # Draw as cross glyph
                 pygame.draw.line(screen, f_color, (fx - f_size, fy), (fx + f_size, fy), 1)
                 pygame.draw.line(screen, f_color, (fx, fy - f_size), (fx, fy + f_size), 1)
+
+    # ─── Rainbow Aura helpers (Gay Ring) ─────────────────────────────────
+
+    def _update_rainbow_aura_particles(self, dt):
+        import random
+        from src.items.items import GayRing
+        colors = GayRing.RAINBOW_COLORS
+        if self.rainbow_aura_active:
+            spawn_count = max(1, int(8 * dt))
+            for _ in range(spawn_count):
+                angle = random.uniform(0, math.pi * 2)
+                dist = random.uniform(30, 80)
+                speed = random.uniform(20, 50)
+                max_life = random.uniform(0.5, 1.0)
+                self.rainbow_aura_particles.append({
+                    "angle": angle,
+                    "dist": dist,
+                    "life": max_life,
+                    "max_life": max_life,
+                    "size": random.uniform(2.0, 5.0),
+                    "drift": random.uniform(-10, 10),
+                    "vertical_speed": -speed,
+                    "color": random.choice(colors),
+                    "color_index": random.randint(0, len(colors) - 1),
+                })
+        for p in self.rainbow_aura_particles[:]:
+            p["life"] -= dt
+            if p["life"] <= 0:
+                self.rainbow_aura_particles.remove(p)
+                continue
+            p["angle"] += p["drift"] * dt
+            p["dist"] = max(0, p["dist"] - 4 * dt)
+            p["vertical_speed"] -= 80 * dt
+
+    def _draw_rainbow_aura(self, screen, camera_offset):
+        import random
+        from src.items.items import GayRing
+        center = self.get_center()
+        cx = center.x - camera_offset.x
+        cy = center.y - camera_offset.y
+        t = pygame.time.get_ticks() / 1000.0
+        colors = GayRing.RAINBOW_COLORS
+        n_colors = len(colors)
+
+        n = n_colors
+        phase = (t * 1.5) % n
+        ci = int(phase)
+        frac = phase - ci
+        c1 = colors[ci]
+        c2 = colors[(ci + 1) % n]
+        cur_color = (
+            int(c1[0] + (c2[0] - c1[0]) * frac),
+            int(c1[1] + (c2[1] - c1[1]) * frac),
+            int(c1[2] + (c2[2] - c1[2]) * frac),
+        )
+
+        visual_radius = 80.0
+        pulse_slow = 0.6 + 0.4 * math.sin(t * 2.0)
+        pulse_fast = 0.5 + 0.5 * math.sin(t * 5.0)
+
+        # ── Shimmer ring ──
+        shimmer_surf = pygame.Surface((int(visual_radius * 2) + 20, int(visual_radius * 2) + 20), pygame.SRCALPHA)
+        shimmer_a = int(15 + 10 * math.sin(t * 3.0))
+        for i in range(3):
+            r = visual_radius + i * 6 + 4 * math.sin(t * 4.0 + i * 2.0)
+            ci2 = (ci + i) % n_colors
+            sc = colors[ci2]
+            pygame.draw.circle(shimmer_surf, (*sc, shimmer_a // (i + 1)),
+                               (int(r) + 10, int(r) + 10), int(r), 1)
+        screen.blit(shimmer_surf, (int(cx - visual_radius - 10), int(cy - visual_radius - 10)))
+
+        # ── Inner pulsing glow ──
+        glow_radius = visual_radius * (0.7 + 0.3 * pulse_slow)
+        glow_surf = pygame.Surface((int(glow_radius * 2) + 8, int(glow_radius * 2) + 8), pygame.SRCALPHA)
+        gc = int(glow_radius) + 4
+        glow_a = int(35 + 25 * pulse_slow)
+        pygame.draw.circle(glow_surf, (*cur_color, glow_a), (gc, gc), int(glow_radius))
+        mid_r = int(glow_radius * 0.65)
+        mid_a = int(25 + 20 * pulse_slow)
+        ci3 = (ci + 2) % n_colors
+        mc = colors[ci3]
+        pygame.draw.circle(glow_surf, (*mc, mid_a), (gc, gc), mid_r)
+        inner_r = int(glow_radius * 0.35)
+        inner_a = int(20 + 15 * pulse_slow)
+        ci4 = (ci + 4) % n_colors
+        ic = colors[ci4]
+        pygame.draw.circle(glow_surf, (*ic, inner_a), (gc, gc), inner_r)
+        screen.blit(glow_surf, (int(cx - glow_radius - 4), int(cy - glow_radius - 4)))
+
+        # ── Outer ring ──
+        ring_r = visual_radius
+        ring_a = int(60 + 40 * math.sin(t * 5.0))
+        ring_surf = pygame.Surface((int(ring_r * 2) + 4, int(ring_r * 2) + 4), pygame.SRCALPHA)
+        ring_width = max(1, int(2 + pulse_fast))
+        ci5 = int(t * 0.5) % n_colors
+        rc = colors[ci5]
+        pygame.draw.circle(ring_surf, (*rc, ring_a), (int(ring_r) + 2, int(ring_r) + 2), int(ring_r), ring_width)
+        if ring_width > 1:
+            ci6 = (ci5 + 3) % n_colors
+            rc2 = colors[ci6]
+            pygame.draw.circle(ring_surf, (*rc2, ring_a // 2), (int(ring_r) + 2, int(ring_r) + 2), int(ring_r * 0.98), max(1, ring_width - 1))
+        screen.blit(ring_surf, (int(cx - ring_r - 2), int(cy - ring_r - 2)))
+
+        # ── Particles ──
+        for p in self.rainbow_aura_particles:
+            life_ratio = min(1.0, p["life"] / p["max_life"]) if p["max_life"] > 0 else 0
+            if life_ratio <= 0:
+                continue
+            px = cx + math.cos(p["angle"]) * p["dist"]
+            py = cy + math.sin(p["angle"]) * p["dist"] + p["vertical_speed"] * (1 - life_ratio) * 0.3
+            alpha = int(200 * life_ratio)
+            size = max(1, int(p["size"] * life_ratio))
+            r, g, b = p["color"]
+            glow_sz = size * 3
+            glow = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+            pygame.draw.circle(glow, (r, g, b, alpha // 3), (glow_sz, glow_sz), glow_sz)
+            screen.blit(glow, (int(px - glow_sz), int(py - glow_sz)))
+            if alpha > 20:
+                pygame.draw.circle(screen, (min(255, r + 60), min(255, g + 60), min(255, b + 60)), (int(px), int(py)), size)
+
+        # ── Sparkles ──
+        for _ in range(3):
+            sp_angle = random.uniform(0, math.pi * 2)
+            sp_dist = random.uniform(0, visual_radius * 0.5)
+            sp_x = cx + math.cos(sp_angle) * sp_dist
+            sp_y = cy + random.uniform(-15, 15)
+            sp_size = random.randint(1, 3)
+            sp_ci = random.randint(0, n_colors - 1)
+            sp_color = colors[sp_ci]
+            pygame.draw.circle(screen, sp_color, (int(sp_x), int(sp_y)), sp_size)
 
     # ─── Chrono Shift helpers ─────────────────────────────────────────
 
