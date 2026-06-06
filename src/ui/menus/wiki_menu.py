@@ -975,7 +975,7 @@ class WikiMenu(Menu):
             ey = toc_top + i * (entry_h + gap) + sl
             er = pygame.Rect(inner.x + int(10 * scale), ey, inner.width - int(20 * scale), entry_h)
             hov = i == self._toc_hover
-            locked = not self.app.article_tracker.already_seen(self._page, et)
+            locked = self._page != "guide" and not self.app.article_tracker.already_seen(self._page, et)
 
             ns = pygame.Surface(er.size, pygame.SRCALPHA)
             bc = theme["accent"]
@@ -1033,7 +1033,7 @@ class WikiMenu(Menu):
         ps = pd.get("portrait", None)
         t = self._anim_time
 
-        locked = not self.app.article_tracker.already_seen(self._page, title)
+        locked = self._page != "guide" and not self.app.article_tracker.already_seen(self._page, title)
         if locked:
             body = "???\n\nThis knowledge has not yet been unlocked.\nBrave the wilds and earn this entry."
             ps = None
