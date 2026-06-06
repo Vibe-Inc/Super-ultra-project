@@ -1201,17 +1201,7 @@ class Game(State):
         lights = []
         try:
             camera = self._get_camera_offset()
-            # Player light: if player has an active lamp, use it
             player_center = self.character.get_center()
-            if getattr(self.character, 'active_lamp', None) and getattr(self.character.active_lamp, 'lit', False):
-                lamp = self.character.active_lamp
-                screen_pos = (int(player_center.x - camera.x), int(player_center.y - camera.y))
-                lights.append({
-                    'pos': screen_pos,
-                    'radius': int(lamp.light_radius),
-                    'intensity': float(lamp.intensity)
-                })
-
             # Lantern: emit light when the lantern is in the active hotbar slot
             try:
                 hb = getattr(self, 'hotbar', None)
