@@ -2494,7 +2494,7 @@
   </tile>
  </tileset>
  <tileset firstgid="6259" name="Workbench" tilewidth="32" tileheight="32" tilecount="264" columns="12">
-  <image source="../../../../Documents/Pixel Crawler - Free Pack/Environment/Structures/Stations/Workbench/Workbench.png" width="384" height="704"/>
+  <image source="tilesets/Workbench.png" width="384" height="704"/>
   <tile id="51">
    <properties>
     <property name="Is_smeltery_workstation" type="bool" value="true"/>
