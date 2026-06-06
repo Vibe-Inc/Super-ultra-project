@@ -405,6 +405,7 @@ class App:
             self.profiler.start_section("postfx")
             effective_brightness = cfg.USER_SCREEN_BRIGHTNESS
             night_tint = False
+            _is_intro = self.manager.get_state() == "intro_animation"
             if self.manager.get_state() == "gameplay":
                 effective_brightness = cfg.USER_SCREEN_BRIGHTNESS * cfg.ENVIRONMENT_BRIGHTNESS
                 night_tint = cfg.ENVIRONMENT_BRIGHTNESS <= 0.55
@@ -427,7 +428,7 @@ class App:
                 if gs and getattr(gs, 'current_map_path', '') == "maps/tavern.tmx":
                     _skip_night_overlay = True
 
-            if effective_brightness < 1 and not _skip_night_overlay:
+            if effective_brightness < 1 and not _skip_night_overlay and not _is_intro:
                 overlay_alpha = int((1 - effective_brightness) * 255)
                 # Use the environment tint color computed by the game state for dawn/dusk/night
                 if night_tint:

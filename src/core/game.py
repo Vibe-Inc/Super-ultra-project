@@ -218,6 +218,8 @@ class Game(State):
 
         initial_map_path = "maps/test-map-1.tmx"
         self.current_map_path = initial_map_path
+        self.intro_played = False
+        self._intro_sequence_active = False
         self.map = LocalMap("Level1", initial_map_path)
 
         self.collision_handler = CollisionSystem()
@@ -1449,7 +1451,28 @@ class Game(State):
         if placed == 0:
             logger.debug(f"Enemy '{getattr(enemy, 'ai_profile', 'unknown')}' had drop_chance entries but none rolled.")
 
+    def _finish_intro(self):
+        """Callback to finish the intro sequence and unlock the game."""
+        self.intro_played = True
+        self._intro_sequence_active = False
+
     def update(self, dt):
+        # Intro Sequence for test-map-1
+        if self.current_map_path == "maps/test-map-1.tmx" and not getattr(self, "intro_played", False) and not getattr(self, "_intro_sequence_active", False):
+            self._intro_sequence_active = True
+            
+            # Set player lying down (facing down, frame 0)
+            self.character.direction = "down"
+            self.character.frame_index = 0
+            self.character.image = self.character.animations["down"][0]
+
+            dialog_lines = [
+                '"Arise, Chosen One."',
+                '"I sense the latent magic humming in your blood. You have been selected for a sacred mission."',
+                '"Far to the east, a great dragon slumbers in a mountain cave. You must slay it, or the realm will burn."'
+            ]
+            self.app.current_dialog = Dialog(self.app, dialog_lines, on_close=self._finish_intro)
+
         tr = self.app.article_tracker
 
         # Guide intro — only on the very first-ever game start

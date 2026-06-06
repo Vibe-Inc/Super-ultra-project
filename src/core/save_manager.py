@@ -315,6 +315,7 @@ class SaveManager:
                 "xp_to_next_level": char.xp_to_next_level,
                 "map_path": game_state.current_map_path if hasattr(game_state, "current_map_path") else "maps/test-map-1.tmx",
                 "character_state": char_state,
+                "intro_played": getattr(game_state, "intro_played", False),
             },
             "inventory": serialized_inv,
             "hotbar": serialized_hotbar,
@@ -398,6 +399,7 @@ class SaveManager:
         char.xp = player_data.get("xp", 0)
         char.level = player_data.get("level", 1)
         char.xp_to_next_level = player_data.get("xp_to_next_level", 100)
+        game_state.intro_played = player_data.get("intro_played", False)
 
         # Restore extended character state
         char_state = player_data.get("character_state", {})
