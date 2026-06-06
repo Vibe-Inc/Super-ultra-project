@@ -91,6 +91,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">database.effects</span><span class="w"> </span><span class="kn">import</span> <span class="n">RegenerationEffect</span><span class="p">,</span> <span class="n">PoisonEffect</span><span class="p">,</span> <span class="n">ConfusionEffect</span><span class="p">,</span> <span class="n">DizzinessEffect</span><span class="p">,</span> <span class="n">SlowEffect</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.enemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enemy</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.npc</span><span class="w"> </span><span class="kn">import</span> <span class="n">NPC</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.mage_npc</span><span class="w"> </span><span class="kn">import</span> <span class="n">MageNPC</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.projectile</span><span class="w"> </span><span class="kn">import</span> <span class="n">Arrow</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.hud</span><span class="w"> </span><span class="kn">import</span> <span class="n">HUD</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.widgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dialog</span>
@@ -561,6 +562,13 @@
             <span class="s2">&quot;maps/test-map-1.tmx&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1120</span><span class="p">,</span> <span class="mi">1024</span><span class="p">),</span>
         <span class="p">}</span>
 
+        <span class="c1"># Mage NPC spawn positions (pixels) — placed near trees on test-map-2</span>
+        <span class="c1"># The center of the map (cols 50-64, rows 40-54) is the lake; this</span>
+        <span class="c1"># position is on solid ground near the upper-right detail objects.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">MAGE_NPC_SPAWNS</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;maps/test-map-2.tmx&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">2240</span><span class="p">,</span> <span class="mi">640</span><span class="p">),</span>
+        <span class="p">}</span>
+
         <span class="c1"># Maps where enemy spawning (both default and random) is disabled</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">NO_ENEMY_SPAWN_MAPS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;maps/tavern.tmx&quot;</span><span class="p">,</span> <span class="s2">&quot;maps/test-map-1.tmx&quot;</span><span class="p">}</span>
 
@@ -709,6 +717,51 @@
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">pass</span>
 
+        <span class="c1"># ---- Mage NPC (Arcane Quests / Mysterium Magnum gatekeeper) ----</span>
+        <span class="k">if</span> <span class="n">initial_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAGE_NPC_SPAWNS</span><span class="p">:</span>
+            <span class="n">mg_x</span><span class="p">,</span> <span class="n">mg_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAGE_NPC_SPAWNS</span><span class="p">[</span><span class="n">initial_map_path</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mg_x</span><span class="p">,</span> <span class="n">mg_y</span> <span class="o">=</span> <span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="o">-</span><span class="mi">5000</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc_first_dialog</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;I sense a great power within you... something ancient, something waiting.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;You must collect the souls of the monsters you defeat.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Bring them to me, and I shall unlock the Arcane Quests — a path to harness that power.&quot;</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc_repeat_dialog</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;The winds whisper of your progress.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Keep collecting monster souls. The Arcane Quests await.&quot;</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc_post_unlock_dialog</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;You have gathered the souls. I can feel their energy resonating.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Now you must tap into your inner world and transform these souls into a tarot deck.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;This is the Mysterium Magnum — a deck of power, fate, and transformation.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;I shall open the way for you.&quot;</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc_post_unlock_repeat_dialog</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;The Mysterium Magnum is now open to you.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Transform your collected souls into cards of destiny.&quot;</span>
+        <span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc</span> <span class="o">=</span> <span class="n">MageNPC</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">mg_x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">mg_y</span><span class="p">,</span>
+            <span class="n">dialog_lines</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mage_npc_first_dialog</span><span class="p">,</span>
+            <span class="n">gender</span><span class="o">=</span><span class="s1">&#39;female&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Clamp mage NPC to map bounds</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">initial_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAGE_NPC_SPAWNS</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_width</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_height</span><span class="p">:</span>
+                <span class="n">map_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_width</span>
+                <span class="n">map_h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_height</span>
+                <span class="n">mg_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>
+                <span class="n">mg_h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
+                <span class="n">mg_x</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">mg_x</span><span class="p">,</span> <span class="n">map_w</span> <span class="o">-</span> <span class="n">mg_w</span><span class="p">))</span>
+                <span class="n">mg_y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">mg_y</span><span class="p">,</span> <span class="n">map_h</span> <span class="o">-</span> <span class="n">mg_h</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">mg_x</span><span class="p">,</span> <span class="n">mg_y</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
         <span class="c1"># Blackjack game state (None when not playing)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">blackjack_game</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -822,6 +875,25 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_npc_first_dialog</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_npc_repeat_dialog</span></div>
 
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_mage_npc_dialog</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Pick the right mage NPC dialog lines based on the current unlock state.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">arcane_quests_unlocked</span><span class="p">:</span>
+            <span class="c1"># First conversation: senses power, tells player to collect souls</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc</span><span class="o">.</span><span class="n">was_talked</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc_first_dialog</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc_repeat_dialog</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">mysterium_magnum_unlocked</span><span class="p">:</span>
+            <span class="c1"># Arcane quests unlocked, but Mysterium Magnum not yet</span>
+            <span class="c1"># Check if player has at least 1 purple star</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="s1">&#39;purple_stars&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_mage_mysterium_dialog_shown&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_mage_mysterium_dialog_shown</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc_post_unlock_dialog</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc_post_unlock_repeat_dialog</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_mage_mysterium_dialog_shown&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc_post_unlock_repeat_dialog</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Both unlocked</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc_post_unlock_repeat_dialog</span>
 
 <div class="viewcode-block" id="Game.use_skill_slot">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.use_skill_slot">[docs]</a>
@@ -1143,6 +1215,7 @@
             <span class="n">visual_style</span><span class="o">=</span><span class="n">visual_style</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">enemy</span><span class="o">.</span><span class="n">target_entity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span>
+        <span class="n">enemy</span><span class="o">.</span><span class="n">profile_name</span> <span class="o">=</span> <span class="n">profile_name</span>
         <span class="k">return</span> <span class="n">enemy</span></div>
 
 
@@ -1389,6 +1462,25 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="o">-</span><span class="mi">5000</span><span class="p">)</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No fishing NPC spawn for map </span><span class="si">{</span><span class="n">switched_map_path</span><span class="si">}</span><span class="s2">; hiding fishing NPC&quot;</span><span class="p">)</span>
 
+            <span class="c1"># Place mage NPC on the new map (or hide if not present)</span>
+            <span class="k">if</span> <span class="n">switched_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAGE_NPC_SPAWNS</span><span class="p">:</span>
+                <span class="n">mg_x</span><span class="p">,</span> <span class="n">mg_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAGE_NPC_SPAWNS</span><span class="p">[</span><span class="n">switched_map_path</span><span class="p">]</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_width</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_height</span><span class="p">:</span>
+                        <span class="n">map_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_width</span>
+                        <span class="n">map_h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_height</span>
+                        <span class="n">mg_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>
+                        <span class="n">mg_h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
+                        <span class="n">mg_x</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">mg_x</span><span class="p">,</span> <span class="n">map_w</span> <span class="o">-</span> <span class="n">mg_w</span><span class="p">))</span>
+                        <span class="n">mg_y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">mg_y</span><span class="p">,</span> <span class="n">map_h</span> <span class="o">-</span> <span class="n">mg_h</span><span class="p">))</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">pass</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">mg_x</span><span class="p">,</span> <span class="n">mg_y</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Placed mage NPC for map </span><span class="si">{</span><span class="n">switched_map_path</span><span class="si">}</span><span class="s2"> at (</span><span class="si">{</span><span class="n">mg_x</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">mg_y</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="o">-</span><span class="mi">5000</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No mage NPC spawn for map </span><span class="si">{</span><span class="n">switched_map_path</span><span class="si">}</span><span class="s2">; hiding mage NPC&quot;</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">update_animation</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
 
         <span class="c1"># Enemy Spawning Logic</span>
@@ -1507,6 +1599,19 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span> <span class="o">+=</span> <span class="n">gold_gain</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Gained </span><span class="si">{</span><span class="n">gold_gain</span><span class="si">}</span><span class="s2"> gold. Total: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
+                <span class="c1"># Update quest progress for the killed mob type</span>
+                <span class="n">mob_type</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">enemy</span><span class="p">,</span> <span class="s1">&#39;profile_name&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">mob_type</span><span class="p">:</span>
+                    <span class="n">quest_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;arcane_quest&quot;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">quest_state</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">quest_state</span><span class="p">,</span> <span class="s2">&quot;quests&quot;</span><span class="p">):</span>
+                        <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">quest_state</span><span class="o">.</span><span class="n">quests</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">q</span><span class="o">.</span><span class="n">claimed</span><span class="p">:</span>
+                                <span class="k">continue</span>
+                            <span class="k">if</span> <span class="n">q</span><span class="o">.</span><span class="n">target_type</span> <span class="o">==</span> <span class="n">mob_type</span><span class="p">:</span>
+                                <span class="n">q</span><span class="o">.</span><span class="n">progress</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">target_count</span><span class="p">,</span> <span class="n">q</span><span class="o">.</span><span class="n">progress</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                                <span class="k">if</span> <span class="n">q</span><span class="o">.</span><span class="n">progress</span> <span class="o">&gt;=</span> <span class="n">q</span><span class="o">.</span><span class="n">target_count</span><span class="p">:</span>
+                                    <span class="n">q</span><span class="o">.</span><span class="n">completed</span> <span class="o">=</span> <span class="kc">True</span>
+
                 <span class="c1"># Spawn loot drops at the enemy&#39;s death location (Python-configured, no JSON)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_drop_enemy_loot</span><span class="p">(</span><span class="n">enemy</span><span class="p">)</span>
 
@@ -1515,6 +1620,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
 
         <span class="c1"># Update fishing controller</span>
         <span class="k">try</span><span class="p">:</span>
@@ -1547,6 +1653,15 @@
                 <span class="n">fnx</span><span class="p">,</span> <span class="n">fny</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FISHING_NPC_SPAWNS</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">fnx</span><span class="p">,</span> <span class="n">fny</span><span class="p">)</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Safety placed fishing NPC on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="si">}</span><span class="s2"> at (</span><span class="si">{</span><span class="n">fnx</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">fny</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="c1"># Safety: place mage NPC if it should be on this map but is far away</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAGE_NPC_SPAWNS</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mage_npc</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">1000</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">1000</span><span class="p">):</span>
+                <span class="n">mgx</span><span class="p">,</span> <span class="n">mgy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAGE_NPC_SPAWNS</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">mgx</span><span class="p">,</span> <span class="n">mgy</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Safety placed mage NPC on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="si">}</span><span class="s2"> at (</span><span class="si">{</span><span class="n">mgx</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">mgy</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">pass</span>
 
@@ -1688,6 +1803,10 @@
             <span class="n">fishing_npc_vis</span> <span class="o">=</span> <span class="n">_is_visible</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="n">fishing_npc_vis</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">mage_npc_vis</span> <span class="o">=</span> <span class="n">_is_visible</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mage_npc</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">mage_npc_vis</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="c1"># Collect all visible entities with their y-position for sorting.</span>
         <span class="n">draw_entities</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1697,6 +1816,8 @@
             <span class="n">draw_entities</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="s1">&#39;card_npc&#39;</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">fishing_npc_vis</span><span class="p">:</span>
             <span class="n">draw_entities</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="s1">&#39;fishing_npc&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">mage_npc_vis</span><span class="p">:</span>
+            <span class="n">draw_entities</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">mage_npc</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="s1">&#39;mage_npc&#39;</span><span class="p">))</span>
         <span class="n">draw_entities</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="s1">&#39;player&#39;</span><span class="p">))</span>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
@@ -1716,6 +1837,8 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;fishing_npc&#39;</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;mage_npc&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;player&#39;</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;item&#39;</span><span class="p">:</span>
@@ -1869,8 +1992,31 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">use_skill_slot</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
             
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_e</span><span class="p">:</span>
-                <span class="c1"># Card NPC interaction takes priority if both are nearby</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">is_interactable</span><span class="p">:</span>
+                <span class="c1"># Mage NPC interaction (highest priority)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc</span><span class="o">.</span><span class="n">is_interactable</span><span class="p">:</span>
+                    <span class="n">dialog_lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_mage_npc_dialog</span><span class="p">()</span>
+
+                    <span class="k">def</span><span class="w"> </span><span class="nf">on_mage_close</span><span class="p">():</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc</span><span class="o">.</span><span class="n">was_talked</span> <span class="o">=</span> <span class="kc">True</span>
+                            <span class="c1"># On first talk: unlock Arcane Quests</span>
+                            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">arcane_quests_unlocked</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">arcane_quests_unlocked</span> <span class="o">=</span> <span class="kc">True</span>
+                                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Arcane Quests UNLOCKED by mage NPC!&quot;</span><span class="p">)</span>
+                            <span class="c1"># If arcane quests already unlocked and player has purple star: unlock Mysterium Magnum</span>
+                            <span class="k">elif</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">mysterium_magnum_unlocked</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="s1">&#39;purple_stars&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">mysterium_magnum_unlocked</span> <span class="o">=</span> <span class="kc">True</span>
+                                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Mysterium Magnum UNLOCKED by mage NPC!&quot;</span><span class="p">)</span>
+                        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                            <span class="k">pass</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">current_dialog</span> <span class="o">=</span> <span class="n">Dialog</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span>
+                        <span class="n">dialog_lines</span><span class="p">,</span>
+                        <span class="n">on_close</span><span class="o">=</span><span class="n">on_mage_close</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="c1"># Card NPC interaction</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">is_interactable</span><span class="p">:</span>
                     <span class="n">dialog_lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_card_npc_dialog</span><span class="p">()</span>
 
                     <span class="k">def</span><span class="w"> </span><span class="nf">on_card_close</span><span class="p">():</span>

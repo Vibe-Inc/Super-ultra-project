@@ -106,6 +106,8 @@
     <span class="s2">&quot;max_stamina&quot;</span><span class="p">,</span> <span class="s2">&quot;stamina&quot;</span><span class="p">,</span> <span class="s2">&quot;stamina_drain_rate&quot;</span><span class="p">,</span> <span class="s2">&quot;stamina_regen_rate&quot;</span><span class="p">,</span>
     <span class="s2">&quot;can_sprint&quot;</span><span class="p">,</span> <span class="s2">&quot;is_sprinting&quot;</span><span class="p">,</span>
     <span class="s2">&quot;skill_tree_points&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;cooldown_multiplier&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;damage_bonus&quot;</span><span class="p">,</span>
     <span class="s2">&quot;base_attack_damage&quot;</span><span class="p">,</span> <span class="s2">&quot;attack_damage&quot;</span><span class="p">,</span>
     <span class="s2">&quot;base_attack_range&quot;</span><span class="p">,</span> <span class="s2">&quot;attack_range&quot;</span><span class="p">,</span>
     <span class="s2">&quot;base_attack_cooldown&quot;</span><span class="p">,</span> <span class="s2">&quot;attack_cooldown_mult&quot;</span><span class="p">,</span>
@@ -280,6 +282,12 @@
                     <span class="n">col_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
             <span class="n">serialized_hotbar</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">col_data</span><span class="p">)</span>
 
+        <span class="c1"># Serialize Quest Data</span>
+        <span class="n">quest_data</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">quest_state</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;arcane_quest&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">quest_state</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">quest_state</span><span class="p">,</span> <span class="s2">&quot;get_quest_data&quot;</span><span class="p">):</span>
+            <span class="n">quest_data</span> <span class="o">=</span> <span class="n">quest_state</span><span class="o">.</span><span class="n">get_quest_data</span><span class="p">()</span>
+
         <span class="n">char</span> <span class="o">=</span> <span class="n">game_state</span><span class="o">.</span><span class="n">character</span>
 
         <span class="c1"># Build character state dict (raw __dict__ values to bypass __getattribute__ overrides)</span>
@@ -302,6 +310,10 @@
         <span class="n">save_data</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span><span class="p">),</span>
             <span class="s2">&quot;money&quot;</span><span class="p">:</span> <span class="n">app</span><span class="o">.</span><span class="n">money</span><span class="p">,</span>
+            <span class="s2">&quot;purple_stars&quot;</span><span class="p">:</span> <span class="n">app</span><span class="o">.</span><span class="n">purple_stars</span><span class="p">,</span>
+            <span class="s2">&quot;revealed_tarot_cards&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">revealed_tarot_cards</span><span class="p">),</span>
+            <span class="s2">&quot;arcane_quests_unlocked&quot;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s1">&#39;arcane_quests_unlocked&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+            <span class="s2">&quot;mysterium_magnum_unlocked&quot;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s1">&#39;mysterium_magnum_unlocked&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
             <span class="s2">&quot;player&quot;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s2">&quot;pos_x&quot;</span><span class="p">:</span> <span class="n">char</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>
                 <span class="s2">&quot;pos_y&quot;</span><span class="p">:</span> <span class="n">char</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
@@ -317,7 +329,8 @@
             <span class="s2">&quot;hotbar&quot;</span><span class="p">:</span> <span class="n">serialized_hotbar</span><span class="p">,</span>
             <span class="s2">&quot;hotbar_active_slot&quot;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">game_state</span><span class="p">,</span> <span class="s2">&quot;hotbar&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span><span class="o">.</span><span class="n">active_slot_index</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">game_state</span><span class="p">,</span> <span class="s2">&quot;hotbar&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">game_state</span><span class="o">.</span><span class="n">hotbar</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
             <span class="s2">&quot;equipment&quot;</span><span class="p">:</span> <span class="n">serialized_equip</span><span class="p">,</span>
-            <span class="s2">&quot;game_time_seconds&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">game_state</span><span class="p">,</span> <span class="s2">&quot;game_time_seconds&quot;</span><span class="p">,</span> <span class="mi">6</span> <span class="o">*</span> <span class="mi">3600</span><span class="p">))</span>
+            <span class="s2">&quot;game_time_seconds&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">game_state</span><span class="p">,</span> <span class="s2">&quot;game_time_seconds&quot;</span><span class="p">,</span> <span class="mi">6</span> <span class="o">*</span> <span class="mi">3600</span><span class="p">)),</span>
+            <span class="s2">&quot;quests&quot;</span><span class="p">:</span> <span class="n">quest_data</span><span class="p">,</span>
         <span class="p">}</span>
         
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">game_state</span><span class="p">,</span> <span class="s2">&quot;current_map_path&quot;</span><span class="p">):</span>
@@ -356,6 +369,10 @@
 
         <span class="c1"># Restore Money</span>
         <span class="n">app</span><span class="o">.</span><span class="n">money</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;money&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">app</span><span class="o">.</span><span class="n">purple_stars</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;purple_stars&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">app</span><span class="o">.</span><span class="n">revealed_tarot_cards</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;revealed_tarot_cards&quot;</span><span class="p">,</span> <span class="p">[]))</span>
+        <span class="n">app</span><span class="o">.</span><span class="n">arcane_quests_unlocked</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;arcane_quests_unlocked&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">app</span><span class="o">.</span><span class="n">mysterium_magnum_unlocked</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mysterium_magnum_unlocked&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
         <span class="c1"># Restore Inventory</span>
         <span class="n">inv_data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;inventory&quot;</span><span class="p">,</span> <span class="p">[])</span>
@@ -449,6 +466,13 @@
                     <span class="n">equip_inv</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="p">,</span> <span class="n">count</span><span class="p">]</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">equip_inv</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Restore Quest Data</span>
+        <span class="n">quest_data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;quests&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">if</span> <span class="n">quest_data</span><span class="p">:</span>
+            <span class="n">quest_state</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;arcane_quest&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">quest_state</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">quest_state</span><span class="p">,</span> <span class="s2">&quot;set_quest_data&quot;</span><span class="p">):</span>
+                <span class="n">quest_state</span><span class="o">.</span><span class="n">set_quest_data</span><span class="p">(</span><span class="n">quest_data</span><span class="p">)</span>
 
         <span class="c1"># Sync character defense from loaded equipment</span>
         <span class="n">equip_inv</span><span class="o">.</span><span class="n">sync_character_defense</span><span class="p">(</span><span class="n">char</span><span class="p">)</span>

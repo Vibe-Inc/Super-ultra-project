@@ -73,7 +73,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.menus</span><span class="w"> </span><span class="kn">import</span> <span class="n">MainMenu</span><span class="p">,</span> <span class="n">SettingsMenu</span><span class="p">,</span> <span class="n">CreditsMenu</span><span class="p">,</span> <span class="n">PauseMenu</span><span class="p">,</span> <span class="n">SaveLoadMenu</span><span class="p">,</span> <span class="n">SkillbarMenu</span><span class="p">,</span> <span class="n">SkillTreeMenu</span><span class="p">,</span> <span class="n">RecipeBookMenu</span><span class="p">,</span> <span class="n">WikiMenu</span><span class="p">,</span> <span class="n">CollectionBookMenu</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.menus</span><span class="w"> </span><span class="kn">import</span> <span class="n">MainMenu</span><span class="p">,</span> <span class="n">SettingsMenu</span><span class="p">,</span> <span class="n">CreditsMenu</span><span class="p">,</span> <span class="n">PauseMenu</span><span class="p">,</span> <span class="n">SaveLoadMenu</span><span class="p">,</span> <span class="n">SkillbarMenu</span><span class="p">,</span> <span class="n">SkillTreeMenu</span><span class="p">,</span> <span class="n">RecipeBookMenu</span><span class="p">,</span> <span class="n">WikiMenu</span><span class="p">,</span> <span class="n">CollectionBookMenu</span><span class="p">,</span> <span class="n">ArcaneQuestMenu</span><span class="p">,</span> <span class="n">MysteriumMagnumMenu</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.game</span><span class="w"> </span><span class="kn">import</span> <span class="n">Game</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
@@ -123,6 +123,8 @@
             <span class="s2">&quot;recipe_book&quot;</span><span class="p">:</span> <span class="n">RecipeBookMenu</span><span class="p">(</span><span class="n">app</span><span class="p">),</span>
             <span class="s2">&quot;wiki&quot;</span><span class="p">:</span> <span class="n">WikiMenu</span><span class="p">(</span><span class="n">app</span><span class="p">),</span>
             <span class="s2">&quot;collection_book&quot;</span><span class="p">:</span> <span class="n">CollectionBookMenu</span><span class="p">(</span><span class="n">app</span><span class="p">),</span>
+            <span class="s2">&quot;arcane_quest&quot;</span><span class="p">:</span> <span class="n">ArcaneQuestMenu</span><span class="p">(</span><span class="n">app</span><span class="p">),</span>
+            <span class="s2">&quot;mysterium_magnum&quot;</span><span class="p">:</span> <span class="n">MysteriumMagnumMenu</span><span class="p">(</span><span class="n">app</span><span class="p">),</span>
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current_state</span> <span class="o">=</span> <span class="kc">None</span></div>
 
@@ -175,6 +177,12 @@
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">gameplay_state</span><span class="p">,</span> <span class="s2">&quot;reinit_ui&quot;</span><span class="p">):</span>
             <span class="n">gameplay_state</span><span class="o">.</span><span class="n">reinit_ui</span><span class="p">()</span>
         
+        <span class="c1"># Preserve quest data before recreating the quest menu</span>
+        <span class="n">old_quest</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;arcane_quest&quot;</span><span class="p">)</span>
+        <span class="n">quest_data</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">old_quest</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">old_quest</span><span class="p">,</span> <span class="s2">&quot;get_quest_data&quot;</span><span class="p">):</span>
+            <span class="n">quest_data</span> <span class="o">=</span> <span class="n">old_quest</span><span class="o">.</span><span class="n">get_quest_data</span><span class="p">()</span>
+        
         <span class="bp">self</span><span class="o">.</span><span class="n">states</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;main&quot;</span><span class="p">:</span> <span class="n">MainMenu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="p">[</span><span class="s2">&quot;main&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">app</span><span class="p">),</span>
             <span class="s2">&quot;settings&quot;</span><span class="p">:</span> <span class="n">SettingsMenu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="p">[</span><span class="s2">&quot;settings&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">app</span><span class="p">),</span>
@@ -187,7 +195,15 @@
             <span class="s2">&quot;recipe_book&quot;</span><span class="p">:</span> <span class="n">RecipeBookMenu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="p">[</span><span class="s2">&quot;main&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">app</span><span class="p">),</span>
             <span class="s2">&quot;wiki&quot;</span><span class="p">:</span> <span class="n">WikiMenu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="p">[</span><span class="s2">&quot;main&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">app</span><span class="p">),</span>
             <span class="s2">&quot;collection_book&quot;</span><span class="p">:</span> <span class="n">CollectionBookMenu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="p">[</span><span class="s2">&quot;main&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">app</span><span class="p">),</span>
+            <span class="s2">&quot;arcane_quest&quot;</span><span class="p">:</span> <span class="n">ArcaneQuestMenu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="p">[</span><span class="s2">&quot;main&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">app</span><span class="p">),</span>
+            <span class="s2">&quot;mysterium_magnum&quot;</span><span class="p">:</span> <span class="n">MysteriumMagnumMenu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="p">[</span><span class="s2">&quot;main&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">app</span><span class="p">),</span>
         <span class="p">}</span>
+        
+        <span class="c1"># Restore quest data into the new quest menu</span>
+        <span class="k">if</span> <span class="n">quest_data</span><span class="p">:</span>
+            <span class="n">new_quest</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;arcane_quest&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">new_quest</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">new_quest</span><span class="p">,</span> <span class="s2">&quot;set_quest_data&quot;</span><span class="p">):</span>
+                <span class="n">new_quest</span><span class="o">.</span><span class="n">set_quest_data</span><span class="p">(</span><span class="n">quest_data</span><span class="p">)</span>
         
         <span class="k">if</span> <span class="n">current_name</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">current_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">current_name</span><span class="p">)</span>

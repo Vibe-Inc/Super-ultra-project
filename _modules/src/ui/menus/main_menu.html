@@ -608,6 +608,9 @@
 <a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.MainMenu.start_game">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">start_game</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Start game requested from MainMenu&quot;</span><span class="p">)</span>
+        <span class="n">quest_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;arcane_quest&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">quest_state</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">quest_state</span><span class="p">,</span> <span class="s2">&quot;reset_quests&quot;</span><span class="p">):</span>
+            <span class="n">quest_state</span><span class="o">.</span><span class="n">reset_quests</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;gameplay&quot;</span><span class="p">)</span></div>
 
 

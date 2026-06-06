@@ -231,6 +231,12 @@
         <span class="n">add_item</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;steel_boots&quot;</span><span class="p">)</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">money</span> <span class="o">=</span> <span class="mi">100</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">purple_stars</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">revealed_tarot_cards</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="c1"># Unlock flags for mage-NPC gated features</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">arcane_quests_unlocked</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mysterium_magnum_unlocked</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="c1"># Dialog state: current active dialog UI and last NPC the player talked to</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current_dialog</span> <span class="o">=</span> <span class="kc">None</span>

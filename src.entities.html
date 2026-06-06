@@ -880,7 +880,8 @@ _dash_trail_timer (float): Dash trail spawn accumulator.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="id8">
 <span class="sig-name descname"><span class="pre">consume_mana</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.consume_mana"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
-<dd><p>Attempt to consume mana. Returns True if enough mana was available.</p>
+<dd><p>Attempt to consume mana. Returns True if enough mana was available.
+Uses the ManaSystem component if available.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -959,6 +960,24 @@ _dash_trail_timer (float): Dash trail spawn accumulator.</p>
 <dt class="sig sig-object py" id="id20">
 <span class="sig-name descname"><span class="pre">get_skill_in_slot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slot_index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_skill_in_slot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id20" title="Link to this definition"></a></dt>
 <dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.entities.character.Character.get_skill_mana_cost">
+<span class="sig-name descname"><span class="pre">get_skill_mana_cost</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">skill</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.get_skill_mana_cost"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.entities.character.Character.get_skill_mana_cost" title="Link to this definition"></a></dt>
+<dd><p>Return the mana cost of a skill (read from the skill dict’s <code class="docutils literal notranslate"><span class="pre">manaCost</span></code> key).</p>
+<p>Falls back to 0 for skills that don’t define one (e.g., passives, dash).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>skill</strong> (<em>dict</em>) – The skill dictionary with a <code class="docutils literal notranslate"><span class="pre">manaCost</span></code> field.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Mana required to cast the skill (&gt;= 0).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id21">
@@ -1122,7 +1141,8 @@ _dash_trail_timer (float): Dash trail spawn accumulator.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="id49">
 <span class="sig-name descname"><span class="pre">restore_mana</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">amount</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/character.html#Character.restore_mana"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id49" title="Link to this definition"></a></dt>
-<dd><p>Restore mana (clamped to max_mana).</p>
+<dd><p>Restore mana (clamped to max_mana).
+Uses the ManaSystem component if available.</p>
 </dd></dl>
 
 <dl class="py method">

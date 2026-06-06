@@ -77,6 +77,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.projectile</span><span class="w"> </span><span class="kn">import</span> <span class="n">Fireball</span><span class="p">,</span> <span class="n">GlacialCascade</span><span class="p">,</span> <span class="n">FrostNova</span><span class="p">,</span> <span class="n">ChainLightning</span><span class="p">,</span> <span class="n">Thunderstrike</span><span class="p">,</span> <span class="n">EntanglingRoots</span><span class="p">,</span> <span class="n">NatureBolt</span><span class="p">,</span> <span class="n">DarkPact</span><span class="p">,</span> <span class="n">ArcaneMissile</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.nature_spirit</span><span class="w"> </span><span class="kn">import</span> <span class="n">NatureSpirit</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.mana.mana_system</span><span class="w"> </span><span class="kn">import</span> <span class="n">ManaSystem</span>
 
 <div class="viewcode-block" id="Character">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character">[docs]</a>
@@ -518,11 +519,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">is_sprinting</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">can_sprint</span> <span class="o">=</span> <span class="kc">True</span>
 
-        <span class="c1"># Mana / Energy system</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">max_mana</span> <span class="o">=</span> <span class="mi">50</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mana</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_mana</span>
+        <span class="c1"># Mana system (using ManaSystem component)</span>
+        <span class="c1"># Regen rate reduced 4x (10.0 -&gt; 2.5) so mana regenerates much</span>
+        <span class="c1"># more slowly and the magical crumble animation has time to play out.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mana_system</span> <span class="o">=</span> <span class="n">ManaSystem</span><span class="p">(</span><span class="n">max_mana</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">mana_regen_rate</span><span class="o">=</span><span class="mf">2.5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_mana</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mana_system</span><span class="o">.</span><span class="n">max_mana</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mana</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mana_system</span><span class="o">.</span><span class="n">current_mana</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mana_drain_rate</span> <span class="o">=</span> <span class="mf">20.0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mana_regen_rate</span> <span class="o">=</span> <span class="mf">10.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mana_regen_rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mana_system</span><span class="o">.</span><span class="n">mana_regen_rate</span>
         <span class="c1"># energy is an alias to support systems that use &quot;energy&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">energy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stamina</span>
         <span class="c1"># Armor / defense system (consumed by Armor items)</span>
@@ -848,6 +852,7 @@
             <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Launch an explosive fireball dealing 28 damage with area effect and knockback.&quot;</span><span class="p">,</span>
             <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">188</span><span class="p">,</span> <span class="mi">82</span><span class="p">,</span> <span class="mi">35</span><span class="p">),</span>
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">214</span><span class="p">,</span> <span class="mi">120</span><span class="p">),</span>
+            <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
         <span class="p">})</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Fireball!&quot;</span><span class="p">)</span></div>
 
@@ -865,6 +870,7 @@
             <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Surrounds you with flames, dealing 8 damage/sec to nearby enemies.&quot;</span><span class="p">,</span>
             <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">220</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">20</span><span class="p">),</span>
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="mi">60</span><span class="p">),</span>
+            <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">15</span><span class="p">,</span>
         <span class="p">})</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Flame Shield!&quot;</span><span class="p">)</span></div>
 
@@ -890,6 +896,7 @@
             <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Freeze all enemies within radius for 3 seconds.&quot;</span><span class="p">,</span>
             <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="mi">140</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">180</span><span class="p">,</span> <span class="mi">220</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
+            <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
         <span class="p">})</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Frost Nova!&quot;</span><span class="p">)</span></div>
 
@@ -907,6 +914,7 @@
             <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Grants a shield of ice absorbing 30 damage and slowing attackers.&quot;</span><span class="p">,</span>
             <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">40</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">220</span><span class="p">),</span>
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">140</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
+            <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span>
         <span class="p">})</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Ice Armor!&quot;</span><span class="p">)</span></div>
 
@@ -924,6 +932,7 @@
             <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Ice shards cascade outward dealing 35 damage and freezing enemies.&quot;</span><span class="p">,</span>
             <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="mi">160</span><span class="p">,</span> <span class="mi">240</span><span class="p">),</span>
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">230</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
+            <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">22</span><span class="p">,</span>
         <span class="p">})</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Glacial Cascade!&quot;</span><span class="p">)</span></div>
 
@@ -940,6 +949,7 @@
             <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Fires a lightning bolt that jumps between up to 5 enemies.&quot;</span><span class="p">,</span>
             <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">220</span><span class="p">,</span> <span class="mi">50</span><span class="p">),</span>
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">180</span><span class="p">),</span>
+            <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">18</span><span class="p">,</span>
         <span class="p">})</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Chain Lightning!&quot;</span><span class="p">)</span></div>
 
@@ -963,6 +973,7 @@
             <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Call down lightning from above for 55 damage in a column.&quot;</span><span class="p">,</span>
             <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">230</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
+            <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">28</span><span class="p">,</span>
         <span class="p">})</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Thunderstrike!&quot;</span><span class="p">)</span></div>
 
@@ -979,6 +990,7 @@
             <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Unleash roots that immobilize enemies for 4 seconds.&quot;</span><span class="p">,</span>
             <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="mi">60</span><span class="p">),</span>
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">160</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">140</span><span class="p">),</span>
+            <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">22</span><span class="p">,</span>
         <span class="p">})</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Entangling Roots!&quot;</span><span class="p">)</span></div>
 
@@ -1002,6 +1014,7 @@
             <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Summon a nature spirit that attacks for 15 damage.&quot;</span><span class="p">,</span>
             <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">220</span><span class="p">,</span> <span class="mi">120</span><span class="p">),</span>
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">200</span><span class="p">),</span>
+            <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">35</span><span class="p">,</span>
         <span class="p">})</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Summon Spirit!&quot;</span><span class="p">)</span></div>
 
@@ -1018,6 +1031,7 @@
             <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Teleport through shadows, becoming invulnerable briefly.&quot;</span><span class="p">,</span>
             <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">140</span><span class="p">),</span>
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">160</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
+            <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
         <span class="p">})</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Shadow Step!&quot;</span><span class="p">)</span></div>
 
@@ -1041,6 +1055,7 @@
             <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Sacrifice 10% HP to deal 60 shadow damage to all nearby enemies.&quot;</span><span class="p">,</span>
             <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">140</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">180</span><span class="p">),</span>
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">220</span><span class="p">,</span> <span class="mi">160</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
+            <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
         <span class="p">})</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Dark Pact!&quot;</span><span class="p">)</span></div>
 
@@ -1057,6 +1072,7 @@
             <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Fire homing arcane missiles dealing 22 damage each.&quot;</span><span class="p">,</span>
             <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">140</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">120</span><span class="p">),</span>
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="mi">240</span><span class="p">),</span>
+            <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">24</span><span class="p">,</span>
         <span class="p">})</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Arcane Missiles!&quot;</span><span class="p">)</span></div>
 
@@ -1080,6 +1096,7 @@
             <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Creates a barrier that reflects 30</span><span class="si">% o</span><span class="s2">f incoming damage.&quot;</span><span class="p">,</span>
             <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">180</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">160</span><span class="p">),</span>
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">240</span><span class="p">),</span>
+            <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
         <span class="p">})</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Mystic Barrier!&quot;</span><span class="p">)</span></div>
 
@@ -1096,6 +1113,7 @@
             <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;+50</span><span class="si">% d</span><span class="s2">amage dealt, +20</span><span class="si">% d</span><span class="s2">amage taken. The fury consumes you.&quot;</span><span class="p">,</span>
             <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">30</span><span class="p">),</span>
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">160</span><span class="p">,</span> <span class="mi">60</span><span class="p">),</span>
+            <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span>
         <span class="p">})</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Berserker&#39;s Rage!&quot;</span><span class="p">)</span></div>
 
@@ -1152,6 +1170,7 @@
             <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Slow time for 3 seconds. +25</span><span class="si">% a</span><span class="s2">ttack speed. Cooldown: 30s.&quot;</span><span class="p">,</span>
             <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">160</span><span class="p">,</span> <span class="mi">220</span><span class="p">),</span>
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">230</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
+            <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span>
         <span class="p">})</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Chrono Shift!&quot;</span><span class="p">)</span></div>
 
@@ -1220,14 +1239,85 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">is_skill_ready</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skill</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if a skill is ready to use (cooldown expired).</span>
-<span class="sd">        </span>
+
 <span class="sd">        Args:</span>
 <span class="sd">            skill (dict): The skill dictionary with skill_id.</span>
-<span class="sd">            </span>
+
 <span class="sd">        Returns:</span>
 <span class="sd">            bool: True if skill is ready, False if on cooldown.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_skill_cooldown_percent</span><span class="p">(</span><span class="n">skill</span><span class="p">)</span> <span class="o">==</span> <span class="mf">0.0</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_is_skill_on_cooldown</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skill_id</span><span class="p">,</span> <span class="n">current_time</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Internal cooldown gate that mirrors the per-skill cooldown logic</span>
+<span class="sd">        in ``use_skill``. Returns True when the skill is still on cooldown.</span>
+
+<span class="sd">        This lets us reject a cast *before* spending mana, so the player</span>
+<span class="sd">        doesn&#39;t get penalised for trying to fire a skill they couldn&#39;t use.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            skill_id (str): The skill identifier (e.g. &quot;fireball&quot;).</span>
+<span class="sd">            current_time (int): ``pygame.time.get_ticks()`` value in ms.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the skill is on cooldown, False if it&#39;s ready.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Skills with dynamic cooldown (may include cooldown reduction bonuses)</span>
+        <span class="k">if</span> <span class="n">skill_id</span> <span class="o">==</span> <span class="s2">&quot;berserkers_rage&quot;</span><span class="p">:</span>
+            <span class="n">cooldown</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">berserkers_rage_cooldown</span> <span class="o">+</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;berserkers_rage_cooldown_bonus&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">skill_id</span> <span class="o">==</span> <span class="s2">&quot;chrono_shift&quot;</span><span class="p">:</span>
+            <span class="n">cooldown</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chrono_shift_cooldown</span> <span class="o">+</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;chrono_shift_cooldown_bonus&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cooldown</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">skill_id</span><span class="si">}</span><span class="s2">_cooldown&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">cooldown</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">cooldown</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="n">last_used</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">skill_id</span><span class="si">}</span><span class="s2">_last_used&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">last_used</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="n">current_time</span> <span class="o">-</span> <span class="n">last_used</span> <span class="o">&lt;</span> <span class="n">cooldown</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_is_skill_state_blocked</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skill_id</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return True if the skill can&#39;t be used due to a non-cooldown state</span>
+<span class="sd">        condition (e.g. toggle already active). Mirrors the early ``if ...:</span>
+<span class="sd">        return False`` guards inside ``use_skill``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">skill_id</span> <span class="o">==</span> <span class="s2">&quot;flame_shield&quot;</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;flame_shield_active&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">skill_id</span> <span class="o">==</span> <span class="s2">&quot;ice_armor&quot;</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;ice_armor_active&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">skill_id</span> <span class="o">==</span> <span class="s2">&quot;mystic_barrier&quot;</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;mystic_barrier_active&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">skill_id</span> <span class="o">==</span> <span class="s2">&quot;berserkers_rage&quot;</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;berserkers_rage_active&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">skill_id</span> <span class="o">==</span> <span class="s2">&quot;chrono_shift&quot;</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;chrono_shift_active&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="Character.get_skill_mana_cost">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.get_skill_mana_cost">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_skill_mana_cost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skill</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the mana cost of a skill (read from the skill dict&#39;s ``manaCost`` key).</span>
+
+<span class="sd">        Falls back to 0 for skills that don&#39;t define one (e.g., passives, dash).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            skill (dict): The skill dictionary with a ``manaCost`` field.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: Mana required to cast the skill (&gt;= 0).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">skill</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">skill</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;manaCost&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+            <span class="k">return</span> <span class="mi">0</span></div>
 
 
 <div class="viewcode-block" id="Character.use_skill">
@@ -1238,6 +1328,49 @@
 
         <span class="n">skill_id</span> <span class="o">=</span> <span class="n">skill</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;skill_id&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
         <span class="n">current_time</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span>
+
+        <span class="c1"># ─── ManaSystem integration ────────────────────────────────────</span>
+        <span class="c1"># Cast gating order (matches the inner skill branches&#39; return-False</span>
+        <span class="c1"># checks so mana is only spent on a *successful* cast):</span>
+        <span class="c1">#   1. Cooldown   — don&#39;t penalise the player for trying a skill</span>
+        <span class="c1">#                    they can&#39;t use yet.</span>
+        <span class="c1">#   2. State      — e.g. an already-active Flame Shield / Ice Armor.</span>
+        <span class="c1">#   3. Mana       — only checked once we know the cast can actually</span>
+        <span class="c1">#                    happen, then deducted at the same time.</span>
+        <span class="c1"># Anything that fails steps 1/2 returns ``False`` *without* touching</span>
+        <span class="c1"># the player&#39;s mana pool.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_skill_on_cooldown</span><span class="p">(</span><span class="n">skill_id</span><span class="p">,</span> <span class="n">current_time</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_skill_state_blocked</span><span class="p">(</span><span class="n">skill_id</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="n">mana_cost</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_skill_mana_cost</span><span class="p">(</span><span class="n">skill</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mana_cost</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">mana_system</span><span class="o">.</span><span class="n">has_enough_mana</span><span class="p">(</span><span class="n">mana_cost</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Cannot cast &#39;</span><span class="si">{</span><span class="n">skill_id</span><span class="si">}</span><span class="s2">&#39;: not enough mana &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;(need </span><span class="si">{</span><span class="n">mana_cost</span><span class="si">}</span><span class="s2">, have </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mana_system</span><span class="o">.</span><span class="n">current_mana</span><span class="p">)</span><span class="si">}</span><span class="s2">).&quot;</span>
+            <span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_floating_text</span><span class="p">(</span>
+                    <span class="s2">&quot;Not enough mana!&quot;</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="mi">50</span><span class="p">,</span>
+                    <span class="p">(</span><span class="mi">180</span><span class="p">,</span> <span class="mi">120</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
+                    <span class="mf">1.2</span><span class="p">,</span>
+                    <span class="mi">20</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="c1"># Mana is sufficient (or the skill is free) and the cooldown/state</span>
+        <span class="c1"># gates have passed — deduct it so the inner branch commits. If the</span>
+        <span class="c1"># inner branch still bails (e.g. missing game_state, no projectiles</span>
+        <span class="c1"># container) the cost is not refunded; this matches typical ARPG</span>
+        <span class="c1"># design where paying mana and missing is a player mistake.</span>
+        <span class="k">if</span> <span class="n">mana_cost</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">consume_mana</span><span class="p">(</span><span class="n">mana_cost</span><span class="p">)</span>
+        <span class="c1"># ───────────────────────────────────────────────────────────────</span>
 
         <span class="c1"># Elemental Mastery: dual-element combo tracking</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">elemental_mastery</span><span class="p">:</span>
@@ -2332,12 +2465,12 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">stamina</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_stamina</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">can_sprint</span> <span class="o">=</span> <span class="kc">True</span>
 
-        <span class="c1"># Mana regeneration</span>
-        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;mana&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mana</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_mana</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">mana</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mana_regen_rate</span> <span class="o">*</span> <span class="n">dt</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mana</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_mana</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">mana</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_mana</span>
+        <span class="c1"># Mana regeneration (using ManaSystem)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;mana_system&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mana_system</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+            <span class="c1"># Sync with legacy attributes for compatibility</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mana</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mana_system</span><span class="o">.</span><span class="n">current_mana</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">max_mana</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mana_system</span><span class="o">.</span><span class="n">max_mana</span>
 
         <span class="c1"># KEY IMPLEMENTATION STEP: Single function call for collision-aware movement</span>
         <span class="n">collision_system</span><span class="o">.</span><span class="n">handle_movement_and_collision</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">obstacles</span><span class="p">)</span>
@@ -2542,9 +2675,16 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">consume_mana</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Attempt to consume mana. Returns True if enough mana was available.</span>
+<span class="sd">        Uses the ManaSystem component if available.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">amount</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;mana_system&quot;</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mana_system</span><span class="o">.</span><span class="n">consume_mana</span><span class="p">(</span><span class="n">amount</span><span class="p">)</span>
+            <span class="c1"># Sync with legacy attributes</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mana</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mana_system</span><span class="o">.</span><span class="n">current_mana</span>
+            <span class="k">return</span> <span class="n">result</span>
+        <span class="c1"># Fallback if mana_system not initialized</span>
         <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;mana&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">amount</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">mana</span> <span class="o">-=</span> <span class="n">amount</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Consumed </span><span class="si">{</span><span class="n">amount</span><span class="si">}</span><span class="s2"> mana. Mana: </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mana</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_mana</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -2558,9 +2698,16 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">restore_mana</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Restore mana (clamped to max_mana).</span>
+<span class="sd">        Uses the ManaSystem component if available.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">amount</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">return</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;mana_system&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mana_system</span><span class="o">.</span><span class="n">restore_mana</span><span class="p">(</span><span class="n">amount</span><span class="p">)</span>
+            <span class="c1"># Sync with legacy attributes</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mana</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mana_system</span><span class="o">.</span><span class="n">current_mana</span>
+            <span class="k">return</span>
+        <span class="c1"># Fallback if mana_system not initialized</span>
         <span class="n">prev</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;mana&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mana</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_mana</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mana</span> <span class="o">+</span> <span class="n">amount</span><span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Player restored </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mana</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">prev</span><span class="si">}</span><span class="s2"> mana. Mana: </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mana</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_mana</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>

@@ -378,6 +378,7 @@
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#id18"><code class="docutils literal notranslate"><span class="pre">Character.get_resistance()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#id19"><code class="docutils literal notranslate"><span class="pre">Character.get_skill_cooldown_percent()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#id20"><code class="docutils literal notranslate"><span class="pre">Character.get_skill_in_slot()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.entities.html#src.entities.character.Character.get_skill_mana_cost"><code class="docutils literal notranslate"><span class="pre">Character.get_skill_mana_cost()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#id21"><code class="docutils literal notranslate"><span class="pre">Character.heal()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#id22"><code class="docutils literal notranslate"><span class="pre">Character.is_immune()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.entities.html#id23"><code class="docutils literal notranslate"><span class="pre">Character.is_skill_ready()</span></code></a></li>
@@ -812,6 +813,19 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="src.ui.html#module-src.ui.menus">src.ui.menus module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="src.ui.html#src.ui.menus.ArcaneQuestMenu"><code class="docutils literal notranslate"><span class="pre">ArcaneQuestMenu</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.ArcaneQuestMenu.QUEST_COUNT"><code class="docutils literal notranslate"><span class="pre">ArcaneQuestMenu.QUEST_COUNT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.ArcaneQuestMenu.claim_reward"><code class="docutils literal notranslate"><span class="pre">ArcaneQuestMenu.claim_reward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.ArcaneQuestMenu.close_menu"><code class="docutils literal notranslate"><span class="pre">ArcaneQuestMenu.close_menu()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.ArcaneQuestMenu.draw"><code class="docutils literal notranslate"><span class="pre">ArcaneQuestMenu.draw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.ArcaneQuestMenu.get_quest_data"><code class="docutils literal notranslate"><span class="pre">ArcaneQuestMenu.get_quest_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.ArcaneQuestMenu.handle_event"><code class="docutils literal notranslate"><span class="pre">ArcaneQuestMenu.handle_event()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.ArcaneQuestMenu.on_enter"><code class="docutils literal notranslate"><span class="pre">ArcaneQuestMenu.on_enter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.ArcaneQuestMenu.reset_quests"><code class="docutils literal notranslate"><span class="pre">ArcaneQuestMenu.reset_quests()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.ArcaneQuestMenu.set_quest_data"><code class="docutils literal notranslate"><span class="pre">ArcaneQuestMenu.set_quest_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.ArcaneQuestMenu.update"><code class="docutils literal notranslate"><span class="pre">ArcaneQuestMenu.update()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="src.ui.html#src.ui.menus.CollectionBookMenu"><code class="docutils literal notranslate"><span class="pre">CollectionBookMenu</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.CollectionBookMenu.close_menu"><code class="docutils literal notranslate"><span class="pre">CollectionBookMenu.close_menu()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.CollectionBookMenu.draw"><code class="docutils literal notranslate"><span class="pre">CollectionBookMenu.draw()</span></code></a></li>
@@ -900,6 +914,15 @@
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#id14"><code class="docutils literal notranslate"><span class="pre">Menu.draw()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#id15"><code class="docutils literal notranslate"><span class="pre">Menu.handle_event()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ui.html#id16"><code class="docutils literal notranslate"><span class="pre">Menu.layout()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="src.ui.html#src.ui.menus.MysteriumMagnumMenu"><code class="docutils literal notranslate"><span class="pre">MysteriumMagnumMenu</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.MysteriumMagnumMenu.draw"><code class="docutils literal notranslate"><span class="pre">MysteriumMagnumMenu.draw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.MysteriumMagnumMenu.exit_menu"><code class="docutils literal notranslate"><span class="pre">MysteriumMagnumMenu.exit_menu()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.MysteriumMagnumMenu.handle_event"><code class="docutils literal notranslate"><span class="pre">MysteriumMagnumMenu.handle_event()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.MysteriumMagnumMenu.layout"><code class="docutils literal notranslate"><span class="pre">MysteriumMagnumMenu.layout()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.MysteriumMagnumMenu.on_enter"><code class="docutils literal notranslate"><span class="pre">MysteriumMagnumMenu.on_enter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ui.html#src.ui.menus.MysteriumMagnumMenu.update"><code class="docutils literal notranslate"><span class="pre">MysteriumMagnumMenu.update()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="src.ui.html#src.ui.menus.PauseMenu"><code class="docutils literal notranslate"><span class="pre">PauseMenu</span></code></a><ul>
