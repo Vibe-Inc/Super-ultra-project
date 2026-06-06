@@ -127,6 +127,7 @@ class ArcaneQuestMenu(Menu):
         self.section_font = cfg.get_font(max(16, int(30 * scale)))
         self.body_font    = cfg.get_font(max(14, int(24 * scale)))
         self.small_font   = cfg.get_font(max(12, int(20 * scale)))
+        self.claim_font   = cfg.get_font(max(12, int(22 * scale)))
         self.reward_font  = cfg.get_font(max(14, int(26 * scale)))
         self.mono_font    = cfg.get_font(max(12, int(20 * scale)))
 
@@ -685,8 +686,8 @@ class ArcaneQuestMenu(Menu):
             if i >= len(self.slot_rects):
                 break
             sr = self.slot_rects[i]
-            cw = max(80, int(120 * scale))
-            ch = max(28, int(36 * scale))
+            cw = max(72, int(100 * scale))
+            ch = max(26, int(32 * scale))
             cx = sr.right - cw - int(8 * scale)
             cy = sr.bottom - ch - int(6 * scale)
             text = _("CLAIM") if not q.claimed else _("DONE")
@@ -695,7 +696,7 @@ class ArcaneQuestMenu(Menu):
                 text,
                 (70, 30, 100) if not q.claimed else (50, 50, 55),
                 (100, 50, 140) if not q.claimed else (70, 70, 75),
-                cfg.button_font,
+                self.claim_font,
                 GOLD_BRIGHT if not q.claimed else (140, 140, 150),
                 max(2, int(6 * scale)),
                 on_click=lambda idx=i: self.claim_reward(idx),
@@ -1360,67 +1361,104 @@ class ArcaneQuestMenu(Menu):
 
     def _draw_magical_claim_button(self, screen, btn, idx):
         pulse = (math.sin(self.anim_time * 3.0 + idx * 1.1) + 1.0) * 0.5
+        cx, cy = btn.rect.centerx, btn.rect.centery
+        w, h = btn.rect.width, btn.rect.height
 
         # Outer glow aura
-        aura_size = int(btn.rect.width * 1.4)
+        aura_size = int(max(w, h) * 1.6)
         aura_surf = pygame.Surface((aura_size, aura_size), pygame.SRCALPHA)
-        aa = int(60 + 70 * pulse)
-        for r_ in range(aura_size // 2, 0, -4):
+        aa = int(40 + 80 * pulse)
+        for r_ in range(aura_size // 2, 0, -3):
             t_ = r_ / (aura_size // 2)
             col = (
                 int(GOLD_BRIGHT[0] * (1 - t_) + PURPLE_BRIGHT[0] * t_),
                 int(GOLD_BRIGHT[1] * (1 - t_) + PURPLE_BRIGHT[1] * t_),
                 int(GOLD_BRIGHT[2] * (1 - t_) + PURPLE_BRIGHT[2] * t_),
-                max(0, int(aa * (1 - t_))),
+                max(0, int(aa * (1 - t_ * t_))),
             )
             pygame.draw.circle(aura_surf, col, (aura_size // 2, aura_size // 2), r_)
-        screen.blit(aura_surf,
-                    (btn.rect.centerx - aura_size // 2, btn.rect.centery - aura_size // 2))
+        screen.blit(aura_surf, (cx - aura_size // 2, cy - aura_size // 2))
 
-        # Gradient background (gold → purple)
-        grad = pygame.Surface(btn.rect.size, pygame.SRCALPHA)
-        for x in range(btn.rect.width):
-            tt = x / max(1, btn.rect.width - 1)
-            cr = int(GOLD_BRIGHT[0] * (1 - tt) + PURPLE[0] * tt)
-            cg = int(GOLD_BRIGHT[1] * (1 - tt) + PURPLE[1] * tt)
-            cb = int(GOLD_BRIGHT[2] * (1 - tt) + PURPLE[2] * tt)
-            pygame.draw.line(grad, (cr, cg, cb), (x, 0), (x, btn.rect.height))
-        mask = pygame.Surface(btn.rect.size, pygame.SRCALPHA)
-        pygame.draw.rect(mask, (255, 255, 255, 255), mask.get_rect(), border_radius=8)
+        # Inner glow (tight, bright)
+        inner_aura_size = int(max(w, h) * 1.2)
+        inner_surf = pygame.Surface((inner_aura_size, inner_aura_size), pygame.SRCALPHA)
+        ia = int(80 + 100 * pulse)
+        for r_ in range(inner_aura_size // 2, 0, -3):
+            t_ = r_ / (inner_aura_size // 2)
+            blend = 1.0 - t_
+            col = (
+                min(255, int(GOLD_BRIGHT[0] * blend + 60)),
+                min(255, int(GOLD_BRIGHT[1] * blend + 30)),
+                min(255, int(GOLD_BRIGHT[2] * blend * 0.5 + PURPLE_BRIGHT[2] * t_ * 0.5)),
+                max(0, int(ia * (1.0 - t_ * t_))),
+            )
+            pygame.draw.circle(inner_surf, col, (inner_aura_size // 2, inner_aura_size // 2), r_)
+        screen.blit(inner_surf, (cx - inner_aura_size // 2, cy - inner_aura_size // 2))
+
+        # Gradient background (gold → bright purple)
+        grad = pygame.Surface((w, h), pygame.SRCALPHA)
+        for x in range(w):
+            tt = x / max(1, w - 1)
+            cr = int(min(255, GOLD_BRIGHT[0] * (1 - tt) + PURPLE_BRIGHT[0] * tt))
+            cg = int(min(255, GOLD_BRIGHT[1] * (1 - tt) + PURPLE_BRIGHT[1] * tt))
+            cb = int(min(255, GOLD_BRIGHT[2] * (1 - tt) + PURPLE_BRIGHT[2] * tt))
+            pygame.draw.line(grad, (cr, cg, cb), (x, 0), (x, h))
+        mask = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.rect(mask, (255, 255, 255, 255), mask.get_rect(), border_radius=6)
         grad.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
         screen.blit(grad, btn.rect.topleft)
 
-        # Gold border
-        pygame.draw.rect(screen, GOLD_BRIGHT, btn.rect, 2, border_radius=8)
+        # Shimmering gold border
+        border_bright = int(180 + 75 * pulse)
+        border_col = (min(255, GOLD_BRIGHT[0] + 30),
+                      min(255, GOLD_BRIGHT[1] + 20),
+                      GOLD_BRIGHT[2] + border_bright // 3)
+        pygame.draw.rect(screen, border_col, btn.rect, 2, border_radius=6)
+        # Inner subtle highlight line
+        inner_line = btn.rect.inflate(-2, -2)
+        hl_bright = int(60 + 80 * (1.0 - pulse))
+        pygame.draw.rect(screen, (*GOLD_BRIGHT, hl_bright), inner_line, 1, border_radius=5)
 
         # Text with glow
         text_surf = btn.font.render(btn.text, True, (255, 255, 240))
-        text_rect = text_surf.get_rect(center=btn.rect.center)
-        shadow_surf = btn.font.render(btn.text, True, (80, 50, 20, 120))
-        screen.blit(shadow_surf, (text_rect.x + 1, text_rect.y + 1))
+        text_rect = text_surf.get_rect(center=(cx, cy))
+        glow_surf = btn.font.render(btn.text, True, (255, 200, 100))
+        for dx, dy in [(-1, -1), (-1, 1), (1, -1), (1, 1), (0, 0)]:
+            alpha = 60 if dx != 0 or dy != 0 else 200
+            glow_surf.set_alpha(alpha)
+            screen.blit(glow_surf, (text_rect.x + dx, text_rect.y + dy))
         screen.blit(text_surf, text_rect)
 
-        # Decorative stars
-        self._draw_star(screen, btn.rect.x + 8, btn.rect.centery, 2.5, GOLD_BRIGHT,
-                        self.anim_time + idx * 0.3)
-        self._draw_star(screen, btn.rect.right - 8, btn.rect.centery, 2.5, PURPLE_BRIGHT,
-                        self.anim_time + idx * 0.3 + 1.5)
+        # Decorative stars with animation
+        star_phase = self.anim_time + idx * 0.3
+        star_pulse = (math.sin(star_phase * 2.0) + 1.0) * 0.5
+        star_size = 2.0 + 1.5 * star_pulse
+        self._draw_star(screen, btn.rect.x + 6, cy, star_size, GOLD_BRIGHT, star_phase)
+        self._draw_star(screen, btn.rect.right - 6, cy, star_size, PURPLE_BRIGHT, star_phase + 1.5)
+        # Tiny orbiting sparkles
+        sparkle_angle = star_phase * 2.5
+        for side, col in [(-1, GOLD_BRIGHT), (1, PURPLE_BRIGHT)]:
+            sx = cx + side * (w // 2 + 2)
+            sy = cy + math.sin(sparkle_angle + side) * 3
+            spark_alpha = int(100 + 155 * (math.sin(sparkle_angle * 2 + side) + 1.0) * 0.5)
+            pygame.draw.circle(screen, (*col, spark_alpha), (int(sx), int(sy)), 1.5)
 
     def _draw_locked_button(self, screen, btn):
-        dim_grad = pygame.Surface(btn.rect.size, pygame.SRCALPHA)
-        for x in range(btn.rect.width):
-            tt = x / max(1, btn.rect.width - 1)
-            cr = int(40 * (1 - tt) + 55 * tt)
-            cg = int(28 * (1 - tt) + 32 * tt)
-            cb = int(50 * (1 - tt) + 45 * tt)
-            pygame.draw.line(dim_grad, (cr, cg, cb, 180), (x, 0), (x, btn.rect.height))
-        dim_mask = pygame.Surface(btn.rect.size, pygame.SRCALPHA)
-        pygame.draw.rect(dim_mask, (255, 255, 255, 255), dim_mask.get_rect(), border_radius=8)
+        w, h = btn.rect.width, btn.rect.height
+        dim_grad = pygame.Surface((w, h), pygame.SRCALPHA)
+        for x in range(w):
+            tt = x / max(1, w - 1)
+            cr = int(35 * (1 - tt) + 50 * tt)
+            cg = int(22 * (1 - tt) + 28 * tt)
+            cb = int(45 * (1 - tt) + 40 * tt)
+            pygame.draw.line(dim_grad, (cr, cg, cb, 160), (x, 0), (x, h))
+        dim_mask = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.rect(dim_mask, (255, 255, 255, 255), dim_mask.get_rect(), border_radius=6)
         dim_grad.blit(dim_mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
         screen.blit(dim_grad, btn.rect.topleft)
-        pygame.draw.rect(screen, (GOLD_DARK[0], GOLD_DARK[1], GOLD_DARK[2]),
-                         btn.rect, 1, border_radius=8)
-        text_surf = btn.font.render(btn.text, True, (140, 135, 150))
+        pygame.draw.rect(screen, (50, 45, 60), btn.rect, 1, border_radius=6)
+        pygame.draw.rect(screen, (30, 25, 40), btn.rect.inflate(-2, -2), 1, border_radius=5)
+        text_surf = btn.font.render(btn.text, True, (130, 125, 140))
         text_rect = text_surf.get_rect(center=btn.rect.center)
         screen.blit(text_surf, text_rect)
 
