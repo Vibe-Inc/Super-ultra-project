@@ -61,6 +61,7 @@ GATHER_TILE_PROPERTY = {
     "ore":    "is_ore_gatherable",
     "iron":   "is_iron_gatherable",
     "flint":  "is_flint_gatherable",
+    "sticks": "is_sticks_gatherable",
 }
 
 # Legacy tile properties still recognised for backwards compatibility
@@ -73,13 +74,15 @@ GATHER_TILE_PROPERTY_FALLBACK = {
     "ore":    ("minable",),
     "iron":   (),
     "flint":  (),
+    "sticks": (),
 }
 
 # Gather types that can be picked up without any tool equipped (i.e.
 # "bare hands"). When the player has no gathering tool active, the
 # controller falls back to these types so that loose surface resources
-# like flint still show a "Press G" prompt and can be collected.
-GATHER_NO_TOOL_TYPES = {"flint"}
+# like flint and sticks still show a "Press G" prompt and can be
+# collected.
+GATHER_NO_TOOL_TYPES = {"flint", "sticks"}
 
 # Default per-gather-type yield item id when the tool doesn't override it.
 GATHER_DEFAULT_YIELD = {
@@ -88,6 +91,7 @@ GATHER_DEFAULT_YIELD = {
     "ore":   "iron_ore",
     "iron":  "iron_ore",
     "flint": "flint",
+    "sticks": "stick",
 }
 
 # Maps a tool's declared ``gather_type`` to the list of tile gather
@@ -141,6 +145,7 @@ GATHER_LABELS = {
     "ore":   "Mining",
     "iron":  "Mining",
     "flint": "Picking up",
+    "sticks": "Gathering",
 }
 
 
@@ -247,6 +252,7 @@ class GatheringUI:
                 "ore":   "crack",
                 "iron":  "mine",
                 "flint": "pick up",
+                "sticks": "pick up sticks",
             }.get(gather_type, "gather")
             msg = f"Press G to {verb}"
             text_color = (245, 245, 220)
@@ -336,14 +342,20 @@ class GatheringController:
         # underlying :class:`pytmx.TiledMap` object changes (i.e. the
         # player moved to a different map).
         #
-        # This is a *set* of ``(id(tmx), gather_type)`` tuples, not a
-        # single slot. The single-slot version was a hot-path bug for
-        # tools with alias-expanded gather types (e.g. the pickaxe's
-        # ``"stone"`` -> ``("stone", "iron")``): the per-frame search
-        # alternates between "stone" and "iron", and a single-slot
-        # cache evicts itself on every alternation, causing four
-        # full-map scans per cache miss instead of one.
-        self._clusters_built_for: set = set()
+        # The cache is keyed by ``(id(tmx), gather_type)`` and stores
+        # the *actual cluster data* per gather type, not just a flag
+        # that "this combination has been built". A flag-only cache
+        # breaks the bare-hands "flint vs. sticks" case: the per-frame
+        # search iterates over ``GATHER_NO_TOOL_TYPES`` and builds
+        # clusters for one type, then the next, and a flag-only cache
+        # would return the *previous* type's ``tile_to_cluster`` map
+        # for the current query -- meaning a sticks tile could be
+        # looked up in a flint cluster map (or vice versa) and be
+        # silently missed. Storing the data per gather type keeps the
+        # two lookups strictly independent so an ``is_sticks_gatherable``
+        # tile always yields sticks and an ``is_flint_gatherable``
+        # tile always yields flint.
+        self._cluster_data: dict = {}
         self.gatherable_tiles: set[tuple[int, int]] = set()
         self.tile_clusters: list[frozenset[tuple[int, int]]] = []
         self.tile_to_cluster: dict[tuple[int, int], int] = {}
@@ -702,29 +714,44 @@ class GatheringController:
                 tile = self._find_target_tile(gather_type)
                 if tile is not None:
                     return (tile, gather_type)
-            # No ready tile across any alias -- surface a "Regrowing" prompt
-            # for the tool's primary type instead so the player understands
-            # why the usual hint isn't an actionable "Press G".
-            for gather_type in self._tool_gather_types(tool):
-                cooldown_tile = self._find_cooldown_tile(gather_type)
-                if cooldown_tile is not None:
-                    return (cooldown_tile, gather_type)
-            # Tool is equipped but has nothing to do right now -- the
-            # player may still be standing next to a flint they want
-            # to pick up with bare hands.  Probe the no-tool types as
-            # a courtesy before giving up.
+            # Tool has no ready tile -- but the player may still be
+            # standing next to a bare-hands resource (flint, sticks)
+            # they want to pick up.  Probe the no-tool types BEFORE
+            # falling back to the tool's "Regrowing" hint so a
+            # useful bare-hands action isn't masked by an
+            # informational cooldown countdown (e.g. wood regrowing
+            # nearby shouldn't hide the "Press G to pick up sticks"
+            # prompt that the player can act on right now).
             for gather_type in GATHER_NO_TOOL_TYPES:
                 tile = self._find_target_tile(gather_type)
                 if tile is not None:
                     return (tile, gather_type)
+            # No ready target anywhere -- surface a "Regrowing" prompt
+            # for the tool's primary type instead so the player
+            # understands why the usual hint isn't an actionable
+            # "Press G".
+            for gather_type in self._tool_gather_types(tool):
+                cooldown_tile = self._find_cooldown_tile(gather_type)
+                if cooldown_tile is not None:
+                    return (cooldown_tile, gather_type)
+            # Or the same hint for bare-hands types on cooldown.
+            for gather_type in GATHER_NO_TOOL_TYPES:
+                cooldown_tile = self._find_cooldown_tile(gather_type)
+                if cooldown_tile is not None:
+                    return (cooldown_tile, gather_type)
             return None
 
-        # No tool equipped: fall back to the tool-less gather types
-        # (e.g. flint outcrops picked up by hand).
+        # No tool equipped: check ALL tool-less types for a ready
+        # tile first so a sticks tile in range isn't masked by a
+        # flint tile on cooldown (or vice versa).  Only after every
+        # type has reported "nothing ready" do we fall through to
+        # the "Regrowing" hint for whichever type has a cooldown
+        # tile in range.
         for gather_type in GATHER_NO_TOOL_TYPES:
             tile = self._find_target_tile(gather_type)
             if tile is not None:
                 return (tile, gather_type)
+        for gather_type in GATHER_NO_TOOL_TYPES:
             cooldown_tile = self._find_cooldown_tile(gather_type)
             if cooldown_tile is not None:
                 return (cooldown_tile, gather_type)
@@ -1044,7 +1071,17 @@ class GatheringController:
         except Exception:
             tmx = None
         cache_key = (id(tmx) if tmx is not None else None, gather_type)
-        if cache_key in self._clusters_built_for:
+        cached = self._cluster_data.get(cache_key)
+        if cached is not None:
+            # Restore the cached data for this exact (map, gather_type)
+            # pair into the instance attributes. Storing the data per
+            # gather type is what keeps ``is_sticks_gatherable`` and
+            # ``is_flint_gatherable`` lookups strictly independent:
+            # a cache hit here always returns clusters built from the
+            # property names that match this ``gather_type`` only.
+            self.gatherable_tiles = cached["gatherable_tiles"]
+            self.tile_clusters = cached["tile_clusters"]
+            self.tile_to_cluster = cached["tile_to_cluster"]
             return
 
         self.gatherable_tiles = set()
@@ -1052,12 +1089,20 @@ class GatheringController:
         self.tile_to_cluster = {}
 
         if tmx is None:
-            self._clusters_built_for.add(cache_key)
+            self._cluster_data[cache_key] = {
+                "gatherable_tiles": self.gatherable_tiles,
+                "tile_clusters": self.tile_clusters,
+                "tile_to_cluster": self.tile_to_cluster,
+            }
             return
 
         prop_names = self._gather_type_prop_names(gather_type)
         if not prop_names:
-            self._clusters_built_for.add(cache_key)
+            self._cluster_data[cache_key] = {
+                "gatherable_tiles": self.gatherable_tiles,
+                "tile_clusters": self.tile_clusters,
+                "tile_to_cluster": self.tile_to_cluster,
+            }
             return
 
         # First pass: find every gatherable tile on the map.
@@ -1112,7 +1157,11 @@ class GatheringController:
         self.gatherable_tiles = gatherable
         self.tile_clusters = clusters
         self.tile_to_cluster = tile_to_cluster
-        self._clusters_built_for.add(cache_key)
+        self._cluster_data[cache_key] = {
+            "gatherable_tiles": gatherable,
+            "tile_clusters": clusters,
+            "tile_to_cluster": tile_to_cluster,
+        }
         logger.info(
             f"Gather clusters built: type={gather_type} "
             f"tiles={len(gatherable)} clusters={len(clusters)}"

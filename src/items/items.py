@@ -444,26 +444,91 @@ class Consumable(Item):
         return used
 
 
-class Armor(Item):
+class Armor(Item, DurabilityMixin):
     """
     Represents an armor item that can be equipped in a specific equipment slot.
+
+    Armor inherits from :class:`DurabilityMixin` so it shares the same
+    wear-bar UX as weapons and tools: each time the wearer takes a hit
+    the equipped piece loses a point of ``durability``; the wear bar in
+    the inventory/hotbar renders the live value, and a piece that has
+    hit zero contributes 0 defense.  Armor that has never been hit stays
+    at ``max_durability`` for its entire lifetime.
 
     Attributes:
         slot_type (str): The equipment slot this armor belongs to
                          ("helmet", "chestplate", "leggings", "boots",
                           "charm", "gloves", "ring", "belt").
-        defense_value (int): Flat damage reduction this armor provides.
+        defense_value (int): Pristine flat damage reduction this armor
+            provides.  The *effective* contribution to the player's
+            ``character.defense`` is scaled by the remaining
+            durability via :py:meth:`get_effective_defense` so a worn
+            chestplate still feels worn.
+        durability (int): Current wear points (set by
+            :py:meth:`DurabilityMixin._init_durability`).
+        max_durability (int): Pristine wear budget.
 
     Methods:
         __init__(row: dict):
             Initialize armor properties from a database row.
+        get_effective_defense():
+            Return the damage-reduction contribution of this piece,
+            scaled by remaining durability.
         get_tooltip_text():
-            Return formatted tooltip text including armor type and defense.
+            Return formatted tooltip text including armor type,
+            defense, and durability.
     """
+    # Defense scaling curve mirrors the weapon damage curve so a worn
+    # armor piece feels the same as a worn weapon: above 25% durability
+    # you get the full defense, between 0% and 25% the contribution
+    # interpolates down to the floor (50% by default), and broken
+    # pieces (0% durability) contribute the floor value too -- never
+    # zero, so a broken chestplate is still slightly better than
+    # nothing.
+    DEFENSE_SCALING_THRESHOLD: float = 0.25
+    DEFENSE_SCALING_FLOOR: float = 0.5
+
     def __init__(self, row: dict):
         super().__init__(row)
         self.slot_type = row.get("slot_type", "helmet")
         self.defense_value = row.get("defense_value", 0)
+        # ``armor_durability`` is the alias used by the DB query's LEFT
+        # JOIN on the ``armor`` table.  Fall back to ``max_durability``
+        # (flat row variant) and finally to the live value so the item
+        # is at least "fully repaired" out of the box.
+        current_dur = row.get("armor_durability", row.get("durability", None))
+        max_dur = row.get("armor_max_durability", None)
+        if max_dur is None:
+            max_dur = row.get("max_durability", current_dur)
+        self._init_durability(current_dur if current_dur is not None else 100, max_dur)
+
+    def get_effective_defense(self) -> int:
+        """Return the damage-reduction contribution of this piece,
+        scaled by remaining durability.
+
+        Mirrors :py:meth:`DurabilityMixin.get_effective_damage` for
+        weapons: above :py:attr:`DEFENSE_SCALING_THRESHOLD` the piece
+        provides its full ``defense_value``; between 0% and the
+        threshold it interpolates linearly down to
+        :py:attr:`DEFENSE_SCALING_FLOOR` (50% by default).  Broken
+        pieces (0% durability) still provide the floor value, floored
+        at 1 so a worn-down chestplate never becomes literal dead
+        weight that *reduces* the player's defense.
+
+        Unbreakable armor pieces always return the full
+        ``defense_value``.
+        """
+        if self.unbreakable:
+            return int(self.defense_value)
+        pct = self.durability_percent()
+        if pct >= self.DEFENSE_SCALING_THRESHOLD:
+            return int(self.defense_value)
+        if pct <= 0.0:
+            scale = self.DEFENSE_SCALING_FLOOR
+        else:
+            t = pct / self.DEFENSE_SCALING_THRESHOLD
+            scale = self.DEFENSE_SCALING_FLOOR + (1.0 - self.DEFENSE_SCALING_FLOOR) * t
+        return max(1, int(round(self.defense_value * scale)))
 
     def get_tooltip_text(self):
         slot_map = {
@@ -473,9 +538,21 @@ class Armor(Item):
             "ring": _("Ring"), "belt": _("Belt"),
         }
         slot_label = slot_map.get(self.slot_type, self.slot_type.capitalize())
+        if self.unbreakable:
+            dur_str = f"{_('Durability')}: ∞"
+        else:
+            dur_str = f"{_('Durability')}: {int(self.durability)}/{int(self.max_durability)}"
+        # Show the *effective* defense so the player understands why a
+        # worn piece suddenly feels weaker than the displayed +N.
+        effective = self.get_effective_defense()
+        if effective != self.defense_value:
+            defense_str = f"{_('Defense')}: +{self.defense_value} ({effective} effective)"
+        else:
+            defense_str = f"{_('Defense')}: +{self.defense_value}"
         stats = (
             f"{_('Type')}: {_('Armor')} ({slot_label})\n"
-            f"{_('Defense')}: +{self.defense_value}\n"
+            f"{defense_str}\n"
+            f"{dur_str}\n"
             f"Price: ${self.price}"
         )
         return f"{self.name}\n{stats}\n{self.description}"

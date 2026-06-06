@@ -509,18 +509,85 @@ class MAIN_player_inventory_equipment(Inventory):
         return "unknown"
 
     def get_total_defense(self) -> int:
-        """Sum the defense_value of all equipped Armor items."""
+        """Sum the *effective* defense of all equipped Armor items.
+
+        Each :class:`Armor` instance scales its ``defense_value`` by
+        the remaining durability via
+        :py:meth:`src.items.items.Armor.get_effective_defense`, so a
+        worn-down chestplate contributes proportionally less -- and a
+        broken piece contributes the floor value (50% by default)
+        rather than zero.  The sum is what gets written to
+        ``character.defense`` by :py:meth:`sync_character_defense`.
+        """
         total = 0
         for col in range(self.columns):
             for row in range(self.rows):
                 slot = self.items[col][row]
                 if slot and isinstance(slot[0], Armor):
-                    total += slot[0].defense_value
+                    total += slot[0].get_effective_defense()
         return total
 
     def sync_character_defense(self, character) -> None:
-        """Recalculate character.defense from all equipped armor."""
+        """Recalculate character.defense from all equipped armor.
+
+        Uses the durability-scaled (effective) defense, not the raw
+        ``defense_value``, so worn pieces immediately show up in the
+        player's stat without waiting for the next equip change.
+        """
         character.defense = self.get_total_defense()
+
+    def damage_equipped_armor(self, amount: int = 1, source: str = "hit") -> list:
+        """Reduce the durability of every equipped armor piece by
+        ``amount``.
+
+        Called from :py:meth:`src.entities.character.Character.take_damage`
+        so each incoming hit chips a point off every worn piece.  A
+        broken piece (zero durability) is left alone -- we already
+        reported the break to the player; a second hit shouldn't
+        re-fire the same floating text.  Unbreakable pieces are
+        skipped entirely.
+
+        After damage is applied the function re-syncs ``character.defense``
+        via :py:meth:`sync_character_defense` so the in-flight
+        :py:meth:`take_damage` reduction picks up the new (lower) defense
+        on subsequent hits in the same frame.
+
+        Args:
+            amount: How many durability points to subtract per piece.
+                Must be a positive integer; non-positive values are a
+                no-op.
+            source: Short string used only for log messages ("hit",
+                "fall", ...).  Doesn't change behaviour.
+
+        Returns:
+            A list of ``(col, row, item, broke_now)`` tuples for every
+            piece that lost durability on this call, so the caller can
+            fire "X just broke!" popups without having to re-walk the
+            grid.  An empty list means nothing was equipped (or every
+            piece was unbreakable).
+        """
+        if amount is None or amount <= 0:
+            return []
+        results: list = []
+        for col in range(self.columns):
+            for row in range(self.rows):
+                slot = self.items[col][row]
+                if not slot:
+                    continue
+                item = slot[0]
+                if not isinstance(item, Armor):
+                    continue
+                if getattr(item, "unbreakable", False):
+                    continue
+                was_broken = bool(getattr(item, "is_broken", lambda: False)())
+                apply = getattr(item, "apply_durability_damage", None)
+                if not callable(apply):
+                    continue
+                apply(int(amount))
+                is_broken_now = bool(getattr(item, "is_broken", lambda: False)())
+                if not was_broken and is_broken_now:
+                    results.append((col, row, item, True))
+        return results
 
     def inventory_interactions(self, event, manager):
         if event.type != pygame.MOUSEBUTTONDOWN:

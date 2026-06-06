@@ -2380,6 +2380,57 @@ class Character:
 
         self.hp -= amount
 
+        # ─── Armor durability damage ─────────────────────────────────
+        # Every incoming hit chips a point off *each* equipped armor
+        # piece so the player can see their gear take real wear over
+        # the course of a fight.  We do this *after* HP is decremented
+        # (and only when the hit actually connected) so dodges, full
+        # blocks and pre-HP deaths don't burn durability for free.
+        #
+        # The damage is gated on:
+        #   * amount > 0   -- ignore 0-damage "hits" (e.g. post-ice-armor
+        #                     zero-damage echoes),
+        #   * not ignore_invulnerability  -- mirror the rest of the
+        #                     durability system: scripted "true damage"
+        #                     hits still wear armor down (no cheat).
+        if amount > 0 and not ignore_invulnerability:
+            equip_inv = None
+            game_state = getattr(self, "game_state", None)
+            if game_state is not None:
+                equip_inv = getattr(game_state, "PLAYER_inventory_equipment", None)
+            if equip_inv is not None and hasattr(equip_inv, "damage_equipped_armor"):
+                try:
+                    broken_pieces = equip_inv.damage_equipped_armor(1, source="hit")
+                except Exception:
+                    broken_pieces = []
+                for col, row, item, _broke in broken_pieces:
+                    try:
+                        self.add_floating_text(
+                            f"{getattr(item, 'name', 'Armor')} broke!",
+                            self.pos.x,
+                            self.pos.y - 40,
+                            (220, 90, 90),
+                            1.6,
+                            20,
+                        )
+                    except Exception:
+                        pass
+                    try:
+                        logger.info(
+                            f"Armor piece broke: id={getattr(item, 'id', '?')} "
+                            f"slot=({col},{row}) defense={getattr(item, 'defense_value', 0)}"
+                        )
+                    except Exception:
+                        pass
+                # Re-sync the live defense so the *next* hit in the
+                # same frame is reduced by the new (lower) armor
+                # value rather than the stale pre-wear one.
+                if broken_pieces and hasattr(equip_inv, "sync_character_defense"):
+                    try:
+                        equip_inv.sync_character_defense(self)
+                    except Exception:
+                        pass
+
         if not ignore_invulnerability:
             self.invulnerable = True
             self.invulnerability_timer = self.invulnerability_duration
