@@ -199,6 +199,11 @@ class MysteriumMagnumMenu(Menu):
         self._cached_constellations: list[tuple] = []
         self._entrance_progress = 1.0
         self._entrance_active = False
+        self._star_glow_cache: dict[tuple, pygame.Surface] = {}
+        self._card_ring_glow_cache: list[pygame.Surface | None] = [None, None, None, None]
+
+        # ── Entrance speed multiplier (2.5 for repeat visits) ──────────
+        self._entrance_speed_mult = 1.0
 
         # ── Screen shake ──────────────────────────────────────────────
         self._shake_offset = [0.0, 0.0]
@@ -642,6 +647,8 @@ class MysteriumMagnumMenu(Menu):
             self._orbital_trail_cache = None
             self._gradient_cache.clear()
             self._star_surface_pool.clear()
+            self._star_glow_cache.clear()
+            self._card_ring_glow_cache = [None, None, None, None]
             self._build_cache(sw, sh)
 
     def on_enter(self):
@@ -649,12 +656,16 @@ class MysteriumMagnumMenu(Menu):
         self._revealed_numbers = set(self.app.revealed_tarot_cards)
         self._rebuild_revealed_cards()
 
+        self._entrance_burst_particles.clear()
+        self._entrance_active = True
+        self._entrance_progress = 0.0
+
         if self._entrance_first_play:
             self._entrance_first_play = False
             self._entrance_stage = 0
-            self._entrance_stage_progress = 0.0
+            self._entrance_speed_mult = 1.0
             self._entrance_stage_time = 0.0
-            self._entrance_burst_particles.clear()
+            self._entrance_stage_progress = 0.0
             # Pre-compute star reveal order: stars closest to centre appear first
             cx, cy = self.tree_rect.width // 2, self.tree_rect.height // 2
             self._entrance_star_reveal_order = sorted(
@@ -670,11 +681,11 @@ class MysteriumMagnumMenu(Menu):
                     (item[1][1] + item[1][3]) * 0.5 - cy,
                 ),
             )
-            self._entrance_active = True
-            self._entrance_progress = 0.0
         else:
-            self._entrance_active = True
-            self._entrance_progress = 0.0
+            self._entrance_stage = 1
+            self._entrance_speed_mult = 2.5
+            self._entrance_stage_time = 0.0
+            self._entrance_stage_progress = 0.0
 
     # ── Main draw entry point ──────────────────────────────────────────
 
@@ -1006,10 +1017,10 @@ class MysteriumMagnumMenu(Menu):
             self._shake_offset[1] = 0.0
             self._shake_intensity = 0.0
 
-        # ── First-play multi-stage entrance ────────────────────────────
+        # ── Multi-stage entrance ──────────────────────────────────────
         if self._entrance_stage >= 0:
             self._entrance_stage_time += dt
-            sd = _ENTRANCE_STAGES[self._entrance_stage][1]
+            sd = _ENTRANCE_STAGES[self._entrance_stage][1] / max(0.1, self._entrance_speed_mult)
             self._entrance_stage_progress = min(1.0, self._entrance_stage_time / sd)
 
             if self._entrance_stage == 0 and self._entrance_stage_time < 0.08:
@@ -1030,12 +1041,13 @@ class MysteriumMagnumMenu(Menu):
                     self._entrance_progress = 1.0
                     self._entrance_burst_particles.clear()
 
-            for b in list(self._entrance_burst_particles):
+            for b in self._entrance_burst_particles:
                 b["x"] += b["vx"] * dt
                 b["y"] += b["vy"] * dt
                 b["life"] -= dt
-                if b["life"] <= 0:
-                    self._entrance_burst_particles.remove(b)
+            self._entrance_burst_particles = [
+                b for b in self._entrance_burst_particles if b["life"] > 0
+            ]
 
             # Do NOT return — regular updates continue so particles,
             # rotations, and other systems stay alive during the entrance.
@@ -1089,12 +1101,11 @@ class MysteriumMagnumMenu(Menu):
             self._sel_progress = max(0.0, self._sel_progress - dt * 4.0)
 
         # Burst particles
-        for b in list(self._reveal_bursts):
+        for b in self._reveal_bursts:
             b["x"] += b["vx"] * dt
             b["y"] += b["vy"] * dt
             b["life"] -= dt
-            if b["life"] <= 0:
-                self._reveal_bursts.remove(b)
+        self._reveal_bursts = [b for b in self._reveal_bursts if b["life"] > 0]
 
         # Rune spirits
         for s in list(self._rune_spirits):
@@ -1127,12 +1138,11 @@ class MysteriumMagnumMenu(Menu):
                     })
                 break
         self._hovered_card_idx = hover_idx
-        for hs in list(self._hover_sparkles):
+        for hs in self._hover_sparkles:
             hs["x"] += hs["vx"] * dt
             hs["y"] += hs["vy"] * dt
             hs["life"] -= dt
-            if hs["life"] <= 0:
-                self._hover_sparkles.remove(hs)
+        self._hover_sparkles = [hs for hs in self._hover_sparkles if hs["life"] > 0]
 
     # ── Event handling ─────────────────────────────────────────────────
 
@@ -1427,12 +1437,13 @@ class MysteriumMagnumMenu(Menu):
                 brightness = max(3, int((12 - r // 80) * glow_mul))
                 pygame.draw.circle(surface, (brightness, brightness, brightness + 5), origin, r, 0)
 
-        # Pentagrams
+        # Pentagrams — expand from centre
         pent_mul = ea.get('pentagrams', 1.0) if ea else 1.0
+        pent_radial = ea.get('_radial', 1.0) if ea else 1.0
         if pent_mul > 0.01:
             for pent in self.pentagrams:
-                px = origin.x + pent["x"]
-                py = origin.y + pent["y"]
+                px = origin.x + pent["x"] * pent_radial
+                py = origin.y + pent["y"] * pent_radial
                 if self.tree_rect.collidepoint(px, py):
                     pulse = (math.sin(t * pent["pulse_speed"] + pent["pulse_offset"]) + 1.0) * 0.5
                     a = pent["alpha"] * (0.5 + 0.5 * pulse) * pent_mul
@@ -1451,12 +1462,13 @@ class MysteriumMagnumMenu(Menu):
                         color_shift_speed=pent.get("color_shift_speed", 0.2),
                     )
 
-        # Runes
+        # Runes — expand from centre
         rune_mul = ea.get('runes', 1.0) if ea else 1.0
+        rune_radial = ea.get('_radial', 1.0) if ea else 1.0
         if rune_mul > 0.01:
             for r_data in self.runes:
-                rx = origin.x + r_data["x"]
-                ry = origin.y + r_data["y"]
+                rx = origin.x + r_data["x"] * rune_radial
+                ry = origin.y + r_data["y"] * rune_radial
                 if self.tree_rect.collidepoint(rx, ry):
                     pulse = (math.sin(t * r_data["pulse_speed"] + r_data["pulse_offset"]) + 1.0) * 0.5
                     a = r_data["alpha"] * (0.4 + 0.6 * pulse) * rune_mul
@@ -1467,24 +1479,26 @@ class MysteriumMagnumMenu(Menu):
                         rect = glyph.get_rect(center=(int(rx), int(ry)))
                         surface.blit(glyph, rect)
 
-        # Magic circles
+        # Magic circles — expand from centre
         mc_mul = ea.get('magic_circles', 1.0) if ea else 1.0
+        mc_radial = ea.get('_radial', 1.0) if ea else 1.0
         if mc_mul > 0.01:
             for c in self.magic_circles:
-                cx = origin.x + c["x"]
-                cy = origin.y + c["y"]
+                cx = origin.x + c["x"] * mc_radial
+                cy = origin.y + c["y"] * mc_radial
                 if self.tree_rect.collidepoint(cx, cy):
                     pulse = (math.sin(t * c["pulse_speed"] + c["pulse_offset"]) + 1.0) * 0.5
                     a = c["alpha"] * (0.5 + 0.5 * pulse) * mc_mul
                     rd = c["radius"] * (0.9 + 0.1 * pulse)
                     self._draw_magic_circle(surface, int(cx), int(cy), rd, c["rotation"], c["color"], a, c["ring_count"])
 
-        # Floating particles
+        # Floating particles — expand from centre
         part_mul = ea.get('particles', 1.0) if ea else 1.0
+        part_radial = ea.get('_radial', 1.0) if ea else 1.0
         if part_mul > 0.01:
             for p in self.particles:
-                px = origin.x + p["x"]
-                py = origin.y + p["y"]
+                px = origin.x + p["x"] * part_radial
+                py = origin.y + p["y"] * part_radial
                 if self.tree_rect.collidepoint(px, py):
                     pulse = (math.sin(t * p["pulse_speed"] + p["pulse_offset"]) + 1.0) * 0.5
                     alpha = p["alpha"] * (0.4 + 0.6 * pulse) * part_mul
@@ -1494,26 +1508,28 @@ class MysteriumMagnumMenu(Menu):
                     if alpha > 0.05:
                         pygame.draw.circle(surface, pcolor, (int(px), int(py)), sz)
 
-        # Ember particles (warm golden wisps)
+        # Ember particles (warm golden wisps) — expand from centre
         emb_mul = ea.get('embers', 1.0) if ea else 1.0
+        emb_radial = ea.get('_radial', 1.0) if ea else 1.0
         if emb_mul > 0.01:
             for p in self._ember_particles:
-                px = origin.x + p["x"]
-                py = origin.y + p["y"]
+                px = origin.x + p["x"] * emb_radial
+                py = origin.y + p["y"] * emb_radial
                 if self.tree_rect.collidepoint(px, py):
                     pulse = (math.sin(t * 1.5 + p["phase"]) + 1.0) * 0.5
                     a = p["alpha"] * (0.3 + 0.7 * pulse) * emb_mul
                     r, g, b = p["color"]
                     pygame.draw.circle(surface, (int(r * a), int(g * a), int(b * a)), (int(px), int(py)), max(1, int(p["size"])))
 
-        # Light rays from centre
+        # Light rays from centre — expand outward with radial
         lr_mul = ea.get('light_rays', 1.0) if ea else 1.0
         if lr_mul > 0.01:
             cx, cy = self.tree_rect.center
+            radial = ea.get('_radial', 1.0) if ea else 1.0
             for i in range(16):
                 ang = (i / 16) * math.pi * 2 + t * 0.02
                 a = max(0, int((3 + 5 * math.sin(t * 0.35 + i * 0.7)) * lr_mul))
-                ray_len = min(self.tree_rect.width, self.tree_rect.height) * 0.65
+                ray_len = min(self.tree_rect.width, self.tree_rect.height) * 0.65 * radial
                 ex = cx + math.cos(ang) * ray_len
                 ey = cy + math.sin(ang) * ray_len
                 pygame.draw.line(surface, (212, 175, 55, a), (cx, cy), (ex, ey), 1)
@@ -1536,46 +1552,66 @@ class MysteriumMagnumMenu(Menu):
                 size = 1 + twinkle * 0.8
                 c = star["color"]
                 sx, sy = star["x"], star["y"]
-                # Pool tiny star surfaces by size bucket
+                # Pool tiny star surfaces to avoid per-frame alloc
                 sb = int(size)
                 pool_key = (c[0] >> 3, c[1] >> 3, c[2] >> 3, sb)
                 star_surf = self._star_surface_pool.get(pool_key)
                 if star_surf is None:
                     star_surf = pygame.Surface((6, 6), pygame.SRCALPHA)
                     self._star_surface_pool[pool_key] = star_surf
-                # Draw onto a temp blit
                 if self.tree_rect.collidepoint(sx, sy):
+                    star_surf.fill((0, 0, 0, 0))
                     pygame.draw.circle(star_surf, (*c, a), (3, 3), max(1, int(size)))
                     surface.blit(star_surf, (sx - 3, sy - 3))
                     # Bright glow for high-twinkle stars
                     if twinkle > 0.88 and size > 1.3:
-                        glow_surf = pygame.Surface((16, 16), pygame.SRCALPHA)
-                        ga = int(30 * twinkle)
-                        pygame.draw.circle(glow_surf, (*c, ga), (8, 8), 8)
+                        glow_key = (c[0] >> 4, c[1] >> 4, c[2] >> 4)
+                        glow_surf = self._star_glow_cache.get(glow_key)
+                        if glow_surf is None:
+                            glow_surf = pygame.Surface((16, 16), pygame.SRCALPHA)
+                            pygame.draw.circle(glow_surf, (*c, 255), (8, 8), 8)
+                            self._star_glow_cache[glow_key] = glow_surf
+                        glow_surf.set_alpha(int(30 * twinkle))
                         surface.blit(glow_surf, (sx - 8, sy - 8))
 
     def _draw_mandala(self, surface):
         """Draw the pre-rendered central mandala with pulsing alpha."""
         if self._mandala_cache is None:
             return
+        la = getattr(self, '_entrance_layer_alphas', {})
+        radial = la.get('_radial', 1.0)
         t = self.animation_time
-        alpha = int(80 + 30 * math.sin(t * 0.4))
+        alpha = int((80 + 30 * math.sin(t * 0.4)) * radial)
         self._mandala_cache.set_alpha(alpha)
-        mr = self._mandala_cache.get_rect(center=self.tree_rect.center)
-        surface.blit(self._mandala_cache, mr)
+        # Scale from centre for a swelling effect
+        scale = max(0.3, radial)
+        if scale < 0.99:
+            orig = self._mandala_cache
+            size = orig.get_size()
+            scaled = pygame.transform.smoothscale(orig, (max(1, int(size[0] * scale)), max(1, int(size[1] * scale))))
+            scaled.set_alpha(alpha)
+            mr = scaled.get_rect(center=self.tree_rect.center)
+            surface.blit(scaled, mr)
+        else:
+            mr = self._mandala_cache.get_rect(center=self.tree_rect.center)
+            surface.blit(self._mandala_cache, mr)
 
     def _draw_orbital_trails(self, surface):
         """Draw pre-rendered orbital path dashes with pulsing alpha."""
         if self._orbital_trail_cache is None:
             return
+        la = getattr(self, '_entrance_layer_alphas', {})
+        radial = la.get('_radial', 1.0)
         t = self.animation_time
-        alpha = int(50 + 20 * math.sin(t * 0.3))
+        alpha = int((50 + 20 * math.sin(t * 0.3)) * radial)
         self._orbital_trail_cache.set_alpha(alpha)
         surface.blit(self._orbital_trail_cache, self.tree_rect.topleft)
 
     def _draw_card_rings(self, surface):
         if self._card_back_scaled is None:
             return
+        la = getattr(self, '_entrance_layer_alphas', {})
+        radial = la.get('_radial', 1.0)
         t = self.animation_time
         cx, cy = self.tree_rect.center
         ring_draw = [
@@ -1587,16 +1623,21 @@ class MysteriumMagnumMenu(Menu):
         base_alpha = 140  # raised from 55 so face-down cards are clearly visible
         revealed_slots = {(rc["ring_idx"], rc["slot_idx"]) for rc in self.revealed_cards}
 
-        # Ring glows
+        # Ring glows (cached surfaces, only alpha changes per frame)
         for ri, (radius, count, scale_f) in enumerate(ring_draw):
             gp = (math.sin(t * 0.5 + ri * 1.2) + 1.0) * 0.5
             ga = int(12 + 20 * gp)
-            glow_surf = pygame.Surface((radius * 2 + 20, radius * 2 + 20), pygame.SRCALPHA)
-            gcolor = (140, 80, 220, ga) if ri % 2 == 0 else (212, 175, 55, ga)
-            pygame.draw.circle(glow_surf, gcolor, (radius + 10, radius + 10), radius + 10, width=max(1, int(2 - ri * 0.3)))
-            surface.blit(glow_surf, (cx - radius - 10, cy - radius - 10))
+            cached = self._card_ring_glow_cache[ri]
+            if cached is None:
+                cached = pygame.Surface((radius * 2 + 20, radius * 2 + 20), pygame.SRCALPHA)
+                gcolor_full = (140, 80, 220, 255) if ri % 2 == 0 else (212, 175, 55, 255)
+                pygame.draw.circle(cached, gcolor_full, (radius + 10, radius + 10), radius + 10, width=max(1, int(2 - ri * 0.3)))
+                self._card_ring_glow_cache[ri] = cached
+            cached.set_alpha(ga)
+            glow_r = int(radius * radial)
+            surface.blit(cached, (cx - glow_r - 10, cy - glow_r - 10))
 
-        # Card slots
+        # Card slots — fly out from centre via radial expansion
         for ri, (radius, count, scale_f) in enumerate(ring_draw):
             offset = self.card_ring_offsets[ri]
             scaled = self._card_scaled_rings[ri]
@@ -1604,12 +1645,20 @@ class MysteriumMagnumMenu(Menu):
                 if (ri, i) in revealed_slots:
                     continue
                 angle = offset + i * 2 * math.pi / count
-                px = cx + math.cos(angle) * radius
-                py = cy + math.sin(angle) * radius
+                fly_r = radius * radial
+                px = cx + math.cos(angle) * fly_r
+                py = cy + math.sin(angle) * fly_r
                 rot_angle = math.degrees(angle) + 90
                 rotated = pygame.transform.rotate(scaled, rot_angle)
-                # Gentle pulse between 0.80 and 1.0 so cards breathe without disappearing
-                fade = 0.88 + 0.12 * math.sin(t * 0.3 + ri + i)
+                # Fade cards in during expansion
+                fade_in = min(1.0, radial * 1.5) if radial < 0.9 else 1.0
+                fade = (0.88 + 0.12 * math.sin(t * 0.3 + ri + i)) * fade_in
+                # Scale up cards slightly when they first appear at centre
+                scale_mult = max(0.5, min(1.0, radial + 0.3))
+                if scale_mult < 0.99:
+                    w = rotated.get_width()
+                    h = rotated.get_height()
+                    rotated = pygame.transform.smoothscale(rotated, (max(1, int(w * scale_mult)), max(1, int(h * scale_mult))))
                 rotated.set_alpha(int(base_alpha * fade))
                 rect = rotated.get_rect(center=(int(px), int(py)))
                 surface.blit(rotated, rect)
@@ -1619,6 +1668,8 @@ class MysteriumMagnumMenu(Menu):
             return
         t = self.animation_time
         cx, cy = self.tree_rect.center
+        la = getattr(self, '_entrance_layer_alphas', {})
+        radial = la.get('_radial', 1.0)
         ring_draw = [
             (120, 6, 0.80), (200, 5, 1.00), (280, 5, 1.15), (370, 6, 1.30),
         ]
@@ -1633,14 +1684,17 @@ class MysteriumMagnumMenu(Menu):
             radius, count, scale_f = ring_draw[ri]
             offset = self.card_ring_offsets[ri]
             slot_angle = offset + rc["slot_idx"] * 2 * math.pi / count
-            tx = cx + math.cos(slot_angle) * radius
-            ty = cy + math.sin(slot_angle) * radius
+            # Radial makes ring expand from centre during entrance
+            ring_r = radius * max(0.05, radial)
+            tx = cx + math.cos(slot_angle) * ring_r
+            ty = cy + math.sin(slot_angle) * ring_r
             px = cx + (tx - cx) * ease
             py = cy + (ty - cy) * ease
 
             ring_card = self._card_scaled_rings[ri]
             target_w = ring_card.get_width()
-            s = 0.1 + 0.9 * ease
+            size_radial = max(0.4, radial)
+            s = (0.1 + 0.9 * ease) * size_radial
             display_w = max(1, int(target_w * s))
             surf = card["front"]
             ar = surf.get_height() / max(1, surf.get_width())
@@ -1691,13 +1745,15 @@ class MysteriumMagnumMenu(Menu):
     def _draw_rune_spirits(self, surface):
         t = self.animation_time
         cx, cy = self.tree_rect.center
+        la = getattr(self, '_entrance_layer_alphas', {})
+        radial = la.get('_radial', 1.0)
         for s in self._rune_spirits:
             frac = s["life"] / s["max_life"]
             a = int(30 * frac * s["alpha"] * 200)
             if a < 2:
                 continue
-            sx = cx + s["x"]
-            sy = cy + s["y"]
+            sx = cx + s["x"] * radial
+            sy = cy + s["y"] * radial
             sp = math.sin(t * 0.5 + s["phase"]) * 4
             font = cfg.get_font(int(s["size"]))
             rs = font.render(s["char"], True, (200, 160, 255))
@@ -2238,22 +2294,36 @@ class MysteriumMagnumMenu(Menu):
         smooth easing curves.  Layers now cross-fade between stages rather
         than snapping — the scene flows in like ink through water instead
         of abruptly switching each stage."""
-        alphas = {
-            'background': 1.0, 'stars': 1.0, 'constellations': 1.0,
-            'nebula': 1.0, 'aurora': 1.0, 'mandala': 1.0,
-            'runes': 1.0, 'pentagrams': 1.0, 'magic_circles': 1.0,
-            'particles': 1.0, 'embers': 1.0, 'light_rays': 1.0,
-            'orbital_trails': 1.0, 'card_rings': 1.0, 'revealed_cards': 1.0,
-            'rune_spirits': 1.0,
-            'tree_frame': 1.0, 'border_energy': 1.0, 'sidebar': 1.0,
-            'buttons': 1.0, 'vignette': 1.0,
-        }
+        _KEYS = [
+            'background', 'stars', 'constellations', 'nebula', 'aurora',
+            'mandala', 'runes', 'pentagrams', 'magic_circles', 'particles',
+            'embers', 'light_rays', 'orbital_trails', 'card_rings',
+            'revealed_cards', 'rune_spirits', 'tree_frame', 'border_energy',
+            'sidebar', 'buttons', 'vignette',
+        ]
+        alphas = {k: 0.0 for k in _KEYS}
         if self._entrance_stage < 0:
+            for k in _KEYS:
+                alphas[k] = 1.0
+            alphas['_radial'] = 1.0
             return alphas
 
         stage = self._entrance_stage
         p = self._entrance_stage_progress
         e = _ease_out_cubic(p)  # apply easing to per-stage progress
+
+        # Radial expansion — elements fly/swell outward from centre across stages 1→3
+        if stage == 0:
+            radial = 0.0
+        elif stage == 1:
+            radial = _smoothstep(0.0, 1.0, p) * 0.30
+        elif stage == 2:
+            radial = 0.30 + _smoothstep(0.0, 1.0, p) * 0.35
+        elif stage == 3:
+            radial = 0.65 + _smoothstep(0.0, 1.0, p) * 0.35
+        else:
+            radial = 1.0
+        alphas['_radial'] = radial
 
         # ── Stage 0: Cosmic Dawn — pure black void with light ──────
         if stage == 0:
