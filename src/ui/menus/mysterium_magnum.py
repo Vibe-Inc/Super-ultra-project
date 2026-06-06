@@ -210,6 +210,18 @@ class MysteriumMagnumMenu(Menu):
             phase_r = si
             self._card_info_stars.append((fx, fy, phase_s, phase_r))
 
+        # ── _draw_card_info caches ──────────────────────────────────────
+        self._card_info_glass: pygame.Surface | None = None
+        self._card_info_glass_size: tuple[int, int] | None = None
+        self._card_info_text_cache: dict[str, pygame.Surface] = {}
+        self._card_info_desc_lines_cache: dict[tuple[int, int], list[str]] = {}
+        self._card_glow_cache: pygame.Surface | None = None
+        self._card_glow_cache_key: tuple[int, int, int, float] | None = None
+        self._orn_font_cache: pygame.font.Font | None = None
+        self._orn_font_scale: float = 0
+        self._rune_glyph_cache: dict[tuple, pygame.Surface] = {}
+        self._pentagram_glow_cache: dict[int, pygame.Surface] = {}
+
         # ── Entrance speed multiplier (2.5 for repeat visits) ──────────
         self._entrance_speed_mult = 1.0
 
@@ -1164,6 +1176,7 @@ class MysteriumMagnumMenu(Menu):
                 if not panel_rect.collidepoint(pos) or close_r.collidepoint(pos):
                     self._selected_card = None
                     self._sel_card_front_large = None
+                    self._card_glow_cache_key = None
                 return
             for rect, rc in self._get_reveal_card_rects():
                 if rect.collidepoint(pos):
@@ -1176,6 +1189,9 @@ class MysteriumMagnumMenu(Menu):
                     self._selected_card = rc
                     self._sel_card_front_large = large
                     self._sel_progress = 0.0
+                    self._card_info_text_cache.clear()
+                    self._card_info_desc_lines_cache.clear()
+                    self._card_glow_cache_key = None
                     break
 
     # ── Drawing helpers ────────────────────────────────────────────────
@@ -1217,16 +1233,19 @@ class MysteriumMagnumMenu(Menu):
         if glow_color is None:
             glow_color = color
 
-        # ── 1. Outer glow halo ─────────────────────────────────────────
+        # ── 1. Outer glow halo (cached) ─────────────────────────────────
         glow_r = int(size * 1.8)
-        glow_surf = pygame.Surface((glow_r * 2, glow_r * 2), pygame.SRCALPHA)
-        # Soft radial glow that pulses
+        gk = ("pent_glow", size, glow_color)
+        if gk not in self._pentagram_glow_cache:
+            base = pygame.Surface((glow_r * 2, glow_r * 2), pygame.SRCALPHA)
+            for ring in range(4, 0, -1):
+                rr = int(glow_r * ring / 4)
+                ga = int(255 * 0.08 * (1.0 - ring / 5))
+                pygame.draw.circle(base, (*glow_color, ga), (glow_r, glow_r), rr)
+            self._pentagram_glow_cache[gk] = base
+        glow_surf = self._pentagram_glow_cache[gk]
         pulse = (math.sin(t * 1.2 + rotation) + 1.0) * 0.5
-        for ring in range(4, 0, -1):
-            rr = int(glow_r * ring / 4)
-            ga = int(a255 * 0.08 * (1.0 - ring / 5) * (0.6 + 0.4 * pulse))
-            gc = glow_color
-            pygame.draw.circle(glow_surf, (*gc, ga), (glow_r, glow_r), rr)
+        glow_surf.set_alpha(int(a255 * (0.6 + 0.4 * pulse)))
         surface.blit(glow_surf, (cx - glow_r, cy - glow_r))
 
         # ── 2. Outer decorative rings ──────────────────────────────────
@@ -1456,7 +1475,10 @@ class MysteriumMagnumMenu(Menu):
                     a = r_data["alpha"] * (0.4 + 0.6 * pulse) * rune_mul
                     if a > 0.02:
                         font = cfg.get_font(max(10, int(r_data["size"])))
-                        glyph = font.render(r_data["symbol"], True, r_data["color"])
+                        gk = (r_data["symbol"], r_data["color"], max(10, int(r_data["size"])))
+                        if gk not in self._rune_glyph_cache:
+                            self._rune_glyph_cache[gk] = font.render(r_data["symbol"], True, r_data["color"])
+                        glyph = self._rune_glyph_cache[gk]
                         glyph.set_alpha(int(a * 255))
                         rect = glyph.get_rect(center=(int(rx), int(ry)))
                         surface.blit(glyph, rect)
@@ -1764,16 +1786,16 @@ class MysteriumMagnumMenu(Menu):
 
         # Determine card rarity tier for colour theming
         if num >= 19:
-            tier_color = (255, 215, 100)   # legendary gold
+            tier_color = (255, 215, 100)
             tier_glow = (255, 180, 60)
         elif num >= 14:
-            tier_color = (200, 130, 255)   # epic purple
+            tier_color = (200, 130, 255)
             tier_glow = (160, 80, 240)
         elif num >= 8:
-            tier_color = (100, 200, 220)   # rare cyan
+            tier_color = (100, 200, 220)
             tier_glow = (60, 160, 200)
         else:
-            tier_color = (180, 140, 255)   # common violet
+            tier_color = (180, 140, 255)
             tier_glow = (140, 100, 220)
 
         sw, sh = self.tree_rect.size
@@ -1801,12 +1823,18 @@ class MysteriumMagnumMenu(Menu):
         # ── Panel body ─────────────────────────────────────────────────
         self._draw_gradient_rect(screen, panel_rect, (24, 12, 40), (8, 3, 16), border_radius=20)
 
-        # Subtle glass highlight at top
-        glass = pygame.Surface((panel_w, int(panel_h * 0.4)), pygame.SRCALPHA)
-        for y in range(glass.get_height()):
-            ga = int(10 * (1.0 - y / glass.get_height()) * ease)
-            pygame.draw.line(glass, (100, 70, 140, ga), (0, y), (panel_w, y))
-        screen.blit(glass, (px, py))
+        # Cached glass highlight at top
+        glass_size = (panel_w, int(panel_h * 0.4))
+        if self._card_info_glass_size != glass_size:
+            glass = pygame.Surface(glass_size, pygame.SRCALPHA)
+            for gy in range(glass.get_height()):
+                ga = int(10 * (1.0 - gy / glass.get_height()))
+                pygame.draw.line(glass, (100, 70, 140, ga), (0, gy), (panel_w, gy))
+            self._card_info_glass = glass
+            self._card_info_glass_size = glass_size
+        glass_surf = self._card_info_glass
+        glass_surf.set_alpha(int(255 * ease))
+        screen.blit(glass_surf, (px, py))
 
         # Pentagram watermark
         if self._card_pentagram is not None:
@@ -1867,9 +1895,16 @@ class MysteriumMagnumMenu(Menu):
             da = int(40 + 50 * dp)
             pygame.draw.circle(screen, (*tier_color, da), (dx, dy), max(1, int(1.5 * scale)))
 
-        # ── Corner ornaments ──────────────────────────────────────────
-        orn_font = cfg.get_font(max(10, int(16 * scale)))
+        # ── Corner ornaments + filigree (merged) ───────────────────────
+        orn_scale = scale
+        if self._orn_font_scale != orn_scale:
+            self._orn_font_cache = cfg.get_font(max(10, int(16 * orn_scale)))
+            self._orn_font_scale = orn_scale
+        orn_font = self._orn_font_cache
+
         orn_chars = ["ᛟ", "ᛞ", "ᛝ", "ᛚ"]
+        filig_len = int(30 * scale)
+        gem_sz = int(10 * scale)
         corner_positions = [
             (panel_rect.x + 16, panel_rect.y + 16),
             (panel_rect.right - 16, panel_rect.y + 16),
@@ -1877,25 +1912,25 @@ class MysteriumMagnumMenu(Menu):
             (panel_rect.right - 16, panel_rect.bottom - 16),
         ]
         for idx, (gcx, gcy) in enumerate(corner_positions):
+            # Shared animation
             op = (math.sin(t * 1.2 + idx * 1.5) + 1.0) * 0.5
             oa = int(90 + 130 * op)
-            gem_sz = int(10 * scale)
+            # Ornament diamond
             pygame.draw.polygon(screen, (*tier_color, int(oa * 0.3 * ease)),
                 [(gcx, gcy - gem_sz), (gcx + gem_sz, gcy), (gcx, gcy + gem_sz), (gcx - gem_sz, gcy)])
-            o = orn_font.render(orn_chars[idx], True, tier_color)
+            # Ornament rune (cached)
+            gk = (orn_chars[idx], tier_color, max(10, int(16 * scale)))
+            if gk not in self._rune_glyph_cache:
+                self._rune_glyph_cache[gk] = orn_font.render(orn_chars[idx], True, tier_color)
+            o = self._rune_glyph_cache[gk]
             o.set_alpha(int(oa * ease))
             screen.blit(o, (gcx - o.get_width() // 2, gcy - o.get_height() // 2))
-
-        # ── Arcane corner filigree lines ───────────────────────────────
-        filig_len = int(30 * scale)
-        for idx, (gcx, gcy) in enumerate(corner_positions):
+            # Filigree lines
             h_dir = 1 if gcx == panel_rect.x + 16 else -1
             v_dir = 1 if gcy == panel_rect.y + 16 else -1
             fa = int(60 * ease * (0.5 + 0.5 * math.sin(t + idx)))
             end_x = gcx + h_dir * filig_len
             end_y = gcy + v_dir * filig_len
-            mid_x = gcx + h_dir * filig_len * 0.5
-            mid_y = gcy + v_dir * filig_len * 0.5
             pygame.draw.line(screen, (*tier_color, fa), (gcx, gcy), (end_x, gcy), 1)
             pygame.draw.line(screen, (*tier_color, fa), (gcx, gcy), (gcx, end_y), 1)
             pygame.draw.circle(screen, (*tier_color, int(fa * 0.6)), (int(end_x), int(end_y)), max(1, int(2 * scale)))
@@ -1918,13 +1953,17 @@ class MysteriumMagnumMenu(Menu):
             img_y = py + margin
             img_rect = pygame.Rect(img_x, img_y, cw, ch)
 
-            # ── Multi-layer card glow ──────────────────────────────────
-            glow_w, glow_h = cw + 60, ch + 60
-            glow = pygame.Surface((glow_w, glow_h), pygame.SRCALPHA)
-            ga1 = int(40 * ease * (0.5 + 0.5 * math.sin(t * 0.7)))
-            pygame.draw.ellipse(glow, (*tier_glow, ga1), (0, 0, glow_w, glow_h))
-            ga2 = int(60 * ease * (0.6 + 0.4 * math.sin(t * 1.1)))
-            pygame.draw.ellipse(glow, (*tier_color, ga2), (15, 15, glow_w - 30, glow_h - 30))
+            # ── Multi-layer card glow (cached) ─────────────────────────
+            glow_key = (cw, ch, *tier_color, *tier_glow)
+            if self._card_glow_cache_key != glow_key:
+                glow_w, glow_h = cw + 60, ch + 60
+                glow = pygame.Surface((glow_w, glow_h), pygame.SRCALPHA)
+                pygame.draw.ellipse(glow, (*tier_glow, 100), (0, 0, glow_w, glow_h))
+                pygame.draw.ellipse(glow, (*tier_color, 120), (15, 15, glow_w - 30, glow_h - 30))
+                self._card_glow_cache = glow
+                self._card_glow_cache_key = glow_key
+            glow = self._card_glow_cache
+            glow.set_alpha(int(70 * ease * (0.55 + 0.45 * math.sin(t * 0.9))))
             screen.blit(glow, (img_x - 30, img_y - 30))
 
             # ── Card frame ────────────────────────────────────────────
@@ -1952,17 +1991,21 @@ class MysteriumMagnumMenu(Menu):
         text_y = (img_rect.bottom + margin) if img_rect else (py + margin)
 
         # ── Card name with glow ────────────────────────────────────────
-        sec_font = cfg.get_font(max(16, int(28 * scale)))
-        name_text = card['name']
-        name_surf = sec_font.render(name_text, True, (240, 225, 255))
+        name_key = f"name_{card['name']}_{scale}"
+        if name_key not in self._card_info_text_cache:
+            sec_font = cfg.get_font(max(16, int(28 * scale)))
+            self._card_info_text_cache[name_key] = sec_font.render(card['name'], True, (240, 225, 255))
+        name_surf = self._card_info_text_cache[name_key]
         name_surf.set_alpha(int(255 * ease))
         name_y = text_y
         screen.blit(name_surf, (cx - name_surf.get_width() // 2, name_y))
 
         # ── Arcana number + ornamental subtitle ────────────────────────
-        sub_font = cfg.get_font(max(11, int(15 * scale)))
-        sub_text = f"— Arcana {num} of 22 —"
-        sub_surf = sub_font.render(sub_text, True, tier_color)
+        sub_key = f"arcana_{num}_{scale}"
+        if sub_key not in self._card_info_text_cache:
+            sub_font = cfg.get_font(max(11, int(15 * scale)))
+            self._card_info_text_cache[sub_key] = sub_font.render(f"— Arcana {num} of 22 —", True, tier_color)
+        sub_surf = self._card_info_text_cache[sub_key]
         sub_surf.set_alpha(int(140 * ease))
         sub_y = name_y + name_surf.get_height() + 4
         screen.blit(sub_surf, (cx - sub_surf.get_width() // 2, sub_y))
@@ -1977,9 +2020,11 @@ class MysteriumMagnumMenu(Menu):
         pygame.draw.polygon(screen, (*tier_color, d_a), [
             (div_cx, div_y - diamond_sz), (div_cx + diamond_sz, div_y),
             (div_cx, div_y + diamond_sz), (div_cx - diamond_sz, div_y)])
+        # Replace the inner per-pixel line loop with spaced dots
+        dot_spacing = int(4 * scale)
         for side in (-1, 1):
-            for i in range(div_width // 2 - diamond_sz):
-                ix = div_cx + side * (diamond_sz + i + 1)
+            for i in range(dot_spacing, div_width // 2 - diamond_sz, dot_spacing):
+                ix = div_cx + side * (diamond_sz + i)
                 if text_x <= ix < text_x + div_width:
                     wave = math.sin(t * 2.0 + i * 0.08) * 0.3 + 0.7
                     la = int((1.0 - i / max(1, div_width // 2)) * 120 * wave * ease)
@@ -1989,27 +2034,31 @@ class MysteriumMagnumMenu(Menu):
         eff = self.card_effects.get(num)
         if eff and eff["desc"]:
             body_font = cfg.get_font(max(12, int(18 * scale)))
-            # Description background panel
             desc_panel_y = div_y + 16
-            words = eff["desc"].split(" ")
-            lines = []
-            current_line = ""
-            for w in words:
-                test = f"{current_line} {w}".strip()
-                if body_font.size(test)[0] <= text_w - 16:
-                    current_line = test
-                else:
-                    if current_line:
-                        lines.append(current_line)
-                    current_line = w
-            if current_line:
-                lines.append(current_line)
+
+            # Cached wrapped lines (keyed by num + text_w to handle resize)
+            desc_cache_key = (num, text_w)
+            if desc_cache_key not in self._card_info_desc_lines_cache:
+                words = eff["desc"].split(" ")
+                lines = []
+                current_line = ""
+                for w in words:
+                    test = f"{current_line} {w}".strip()
+                    if body_font.size(test)[0] <= text_w - 16:
+                        current_line = test
+                    else:
+                        if current_line:
+                            lines.append(current_line)
+                        current_line = w
+                if current_line:
+                    lines.append(current_line)
+                self._card_info_desc_lines_cache[desc_cache_key] = lines
+            lines = self._card_info_desc_lines_cache[desc_cache_key]
 
             line_h = body_font.get_height() + 4
             desc_panel_h = len(lines) * line_h + 16
             desc_panel = pygame.Rect(text_x - 8, desc_panel_y - 6,
                                       min(text_w + 8, panel_w - margin * 2 + 8), desc_panel_h)
-            # Subtle background for description
             pygame.draw.rect(screen, (15, 8, 25, int(80 * ease)), desc_panel, border_radius=8)
             pygame.draw.rect(screen, (*tier_glow, int(25 * ease)), desc_panel, 1, border_radius=8)
 
@@ -2051,7 +2100,6 @@ class MysteriumMagnumMenu(Menu):
                     tw_stat = stats_font.size(full_text)[0]
                     badge_w_stat = tw_stat + int(16 * scale)
 
-                    # Check if badge fits on current line
                     if badge_x + badge_w_stat > panel_rect.right - margin:
                         badge_x = text_x
                         badge_y += stat_badge_h + int(4 * scale)
@@ -2068,11 +2116,9 @@ class MysteriumMagnumMenu(Menu):
 
         # ── Close button (ornate) ──────────────────────────────────────
         close_r = pygame.Rect(panel_rect.right - 48, panel_rect.y + 12, 36, 36)
-        # Animated ring around close button
         ring_a = int(120 * ease * (0.5 + 0.5 * math.sin(t * 2.0)))
         ring_r = close_r.width // 2 + 4
         pygame.draw.circle(screen, (*tier_color, ring_a), close_r.center, ring_r, max(1, int(1.5 * scale)))
-        # Button body
         close_pulse = int(180 + 75 * (0.5 + 0.5 * math.sin(t * 1.5)))
         pygame.draw.circle(screen, (40, 20, 60, int(220 * ease)), close_r.center, close_r.width // 2)
         pygame.draw.circle(screen, (*tier_color, int(close_pulse * ease * 0.5)),
@@ -2148,35 +2194,45 @@ class MysteriumMagnumMenu(Menu):
             pygame.draw.polygon(screen, tuple(max(0, c - 30) for c in gcolor), pts_bot)
             pygame.draw.circle(screen, (255, 215, 100), (gcx, gcy), max(1, gem_size // 3))
 
-        # Corner rune ornaments
+        # Corner rune ornaments (cached)
         rune_orn = cfg.get_font(max(10, int(16 * scale)))
         orn_chars = ["ᛟ", "ᛞ", "ᛝ", "ᛚ"]
+        rcorn_color = (212, 175, 55)
         for idx, (gcx, gcy) in enumerate([
             (r.x + 14, r.y + 14), (r.right - 14, r.y + 14),
             (r.x + 14, r.bottom - 14), (r.right - 14, r.bottom - 14),
         ]):
             op = (math.sin(t * 1.2 + idx * 1.5) + 1.0) * 0.5
             oa = int((80 + 100 * op) * sb_a)
-            o = rune_orn.render(orn_chars[idx], True, (212, 175, 55))
+            gk = (orn_chars[idx], rcorn_color, max(10, int(16 * scale)))
+            if gk not in self._rune_glyph_cache:
+                self._rune_glyph_cache[gk] = rune_orn.render(orn_chars[idx], True, rcorn_color)
+            o = self._rune_glyph_cache[gk]
             o.set_alpha(oa)
             screen.blit(o, (gcx - o.get_width() // 2, gcy - o.get_height() // 2 - 2))
 
-        # ── Title with cascading glow ──────────────────────────────────
+        # ── Title with cascading glow (cached renders) ──────────────────
         title_text = _("⟐ Mysterium Magnum ⟐")
+        gk_glow = ("__title_glow__", scale)
+        if gk_glow not in self._rune_glyph_cache:
+            self._rune_glyph_cache[gk_glow] = self.title_font.render(title_text, True, (140, 80, 220))
+        gk_main = ("__title_main__", scale)
+        if gk_main not in self._rune_glyph_cache:
+            self._rune_glyph_cache[gk_main] = self.title_font.render(title_text, True, (240, 220, 255))
+        glow_surf = self._rune_glyph_cache[gk_glow]
         glow_a_pulse = int((math.sin(t * 1.5) + 1.0) * 60 + 60)
-        # Multiple glow layers for depth
         for i in range(5):
             offset = i * (1 if i < 3 else -1)
-            glow_surf = self.title_font.render(title_text, True, (140, 80, 220))
             glow_surf.set_alpha(int(glow_a_pulse // (i + 1) * sb_a))
             screen.blit(glow_surf, (r.x + 18 + offset, r.y + 18 + offset))
-        title = self.title_font.render(title_text, True, (240, 220, 255))
+        title = self._rune_glyph_cache[gk_main]
         title.set_alpha(int(255 * sb_a))
         screen.blit(title, (r.x + 18, r.y + 18))
 
         # ── Title underline with flowing energy ────────────────────────
         div_y = r.y + 18 + title.get_height() + 12
-        for i in range(r.width - 36):
+        step = max(1, int(3 * scale))
+        for i in range(step, r.width - 36, step):
             x = r.x + 18 + i
             wave = math.sin(t * 2.0 + i * 0.08) * 0.3 + 0.7
             alpha = int((1.0 - abs(i / max(1, r.width - 36) - 0.5) * 2) * 120 * wave * sb_a)
@@ -2203,7 +2259,8 @@ class MysteriumMagnumMenu(Menu):
         py = div_y + 10 + hint.get_height() + 24
 
         # ── Second divider ─────────────────────────────────────────────
-        for i in range(r.width - 36):
+        sd_step = max(1, int(4 * scale))
+        for i in range(sd_step, r.width - 36, sd_step):
             x = r.x + 18 + i
             alpha = int((1.0 - abs(i / max(1, r.width - 36) - 0.5) * 2) * 80 * sb_a)
             pygame.draw.line(screen, (70, 40, 100, alpha), (x, py), (x, py + 1))
@@ -2604,15 +2661,19 @@ class MysteriumMagnumMenu(Menu):
                 ]
                 pygame.draw.polygon(screen, (120, 60, 200), gem_pts2)
 
-        # ── Border runes ───────────────────────────────────────────────
+        # ── Border runes (cached) ───────────────────────────────────────
         if tf_a > 0.01:
             bf = cfg.get_font(max(6, int(10 * cfg.ui_scale())))
             border_rune_list = ["ᚠ", "ᚢ", "ᚦ", "ᚨ", "ᚱ", "ᚲ", "ᚷ", "ᚹ", "ᚺ", "ᚾ", "ᛁ", "ᛃ"]
+            brune_color = (160, 100, 210)
             for i, ch in enumerate(border_rune_list):
                 frac = (i + 0.5) / len(border_rune_list)
                 bp = (math.sin(self.animation_time * 1.5 + i * 0.9) + 1.0) * 0.5
                 ba = int((30 + 50 * bp) * tf_a)
-                rs = bf.render(ch, True, (160, 100, 210))
+                gk = (ch, brune_color, max(6, int(10 * cfg.ui_scale())))
+                if gk not in self._rune_glyph_cache:
+                    self._rune_glyph_cache[gk] = bf.render(ch, True, brune_color)
+                rs = self._rune_glyph_cache[gk]
                 rs.set_alpha(ba)
                 if tree_draw.height > 100:
                     ly = tree_draw.y + int(tree_draw.height * frac)
