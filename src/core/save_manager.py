@@ -304,6 +304,7 @@ class SaveManager:
             "revealed_tarot_cards": list(app.revealed_tarot_cards),
             "arcane_quests_unlocked": getattr(app, 'arcane_quests_unlocked', False),
             "mysterium_magnum_unlocked": getattr(app, 'mysterium_magnum_unlocked', False),
+            "seen_articles": app.article_tracker.serialize(),
             "player": {
                 "pos_x": char.pos.x,
                 "pos_y": char.pos.y,
@@ -464,6 +465,12 @@ class SaveManager:
             if quest_state and hasattr(quest_state, "set_quest_data"):
                 quest_state.set_quest_data(quest_data)
 
+        # Restore seen articles
+        seen_articles = data.get("seen_articles", [])
+        if seen_articles:
+            app.article_tracker.deserialize(seen_articles)
+            logger.info(f"Restored {len(seen_articles)} seen articles from save.")
+
         # Sync character defense from loaded equipment
         equip_inv.sync_character_defense(char)
 
@@ -508,6 +515,7 @@ class SaveManager:
             "brightness": cfg.USER_SCREEN_BRIGHTNESS,
             "music_volume": cfg.MUSIC_VOLUME,
             "profiler_enabled": cfg.PROFILER_ENABLED,
+            "guide_intro_shown": app.guide_intro_shown,
         }
         with open(SETTINGS_FILE, 'w') as f:
             json.dump(data, f, indent=4)
@@ -548,6 +556,9 @@ class SaveManager:
         # Windowed size
         if "windowed_width" in data and "windowed_height" in data:
             app.windowed_size = (data["windowed_width"], data["windowed_height"])
+
+        # Guide intro one-time flag
+        app.guide_intro_shown = data.get("guide_intro_shown", False)
 
         # Fullscreen — apply after windowed_size is restored
         if data.get("fullscreen", False):

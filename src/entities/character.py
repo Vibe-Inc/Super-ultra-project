@@ -757,6 +757,11 @@ class Character:
             },
         ]
 
+    def _try_open_magic_article(self, title):
+        gs = getattr(self, "game_state", None)
+        if gs and hasattr(gs, "app") and hasattr(gs.app, "article_tracker"):
+            gs.app.article_tracker.try_open(gs.app, "magic", title)
+
     def learn_fireball(self):
         """Add the fireball skill to the skillbook if not already present."""
         for skill in self.skillbook:
@@ -771,6 +776,7 @@ class Character:
             "manaCost": 20,
         })
         logger.info("Player learned Fireball!")
+        self._try_open_magic_article("Fireball")
 
     def learn_flame_shield(self):
         """Add the Flame Shield skill to the skillbook if not already present."""
@@ -786,6 +792,7 @@ class Character:
             "manaCost": 15,
         })
         logger.info("Player learned Flame Shield!")
+        self._try_open_magic_article("Flame Shield")
 
     def learn_pyromancers_fury(self):
         """Activate the Pyromancer's Fury passive: fire skills deal 25% more damage and have 15% larger area."""
@@ -806,6 +813,7 @@ class Character:
             "manaCost": 25,
         })
         logger.info("Player learned Frost Nova!")
+        self._try_open_magic_article("Frost Nova")
 
     def learn_ice_armor(self):
         """Add the Ice Armor skill to the skillbook if not already present."""
@@ -821,6 +829,7 @@ class Character:
             "manaCost": 30,
         })
         logger.info("Player learned Ice Armor!")
+        self._try_open_magic_article("Ice Armor")
 
     def learn_glacial_cascade(self):
         """Add the Glacial Cascade skill to the skillbook if not already present."""
@@ -836,6 +845,7 @@ class Character:
             "manaCost": 22,
         })
         logger.info("Player learned Glacial Cascade!")
+        self._try_open_magic_article("Glacial Cascade")
 
     def learn_chain_lightning(self):
         for skill in self.skillbook:
@@ -850,6 +860,7 @@ class Character:
             "manaCost": 18,
         })
         logger.info("Player learned Chain Lightning!")
+        self._try_open_magic_article("Chain Lightning")
 
     def learn_static_field(self):
         self.static_field = True
@@ -868,6 +879,7 @@ class Character:
             "manaCost": 28,
         })
         logger.info("Player learned Thunderstrike!")
+        self._try_open_magic_article("Thunderstrike")
 
     def learn_entangling_roots(self):
         for skill in self.skillbook:
@@ -882,6 +894,7 @@ class Character:
             "manaCost": 22,
         })
         logger.info("Player learned Entangling Roots!")
+        self._try_open_magic_article("Entangling Roots")
 
     def learn_regeneration(self):
         self.regeneration = True
@@ -900,6 +913,7 @@ class Character:
             "manaCost": 35,
         })
         logger.info("Player learned Summon Spirit!")
+        self._try_open_magic_article("Summon Spirit")
 
     def learn_shadow_step(self):
         for skill in self.skillbook:
@@ -914,6 +928,7 @@ class Character:
             "manaCost": 20,
         })
         logger.info("Player learned Shadow Step!")
+        self._try_open_magic_article("Shadow Step")
 
     def learn_poison_blade(self):
         self.poison_blade = True
@@ -932,6 +947,7 @@ class Character:
             "manaCost": 25,
         })
         logger.info("Player learned Dark Pact!")
+        self._try_open_magic_article("Dark Pact")
 
     def learn_arcane_missiles(self):
         for skill in self.skillbook:
@@ -946,6 +962,7 @@ class Character:
             "manaCost": 24,
         })
         logger.info("Player learned Arcane Missiles!")
+        self._try_open_magic_article("Arcane Missiles")
 
     def learn_mana_flow(self):
         self.mana_flow = True
@@ -964,6 +981,7 @@ class Character:
             "manaCost": 25,
         })
         logger.info("Player learned Mystic Barrier!")
+        self._try_open_magic_article("Mystic Barrier")
 
     def learn_berserkers_rage(self):
         for skill in self.skillbook:
@@ -978,6 +996,7 @@ class Character:
             "manaCost": 30,
         })
         logger.info("Player learned Berserker's Rage!")
+        self._try_open_magic_article("Berserker's Rage")
 
     def learn_eternal_fortress(self):
         if self.eternal_fortress:
@@ -1020,6 +1039,7 @@ class Character:
             "manaCost": 40,
         })
         logger.info("Player learned Chrono Shift!")
+        self._try_open_magic_article("Chrono Shift")
 
     def get_skill_in_slot(self, slot_index):
         if 0 <= slot_index < len(self.skillbar):
@@ -1239,6 +1259,14 @@ class Character:
             self.dash_active_time = self.dash_duration
             self.dash_last_used = current_time
             logger.info("Player used Dash.")
+            # Dash magic article + guide: Skills & Hotbar (first use)
+            gs = getattr(self, "game_state", None)
+            if gs and hasattr(gs, "app") and hasattr(gs.app, "article_tracker"):
+                tr = gs.app.article_tracker
+                tr.try_open(gs.app, "magic", "Dash")
+                if not gs._triggered_guide_skills:
+                    gs._triggered_guide_skills = True
+                    tr.try_open(gs.app, "guide", "3. Skills & Hotbar")
             return True
 
         if skill_id == "fireball":
@@ -1716,6 +1744,23 @@ class Character:
         # Otherwise append new effect
         self.effects.append(effect)
 
+        # Effects article: open on first application to the player
+        _effect_article_map = {
+            "RegenerationEffect": "Boon: Regeneration",
+            "PoisonEffect": "Bane: Poison",
+            "BurnEffect": "Bane: Burn",
+            "ConfusionEffect": "Bane: Confusion",
+            "DizzinessEffect": "Bane: Dizziness",
+            "SlowEffect": "Bane: Slow",
+            "FreezeEffect": "Bane: Freeze & Root",
+            "RootEffect": "Bane: Freeze & Root",
+        }
+        art_title = _effect_article_map.get(cls_name)
+        if art_title:
+            gs = getattr(self, "game_state", None)
+            if gs and hasattr(gs, "app") and hasattr(gs.app, "article_tracker"):
+                gs.app.article_tracker.try_open(gs.app, "effects", art_title)
+
     def gain_xp(self, amount):
         self.xp += amount
         logger.info(f"Gained {amount} XP. Current XP: {self.xp}/{self.xp_to_next_level}")
@@ -1724,6 +1769,7 @@ class Character:
             self.level_up()
 
     def level_up(self):
+        prev_level = self.level
         self.level += 1
         self.xp_to_next_level = int(self.xp_to_next_level * 1.5)
         self.max_hp += 20
@@ -1731,6 +1777,16 @@ class Character:
         self.skill_tree_points += 1
         logger.info(f"Level Up! Level: {self.level}, Max HP: {self.max_hp}, Skill points: {self.skill_tree_points}")
         print(f"Level Up! Level: {self.level}, Max HP: {self.max_hp}, Skill points: {self.skill_tree_points}")
+        # Article triggers
+        gs = getattr(self, "game_state", None)
+        if gs and hasattr(gs, "app") and hasattr(gs.app, "article_tracker"):
+            tr = gs.app.article_tracker
+            if not gs._triggered_guide_leveling:
+                gs._triggered_guide_leveling = True
+                tr.try_open(gs.app, "guide", "6. Leveling & Experience")
+            if self.level >= 10 and not gs._triggered_guide_final:
+                gs._triggered_guide_final = True
+                tr.try_open(gs.app, "guide", "10. Final Words")
 
     def can_attack(self, current_time=None):
         if current_time is None:

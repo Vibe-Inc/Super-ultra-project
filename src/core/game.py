@@ -14,6 +14,7 @@ import random
 from src.core.logger import logger
 import src.config as cfg
 from src.core.state import State
+from src.core.save_manager import SaveManager
 from src.entities.character import Character
 from src.map.map import LocalMap
 from src.inventory.system import MAIN_player_inventory, MAIN_player_inventory_equipment, ShopInventory, MAIN_player_hotbar
@@ -724,24 +725,34 @@ class Game(State):
         except Exception:
             self.fishing = None
 
+        # Guide article one-shot trigger flags
+        self._triggered_guide_combat = False
+        self._triggered_guide_inventory = False
+        self._triggered_guide_crafting = False
+        self._triggered_guide_leveling = False
+        self._triggered_guide_daynight = False
+        self._triggered_guide_enemies = False
+        self._triggered_guide_skills = False
+        self._triggered_guide_respec = False
+        self._triggered_guide_final = False
+        self._bestiary_encountered = set()
+        self._dusk_was_reached = False
+        self._kill_count = 0
+
         # Gathering minigame controller (chop / mine)
         try:
             self.gathering = GatheringController(self)
         except Exception:
             self.gathering = None
 
-        # Smeltery workstation overlay (workbench + coke oven + blast furnace).
-        # The instance is owned by Game so that smelting jobs keep ticking
-        # even while the overlay is closed.
+        # Smeltery workstation overlay (workbench + coke oven + blast furnace)
         try:
             self.smeltery = SmelteryMenu(app)
         except Exception as exc:
             logger.warning(f"Failed to initialise SmelteryMenu: {exc}")
             self.smeltery = None
 
-        # Per-map gatherable node registries (currently empty: gathering
-        # is driven entirely by the is_*_gatherable tile properties on
-        # the .tmx files -- see src.world.gatherable_nodes).
+        # Per-map gatherable node registries
         self.gatherables: dict[str, GatherableNodeRegistry] = {}
         try:
             self._build_gatherable_registries()
@@ -749,13 +760,6 @@ class Game(State):
             logger.warning(f"Failed to build gatherable node registries: {exc}")
 
     def _build_gatherable_registries(self) -> None:
-        """Read :mod:`data.gatherable_nodes` once and group the entries
-        by ``map_path`` into :class:`GatherableNodeRegistry` instances.
-
-        The data file is intentionally empty now; the registries exist
-        so the per-map update / draw hooks in :meth:`Game.update` and
-        :meth:`Game.draw_scene` keep working without a guard.
-        """
         try:
             from data.gatherable_nodes import load_gatherable_node_defs
         except Exception as exc:
@@ -806,6 +810,10 @@ class Game(State):
 
     def toggle_player_inventory(self):
         self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
+        # Guide: Inventory & Items — first inventory open
+        if not self._triggered_guide_inventory:
+            self._triggered_guide_inventory = True
+            self.app.article_tracker.try_open(self.app, "guide", "4. Inventory & Items")
 
     def open_shop(self):
         try:
@@ -1010,7 +1018,12 @@ class Game(State):
         return self.DAY_START <= self.game_time_seconds < self.NIGHT_START
 
     def _update_game_time(self, dt: float):
+        was_day = self.is_daytime()
         self.game_time_seconds = (self.game_time_seconds + dt * self.GAME_SECONDS_PER_REAL_SECOND) % self.GAME_DAY_SECONDS
+        # Guide: Day & Night Cycle — first time dusk/night is reached
+        if not self._triggered_guide_daynight and not was_day and not self.is_daytime():
+            self._triggered_guide_daynight = True
+            self.app.article_tracker.try_open(self.app, "guide", "7. Day & Night Cycle")
         # Smooth brightness interpolation across dawn/dusk and compute a tint color
         def lerp_color(a: tuple[int, int, int], b: tuple[int, int, int], t: float) -> tuple[int, int, int]:
             return (int(a[0] + (b[0] - a[0]) * t), int(a[1] + (b[1] - a[1]) * t), int(a[2] + (b[2] - a[2]) * t))
@@ -1404,6 +1417,14 @@ class Game(State):
             logger.debug(f"Enemy '{getattr(enemy, 'ai_profile', 'unknown')}' had drop_chance entries but none rolled.")
 
     def update(self, dt):
+        tr = self.app.article_tracker
+
+        # Guide intro — only on the very first-ever game start
+        if not self.app.guide_intro_shown:
+            self.app.guide_intro_shown = True
+            SaveManager.save_settings(self.app)
+            tr.try_open(self.app, "guide", "1. Movement & Navigation")
+
         switched_map_path = self.map.update(self.character)
 
         if switched_map_path:
@@ -1595,7 +1616,31 @@ class Game(State):
         for enemy in self.enemies[:]:
             if enemy.is_dead():
                 logger.info("Enemy defeated!")
-                
+                self._kill_count += 1
+
+                # Bestiary: open article for this enemy type
+                vs = getattr(enemy, "visual_style", None) or getattr(enemy, "ai_profile", "")
+                bestiary_title = {
+                    "brute": "The Brute", "venomous": "The Venomous",
+                    "arcanist": "The Arcanist", "trickster": "The Trickster",
+                    "bomber": "The Bomber", "stalker": "The Stalker",
+                    "skirmisher": "The Skirmisher", "guardian": "The Guardian",
+                }.get(vs.lower() if vs else "")
+                if bestiary_title:
+                    tr.try_open(self.app, "bestiary", bestiary_title)
+
+                # Guide: Combat Basics — first kill
+                if not self._triggered_guide_combat:
+                    self._triggered_guide_combat = True
+                    tr.try_open(self.app, "guide", "2. Combat Basics")
+
+                # Guide: Enemies & Threat Assessment — after 3+ different types encountered
+                if vs:
+                    self._bestiary_encountered.add(vs.lower())
+                    if not self._triggered_guide_enemies and len(self._bestiary_encountered) >= 3:
+                        self._triggered_guide_enemies = True
+                        tr.try_open(self.app, "guide", "8. Enemies & Threat Assessment")
+
                 # Reward scaling based on enemy difficulty (using max_hp as proxy)
                 # Base reward ranges
                 _base_xp_min, _base_xp_max = 30, 60

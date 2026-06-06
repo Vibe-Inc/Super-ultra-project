@@ -518,10 +518,16 @@ class MainMenu(Menu):
 
     def start_game(self):
         logger.info("Start game requested from MainMenu")
+        self.app.article_tracker.seen_articles.discard(("guide", "1. movement & navigation"))
         quest_state = self.app.manager.states.get("arcane_quest")
         if quest_state and hasattr(quest_state, "reset_quests"):
             quest_state.reset_quests()
         self.app.manager.set_state("gameplay")
+        if not self.app.guide_intro_shown:
+            wiki = self.app.manager.states["wiki"]
+            wiki._skip_to_gameplay = True
+            wiki._open_guide()
+            self.app.manager.set_state("wiki")
 
     def exit_game(self):
         logger.info("Exit requested from MainMenu")

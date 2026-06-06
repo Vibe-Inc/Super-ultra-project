@@ -126,6 +126,10 @@ class HUD:
         self.font = cfg.get_font(max(8,int(40 * cfg.ui_scale())))
         self.stamina_font = pygame.font.Font(None, 24)
         self.stamina_label = self.stamina_font.render(_("STAMINA"), True, (255, 255, 255))
+        self._toast_font = cfg.get_font(max(8, int(18 * cfg.ui_scale())))
+        self._toast_title_font = cfg.get_font(max(8, int(22 * cfg.ui_scale())))
+        self._active_toast = None
+        self._toast_timer = 0.0
 
         try:
             self.hp_icon = pygame.image.load("assets/heart.png")
@@ -968,3 +972,44 @@ class HUD:
                 self._draw_hud_skill_slot(screen, slot, skill, idx)
 
         # top skillbar removed
+
+        # ─── Article Unlock Toast ──────────────────────────────────
+        dt = self.app.clock.get_time() / 1000.0 if hasattr(self.app, 'clock') else 0.016
+        if self._active_toast is None and self.app.article_notifications:
+            notif = self.app.article_notifications.pop(0)
+            self._active_toast = notif
+            self._toast_timer = 4.0
+
+        if self._active_toast:
+            self._toast_timer -= dt
+            if self._toast_timer <= 0.0:
+                self._active_toast = None
+            else:
+                section = self._active_toast["section"]
+                title = self._active_toast["title"]
+                fade = min(255, int(255 * min(1.0, self._toast_timer / 0.5)))
+                sw, sh = screen.get_size()
+                pw = int(380 * cfg.ui_scale())
+                ph = int(90 * cfg.ui_scale())
+                px = (sw - pw) // 2
+                py = int(20 * cfg.ui_scale())
+
+                bg = pygame.Surface((pw, ph), pygame.SRCALPHA)
+                pygame.draw.rect(bg, (20, 15, 25, min(220, fade)), bg.get_rect(), border_radius=10)
+                pygame.draw.rect(bg, (212, 175, 55, fade), bg.get_rect(), 2, border_radius=10)
+                screen.blit(bg, (px, py))
+
+                icon_surf = self._toast_font.render("\U0001F514", True, (255, 215, 0, fade))
+                screen.blit(icon_surf, (px + 10, py + 10))
+
+                tsf = self._toast_title_font.render(title, True, (255, 215, 0))
+                tsf.set_alpha(fade)
+                screen.blit(tsf, (px + 40, py + 8))
+
+                ssf = self._toast_font.render(f"Section: {section.title()}", True, (180, 160, 130))
+                ssf.set_alpha(fade)
+                screen.blit(ssf, (px + 40, py + 34))
+
+                hf = self._toast_font.render("Press ESC \u2192 Pause \u2192 Wiki to read", True, (140, 130, 120))
+                hf.set_alpha(fade)
+                screen.blit(hf, (px + 40, py + 56))
