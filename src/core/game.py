@@ -566,7 +566,6 @@ class Game(State):
             create_item("dull_sword"),
             create_item("wooden_bow"),
             create_item("apple"),
-            create_item("hand_lamp"),
             create_item("lantern"),
             create_item("small_health_potion"),
             create_item("large_health_potion"),
@@ -1212,17 +1211,7 @@ class Game(State):
         lights = []
         try:
             camera = self._get_camera_offset()
-            # Player light: if player has an active lamp, use it
             player_center = self.character.get_center()
-            if getattr(self.character, 'active_lamp', None) and getattr(self.character.active_lamp, 'lit', False):
-                lamp = self.character.active_lamp
-                screen_pos = (int(player_center.x - camera.x), int(player_center.y - camera.y))
-                lights.append({
-                    'pos': screen_pos,
-                    'radius': int(lamp.light_radius),
-                    'intensity': float(lamp.intensity)
-                })
-
             # Lantern: emit light when the lantern is in the active hotbar slot
             try:
                 hb = getattr(self, 'hotbar', None)

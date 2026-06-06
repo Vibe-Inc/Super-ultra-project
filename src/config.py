@@ -378,6 +378,17 @@ DURABILITY_BAR_COLORS = {
     "broken": (220, 70, 70, 230),
 }
 
+# ============== TRASHCAN ==============
+INV_TRASHCAN_SIZE = 50
+INV_TRASHCAN_SLOT_COLOR = (35, 25, 25)
+INV_TRASHCAN_BORDER_COLOR = (80, 55, 55)
+INV_TRASHCAN_HOVER_BORDER = (220, 80, 80)
+INV_TRASHCAN_HOVER_FILL = (220, 80, 80, 30)
+INV_TRASHCAN_ICON_COLOR = (180, 80, 80)
+INV_TRASHCAN_LABEL = "Trash"
+INV_TRASHCAN_LABEL_COLOR = (140, 100, 100)
+INV_TRASHCAN_GAP = 10
+
 def set_screen_size(screen_width, screen_height):
     """Update the global screen dimensions and recalculate dependent values.
 

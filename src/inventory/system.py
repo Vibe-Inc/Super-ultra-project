@@ -445,10 +445,38 @@ class MAIN_player_inventory(Inventory):
             on_click=None,
         )
 
+    def get_trash_rect(self, manager):
+        sc = cfg.ui_scale()
+        equip_inv = None
+        for inv in manager.active_inventories:
+            if isinstance(inv, MAIN_player_inventory_equipment):
+                equip_inv = inv
+                break
+        slot_size = int(cfg.BASE_INV_slot_size * sc)
+        border = int(cfg.BASE_INV_border * sc)
+        grid_size = (slot_size + border) * 3
+        if equip_inv:
+            craft_x = equip_inv.pos_x - grid_size - int(8 * sc)
+            craft_y = equip_inv.pos_y
+        else:
+            craft_x = self.pos_x
+            craft_y = self.pos_y
+        output_x = craft_x + (grid_size // 2) - (slot_size // 2)
+        output_y = craft_y + grid_size + int(15 * sc)
+        size = int(cfg.INV_TRASHCAN_SIZE * sc)
+        gap = int(12 * sc)
+        x = output_x - size - gap
+        y = output_y
+        return pygame.Rect(x, y, size, size)
+
     def inventory_interactions(self, event, manager):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mouse_pos = event.pos
+            if self.get_trash_rect(manager).collidepoint(mouse_pos):
+                if manager.selected_item:
+                    manager.selected_item = None
+                return
             if not getattr(self.app.INV_manager, 'current_shop_inv', None):
-                mouse_pos = event.pos
                 if hasattr(self, 'open_skilltree_btn') and self.open_skilltree_btn.rect.collidepoint(mouse_pos):
                     try: self.app.manager.set_state("skill_tree")
                     except Exception: pass

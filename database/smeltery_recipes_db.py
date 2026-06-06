@@ -150,6 +150,28 @@ BLAST_FURNACE_RECIPES = [
         "tier": "steel",
         "minigame_chain": ["bellows", "temper"],
     },
+    {
+        "input_item_id": "silver_ore",
+        "input_item_amount": 1,
+        "input_fuel_id": "coke",
+        "input_fuel_amount": 1,
+        "primary_output_id": "silver_ingot",
+        "primary_output_amount": 1,
+        "duration": 22.0,
+        "heat_color": (200, 200, 220),
+        "tier": "silver",
+    },
+    {
+        "input_item_id": "silver_ore",
+        "input_item_amount": 1,
+        "input_fuel_id": "coal",
+        "input_fuel_amount": 2,
+        "primary_output_id": "silver_ingot",
+        "primary_output_amount": 1,
+        "duration": 26.0,
+        "heat_color": (180, 190, 210),
+        "tier": "silver",
+    },
 ]
 
 
