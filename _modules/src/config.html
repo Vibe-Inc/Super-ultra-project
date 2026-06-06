@@ -485,6 +485,78 @@
     <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
         <span class="k">pass</span></div>
 
+
+
+<span class="c1"># ============== EFFECT BAR STYLING ==============</span>
+<span class="n">EFFECT_BAR_SLOT_SIZE</span> <span class="o">=</span> <span class="mi">72</span>
+<span class="n">EFFECT_BAR_PADDING</span> <span class="o">=</span> <span class="mi">6</span>
+<span class="n">EFFECT_BAR_MAX_VISIBLE</span> <span class="o">=</span> <span class="mi">12</span>          <span class="c1"># max icons shown before wrapping</span>
+<span class="n">EFFECT_BAR_GAP</span> <span class="o">=</span> <span class="mi">4</span>                   <span class="c1"># gap between rows (for multi-row)</span>
+<span class="n">EFFECT_BAR_BG_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">18</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+<span class="n">EFFECT_BAR_BORDER_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="mi">68</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+<span class="n">EFFECT_BAR_BORDER_RADIUS</span> <span class="o">=</span> <span class="mi">6</span>
+
+<span class="c1"># Buff = positive effect, Debuff = negative effect</span>
+<span class="n">EFFECT_BAR_BUFF_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">40</span><span class="p">,</span> <span class="mi">160</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>       <span class="c1"># green tint</span>
+<span class="n">EFFECT_BAR_DEBUFF_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">180</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>     <span class="c1"># red tint</span>
+<span class="n">EFFECT_BAR_TIMER_BG_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">35</span><span class="p">,</span> <span class="mi">180</span><span class="p">)</span>
+<span class="n">EFFECT_BAR_TIMER_FILL_COLOR</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">220</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">220</span><span class="p">)</span>
+
+<span class="c1"># Effect type classification</span>
+<span class="n">EFFECT_BAR_BUFF_TYPES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;regeneration&quot;</span><span class="p">,</span> <span class="s2">&quot;radiant_fortitude&quot;</span><span class="p">,</span> <span class="s2">&quot;vampiric_edge&quot;</span><span class="p">,</span> <span class="s2">&quot;keen_insight&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;strength&quot;</span><span class="p">,</span> <span class="s2">&quot;momentum&quot;</span><span class="p">,</span> <span class="s2">&quot;haste&quot;</span><span class="p">,</span> <span class="s2">&quot;shield&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="n">EFFECT_BAR_DEBUFF_TYPES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;poison&quot;</span><span class="p">,</span> <span class="s2">&quot;burn&quot;</span><span class="p">,</span> <span class="s2">&quot;confusion&quot;</span><span class="p">,</span> <span class="s2">&quot;dizziness&quot;</span><span class="p">,</span> <span class="s2">&quot;slow&quot;</span><span class="p">,</span> <span class="s2">&quot;freeze&quot;</span><span class="p">,</span> <span class="s2">&quot;root&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;bleed&quot;</span><span class="p">,</span> <span class="s2">&quot;blind&quot;</span><span class="p">,</span> <span class="s2">&quot;weaken&quot;</span><span class="p">,</span> <span class="s2">&quot;curse&quot;</span><span class="p">,</span> <span class="s2">&quot;lethargy&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1"># Short display labels for effects (class name -&gt; label)</span>
+<span class="n">EFFECT_BAR_LABELS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;regeneration&quot;</span><span class="p">:</span> <span class="s2">&quot;Regen&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;poison&quot;</span><span class="p">:</span> <span class="s2">&quot;Poisn&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;burn&quot;</span><span class="p">:</span> <span class="s2">&quot;Burn&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;confusion&quot;</span><span class="p">:</span> <span class="s2">&quot;Conf&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;dizziness&quot;</span><span class="p">:</span> <span class="s2">&quot;Dizz&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;slow&quot;</span><span class="p">:</span> <span class="s2">&quot;Slow&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;freeze&quot;</span><span class="p">:</span> <span class="s2">&quot;Freeze&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;root&quot;</span><span class="p">:</span> <span class="s2">&quot;Root&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;radiant_fortitude&quot;</span><span class="p">:</span> <span class="s2">&quot;RFort&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;vampiric_edge&quot;</span><span class="p">:</span> <span class="s2">&quot;Vamp&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;keen_insight&quot;</span><span class="p">:</span> <span class="s2">&quot;KIns&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;strength&quot;</span><span class="p">:</span> <span class="s2">&quot;Str&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;momentum&quot;</span><span class="p">:</span> <span class="s2">&quot;Momt&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;blind&quot;</span><span class="p">:</span> <span class="s2">&quot;Bln&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;haste&quot;</span><span class="p">:</span> <span class="s2">&quot;Haste&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;weaken&quot;</span><span class="p">:</span> <span class="s2">&quot;Weak&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;curse&quot;</span><span class="p">:</span> <span class="s2">&quot;Curse&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;lethargy&quot;</span><span class="p">:</span> <span class="s2">&quot;Leth&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;shield&quot;</span><span class="p">:</span> <span class="s2">&quot;Shld&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1"># Hex-like colors for each effect (icon tint)</span>
+<span class="n">EFFECT_BAR_COLORS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;regeneration&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="mi">220</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span>
+    <span class="s2">&quot;poison&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">120</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">40</span><span class="p">),</span>
+    <span class="s2">&quot;burn&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">30</span><span class="p">),</span>
+    <span class="s2">&quot;confusion&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">130</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
+    <span class="s2">&quot;dizziness&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">180</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="mi">200</span><span class="p">),</span>
+    <span class="s2">&quot;slow&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">140</span><span class="p">,</span> <span class="mi">220</span><span class="p">),</span>
+    <span class="s2">&quot;freeze&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
+    <span class="s2">&quot;root&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="mi">160</span><span class="p">,</span> <span class="mi">60</span><span class="p">),</span>
+    <span class="s2">&quot;radiant_fortitude&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">220</span><span class="p">,</span> <span class="mi">80</span><span class="p">),</span>
+    <span class="s2">&quot;vampiric_edge&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">60</span><span class="p">),</span>
+    <span class="s2">&quot;keen_insight&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">220</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
+    <span class="s2">&quot;strength&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">60</span><span class="p">),</span>
+    <span class="s2">&quot;momentum&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">160</span><span class="p">,</span> <span class="mi">40</span><span class="p">),</span>
+    <span class="s2">&quot;blind&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">120</span><span class="p">),</span>
+    <span class="s2">&quot;haste&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">240</span><span class="p">,</span> <span class="mi">80</span><span class="p">),</span>
+    <span class="s2">&quot;weaken&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">160</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">80</span><span class="p">),</span>
+    <span class="s2">&quot;curse&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">140</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">180</span><span class="p">),</span>
+    <span class="s2">&quot;lethargy&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">140</span><span class="p">),</span>
+    <span class="s2">&quot;shield&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="mi">240</span><span class="p">),</span>
+<span class="p">}</span>
 </pre></div>
 
            </div>
