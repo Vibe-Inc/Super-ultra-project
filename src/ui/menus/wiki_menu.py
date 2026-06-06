@@ -995,7 +995,10 @@ class WikiMenu(Menu):
             pygame.draw.rect(ns, GOLD if hov and not locked else GOLD_DARK, ns.get_rect(), 1, border_radius=10)
             screen.blit(ns, er.topleft)
 
-            ns2 = self.font_small.render(f"{i+1}.", True, GOLD_BRIGHT if not locked else GOLD_DARK)
+            if locked:
+                ns2 = self.font_small.render("?", True, GOLD_DARK)
+            else:
+                ns2 = self.font_small.render(f"{i+1}.", True, GOLD_BRIGHT)
             screen.blit(ns2, (er.x + 12, er.y + (er.height - ns2.get_height()) // 2))
 
             tc = GOLD_BRIGHT if hov else self.ink_color
@@ -1005,9 +1008,21 @@ class WikiMenu(Menu):
             screen.blit(es, (er.x + 48, er.y + (er.height - es.get_height()) // 2))
 
             if locked:
-                lock_surf = self.font_small.render("\U0001F512", True, (100, 80, 60))
-                screen.blit(lock_surf, (er.right - lock_surf.get_width() - 14,
-                                        er.y + (er.height - lock_surf.get_height()) // 2))
+                seal_size = max(1, int(entry_h * 0.55))
+                sc = seal_size // 2
+                ga = int(18 + 14 * math.sin(t * 2))
+                gs2 = pygame.Surface((seal_size + 6, seal_size + 6), pygame.SRCALPHA)
+                pygame.draw.circle(gs2, (*theme["glow"], ga), (gs2.get_width() // 2, gs2.get_height() // 2), sc)
+                ss = pygame.Surface((seal_size, seal_size), pygame.SRCALPHA)
+                pygame.draw.circle(ss, theme["accent"], (sc, sc), sc, max(1, int(2 * scale)))
+                pygame.draw.circle(ss, theme["accent"], (sc, sc), sc - max(2, int(3 * scale)), 1)
+                si = self.font_small.render(theme.get("icon", "?"), True, theme["accent"])
+                si.set_alpha(180)
+                ss.blit(si, (sc - si.get_width() // 2, sc - si.get_height() // 2))
+                gx = er.right - seal_size - 14 - 3
+                gy = er.y + (er.height - seal_size) // 2 - 3
+                screen.blit(gs2, (gx, gy))
+                screen.blit(ss, (er.right - seal_size - 14, er.y + (er.height - seal_size) // 2))
             elif hov:
                 ar = self.font_small.render("\u2192", True, GOLD_BRIGHT)
                 screen.blit(ar, (er.right - ar.get_width() - 14,
@@ -1075,37 +1090,68 @@ class WikiMenu(Menu):
         # Body text
         tt2 = dy + int(18 * scale)
         taw2 = inner.width - (ps2 + int(24 * scale) if pimg else 0)
-        tah = inner.y + inner.height - tt2
-        bf = self.font_body
-        lh = bf.get_height() + max(2, int(3 * scale))
-        bl = _wrap_text(body, bf, taw2)
-        vl = max(0, (tah - int(40 * scale)) // lh)
+        if locked:
+            icon_char = theme.get("icon", "?")
+            sigil_size = max(1, int(72 * scale))
+            sigil_font = cfg.get_font(sigil_size)
+            sigil = sigil_font.render(icon_char, True, theme["accent"])
+            sigil.set_alpha(int(50 + 35 * math.sin(t * 1.5)))
+            float_ofs = int(math.sin(t * 0.8) * 4 * scale)
+            six = inner.x + (taw2 - sigil.get_width()) // 2
+            siy = tt2 + int(30 * scale) + float_ofs
 
-        for i in range(vl):
-            if i >= len(bl): break
-            line = bl[i]
-            if not line.strip(): continue
-            ld = i * 0.02
-            lt2 = max(0, min(1.0, (t - 0.1 - ld) * 4.0))
-            la = int(255 * _eased_out_cubic(lt2))
+            glow_r = max(sigil.get_width(), sigil.get_height()) // 2 + int(20 * scale)
+            gs = pygame.Surface((glow_r * 2, glow_r * 2), pygame.SRCALPHA)
+            ga = int(12 + 10 * math.sin(t * 1.5))
+            pygame.draw.circle(gs, (*theme["glow"], ga), (glow_r, glow_r), glow_r)
+            screen.blit(gs, (six + sigil.get_width() // 2 - glow_r, siy + sigil.get_height() // 2 - glow_r))
 
-            if i == 0 and line.strip():
-                fc = line[0]; rest = line[1:]
-                cs = int(bf.get_height() * 1.8)
-                try: cf = cfg.get_font(cs)
-                except: cf = bf
-                cap = cf.render(fc, True, theme["accent"])
-                cap.set_alpha(la)
-                screen.blit(cap, (inner.x + int(10 * scale), tt2))
-                if rest:
-                    rs = bf.render(rest, True, self.ink_color)
-                    rs.set_alpha(la)
-                    screen.blit(rs, (inner.x + int(10 * scale) + cap.get_width() + 2,
-                                     tt2 + int((cs - bf.get_height()) * 0.6)))
-            else:
-                sf = bf.render(line, True, self.ink_color)
-                sf.set_alpha(la)
-                screen.blit(sf, (inner.x + int(10 * scale), tt2 + i * lh))
+            screen.blit(sigil, (six, siy))
+
+            sub = self.font_subtitle.render("Not yet discovered", True,
+                                             tuple(c // 2 + 40 for c in self.ink_light))
+            sub.set_alpha(int(130 + 50 * math.sin(t * 0.7)))
+            sub_x = inner.x + (taw2 - sub.get_width()) // 2
+            sub_y = siy + sigil.get_height() + int(24 * scale)
+            screen.blit(sub, (sub_x, sub_y))
+
+            hint = self.font_small.render("???", True, GOLD_DARK)
+            hint.set_alpha(int(80 + 40 * math.sin(t * 0.9 + 1)))
+            hint_x = inner.x + (taw2 - hint.get_width()) // 2
+            hint_y = sub_y + sub.get_height() + int(16 * scale)
+            screen.blit(hint, (hint_x, hint_y))
+        else:
+            tah = inner.y + inner.height - tt2
+            bf = self.font_body
+            lh = bf.get_height() + max(2, int(3 * scale))
+            bl = _wrap_text(body, bf, taw2)
+            vl = max(0, (tah - int(40 * scale)) // lh)
+
+            for i in range(vl):
+                if i >= len(bl): break
+                line = bl[i]
+                if not line.strip(): continue
+                ld = i * 0.02
+                lt2 = max(0, min(1.0, (t - 0.1 - ld) * 4.0))
+                la = int(255 * _eased_out_cubic(lt2))
+
+                if i == 0 and line.strip():
+                    fc = line[0]; rest = line[1:]
+                    cs = int(bf.get_height() * 1.8)
+                    try: cf = cfg.get_font(cs)
+                    except: cf = bf
+                    cap = cf.render(fc, True, theme["accent"])
+                    cap.set_alpha(la)
+                    screen.blit(cap, (inner.x + int(10 * scale), tt2))
+                    if rest:
+                        rs = bf.render(rest, True, self.ink_color)
+                        rs.set_alpha(la)
+                        screen.blit(rs, (inner.x + int(10 * scale) + cap.get_width() + 2,
+                                         tt2 + int((cs - bf.get_height()) * 0.6)))
+                else:
+                    sf = bf.render(line, True, self.ink_color)
+                    sf.set_alpha(la)
+                    screen.blit(sf, (inner.x + int(10 * scale), tt2 + i * lh))
 
         # Portrait
         if pimg:
