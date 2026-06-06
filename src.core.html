@@ -807,6 +807,15 @@ subsystems (HUD, inventory, combat, dialogs).</p>
 <dd></dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="src.core.game.Game.get_light_sources">
+<span class="sig-name descname"><span class="pre">get_light_sources</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="reference internal" href="_modules/src/core/game.html#Game.get_light_sources"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.game.Game.get_light_sources" title="Link to this definition"></a></dt>
+<dd><p>Return a list of light sources in screen coordinates.</p>
+<p>Each source is a dict: { ‘pos’: (x,y), ‘radius’: int, ‘intensity’: float }
+The Game computes camera offset and converts world positions to screen space.
+Only returns lights during night/dusk/dawn — illumination turns on at night.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="id3">
 <span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/game.html#Game.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
 <dd><p>Handles input events specific to the state.</p>

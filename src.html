@@ -195,6 +195,7 @@
 <li class="toctree-l4"><a class="reference internal" href="src.core.html#id0"><code class="docutils literal notranslate"><span class="pre">Game.draw()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.core.html#id1"><code class="docutils literal notranslate"><span class="pre">Game.draw_scene()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.core.html#id2"><code class="docutils literal notranslate"><span class="pre">Game.draw_ui()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.core.html#src.core.game.Game.get_light_sources"><code class="docutils literal notranslate"><span class="pre">Game.get_light_sources()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.core.html#id3"><code class="docutils literal notranslate"><span class="pre">Game.handle_event()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.core.html#id4"><code class="docutils literal notranslate"><span class="pre">Game.is_daytime()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.core.html#id5"><code class="docutils literal notranslate"><span class="pre">Game.open_blackjack()</span></code></a></li>
@@ -638,6 +639,11 @@
 <li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.items.Fish.get_tooltip_text"><code class="docutils literal notranslate"><span class="pre">Fish.get_tooltip_text()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="src.items.html#src.items.items.GayRing"><code class="docutils literal notranslate"><span class="pre">GayRing</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.items.GayRing.RAINBOW_COLORS"><code class="docutils literal notranslate"><span class="pre">GayRing.RAINBOW_COLORS</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.items.GayRing.get_tooltip_text"><code class="docutils literal notranslate"><span class="pre">GayRing.get_tooltip_text()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="src.items.html#src.items.items.Item"><code class="docutils literal notranslate"><span class="pre">Item</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.items.Item.id"><code class="docutils literal notranslate"><span class="pre">Item.id</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.items.Item.name_key"><code class="docutils literal notranslate"><span class="pre">Item.name_key</span></code></a></li>
@@ -655,6 +661,19 @@
 <li class="toctree-l4"><a class="reference internal" href="src.items.html#id5"><code class="docutils literal notranslate"><span class="pre">Item.name</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.items.Item.resize"><code class="docutils literal notranslate"><span class="pre">Item.resize()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.items.html#id6"><code class="docutils literal notranslate"><span class="pre">Item.use()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="src.items.html#src.items.items.Lamp"><code class="docutils literal notranslate"><span class="pre">Lamp</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.items.Lamp.toggle"><code class="docutils literal notranslate"><span class="pre">Lamp.toggle()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.items.Lamp.use"><code class="docutils literal notranslate"><span class="pre">Lamp.use()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="src.items.html#src.items.items.Lantern"><code class="docutils literal notranslate"><span class="pre">Lantern</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.items.Lantern.get_tooltip_text"><code class="docutils literal notranslate"><span class="pre">Lantern.get_tooltip_text()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="src.items.html#src.items.items.LightRing"><code class="docutils literal notranslate"><span class="pre">LightRing</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.items.html#src.items.items.LightRing.get_tooltip_text"><code class="docutils literal notranslate"><span class="pre">LightRing.get_tooltip_text()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="src.items.html#src.items.items.MeleeWeapon"><code class="docutils literal notranslate"><span class="pre">MeleeWeapon</span></code></a><ul>
@@ -726,11 +745,13 @@
 <li class="toctree-l4"><a class="reference internal" href="src.map.html#src.map.map.Map.FRINGE_LAYER_FADE_ALPHA"><code class="docutils literal notranslate"><span class="pre">Map.FRINGE_LAYER_FADE_ALPHA</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.map.html#src.map.map.Map.FRINGE_LAYER_NAME"><code class="docutils literal notranslate"><span class="pre">Map.FRINGE_LAYER_NAME</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.map.html#src.map.map.Map.TILESET_ANIMATIONS"><code class="docutils literal notranslate"><span class="pre">Map.TILESET_ANIMATIONS</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.map.html#src.map.map.Map.WINDOW_LOCAL_IDS"><code class="docutils literal notranslate"><span class="pre">Map.WINDOW_LOCAL_IDS</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.map.html#id7"><code class="docutils literal notranslate"><span class="pre">Map.draw()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.map.html#id8"><code class="docutils literal notranslate"><span class="pre">Map.draw_fringe_overlay()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.map.html#id9"><code class="docutils literal notranslate"><span class="pre">Map.ensure_loaded()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.map.html#id10"><code class="docutils literal notranslate"><span class="pre">Map.get_obstacles()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.map.html#id11"><code class="docutils literal notranslate"><span class="pre">Map.get_tmx_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.map.html#src.map.map.Map.get_window_positions"><code class="docutils literal notranslate"><span class="pre">Map.get_window_positions()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.map.html#src.map.map.Map.update_animation"><code class="docutils literal notranslate"><span class="pre">Map.update_animation()</span></code></a></li>
 </ul>
 </li>

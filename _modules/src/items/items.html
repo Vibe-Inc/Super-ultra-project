@@ -124,7 +124,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_cached_size</span> <span class="o">=</span> <span class="n">size</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_image</span></div>
 
-    
+
 <div class="viewcode-block" id="Item.get_tooltip_text">
 <a class="viewcode-back" href="../../../src.items.html#src.items.items.Item.get_tooltip_text">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_tooltip_text</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -232,7 +232,7 @@
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Style&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">style_label</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;Price: $</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">price</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">stats</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span>    </div>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">stats</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span></div>
 </div>
 
 
@@ -395,6 +395,129 @@
 
 
 
+<div class="viewcode-block" id="Lamp">
+<a class="viewcode-back" href="../../../src.items.html#src.items.items.Lamp">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Lamp</span><span class="p">(</span><span class="n">Item</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simple handheld lamp item that can be toggled on/off to provide light.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">image_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;assets/items/lamp.png&quot;</span><span class="p">):</span>
+        <span class="c1"># Create a minimal row-like dict if none provided</span>
+        <span class="k">if</span> <span class="n">row</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">row</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;hand_lamp&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Hand Lamp&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;misc&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;max_stack&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s2">&quot;price&quot;</span><span class="p">:</span> <span class="mi">15</span><span class="p">,</span>
+                <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;A small oil lamp that provides light when turned on.&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;image_path&quot;</span><span class="p">:</span> <span class="n">image_path</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lit</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">light_radius</span> <span class="o">=</span> <span class="mi">220</span>  <span class="c1"># pixels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+<div class="viewcode-block" id="Lamp.toggle">
+<a class="viewcode-back" href="../../../src.items.html#src.items.items.Lamp.toggle">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">toggle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lit</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">lit</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lit</span></div>
+
+
+<div class="viewcode-block" id="Lamp.use">
+<a class="viewcode-back" href="../../../src.items.html#src.items.items.Lamp.use">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">use</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="c1"># Toggle lamp on the target (player)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">active_lamp</span> <span class="o">=</span> <span class="bp">self</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="s1">&#39;active_lamp&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">self</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lit</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">lit</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Lantern">
+<a class="viewcode-back" href="../../../src.items.html#src.items.items.Lantern">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Lantern</span><span class="p">(</span><span class="n">Item</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Handheld lantern that illuminates a small radius around the character while held.</span>
+
+<span class="sd">    The lantern emits light automatically when it occupies the player&#39;s active</span>
+<span class="sd">    hotbar slot — no toggling needed.  ``Game.get_light_sources`` reads the</span>
+<span class="sd">    ``emits_light`` flag and the ``light_radius`` / ``intensity`` attributes to</span>
+<span class="sd">    feed the lighting overlay in the renderer.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">image_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;assets/items/lantern.png&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">row</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">row</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;lantern&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Lantern&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;misc&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;max_stack&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s2">&quot;price&quot;</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
+                <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;A compact lantern that casts a warm glow around you when carried.&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;image_path&quot;</span><span class="p">:</span> <span class="n">image_path</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">light_radius</span> <span class="o">=</span> <span class="mi">200</span>   <span class="c1"># pixels – soft warm glow</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="mf">1.4</span>      <span class="c1"># strong intensity for clear illumination</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">emits_light</span> <span class="o">=</span> <span class="kc">True</span>   <span class="c1"># flag checked by Game.get_light_sources()</span>
+
+<div class="viewcode-block" id="Lantern.get_tooltip_text">
+<a class="viewcode-back" href="../../../src.items.html#src.items.items.Lantern.get_tooltip_text">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_tooltip_text</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">stats</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Type&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Misc&#39;</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Light Radius&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">light_radius</span><span class="si">}</span><span class="s2">px</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Price: $</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">price</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">stats</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="LightRing">
+<a class="viewcode-back" href="../../../src.items.html#src.items.items.LightRing">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LightRing</span><span class="p">(</span><span class="n">Armor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Enchanted ring that amplifies the lantern&#39;s glow when worn.</span>
+
+<span class="sd">    Equip this ring in the ring slot to increase both the light radius and</span>
+<span class="sd">    intensity of any light-emitting item held in the hotbar (Lantern, Lamp).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">image_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;assets/items/accessories/Light_ring.png&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">row</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">row</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;light_ring&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Light Ring&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;armor&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;max_stack&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s2">&quot;price&quot;</span><span class="p">:</span> <span class="mi">120</span><span class="p">,</span>
+                <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;An enchanted ring that emits a soft glow and amplifies any light source you carry.&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;image_path&quot;</span><span class="p">:</span> <span class="n">image_path</span><span class="p">,</span>
+                <span class="s2">&quot;slot_type&quot;</span><span class="p">:</span> <span class="s2">&quot;ring&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;defense_value&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">light_radius</span> <span class="o">=</span> <span class="mi">260</span>   <span class="c1"># bigger radius than the lantern (200)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">light_intensity</span> <span class="o">=</span> <span class="mf">1.6</span>  <span class="c1"># strong illumination</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">emits_light</span> <span class="o">=</span> <span class="kc">True</span>   <span class="c1"># same flag the lantern uses</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">light_radius_bonus</span> <span class="o">=</span> <span class="mi">80</span>   <span class="c1"># extra pixels added to lantern radius</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">light_intensity_bonus</span> <span class="o">=</span> <span class="mf">0.3</span>  <span class="c1"># extra intensity added to lantern</span>
+
+<div class="viewcode-block" id="LightRing.get_tooltip_text">
+<a class="viewcode-back" href="../../../src.items.html#src.items.items.LightRing.get_tooltip_text">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_tooltip_text</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">stats</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Type&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Armor&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Ring&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Defense&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: +</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">defense_value</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;+</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">light_radius_bonus</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Light Radius&#39;</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;+</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">light_intensity_bonus</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Light Intensity&#39;</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">stats</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span></div>
+</div>
+
+
+
 <div class="viewcode-block" id="Tool">
 <a class="viewcode-back" href="../../../src.items.html#src.items.items.Tool">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Tool</span><span class="p">(</span><span class="n">Item</span><span class="p">):</span>
@@ -432,6 +555,61 @@
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Durability&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">durability</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Power&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: +</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">power</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;Price: $</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">price</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">stats</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span></div>
+</div>
+
+
+
+<span class="c1"># ─── Rainbow / Gay Ring ───────────────────────────────────────────────────────</span>
+
+<div class="viewcode-block" id="GayRing">
+<a class="viewcode-back" href="../../../src.items.html#src.items.items.GayRing">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">GayRing</span><span class="p">(</span><span class="n">Armor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A fabulous rainbow ring that creates a gloving rainbow aura around the wearer.</span>
+
+<span class="sd">    When equipped in the ring slot, it generates a vibrant rainbow aura with</span>
+<span class="sd">    orbiting rainbow-colored particles, pulsing rainbow rings, and sparkle effects</span>
+<span class="sd">    that follow the player character.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Predefined rainbow color palette for consistent cycling</span>
+    <span class="n">RAINBOW_COLORS</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">),</span>    <span class="c1"># Red</span>
+        <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">160</span><span class="p">,</span> <span class="mi">20</span><span class="p">),</span>   <span class="c1"># Orange</span>
+        <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">50</span><span class="p">),</span>   <span class="c1"># Yellow</span>
+        <span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">50</span><span class="p">),</span>    <span class="c1"># Green</span>
+        <span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>   <span class="c1"># Cyan/Blue</span>
+        <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>   <span class="c1"># Purple</span>
+        <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">200</span><span class="p">),</span>   <span class="c1"># Pink</span>
+    <span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">image_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;assets/items/accessories/Gay_ring.png&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">row</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">row</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;gay_ring&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Gay Ring&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;armor&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;max_stack&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s2">&quot;price&quot;</span><span class="p">:</span> <span class="mi">67</span><span class="p">,</span>
+                <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;A fabulous rainbow ring! Creates a gloving rainbow aura around you when equipped.&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;image_path&quot;</span><span class="p">:</span> <span class="n">image_path</span><span class="p">,</span>
+                <span class="s2">&quot;slot_type&quot;</span><span class="p">:</span> <span class="s2">&quot;ring&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;defense_value&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">emits_light</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">light_radius</span> <span class="o">=</span> <span class="mi">130</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">light_intensity</span> <span class="o">=</span> <span class="mf">1.6</span>
+
+<div class="viewcode-block" id="GayRing.get_tooltip_text">
+<a class="viewcode-back" href="../../../src.items.html#src.items.items.GayRing.get_tooltip_text">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_tooltip_text</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">rainbow_charm</span> <span class="o">=</span> <span class="s2">&quot;🌈✨🌈✨🌈&quot;</span>
+        <span class="n">stats</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Type&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Armor&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Ring&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Defense&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: +</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">defense_value</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">rainbow_charm</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Gloving Rainbow Aura&#39;</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">stats</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span></div>
 </div>
@@ -484,8 +662,33 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        Item | None: An instance of a specific item class or None.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">database.GP_database</span><span class="w"> </span><span class="kn">import</span> <span class="n">Gp_database</span> 
-    
+    <span class="c1"># Built-in quick items (do not require DB presence)</span>
+    <span class="k">if</span> <span class="n">item_id</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;hand_lamp&quot;</span><span class="p">,</span> <span class="s2">&quot;lamp&quot;</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Lamp</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+    <span class="k">if</span> <span class="n">item_id</span> <span class="o">==</span> <span class="s2">&quot;lantern&quot;</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Lantern</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+    <span class="k">if</span> <span class="n">item_id</span> <span class="o">==</span> <span class="s2">&quot;light_ring&quot;</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">LightRing</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+    <span class="k">if</span> <span class="n">item_id</span> <span class="o">==</span> <span class="s2">&quot;gay_ring&quot;</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">GayRing</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+    <span class="kn">from</span><span class="w"> </span><span class="nn">database.GP_database</span><span class="w"> </span><span class="kn">import</span> <span class="n">Gp_database</span>
+
     <span class="n">db</span> <span class="o">=</span> <span class="n">Gp_database</span><span class="p">()</span>
     <span class="n">row</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">get_item</span><span class="p">(</span><span class="n">item_id</span><span class="p">)</span>
     <span class="n">db</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
@@ -495,7 +698,7 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="n">item_type</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">)</span>
-    
+
     <span class="k">if</span> <span class="n">item_type</span> <span class="o">==</span> <span class="s2">&quot;weapon&quot;</span><span class="p">:</span>
         <span class="n">w_class</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;weapon_class&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">w_class</span> <span class="o">==</span> <span class="s2">&quot;ranged&quot;</span><span class="p">:</span>
