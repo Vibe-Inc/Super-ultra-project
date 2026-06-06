@@ -24,8 +24,8 @@ class CollisionSystem:
             Build the spatial index from a list of obstacle rects.
         _get_nearby_obstacles(rect, obstacles):
             Get obstacles near a given rect using the spatial index.
-        _resolve_static_collision(entity, obstacles):
-            Push an entity out of any remaining overlaps.
+        resolve_static_collision(entity, obstacles):
+            Push an entity out of all overlapping walls iteratively.
         check_interactions(player, enemies, items):
             Process player collisions with enemies and loose items.
     """
@@ -113,32 +113,38 @@ class CollisionSystem:
                     rect = self.rect_of(entity)
                     break
 
-        self._resolve_static_collision(entity, obstacles)
+        self.resolve_static_collision(entity, obstacles)
 
-    def _resolve_static_collision(self, entity: object, obstacles: list[pygame.Rect]):
+    def resolve_static_collision(self, entity: object, obstacles: list[pygame.Rect]):
         rect = self.rect_of(entity)
         nearby_obstacles = self._get_nearby_obstacles(rect, obstacles)
 
-        for wall in nearby_obstacles:
-            if rect.colliderect(wall):
-                overlap_left = rect.right - wall.left
-                overlap_right = wall.right - rect.left
-                overlap_top = rect.bottom - wall.top
-                overlap_bottom = wall.bottom - rect.top
+        for _ in range(10):
+            resolved_any = False
+            for wall in nearby_obstacles:
+                if rect.colliderect(wall):
+                    overlap_left = rect.right - wall.left
+                    overlap_right = wall.right - rect.left
+                    overlap_top = rect.bottom - wall.top
+                    overlap_bottom = wall.bottom - rect.top
 
-                min_overlap = min(overlap_left, overlap_right, overlap_top, overlap_bottom)
+                    min_overlap = min(overlap_left, overlap_right, overlap_top, overlap_bottom)
 
-                if min_overlap == overlap_left:
-                    entity.pos.x -= overlap_left
-                elif min_overlap == overlap_right:
-                    entity.pos.x += overlap_right
-                elif min_overlap == overlap_top:
-                    entity.pos.y -= overlap_top
-                elif min_overlap == overlap_bottom:
-                    entity.pos.y += overlap_bottom
+                    if min_overlap == overlap_left:
+                        entity.pos.x -= overlap_left
+                    elif min_overlap == overlap_right:
+                        entity.pos.x += overlap_right
+                    elif min_overlap == overlap_top:
+                        entity.pos.y -= overlap_top
+                    elif min_overlap == overlap_bottom:
+                        entity.pos.y += overlap_bottom
 
-                logger.debug(f"Resolved static overlap for {getattr(entity, 'id', type(entity))}; applied correction {min_overlap}")
-                rect = self.rect_of(entity)
+                    logger.debug(f"Resolved static overlap for {getattr(entity, 'id', type(entity))}; applied correction {min_overlap}")
+                    rect = self.rect_of(entity)
+                    nearby_obstacles = self._get_nearby_obstacles(rect, obstacles)
+                    resolved_any = True
+                    break
+            if not resolved_any:
                 break
 
     def check_interactions(self, player: object, enemies: list, items: list):

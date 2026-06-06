@@ -48,7 +48,7 @@ class Item:
             self._cached_image = pygame.transform.scale(self.image, (size, size))
             self._cached_size = size
         return self._cached_image
-    
+
     def get_tooltip_text(self):
         return f"{self.name}\n{self.description}"
 
@@ -139,7 +139,7 @@ class MeleeWeapon(Weapon):
             f"{_('Style')}: {style_label}\n"
             f"Price: ${self.price}"
         )
-        return f"{self.name}\n{stats}\n{self.description}"    
+        return f"{self.name}\n{stats}\n{self.description}"
 
 
 class RangedWeapon(Weapon):
@@ -279,6 +279,108 @@ class Armor(Item):
         return f"{self.name}\n{stats}\n{self.description}"
 
 
+class Lamp(Item):
+    """Simple handheld lamp item that can be toggled on/off to provide light."""
+    def __init__(self, row: dict | None = None, *, image_path: str = "assets/items/lamp.png"):
+        # Create a minimal row-like dict if none provided
+        if row is None:
+            row = {
+                "id": "hand_lamp",
+                "name": "Hand Lamp",
+                "type": "misc",
+                "max_stack": 1,
+                "price": 15,
+                "description": "A small oil lamp that provides light when turned on.",
+                "image_path": image_path,
+            }
+        super().__init__(row)
+        self.lit = False
+        self.light_radius = 220  # pixels
+        self.intensity = 1.0
+
+    def toggle(self, target=None):
+        self.lit = not self.lit
+        return self.lit
+
+    def use(self, target):
+        # Toggle lamp on the target (player)
+        try:
+            target.active_lamp = self if getattr(target, 'active_lamp', None) is not self else None
+        except Exception:
+            pass
+        self.lit = not self.lit
+        return True
+
+
+class Lantern(Item):
+    """Handheld lantern that illuminates a small radius around the character while held.
+
+    The lantern emits light automatically when it occupies the player's active
+    hotbar slot — no toggling needed.  ``Game.get_light_sources`` reads the
+    ``emits_light`` flag and the ``light_radius`` / ``intensity`` attributes to
+    feed the lighting overlay in the renderer.
+    """
+    def __init__(self, row: dict | None = None, *, image_path: str = "assets/items/lantern.png"):
+        if row is None:
+            row = {
+                "id": "lantern",
+                "name": "Lantern",
+                "type": "misc",
+                "max_stack": 1,
+                "price": 25,
+                "description": "A compact lantern that casts a warm glow around you when carried.",
+                "image_path": image_path,
+            }
+        super().__init__(row)
+        self.light_radius = 200   # pixels – soft warm glow
+        self.intensity = 1.4      # strong intensity for clear illumination
+        self.emits_light = True   # flag checked by Game.get_light_sources()
+
+    def get_tooltip_text(self):
+        stats = (
+            f"{_('Type')}: {_('Misc')}\n"
+            f"{_('Light Radius')}: {self.light_radius}px\n"
+            f"Price: ${self.price}"
+        )
+        return f"{self.name}\n{stats}\n{self.description}"
+
+
+class LightRing(Armor):
+    """Enchanted ring that amplifies the lantern's glow when worn.
+
+    Equip this ring in the ring slot to increase both the light radius and
+    intensity of any light-emitting item held in the hotbar (Lantern, Lamp).
+    """
+    def __init__(self, row: dict | None = None, *, image_path: str = "assets/items/accessories/Light_ring.png"):
+        if row is None:
+            row = {
+                "id": "light_ring",
+                "name": "Light Ring",
+                "type": "armor",
+                "max_stack": 1,
+                "price": 120,
+                "description": "An enchanted ring that emits a soft glow and amplifies any light source you carry.",
+                "image_path": image_path,
+                "slot_type": "ring",
+                "defense_value": 0,
+            }
+        super().__init__(row)
+        self.light_radius = 260   # bigger radius than the lantern (200)
+        self.light_intensity = 1.6  # strong illumination
+        self.emits_light = True   # same flag the lantern uses
+        self.light_radius_bonus = 80   # extra pixels added to lantern radius
+        self.light_intensity_bonus = 0.3  # extra intensity added to lantern
+
+    def get_tooltip_text(self):
+        stats = (
+            f"{_('Type')}: {_('Armor')} ({_('Ring')})\n"
+            f"{_('Defense')}: +{self.defense_value}\n"
+            f"+{self.light_radius_bonus} {_('Light Radius')}\n"
+            f"+{self.light_intensity_bonus} {_('Light Intensity')}\n"
+        )
+        return f"{self.name}\n{stats}\n{self.description}"
+
+
 class Tool(Item):
     """
     Represents a utility tool used to perform a specific in-world action
@@ -333,6 +435,83 @@ class Tool(Item):
         return f"{self.name}\n{stats}\n{self.description}"
 
 
+# ─── Rainbow / Gay Ring ───────────────────────────────────────────────────────
+
+class GayRing(Armor):
+    """A fabulous rainbow ring that creates a gloving rainbow aura around the wearer.
+
+    When equipped in the ring slot, it generates a vibrant rainbow aura with
+    orbiting rainbow-colored particles, pulsing rainbow rings, and sparkle effects
+    that follow the player character.
+    """
+    # Predefined rainbow color palette for consistent cycling
+    RAINBOW_COLORS = [
+        (255, 50, 50),    # Red
+        (255, 160, 20),   # Orange
+        (255, 255, 50),   # Yellow
+        (50, 255, 50),    # Green
+        (50, 200, 255),   # Cyan/Blue
+        (200, 50, 255),   # Purple
+        (255, 50, 200),   # Pink
+    ]
+
+    def __init__(self, row: dict | None = None, *, image_path: str = "assets/items/accessories/Gay_ring.png"):
+        if row is None:
+            row = {
+                "id": "gay_ring",
+                "name": "Gay Ring",
+                "type": "armor",
+                "max_stack": 1,
+                "price": 67,
+                "description": "A fabulous rainbow ring! Creates a gloving rainbow aura around you when equipped.",
+                "image_path": image_path,
+                "slot_type": "ring",
+                "defense_value": 1,
+            }
+        super().__init__(row)
+        self.emits_light = True
+        self.light_radius = 130
+        self.light_intensity = 1.6
+
+    def get_tooltip_text(self):
+        rainbow_charm = "🌈✨🌈✨🌈"
+        stats = (
+            f"{_('Type')}: {_('Armor')} ({_('Ring')})\n"
+            f"{_('Defense')}: +{self.defense_value}\n"
+            f"{rainbow_charm}\n"
+            f"{_('Gloving Rainbow Aura')}\n"
+        )
+        return f"{self.name}\n{stats}\n{self.description}"
+
+
+class Fish(Item):
+    """
+    Represents a fish caught via the fishing minigame.
+
+    Attributes:
+        rarity (str): Rarity tier (common, uncommon, rare, legendary).
+        difficulty (float): 0.0 to 1.0, how hard the fish is to catch.
+        speed (float): Speed multiplier for the fish's movement on the bar.
+        spawn_weight (int): Relative spawn weight when selecting a fish.
+        base_price (int): Gold value when sold.
+    """
+    def __init__(self, row: dict):
+        super().__init__(row)
+        self.rarity = row.get("rarity", "common") or "common"
+        self.difficulty = row.get("difficulty", 0.3) or 0.3
+        self.speed = row.get("fish_speed", row.get("speed", 1.0)) or 1.0
+        self.spawn_weight = row.get("spawn_weight", 50) or 50
+        self.base_price = row.get("fish_base_price", row.get("base_price", 10)) or 10
+
+    def get_tooltip_text(self):
+        rarity_label = self.rarity.capitalize()
+        stats = (
+            f"{_('Type')}: {_('Fish')} ({rarity_label})\n"
+            f"Price: ${self.price}"
+        )
+        return f"{self.name}\n{stats}\n{self.description}"
+
+
 def create_item(item_id: str):
     """
     Factory function to instantiate the appropriate item class.
@@ -343,8 +522,33 @@ def create_item(item_id: str):
     Returns:
         Item | None: An instance of a specific item class or None.
     """
-    from database.GP_database import Gp_database 
-    
+    # Built-in quick items (do not require DB presence)
+    if item_id in ("hand_lamp", "lamp"):
+        try:
+            return Lamp(None)
+        except Exception:
+            pass
+
+    if item_id == "lantern":
+        try:
+            return Lantern(None)
+        except Exception:
+            pass
+
+    if item_id == "light_ring":
+        try:
+            return LightRing(None)
+        except Exception:
+            pass
+
+    if item_id == "gay_ring":
+        try:
+            return GayRing(None)
+        except Exception:
+            pass
+
+    from database.GP_database import Gp_database
+
     db = Gp_database()
     row = db.get_item(item_id)
     db.close()
@@ -354,7 +558,7 @@ def create_item(item_id: str):
         return None
 
     item_type = row.get("type")
-    
+
     if item_type == "weapon":
         w_class = row.get("weapon_class")
         if w_class == "ranged":
@@ -369,6 +573,8 @@ def create_item(item_id: str):
         return Tool(row)
     elif item_type == "resource":
         return Item(row)
+    elif item_type == "fish":
+        return Fish(row)
     else:
         logger.warning(f"Unknown item type '{item_type}' for '{item_id}'. Defaulting to generic Item.")
         return Item(row)

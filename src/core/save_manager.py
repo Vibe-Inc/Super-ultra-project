@@ -35,6 +35,8 @@ CHARACTER_SCALAR_FIELDS = [
     "max_stamina", "stamina", "stamina_drain_rate", "stamina_regen_rate",
     "can_sprint", "is_sprinting",
     "skill_tree_points",
+    "cooldown_multiplier",
+    "damage_bonus",
     "base_attack_damage", "attack_damage",
     "base_attack_range", "attack_range",
     "base_attack_cooldown", "attack_cooldown_mult",
@@ -199,6 +201,12 @@ class SaveManager:
                     col_data.append(None)
             serialized_hotbar.append(col_data)
 
+        # Serialize Quest Data
+        quest_data = []
+        quest_state = app.manager.states.get("arcane_quest")
+        if quest_state and hasattr(quest_state, "get_quest_data"):
+            quest_data = quest_state.get_quest_data()
+
         char = game_state.character
 
         # Build character state dict (raw __dict__ values to bypass __getattribute__ overrides)
@@ -221,6 +229,10 @@ class SaveManager:
         save_data = {
             "date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "money": app.money,
+            "purple_stars": app.purple_stars,
+            "revealed_tarot_cards": list(app.revealed_tarot_cards),
+            "arcane_quests_unlocked": getattr(app, 'arcane_quests_unlocked', False),
+            "mysterium_magnum_unlocked": getattr(app, 'mysterium_magnum_unlocked', False),
             "player": {
                 "pos_x": char.pos.x,
                 "pos_y": char.pos.y,
@@ -236,7 +248,8 @@ class SaveManager:
             "hotbar": serialized_hotbar,
             "hotbar_active_slot": getattr(game_state, "hotbar", None).active_slot_index if hasattr(game_state, "hotbar") and game_state.hotbar else 0,
             "equipment": serialized_equip,
-            "game_time_seconds": int(getattr(game_state, "game_time_seconds", 6 * 3600))
+            "game_time_seconds": int(getattr(game_state, "game_time_seconds", 6 * 3600)),
+            "quests": quest_data,
         }
         
         if hasattr(game_state, "current_map_path"):
@@ -272,6 +285,10 @@ class SaveManager:
 
         # Restore Money
         app.money = data.get("money", 0)
+        app.purple_stars = data.get("purple_stars", 0)
+        app.revealed_tarot_cards = set(data.get("revealed_tarot_cards", []))
+        app.arcane_quests_unlocked = data.get("arcane_quests_unlocked", False)
+        app.mysterium_magnum_unlocked = data.get("mysterium_magnum_unlocked", False)
 
         # Restore Inventory
         inv_data = data.get("inventory", [])
@@ -365,6 +382,13 @@ class SaveManager:
                     equip_inv.items[col][row] = [item, count]
                 else:
                     equip_inv.items[col][row] = None
+
+        # Restore Quest Data
+        quest_data = data.get("quests", [])
+        if quest_data:
+            quest_state = app.manager.states.get("arcane_quest")
+            if quest_state and hasattr(quest_state, "set_quest_data"):
+                quest_state.set_quest_data(quest_data)
 
         # Sync character defense from loaded equipment
         equip_inv.sync_character_defense(char)

@@ -17,10 +17,11 @@ from src.core.state import State
 from src.entities.character import Character
 from src.map.map import LocalMap
 from src.inventory.system import MAIN_player_inventory, MAIN_player_inventory_equipment, ShopInventory, MAIN_player_hotbar
-from src.items.items import create_item
+from src.items.items import create_item, LightRing
 from database.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, DizzinessEffect, SlowEffect
 from src.entities.enemy import Enemy
 from src.entities.npc import NPC
+from src.entities.mage_npc import MageNPC
 from src.entities.projectile import Arrow
 from src.ui.hud import HUD
 from src.ui.widgets import Dialog
@@ -247,7 +248,7 @@ class Game(State):
         self.DUSK_START = 16 * 3600
         self.NIGHT_START = 18 * 3600
         self.DAWN_START = 4 * 3600
-        self.NIGHT_BRIGHTNESS = 0.4
+        self.NIGHT_BRIGHTNESS = 0.15
 
         self.enemy_profiles = {
             "brute": {
@@ -485,6 +486,18 @@ class Game(State):
             "maps/tavern.tmx": (320, 320),
         }
 
+        # Fishing NPC spawn positions (pixels) — placed near the lake
+        self.FISHING_NPC_SPAWNS = {
+            "maps/test-map-1.tmx": (1120, 1024),
+        }
+
+        # Mage NPC spawn positions (pixels) — placed near trees on test-map-2
+        # The center of the map (cols 50-64, rows 40-54) is the lake; this
+        # position is on solid ground near the upper-right detail objects.
+        self.MAGE_NPC_SPAWNS = {
+            "maps/test-map-2.tmx": (2240, 640),
+        }
+
         # Maps where enemy spawning (both default and random) is disabled
         self.NO_ENEMY_SPAWN_MAPS = {"maps/tavern.tmx", "maps/test-map-1.tmx"}
 
@@ -539,6 +552,8 @@ class Game(State):
             create_item("dull_sword"),
             create_item("wooden_bow"),
             create_item("apple"),
+            create_item("hand_lamp"),
+            create_item("lantern"),
             create_item("small_health_potion"),
             create_item("large_health_potion"),
             create_item("large_health_potion"),
@@ -601,6 +616,84 @@ class Game(State):
                 cn_x = max(0, min(cn_x, map_w - cn_w))
                 cn_y = max(0, min(cn_y, map_h - cn_h))
                 self.card_npc.pos = pygame.Vector2(cn_x, cn_y)
+        except Exception:
+            pass
+
+        # ---- Fishing NPC (woman near the lake) ----
+        fishing_npc_dialog = [
+            "Hello there! I come here to fish every day.",
+            "The lake is full of interesting catches — have you tried?",
+            "Equip a fishing rod and press F near the water to cast your line."
+        ]
+
+        if initial_map_path in self.FISHING_NPC_SPAWNS:
+            fn_x, fn_y = self.FISHING_NPC_SPAWNS[initial_map_path]
+        else:
+            fn_x, fn_y = -5000, -5000
+
+        self.fishing_npc = NPC(
+            x=fn_x, y=fn_y,
+            sprite_set="WomanHuman1",
+            dialog_lines=fishing_npc_dialog,
+            is_merchant=False,
+            gender='female',
+        )
+
+        # Clamp fishing NPC to map bounds
+        try:
+            if initial_map_path in self.FISHING_NPC_SPAWNS and self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                map_w = self.map.current_map.pixel_width
+                map_h = self.map.current_map.pixel_height
+                fn_w = self.fishing_npc.image.get_width()
+                fn_h = self.fishing_npc.image.get_height()
+                fn_x = max(0, min(fn_x, map_w - fn_w))
+                fn_y = max(0, min(fn_y, map_h - fn_h))
+                self.fishing_npc.pos = pygame.Vector2(fn_x, fn_y)
+        except Exception:
+            pass
+
+        # ---- Mage NPC (Arcane Quests / Mysterium Magnum gatekeeper) ----
+        if initial_map_path in self.MAGE_NPC_SPAWNS:
+            mg_x, mg_y = self.MAGE_NPC_SPAWNS[initial_map_path]
+        else:
+            mg_x, mg_y = -5000, -5000
+
+        self.mage_npc_first_dialog = [
+            "I sense a great power within you... something ancient, something waiting.",
+            "You must collect the souls of the monsters you defeat.",
+            "Bring them to me, and I shall unlock the Arcane Quests — a path to harness that power."
+        ]
+        self.mage_npc_repeat_dialog = [
+            "The winds whisper of your progress.",
+            "Keep collecting monster souls. The Arcane Quests await."
+        ]
+        self.mage_npc_post_unlock_dialog = [
+            "You have gathered the souls. I can feel their energy resonating.",
+            "Now you must tap into your inner world and transform these souls into a tarot deck.",
+            "This is the Mysterium Magnum — a deck of power, fate, and transformation.",
+            "I shall open the way for you."
+        ]
+        self.mage_npc_post_unlock_repeat_dialog = [
+            "The Mysterium Magnum is now open to you.",
+            "Transform your collected souls into cards of destiny."
+        ]
+
+        self.mage_npc = MageNPC(
+            x=mg_x, y=mg_y,
+            dialog_lines=self.mage_npc_first_dialog,
+            gender='female',
+        )
+
+        # Clamp mage NPC to map bounds
+        try:
+            if initial_map_path in self.MAGE_NPC_SPAWNS and self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                map_w = self.map.current_map.pixel_width
+                map_h = self.map.current_map.pixel_height
+                mg_w = self.mage_npc.image.get_width()
+                mg_h = self.mage_npc.image.get_height()
+                mg_x = max(0, min(mg_x, map_w - mg_w))
+                mg_y = max(0, min(mg_y, map_h - mg_h))
+                self.mage_npc.pos = pygame.Vector2(mg_x, mg_y)
         except Exception:
             pass
 
@@ -753,6 +846,25 @@ class Game(State):
             return self.card_npc_first_dialog
         return self.card_npc_repeat_dialog
 
+    def _get_mage_npc_dialog(self):
+        """Pick the right mage NPC dialog lines based on the current unlock state."""
+        if not self.app.arcane_quests_unlocked:
+            # First conversation: senses power, tells player to collect souls
+            if not self.mage_npc.was_talked:
+                return self.mage_npc_first_dialog
+            return self.mage_npc_repeat_dialog
+        elif not self.app.mysterium_magnum_unlocked:
+            # Arcane quests unlocked, but Mysterium Magnum not yet
+            # Check if player has at least 1 purple star
+            if getattr(self.app, 'purple_stars', 0) >= 1:
+                if not getattr(self, '_mage_mysterium_dialog_shown', False):
+                    self._mage_mysterium_dialog_shown = True
+                    return self.mage_npc_post_unlock_dialog
+            return self.mage_npc_post_unlock_repeat_dialog if getattr(self, '_mage_mysterium_dialog_shown', False) else self.mage_npc_post_unlock_repeat_dialog
+        else:
+            # Both unlocked
+            return self.mage_npc_post_unlock_repeat_dialog
+
     def use_skill_slot(self, slot_index):
         mouse_screen_pos = pygame.mouse.get_pos()
         camera_offset = self._get_camera_offset()
@@ -899,17 +1011,24 @@ class Game(State):
 
     def _update_game_time(self, dt: float):
         self.game_time_seconds = (self.game_time_seconds + dt * self.GAME_SECONDS_PER_REAL_SECOND) % self.GAME_DAY_SECONDS
+        # Smooth brightness interpolation across dawn/dusk and compute a tint color
+        def lerp_color(a: tuple[int, int, int], b: tuple[int, int, int], t: float) -> tuple[int, int, int]:
+            return (int(a[0] + (b[0] - a[0]) * t), int(a[1] + (b[1] - a[1]) * t), int(a[2] + (b[2] - a[2]) * t))
 
         if self.DUSK_START <= self.game_time_seconds < self.NIGHT_START:
             t = (self.game_time_seconds - self.DUSK_START) / (self.NIGHT_START - self.DUSK_START)
             cfg.ENVIRONMENT_BRIGHTNESS = 1.0 - t * (1.0 - self.NIGHT_BRIGHTNESS)
+            cfg.ENVIRONMENT_TINT = lerp_color(cfg.ENVIRONMENT_DAY_COLOR, cfg.ENVIRONMENT_NIGHT_COLOR, t)
         elif self.NIGHT_START <= self.game_time_seconds or self.game_time_seconds < self.DAWN_START:
             cfg.ENVIRONMENT_BRIGHTNESS = self.NIGHT_BRIGHTNESS
+            cfg.ENVIRONMENT_TINT = cfg.ENVIRONMENT_NIGHT_COLOR
         elif self.DAWN_START <= self.game_time_seconds < self.DAY_START:
             t = (self.game_time_seconds - self.DAWN_START) / (self.DAY_START - self.DAWN_START)
             cfg.ENVIRONMENT_BRIGHTNESS = self.NIGHT_BRIGHTNESS + t * (1.0 - self.NIGHT_BRIGHTNESS)
+            cfg.ENVIRONMENT_TINT = lerp_color(cfg.ENVIRONMENT_NIGHT_COLOR, cfg.ENVIRONMENT_DAY_COLOR, t)
         else:
             cfg.ENVIRONMENT_BRIGHTNESS = 1.0
+            cfg.ENVIRONMENT_TINT = cfg.ENVIRONMENT_DAY_COLOR
 
         self.app.profiler.set_gauge("game_time", self._format_game_time())
 
@@ -959,6 +1078,136 @@ class Game(State):
             (center.x - radius, center.y + radius),
         ]
 
+    def get_light_sources(self) -> list:
+        """Return a list of light sources in screen coordinates.
+
+        Each source is a dict: { 'pos': (x,y), 'radius': int, 'intensity': float }
+        The Game computes camera offset and converts world positions to screen space.
+        Only returns lights during night/dusk/dawn — illumination turns on at night.
+        """
+        if self.is_daytime():
+            return []
+        lights = []
+        try:
+            camera = self._get_camera_offset()
+            # Player light: if player has an active lamp, use it
+            player_center = self.character.get_center()
+            if getattr(self.character, 'active_lamp', None) and getattr(self.character.active_lamp, 'lit', False):
+                lamp = self.character.active_lamp
+                screen_pos = (int(player_center.x - camera.x), int(player_center.y - camera.y))
+                lights.append({
+                    'pos': screen_pos,
+                    'radius': int(lamp.light_radius),
+                    'intensity': float(lamp.intensity)
+                })
+
+            # Lantern: emit light when the lantern is in the active hotbar slot
+            try:
+                hb = getattr(self, 'hotbar', None)
+                if hb:
+                    slot_data = hb.items[hb.active_slot_index][0]
+                    if slot_data:
+                        held_item = slot_data[0] if isinstance(slot_data, (list, tuple)) else slot_data
+                        if getattr(held_item, 'emits_light', False):
+                            radius = getattr(held_item, 'light_radius', 160)
+                            intensity = getattr(held_item, 'intensity', 0.9)
+
+                            # Check if a LightRing is equipped in the ring slot
+                            try:
+                                eq = getattr(self, 'PLAYER_inventory_equipment', None)
+                                if eq:
+                                    for ex in range(eq.columns):
+                                        for ey in range(eq.rows):
+                                            eq_slot = eq.items[ex][ey]
+                                            if eq_slot:
+                                                eq_item = eq_slot[0] if isinstance(eq_slot, (list, tuple)) else eq_slot
+                                                if isinstance(eq_item, LightRing):
+                                                    radius += getattr(eq_item, 'light_radius_bonus', 0)
+                                                    intensity += getattr(eq_item, 'light_intensity_bonus', 0)
+                            except Exception:
+                                pass
+
+                            screen_pos = (int(player_center.x - camera.x), int(player_center.y - camera.y))
+                            lights.append({
+                                'pos': screen_pos,
+                                'radius': int(radius),
+                                'intensity': float(min(intensity, 2.0)),
+                            })
+            except Exception:
+                pass
+
+            # LightRing: emits its own light when equipped in ring slot
+            try:
+                eq = getattr(self, 'PLAYER_inventory_equipment', None)
+                if eq:
+                    for ex in range(eq.columns):
+                        for ey in range(eq.rows):
+                            eq_slot = eq.items[ex][ey]
+                            if eq_slot:
+                                eq_item = eq_slot[0] if isinstance(eq_slot, (list, tuple)) else eq_slot
+                                if isinstance(eq_item, LightRing) and getattr(eq_item, 'emits_light', False):
+                                    screen_pos = (int(player_center.x - camera.x), int(player_center.y - camera.y))
+                                    lights.append({
+                                        'pos': screen_pos,
+                                        'radius': int(getattr(eq_item, 'light_radius', 160)),
+                                        'intensity': float(getattr(eq_item, 'light_intensity', 0.6)),
+                                    })
+            except Exception:
+                pass
+
+
+            # GayRing: emits its own soft rainbow light when equipped in ring slot
+            from src.items.items import GayRing
+            try:
+                eq = getattr(self, 'PLAYER_inventory_equipment', None)
+                if eq:
+                    for ex in range(eq.columns):
+                        for ey in range(eq.rows):
+                            eq_slot = eq.items[ex][ey]
+                            if eq_slot:
+                                eq_item = eq_slot[0] if isinstance(eq_slot, (list, tuple)) else eq_slot
+                                if isinstance(eq_item, GayRing) and getattr(eq_item, 'emits_light', False):
+                                    screen_pos = (int(player_center.x - camera.x), int(player_center.y - camera.y))
+                                    lights.append({
+                                        'pos': screen_pos,
+                                        'radius': int(getattr(eq_item, 'light_radius', 130)),
+                                        'intensity': float(getattr(eq_item, 'light_intensity', 1.6)),
+                                        'full_360': True,
+                                    })
+            except Exception:
+                pass
+
+            # Optional: existing dropped items that emit light
+            for it in getattr(self, 'items', []):
+                try:
+                    if getattr(it, 'emits_light', False):
+                        world_pos = pygame.Vector2(getattr(it, 'pos', it.get('pos', pygame.Vector2(0,0))))
+                        screen_pos = (int(world_pos.x - camera.x), int(world_pos.y - camera.y))
+                        lights.append({'pos': screen_pos, 'radius': int(getattr(it, 'light_radius', 120)), 'intensity': float(getattr(it, 'intensity', 0.8))})
+                except Exception:
+                    pass
+
+            # Window illumination: windows emit warm light at night
+            # Skip for interior maps (e.g. tavern) where windows are on internal walls
+            _NO_WINDOW_LIGHT_MAPS = {"maps/tavern.tmx"}
+            try:
+                game_map = getattr(self, 'map', None)
+                if game_map and self.current_map_path not in _NO_WINDOW_LIGHT_MAPS:
+                    window_positions = game_map.get_window_positions()
+                    for wx, wy in window_positions:
+                        screen_pos = (int(wx - camera.x), int(wy - camera.y))
+                        lights.append({
+                            'pos': screen_pos,
+                            'radius': 100,
+                            'intensity': 0.9,
+                            'full_360': True,
+                        })
+            except Exception:
+                pass
+        except Exception:
+            pass
+        return lights
+
     def _create_enemy(self, x: float, y: float, profile: str | None = None) -> Enemy:
         profile_name = profile or random.choice(self.enemy_profile_names)
         if profile_name not in self.enemy_profiles:
@@ -1001,6 +1250,7 @@ class Game(State):
             visual_style=visual_style,
         )
         enemy.target_entity = self.character
+        enemy.profile_name = profile_name
         return enemy
 
     def spawn_random_enemy(self):
@@ -1210,6 +1460,44 @@ class Game(State):
                 self.card_npc.pos = pygame.Vector2(-5000, -5000)
                 logger.info(f"No card NPC spawn for map {switched_map_path}; hiding card NPC")
 
+            # Place fishing NPC on the new map (or hide if not present)
+            if switched_map_path in self.FISHING_NPC_SPAWNS:
+                fn_x, fn_y = self.FISHING_NPC_SPAWNS[switched_map_path]
+                try:
+                    if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                        map_w = self.map.current_map.pixel_width
+                        map_h = self.map.current_map.pixel_height
+                        fn_w = self.fishing_npc.image.get_width()
+                        fn_h = self.fishing_npc.image.get_height()
+                        fn_x = max(0, min(fn_x, map_w - fn_w))
+                        fn_y = max(0, min(fn_y, map_h - fn_h))
+                except Exception:
+                    pass
+                self.fishing_npc.pos = pygame.Vector2(fn_x, fn_y)
+                logger.info(f"Placed fishing NPC for map {switched_map_path} at ({fn_x},{fn_y})")
+            else:
+                self.fishing_npc.pos = pygame.Vector2(-5000, -5000)
+                logger.info(f"No fishing NPC spawn for map {switched_map_path}; hiding fishing NPC")
+
+            # Place mage NPC on the new map (or hide if not present)
+            if switched_map_path in self.MAGE_NPC_SPAWNS:
+                mg_x, mg_y = self.MAGE_NPC_SPAWNS[switched_map_path]
+                try:
+                    if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                        map_w = self.map.current_map.pixel_width
+                        map_h = self.map.current_map.pixel_height
+                        mg_w = self.mage_npc.image.get_width()
+                        mg_h = self.mage_npc.image.get_height()
+                        mg_x = max(0, min(mg_x, map_w - mg_w))
+                        mg_y = max(0, min(mg_y, map_h - mg_h))
+                except Exception:
+                    pass
+                self.mage_npc.pos = pygame.Vector2(mg_x, mg_y)
+                logger.info(f"Placed mage NPC for map {switched_map_path} at ({mg_x},{mg_y})")
+            else:
+                self.mage_npc.pos = pygame.Vector2(-5000, -5000)
+                logger.info(f"No mage NPC spawn for map {switched_map_path}; hiding mage NPC")
+
         self.map.update_animation(dt)
 
         # Enemy Spawning Logic
@@ -1272,6 +1560,26 @@ class Game(State):
         if self.character.ice_armor_active:
             self._apply_ice_armor_slow(dt)
 
+        # GayRing: check if equipped in ring slot and toggle rainbow aura
+        from src.items.items import GayRing
+        try:
+            eq = getattr(self, 'PLAYER_inventory_equipment', None)
+            gay_ring_equipped = False
+            if eq:
+                for ex in range(eq.columns):
+                    for ey in range(eq.rows):
+                        eq_slot = eq.items[ex][ey]
+                        if eq_slot:
+                            eq_item = eq_slot[0] if isinstance(eq_slot, (list, tuple)) else eq_slot
+                            if isinstance(eq_item, GayRing):
+                                gay_ring_equipped = True
+                                break
+                    if gay_ring_equipped:
+                        break
+            self.character.rainbow_aura_active = gay_ring_equipped
+        except Exception:
+            pass
+
         # Regeneration passive
         if self.character.regeneration:
             self._apply_regeneration(dt)
@@ -1308,6 +1616,19 @@ class Game(State):
                 self.app.money += gold_gain
                 logger.info(f"Gained {gold_gain} gold. Total: {self.app.money}")
 
+                # Update quest progress for the killed mob type
+                mob_type = getattr(enemy, 'profile_name', None)
+                if mob_type:
+                    quest_state = self.app.manager.states.get("arcane_quest")
+                    if quest_state and hasattr(quest_state, "quests"):
+                        for q in quest_state.quests:
+                            if q.claimed:
+                                continue
+                            if q.target_type == mob_type:
+                                q.progress = min(q.target_count, q.progress + 1)
+                                if q.progress >= q.target_count:
+                                    q.completed = True
+
                 # Spawn loot drops at the enemy's death location (Python-configured, no JSON)
                 self._drop_enemy_loot(enemy)
 
@@ -1315,6 +1636,8 @@ class Game(State):
 
         self.npc.update(self.character.pos)
         self.card_npc.update(self.character.pos)
+        self.fishing_npc.update(self.character.pos)
+        self.mage_npc.update(self.character.pos)
 
         # Update fishing controller
         try:
@@ -1361,6 +1684,24 @@ class Game(State):
                 cnx, cny = self.CARD_NPC_SPAWNS[self.current_map_path]
                 self.card_npc.pos = pygame.Vector2(cnx, cny)
                 logger.info(f"Safety placed card NPC on {self.current_map_path} at ({cnx},{cny})")
+        except Exception:
+            pass
+
+        # Safety: place fishing NPC if it should be on this map but is far away
+        try:
+            if self.current_map_path in self.FISHING_NPC_SPAWNS and (self.fishing_npc.pos.x < -1000 or self.fishing_npc.pos.y < -1000):
+                fnx, fny = self.FISHING_NPC_SPAWNS[self.current_map_path]
+                self.fishing_npc.pos = pygame.Vector2(fnx, fny)
+                logger.info(f"Safety placed fishing NPC on {self.current_map_path} at ({fnx},{fny})")
+        except Exception:
+            pass
+
+        # Safety: place mage NPC if it should be on this map but is far away
+        try:
+            if self.current_map_path in self.MAGE_NPC_SPAWNS and (self.mage_npc.pos.x < -1000 or self.mage_npc.pos.y < -1000):
+                mgx, mgy = self.MAGE_NPC_SPAWNS[self.current_map_path]
+                self.mage_npc.pos = pygame.Vector2(mgx, mgy)
+                logger.info(f"Safety placed mage NPC on {self.current_map_path} at ({mgx},{mgy})")
         except Exception:
             pass
 
@@ -1417,6 +1758,7 @@ class Game(State):
                 if dist_sq > 0:
                     push_dir = (enemy_center - center).normalize()
                     enemy.pos += push_dir * 8 * dt
+                    self.collision_handler.resolve_static_collision(enemy, self.obstacles)
 
     def _apply_regeneration(self, dt):
         acc = getattr(self.character, "regeneration_acc", 0.0)
@@ -1482,6 +1824,14 @@ class Game(State):
             card_npc_vis = _is_visible(self.card_npc)
         except Exception:
             card_npc_vis = False
+        try:
+            fishing_npc_vis = _is_visible(self.fishing_npc)
+        except Exception:
+            fishing_npc_vis = False
+        try:
+            mage_npc_vis = _is_visible(self.mage_npc)
+        except Exception:
+            mage_npc_vis = False
 
         # Collect all visible entities with their y-position for sorting.
         draw_entities = []
@@ -1489,6 +1839,10 @@ class Game(State):
             draw_entities.append((self.npc.pos.y, 'npc'))
         if card_npc_vis:
             draw_entities.append((self.card_npc.pos.y, 'card_npc'))
+        if fishing_npc_vis:
+            draw_entities.append((self.fishing_npc.pos.y, 'fishing_npc'))
+        if mage_npc_vis:
+            draw_entities.append((self.mage_npc.pos.y, 'mage_npc'))
         draw_entities.append((self.character.pos.y, 'player'))
         for item in self.items:
             try:
@@ -1506,6 +1860,10 @@ class Game(State):
                 self.npc.draw(screen, camera_offset)
             elif kind == 'card_npc':
                 self.card_npc.draw(screen, camera_offset)
+            elif kind == 'fishing_npc':
+                self.fishing_npc.draw(screen, camera_offset)
+            elif kind == 'mage_npc':
+                self.mage_npc.draw(screen, camera_offset)
             elif kind == 'player':
                 self.character.draw(screen, camera_offset)
             elif kind == 'item':
@@ -1707,8 +2065,31 @@ class Game(State):
                 self.use_skill_slot(5)
             
             if event.key == pygame.K_e:
-                # Card NPC interaction takes priority if both are nearby
-                if self.card_npc.is_interactable:
+                # Mage NPC interaction (highest priority)
+                if self.mage_npc.is_interactable:
+                    dialog_lines = self._get_mage_npc_dialog()
+
+                    def on_mage_close():
+                        try:
+                            self.mage_npc.was_talked = True
+                            # On first talk: unlock Arcane Quests
+                            if not self.app.arcane_quests_unlocked:
+                                self.app.arcane_quests_unlocked = True
+                                logger.info("Arcane Quests UNLOCKED by mage NPC!")
+                            # If arcane quests already unlocked and player has purple star: unlock Mysterium Magnum
+                            elif not self.app.mysterium_magnum_unlocked and getattr(self.app, 'purple_stars', 0) >= 1:
+                                self.app.mysterium_magnum_unlocked = True
+                                logger.info("Mysterium Magnum UNLOCKED by mage NPC!")
+                        except Exception:
+                            pass
+
+                    self.app.current_dialog = Dialog(
+                        self.app,
+                        dialog_lines,
+                        on_close=on_mage_close,
+                    )
+                # Card NPC interaction
+                elif self.card_npc.is_interactable:
                     dialog_lines = self._get_card_npc_dialog()
 
                     def on_card_close():
@@ -1724,6 +2105,8 @@ class Game(State):
                         on_play_cards=self.open_blackjack,
                         show_play_cards=True,
                     )
+                elif self.fishing_npc.is_interactable:
+                    self.app.manager.set_state("collection_book")
                 elif self.npc.is_interactable:
                     def on_close():
                         try:
