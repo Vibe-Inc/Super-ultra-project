@@ -335,7 +335,15 @@ class GatheringController:
         # for a (map, gather_type) pair. Caches are invalidated when the
         # underlying :class:`pytmx.TiledMap` object changes (i.e. the
         # player moved to a different map).
-        self._clusters_built_for: Optional[tuple] = None
+        #
+        # This is a *set* of ``(id(tmx), gather_type)`` tuples, not a
+        # single slot. The single-slot version was a hot-path bug for
+        # tools with alias-expanded gather types (e.g. the pickaxe's
+        # ``"stone"`` -> ``("stone", "iron")``): the per-frame search
+        # alternates between "stone" and "iron", and a single-slot
+        # cache evicts itself on every alternation, causing four
+        # full-map scans per cache miss instead of one.
+        self._clusters_built_for: set = set()
         self.gatherable_tiles: set[tuple[int, int]] = set()
         self.tile_clusters: list[frozenset[tuple[int, int]]] = []
         self.tile_to_cluster: dict[tuple[int, int], int] = {}
@@ -348,6 +356,17 @@ class GatheringController:
         # up flint with bare hands (``False``). Used to skip tool
         # durability damage on success when no tool was involved.
         self.target_had_tool: bool = False
+        # Per-frame cache for :py:meth:`get_nearest_gatherable`. The
+        # UI calls that method every frame to render the "Press G" /
+        # "Regrowing" hint, and for a held pickaxe each call expands
+        # the tool's gather type to two aliases and runs both target
+        # and cooldown searches for each -- 4 cluster lookups per
+        # frame even when nothing is in range. Caching the result
+        # across frames (invalidated on player-tile move, tool
+        # change, map change, or a cooldown crossing a whole-second
+        # boundary) eliminates the per-frame cost entirely.
+        self._hint_cache: Optional[tuple] = None
+        self._hint_cache_key: Optional[tuple] = None
 
     # ------------------------------------------------------------------
     # Tool detection
@@ -394,6 +413,52 @@ class GatheringController:
         if aliases:
             return tuple(aliases)
         return (primary,)
+
+    def _build_hint_cache_key(self) -> Optional[tuple]:
+        """Build a key describing everything that can change the result
+        of :py:meth:`get_nearest_gatherable`.
+
+        Returns ``None`` when the underlying state isn't available yet
+        (e.g. the game has no current map), in which case the caller
+        must recompute and populate the cache.
+
+        Components:
+
+        * ``id(tmx)`` -- the current :class:`pytmx.TiledMap` object
+          identity. Different for every map, so map transitions
+          invalidate the cache automatically.
+        * ``(cx, cy)`` -- the player's *tile* coordinates. The hint
+          depends only on which tiles are within 1 tile of the
+          player, so sub-tile motion doesn't need a recompute.
+        * ``active_slot_index`` -- the hotbar slot currently selected.
+          Changing the held tool (e.g. axe -> pickaxe) changes the
+          alias expansion and therefore the result.
+        * The smallest remaining regrow cooldown, bucketed to whole
+          seconds. The "Regrowing (Ns)" prompt only updates once a
+          second, so we only need a new result when that value
+          changes.
+        """
+        try:
+            tmx_map = self.game.map.current_map
+            tmx = getattr(tmx_map, "tmxdata", None) or getattr(tmx_map, "get_tmx_data", lambda: None)()
+            if not tmx:
+                return None
+            center = self.game.character.get_center()
+            cx = int(center.x // tmx.tilewidth)
+            cy = int(center.y // tmx.tileheight)
+            active_slot = None
+            inv_manager = getattr(self.game.app, "INV_manager", None)
+            hotbar = getattr(inv_manager, "hotbar", None) if inv_manager else None
+            if hotbar is not None:
+                active_slot = getattr(hotbar, "active_slot_index", None)
+            map_id = id(tmx)
+        except Exception:
+            return None
+        if self.gather_cooldowns:
+            min_remaining_bucket = int(min(self.gather_cooldowns.values()))
+        else:
+            min_remaining_bucket = -1
+        return (map_id, cx, cy, active_slot, min_remaining_bucket)
 
     # ------------------------------------------------------------------
     # Tile-property detection
@@ -608,7 +673,24 @@ class GatheringController:
         tool-less gather types (see :data:`GATHER_NO_TOOL_TYPES`,
         e.g. ``flint``) so that bare-hand pickups still surface a
         "Press G" prompt.
+
+        The result is cached across frames; the cache is invalidated
+        whenever the player moves to a new tile, switches hotbar
+        slots, switches maps, or a regrow cooldown crosses a whole
+        second. This is a hot per-frame path -- a held pickaxe would
+        otherwise run four cluster searches every frame even when
+        the player is nowhere near a stone tile.
         """
+        key = self._build_hint_cache_key()
+        if key is not None and key == self._hint_cache_key:
+            return self._hint_cache
+        result = self._compute_nearest_gatherable()
+        self._hint_cache_key = key
+        self._hint_cache = result
+        return result
+
+    def _compute_nearest_gatherable(self):
+        """Uncached body of :py:meth:`get_nearest_gatherable`."""
         tool = self._get_active_tool()
         if tool:
             for gather_type in self._tool_gather_types(tool):
@@ -725,6 +807,8 @@ class GatheringController:
             self.target_had_tool = False
             self.fill = 0.0
             self.result = GatheringResult("Cancelled", success=False, duration=1.0)
+            self._hint_cache = None
+            self._hint_cache_key = None
 
     def _finish_success(self) -> None:
         """Award the gathered resources, wear down the tool, and reset.
@@ -806,6 +890,13 @@ class GatheringController:
         if self.target_had_tool:
             self._damage_tool()
         self._reset_target()
+        # A successful gather puts the targeted cluster on cooldown and
+        # flips the controller back to ``idle`` -- both invalidate the
+        # hint cache, otherwise the UI would briefly keep showing the
+        # pre-gather "Press G" prompt (or, worse, a stale "Regrowing"
+        # timer) until the player moved a tile.
+        self._hint_cache = None
+        self._hint_cache_key = None
 
     def _add_to_inventory(self, item_obj, amount: int) -> int:
         """Add ``amount`` of ``item_obj`` straight to the player's
@@ -905,7 +996,7 @@ class GatheringController:
         except Exception:
             tmx = None
         cache_key = (id(tmx) if tmx is not None else None, gather_type)
-        if self._clusters_built_for == cache_key:
+        if cache_key in self._clusters_built_for:
             return
 
         self.gatherable_tiles = set()
@@ -913,12 +1004,12 @@ class GatheringController:
         self.tile_to_cluster = {}
 
         if tmx is None:
-            self._clusters_built_for = cache_key
+            self._clusters_built_for.add(cache_key)
             return
 
         prop_names = self._gather_type_prop_names(gather_type)
         if not prop_names:
-            self._clusters_built_for = cache_key
+            self._clusters_built_for.add(cache_key)
             return
 
         # First pass: find every gatherable tile on the map.
@@ -973,7 +1064,7 @@ class GatheringController:
         self.gatherable_tiles = gatherable
         self.tile_clusters = clusters
         self.tile_to_cluster = tile_to_cluster
-        self._clusters_built_for = cache_key
+        self._clusters_built_for.add(cache_key)
         logger.info(
             f"Gather clusters built: type={gather_type} "
             f"tiles={len(gatherable)} clusters={len(clusters)}"

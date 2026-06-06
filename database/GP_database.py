@@ -593,16 +593,15 @@ class Gp_database:
                    weapons.cone_degrees, weapons.on_hit_effects, weapons.combat_style,
                    consumables.heal_amount,
                    armor.slot_type, armor.defense_value,
-                   tools.tool_type, tools.durability AS tool_durability, tools.power,
+                   "tools".tool_type, "tools".durability AS tool_durability, "tools".power,
+                   "tools".gather_type, "tools".gather_yield_min, "tools".gather_yield_max,
                    fish.rarity, fish.difficulty, fish.speed AS fish_speed,
                    fish.spawn_weight, fish.base_price AS fish_base_price
-                   tools.tool_type, tools.durability AS tool_durability, tools.power,
-                   tools.gather_type, tools.gather_yield_min, tools.gather_yield_max
             FROM items
             LEFT JOIN weapons ON items.id = weapons.item_id
             LEFT JOIN consumables ON items.id = consumables.item_id
             LEFT JOIN armor ON items.id = armor.item_id
-            LEFT JOIN tools ON items.id = tools.item_id
+            LEFT JOIN "tools" ON items.id = "tools".item_id
             LEFT JOIN fish ON items.id = fish.item_id
             WHERE items.id = ?
         ''', (item_id,))
