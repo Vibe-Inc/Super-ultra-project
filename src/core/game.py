@@ -33,6 +33,7 @@ from src.entities.monster_visuals import build_monster_animations
 from src.entities.monster_attacks import build_attack_controller, AttackContext
 from src.combat.base_player_combat import PlayerCombatController
 from src.minigames.blackjack import BlackjackGame
+from src.minigames.roulette import RouletteGame
 from src.minigames.fishing import FishingController
 from src.minigames.gathering import GatheringController
 from src.world.gatherable_nodes import GatherableNodeRegistry
@@ -586,13 +587,13 @@ class Game(State):
 
         self.card_npc_first_dialog = [
             "Well, well — a fresh face in the tavern!",
-            "Name's Ren. I pass the time with a bit of cards.",
-            "Care for a round of Blackjack? I promise I don't cheat... much."
+            "Name's Ren. I pass the time with some casino games.",
+            "Care for a round of Blackjack or Roulette? I promise I don't cheat... much."
         ]
         self.card_npc_repeat_dialog = [
             "Back again? I knew you'd come around.",
-            "The cards have been waiting for you.",
-            "How about another round of Blackjack?"
+            "The tables are waiting for you.",
+            "Would you like to play Blackjack or Roulette?"
         ]
         self.card_npc_post_game_dialog = [
             "Thanks for playing! That was a fine round.",
@@ -698,8 +699,9 @@ class Game(State):
         except Exception:
             pass
 
-        # Blackjack game state (None when not playing)
+        # Blackjack & Roulette game state (None when not playing)
         self.blackjack_game = None
+        self.roulette_game = None
 
         # Debug menu for spawning mobs
         self.spawn_menu = SpawnMenu(
@@ -848,6 +850,37 @@ class Game(State):
                 on_close=lambda: setattr(self.card_npc, 'was_talked', True),
             )
         self.blackjack_game = BlackjackGame(self.app, on_close=on_close, player_money=self.app.money)
+
+    def open_roulette(self):
+        def on_close(outcome, net_change):
+            self.roulette_game = None
+            self.app.money += net_change
+            if self.app.money < 0:
+                self.app.money = 0
+            logger.info(f"Roulette closed: outcome={outcome}, net_change={net_change}, money now={self.app.money}")
+            if net_change > 0:
+                post_lines = [
+                    "Thanks for playing! That was a fine round.",
+                    f"You walked away {net_change} gold richer!",
+                    "Come back anytime — the wheel is always spinning."
+                ]
+            elif net_change < 0:
+                post_lines = [
+                    "Thanks for playing! That was a fine round.",
+                    f"Tough luck — you lost {abs(net_change)} gold.",
+                    "Come back anytime — the wheel is always spinning."
+                ]
+            else:
+                post_lines = [
+                    "Thanks for playing! That was a fine round.",
+                    "Come back anytime — the wheel is always spinning."
+                ]
+            self.app.current_dialog = Dialog(
+                self.app,
+                post_lines,
+                on_close=lambda: setattr(self.card_npc, 'was_talked', True),
+            )
+        self.roulette_game = RouletteGame(self.app, on_close=on_close, player_money=self.app.money)
 
     def _get_card_npc_dialog(self):
         if not self.card_npc.was_talked:
@@ -1970,10 +2003,15 @@ class Game(State):
                 self.app.current_dialog.draw(screen)
             except Exception:
                 pass
-        # Draw blackjack overlay on top of everything
+        # Draw blackjack or roulette overlay on top of everything
         if self.blackjack_game:
             try:
                 self.blackjack_game.draw(screen)
+            except Exception:
+                pass
+        if self.roulette_game:
+            try:
+                self.roulette_game.draw(screen)
             except Exception:
                 pass
         # Smeltery workstation overlay (workbench / coke oven / blast furnace).
@@ -2020,10 +2058,16 @@ class Game(State):
                 self.effects_menu.handle_event(event)
                 return
 
-        # If blackjack game is active, route all events to it
+        # If blackjack or roulette game is active, route all events to it
         if self.blackjack_game:
             try:
                 self.blackjack_game.handle_event(event)
+                return
+            except Exception:
+                pass
+        if self.roulette_game:
+            try:
+                self.roulette_game.handle_event(event)
                 return
             except Exception:
                 pass
@@ -2149,6 +2193,8 @@ class Game(State):
                         on_close=on_card_close,
                         on_play_cards=self.open_blackjack,
                         show_play_cards=True,
+                        on_play_roulette=self.open_roulette,
+                        show_play_roulette=True,
                     )
                 elif self.fishing_npc.is_interactable:
                     self.app.manager.set_state("collection_book")
