@@ -146,10 +146,10 @@ class App:
         add_item(3, 1, "crossbow")
         add_item(4, 1, "throwing_dagger")
         add_item(6, 1, "gay_ring")
-        add_item(7, 1, "light_ring")
         add_item(5, 1, "fishing_rod")
         add_item(6, 1, "stone_axe")
         add_item(7, 1, "iron_pickaxe")
+        add_item(7, 0, "light_ring")
 
         # Row 2 — Potions
         add_item(0, 2, "small_health_potion", 3)
