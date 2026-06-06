@@ -198,6 +198,35 @@ class INVENTORY_manager:
     def remove_active_inventory(self, inventory):
         if inventory in self.active_inventories: self.active_inventories.remove(inventory)
 
+    def draw_held_item(self, screen):
+        """Draw the currently held (``selected_item``) item on the cursor.
+
+        Public so other overlays (e.g. the smeltery panel) can call this
+        again *after* drawing themselves, ensuring the dragged item is
+        visible above any custom UI.
+        """
+        if not self.selected_item:
+            return
+        mx, my = pygame.mouse.get_pos()
+        item, count = self.selected_item
+
+        time_ms = pygame.time.get_ticks()
+        scale_offset = math.sin(time_ms * 0.008) * cfg.INV_SELECTED_ITEM_SCALE_OFFSET
+        current_size = int(cfg.BASE_INV_slot_size * (cfg.INV_SELECTED_ITEM_SCALE_BASE + scale_offset))
+
+        shadow = pygame.Surface((current_size, current_size), pygame.SRCALPHA)
+        pygame.draw.circle(shadow, cfg.INV_SELECTED_ITEM_SHADOW_COLOR, (current_size // 2, current_size // 2), current_size // 2 - 4)
+        screen.blit(shadow, (mx - current_size // 2, my - current_size // 2))
+        screen.blit(item.resize(current_size), item.resize(current_size).get_rect(center=(mx, my)))
+
+        if count > 1:
+            font = cfg.INV_nums_font
+            text_str = str(count)
+            shadow_surf = font.render(text_str, True, cfg.INV_SELECTED_ITEM_SHADOW_TEXT_COLOR)
+            text_surf = font.render(text_str, True, cfg.INV_SELECTED_ITEM_TEXT_COLOR)
+            screen.blit(shadow_surf, (mx + cfg.INV_SELECTED_ITEM_TEXT_OFFSET_X, my + cfg.INV_SELECTED_ITEM_TEXT_OFFSET_Y))
+            screen.blit(text_surf, (mx + cfg.INV_SELECTED_ITEM_TEXT_OFFSET_X - 2, my + cfg.INV_SELECTED_ITEM_TEXT_OFFSET_Y - 2))
+
     def draw(self, screen):
         self.target_alpha = cfg.INV_OVERLAY_ALPHA if self.player_inventory_opened else 0
         if self.overlay_alpha != self.target_alpha:
@@ -240,26 +269,7 @@ class INVENTORY_manager:
             else:
                 self.renderer.draw_base_inventory(screen, inv)
 
-        if self.selected_item:
-            mx, my = pygame.mouse.get_pos()
-            item, count = self.selected_item
-
-            time_ms = pygame.time.get_ticks()
-            scale_offset = math.sin(time_ms * 0.008) * cfg.INV_SELECTED_ITEM_SCALE_OFFSET
-            current_size = int(cfg.BASE_INV_slot_size * (cfg.INV_SELECTED_ITEM_SCALE_BASE + scale_offset))
-
-            shadow = pygame.Surface((current_size, current_size), pygame.SRCALPHA)
-            pygame.draw.circle(shadow, cfg.INV_SELECTED_ITEM_SHADOW_COLOR, (current_size // 2, current_size // 2), current_size // 2 - 4)
-            screen.blit(shadow, (mx - current_size // 2, my - current_size // 2))
-            screen.blit(item.resize(current_size), item.resize(current_size).get_rect(center=(mx, my)))
-
-            if count > 1:
-                font = cfg.INV_nums_font
-                text_str = str(count)
-                shadow_surf = font.render(text_str, True, cfg.INV_SELECTED_ITEM_SHADOW_TEXT_COLOR)
-                text_surf = font.render(text_str, True, cfg.INV_SELECTED_ITEM_TEXT_COLOR)
-                screen.blit(shadow_surf, (mx + cfg.INV_SELECTED_ITEM_TEXT_OFFSET_X, my + cfg.INV_SELECTED_ITEM_TEXT_OFFSET_Y))
-                screen.blit(text_surf, (mx + cfg.INV_SELECTED_ITEM_TEXT_OFFSET_X - 2, my + cfg.INV_SELECTED_ITEM_TEXT_OFFSET_Y - 2))
+        self.draw_held_item(screen)
 
         if not self.selected_item:
             found_item = False
