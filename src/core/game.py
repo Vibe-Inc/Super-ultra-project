@@ -1,5 +1,6 @@
 import math
 import pygame
+import pytmx
 import os
 import sys
 # Ensure project root is on sys.path if this module is executed directly
@@ -32,6 +33,9 @@ from src.entities.monster_attacks import build_attack_controller, AttackContext
 from src.combat.base_player_combat import PlayerCombatController
 from src.minigames.blackjack import BlackjackGame
 from src.minigames.fishing import FishingController
+from src.minigames.gathering import GatheringController
+from src.world.gatherable_nodes import GatherableNodeRegistry
+from src.ui.menus.smeltery import SmelteryMenu
 import inspect
 import database.effects as effects_db
 
@@ -563,6 +567,12 @@ class Game(State):
             create_item("defense_charm"),
             create_item("leather_gloves"),
             create_item("fishing_rod"),
+            create_item("stone_axe"),
+            create_item("iron_axe"),
+            create_item("stone_pickaxe"),
+            create_item("iron_pickaxe"),
+            create_item("stone_hammer"),
+            create_item("iron_hammer"),
             ]
 
         self.shop_inv = ShopInventory(self.app, shop_items)
@@ -714,6 +724,57 @@ class Game(State):
         except Exception:
             self.fishing = None
 
+        # Gathering minigame controller (chop / mine)
+        try:
+            self.gathering = GatheringController(self)
+        except Exception:
+            self.gathering = None
+
+        # Smeltery workstation overlay (workbench + coke oven + blast furnace).
+        # The instance is owned by Game so that smelting jobs keep ticking
+        # even while the overlay is closed.
+        try:
+            self.smeltery = SmelteryMenu(app)
+        except Exception as exc:
+            logger.warning(f"Failed to initialise SmelteryMenu: {exc}")
+            self.smeltery = None
+
+        # Per-map gatherable node registries (currently empty: gathering
+        # is driven entirely by the is_*_gatherable tile properties on
+        # the .tmx files -- see src.world.gatherable_nodes).
+        self.gatherables: dict[str, GatherableNodeRegistry] = {}
+        try:
+            self._build_gatherable_registries()
+        except Exception as exc:
+            logger.warning(f"Failed to build gatherable node registries: {exc}")
+
+    def _build_gatherable_registries(self) -> None:
+        """Read :mod:`data.gatherable_nodes` once and group the entries
+        by ``map_path`` into :class:`GatherableNodeRegistry` instances.
+
+        The data file is intentionally empty now; the registries exist
+        so the per-map update / draw hooks in :meth:`Game.update` and
+        :meth:`Game.draw_scene` keep working without a guard.
+        """
+        try:
+            from data.gatherable_nodes import load_gatherable_node_defs
+        except Exception as exc:
+            logger.warning(f"Could not import data.gatherable_nodes: {exc}")
+            return
+        try:
+            definitions = load_gatherable_node_defs()
+        except Exception as exc:
+            logger.warning(f"load_gatherable_node_defs() failed: {exc}")
+            return
+        for definition in definitions:
+            registry = self.gatherables.get(definition.map_path)
+            if registry is None:
+                registry = GatherableNodeRegistry(definition.map_path)
+                self.gatherables[definition.map_path] = registry
+            registry.add_def(definition)
+        total = sum(len(reg.nodes) for reg in self.gatherables.values())
+        logger.info(f"Loaded {total} gatherable node(s) across {len(self.gatherables)} map(s)")
+
     def reinit_ui(self):
         self.hud = HUD(self.character, self.app, self.toggle_player_inventory, self.use_skill_slot, open_shop_callback=self.open_shop)
 
@@ -814,6 +875,106 @@ class Game(State):
             aim_direction = self.character.get_forward_direction()
         return self.character.use_skill_from_slot(slot_index, aim_direction=aim_direction)
 
+    # ------------------------------------------------------------------ #
+    # Smeltery workstation helpers                                        #
+    # ------------------------------------------------------------------ #
+
+    SMELTERY_TILE_PROPERTY = "Is_smeltery_workstation"
+    SMELTERY_INTERACT_RADIUS = 48.0
+
+    def _is_smeltery_tile(self, world_pos):
+        """Return True if the map tile at ``world_pos`` carries the
+        smeltery-workstation custom property."""
+        try:
+            if not getattr(self, "map", None) or not getattr(self.map, "current_map", None):
+                return False
+            tmx_map = self.map.current_map
+            tmx = getattr(tmx_map, "tmxdata", None) or getattr(tmx_map, "get_tmx_data", lambda: None)()
+            if not tmx:
+                return False
+            tile_x = int(world_pos.x // tmx.tilewidth)
+            tile_y = int(world_pos.y // tmx.tileheight)
+            for layer in tmx.layers:
+                if not isinstance(layer, pytmx.TiledTileLayer):
+                    continue
+                try:
+                    gid = layer.data[tile_y][tile_x]
+                except (IndexError, TypeError):
+                    continue
+                if not gid:
+                    continue
+                tile_properties = tmx.get_tile_properties_by_gid(gid)
+                if not tile_properties:
+                    continue
+                val = tile_properties.get(self.SMELTERY_TILE_PROPERTY)
+                if isinstance(val, str):
+                    if val.strip().lower() in ("true", "1", "yes"):
+                        return True
+                elif val:
+                    return True
+        except Exception:
+            pass
+        return False
+
+    def _find_nearby_smeltery_tile(self):
+        """Return the world-space position of the closest smeltery
+        tile within :pyattr:`SMELTERY_INTERACT_RADIUS`, or ``None`` if
+        the player is not standing near one."""
+        try:
+            tmx_map = getattr(self.map, "current_map", None)
+            if not tmx_map:
+                return None
+            tmx = getattr(tmx_map, "tmxdata", None) or tmx_map.get_tmx_data()
+            if not tmx:
+                return None
+            tile_w = tmx.tilewidth
+            tile_h = tmx.tileheight
+            center = self.character.get_center()
+            cx = int(center.x // tile_w)
+            cy = int(center.y // tile_h)
+            r = 2
+            best_pos = None
+            best_dist = None
+            for ty in range(max(0, cy - r), cy + r + 1):
+                for tx in range(max(0, cx - r), cx + r + 1):
+                    world_x = tx * tile_w + tile_w // 2
+                    world_y = ty * tile_h + tile_h // 2
+                    if self._is_smeltery_tile(pygame.Vector2(world_x, world_y)):
+                        d = (world_x - center.x) ** 2 + (world_y - center.y) ** 2
+                        if best_dist is None or d < best_dist:
+                            best_dist = d
+                            best_pos = pygame.Vector2(world_x, world_y)
+            if best_pos is None:
+                return None
+            if best_dist is not None and best_dist > (self.SMELTERY_INTERACT_RADIUS ** 2):
+                return None
+            return best_pos
+        except Exception:
+            return None
+
+    def _draw_smeltery_hint(self, screen, camera_offset):
+        """Show a floating 'Press E to use Smeltery' hint above the
+        nearest smeltery tile when the player is in range."""
+        if not getattr(self, "smeltery", None) or self.smeltery.is_open:
+            return
+        tile_pos = self._find_nearby_smeltery_tile()
+        if tile_pos is None:
+            return
+        screen_x = int(tile_pos.x - camera_offset.x)
+        screen_y = int(tile_pos.y - camera_offset.y)
+        font = cfg.tooltip_font_CREDITS
+        text = font.render(_("Press E to use Smeltery"), True, (255, 240, 200))
+        shadow = font.render(_("Press E to use Smeltery"), True, (0, 0, 0))
+        text_rect = text.get_rect(midbottom=(screen_x, screen_y - 8))
+        # Soft backdrop pill for legibility.
+        pad_x = int(8 * cfg.ui_scale())
+        pad_y = int(4 * cfg.ui_scale())
+        bg_rect = text_rect.inflate(pad_x * 2, pad_y * 2)
+        bg_surf = pygame.Surface(bg_rect.size, pygame.SRCALPHA)
+        pygame.draw.rect(bg_surf, (0, 0, 0, 160), bg_surf.get_rect(), border_radius=6)
+        screen.blit(bg_surf, bg_rect.topleft)
+        screen.blit(shadow, (text_rect.x + 1, text_rect.y + 1))
+        screen.blit(text, text_rect)
 
     def _update_projectiles(self, dt):
         if not self.projectiles:
@@ -1485,6 +1646,29 @@ class Game(State):
         except Exception:
             pass
 
+        # Update gathering controller
+        try:
+            if getattr(self, 'gathering', None):
+                self.gathering.update(dt)
+        except Exception:
+            pass
+
+        # Tick the smeltery overlay so coke oven / blast furnace jobs
+        # continue to advance even while the overlay is closed.
+        try:
+            if getattr(self, 'smeltery', None):
+                self.smeltery.update(dt)
+        except Exception:
+            pass
+
+        # Tick gatherable node respawn timers for the current map.
+        try:
+            active_registry = self.gatherables.get(self.current_map_path)
+            if active_registry is not None:
+                active_registry.update(dt)
+        except Exception:
+            pass
+
         # Safety: if current map defines an NPC spawn but NPC is far away (not placed), place it
         try:
             if self.current_map_path in self.NPC_SPAWNS and (self.npc.pos.x < -1000 or self.npc.pos.y < -1000):
@@ -1690,7 +1874,34 @@ class Game(State):
                 self.fishing.draw(screen, camera_offset)
         except Exception:
             pass
+
+        # Draw coordinate-based gatherable nodes (trees/rocks/ore veins)
+        # on the current map so they appear in the world.
+        try:
+            active_registry = self.gatherables.get(self.current_map_path)
+            if active_registry is not None:
+                active_registry.draw(screen, camera_offset)
+        except Exception:
+            pass
+
+        # Draw the fringe (upper-details) overlay BEFORE the gathering
+        # UI so the bar and "Press G to ..." hint sit on top of the
+        # upper halves of trees / rocks and never get hidden behind
+        # tall tile art.
         self.map.draw_fringe_overlay(screen, camera_offset, self.character)
+
+        try:
+            if getattr(self, 'gathering', None):
+                self.gathering.draw(screen, camera_offset)
+        except Exception:
+            pass
+
+        # "Press E to use Smeltery" hint above the nearest workstation tile.
+        try:
+            if getattr(self, 'smeltery', None) and not self.smeltery.is_open:
+                self._draw_smeltery_hint(screen, camera_offset)
+        except Exception:
+            pass
 
         if not self.npc.is_interactable:
             if getattr(self.app.INV_manager, 'current_shop_inv', None) is not None:
@@ -1720,6 +1931,18 @@ class Game(State):
                 self.blackjack_game.draw(screen)
             except Exception:
                 pass
+        # Smeltery workstation overlay (workbench / coke oven / blast furnace).
+        try:
+            if getattr(self, 'smeltery', None) and self.smeltery.is_open:
+                self.smeltery.draw(screen)
+                # Re-draw the inventory's held item on top of the smeltery
+                # panel so dragged items stay visible above the overlay.
+                try:
+                    self.app.INV_manager.draw_held_item(screen)
+                except Exception:
+                    pass
+        except Exception:
+            pass
         # Draw debug spawn / effects menus
         self.spawn_menu.draw(screen)
         try:
@@ -1772,6 +1995,24 @@ class Game(State):
         if getattr(self, 'fishing', None):
             try:
                 handled = self.fishing.handle_event(event)
+                if handled:
+                    return
+            except Exception:
+                pass
+
+        # Route events to gathering controller (G to gather, K to cancel)
+        if getattr(self, 'gathering', None):
+            try:
+                handled = self.gathering.handle_event(event)
+                if handled:
+                    return
+            except Exception:
+                pass
+
+        # Route events to the smeltery overlay (workbench / coke oven / blast furnace).
+        if getattr(self, 'smeltery', None) and self.smeltery.is_open:
+            try:
+                handled = self.smeltery.handle_event(event)
                 if handled:
                     return
             except Exception:
@@ -1876,6 +2117,8 @@ class Game(State):
 
                     # show shop button inside dialog only for merchant NPCs
                     self.app.current_dialog = Dialog(self.app, self.npc.dialog_lines, on_close=on_close, on_shop=self.open_shop, show_shop=self.npc.is_merchant)
+                elif self._find_nearby_smeltery_tile() is not None and getattr(self, "smeltery", None):
+                    self.smeltery.open()
                 else:
                     # Otherwise toggle the player's inventory (open/close)
                     self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
@@ -1902,7 +2145,8 @@ class Game(State):
                         self.player_combat.handle_player_attack(mouse_world_pos)
             
             elif event.button == 3:
-                if getattr(self.app.INV_manager, 'hotbar', None):
-                    self.app.INV_manager.hotbar.use_active_slot()
+                if not self.app.INV_manager.player_inventory_opened:
+                    if getattr(self.app.INV_manager, 'hotbar', None):
+                        self.app.INV_manager.hotbar.use_active_slot()
 
         self.app.INV_manager.PLAYER_inventory_open(event, self.MAIN_player_inv, self.PLAYER_inventory_equipment)

@@ -3,6 +3,128 @@ import pygame
 import src.config as cfg
 from src.inventory.system import ShopInventory, MAIN_player_inventory, MAIN_player_hotbar, MAIN_player_inventory_equipment, CraftingGrid
 
+
+def _item_has_durability(item) -> bool:
+    """Return ``True`` when *item* exposes the durability protocol.
+
+    The check is attribute-based (``hasattr``), not ``callable`` based,
+    because :py:meth:`DurabilityMixin._init_durability` stores
+    ``durability`` and ``max_durability`` as plain ints on the
+    instance -- they're not methods.  A previous version of this
+    helper used ``callable(getattr(item, "max_durability", None))``
+    which silently returned ``False`` for every integer attribute and
+    suppressed the wear bar entirely.  See commit message for context.
+    """
+    if item is None:
+        return False
+    if getattr(item, "unbreakable", False):
+        return False
+    if not hasattr(item, "durability_percent"):
+        return False
+    if not callable(getattr(item, "durability_percent", None)):
+        return False
+    if not hasattr(item, "max_durability"):
+        return False
+    max_dur = getattr(item, "max_durability", None)
+    if not isinstance(max_dur, (int, float)):
+        return False
+    return True
+
+
+def _draw_durability_bar(screen, slot_rect, item):
+    """Draw a slim wear bar across the bottom of ``slot_rect``.
+
+    The bar is two stacked rects:
+
+    * a dark background that fills the bar's footprint, and
+    * a tier-coloured fill (green / lime / amber / orange / red)
+      whose width is the item's :py:meth:`DurabilityMixin.durability_percent`.
+
+    The bar is drawn in screen coordinates (already pre-translated
+    by the caller), so this function only manipulates ``screen``.
+    """
+    if not _item_has_durability(item):
+        return
+    bar_height = cfg.DURABILITY_BAR_HEIGHT
+    inset = cfg.DURABILITY_BAR_INSET
+    bar_x = slot_rect.left + inset
+    bar_y = slot_rect.bottom - bar_height - inset + 1
+    bar_w = max(1, slot_rect.width - inset * 2)
+    radius = cfg.DURABILITY_BAR_BORDER_RADIUS
+    # Dark background track.
+    pygame.draw.rect(
+        screen,
+        cfg.DURABILITY_BAR_BG_COLOR,
+        (bar_x, bar_y, bar_w, bar_height),
+        border_radius=radius,
+    )
+    is_broken_method = getattr(item, "is_broken", None)
+    is_broken = bool(is_broken_method()) if callable(is_broken_method) else False
+    state = item.durability_state()
+    color = cfg.DURABILITY_BAR_COLORS.get(state, cfg.DURABILITY_BAR_COLORS["worn"])
+    pct = max(0.0, min(1.0, float(item.durability_percent())))
+    fill_w = int(bar_w * pct)
+    if fill_w > 0:
+        pygame.draw.rect(
+            screen,
+            color,
+            (bar_x, bar_y, fill_w, bar_height),
+            border_radius=radius,
+        )
+    elif is_broken:
+        # A fully-empty bar on a broken item is easy to miss.  Paint a
+        # thin red "EMPTY" stripe across the whole bar so the player
+        # sees at a glance that the item is unusable.
+        pygame.draw.rect(
+            screen,
+            cfg.DURABILITY_BAR_COLORS["broken"],
+            (bar_x, bar_y, bar_w, bar_height),
+            border_radius=radius,
+        )
+
+
+def _draw_broken_overlay(screen, slot_rect, item):
+    """Stamp a red "✕" over broken items in the inventory.
+
+    The wear bar in :func:`_draw_durability_bar` shows the bar going
+    empty, but in a cluttered inventory that can still be missed when
+    the slot is at the edge of vision.  A bold red cross centered on
+    the icon makes a broken tool/weapon unmistakable -- and unlike a
+    greyscale tint it doesn't fight with the item's own colors.
+    """
+    if not _item_has_durability(item):
+        return
+    is_broken_method = getattr(item, "is_broken", None)
+    if not callable(is_broken_method) or not is_broken_method():
+        return
+    padding = cfg.INV_SLOT_PADDING
+    # A pair of crossed lines is more visible than a glyph at small
+    # slot sizes and doesn't depend on the active font's character set
+    # (the ✕ glyph varies wildly across pygame font fallbacks).
+    cx = slot_rect.centerx
+    cy = slot_rect.centery
+    span = max(6, (slot_rect.width - padding * 2) // 3)
+    color = cfg.DURABILITY_BAR_COLORS["broken"][:3]
+    # Black outline first so the cross reads on light icon backgrounds.
+    for ox, oy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+        pygame.draw.line(
+            screen,
+            (0, 0, 0),
+            (cx - span + ox, cy - span + oy),
+            (cx + span + ox, cy + span + oy),
+            3,
+        )
+        pygame.draw.line(
+            screen,
+            (0, 0, 0),
+            (cx - span + ox, cy + span + oy),
+            (cx + span + ox, cy - span + oy),
+            3,
+        )
+    pygame.draw.line(screen, color, (cx - span, cy - span), (cx + span, cy + span), 2)
+    pygame.draw.line(screen, color, (cx - span, cy + span), (cx + span, cy - span), 2)
+
+
 def draw_panel_with_shadow(screen, rect, bg_color, border_color, border_width=2, border_radius=15, shadow_offset=8):
     """
     Draws a modern UI panel with a drop shadow effect.
@@ -113,9 +235,16 @@ class InventoryRenderer:
                     shadow_surf = pygame.Surface((item_size, item_size), pygame.SRCALPHA)
                     pygame.draw.circle(shadow_surf, cfg.INV_ITEM_SHADOW_COLOR, (item_size//2, item_size//2), item_size//2 - 2)
                     screen.blit(shadow_surf, (rect.x + padding + 2, rect.y + padding + 4))
-                    
+
                     screen.blit(item.resize(item_size), (rect.x + padding, rect.y + padding))
-                    
+
+                    # Durability wear bar (tools / weapons only).
+                    _draw_durability_bar(screen, rect, item)
+                    # Big red "X" overlay on broken tools/weapons so the
+                    # player notices them even when the slot is small
+                    # or the bar is hard to see in a busy inventory.
+                    _draw_broken_overlay(screen, rect, item)
+
                     if count > 1:
                         font_obj = cfg.INV_nums_font
                         text_str = str(count)
@@ -177,6 +306,10 @@ class InventoryRenderer:
                     pygame.draw.circle(shadow_surf, cfg.INV_ITEM_SHADOW_COLOR, (item_size//2, item_size//2), item_size//2 - 2)
                     screen.blit(shadow_surf, (rect.x + padding + 2, rect.y + padding + 4))
                     screen.blit(item.resize(item_size), (rect.x + padding, rect.y + padding))
+                    # Durability wear bar (tools / weapons only).
+                    _draw_durability_bar(screen, rect, item)
+                    # Red "X" overlay on broken tools/weapons.
+                    _draw_broken_overlay(screen, rect, item)
                     if count > 1:
                         font_obj = cfg.INV_nums_font
                         text_str = str(count)

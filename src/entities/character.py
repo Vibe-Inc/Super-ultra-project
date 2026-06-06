@@ -2380,6 +2380,57 @@ class Character:
 
         self.hp -= amount
 
+        # ─── Armor durability damage ─────────────────────────────────
+        # Every incoming hit chips a point off *each* equipped armor
+        # piece so the player can see their gear take real wear over
+        # the course of a fight.  We do this *after* HP is decremented
+        # (and only when the hit actually connected) so dodges, full
+        # blocks and pre-HP deaths don't burn durability for free.
+        #
+        # The damage is gated on:
+        #   * amount > 0   -- ignore 0-damage "hits" (e.g. post-ice-armor
+        #                     zero-damage echoes),
+        #   * not ignore_invulnerability  -- mirror the rest of the
+        #                     durability system: scripted "true damage"
+        #                     hits still wear armor down (no cheat).
+        if amount > 0 and not ignore_invulnerability:
+            equip_inv = None
+            game_state = getattr(self, "game_state", None)
+            if game_state is not None:
+                equip_inv = getattr(game_state, "PLAYER_inventory_equipment", None)
+            if equip_inv is not None and hasattr(equip_inv, "damage_equipped_armor"):
+                try:
+                    broken_pieces = equip_inv.damage_equipped_armor(1, source="hit")
+                except Exception:
+                    broken_pieces = []
+                for col, row, item, _broke in broken_pieces:
+                    try:
+                        self.add_floating_text(
+                            f"{getattr(item, 'name', 'Armor')} broke!",
+                            self.pos.x,
+                            self.pos.y - 40,
+                            (220, 90, 90),
+                            1.6,
+                            20,
+                        )
+                    except Exception:
+                        pass
+                    try:
+                        logger.info(
+                            f"Armor piece broke: id={getattr(item, 'id', '?')} "
+                            f"slot=({col},{row}) defense={getattr(item, 'defense_value', 0)}"
+                        )
+                    except Exception:
+                        pass
+                # Re-sync the live defense so the *next* hit in the
+                # same frame is reduced by the new (lower) armor
+                # value rather than the stale pre-wear one.
+                if broken_pieces and hasattr(equip_inv, "sync_character_defense"):
+                    try:
+                        equip_inv.sync_character_defense(self)
+                    except Exception:
+                        pass
+
         if not ignore_invulnerability:
             self.invulnerable = True
             self.invulnerability_timer = self.invulnerability_duration
@@ -2635,6 +2686,123 @@ class Character:
                     pos = base_anchor + d * (30 + 40 * lp)
                     c = (160, 200, 255)
                     dot(to_screen(pos), c, int(100 * (1 - lp) * fade), 1 + int(3 * (1 - lp)))
+
+            elif combat_style == "dagger":
+                # A realistic dagger slash. The blade is a shaded steel polygon
+                # sweeping the full 80° attack cone, with a 2-frame motion blur,
+                # a single brief tip glint, a thin pale air-arc tracing the path,
+                # and a few dust motes kicked up by the strike. No glow ribbons,
+                # no laser core — just a fast piece of metal cutting air.
+                half_cone = 40.0
+                blade_len = float(self.attack_range)
+
+                def _swing_angle(sp):
+                    if sp < 0.15:
+                        return -half_cone * 1.25
+                    if sp < 0.70:
+                        wp = (sp - 0.15) / 0.55
+                        return -half_cone + 2.0 * half_cone * (wp * wp * (3.0 - 2.0 * wp))
+                    wp = (sp - 0.70) / 0.30
+                    return half_cone + 8.0 * wp
+
+                def _draw_blade(swing_a, alpha):
+                    if alpha <= 0.02:
+                        return None
+                    swing_dir = attack_dir.rotate(swing_a)
+                    perp = pygame.Vector2(-swing_dir.y, swing_dir.x)
+
+                    tip    = base_anchor + swing_dir * blade_len
+                    mid    = base_anchor + swing_dir * (blade_len * 0.45)
+                    hilt   = base_anchor + swing_dir * 5.0
+                    top_m  = mid  + perp * 1.8
+                    top_h  = hilt + perp * 2.5
+                    bot_m  = mid  - perp * 1.3
+                    bot_h  = hilt - perp * 2.0
+
+                    tip_s   = to_screen(tip)
+                    top_m_s = to_screen(top_m)
+                    top_h_s = to_screen(top_h)
+                    bot_m_s = to_screen(bot_m)
+                    bot_h_s = to_screen(bot_h)
+
+                    # Steel body fill.
+                    pygame.draw.polygon(
+                        screen,
+                        (190, 200, 215, int(225 * alpha)),
+                        [tip_s, top_m_s, top_h_s, bot_h_s, bot_m_s],
+                        0,
+                    )
+                    # Lit (top) edge highlight.
+                    pygame.draw.line(screen, (232, 238, 248, int(195 * alpha)),
+                                     top_h_s, top_m_s, 1)
+                    pygame.draw.line(screen, (242, 246, 252, int(155 * alpha)),
+                                     top_m_s, tip_s, 1)
+                    # Shadow (bottom) edge.
+                    pygame.draw.line(screen, (100, 110, 130, int(160 * alpha)),
+                                     bot_h_s, bot_m_s, 1)
+                    # Thin bright cutting edge along the leading (top) edge.
+                    pygame.draw.line(screen, (248, 250, 253, int(210 * alpha)),
+                                     top_h_s, tip_s, 1)
+                    return tip_s
+
+                # 1. Motion blur: two ghost positions at older swing angles.
+                _draw_blade(_swing_angle(max(0.15, p - 0.06)), 0.22)
+                _draw_blade(_swing_angle(max(0.15, p - 0.03)), 0.40)
+
+                # 2. Thin pale air-arc tracing the swing path (wake disturbance).
+                if 0.18 < p < 0.95:
+                    n_arc = 10
+                    prev = None
+                    for i in range(n_arc + 1):
+                        sp = i / n_arc
+                        if sp > p:
+                            break
+                        sa = _swing_angle(sp)
+                        sdir = attack_dir.rotate(sa)
+                        pt = to_screen(base_anchor + sdir * blade_len)
+                        if prev is not None:
+                            cd = abs(sp - 0.5) * 2
+                            arc_alpha = int(38 * (1 - cd * 0.5) *
+                                            (1.0 - max(0, p - 0.78) * 3))
+                            if arc_alpha > 0:
+                                pygame.draw.line(screen,
+                                                 (170, 180, 195, arc_alpha),
+                                                 prev, pt, 1)
+                        prev = pt
+
+                # 3. The main blade (full opacity).
+                tip_s = _draw_blade(_swing_angle(p), 1.0)
+
+                # 4. Brief tip glint — a quick reflection, not a sustained glow.
+                glint = max(0.0, 1.0 - abs(p - 0.45) * 4.5)
+                if glint > 0 and tip_s is not None:
+                    pygame.draw.circle(screen,
+                                       (255, 255, 255, int(220 * glint)),
+                                       tip_s, max(1, int(2.5 * glint)))
+
+                # 5. Dust motes kicked up by the strike (warm grey, not sparks).
+                dust_specs = [
+                    (0.28, -half_cone * 0.40, 3.0, 1.0),
+                    (0.38, -half_cone * 0.10, 3.5, 0.9),
+                    (0.45,  half_cone * 0.30, 3.0, 0.8),
+                    (0.55,  half_cone * 0.65, 3.5, 0.9),
+                    (0.62,  half_cone * 0.85, 4.0, 1.0),
+                ]
+                for start_p, ang_off, drift, base_size in dust_specs:
+                    lifetime = 0.25
+                    if p < start_p or p > start_p + lifetime:
+                        continue
+                    age = (p - start_p) / lifetime
+                    sa = _swing_angle(start_p) + ang_off
+                    sdir = attack_dir.rotate(sa)
+                    base_pos = base_anchor + sdir * blade_len
+                    drift_vec = sdir * (drift * age) + pygame.Vector2(0, -2.0 * age)
+                    dust_pos = base_pos + drift_vec
+                    d_alpha = int(150 * (1 - age))
+                    d_size = max(1, int(base_size * (1 - age * 0.3)))
+                    if d_alpha > 0:
+                        dot(to_screen(dust_pos), (165, 155, 140),
+                            d_alpha, d_size)
 
             elif combat_style == "mace":
                 ip = base_anchor + attack_dir * (self.attack_range * min(1.0, p * 1.5))

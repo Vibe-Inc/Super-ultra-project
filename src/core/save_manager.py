@@ -9,6 +9,71 @@ import src.config as cfg
 SAVES_DIR = "saves"
 SETTINGS_FILE = os.path.join(SAVES_DIR, "settings.json")
 
+def _append_durability(entry: dict, item) -> None:
+    """Stamp the item's live durability onto a save entry.
+
+    Tools and weapons both expose ``durability`` and ``max_durability``
+    (set by ``DurabilityMixin``).  We persist both so a save file
+    survives a database schema bump (e.g. a future item tweak that
+    raises the pristine max).
+
+    Only entries that actually carry the durability protocol are
+    annotated; consumables, armor, etc. are left untouched so older
+    saves keep loading identically.
+    """
+    if not callable(getattr(item, "durability_percent", None)):
+        return
+    if not hasattr(item, "max_durability"):
+        return
+    if getattr(item, "unbreakable", False):
+        # Nothing to persist; the DB row already says the item is
+        # unbreakable and reloading from the DB will re-establish that.
+        return
+    try:
+        entry["durability"] = int(getattr(item, "durability"))
+        entry["max_durability"] = int(getattr(item, "max_durability"))
+    except Exception:
+        pass
+
+
+def _apply_durability(item, slot_data: dict) -> None:
+    """Restore a previously-saved durability value onto a freshly-
+    instantiated item, if the slot data carries one.
+
+    Silently no-ops on items that don't expose ``durability`` /
+    ``max_durability`` (consumables, armor, etc.) and on save files
+    predating the durability system -- both cases fall through to the
+    item's natural pristine state.
+    """
+    if item is None or not isinstance(slot_data, dict):
+        return
+    if not hasattr(item, "durability") or not hasattr(item, "max_durability"):
+        return
+    saved_cur = slot_data.get("durability")
+    saved_max = slot_data.get("max_durability")
+    if saved_cur is None:
+        return
+    try:
+        saved_cur = int(saved_cur)
+    except (TypeError, ValueError):
+        return
+    if saved_max is not None:
+        try:
+            saved_max = int(saved_max)
+        except (TypeError, ValueError):
+            saved_max = None
+    # Clamp into a valid range so a tampered or partially-migrated
+    # save can't push the item into a broken / over-repaired state.
+    if saved_max is not None and saved_max > 0:
+        item.max_durability = saved_max
+    if saved_max is not None and saved_max > 0:
+        item.durability = max(0, min(saved_max, saved_cur))
+    else:
+        item.durability = max(0, saved_cur)
+    if item.durability > 0 and hasattr(item, "_was_broken"):
+        item._was_broken = False
+
+
 def _skill_dicts_to_json(items):
     """Convert tuple RGB values to lists for JSON serialization."""
     result = []
@@ -168,7 +233,9 @@ class SaveManager:
                 slot = app.MAIN_INV_items[col][row]
                 if slot:
                     item, count = slot
-                    col_data.append({"id": item.id, "count": count})
+                    entry = {"id": item.id, "count": count}
+                    _append_durability(entry, item)
+                    col_data.append(entry)
                 else:
                     col_data.append(None)
             serialized_inv.append(col_data)
@@ -183,7 +250,9 @@ class SaveManager:
                 slot = equip_inv.items[col][row]
                 if slot:
                     item, count = slot
-                    col_data.append({"id": item.id, "count": count})
+                    entry = {"id": item.id, "count": count}
+                    _append_durability(entry, item)
+                    col_data.append(entry)
                 else:
                     col_data.append(None)
             serialized_equip.append(col_data)
@@ -196,7 +265,9 @@ class SaveManager:
                 slot = app.MAIN_HOTBAR_items[col][row]
                 if slot:
                     item, count = slot
-                    col_data.append({"id": item.id, "count": count})
+                    entry = {"id": item.id, "count": count}
+                    _append_durability(entry, item)
+                    col_data.append(entry)
                 else:
                     col_data.append(None)
             serialized_hotbar.append(col_data)
@@ -298,6 +369,7 @@ class SaveManager:
                 if slot_data:
                     item = create_item(slot_data["id"])
                     count = slot_data["count"]
+                    _apply_durability(item, slot_data)
                     app.MAIN_INV_items[col][row] = [item, count]
                 else:
                     app.MAIN_INV_items[col][row] = None
@@ -366,6 +438,7 @@ class SaveManager:
                     if slot_data:
                         item = create_item(slot_data["id"])
                         count = slot_data["count"]
+                        _apply_durability(item, slot_data)
                         app.MAIN_HOTBAR_items[col][row] = [item, count]
                     else:
                         app.MAIN_HOTBAR_items[col][row] = None
@@ -379,6 +452,7 @@ class SaveManager:
                 if slot_data:
                     item = create_item(slot_data["id"])
                     count = slot_data["count"]
+                    _apply_durability(item, slot_data)
                     equip_inv.items[col][row] = [item, count]
                 else:
                     equip_inv.items[col][row] = None
