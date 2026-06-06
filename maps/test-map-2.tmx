@@ -818,7 +818,7 @@
   <image source="tilesets/exterior.png" width="544" height="1824"/>
  </tileset>
  <tileset firstgid="5420" name="Water + terrain" tilewidth="32" tileheight="32" tilecount="261" columns="29">
-  <image source="tilesets/Tileset-Animated Terrains-8 frames-.png" width="928" height="288"/>
+  <image source="tilesets/Water + terrain.png" width="928" height="288"/>
   <tile id="29">
    <properties>
     <property name="collidable" type="bool" value="true"/>

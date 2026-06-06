@@ -8,6 +8,8 @@ from GP_database import Gp_database
 from .weapons_db import seed_weapons
 from .consumables_db import seed_consumables
 from .armor_db import seed_armor
+from .tools_db import seed_tools
+from .fish_db import seed_fish
 
 
 def seed_items():
@@ -16,6 +18,8 @@ def seed_items():
     seed_weapons(db)
     seed_consumables(db)
     seed_armor(db)
+    seed_tools(db)
+    seed_fish(db)
     db.close()
     print("Population complete!")
 

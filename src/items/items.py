@@ -377,6 +377,38 @@ class LightRing(Armor):
             f"{_('Defense')}: +{self.defense_value}\n"
             f"+{self.light_radius_bonus} {_('Light Radius')}\n"
             f"+{self.light_intensity_bonus} {_('Light Intensity')}\n"
+class Tool(Item):
+    """
+    Represents a utility tool used to perform a specific in-world action
+    (fishing, mining, woodcutting, etc.). Tools are not weapons, not
+    consumables, and usually do not stack.
+
+    Attributes:
+        tool_type (str): Sub-category of the tool
+            (e.g. "fishing", "pickaxe", "axe").
+        durability (int): Current durability points.
+        power (int): Generic effectiveness multiplier (e.g. catch power
+            bonus for a fishing rod, mining speed for a pickaxe).
+
+    Methods:
+        __init__(row: dict):
+            Initialize tool properties from a database row.
+        get_tooltip_text():
+            Return formatted tooltip text including tool type and power.
+    """
+    def __init__(self, row: dict):
+        super().__init__(row)
+        self.tool_type = row.get("tool_type", "generic") or "generic"
+        self.durability = row.get("tool_durability",
+                                  row.get("durability", 100)) or 100
+        self.power = row.get("power", 0) or 0
+
+    def get_tooltip_text(self):
+        type_label = self.tool_type.replace("_", " ").title()
+        stats = (
+            f"{_('Type')}: {_('Tool')} ({type_label})\n"
+            f"{_('Durability')}: {self.durability}\n"
+            f"{_('Power')}: +{self.power}\n"
             f"Price: ${self.price}"
         )
         return f"{self.name}\n{stats}\n{self.description}"
@@ -427,6 +459,29 @@ class GayRing(Armor):
             f"{_('Defense')}: +{self.defense_value}\n"
             f"{rainbow_charm}\n"
             f"{_('Gloving Rainbow Aura')}\n"
+class Fish(Item):
+    """
+    Represents a fish caught via the fishing minigame.
+
+    Attributes:
+        rarity (str): Rarity tier (common, uncommon, rare, legendary).
+        difficulty (float): 0.0 to 1.0, how hard the fish is to catch.
+        speed (float): Speed multiplier for the fish's movement on the bar.
+        spawn_weight (int): Relative spawn weight when selecting a fish.
+        base_price (int): Gold value when sold.
+    """
+    def __init__(self, row: dict):
+        super().__init__(row)
+        self.rarity = row.get("rarity", "common") or "common"
+        self.difficulty = row.get("difficulty", 0.3) or 0.3
+        self.speed = row.get("fish_speed", row.get("speed", 1.0)) or 1.0
+        self.spawn_weight = row.get("spawn_weight", 50) or 50
+        self.base_price = row.get("fish_base_price", row.get("base_price", 10)) or 10
+
+    def get_tooltip_text(self):
+        rarity_label = self.rarity.capitalize()
+        stats = (
+            f"{_('Type')}: {_('Fish')} ({rarity_label})\n"
             f"Price: ${self.price}"
         )
         return f"{self.name}\n{stats}\n{self.description}"
@@ -489,6 +544,10 @@ def create_item(item_id: str):
         return Consumable(row)
     elif item_type == "armor":
         return Armor(row)
+    elif item_type == "tool":
+        return Tool(row)
+    elif item_type == "fish":
+        return Fish(row)
     else:
         logger.warning(f"Unknown item type '{item_type}' for '{item_id}'. Defaulting to generic Item.")
         return Item(row)

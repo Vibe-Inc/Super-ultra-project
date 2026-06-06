@@ -1,5 +1,12 @@
 import math
 import pygame
+import os
+import sys
+# Ensure project root is on sys.path if this module is executed directly
+_project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
 from typing import TYPE_CHECKING
 import random
 
@@ -23,6 +30,7 @@ from src.entities.monster_visuals import build_monster_animations
 from src.entities.monster_attacks import build_attack_controller, AttackContext
 from src.combat.base_player_combat import PlayerCombatController
 from src.minigames.blackjack import BlackjackGame
+from src.minigames.fishing import FishingController
 import inspect
 import database.effects as effects_db
 
@@ -390,6 +398,13 @@ class Game(State):
                     "memory_duration": 3.0,
                     "repath_interval": 0.5,
                 },
+                "attack_profile": "melee",
+                "attack_config": {
+                    "cooldown_ms": 900,
+                    "damage_mult": 1.0,
+                    "strike_range": 55.0,
+                },
+                "contact_damage": False,
                 "drop_chance": [
                     {"item_id": "small_health_potion", "chance": 0.20},
                 ],
@@ -408,6 +423,13 @@ class Game(State):
                     "preferred_max": 170.0,
                     "orbit_radius": 130.0,
                 },
+                "attack_profile": "melee",
+                "attack_config": {
+                    "cooldown_ms": 800,
+                    "damage_mult": 1.0,
+                    "strike_range": 50.0,
+                },
+                "contact_damage": False,
                 "drop_chance": [
                     {"item_id": "small_health_potion", "chance": 0.25},
                 ],
@@ -427,6 +449,14 @@ class Game(State):
                     "leash_slack": 90.0,
                     "patrol_wait": 0.8,
                 },
+                "attack_profile": "melee",
+                "attack_config": {
+                    "cooldown_ms": 1100,
+                    "damage_mult": 1.1,
+                    "strike_range": 60.0,
+                    "knockback_force": 25.0,
+                },
+                "contact_damage": False,
                 "drop_chance": [
                     {"item_id": "small_health_potion", "chance": 0.30},
                     {"item_id": "large_health_potion", "chance": 0.10},
@@ -449,6 +479,11 @@ class Game(State):
         # Card-game NPC spawn positions (pixels) — separate from the merchant NPC
         self.CARD_NPC_SPAWNS = {
             "maps/tavern.tmx": (320, 320),
+        }
+
+        # Fishing NPC spawn positions (pixels) — placed near the lake
+        self.FISHING_NPC_SPAWNS = {
+            "maps/test-map-1.tmx": (1120, 1024),
         }
 
         # Maps where enemy spawning (both default and random) is disabled
@@ -519,6 +554,7 @@ class Game(State):
             create_item("iron_boots"),
             create_item("defense_charm"),
             create_item("leather_gloves"),
+            create_item("fishing_rod"),
             ]
 
         self.shop_inv = ShopInventory(self.app, shop_items)
@@ -565,6 +601,39 @@ class Game(State):
         except Exception:
             pass
 
+        # ---- Fishing NPC (woman near the lake) ----
+        fishing_npc_dialog = [
+            "Hello there! I come here to fish every day.",
+            "The lake is full of interesting catches — have you tried?",
+            "Equip a fishing rod and press F near the water to cast your line."
+        ]
+
+        if initial_map_path in self.FISHING_NPC_SPAWNS:
+            fn_x, fn_y = self.FISHING_NPC_SPAWNS[initial_map_path]
+        else:
+            fn_x, fn_y = -5000, -5000
+
+        self.fishing_npc = NPC(
+            x=fn_x, y=fn_y,
+            sprite_set="WomanHuman1",
+            dialog_lines=fishing_npc_dialog,
+            is_merchant=False,
+            gender='female',
+        )
+
+        # Clamp fishing NPC to map bounds
+        try:
+            if initial_map_path in self.FISHING_NPC_SPAWNS and self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                map_w = self.map.current_map.pixel_width
+                map_h = self.map.current_map.pixel_height
+                fn_w = self.fishing_npc.image.get_width()
+                fn_h = self.fishing_npc.image.get_height()
+                fn_x = max(0, min(fn_x, map_w - fn_w))
+                fn_y = max(0, min(fn_y, map_h - fn_h))
+                self.fishing_npc.pos = pygame.Vector2(fn_x, fn_y)
+        except Exception:
+            pass
+
         # Blackjack game state (None when not playing)
         self.blackjack_game = None
 
@@ -586,6 +655,11 @@ class Game(State):
             on_apply=self._debug_apply_effect,
             on_close=lambda: None
         )
+        # Fishing minigame controller
+        try:
+            self.fishing = FishingController(self)
+        except Exception:
+            self.fishing = None
 
     def reinit_ui(self):
         self.hud = HUD(self.character, self.app, self.toggle_player_inventory, self.use_skill_slot, open_shop_callback=self.open_shop)
@@ -607,6 +681,9 @@ class Game(State):
         hotbar_scale = cfg.INV_HOTBAR_SCALE * scale
         self.hotbar.slot_size = int(cfg.BASE_INV_slot_size * hotbar_scale)
         self.hotbar.border = border
+
+        self.app.INV_manager.crafting_system.rescale()
+        self.shop_inv.rescale()
 
         if self.app.INV_manager.current_shop_inv:
             self.MAIN_player_inv.pos_x = cfg.SCREEN_WIDTH // 2 - int(500 * scale)
@@ -937,6 +1014,7 @@ class Game(State):
             animations=animations,
             attack_controller=attack_controller,
             contact_damage=contact_damage,
+            visual_style=visual_style,
         )
         enemy.target_entity = self.character
         return enemy
@@ -1148,6 +1226,27 @@ class Game(State):
                 self.card_npc.pos = pygame.Vector2(-5000, -5000)
                 logger.info(f"No card NPC spawn for map {switched_map_path}; hiding card NPC")
 
+            # Place fishing NPC on the new map (or hide if not present)
+            if switched_map_path in self.FISHING_NPC_SPAWNS:
+                fn_x, fn_y = self.FISHING_NPC_SPAWNS[switched_map_path]
+                try:
+                    if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                        map_w = self.map.current_map.pixel_width
+                        map_h = self.map.current_map.pixel_height
+                        fn_w = self.fishing_npc.image.get_width()
+                        fn_h = self.fishing_npc.image.get_height()
+                        fn_x = max(0, min(fn_x, map_w - fn_w))
+                        fn_y = max(0, min(fn_y, map_h - fn_h))
+                except Exception:
+                    pass
+                self.fishing_npc.pos = pygame.Vector2(fn_x, fn_y)
+                logger.info(f"Placed fishing NPC for map {switched_map_path} at ({fn_x},{fn_y})")
+            else:
+                self.fishing_npc.pos = pygame.Vector2(-5000, -5000)
+                logger.info(f"No fishing NPC spawn for map {switched_map_path}; hiding fishing NPC")
+
+        self.map.update_animation(dt)
+
         # Enemy Spawning Logic
         self._update_game_time(dt)
 
@@ -1271,6 +1370,14 @@ class Game(State):
 
         self.npc.update(self.character.pos)
         self.card_npc.update(self.character.pos)
+        self.fishing_npc.update(self.character.pos)
+
+        # Update fishing controller
+        try:
+            if getattr(self, 'fishing', None):
+                self.fishing.update(dt)
+        except Exception:
+            pass
 
         # Safety: if current map defines an NPC spawn but NPC is far away (not placed), place it
         try:
@@ -1287,6 +1394,15 @@ class Game(State):
                 cnx, cny = self.CARD_NPC_SPAWNS[self.current_map_path]
                 self.card_npc.pos = pygame.Vector2(cnx, cny)
                 logger.info(f"Safety placed card NPC on {self.current_map_path} at ({cnx},{cny})")
+        except Exception:
+            pass
+
+        # Safety: place fishing NPC if it should be on this map but is far away
+        try:
+            if self.current_map_path in self.FISHING_NPC_SPAWNS and (self.fishing_npc.pos.x < -1000 or self.fishing_npc.pos.y < -1000):
+                fnx, fny = self.FISHING_NPC_SPAWNS[self.current_map_path]
+                self.fishing_npc.pos = pygame.Vector2(fnx, fny)
+                logger.info(f"Safety placed fishing NPC on {self.current_map_path} at ({fnx},{fny})")
         except Exception:
             pass
 
@@ -1408,6 +1524,10 @@ class Game(State):
             card_npc_vis = _is_visible(self.card_npc)
         except Exception:
             card_npc_vis = False
+        try:
+            fishing_npc_vis = _is_visible(self.fishing_npc)
+        except Exception:
+            fishing_npc_vis = False
 
         # Collect all visible entities with their y-position for sorting.
         draw_entities = []
@@ -1415,6 +1535,8 @@ class Game(State):
             draw_entities.append((self.npc.pos.y, 'npc'))
         if card_npc_vis:
             draw_entities.append((self.card_npc.pos.y, 'card_npc'))
+        if fishing_npc_vis:
+            draw_entities.append((self.fishing_npc.pos.y, 'fishing_npc'))
         draw_entities.append((self.character.pos.y, 'player'))
         for item in self.items:
             try:
@@ -1432,11 +1554,18 @@ class Game(State):
                 self.npc.draw(screen, camera_offset)
             elif kind == 'card_npc':
                 self.card_npc.draw(screen, camera_offset)
+            elif kind == 'fishing_npc':
+                self.fishing_npc.draw(screen, camera_offset)
             elif kind == 'player':
                 self.character.draw(screen, camera_offset)
             elif kind == 'item':
                 entry[2].draw(screen, camera_offset)
 
+        try:
+            if getattr(self, 'fishing', None):
+                self.fishing.draw(screen, camera_offset)
+        except Exception:
+            pass
         self.map.draw_fringe_overlay(screen, camera_offset, self.character)
 
         if not self.npc.is_interactable:
@@ -1515,6 +1644,14 @@ class Game(State):
                 pass
 
         self.hud.handle_event(event)
+        # Route events to fishing controller (casting/reeling)
+        if getattr(self, 'fishing', None):
+            try:
+                handled = self.fishing.handle_event(event)
+                if handled:
+                    return
+            except Exception:
+                pass
 
         if event.type == pygame.MOUSEWHEEL:
             if getattr(self.app.INV_manager, 'hotbar', None):
@@ -1580,6 +1717,8 @@ class Game(State):
                         on_play_cards=self.open_blackjack,
                         show_play_cards=True,
                     )
+                elif self.fishing_npc.is_interactable:
+                    self.app.manager.set_state("collection_book")
                 elif self.npc.is_interactable:
                     def on_close():
                         try:

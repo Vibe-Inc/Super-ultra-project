@@ -369,6 +369,34 @@ class SkirmisherBrain(BaseBrain):
             self._roam(enemy, context, pygame.Vector2(enemy.spawn_pos), roam_radius, self.roam_interval)
             return
 
+        attack_controller = getattr(enemy, "attack_controller", None)
+        close_melee = bool(getattr(attack_controller, "is_close_melee", False))
+        close_melee_strike_range = 0.0
+        if close_melee and attack_controller is not None:
+            controller_range = float(getattr(attack_controller, "strike_range", 0.0))
+            close_melee_strike_range = controller_range if controller_range > 0.0 else float(enemy.attack_range)
+
+        if close_melee and close_melee_strike_range > 0.0:
+            enemy.ai_state = "orbit"
+            self.orbit_timer -= context.dt
+            if self.orbit_timer <= 0:
+                self.orbit_timer = self.orbit_interval
+                self.orbit_clockwise = random.choice([True, False])
+
+            direction = player_pos - enemy_pos
+            if direction.length_squared() == 0:
+                direction = pygame.Vector2(1, 0)
+
+            tangent = pygame.Vector2(-direction.y, direction.x)
+            if not self.orbit_clockwise:
+                tangent *= -1
+            tangent = tangent.normalize()
+
+            orbit_radius = max(8.0, close_melee_strike_range * 0.85)
+            target = player_pos + tangent * orbit_radius
+            self._move_to(enemy, context, target)
+            return
+
         if distance_sq <= (enemy.attack_range * enemy.attack_range):
             enemy.ai_state = "attack"
             if getattr(enemy, "contact_damage", True):
