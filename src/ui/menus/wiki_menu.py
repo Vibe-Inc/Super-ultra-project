@@ -536,7 +536,7 @@ class WikiMenu(Menu):
         self._skip_to_gameplay = False
         self.begin_btn = Button(pygame.Rect(0, 0, bw, bh), _(">> BEGIN ADVENTURE"),
             (100, 75, 25), (160, 120, 40),
-            cfg.button_font, GOLD_BRIGHT, cfg.corner_radius, on_click=self._begin_adventure)
+            cfg.button_font, cfg.text_color, cfg.corner_radius, on_click=self._begin_adventure)
 
     def on_enter(self):
         self._anim_time = 0.0
@@ -800,6 +800,15 @@ class WikiMenu(Menu):
             self.toc_btn.rect = pygame.Rect(mx + bw + max(8, int(10 * scale)), by2, bw, bh)
             self.prev_btn.rect = pygame.Rect(mx, ny, bw, bh)
             self.next_btn.rect = pygame.Rect(sw - bw - mx, ny, bw, bh)
+            if self._skip_to_gameplay and self._page == "guide":
+                pad2 = max(8, int(24 * scale))
+                box2 = pygame.Rect(pad2, pad2, sw - 2 * pad2, sh - 2 * pad2)
+                inner2 = box2.inflate(-int(60 * scale), -int(100 * scale))
+                btn_w2 = max(1, int(340 * scale))
+                btn_h2 = max(1, int(62 * scale))
+                btn_x2 = inner2.x + (inner2.width - btn_w2) // 2
+                btn_y2 = inner2.y + inner2.height - btn_h2 - int(60 * scale)
+                self.begin_btn.rect = pygame.Rect(btn_x2, btn_y2, btn_w2, btn_h2)
         else:
             ny = sh - bh - max(40, int(60 * scale))
             by2 = ny - bh - max(20, int(24 * scale))
@@ -808,6 +817,11 @@ class WikiMenu(Menu):
             self.toc_btn.rect = pygame.Rect(mx + bw + max(8, int(10 * scale)), by2, bw, bh)
             self.prev_btn.rect = pygame.Rect(mx, ny, bw, bh)
             self.next_btn.rect = pygame.Rect(sw - bw - mx, ny, bw, bh)
+            if self._skip_to_gameplay and self._page == "guide":
+                btn_w = max(1, int(340 * scale))
+                btn_h = max(1, int(62 * scale))
+                btn_x = (sw - btn_w) // 2
+                self.begin_btn.rect = pygame.Rect(btn_x, ny, btn_w, btn_h)
         for b in (self.back_btn, self.prev_btn, self.next_btn, self.toc_btn, self.begin_btn):
             try: b._update_text_surface()
             except: pass
@@ -1052,11 +1066,6 @@ class WikiMenu(Menu):
                          inner.y + inner.height - hs.get_height() - 10))
 
         if self._skip_to_gameplay and self._page == "guide":
-            btn_w = max(1, int(340 * scale))
-            btn_h = max(1, int(62 * scale))
-            btn_x = inner.x + (inner.width - btn_w) // 2
-            btn_y = inner.y + inner.height - btn_h - int(60 * scale)
-            self.begin_btn.rect = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
             self.begin_btn.draw(screen)
 
         self.back_btn.draw(screen)
@@ -1247,6 +1256,8 @@ class WikiMenu(Menu):
         if mp > 0:
             if self._sub_page > 0: self.prev_btn.draw(screen)
             if self._sub_page < mp: self.next_btn.draw(screen)
+        if self._skip_to_gameplay and self._page == "guide":
+            self.begin_btn.draw(screen)
 
     # ─── Events ─────────────────────────────────────────────
     def handle_event(self, event):
@@ -1254,7 +1265,7 @@ class WikiMenu(Menu):
             self._handle_main_click(event)
             return
         if event.type == pygame.MOUSEBUTTONDOWN:
-            if self._skip_to_gameplay and self._page == "guide" and self._show_toc:
+            if self._skip_to_gameplay and self._page == "guide":
                 if self.begin_btn.rect.collidepoint(event.pos):
                     self.begin_btn.on_click(); return
             if self.back_btn.rect.collidepoint(event.pos):
