@@ -85,6 +85,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">src.config</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cfg</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.state</span><span class="w"> </span><span class="kn">import</span> <span class="n">State</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.save_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">SaveManager</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.character</span><span class="w"> </span><span class="kn">import</span> <span class="n">Character</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.map.map</span><span class="w"> </span><span class="kn">import</span> <span class="n">LocalMap</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.inventory.system</span><span class="w"> </span><span class="kn">import</span> <span class="n">MAIN_player_inventory</span><span class="p">,</span> <span class="n">MAIN_player_inventory_equipment</span><span class="p">,</span> <span class="n">ShopInventory</span><span class="p">,</span> <span class="n">MAIN_player_hotbar</span>
@@ -799,24 +800,34 @@
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">fishing</span> <span class="o">=</span> <span class="kc">None</span>
 
+        <span class="c1"># Guide article one-shot trigger flags</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_triggered_guide_combat</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_triggered_guide_inventory</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_triggered_guide_crafting</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_triggered_guide_leveling</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_triggered_guide_daynight</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_triggered_guide_enemies</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_triggered_guide_skills</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_triggered_guide_respec</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_triggered_guide_final</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bestiary_encountered</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dusk_was_reached</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_kill_count</span> <span class="o">=</span> <span class="mi">0</span>
+
         <span class="c1"># Gathering minigame controller (chop / mine)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">gathering</span> <span class="o">=</span> <span class="n">GatheringController</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">gathering</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="c1"># Smeltery workstation overlay (workbench + coke oven + blast furnace).</span>
-        <span class="c1"># The instance is owned by Game so that smelting jobs keep ticking</span>
-        <span class="c1"># even while the overlay is closed.</span>
+        <span class="c1"># Smeltery workstation overlay (workbench + coke oven + blast furnace)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">smeltery</span> <span class="o">=</span> <span class="n">SmelteryMenu</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to initialise SmelteryMenu: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">smeltery</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="c1"># Per-map gatherable node registries (currently empty: gathering</span>
-        <span class="c1"># is driven entirely by the is_*_gatherable tile properties on</span>
-        <span class="c1"># the .tmx files -- see src.world.gatherable_nodes).</span>
+        <span class="c1"># Per-map gatherable node registries</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">gatherables</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">GatherableNodeRegistry</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_build_gatherable_registries</span><span class="p">()</span>
@@ -825,13 +836,6 @@
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_build_gatherable_registries</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read :mod:`data.gatherable_nodes` once and group the entries</span>
-<span class="sd">        by ``map_path`` into :class:`GatherableNodeRegistry` instances.</span>
-
-<span class="sd">        The data file is intentionally empty now; the registries exist</span>
-<span class="sd">        so the per-map update / draw hooks in :meth:`Game.update` and</span>
-<span class="sd">        :meth:`Game.draw_scene` keep working without a guard.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">data.gatherable_nodes</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_gatherable_node_defs</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
@@ -886,7 +890,11 @@
 <div class="viewcode-block" id="Game.toggle_player_inventory">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.toggle_player_inventory">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">toggle_player_inventory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">toggle_inventory</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">MAIN_player_inv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PLAYER_inventory_equipment</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">toggle_inventory</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">MAIN_player_inv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PLAYER_inventory_equipment</span><span class="p">)</span>
+        <span class="c1"># Guide: Inventory &amp; Items — first inventory open</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_triggered_guide_inventory</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_triggered_guide_inventory</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">article_tracker</span><span class="o">.</span><span class="n">try_open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;guide&quot;</span><span class="p">,</span> <span class="s2">&quot;4. Inventory &amp; Items&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Game.open_shop">
@@ -1121,7 +1129,12 @@
 <div class="viewcode-block" id="Game._update_game_time">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game._update_game_time">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_update_game_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="n">was_day</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_daytime</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">game_time_seconds</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">game_time_seconds</span> <span class="o">+</span> <span class="n">dt</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">GAME_SECONDS_PER_REAL_SECOND</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">GAME_DAY_SECONDS</span>
+        <span class="c1"># Guide: Day &amp; Night Cycle — first time dusk/night is reached</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_triggered_guide_daynight</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">was_day</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_daytime</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_triggered_guide_daynight</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">article_tracker</span><span class="o">.</span><span class="n">try_open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;guide&quot;</span><span class="p">,</span> <span class="s2">&quot;7. Day &amp; Night Cycle&quot;</span><span class="p">)</span>
         <span class="c1"># Smooth brightness interpolation across dawn/dusk and compute a tint color</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">lerp_color</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">b</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">t</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
             <span class="k">return</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="n">t</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="n">t</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">a</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">*</span> <span class="n">t</span><span class="p">))</span>
@@ -1548,6 +1561,14 @@
 <div class="viewcode-block" id="Game.update">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.update">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+        <span class="n">tr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">article_tracker</span>
+
+        <span class="c1"># Guide intro — only on the very first-ever game start</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">guide_intro_shown</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">guide_intro_shown</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">SaveManager</span><span class="o">.</span><span class="n">save_settings</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">)</span>
+            <span class="n">tr</span><span class="o">.</span><span class="n">try_open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;guide&quot;</span><span class="p">,</span> <span class="s2">&quot;1. Movement &amp; Navigation&quot;</span><span class="p">)</span>
+
         <span class="n">switched_map_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">switched_map_path</span><span class="p">:</span>
@@ -1739,7 +1760,31 @@
         <span class="k">for</span> <span class="n">enemy</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">[:]:</span>
             <span class="k">if</span> <span class="n">enemy</span><span class="o">.</span><span class="n">is_dead</span><span class="p">():</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Enemy defeated!&quot;</span><span class="p">)</span>
-                
+                <span class="bp">self</span><span class="o">.</span><span class="n">_kill_count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                <span class="c1"># Bestiary: open article for this enemy type</span>
+                <span class="n">vs</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">enemy</span><span class="p">,</span> <span class="s2">&quot;visual_style&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">enemy</span><span class="p">,</span> <span class="s2">&quot;ai_profile&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="n">bestiary_title</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;brute&quot;</span><span class="p">:</span> <span class="s2">&quot;The Brute&quot;</span><span class="p">,</span> <span class="s2">&quot;venomous&quot;</span><span class="p">:</span> <span class="s2">&quot;The Venomous&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;arcanist&quot;</span><span class="p">:</span> <span class="s2">&quot;The Arcanist&quot;</span><span class="p">,</span> <span class="s2">&quot;trickster&quot;</span><span class="p">:</span> <span class="s2">&quot;The Trickster&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;bomber&quot;</span><span class="p">:</span> <span class="s2">&quot;The Bomber&quot;</span><span class="p">,</span> <span class="s2">&quot;stalker&quot;</span><span class="p">:</span> <span class="s2">&quot;The Stalker&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;skirmisher&quot;</span><span class="p">:</span> <span class="s2">&quot;The Skirmisher&quot;</span><span class="p">,</span> <span class="s2">&quot;guardian&quot;</span><span class="p">:</span> <span class="s2">&quot;The Guardian&quot;</span><span class="p">,</span>
+                <span class="p">}</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">vs</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">if</span> <span class="n">vs</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">bestiary_title</span><span class="p">:</span>
+                    <span class="n">tr</span><span class="o">.</span><span class="n">try_open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;bestiary&quot;</span><span class="p">,</span> <span class="n">bestiary_title</span><span class="p">)</span>
+
+                <span class="c1"># Guide: Combat Basics — first kill</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_triggered_guide_combat</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_triggered_guide_combat</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">tr</span><span class="o">.</span><span class="n">try_open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;guide&quot;</span><span class="p">,</span> <span class="s2">&quot;2. Combat Basics&quot;</span><span class="p">)</span>
+
+                <span class="c1"># Guide: Enemies &amp; Threat Assessment — after 3+ different types encountered</span>
+                <span class="k">if</span> <span class="n">vs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_bestiary_encountered</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">vs</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_triggered_guide_enemies</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bestiary_encountered</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_triggered_guide_enemies</span> <span class="o">=</span> <span class="kc">True</span>
+                        <span class="n">tr</span><span class="o">.</span><span class="n">try_open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;guide&quot;</span><span class="p">,</span> <span class="s2">&quot;8. Enemies &amp; Threat Assessment&quot;</span><span class="p">)</span>
+
                 <span class="c1"># Reward scaling based on enemy difficulty (using max_hp as proxy)</span>
                 <span class="c1"># Base reward ranges</span>
                 <span class="n">_base_xp_min</span><span class="p">,</span> <span class="n">_base_xp_max</span> <span class="o">=</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">60</span>

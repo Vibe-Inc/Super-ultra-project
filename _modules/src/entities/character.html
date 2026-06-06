@@ -839,6 +839,11 @@
         <span class="p">]</span></div>
 
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_try_open_magic_article</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">):</span>
+        <span class="n">gs</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;game_state&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">gs</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">gs</span><span class="p">,</span> <span class="s2">&quot;app&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;article_tracker&quot;</span><span class="p">):</span>
+            <span class="n">gs</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">article_tracker</span><span class="o">.</span><span class="n">try_open</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;magic&quot;</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span>
+
 <div class="viewcode-block" id="Character.learn_fireball">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.learn_fireball">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">learn_fireball</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -854,7 +859,8 @@
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">214</span><span class="p">,</span> <span class="mi">120</span><span class="p">),</span>
             <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
         <span class="p">})</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Fireball!&quot;</span><span class="p">)</span></div>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Fireball!&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_try_open_magic_article</span><span class="p">(</span><span class="s2">&quot;Fireball&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Character.learn_flame_shield">
@@ -872,7 +878,8 @@
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="mi">60</span><span class="p">),</span>
             <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">15</span><span class="p">,</span>
         <span class="p">})</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Flame Shield!&quot;</span><span class="p">)</span></div>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Flame Shield!&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_try_open_magic_article</span><span class="p">(</span><span class="s2">&quot;Flame Shield&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Character.learn_pyromancers_fury">
@@ -898,7 +905,8 @@
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">180</span><span class="p">,</span> <span class="mi">220</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
             <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
         <span class="p">})</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Frost Nova!&quot;</span><span class="p">)</span></div>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Frost Nova!&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_try_open_magic_article</span><span class="p">(</span><span class="s2">&quot;Frost Nova&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Character.learn_ice_armor">
@@ -916,7 +924,8 @@
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">140</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
             <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span>
         <span class="p">})</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Ice Armor!&quot;</span><span class="p">)</span></div>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Ice Armor!&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_try_open_magic_article</span><span class="p">(</span><span class="s2">&quot;Ice Armor&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Character.learn_glacial_cascade">
@@ -934,7 +943,8 @@
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">230</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
             <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">22</span><span class="p">,</span>
         <span class="p">})</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Glacial Cascade!&quot;</span><span class="p">)</span></div>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Glacial Cascade!&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_try_open_magic_article</span><span class="p">(</span><span class="s2">&quot;Glacial Cascade&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Character.learn_chain_lightning">
@@ -951,7 +961,8 @@
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">180</span><span class="p">),</span>
             <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">18</span><span class="p">,</span>
         <span class="p">})</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Chain Lightning!&quot;</span><span class="p">)</span></div>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Chain Lightning!&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_try_open_magic_article</span><span class="p">(</span><span class="s2">&quot;Chain Lightning&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Character.learn_static_field">
@@ -975,7 +986,8 @@
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">230</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
             <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">28</span><span class="p">,</span>
         <span class="p">})</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Thunderstrike!&quot;</span><span class="p">)</span></div>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Thunderstrike!&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_try_open_magic_article</span><span class="p">(</span><span class="s2">&quot;Thunderstrike&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Character.learn_entangling_roots">
@@ -992,7 +1004,8 @@
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">160</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">140</span><span class="p">),</span>
             <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">22</span><span class="p">,</span>
         <span class="p">})</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Entangling Roots!&quot;</span><span class="p">)</span></div>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Entangling Roots!&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_try_open_magic_article</span><span class="p">(</span><span class="s2">&quot;Entangling Roots&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Character.learn_regeneration">
@@ -1016,7 +1029,8 @@
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">200</span><span class="p">),</span>
             <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">35</span><span class="p">,</span>
         <span class="p">})</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Summon Spirit!&quot;</span><span class="p">)</span></div>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Summon Spirit!&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_try_open_magic_article</span><span class="p">(</span><span class="s2">&quot;Summon Spirit&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Character.learn_shadow_step">
@@ -1033,7 +1047,8 @@
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">160</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
             <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
         <span class="p">})</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Shadow Step!&quot;</span><span class="p">)</span></div>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Shadow Step!&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_try_open_magic_article</span><span class="p">(</span><span class="s2">&quot;Shadow Step&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Character.learn_poison_blade">
@@ -1057,7 +1072,8 @@
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">220</span><span class="p">,</span> <span class="mi">160</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
             <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
         <span class="p">})</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Dark Pact!&quot;</span><span class="p">)</span></div>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Dark Pact!&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_try_open_magic_article</span><span class="p">(</span><span class="s2">&quot;Dark Pact&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Character.learn_arcane_missiles">
@@ -1074,7 +1090,8 @@
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="mi">240</span><span class="p">),</span>
             <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">24</span><span class="p">,</span>
         <span class="p">})</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Arcane Missiles!&quot;</span><span class="p">)</span></div>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Arcane Missiles!&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_try_open_magic_article</span><span class="p">(</span><span class="s2">&quot;Arcane Missiles&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Character.learn_mana_flow">
@@ -1098,7 +1115,8 @@
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">240</span><span class="p">),</span>
             <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
         <span class="p">})</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Mystic Barrier!&quot;</span><span class="p">)</span></div>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Mystic Barrier!&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_try_open_magic_article</span><span class="p">(</span><span class="s2">&quot;Mystic Barrier&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Character.learn_berserkers_rage">
@@ -1115,7 +1133,8 @@
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">160</span><span class="p">,</span> <span class="mi">60</span><span class="p">),</span>
             <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span>
         <span class="p">})</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Berserker&#39;s Rage!&quot;</span><span class="p">)</span></div>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Berserker&#39;s Rage!&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_try_open_magic_article</span><span class="p">(</span><span class="s2">&quot;Berserker&#39;s Rage&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Character.learn_eternal_fortress">
@@ -1172,7 +1191,8 @@
             <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">230</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
             <span class="s2">&quot;manaCost&quot;</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span>
         <span class="p">})</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Chrono Shift!&quot;</span><span class="p">)</span></div>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Chrono Shift!&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_try_open_magic_article</span><span class="p">(</span><span class="s2">&quot;Chrono Shift&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Character.get_skill_in_slot">
@@ -1410,6 +1430,14 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">dash_active_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dash_duration</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">dash_last_used</span> <span class="o">=</span> <span class="n">current_time</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player used Dash.&quot;</span><span class="p">)</span>
+            <span class="c1"># Dash magic article + guide: Skills &amp; Hotbar (first use)</span>
+            <span class="n">gs</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;game_state&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">gs</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">gs</span><span class="p">,</span> <span class="s2">&quot;app&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;article_tracker&quot;</span><span class="p">):</span>
+                <span class="n">tr</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">article_tracker</span>
+                <span class="n">tr</span><span class="o">.</span><span class="n">try_open</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;magic&quot;</span><span class="p">,</span> <span class="s2">&quot;Dash&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">gs</span><span class="o">.</span><span class="n">_triggered_guide_skills</span><span class="p">:</span>
+                    <span class="n">gs</span><span class="o">.</span><span class="n">_triggered_guide_skills</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">tr</span><span class="o">.</span><span class="n">try_open</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;guide&quot;</span><span class="p">,</span> <span class="s2">&quot;3. Skills &amp; Hotbar&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">True</span>
 
         <span class="k">if</span> <span class="n">skill_id</span> <span class="o">==</span> <span class="s2">&quot;fireball&quot;</span><span class="p">:</span>
@@ -1894,7 +1922,24 @@
                 <span class="k">return</span>
 
         <span class="c1"># Otherwise append new effect</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">effect</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">effects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">effect</span><span class="p">)</span>
+
+        <span class="c1"># Effects article: open on first application to the player</span>
+        <span class="n">_effect_article_map</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;RegenerationEffect&quot;</span><span class="p">:</span> <span class="s2">&quot;Boon: Regeneration&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;PoisonEffect&quot;</span><span class="p">:</span> <span class="s2">&quot;Bane: Poison&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;BurnEffect&quot;</span><span class="p">:</span> <span class="s2">&quot;Bane: Burn&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;ConfusionEffect&quot;</span><span class="p">:</span> <span class="s2">&quot;Bane: Confusion&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;DizzinessEffect&quot;</span><span class="p">:</span> <span class="s2">&quot;Bane: Dizziness&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;SlowEffect&quot;</span><span class="p">:</span> <span class="s2">&quot;Bane: Slow&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;FreezeEffect&quot;</span><span class="p">:</span> <span class="s2">&quot;Bane: Freeze &amp; Root&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;RootEffect&quot;</span><span class="p">:</span> <span class="s2">&quot;Bane: Freeze &amp; Root&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">art_title</span> <span class="o">=</span> <span class="n">_effect_article_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cls_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">art_title</span><span class="p">:</span>
+            <span class="n">gs</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;game_state&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">gs</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">gs</span><span class="p">,</span> <span class="s2">&quot;app&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;article_tracker&quot;</span><span class="p">):</span>
+                <span class="n">gs</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">article_tracker</span><span class="o">.</span><span class="n">try_open</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;effects&quot;</span><span class="p">,</span> <span class="n">art_title</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Character.gain_xp">
@@ -1910,13 +1955,24 @@
 <div class="viewcode-block" id="Character.level_up">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.level_up">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">level_up</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">prev_level</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">level</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">xp_to_next_level</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xp_to_next_level</span> <span class="o">*</span> <span class="mf">1.5</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span> <span class="o">+=</span> <span class="mi">20</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">skill_tree_points</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Level Up! Level: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">level</span><span class="si">}</span><span class="s2">, Max HP: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span><span class="si">}</span><span class="s2">, Skill points: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">skill_tree_points</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Level Up! Level: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">level</span><span class="si">}</span><span class="s2">, Max HP: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span><span class="si">}</span><span class="s2">, Skill points: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">skill_tree_points</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Level Up! Level: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">level</span><span class="si">}</span><span class="s2">, Max HP: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span><span class="si">}</span><span class="s2">, Skill points: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">skill_tree_points</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># Article triggers</span>
+        <span class="n">gs</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;game_state&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">gs</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">gs</span><span class="p">,</span> <span class="s2">&quot;app&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;article_tracker&quot;</span><span class="p">):</span>
+            <span class="n">tr</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">article_tracker</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">gs</span><span class="o">.</span><span class="n">_triggered_guide_leveling</span><span class="p">:</span>
+                <span class="n">gs</span><span class="o">.</span><span class="n">_triggered_guide_leveling</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">tr</span><span class="o">.</span><span class="n">try_open</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;guide&quot;</span><span class="p">,</span> <span class="s2">&quot;6. Leveling &amp; Experience&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">&gt;=</span> <span class="mi">10</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">gs</span><span class="o">.</span><span class="n">_triggered_guide_final</span><span class="p">:</span>
+                <span class="n">gs</span><span class="o">.</span><span class="n">_triggered_guide_final</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">tr</span><span class="o">.</span><span class="n">try_open</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;guide&quot;</span><span class="p">,</span> <span class="s2">&quot;10. Final Words&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Character.can_attack">

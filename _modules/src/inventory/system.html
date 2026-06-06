@@ -1100,6 +1100,12 @@
                 <span class="n">manager</span><span class="o">.</span><span class="n">selected_item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_slot</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">output_slot</span> <span class="o">=</span> <span class="kc">None</span>
                 
+                <span class="c1"># Guide: Crafting &amp; Recipes — first item crafted</span>
+                <span class="n">gs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gameplay&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">gs</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">gs</span><span class="o">.</span><span class="n">_triggered_guide_crafting</span><span class="p">:</span>
+                    <span class="n">gs</span><span class="o">.</span><span class="n">_triggered_guide_crafting</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">article_tracker</span><span class="o">.</span><span class="n">try_open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;guide&quot;</span><span class="p">,</span> <span class="s2">&quot;5. Crafting &amp; Recipes&quot;</span><span class="p">)</span>
+                
                 <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
                     <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
                         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]:</span>

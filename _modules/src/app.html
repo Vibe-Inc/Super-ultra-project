@@ -76,6 +76,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.state_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">StateManager</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.save_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">SaveManager</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.profiling</span><span class="w"> </span><span class="kn">import</span> <span class="n">FrameProfiler</span><span class="p">,</span> <span class="n">FpsCounter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.article_tracker</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArticleUnlockTracker</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.inventory.inventory_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">INVENTORY_manager</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.items.items</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_item</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">database.item_db.weapons_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_weapons</span>
@@ -263,7 +264,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">set_profiler_enabled</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">PROFILER_ENABLED</span><span class="p">)</span>
 
         <span class="c1"># State manager</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">manager</span> <span class="o">=</span> <span class="n">StateManager</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">manager</span> <span class="o">=</span> <span class="n">StateManager</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="c1"># Article unlock tracker for auto-opening wiki articles</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">article_tracker</span> <span class="o">=</span> <span class="n">ArticleUnlockTracker</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">article_notifications</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">guide_intro_shown</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_dir_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">radius</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">dir_x</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">dir_y</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;pygame.Surface&quot;</span><span class="p">:</span>

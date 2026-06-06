@@ -385,6 +385,7 @@
             <span class="s2">&quot;revealed_tarot_cards&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">revealed_tarot_cards</span><span class="p">),</span>
             <span class="s2">&quot;arcane_quests_unlocked&quot;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s1">&#39;arcane_quests_unlocked&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
             <span class="s2">&quot;mysterium_magnum_unlocked&quot;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s1">&#39;mysterium_magnum_unlocked&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+            <span class="s2">&quot;seen_articles&quot;</span><span class="p">:</span> <span class="n">app</span><span class="o">.</span><span class="n">article_tracker</span><span class="o">.</span><span class="n">serialize</span><span class="p">(),</span>
             <span class="s2">&quot;player&quot;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s2">&quot;pos_x&quot;</span><span class="p">:</span> <span class="n">char</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>
                 <span class="s2">&quot;pos_y&quot;</span><span class="p">:</span> <span class="n">char</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
@@ -548,6 +549,12 @@
             <span class="k">if</span> <span class="n">quest_state</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">quest_state</span><span class="p">,</span> <span class="s2">&quot;set_quest_data&quot;</span><span class="p">):</span>
                 <span class="n">quest_state</span><span class="o">.</span><span class="n">set_quest_data</span><span class="p">(</span><span class="n">quest_data</span><span class="p">)</span>
 
+        <span class="c1"># Restore seen articles</span>
+        <span class="n">seen_articles</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;seen_articles&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">if</span> <span class="n">seen_articles</span><span class="p">:</span>
+            <span class="n">app</span><span class="o">.</span><span class="n">article_tracker</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="n">seen_articles</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Restored </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">seen_articles</span><span class="p">)</span><span class="si">}</span><span class="s2"> seen articles from save.&quot;</span><span class="p">)</span>
+
         <span class="c1"># Sync character defense from loaded equipment</span>
         <span class="n">equip_inv</span><span class="o">.</span><span class="n">sync_character_defense</span><span class="p">(</span><span class="n">char</span><span class="p">)</span>
 
@@ -598,6 +605,7 @@
             <span class="s2">&quot;brightness&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">USER_SCREEN_BRIGHTNESS</span><span class="p">,</span>
             <span class="s2">&quot;music_volume&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">MUSIC_VOLUME</span><span class="p">,</span>
             <span class="s2">&quot;profiler_enabled&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">PROFILER_ENABLED</span><span class="p">,</span>
+            <span class="s2">&quot;guide_intro_shown&quot;</span><span class="p">:</span> <span class="n">app</span><span class="o">.</span><span class="n">guide_intro_shown</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">SETTINGS_FILE</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
@@ -641,6 +649,9 @@
         <span class="c1"># Windowed size</span>
         <span class="k">if</span> <span class="s2">&quot;windowed_width&quot;</span> <span class="ow">in</span> <span class="n">data</span> <span class="ow">and</span> <span class="s2">&quot;windowed_height&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
             <span class="n">app</span><span class="o">.</span><span class="n">windowed_size</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;windowed_width&quot;</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;windowed_height&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Guide intro one-time flag</span>
+        <span class="n">app</span><span class="o">.</span><span class="n">guide_intro_shown</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;guide_intro_shown&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
         <span class="c1"># Fullscreen — apply after windowed_size is restored</span>
         <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;fullscreen&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
