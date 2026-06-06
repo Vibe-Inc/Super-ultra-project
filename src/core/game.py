@@ -1201,8 +1201,10 @@ class Game(State):
                 except Exception:
                     pass
 
-            # Window illumination: windows emit warm light at night
-            # Skip for interior maps (e.g. tavern) where windows are on internal walls
+            # Window illumination: windows emit soft light at night.
+            # The warm visual glow is pre-baked on the map layer (Map._window_glow);
+            # these light sources only punch subtle holes in the night overlay.
+            # Skip for interior maps (e.g. tavern) where windows are on internal walls.
             _NO_WINDOW_LIGHT_MAPS = {"maps/tavern.tmx"}
             try:
                 game_map = getattr(self, 'map', None)
@@ -1212,10 +1214,9 @@ class Game(State):
                         screen_pos = (int(wx - camera.x), int(wy - camera.y))
                         lights.append({
                             'pos': screen_pos,
-                            'radius': 140,
-                            'intensity': 1.1,
+                            'radius': 100,
+                            'intensity': 0.7,
                             'full_360': True,
-                            'color': (255, 180, 80),
                         })
             except Exception:
                 pass
