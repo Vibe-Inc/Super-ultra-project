@@ -90,6 +90,16 @@
 <span class="n">FPS</span> <span class="o">=</span> <span class="mi">0</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_load_background</span><span class="p">(</span><span class="n">screen_width</span><span class="p">,</span> <span class="n">screen_height</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load and scale the background image for the current screen size.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        screen_width (int): Target width for the background.</span>
+<span class="sd">        screen_height (int): Target height for the background.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pygame.Surface: The scaled background surface, or a fallback black surface</span>
+<span class="sd">        if the image file is missing.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">bg_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s2">&quot;assets&quot;</span><span class="p">,</span> <span class="s2">&quot;ui&quot;</span><span class="p">,</span> <span class="s2">&quot;bg_menu.jpg&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">bg_path</span><span class="p">),</span> <span class="p">(</span><span class="n">screen_width</span><span class="p">,</span> <span class="n">screen_height</span><span class="p">))</span>
@@ -155,6 +165,11 @@
 <div class="viewcode-block" id="update_scaled_fonts">
 <a class="viewcode-back" href="../../src.html#src.config.update_scaled_fonts">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">update_scaled_fonts</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Recompute all scaled font instances for the current screen size and language.</span>
+
+<span class="sd">    Global fonts (myfont, button_font, etc.) are rebuilt so they match the</span>
+<span class="sd">    current UI scale factor.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">global</span> <span class="n">myfont</span><span class="p">,</span> <span class="n">button_font</span><span class="p">,</span> <span class="n">inventory_tooltip_font</span><span class="p">,</span> <span class="n">tooltip_font_CREDITS</span><span class="p">,</span> <span class="n">INV_nums_font</span>
     <span class="n">scale</span> <span class="o">=</span> <span class="n">ui_scale</span><span class="p">()</span>
     <span class="c1"># Base sizes (authored for 1920x1080)</span>
@@ -169,6 +184,10 @@
 <div class="viewcode-block" id="update_brightness">
 <a class="viewcode-back" href="../../src.html#src.config.update_brightness">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">update_brightness</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Clamp and apply the user&#39;s configured screen brightness.</span>
+
+<span class="sd">    Updates the global SCREEN_BRIGHTNESS so that it stays within [0.0, 1.0].</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">global</span> <span class="n">SCREEN_BRIGHTNESS</span>
     <span class="n">SCREEN_BRIGHTNESS</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">USER_SCREEN_BRIGHTNESS</span><span class="p">))</span></div>
 
@@ -240,6 +259,11 @@
 <div class="viewcode-block" id="recalculate_inventory_positions">
 <a class="viewcode-back" href="../../src.html#src.config.recalculate_inventory_positions">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">recalculate_inventory_positions</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Recalculate the pixel positions of inventory grids based on the current UI scale.</span>
+
+<span class="sd">    Updates global position variables for the main inventory grid and the equipment</span>
+<span class="sd">    grid so that they remain centred and properly aligned when the window is resized.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">global</span> <span class="n">MAIN_INV_pos_x</span><span class="p">,</span> <span class="n">MAIN_INV_pos_y</span><span class="p">,</span> <span class="n">MAIN_INV_equipment_pos_x</span><span class="p">,</span> <span class="n">MAIN_INV_equipment_pos_y</span>
     
     <span class="n">scale</span> <span class="o">=</span> <span class="n">ui_scale</span><span class="p">()</span>
@@ -443,6 +467,12 @@
 <div class="viewcode-block" id="set_screen_size">
 <a class="viewcode-back" href="../../src.html#src.config.set_screen_size">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_screen_size</span><span class="p">(</span><span class="n">screen_width</span><span class="p">,</span> <span class="n">screen_height</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the global screen dimensions and recalculate dependent values.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        screen_width (int): New screen width in pixels.</span>
+<span class="sd">        screen_height (int): New screen height in pixels.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">global</span> <span class="n">SCREEN_WIDTH</span><span class="p">,</span> <span class="n">SCREEN_HEIGHT</span><span class="p">,</span> <span class="n">bg</span>
     <span class="n">SCREEN_WIDTH</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">screen_width</span><span class="p">)</span>
     <span class="n">SCREEN_HEIGHT</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">screen_height</span><span class="p">)</span>

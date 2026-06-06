@@ -56,7 +56,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="src.html#submodules">Submodules</a></li>
-<li class="toctree-l3"><a class="reference internal" href="src.html#module-src.app">src.app module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.html#src-app-module">src.app module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="src.html#module-src.config">src.config module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="src.html#module-src.i18n">src.i18n module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="src.html#module-src">Module contents</a></li>
@@ -1788,7 +1788,16 @@ using the external collision system.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="id63">
 <span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/npc.html#NPC.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id63" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Draw the NPC and the interaction prompt if applicable.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>screen</strong> (<em>pygame.Surface</em>) – The surface to draw onto.</p></li>
+<li><p><strong>camera_offset</strong> (<em>pygame.Vector2</em><em> | </em><em>None</em>) – Camera offset for world-to-screen coordinates.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id64">
@@ -1799,13 +1808,22 @@ using the external collision system.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="id65">
 <span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">player_pos</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Vector2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/entities/npc.html#NPC.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id65" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Check distance to player and update interaction status.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>player_pos</strong> (<em>pygame.Vector2</em>) – The current world position of the player.</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
 </section>
 <section id="module-src.entities">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-src.entities" title="Link to this heading"></a></h2>
+<p>Entities module for all game characters and objects.</p>
+<p>Provides the player Character, Enemy, NPC, MageNPC, NatureSpirit, DroppedItem,
+Projectile subclasses, and monster animation/attack visual utilities.</p>
 </section>
 </section>
 

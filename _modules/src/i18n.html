@@ -69,16 +69,18 @@
            <div itemprop="articleBody">
              
   <h1>Source code for src.i18n</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">gettext</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-
-<span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Internationalization (i18n) utilities for language switching and translation management.</span>
 
-<span class="sd">This module provides functions to install and manage gettext-based translations for the application.</span>
+<span class="sd">This module provides functions to install and manage gettext-based translations</span>
+<span class="sd">for the application.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">gettext</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
 <span class="n">_current_translation</span> <span class="o">=</span> <span class="kc">None</span>
+
 
 <div class="viewcode-block" id="install_language">
 <a class="viewcode-back" href="../../src.html#src.i18n.install_language">[docs]</a>
@@ -90,14 +92,15 @@
 <span class="sd">        lang_code (str): Language code to install (e.g., &#39;en&#39;, &#39;ua&#39;).</span>
 
 <span class="sd">    Side Effects:</span>
-<span class="sd">        Sets the global translation for the application. Installs the &#39;_&#39; function in the builtins for runtime translation.</span>
-<span class="sd">        Falls back to English if the specified translation is not found.</span>
+<span class="sd">        Sets the global translation for the application. Installs the &#39;_&#39; function</span>
+<span class="sd">        in the builtins for runtime translation. Falls back to English if the</span>
+<span class="sd">        specified translation is not found.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">global</span> <span class="n">_current_translation</span>
-    
+
     <span class="n">base_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)))</span>
     <span class="n">locales_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_dir</span><span class="p">,</span> <span class="s1">&#39;locales&#39;</span><span class="p">)</span>
-    
+
     <span class="k">try</span><span class="p">:</span>
         <span class="n">language</span> <span class="o">=</span> <span class="n">gettext</span><span class="o">.</span><span class="n">translation</span><span class="p">(</span><span class="s1">&#39;messages&#39;</span><span class="p">,</span> <span class="n">localedir</span><span class="o">=</span><span class="n">locales_dir</span><span class="p">,</span> <span class="n">languages</span><span class="o">=</span><span class="p">[</span><span class="n">lang_code</span><span class="p">])</span>
         <span class="n">language</span><span class="o">.</span><span class="n">install</span><span class="p">()</span>
@@ -109,6 +112,7 @@
         <span class="n">_current_translation</span> <span class="o">=</span> <span class="n">gettext</span><span class="o">.</span><span class="n">NullTranslations</span><span class="p">()</span></div>
 
 
+
 <div class="viewcode-block" id="get_current_translation">
 <a class="viewcode-back" href="../../src.html#src.i18n.get_current_translation">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_current_translation</span><span class="p">():</span>
@@ -116,7 +120,8 @@
 <span class="sd">    Get the currently active gettext translation object.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        gettext.GNUTranslations | gettext.NullTranslations | None: The current translation object, or None if not set.</span>
+<span class="sd">        gettext.GNUTranslations | gettext.NullTranslations | None:</span>
+<span class="sd">            The current translation object, or None if not set.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">_current_translation</span></div>
 

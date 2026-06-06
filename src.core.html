@@ -56,7 +56,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="src.html#submodules">Submodules</a></li>
-<li class="toctree-l3"><a class="reference internal" href="src.html#module-src.app">src.app module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.html#src-app-module">src.app module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="src.html#module-src.config">src.config module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="src.html#module-src.i18n">src.i18n module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="src.html#module-src">Module contents</a></li>
@@ -101,7 +101,7 @@
 <span id="src-core-game-module"></span><h2>src.core.game module<a class="headerlink" href="#module-src.core.game" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="src.core.game.Game">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.core.game.</span></span><span class="sig-name descname"><span class="pre">Game</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/game.html#Game"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.game.Game" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.core.game.</span></span><span class="sig-name descname"><span class="pre">Game</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">App</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/game.html#Game"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.game.Game" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#src.core.state.State" title="src.core.state.State"><code class="xref py py-class docutils literal notranslate"><span class="pre">State</span></code></a></p>
 <p>Main gameplay state for the application.</p>
 <p>Owns the player character, the current map, enemy spawning, the
@@ -115,7 +115,7 @@ subsystems (HUD, inventory, combat, dialogs).</p>
 <dd><p>The main application reference.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="src.html#src.app.App" title="src.app.App">App</a></p>
+<dd class="field-odd"><p>App</p>
 </dd>
 </dl>
 </dd></dl>
@@ -803,7 +803,12 @@ subsystems (HUD, inventory, combat, dialogs).</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="id0">
 <span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/game.html#Game.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
-<dd><p>Renders the state to the provided screen surface.</p>
+<dd><p>Render the state to the provided screen surface.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>screen</strong> (<em>pygame.Surface</em>) – The surface to draw onto.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -828,7 +833,12 @@ Only returns lights during night/dusk/dawn — illumination turns on at night.</
 <dl class="py method">
 <dt class="sig sig-object py" id="id3">
 <span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/game.html#Game.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
-<dd><p>Handles input events specific to the state.</p>
+<dd><p>Handle input events specific to the state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event</strong> (<em>pygame.event.Event</em>) – The pygame event to process.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -864,7 +874,12 @@ Only returns lights during night/dusk/dawn — illumination turns on at night.</
 <dl class="py method">
 <dt class="sig sig-object py" id="id10">
 <span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/game.html#Game.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Link to this definition"></a></dt>
-<dd><p>Updates the state’s logic.</p>
+<dd><p>Update the state’s logic.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dt</strong> (<em>float</em>) – Delta time in seconds since the last frame.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -877,6 +892,9 @@ Only returns lights during night/dusk/dawn — illumination turns on at night.</
 </section>
 <section id="module-src.core.logger">
 <span id="src-core-logger-module"></span><h2>src.core.logger module<a class="headerlink" href="#module-src.core.logger" title="Link to this heading"></a></h2>
+<p>Logging module for the Super Ultra Project.</p>
+<p>Provides a configured logger instance with console and file output,
+including a separate error log file for WARNING and above messages.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="src.core.logger.setup_logger">
 <span class="sig-prename descclassname"><span class="pre">src.core.logger.</span></span><span class="sig-name descname"><span class="pre">setup_logger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'GameLogger'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/logger.html#setup_logger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.logger.setup_logger" title="Link to this definition"></a></dt>
@@ -975,7 +993,7 @@ Only returns lights during night/dusk/dawn — illumination turns on at night.</
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>app</strong> (<a class="reference internal" href="src.html#src.app.App" title="src.app.App"><em>App</em></a>) – The main application instance to restore the state into.</p></li>
+<li><p><strong>app</strong> (<em>App</em>) – The main application instance to restore the state into.</p></li>
 <li><p><strong>slot_name</strong> (<em>str</em>) – The name of the save slot to load.</p></li>
 </ul>
 </dd>
@@ -994,7 +1012,7 @@ Only returns lights during night/dusk/dawn — illumination turns on at night.</
 <dd><p>Restore previously persisted user settings into the application.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>app</strong> (<a class="reference internal" href="src.html#src.app.App" title="src.app.App"><em>App</em></a>) – The main application instance.</p>
+<dd class="field-odd"><p><strong>app</strong> (<em>App</em>) – The main application instance.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1006,7 +1024,7 @@ Only returns lights during night/dusk/dawn — illumination turns on at night.</
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>app</strong> (<a class="reference internal" href="src.html#src.app.App" title="src.app.App"><em>App</em></a>) – The main application instance containing the game state.</p></li>
+<li><p><strong>app</strong> (<em>App</em>) – The main application instance containing the game state.</p></li>
 <li><p><strong>slot_name</strong> (<em>str</em>) – The name of the save slot (filename without extension).</p></li>
 </ul>
 </dd>
@@ -1020,7 +1038,7 @@ Only returns lights during night/dusk/dawn — illumination turns on at night.</
 to a JSON file so they survive application restarts.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>app</strong> (<a class="reference internal" href="src.html#src.app.App" title="src.app.App"><em>App</em></a>) – The main application instance.</p>
+<dd class="field-odd"><p><strong>app</strong> (<em>App</em>) – The main application instance.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1030,20 +1048,23 @@ to a JSON file so they survive application restarts.</p>
 </section>
 <section id="module-src.core.state">
 <span id="src-core-state-module"></span><h2>src.core.state module<a class="headerlink" href="#module-src.core.state" title="Link to this heading"></a></h2>
+<p>State module providing the base class for application states.</p>
+<p>This module defines the abstract State class that all game and menu
+states inherit from.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="src.core.state.State">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.core.state.</span></span><span class="sig-name descname"><span class="pre">State</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state.html#State"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.state.State" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.core.state.</span></span><span class="sig-name descname"><span class="pre">State</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">App</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state.html#State"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.state.State" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Abstract base class for application states.</p>
-<p>This class should be subclassed to implement specific states (e.g., menus, gameplay) for the application.
-Each state can handle events, draw itself, and update its logic.</p>
+<p>This class should be subclassed to implement specific states (e.g., menus, gameplay)
+for the application. Each state can handle events, draw itself, and update its logic.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="src.core.state.State.app">
 <span class="sig-name descname"><span class="pre">app</span></span><a class="headerlink" href="#src.core.state.State.app" title="Link to this definition"></a></dt>
 <dd><p>Reference to the main application instance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="src.html#src.app.App" title="src.app.App">App</a></p>
+<dd class="field-odd"><p>App</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1081,126 +1102,56 @@ Each state can handle events, draw itself, and update its logic.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="id17">
 <span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Surface</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state.html#State.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id17" title="Link to this definition"></a></dt>
-<dd><p>Renders the state to the provided screen surface.</p>
+<dd><p>Render the state to the provided screen surface.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>screen</strong> (<em>pygame.Surface</em>) – The surface to draw onto.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id18">
 <span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state.html#State.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id18" title="Link to this definition"></a></dt>
-<dd><p>Handles input events specific to the state.</p>
+<dd><p>Handle input events specific to the state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event</strong> (<em>pygame.event.Event</em>) – The pygame event to process.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id19">
 <span class="sig-name descname"><span class="pre">on_enter</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state.html#State.on_enter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id19" title="Link to this definition"></a></dt>
 <dd><p>Called when this state becomes the active state.</p>
+<p>Override in subclasses to perform setup logic (e.g., playing music,
+resetting UI state) when the state is entered.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id20">
 <span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state.html#State.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id20" title="Link to this definition"></a></dt>
-<dd><p>Updates the state’s logic.</p>
+<dd><p>Update the state’s logic.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dt</strong> (<em>float</em>) – Delta time in seconds since the last frame.</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
 
 </section>
-<section id="module-src.core.state_manager">
-<span id="src-core-state-manager-module"></span><h2>src.core.state_manager module<a class="headerlink" href="#module-src.core.state_manager" title="Link to this heading"></a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="src.core.state_manager.StateManager">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.core.state_manager.</span></span><span class="sig-name descname"><span class="pre">StateManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.app.App" title="src.app.App"><span class="pre">App</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.state_manager.StateManager" title="Link to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Manages the application’s high-level states (main menu, settings, credits, gameplay, pause).</p>
-<p>This class is responsible for switching between different UI/game states, delegating event handling and drawing, and reinitializing states when needed (e.g., after a language change).</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.core.state_manager.StateManager.states">
-<span class="sig-name descname"><span class="pre">states</span></span><a class="headerlink" href="#src.core.state_manager.StateManager.states" title="Link to this definition"></a></dt>
-<dd><p>Mapping of state names to their corresponding state objects.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>dict[str, <a class="reference internal" href="#src.core.state.State" title="src.core.state.State">State</a>]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.core.state_manager.StateManager.current_state">
-<span class="sig-name descname"><span class="pre">current_state</span></span><a class="headerlink" href="#src.core.state_manager.StateManager.current_state" title="Link to this definition"></a></dt>
-<dd><p>The currently active state object.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#src.core.state.State" title="src.core.state.State">State</a> | None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.core.state_manager.StateManager.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.state_manager.StateManager.__init__" title="Link to this definition"></a></dt>
-<dd><p>Initialize all states and set the current state to None.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.core.state_manager.StateManager.set_state">
-<span class="sig-name descname"><span class="pre">set_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.set_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.state_manager.StateManager.set_state" title="Link to this definition"></a></dt>
-<dd><p>Set the current state by name.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.core.state_manager.StateManager.get_state">
-<span class="sig-name descname"><span class="pre">get_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.get_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.state_manager.StateManager.get_state" title="Link to this definition"></a></dt>
-<dd><p>Get the name of the currently active state, or None if no state is active.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.core.state_manager.StateManager.handle_event">
-<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.state_manager.StateManager.handle_event" title="Link to this definition"></a></dt>
-<dd><p>Delegate event handling to the current state.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.core.state_manager.StateManager.draw">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.state_manager.StateManager.draw" title="Link to this definition"></a></dt>
-<dd><p>Delegate drawing to the current state.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.core.state_manager.StateManager.reinit_states">
-<span class="sig-name descname"><span class="pre">reinit_states</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.reinit_states"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.core.state_manager.StateManager.reinit_states" title="Link to this definition"></a></dt>
-<dd><p>Reinitialize all states (except gameplay), preserving the current state and refreshing UI as needed.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id21">
-<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">screen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id21" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id22">
-<span class="sig-name descname"><span class="pre">get_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.get_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id22" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id23">
-<span class="sig-name descname"><span class="pre">handle_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.handle_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id23" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id24">
-<span class="sig-name descname"><span class="pre">reinit_states</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.reinit_states"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id24" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id25">
-<span class="sig-name descname"><span class="pre">set_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/core/state_manager.html#StateManager.set_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id25" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
+<section id="src-core-state-manager-module">
+<h2>src.core.state_manager module<a class="headerlink" href="#src-core-state-manager-module" title="Link to this heading"></a></h2>
 </section>
 <section id="module-src.core">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-src.core" title="Link to this heading"></a></h2>
+<p>Core module containing essential game systems.</p>
+<p>Provides the main game loop (Game), state management (State, StateManager),
+collision resolution (CollisionSystem), logging (logger), profiling tools,
+and save/load functionality.</p>
 </section>
 </section>
 

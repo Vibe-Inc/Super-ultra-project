@@ -153,6 +153,11 @@
 <div class="viewcode-block" id="NPC.update">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.npc.NPC.update">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">player_pos</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check distance to player and update interaction status.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            player_pos (pygame.Vector2): The current world position of the player.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">diff</span> <span class="o">=</span> <span class="n">player_pos</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_interactable</span> <span class="o">=</span> <span class="n">diff</span><span class="o">.</span><span class="n">length_squared</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_range</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">interaction_range</span><span class="p">)</span>
         <span class="c1"># Keep rect in sync with float position so callers using get_rect() work</span>
@@ -176,6 +181,12 @@
 <div class="viewcode-block" id="NPC.draw">
 <a class="viewcode-back" href="../../../src.entities.html#src.entities.npc.NPC.draw">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">,</span> <span class="n">camera_offset</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Draw the NPC and the interaction prompt if applicable.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            screen (pygame.Surface): The surface to draw onto.</span>
+<span class="sd">            camera_offset (pygame.Vector2 | None): Camera offset for world-to-screen coordinates.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">camera_offset</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">camera_offset</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
