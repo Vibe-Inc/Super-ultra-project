@@ -1451,7 +1451,7 @@ class Character:
             teleport_offset = direction.normalize() * self.shadow_step_range
             self.pos += teleport_offset
             if getattr(self, '_obstacles', None):
-                self._collision_system.resolve_static_collision(self, self._obstacles)
+                self._collision_system.resolve_teleport_collision(self, self._obstacles, direction)
             end_pos = self.get_center()
 
             self.invulnerable = True
@@ -2294,8 +2294,10 @@ class Character:
                 old_center = self.get_center()
                 # Teleport in a random direction
                 angle = random.uniform(0, math.pi * 2)
-                offset = pygame.Vector2(math.cos(angle), math.sin(angle)) * self.void_walker_teleport_range
-                self.pos += offset
+                direction = pygame.Vector2(math.cos(angle), math.sin(angle))
+                self.pos += direction * self.void_walker_teleport_range
+                if getattr(self, '_obstacles', None):
+                    self._collision_system.resolve_teleport_collision(self, self._obstacles, direction)
                 # Spawn afterimage at old center position
                 game_state = getattr(self, "game_state", None)
                 if game_state is not None and hasattr(game_state, "projectiles"):

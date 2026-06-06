@@ -228,6 +228,12 @@ class Button:
                 alive.append(p)
         self._hover_particles = alive
 
+        # Keep text position in sync with the current button rect so that
+        # callers may freely reassign ``self.rect`` (e.g. layout code that
+        # resizes / moves buttons each frame) without leaving the label
+        # stranded at its previous coordinates.
+        self.text_rect = self.text_surf.get_rect(center=self.rect.center)
+
         ts = self.text_surf
         tr = self.text_rect
         shd = ts.copy()
@@ -564,50 +570,20 @@ class Tooltip:
 
 class Dialog:
     """
-    Simple modal dialog with text lines and action buttons.
+    Beautiful modal dialog with rich visuals, animated effects, and action buttons.
 
     Supports an OK button plus optional Shop and Play Cards action buttons.
-
-    Attributes:
-        app (App):
-            The main application instance.
-        lines (list[str]):
-            Lines of text to display in the dialog.
-        on_close (callable | None):
-            Callback invoked when the dialog is closed.
-        on_shop (callable | None):
-            Callback invoked when the Shop button is clicked.
-        show_shop (bool):
-            Whether to show the Shop button.
-        on_play_cards (callable | None):
-            Callback invoked when the Play Cards button is clicked.
-        show_play_cards (bool):
-            Whether to show the Play Cards button.
-        rect (pygame.Rect):
-            Bounding rectangle of the dialog.
-        font (pygame.font.Font):
-            Font used for dialog text.
-        ok_button (Button):
-            The CLOSE button.
-        shop_button (Button | None):
-            The SHOP button, or None if not shown.
-        play_cards_button (Button | None):
-            The PLAY CARDS button, or None if not shown.
-
-    Methods:
-        __init__(app, lines, on_close=None, on_shop=None, show_shop=False, on_play_cards=None, show_play_cards=False):
-            Initialize the dialog.
-        _close():
-            Close the dialog and invoke close callback.
-        handle_event(event):
-            Handle mouse and keyboard events for the dialog buttons.
-        _shop():
-            Open the shop and close the dialog.
-        _play_cards_action():
-            Start the card game and close the dialog.
-        draw(surface):
-            Render the dialog overlay, text, and buttons.
     """
+
+    # ── Colour palette ──────────────────────────────────────────────
+    BG_COLOR         = (18, 22, 32, 240)
+    BORDER_COLOR     = (200, 170, 80, 220)
+    INNER_BORDER     = (80, 75, 60, 120)
+    ACCENT_COLOR     = (230, 185, 60)
+    TITLE_COLOR      = (255, 215, 80)
+    TEXT_COLOR       = (210, 218, 235)
+    SHADOW_COLOR     = (0, 0, 0)
+    OVERLAY_COLOR    = (0, 0, 0)
 
     def __init__(self, app, lines, on_close=None, on_shop=None, show_shop=False,
                  on_play_cards=None, show_play_cards=False):
@@ -618,39 +594,77 @@ class Dialog:
         self.show_shop = bool(show_shop)
         self.on_play_cards = on_play_cards
         self.show_play_cards = bool(show_play_cards)
+
         sw, sh = self.app.screen.get_size()
         w = min(800, sw - 100)
-        h = min(300, sh - 200)
+        h = min(340, sh - 200)
         self.rect = pygame.Rect((sw - w) // 2, (sh - h) // 2, w, h)
-        self.font = cfg.get_font(max(8,int(20 * cfg.ui_scale())))
-        # Buttons: Close and optional Shop / Play Cards
-        btn_w = max(100, int(160 * cfg.ui_scale()))
-        btn_h = max(34, int(44 * cfg.ui_scale()))
-        gap = int(12 * cfg.ui_scale())
 
-        # Count how many action buttons we need
-        action_buttons = []
-        if self.show_shop:
-            action_buttons.append(('shop', _('SHOP'), (100,110,70), (150,160,110)))
-        if self.show_play_cards:
-            action_buttons.append(('cards', _('PLAY CARDS'), (70,100,70), (110,150,110)))
+        self.font = cfg.get_font(max(8, int(20 * cfg.ui_scale())))
+        self.small_font = cfg.get_font(max(7, int(17 * cfg.ui_scale())))
 
-        num_buttons = 1 + len(action_buttons)  # +1 for CLOSE
-        total_w = btn_w * num_buttons + gap * (num_buttons - 1)
-        btn_x = self.rect.x + (self.rect.width - total_w) // 2
-        btn_y = self.rect.y + self.rect.height - btn_h - 16
+        self.btn_w = max(100, int(160 * cfg.ui_scale()))
+        self.btn_h = max(34, int(44 * cfg.ui_scale()))
+        self.btn_gap = int(12 * cfg.ui_scale())
 
+        # Entrance animation
+        self.entrance_progress = 0.0
+        self.visible = False
+        self._entrance_time = 0.0
+
+        # Ambient particles
+        self._particles = []
+        self._spawn_timer = 0.0
+
+        # Create buttons with placeholder positions
         self.shop_button = None
         self.play_cards_button = None
 
+        action_buttons = []
+        if self.show_shop:
+            action_buttons.append(('shop', _('SHOP'), (100, 110, 70), (150, 160, 110)))
+        if self.show_play_cards:
+            action_buttons.append(('cards', _('PLAY CARDS'), (70, 100, 70), (110, 150, 110)))
+
+        self._action_buttons = action_buttons
+
+        placeholder = pygame.Rect(0, 0, self.btn_w, self.btn_h)
+        self.ok_button = Button(
+            placeholder, _('CLOSE'),
+            (100, 100, 100), (150, 150, 150),
+            self.font, (255, 255, 255), 6, on_click=self._close
+        )
+
         for kind, label, color, hover in action_buttons:
             if kind == 'shop':
-                self.shop_button = Button(pygame.Rect(btn_x, btn_y, btn_w, btn_h), label, color, hover, self.font, (255,255,255), 6, on_click=self._shop)
+                self.shop_button = Button(
+                    placeholder, label, color, hover,
+                    self.font, (255, 255, 255), 6, on_click=self._shop
+                )
             elif kind == 'cards':
-                self.play_cards_button = Button(pygame.Rect(btn_x, btn_y, btn_w, btn_h), label, color, hover, self.font, (255,255,255), 6, on_click=self._play_cards_action)
-            btn_x += btn_w + gap
+                self.play_cards_button = Button(
+                    placeholder, label, color, hover,
+                    self.font, (255, 255, 255), 6, on_click=self._play_cards_action
+                )
 
-        self.ok_button = Button(pygame.Rect(btn_x, btn_y, btn_w, btn_h), _('CLOSE'), (100,100,100), (150,150,150), self.font, (255,255,255), 6, on_click=self._close)
+    def _layout_buttons(self, rect):
+        btn_w = self.btn_w
+        btn_h = self.btn_h
+        gap = self.btn_gap
+        num_buttons = 1 + len(self._action_buttons)
+        total_w = btn_w * num_buttons + gap * (num_buttons - 1)
+        btn_x = rect.x + (rect.width - total_w) // 2
+        btn_y = rect.y + rect.height - btn_h - 18
+
+        self.ok_button.rect = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
+        btn_x += btn_w + gap
+
+        for kind, label, color, hover in self._action_buttons:
+            if kind == 'shop' and self.shop_button:
+                self.shop_button.rect = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
+            elif kind == 'cards' and self.play_cards_button:
+                self.play_cards_button.rect = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
+            btn_x += btn_w + gap
 
     def _close(self):
         if callable(self.on_close):
@@ -658,13 +672,14 @@ class Dialog:
                 self.on_close()
             except Exception:
                 pass
-        # clear current dialog in app
         try:
             self.app.current_dialog = None
         except Exception:
             pass
 
     def handle_event(self, event: pygame.event.Event):
+        if not self.visible:
+            return
         if event.type == pygame.MOUSEBUTTONDOWN:
             if self.ok_button.rect.collidepoint(event.pos):
                 if self.ok_button.on_click:
@@ -685,7 +700,6 @@ class Dialog:
                 self.on_shop()
             except Exception:
                 pass
-        # close dialog after opening shop
         self._close()
 
     def _play_cards_action(self):
@@ -694,30 +708,175 @@ class Dialog:
                 self.on_play_cards()
             except Exception:
                 pass
-        # close dialog after starting card game
         self._close()
 
+    def _draw_gold_corner(self, surface, cx, cy, size, alpha):
+        pts = [(cx, cy), (cx + size, cy), (cx, cy + size)]
+        pygame.draw.polygon(surface, (*self.ACCENT_COLOR, alpha), pts)
+
+    def _draw_panel_bg(self, surface, rect, t):
+        r = rect
+        cw = 12
+
+        # Outer shadow
+        for i in range(6):
+            s = i * 2
+            a = 20 - i * 3
+            shadow_rect = pygame.Rect(r.x - s, r.y - s, r.width + s * 2, r.height + s * 2)
+            pygame.draw.rect(surface, (*self.SHADOW_COLOR, max(0, a)), shadow_rect, border_radius=cw + s)
+
+        # Main background
+        bg = pygame.Surface((r.width, r.height), pygame.SRCALPHA)
+        pygame.draw.rect(bg, self.BG_COLOR, (0, 0, r.width, r.height), border_radius=cw)
+
+        # Subtle inner gradient overlay
+        grad = pygame.Surface((r.width, r.height // 2), pygame.SRCALPHA)
+        for y in range(grad.get_height()):
+            a = max(0, 25 - int(y * 25 / grad.get_height()))
+            pygame.draw.line(grad, (255, 255, 255, a), (0, y), (r.width, y))
+        bg.blit(grad, (0, 0))
+        surface.blit(bg, r.topleft)
+
+        # Outer gold border
+        pygame.draw.rect(surface, self.BORDER_COLOR, r, 2, border_radius=cw)
+
+        # Inner border
+        inner = r.inflate(-8, -8)
+        pygame.draw.rect(surface, self.INNER_BORDER, inner, 1, border_radius=cw - 2)
+
+        # Gold corner accents
+        corner_size = 14
+        corner_alpha = 150 + int(60 * (math.sin(t * 1.5) + 1) * 0.5)
+        for cx, cy in [(r.x + 4, r.y + 4), (r.right - 4, r.y + 4),
+                        (r.x + 4, r.bottom - 4), (r.right - 4, r.bottom - 4)]:
+            self._draw_gold_corner(surface, cx, cy, corner_size, corner_alpha)
+
+        # Top accent bar
+        bar_rect = pygame.Rect(r.x + 20, r.y + 4, r.width - 40, 2)
+        bar_alpha = 100 + int(80 * (math.sin(t * 2.0) + 1) * 0.5)
+        bar_surf = pygame.Surface((bar_rect.width, bar_rect.height), pygame.SRCALPHA)
+        for x in range(bar_rect.width):
+            a = int(bar_alpha * (1.0 - abs(x / max(1, bar_rect.width) - 0.5) * 2))
+            bar_surf.set_at((x, 0), (*self.ACCENT_COLOR, a))
+        surface.blit(bar_surf, bar_rect.topleft)
+
+    def _update_particles(self, dt, rect, surface):
+        self._spawn_timer += dt
+        if self._spawn_timer > 0.08:
+            self._spawn_timer = 0
+            if len(self._particles) < 20:
+                self._particles.append({
+                    'x': random.uniform(rect.x + 10, rect.right - 10),
+                    'y': rect.y + rect.height,
+                    'vx': random.uniform(-8, 8),
+                    'vy': random.uniform(-30, -60),
+                    'life': 1.0,
+                    'size': random.uniform(1, 2.5),
+                    'color': random.choice([(230, 185, 60), (255, 215, 80), (200, 170, 80)]),
+                })
+
+        alive = []
+        for p in self._particles:
+            p['x'] += p['vx'] * dt
+            p['y'] += p['vy'] * dt
+            p['vy'] += 20 * dt
+            p['life'] -= dt * 0.8
+            if p['life'] > 0:
+                a = int(160 * p['life'])
+                sz = max(0.5, p['size'] * p['life'])
+                s = pygame.Surface((max(1, int(sz * 2)), max(1, int(sz * 2))), pygame.SRCALPHA)
+                pygame.draw.circle(s, (*p['color'], max(0, min(255, a))), (int(sz), int(sz)), int(sz))
+                surface.blit(s, (int(p['x'] - sz), int(p['y'] - sz)))
+                alive.append(p)
+        self._particles = alive
+
     def draw(self, surface: pygame.Surface):
-        # dim background
+        t = time.time()
+        dt = 0.016
+        try:
+            dt = self.app.clock.get_time() / 1000.0
+        except Exception:
+            pass
+        dt = min(0.05, max(0.001, dt))
+
+        # Entrance animation
+        if not self.visible:
+            self._entrance_time += dt
+            self.entrance_progress = min(1.0, self._entrance_time / 0.3)
+            if self.entrance_progress >= 1.0:
+                self.visible = True
+
+        ease = 1.0 - (1.0 - self.entrance_progress) ** 3
+
+        # Dim background overlay
         overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
-        overlay.fill((0,0,0,120))
-        surface.blit(overlay, (0,0))
+        overlay_alpha = int(140 * ease)
+        overlay.fill((*self.OVERLAY_COLOR, overlay_alpha))
+        surface.blit(overlay, (0, 0))
 
-        # dialog background
-        pygame.draw.rect(surface, (40, 40, 40), self.rect, border_radius=8)
-        pygame.draw.rect(surface, (200, 200, 200), self.rect, 2, border_radius=8)
+        # Animated scale
+        scale = 0.85 + 0.15 * ease
+        r = self.rect
+        scaled_w = int(r.width * scale)
+        scaled_h = int(r.height * scale)
+        draw_rect = pygame.Rect(
+            r.centerx - scaled_w // 2,
+            r.centery - scaled_h // 2,
+            scaled_w, scaled_h
+        )
 
-        # draw lines
+        # Draw panel
+        self._draw_panel_bg(surface, draw_rect, t)
+
+        # Layout and draw buttons
+        self._layout_buttons(draw_rect)
+
+        # Ambient particles
+        self._update_particles(dt, draw_rect, surface)
+
+        # Title / first line as header
         line_h = self.font.get_height()
-        total_h = line_h * len(self.lines)
-        start_y = self.rect.y + 20
-        for i, line in enumerate(self.lines):
-            txt = self.font.render(line, True, (230, 230, 230))
-            txt_x = self.rect.x + 20
-            txt_y = start_y + i * line_h
-            surface.blit(txt, (txt_x, txt_y))
+        content_y = draw_rect.y + 24
+        content_w = draw_rect.width - 40
 
-        # draw buttons
+        if self.lines:
+            # First line as gold title
+            title = self.lines[0]
+            title_surf = self.font.render(title, True, self.TITLE_COLOR)
+            title_shadow = self.font.render(title, True, (0, 0, 0))
+            title_x = draw_rect.centerx - title_surf.get_width() // 2
+
+            surface.blit(title_shadow, (title_x + 1, content_y + 2))
+            surface.blit(title_surf, (title_x, content_y))
+
+            content_y += title_surf.get_height() + 10
+
+            # Decorative divider under title
+            div_y = content_y
+            div_surf = pygame.Surface((min(200, content_w), 1), pygame.SRCALPHA)
+            div_w = div_surf.get_width()
+            for x in range(div_w):
+                a = int(80 * (1.0 - abs(x / max(1, div_w) - 0.5) * 2))
+                div_surf.set_at((x, 0), (*self.ACCENT_COLOR, a))
+            surface.blit(div_surf, (draw_rect.centerx - div_w // 2, div_y))
+            content_y += 14
+
+            # Remaining lines
+            for i in range(1, len(self.lines)):
+                line = self.lines[i]
+                if line.strip() == "":
+                    content_y += line_h // 2
+                    continue
+                txt = self.small_font.render(line, True, self.TEXT_COLOR)
+                txt_shadow = self.small_font.render(line, True, (0, 0, 0))
+                txt_x = draw_rect.x + 24
+                if txt.get_width() < content_w - 20:
+                    txt_x = draw_rect.centerx - txt.get_width() // 2
+                surface.blit(txt_shadow, (txt_x + 1, content_y + 1))
+                surface.blit(txt, (txt_x, content_y))
+                content_y += line_h + 2
+
+        # Draw buttons
         if self.show_shop and self.shop_button:
             try:
                 self.shop_button.draw(surface)
