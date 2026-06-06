@@ -231,6 +231,8 @@ class SaveManager:
             "money": app.money,
             "purple_stars": app.purple_stars,
             "revealed_tarot_cards": list(app.revealed_tarot_cards),
+            "arcane_quests_unlocked": getattr(app, 'arcane_quests_unlocked', False),
+            "mysterium_magnum_unlocked": getattr(app, 'mysterium_magnum_unlocked', False),
             "player": {
                 "pos_x": char.pos.x,
                 "pos_y": char.pos.y,
@@ -285,6 +287,8 @@ class SaveManager:
         app.money = data.get("money", 0)
         app.purple_stars = data.get("purple_stars", 0)
         app.revealed_tarot_cards = set(data.get("revealed_tarot_cards", []))
+        app.arcane_quests_unlocked = data.get("arcane_quests_unlocked", False)
+        app.mysterium_magnum_unlocked = data.get("mysterium_magnum_unlocked", False)
 
         # Restore Inventory
         inv_data = data.get("inventory", [])

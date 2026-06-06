@@ -36,6 +36,42 @@ _RUNE_SYMBOLS = [
 ]
 _RING_DEF = [(120, 6), (200, 5), (280, 5), (370, 6)]
 
+# ── Easing helpers ────────────────────────────────────────────────
+def _ease_out_cubic(t):
+    """Smooth deceleration."""
+    t = max(0.0, min(1.0, t))
+    return 1.0 - (1.0 - t) ** 3
+
+def _ease_in_out_cubic(t):
+    """Smooth acceleration then deceleration."""
+    t = max(0.0, min(1.0, t))
+    if t < 0.5:
+        return 4.0 * t * t * t
+    return 1.0 - (-2.0 * t + 2.0) ** 3 / 2.0
+
+def _ease_out_back(t):
+    """Slight overshoot then settle — gives a satisfying 'pop'."""
+    t = max(0.0, min(1.0, t))
+    c1 = 1.70158
+    c3 = c1 + 1.0
+    return 1.0 + c3 * (t - 1.0) ** 3 + c1 * (t - 1.0) ** 2
+
+def _smoothstep(edge0, edge1, x):
+    """Hermite interpolation between 0 and 1."""
+    t = max(0.0, min(1.0, (x - edge0) / (edge1 - edge0)))
+    return t * t * (3.0 - 2.0 * t)
+
+# ── First-play entrance stage definitions ────────────────────────
+# Each entry: (name, duration_seconds)
+_ENTRANCE_STAGES = [
+    ("cosmic_dawn",     2.0),   # 0: black → single point of light expands outward
+    ("stellar_weave",   1.8),   # 1: stars, constellations, nebula bloom
+    ("sacred_geometry", 2.2),   # 2: runes, pentagrams, magic circles, mandala
+    ("grand_manifest",  1.8),   # 3: tree panel frame, card rings, cards appear
+    ("titles_emerge",   1.2),   # 4: sidebar slides in, title, text, buttons appear
+    ("final_ascension", 1.5),   # 5: grand energy pulse, sparkle shower, settle
+]
+
 
 class MysteriumMagnumMenu(Menu):
     """Tarot-arcana selection screen with a cosmic, mystical aesthetic."""
@@ -77,6 +113,24 @@ class MysteriumMagnumMenu(Menu):
         self.buttons.append(self.reveal_button)
         self._reveal_cost = 1
 
+        # ── View All Cards button ────────────────────────────────────
+        vac_w = max(160, int(220 * scale))
+        vac_h = max(40, int(48 * scale))
+        self.view_all_button = Button(
+            pygame.Rect(0, 0, vac_w, vac_h),
+            _("⟐ View All Cards ⟐"),
+            (60, 40, 100),
+            (90, 60, 140),
+            cfg.get_font(max(14, int(20 * scale))),
+            (180, 160, 220),
+            cfg.corner_radius,
+            on_click=self._open_collection,
+        )
+        self.buttons.append(self.view_all_button)
+        self._show_collection = False
+        self._collection_close_rect = None
+        self._collection_panel_rect = None
+
         # ── Layout rects ───────────────────────────────────────────────
         self.tree_rect = pygame.Rect(0, 0, 0, 0)
         self.sidebar_rect = pygame.Rect(0, 0, 0, 0)
@@ -84,6 +138,16 @@ class MysteriumMagnumMenu(Menu):
 
         # ── Animation state ────────────────────────────────────────────
         self.animation_time = 0.0
+
+        # ── First-play entrance system ────────────────────────────────
+        self._entrance_first_play = True
+        self._entrance_stage = -1
+        self._entrance_stage_progress = 0.0
+        self._entrance_stage_time = 0.0
+        self._entrance_burst_particles = []
+        self._entrance_star_reveal_order = []
+        self._entrance_constellation_reveal_order = []
+        self._entrance_layer_alphas = {}
 
         # ── Particle systems ───────────────────────────────────────────
         self.particles = []
@@ -135,6 +199,11 @@ class MysteriumMagnumMenu(Menu):
         self._cached_constellations: list[tuple] = []
         self._entrance_progress = 1.0
         self._entrance_active = False
+
+        # ── Screen shake ──────────────────────────────────────────────
+        self._shake_offset = [0.0, 0.0]
+        self._shake_intensity = 0.0
+        self._shake_decay = 8.0
 
         # ── Card effects (inside __init__ so _() is available) ─────────
         self.card_effects = {
@@ -549,6 +618,19 @@ class MysteriumMagnumMenu(Menu):
             except Exception:
                 pass
 
+        # View All Cards button
+        if self.view_all_button:
+            vac_w = max(160, int(self.sidebar_rect.width * 0.8))
+            vac_h = max(40, int(48 * scale))
+            vac_y = self.reveal_button.rect.top - vac_h - int(8 * scale)
+            self.view_all_button.rect = pygame.Rect(
+                self.sidebar_rect.centerx - vac_w // 2, vac_y, vac_w, vac_h,
+            )
+            try:
+                self.view_all_button._update_text_surface()
+            except Exception:
+                pass
+
         size = (sw, sh)
         if self._layout_size != size:
             self._layout_size = size
@@ -563,11 +645,172 @@ class MysteriumMagnumMenu(Menu):
             self._build_cache(sw, sh)
 
     def on_enter(self):
-        self._entrance_active = True
-        self._entrance_progress = 0.0
         self._reveal_bursts.clear()
         self._revealed_numbers = set(self.app.revealed_tarot_cards)
         self._rebuild_revealed_cards()
+
+        if self._entrance_first_play:
+            self._entrance_first_play = False
+            self._entrance_stage = 0
+            self._entrance_stage_progress = 0.0
+            self._entrance_stage_time = 0.0
+            self._entrance_burst_particles.clear()
+            # Pre-compute star reveal order: stars closest to centre appear first
+            cx, cy = self.tree_rect.width // 2, self.tree_rect.height // 2
+            self._entrance_star_reveal_order = sorted(
+                enumerate(self._cached_stars),
+                key=lambda item: math.hypot(
+                    item[1]["x"] - cx, item[1]["y"] - cy
+                ),
+            )
+            self._entrance_constellation_reveal_order = sorted(
+                enumerate(self._cached_constellations),
+                key=lambda item: math.hypot(
+                    (item[1][0] + item[1][2]) * 0.5 - cx,
+                    (item[1][1] + item[1][3]) * 0.5 - cy,
+                ),
+            )
+            self._entrance_active = True
+            self._entrance_progress = 0.0
+        else:
+            self._entrance_active = True
+            self._entrance_progress = 0.0
+
+    # ── Main draw entry point ──────────────────────────────────────────
+
+    def draw(self, screen):
+        """Main draw method — delegates to the entrance-effects pipeline
+        which handles all rendering including background, sidebar, and buttons."""
+        self._draw_entrance_effects(screen)
+
+    # ── Collection overlay ─────────────────────────────────────────────
+
+    def _open_collection(self):
+        self._show_collection = True
+
+    def _draw_collection(self, screen):
+        """Full-screen overlay showing all 22 arcana cards and their status."""
+        t = self.animation_time
+        scale = cfg.ui_scale()
+        sw, sh = screen.get_size()
+
+        # Dimmed overlay
+        overlay = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        overlay.fill((5, 2, 12, 200))
+        screen.blit(overlay, (0, 0))
+
+        # Panel
+        panel_w = min(int(sw * 0.85), max(600, int(900 * scale)))
+        panel_h = min(int(sh * 0.85), max(400, int(700 * scale)))
+        panel_x = (sw - panel_w) // 2
+        panel_y = (sh - panel_h) // 2
+        panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
+        self._collection_panel_rect = panel_rect
+
+        # Panel background
+        self._draw_gradient_rect(screen, panel_rect, (22, 10, 38), (10, 4, 20), border_radius=16)
+        bw = max(2, int(2.5 * scale))
+        border_a = int(140 + 60 * math.sin(t * 1.0))
+        pygame.draw.rect(screen, (140, 80, 220, border_a), panel_rect, bw, border_radius=16)
+        inner_border = panel_rect.inflate(-6, -6)
+        pygame.draw.rect(screen, (80, 50, 120, 60), inner_border, 1, border_radius=14)
+
+        # Title
+        title_font = cfg.get_font(max(16, int(28 * scale)))
+        title_text = _("⟐ All Arcana ⟐")
+        title_surf = title_font.render(title_text, True, (220, 200, 255))
+        screen.blit(title_surf, (panel_x + 20, panel_y + 16))
+
+        # Revealed count
+        count_font = cfg.get_font(max(12, int(16 * scale)))
+        count_text = f"{len(self._revealed_numbers)}/22"
+        count_surf = count_font.render(count_text, True, (180, 160, 220))
+        screen.blit(count_surf, (panel_rect.right - count_surf.get_width() - 20, panel_y + 20))
+
+        # Divider
+        div_y = panel_y + 16 + title_surf.get_height() + 8
+        pygame.draw.line(screen, (100, 60, 140), (panel_x + 20, div_y), (panel_rect.right - 20, div_y), 1)
+
+        # Card grid
+        card_font = cfg.get_font(max(10, int(14 * scale)))
+        small_font = cfg.get_font(max(8, int(11 * scale)))
+        cols = max(3, min(7, (panel_w - 40) // (max(80, int(90 * scale)) + 10)))
+        card_w = (panel_w - 40 - (cols - 1) * 10) // cols
+        card_h = int(card_w * 1.35)
+        start_y = div_y + 12
+
+        for num in range(22):
+            row = num // cols
+            col = num % cols
+            cx = panel_x + 20 + col * (card_w + 10)
+            cy = start_y + row * (card_h + 16)
+            if cy + card_h > panel_rect.bottom - 10:
+                continue
+
+            is_revealed = num in self._revealed_numbers
+
+            # Card background
+            card_rect = pygame.Rect(cx, cy, card_w, card_h)
+            if is_revealed:
+                pygame.draw.rect(screen, (40, 20, 60), card_rect, border_radius=8)
+                pygame.draw.rect(screen, (160, 120, 200), card_rect, 1, border_radius=8)
+            else:
+                pygame.draw.rect(screen, (20, 12, 30), card_rect, border_radius=8)
+                pygame.draw.rect(screen, (60, 40, 80), card_rect, 1, border_radius=8)
+
+            # Card number badge
+            num_text = f"#{num}"
+            num_surf = card_font.render(num_text, True, (200, 180, 220) if is_revealed else (80, 60, 100))
+            screen.blit(num_surf, (cx + 4, cy + 4))
+
+            if is_revealed:
+                # Find card name
+                card_name = "???"
+                card_img = None
+                for tc in self.tarot_cards:
+                    if tc["num"] == num:
+                        card_name = tc["name"]
+                        card_img = tc["front"]
+                        break
+                name_surf = small_font.render(card_name, True, (180, 160, 220))
+                if name_surf.get_width() > card_w - 8:
+                    # Truncate name if too long
+                    while name_surf.get_width() > card_w - 12 and len(card_name) > 3:
+                        card_name = card_name[:-1]
+                        name_surf = small_font.render(card_name, True, (180, 160, 220))
+                screen.blit(name_surf, (cx + 4, cy + 4 + num_surf.get_height() + 2))
+
+                # Draw card image (small thumbnail)
+                if card_img:
+                    max_img_w = card_w - 8
+                    max_img_h = card_h - num_surf.get_height() - small_font.get_height() - 14
+                    if max_img_w > 4 and max_img_h > 4:
+                        iw, ih = card_img.get_size()
+                        ratio = min(max_img_w / iw, max_img_h / ih)
+                        new_w = max(1, int(iw * ratio))
+                        new_h = max(1, int(ih * ratio))
+                        scaled = pygame.transform.smoothscale(card_img, (new_w, new_h))
+                        img_x = cx + (card_w - new_w) // 2
+                        img_y = cy + num_surf.get_height() + small_font.get_height() + 8
+                        screen.blit(scaled, (img_x, img_y))
+            else:
+                # Question mark for unrevealed
+                q_font = cfg.get_font(max(18, int(28 * scale)))
+                q = q_font.render("?", True, (60, 40, 80))
+                screen.blit(q, (cx + (card_w - q.get_width()) // 2, cy + (card_h - q.get_height()) // 2))
+
+        # Close button (ornate)
+        close_r = pygame.Rect(panel_rect.right - 44, panel_rect.y + 12, 36, 36)
+        self._collection_close_rect = close_r
+        ring_a = int(120 * (0.5 + 0.5 * math.sin(t * 2.0)))
+        ring_r = close_r.width // 2 + 4
+        pygame.draw.circle(screen, (140, 80, 220, ring_a), close_r.center, ring_r, max(1, int(1.5 * scale)))
+        close_pulse = int(180 + 75 * (0.5 + 0.5 * math.sin(t * 1.5)))
+        pygame.draw.circle(screen, (40, 20, 60, 220), close_r.center, close_r.width // 2)
+        pygame.draw.circle(screen, (140, 80, 220, int(close_pulse * 0.5)), close_r.center, close_r.width // 2, 2)
+        close_font = cfg.get_font(max(14, int(20 * scale)))
+        cx_mark = close_font.render("✕", True, (200, 180, 220))
+        screen.blit(cx_mark, cx_mark.get_rect(center=close_r.center))
 
     # ── Heavy pre-render cache builders ─────────────────────────────────
 
@@ -753,7 +996,51 @@ class MysteriumMagnumMenu(Menu):
         self.animation_time += dt
         t = self.animation_time
 
-        # Entrance
+        # ── Screen shake ────────────────────────────────────────────────
+        if self._shake_intensity > 0.01:
+            self._shake_offset[0] = random.uniform(-1, 1) * self._shake_intensity
+            self._shake_offset[1] = random.uniform(-1, 1) * self._shake_intensity
+            self._shake_intensity *= math.exp(-self._shake_decay * dt)
+        else:
+            self._shake_offset[0] = 0.0
+            self._shake_offset[1] = 0.0
+            self._shake_intensity = 0.0
+
+        # ── First-play multi-stage entrance ────────────────────────────
+        if self._entrance_stage >= 0:
+            self._entrance_stage_time += dt
+            sd = _ENTRANCE_STAGES[self._entrance_stage][1]
+            self._entrance_stage_progress = min(1.0, self._entrance_stage_time / sd)
+
+            if self._entrance_stage == 0 and self._entrance_stage_time < 0.08:
+                self._spawn_cosmic_dawn()
+
+            if self._entrance_stage_progress >= 1.0:
+                nxt = self._entrance_stage + 1
+                if nxt < len(_ENTRANCE_STAGES):
+                    self._entrance_stage = nxt
+                    self._entrance_stage_time = 0.0
+                    self._entrance_stage_progress = 0.0
+                    if nxt == 5:
+                        self._spawn_grand_pulse()
+                        self._spawn_sparkle_shower()
+                else:
+                    self._entrance_stage = -1
+                    self._entrance_active = False
+                    self._entrance_progress = 1.0
+                    self._entrance_burst_particles.clear()
+
+            for b in list(self._entrance_burst_particles):
+                b["x"] += b["vx"] * dt
+                b["y"] += b["vy"] * dt
+                b["life"] -= dt
+                if b["life"] <= 0:
+                    self._entrance_burst_particles.remove(b)
+
+            # Do NOT return — regular updates continue so particles,
+            # rotations, and other systems stay alive during the entrance.
+
+        # ── Fast entrance (existing) ──
         if self._entrance_active:
             self._entrance_progress = min(1.0, self._entrance_progress + dt * 1.5)
             if self._entrance_progress >= 1.0:
@@ -850,6 +1137,23 @@ class MysteriumMagnumMenu(Menu):
     # ── Event handling ─────────────────────────────────────────────────
 
     def handle_event(self, event):
+        # Collection overlay blocks all other input
+        if self._show_collection:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                pos = event.pos
+                if (self._collection_close_rect
+                        and self._collection_close_rect.collidepoint(pos)):
+                    self._show_collection = False
+                    return
+                if (self._collection_panel_rect
+                        and not self._collection_panel_rect.collidepoint(pos)):
+                    self._show_collection = False
+                    return
+            if event.type == pygame.KEYDOWN and event.key in (pygame.K_ESCAPE, pygame.K_c):
+                self._show_collection = False
+                return
+            return  # swallow all other events while collection is open
+
         super().handle_event(event)
         if event.type == pygame.KEYDOWN and event.key == pygame.K_F8:
             self.app.purple_stars = getattr(self.app, "purple_stars", 0) + 10
@@ -1098,135 +1402,157 @@ class MysteriumMagnumMenu(Menu):
         """Cosmic background: nebula → aurora → deep glow → pentagrams →
         runes → magic circles → particles → embers → light rays →
         constellations → twinkling stars."""
+        ea = getattr(self, '_entrance_layer_alphas', {})
+        na = ea.get('nebula', 1.0) if ea else 1.0
         origin = pygame.Vector2(self.tree_rect.center)
         t = self.animation_time
 
         # Nebula base
-        if self._nebula_cache is not None:
+        if self._nebula_cache is not None and na > 0.01:
+            self._nebula_cache.set_alpha(int(140 * na))
             surface.blit(self._nebula_cache, self.tree_rect.topleft)
 
         # Aurora overlay
         if self._aurora_cache is not None:
-            # Animate alpha with a slow pulse
-            aurora_a = int(120 + 40 * math.sin(t * 0.2))
-            self._aurora_cache.set_alpha(aurora_a)
-            surface.blit(self._aurora_cache, self.tree_rect.topleft)
+            aurora_mul = ea.get('aurora', 1.0) if ea else 1.0
+            if aurora_mul > 0.01:
+                aurora_a = int((120 + 40 * math.sin(t * 0.2)) * aurora_mul)
+                self._aurora_cache.set_alpha(aurora_a)
+                surface.blit(self._aurora_cache, self.tree_rect.topleft)
 
         # Deep radial glow at centre
-        for r in range(600, 0, -50):
-            brightness = max(3, 12 - r // 80)
-            pygame.draw.circle(surface, (brightness, brightness, brightness + 5), origin, r, 0)
+        glow_mul = na * 0.2 + 0.8  # glow comes up faster than nebula
+        if glow_mul > 0.02:
+            for r in range(600, 0, -50):
+                brightness = max(3, int((12 - r // 80) * glow_mul))
+                pygame.draw.circle(surface, (brightness, brightness, brightness + 5), origin, r, 0)
 
         # Pentagrams
-        for pent in self.pentagrams:
-            px = origin.x + pent["x"]
-            py = origin.y + pent["y"]
-            if self.tree_rect.collidepoint(px, py):
-                pulse = (math.sin(t * pent["pulse_speed"] + pent["pulse_offset"]) + 1.0) * 0.5
-                a = pent["alpha"] * (0.5 + 0.5 * pulse)
-                sz = pent["size"] * (0.9 + 0.1 * pulse)
-                self._draw_pentagram(
-                    surface, int(px), int(py), sz, pent["rotation"],
-                    pent["color"], a,
-                    glow_color=pent.get("glow_color"),
-                    layer_count=pent.get("layer_count", 2),
-                    ring_count=pent.get("ring_count", 1),
-                    has_inner_pentagon=pent.get("has_inner_pentagon", True),
-                    orbit_particles=pent.get("orbit_particles", 4),
-                    orbit_speed=pent.get("orbit_speed", 0.6),
-                    orbit_offset=pent.get("orbit_offset", 0.0),
-                    orbit_radius_factor=pent.get("orbit_radius_factor", 1.3),
-                    color_shift_speed=pent.get("color_shift_speed", 0.2),
-                )
+        pent_mul = ea.get('pentagrams', 1.0) if ea else 1.0
+        if pent_mul > 0.01:
+            for pent in self.pentagrams:
+                px = origin.x + pent["x"]
+                py = origin.y + pent["y"]
+                if self.tree_rect.collidepoint(px, py):
+                    pulse = (math.sin(t * pent["pulse_speed"] + pent["pulse_offset"]) + 1.0) * 0.5
+                    a = pent["alpha"] * (0.5 + 0.5 * pulse) * pent_mul
+                    sz = pent["size"] * (0.9 + 0.1 * pulse)
+                    self._draw_pentagram(
+                        surface, int(px), int(py), sz, pent["rotation"],
+                        pent["color"], a,
+                        glow_color=pent.get("glow_color"),
+                        layer_count=pent.get("layer_count", 2),
+                        ring_count=pent.get("ring_count", 1),
+                        has_inner_pentagon=pent.get("has_inner_pentagon", True),
+                        orbit_particles=pent.get("orbit_particles", 4),
+                        orbit_speed=pent.get("orbit_speed", 0.6),
+                        orbit_offset=pent.get("orbit_offset", 0.0),
+                        orbit_radius_factor=pent.get("orbit_radius_factor", 1.3),
+                        color_shift_speed=pent.get("color_shift_speed", 0.2),
+                    )
 
         # Runes
-        for r_data in self.runes:
-            rx = origin.x + r_data["x"]
-            ry = origin.y + r_data["y"]
-            if self.tree_rect.collidepoint(rx, ry):
-                pulse = (math.sin(t * r_data["pulse_speed"] + r_data["pulse_offset"]) + 1.0) * 0.5
-                a = r_data["alpha"] * (0.4 + 0.6 * pulse)
-                if a > 0.02:
-                    font = cfg.get_font(max(10, int(r_data["size"])))
-                    glyph = font.render(r_data["symbol"], True, r_data["color"])
-                    glyph.set_alpha(int(a * 255))
-                    rect = glyph.get_rect(center=(int(rx), int(ry)))
-                    surface.blit(glyph, rect)
+        rune_mul = ea.get('runes', 1.0) if ea else 1.0
+        if rune_mul > 0.01:
+            for r_data in self.runes:
+                rx = origin.x + r_data["x"]
+                ry = origin.y + r_data["y"]
+                if self.tree_rect.collidepoint(rx, ry):
+                    pulse = (math.sin(t * r_data["pulse_speed"] + r_data["pulse_offset"]) + 1.0) * 0.5
+                    a = r_data["alpha"] * (0.4 + 0.6 * pulse) * rune_mul
+                    if a > 0.02:
+                        font = cfg.get_font(max(10, int(r_data["size"])))
+                        glyph = font.render(r_data["symbol"], True, r_data["color"])
+                        glyph.set_alpha(int(a * 255))
+                        rect = glyph.get_rect(center=(int(rx), int(ry)))
+                        surface.blit(glyph, rect)
 
         # Magic circles
-        for c in self.magic_circles:
-            cx = origin.x + c["x"]
-            cy = origin.y + c["y"]
-            if self.tree_rect.collidepoint(cx, cy):
-                pulse = (math.sin(t * c["pulse_speed"] + c["pulse_offset"]) + 1.0) * 0.5
-                a = c["alpha"] * (0.5 + 0.5 * pulse)
-                rd = c["radius"] * (0.9 + 0.1 * pulse)
-                self._draw_magic_circle(surface, int(cx), int(cy), rd, c["rotation"], c["color"], a, c["ring_count"])
+        mc_mul = ea.get('magic_circles', 1.0) if ea else 1.0
+        if mc_mul > 0.01:
+            for c in self.magic_circles:
+                cx = origin.x + c["x"]
+                cy = origin.y + c["y"]
+                if self.tree_rect.collidepoint(cx, cy):
+                    pulse = (math.sin(t * c["pulse_speed"] + c["pulse_offset"]) + 1.0) * 0.5
+                    a = c["alpha"] * (0.5 + 0.5 * pulse) * mc_mul
+                    rd = c["radius"] * (0.9 + 0.1 * pulse)
+                    self._draw_magic_circle(surface, int(cx), int(cy), rd, c["rotation"], c["color"], a, c["ring_count"])
 
         # Floating particles
-        for p in self.particles:
-            px = origin.x + p["x"]
-            py = origin.y + p["y"]
-            if self.tree_rect.collidepoint(px, py):
-                pulse = (math.sin(t * p["pulse_speed"] + p["pulse_offset"]) + 1.0) * 0.5
-                alpha = p["alpha"] * (0.4 + 0.6 * pulse)
-                r, g, b = p["color"]
-                pcolor = (int(r * alpha), int(g * alpha), int(b * alpha))
-                sz = max(1, int(p["size"] * (0.8 + 0.4 * pulse)))
-                if alpha > 0.05:
-                    pygame.draw.circle(surface, pcolor, (int(px), int(py)), sz)
+        part_mul = ea.get('particles', 1.0) if ea else 1.0
+        if part_mul > 0.01:
+            for p in self.particles:
+                px = origin.x + p["x"]
+                py = origin.y + p["y"]
+                if self.tree_rect.collidepoint(px, py):
+                    pulse = (math.sin(t * p["pulse_speed"] + p["pulse_offset"]) + 1.0) * 0.5
+                    alpha = p["alpha"] * (0.4 + 0.6 * pulse) * part_mul
+                    r, g, b = p["color"]
+                    pcolor = (int(r * alpha), int(g * alpha), int(b * alpha))
+                    sz = max(1, int(p["size"] * (0.8 + 0.4 * pulse)))
+                    if alpha > 0.05:
+                        pygame.draw.circle(surface, pcolor, (int(px), int(py)), sz)
 
         # Ember particles (warm golden wisps)
-        for p in self._ember_particles:
-            px = origin.x + p["x"]
-            py = origin.y + p["y"]
-            if self.tree_rect.collidepoint(px, py):
-                pulse = (math.sin(t * 1.5 + p["phase"]) + 1.0) * 0.5
-                a = p["alpha"] * (0.3 + 0.7 * pulse)
-                r, g, b = p["color"]
-                pygame.draw.circle(surface, (int(r * a), int(g * a), int(b * a)), (int(px), int(py)), max(1, int(p["size"])))
+        emb_mul = ea.get('embers', 1.0) if ea else 1.0
+        if emb_mul > 0.01:
+            for p in self._ember_particles:
+                px = origin.x + p["x"]
+                py = origin.y + p["y"]
+                if self.tree_rect.collidepoint(px, py):
+                    pulse = (math.sin(t * 1.5 + p["phase"]) + 1.0) * 0.5
+                    a = p["alpha"] * (0.3 + 0.7 * pulse) * emb_mul
+                    r, g, b = p["color"]
+                    pygame.draw.circle(surface, (int(r * a), int(g * a), int(b * a)), (int(px), int(py)), max(1, int(p["size"])))
 
         # Light rays from centre
-        cx, cy = self.tree_rect.center
-        for i in range(16):
-            ang = (i / 16) * math.pi * 2 + t * 0.02
-            a = max(0, int(3 + 5 * math.sin(t * 0.35 + i * 0.7)))
-            ray_len = min(self.tree_rect.width, self.tree_rect.height) * 0.65
-            ex = cx + math.cos(ang) * ray_len
-            ey = cy + math.sin(ang) * ray_len
-            pygame.draw.line(surface, (212, 175, 55, a), (cx, cy), (ex, ey), 1)
+        lr_mul = ea.get('light_rays', 1.0) if ea else 1.0
+        if lr_mul > 0.01:
+            cx, cy = self.tree_rect.center
+            for i in range(16):
+                ang = (i / 16) * math.pi * 2 + t * 0.02
+                a = max(0, int((3 + 5 * math.sin(t * 0.35 + i * 0.7)) * lr_mul))
+                ray_len = min(self.tree_rect.width, self.tree_rect.height) * 0.65
+                ex = cx + math.cos(ang) * ray_len
+                ey = cy + math.sin(ang) * ray_len
+                pygame.draw.line(surface, (212, 175, 55, a), (cx, cy), (ex, ey), 1)
 
         # Constellation lines
-        for (x1, y1, x2, y2, idx) in self._cached_constellations:
-            twinkle = (math.sin(t * 0.5 + x1 * 0.01 + y1 * 0.01 + idx) + 1.0) * 0.5
-            ca = int(4 + 8 * twinkle)
-            if ca > 3:
-                pygame.draw.line(surface, (140, 80, 220, ca), (x1, y1), (x2, y2), 1)
+        const_mul = ea.get('constellations', 1.0) if ea else 1.0
+        if const_mul > 0.01:
+            for (x1, y1, x2, y2, idx) in self._cached_constellations:
+                twinkle = (math.sin(t * 0.5 + x1 * 0.01 + y1 * 0.01 + idx) + 1.0) * 0.5
+                ca = int((4 + 8 * twinkle) * const_mul)
+                if ca > 3:
+                    pygame.draw.line(surface, (140, 80, 220, ca), (x1, y1), (x2, y2), 1)
 
         # Twinkling stars
-        for star in self._cached_stars:
-            twinkle = (math.sin(t * star["speed"] + star["phase"] + star["seed_a"]) + 1.0) * 0.5
-            a = int(15 + 80 * twinkle)
-            size = 1 + twinkle * 0.8
-            c = star["color"]
-            sx, sy = star["x"], star["y"]
-            # Pool tiny star surfaces by size bucket
-            sb = int(size)
-            pool_key = (c[0] >> 3, c[1] >> 3, c[2] >> 3, sb)
-            star_surf = self._star_surface_pool.get(pool_key)
-            if star_surf is None:
-                star_surf = pygame.Surface((6, 6), pygame.SRCALPHA)
-                self._star_surface_pool[pool_key] = star_surf
-            # Draw onto a temp blit
-            if self.tree_rect.collidepoint(sx, sy):
-                pygame.draw.circle(star_surf, (*c, a), (3, 3), max(1, int(size)))
-                surface.blit(star_surf, (sx - 3, sy - 3))
-                # Bright glow for high-twinkle stars
-                if twinkle > 0.88 and size > 1.3:
-                    glow_surf = pygame.Surface((16, 16), pygame.SRCALPHA)
-                    ga = int(30 * twinkle)
-                    pygame.draw.circle(glow_surf, (*c, ga), (8, 8), 8)
-                    surface.blit(glow_surf, (sx - 8, sy - 8))
+        star_mul = ea.get('stars', 1.0) if ea else 1.0
+        if star_mul > 0.01:
+            for star in self._cached_stars:
+                twinkle = (math.sin(t * star["speed"] + star["phase"] + star["seed_a"]) + 1.0) * 0.5
+                a = int((15 + 80 * twinkle) * star_mul)
+                size = 1 + twinkle * 0.8
+                c = star["color"]
+                sx, sy = star["x"], star["y"]
+                # Pool tiny star surfaces by size bucket
+                sb = int(size)
+                pool_key = (c[0] >> 3, c[1] >> 3, c[2] >> 3, sb)
+                star_surf = self._star_surface_pool.get(pool_key)
+                if star_surf is None:
+                    star_surf = pygame.Surface((6, 6), pygame.SRCALPHA)
+                    self._star_surface_pool[pool_key] = star_surf
+                # Draw onto a temp blit
+                if self.tree_rect.collidepoint(sx, sy):
+                    pygame.draw.circle(star_surf, (*c, a), (3, 3), max(1, int(size)))
+                    surface.blit(star_surf, (sx - 3, sy - 3))
+                    # Bright glow for high-twinkle stars
+                    if twinkle > 0.88 and size > 1.3:
+                        glow_surf = pygame.Surface((16, 16), pygame.SRCALPHA)
+                        ga = int(30 * twinkle)
+                        pygame.draw.circle(glow_surf, (*c, ga), (8, 8), 8)
+                        surface.blit(glow_surf, (sx - 8, sy - 8))
 
     def _draw_mandala(self, surface):
         """Draw the pre-rendered central mandala with pulsing alpha."""
@@ -1708,6 +2034,10 @@ class MysteriumMagnumMenu(Menu):
         screen.blit(cx_mark, cx_mark.get_rect(center=close_r.center))
 
     def _draw_sidebar(self, screen):
+        la = getattr(self, '_entrance_layer_alphas', {})
+        sb_a = la.get('sidebar', 1.0) if la else 1.0
+        if sb_a < 0.01:
+            return
         r = self.sidebar_rect
         t = self.animation_time
         scale = cfg.ui_scale()
@@ -1718,7 +2048,7 @@ class MysteriumMagnumMenu(Menu):
         # Glass highlight
         highlight = r.inflate(-6, -6)
         hl_surf = pygame.Surface(highlight.size, pygame.SRCALPHA)
-        hl_surf.fill((60, 40, 80, 12))
+        hl_surf.fill((60, 40, 80, int(12 * sb_a)))
         screen.blit(hl_surf, highlight.topleft)
 
         # ── Animated energy border ─────────────────────────────────────
@@ -1742,8 +2072,8 @@ class MysteriumMagnumMenu(Menu):
             else:
                 ex, ey = r.x, r.bottom - (dist - 2 * r.width - r.height)
             pulse = (math.sin(t * 3.0 + i * 1.2) + 1.0) * 0.5
-            ea = int(40 + 60 * pulse)
-            pygame.draw.circle(screen, (160, 100, 240, ea), (ex, ey), max(1, int(2 * scale)))
+            eda = int((40 + 60 * pulse) * sb_a)
+            pygame.draw.circle(screen, (160, 100, 240, eda), (ex, ey), max(1, int(2 * scale)))
 
         # Corner ornament lines
         orn_len = 20
@@ -1777,7 +2107,7 @@ class MysteriumMagnumMenu(Menu):
             (r.x + 14, r.bottom - 14), (r.right - 14, r.bottom - 14),
         ]):
             op = (math.sin(t * 1.2 + idx * 1.5) + 1.0) * 0.5
-            oa = int(80 + 100 * op)
+            oa = int((80 + 100 * op) * sb_a)
             o = rune_orn.render(orn_chars[idx], True, (212, 175, 55))
             o.set_alpha(oa)
             screen.blit(o, (gcx - o.get_width() // 2, gcy - o.get_height() // 2 - 2))
@@ -1789,23 +2119,24 @@ class MysteriumMagnumMenu(Menu):
         for i in range(5):
             offset = i * (1 if i < 3 else -1)
             glow_surf = self.title_font.render(title_text, True, (140, 80, 220))
-            glow_surf.set_alpha(glow_a_pulse // (i + 1))
+            glow_surf.set_alpha(int(glow_a_pulse // (i + 1) * sb_a))
             screen.blit(glow_surf, (r.x + 18 + offset, r.y + 18 + offset))
         title = self.title_font.render(title_text, True, (240, 220, 255))
+        title.set_alpha(int(255 * sb_a))
         screen.blit(title, (r.x + 18, r.y + 18))
 
         # ── Title underline with flowing energy ────────────────────────
         div_y = r.y + 18 + title.get_height() + 12
         for i in range(r.width - 36):
             x = r.x + 18 + i
-            # Wave pattern along the divider
             wave = math.sin(t * 2.0 + i * 0.08) * 0.3 + 0.7
-            alpha = int((1.0 - abs(i / max(1, r.width - 36) - 0.5) * 2) * 120 * wave)
+            alpha = int((1.0 - abs(i / max(1, r.width - 36) - 0.5) * 2) * 120 * wave * sb_a)
             pygame.draw.line(screen, (140, 80, 220, alpha), (x, div_y), (x, div_y + 1))
 
         # ── Hint text ──────────────────────────────────────────────────
         hint_text = _("Secrets await within the cards...")
         hint = self.small_font.render(hint_text, True, (150, 140, 175))
+        hint.set_alpha(int(255 * sb_a))
         screen.blit(hint, (r.x + 18, div_y + 10))
 
         # ── Narrative text ─────────────────────────────────────────────
@@ -1817,7 +2148,7 @@ class MysteriumMagnumMenu(Menu):
         ]
         for nli, nl in enumerate(narr_lines):
             ns = self.small_font.render(nl, True, (130, 120, 155))
-            ns.set_alpha(160)
+            ns.set_alpha(int(160 * sb_a))
             screen.blit(ns, (r.x + 18, narrative_y + nli * (self.small_font.get_height() + 2)))
 
         py = div_y + 10 + hint.get_height() + 24
@@ -1825,7 +2156,7 @@ class MysteriumMagnumMenu(Menu):
         # ── Second divider ─────────────────────────────────────────────
         for i in range(r.width - 36):
             x = r.x + 18 + i
-            alpha = int((1.0 - abs(i / max(1, r.width - 36) - 0.5) * 2) * 80)
+            alpha = int((1.0 - abs(i / max(1, r.width - 36) - 0.5) * 2) * 80 * sb_a)
             pygame.draw.line(screen, (70, 40, 100, alpha), (x, py), (x, py + 1))
         py += 12
 
@@ -1855,7 +2186,7 @@ class MysteriumMagnumMenu(Menu):
 
         glow_r = int(star_outer_r * 2.5)
         glow_surf = pygame.Surface((glow_r * 2, glow_r * 2), pygame.SRCALPHA)
-        glow_a = int(60 + 60 * star_pulse)
+        glow_a = int((60 + 60 * star_pulse) * sb_a)
         pygame.draw.circle(glow_surf, (180, 80, 255, glow_a), (glow_r, glow_r), glow_r)
         screen.blit(glow_surf, (star_cx - glow_r, star_cy - glow_r))
 
@@ -1870,6 +2201,7 @@ class MysteriumMagnumMenu(Menu):
         label_x = panel_rect.x + int(panel_rect.width * 0.45)
         label_y = panel_rect.y + int(10 * scale)
         label = self.small_font.render(_("Purple Stars"), True, (200, 180, 220))
+        label.set_alpha(int(255 * sb_a))
         screen.blit(label, (label_x, label_y))
 
         count_color = (
@@ -1879,7 +2211,9 @@ class MysteriumMagnumMenu(Menu):
         )
         count_text = str(stars)
         count_surf = self.section_font.render(count_text, True, count_color)
+        count_surf.set_alpha(int(255 * sb_a))
         count_shadow = self.section_font.render(count_text, True, (0, 0, 0))
+        count_shadow.set_alpha(int(255 * sb_a))
         count_y = label_y + label.get_height() + 4
         screen.blit(count_shadow, (label_x + 2, count_y + 2))
         screen.blit(count_surf, (label_x, count_y))
@@ -1897,9 +2231,217 @@ class MysteriumMagnumMenu(Menu):
         if self._vignette_cache is not None:
             screen.blit(self._vignette_cache, (0, 0))
 
-    # ── Main draw entry point ──────────────────────────────────────────
+    # ── Entrance layer alpha computation ───────────────────────────────
 
-    def draw(self, screen):
+    def _compute_entrance_alphas(self):
+        """Return dict of alpha multipliers for each visual layer using
+        smooth easing curves.  Layers now cross-fade between stages rather
+        than snapping — the scene flows in like ink through water instead
+        of abruptly switching each stage."""
+        alphas = {
+            'background': 1.0, 'stars': 1.0, 'constellations': 1.0,
+            'nebula': 1.0, 'aurora': 1.0, 'mandala': 1.0,
+            'runes': 1.0, 'pentagrams': 1.0, 'magic_circles': 1.0,
+            'particles': 1.0, 'embers': 1.0, 'light_rays': 1.0,
+            'orbital_trails': 1.0, 'card_rings': 1.0, 'revealed_cards': 1.0,
+            'rune_spirits': 1.0,
+            'tree_frame': 1.0, 'border_energy': 1.0, 'sidebar': 1.0,
+            'buttons': 1.0, 'vignette': 1.0,
+        }
+        if self._entrance_stage < 0:
+            return alphas
+
+        stage = self._entrance_stage
+        p = self._entrance_stage_progress
+        e = _ease_out_cubic(p)  # apply easing to per-stage progress
+
+        # ── Stage 0: Cosmic Dawn — pure black void with light ──────
+        if stage == 0:
+            for k in alphas:
+                alphas[k] = 0.0
+
+        # ── Stage 1: Stellar Weave — deep space emerges ─────────────
+        elif stage == 1:
+            # Stars burst outward from centre (cumulative progress, no fade-in)
+            alphas['stars'] = _smoothstep(0.0, 0.7, p)
+            alphas['constellations'] = _smoothstep(0.05, 0.75, p)
+            alphas['nebula'] = _smoothstep(0.1, 0.8, p)
+            alphas['aurora'] = _smoothstep(0.15, 0.85, p)
+            alphas['background'] = _smoothstep(0.0, 0.7, p) * 0.5
+            alphas['tree_frame'] = _smoothstep(0.2, 0.9, p) * 0.45
+            alphas['border_energy'] = _smoothstep(0.3, 1.0, p) * 0.3
+            alphas['vignette'] = 0.0
+
+        # ── Stage 2: Sacred Geometry — runes & symbols bloom ───────
+        elif stage == 2:
+            alphas['stars'] = 1.0
+            alphas['constellations'] = 1.0
+            alphas['nebula'] = 1.0
+            alphas['aurora'] = 1.0
+            alphas['background'] = 1.0
+            alphas['tree_frame'] = 0.6 + 0.4 * e
+            alphas['border_energy'] = 0.5 + 0.5 * e
+            alphas['vignette'] = 0.0
+            # Each geometric element with slight stagger for richness
+            alphas['runes'] = _smoothstep(0.0, 0.85, p)
+            alphas['pentagrams'] = _smoothstep(0.1, 0.9, p)
+            alphas['magic_circles'] = _smoothstep(0.2, 0.95, p)
+            alphas['mandala'] = _smoothstep(0.1, 0.9, p)
+            alphas['particles'] = _smoothstep(0.0, 0.8, p) * 0.6
+            alphas['embers'] = _smoothstep(0.1, 0.85, p) * 0.4
+
+        # ── Stage 3: Grand Manifest — card rings & orbits appear ────
+        elif stage == 3:
+            alphas['stars'] = 1.0
+            alphas['constellations'] = 1.0
+            alphas['nebula'] = 1.0
+            alphas['aurora'] = 1.0
+            alphas['background'] = 1.0
+            alphas['runes'] = 1.0
+            alphas['pentagrams'] = 1.0
+            alphas['magic_circles'] = 1.0
+            alphas['mandala'] = 1.0
+            alphas['particles'] = 0.6 + 0.4 * e
+            alphas['embers'] = 0.4 + 0.4 * e
+            alphas['tree_frame'] = e
+            alphas['border_energy'] = e
+            alphas['orbital_trails'] = _smoothstep(0.0, 0.7, p)
+            alphas['card_rings'] = _smoothstep(0.1, 0.8, p)
+            alphas['revealed_cards'] = 1.0
+            alphas['light_rays'] = _smoothstep(0.0, 0.8, p)
+            alphas['rune_spirits'] = _smoothstep(0.2, 0.9, p)
+            alphas['vignette'] = 0.0
+
+        # ── Stage 4: Titles Emerge — sidebar slides in ─────────────
+        elif stage == 4:
+            for k in alphas:
+                alphas[k] = 1.0
+            alphas['tree_frame'] = 1.0
+            alphas['border_energy'] = 1.0
+            alphas['vignette'] = 0.0
+            slide = _ease_out_cubic(p)
+            alphas['sidebar'] = slide
+            alphas['buttons'] = slide
+
+        # ── Stage 5: Final Ascension — grand pulse, vignette in ─────
+        elif stage == 5:
+            for k in alphas:
+                alphas[k] = 1.0
+            alphas['vignette'] = e
+
+        return alphas
+
+    # ── Entrance effect helpers ────────────────────────────────────────
+
+    def _spawn_cosmic_dawn(self):
+        """Spawn the initial Big Bang burst of light particles from centre.
+        Now richer: a slow outer wave of bright stars + dense inner core."""
+        cx, cy = self.tree_rect.center
+        # Slow outer wave — bright, long-lived, fewer in number
+        for _ in range(140):
+            ang = random.uniform(0, math.pi * 2)
+            spd = random.uniform(40, 280)
+            lifetime = random.uniform(1.6, 3.2)
+            size = random.uniform(1.5, 5.0)
+            colour = random.choice([
+                (255, 255, 255), (255, 245, 210), (255, 220, 130),
+                (220, 195, 255), (160, 220, 255),
+            ])
+            self._entrance_burst_particles.append({
+                "x": float(cx), "y": float(cy),
+                "vx": math.cos(ang) * spd,
+                "vy": math.sin(ang) * spd,
+                "life": lifetime,
+                "max_life": lifetime,
+                "color": colour,
+                "size": size,
+            })
+        # Fast inner core — explosive, very bright, short-lived
+        for _ in range(80):
+            ang = random.uniform(0, math.pi * 2)
+            spd = random.uniform(150, 450)
+            lifetime = random.uniform(0.4, 1.1)
+            colour = random.choice([
+                (255, 255, 255), (255, 240, 200), (255, 215, 100),
+            ])
+            self._entrance_burst_particles.append({
+                "x": float(cx), "y": float(cy),
+                "vx": math.cos(ang) * spd,
+                "vy": math.sin(ang) * spd,
+                "life": lifetime,
+                "max_life": lifetime,
+                "color": colour,
+                "size": random.uniform(2.0, 5.0),
+            })
+        # Trigger screen shake on the Big Bang
+        self._shake_intensity = max(self._shake_intensity, 14.0)
+
+    def _spawn_grand_pulse(self):
+        """Spawn an expanding ring pulse at centre — the climax of the
+        entrance, with a powerful radial shockwave."""
+        cx, cy = self.tree_rect.center
+        # Outer shockwave — fast, bright, lives briefly
+        for _ in range(220):
+            ang = random.uniform(0, math.pi * 2)
+            spd = random.uniform(120, 600)
+            lifetime = random.uniform(0.5, 1.6)
+            colour = random.choice([
+                (255, 215, 100), (200, 130, 255), (255, 255, 255),
+                (255, 200, 130), (180, 220, 255),
+            ])
+            self._entrance_burst_particles.append({
+                "x": float(cx), "y": float(cy),
+                "vx": math.cos(ang) * spd,
+                "vy": math.sin(ang) * spd,
+                "life": lifetime,
+                "max_life": lifetime,
+                "color": colour,
+                "size": random.uniform(2.0, 7.0),
+            })
+        # Dense central flash
+        for _ in range(80):
+            ang = random.uniform(0, math.pi * 2)
+            spd = random.uniform(20, 130)
+            lifetime = random.uniform(0.3, 0.9)
+            self._entrance_burst_particles.append({
+                "x": float(cx), "y": float(cy),
+                "vx": math.cos(ang) * spd,
+                "vy": math.sin(ang) * spd,
+                "life": lifetime,
+                "max_life": lifetime,
+                "color": (255, 255, 255),
+                "size": random.uniform(1.0, 3.5),
+            })
+
+    def _spawn_sparkle_shower(self):
+        """Spawn a rain of golden sparkles across the whole tree area."""
+        sw, sh = self.tree_rect.width, self.tree_rect.height
+        ox, oy = self.tree_rect.topleft
+        for _ in range(120):
+            lifetime = random.uniform(1.0, 2.5)
+            self._entrance_burst_particles.append({
+                "x": ox + random.uniform(0, sw),
+                "y": oy + random.uniform(-20, -sh * 0.1),
+                "vx": random.uniform(-15, 15),
+                "vy": random.uniform(30, 90),
+                "life": lifetime,
+                "max_life": lifetime,
+                "color": random.choice([(255, 215, 100), (255, 200, 180), (200, 180, 255)]),
+                "size": random.uniform(1.5, 4.0),
+            })
+
+    def _draw_entrance_effects(self, screen):
+        """Draw the full scene, then composite entrance overlays (cosmic dawn
+        glow, burst particles, screen flash) ON TOP so they are actually
+        visible.  Previously the overlay was drawn first and immediately
+        erased by screen.fill() — the most dramatic moment was invisible."""
+        t = self.animation_time
+        stage = self._entrance_stage
+        p = self._entrance_stage_progress
+        cx, cy = self.tree_rect.center
+        max_dim = max(self.tree_rect.width, self.tree_rect.height)
+
+        # ── Layout & animation timing ──────────────────────────────────
         self.layout(screen)
         raw_dt = 0.016
         try:
@@ -1911,112 +2453,237 @@ class MysteriumMagnumMenu(Menu):
             self._smooth_dt = raw_dt
         self._smooth_dt = self._smooth_dt * 0.85 + raw_dt * 0.15
         dt = self._smooth_dt
+
+        self._entrance_layer_alphas = self._compute_entrance_alphas()
+        la = self._entrance_layer_alphas
         self.update(dt)
 
+        # ── Screen shake offset ────────────────────────────────────────
+        sx = int(self._shake_offset[0])
+        sy = int(self._shake_offset[1])
+
+        # ── Fill background ────────────────────────────────────────────
         screen.fill((5, 3, 12))
 
-        # ── Entrance animation ─────────────────────────────────────────
-        ep = self._entrance_progress
-        ee = 1.0 - (1.0 - ep) ** 2
-        if self._entrance_active:
+        # ── Determine tree drawing rect (with shake) ───────────────────
+        if self._entrance_stage >= 0:
+            tree_draw = self.tree_rect.copy()
+            tree_draw.x += sx
+            tree_draw.y += sy
+        elif self._entrance_active:
+            ep = self._entrance_progress
+            ee = 1.0 - (1.0 - ep) ** 2
             tree_scale = 0.92 + 0.08 * ee
             tw = int(self.tree_rect.width * tree_scale)
             th = int(self.tree_rect.height * tree_scale)
             tree_draw = pygame.Rect(0, 0, tw, th)
             tree_draw.center = self.tree_rect.center
+            tree_draw.x += sx
+            tree_draw.y += sy
         else:
-            tree_draw = self.tree_rect
+            tree_draw = self.tree_rect.copy()
+            tree_draw.x += sx
+            tree_draw.y += sy
 
         # ── Tree panel frame ───────────────────────────────────────────
-        pygame.draw.rect(screen, (12, 8, 22), tree_draw, border_radius=18)
-        pygame.draw.rect(screen, (70, 45, 100), tree_draw, 2, border_radius=18)
-        inner_rect = tree_draw.inflate(-4, -4)
-        pygame.draw.rect(screen, (45, 30, 65), inner_rect, 1, border_radius=16)
+        tf_a = la.get('tree_frame', 1.0)
+        if tf_a > 0.01:
+            frame_a = int(70 * tf_a)
+            inner_a = int(45 * tf_a)
+            pygame.draw.rect(screen, (12, 8, 22), tree_draw, border_radius=18)
+            pygame.draw.rect(screen, (70, 45, 100, frame_a), tree_draw, 2, border_radius=18)
+            inner_rect = tree_draw.inflate(-4, -4)
+            pygame.draw.rect(screen, (45, 30, 65, inner_a), inner_rect, 1, border_radius=16)
 
         # ── Animated border energy ─────────────────────────────────────
-        tree_perimeter = 2 * (tree_draw.width + tree_draw.height) - 8
-        border_dots = 30
-        for i in range(border_dots):
-            frac = (i / border_dots + self.animation_time * 0.04) % 1.0
-            dist = int(frac * tree_perimeter)
-            if dist < tree_draw.width:
-                bx, by = tree_draw.x + dist, tree_draw.y
-            elif dist < tree_draw.width + tree_draw.height:
-                bx, by = tree_draw.right, tree_draw.y + (dist - tree_draw.width)
-            elif dist < 2 * tree_draw.width + tree_draw.height:
-                bx, by = tree_draw.right - (dist - tree_draw.width - tree_draw.height), tree_draw.bottom
-            else:
-                bx, by = tree_draw.x, tree_draw.bottom - (dist - 2 * tree_draw.width - tree_draw.height)
-            bp = (math.sin(self.animation_time * 2.5 + i * 1.1) + 1.0) * 0.5
-            ba = int(30 + 50 * bp)
-            pygame.draw.circle(screen, (140, 90, 200, ba), (bx, by), max(1, int(1.5 * cfg.ui_scale())))
+        be_a = la.get('border_energy', 1.0)
+        if be_a > 0.01:
+            tree_perimeter = 2 * (tree_draw.width + tree_draw.height) - 8
+            border_dots = 30
+            for i in range(border_dots):
+                frac = (i / border_dots + self.animation_time * 0.04) % 1.0
+                dist = int(frac * tree_perimeter)
+                if dist < tree_draw.width:
+                    bx, by = tree_draw.x + dist, tree_draw.y
+                elif dist < tree_draw.width + tree_draw.height:
+                    bx, by = tree_draw.right, tree_draw.y + (dist - tree_draw.width)
+                elif dist < 2 * tree_draw.width + tree_draw.height:
+                    bx, by = tree_draw.right - (dist - tree_draw.width - tree_draw.height), tree_draw.bottom
+                else:
+                    bx, by = tree_draw.x, tree_draw.bottom - (dist - 2 * tree_draw.width - tree_draw.height)
+                bp = (math.sin(self.animation_time * 2.5 + i * 1.1) + 1.0) * 0.5
+                ba = int((30 + 50 * bp) * be_a)
+                pygame.draw.circle(screen, (140, 90, 200, ba), (bx, by), max(1, int(1.5 * cfg.ui_scale())))
 
         # ── Corner ornaments ───────────────────────────────────────────
-        orn_len = 16
-        orn_color = (160, 100, 210)
-        for cx, cy, hdx, hdy in [
-            (tree_draw.x, tree_draw.y, 1, 1),
-            (tree_draw.right, tree_draw.y, -1, 1),
-            (tree_draw.x, tree_draw.bottom, 1, -1),
-            (tree_draw.right, tree_draw.bottom, -1, -1),
-        ]:
-            pygame.draw.line(screen, orn_color, (cx, cy), (cx + hdx * orn_len, cy), 2)
-            pygame.draw.line(screen, orn_color, (cx, cy), (cx, cy + hdy * orn_len), 2)
-            gem_sz = 4
-            gem_pts = [
-                (cx + hdx * orn_len, cy + hdy * orn_len - gem_sz),
-                (cx + hdx * orn_len - gem_sz, cy + hdy * orn_len),
-                (cx + hdx * orn_len + gem_sz, cy + hdy * orn_len),
-            ]
-            pygame.draw.polygon(screen, (180, 100, 255), gem_pts)
-            gem_pts2 = [
-                (cx + hdx * orn_len - gem_sz, cy + hdy * orn_len),
-                (cx + hdx * orn_len + gem_sz, cy + hdy * orn_len),
-                (cx + hdx * orn_len, cy + hdy * orn_len + gem_sz),
-            ]
-            pygame.draw.polygon(screen, (120, 60, 200), gem_pts2)
+        if tf_a > 0.01:
+            orn_len = 16
+            orn_color = (160, 100, 210)
+            for gcx, gcy, hdx, hdy in [
+                (tree_draw.x, tree_draw.y, 1, 1),
+                (tree_draw.right, tree_draw.y, -1, 1),
+                (tree_draw.x, tree_draw.bottom, 1, -1),
+                (tree_draw.right, tree_draw.bottom, -1, -1),
+            ]:
+                pygame.draw.line(screen, orn_color, (gcx, gcy), (gcx + hdx * orn_len, gcy), 2)
+                pygame.draw.line(screen, orn_color, (gcx, gcy), (gcx, gcy + hdy * orn_len), 2)
+                gem_sz = 4
+                gem_pts = [
+                    (gcx + hdx * orn_len, gcy + hdy * orn_len - gem_sz),
+                    (gcx + hdx * orn_len - gem_sz, gcy + hdy * orn_len),
+                    (gcx + hdx * orn_len + gem_sz, gcy + hdy * orn_len),
+                ]
+                pygame.draw.polygon(screen, (180, 100, 255), gem_pts)
+                gem_pts2 = [
+                    (gcx + hdx * orn_len - gem_sz, gcy + hdy * orn_len),
+                    (gcx + hdx * orn_len + gem_sz, gcy + hdy * orn_len),
+                    (gcx + hdx * orn_len, gcy + hdy * orn_len + gem_sz),
+                ]
+                pygame.draw.polygon(screen, (120, 60, 200), gem_pts2)
 
         # ── Border runes ───────────────────────────────────────────────
-        bf = cfg.get_font(max(6, int(10 * cfg.ui_scale())))
-        border_rune_list = ["ᚠ", "ᚢ", "ᚦ", "ᚨ", "ᚱ", "ᚲ", "ᚷ", "ᚹ", "ᚺ", "ᚾ", "ᛁ", "ᛃ"]
-        for i, ch in enumerate(border_rune_list):
-            frac = (i + 0.5) / len(border_rune_list)
-            bp = (math.sin(self.animation_time * 1.5 + i * 0.9) + 1.0) * 0.5
-            ba = int(30 + 50 * bp)
-            rs = bf.render(ch, True, (160, 100, 210))
-            rs.set_alpha(ba)
-            if tree_draw.height > 100:
-                ly = tree_draw.y + int(tree_draw.height * frac)
-                screen.blit(rs, (tree_draw.x + 2, ly - rs.get_height() // 2))
-                screen.blit(rs, (tree_draw.right - rs.get_width() - 2, ly - rs.get_height() // 2))
+        if tf_a > 0.01:
+            bf = cfg.get_font(max(6, int(10 * cfg.ui_scale())))
+            border_rune_list = ["ᚠ", "ᚢ", "ᚦ", "ᚨ", "ᚱ", "ᚲ", "ᚷ", "ᚹ", "ᚺ", "ᚾ", "ᛁ", "ᛃ"]
+            for i, ch in enumerate(border_rune_list):
+                frac = (i + 0.5) / len(border_rune_list)
+                bp = (math.sin(self.animation_time * 1.5 + i * 0.9) + 1.0) * 0.5
+                ba = int((30 + 50 * bp) * tf_a)
+                rs = bf.render(ch, True, (160, 100, 210))
+                rs.set_alpha(ba)
+                if tree_draw.height > 100:
+                    ly = tree_draw.y + int(tree_draw.height * frac)
+                    screen.blit(rs, (tree_draw.x + 2, ly - rs.get_height() // 2))
+                    screen.blit(rs, (tree_draw.right - rs.get_width() - 2, ly - rs.get_height() // 2))
 
-        # ── Clip to tree area ──────────────────────────────────────────
+        # ── Clip to tree area and draw scene ───────────────────────────
         old_clip = screen.get_clip()
         screen.set_clip(tree_draw)
-
         self._draw_background(screen)
-        self._draw_orbital_trails(screen)
-        self._draw_mandala(screen)
-        self._draw_card_rings(screen)
-        self._draw_revealed_cards(screen)
-        self._draw_hover_sparkles(screen)
-        self._draw_rune_spirits(screen)
-
-        # Reveal burst particles
+        if la.get('orbital_trails', 1.0) > 0.01:
+            self._draw_orbital_trails(screen)
+        if la.get('mandala', 1.0) > 0.01:
+            self._draw_mandala(screen)
+        if la.get('card_rings', 1.0) > 0.01:
+            self._draw_card_rings(screen)
+        if la.get('revealed_cards', 1.0) > 0.01:
+            self._draw_revealed_cards(screen)
+        if la.get('revealed_cards', 1.0) > 0.01:
+            self._draw_hover_sparkles(screen)
+        if la.get('rune_spirits', 1.0) > 0.01:
+            self._draw_rune_spirits(screen)
         for b in self._reveal_bursts:
             if self.tree_rect.collidepoint(b["x"], b["y"]):
                 frac = b["life"] / b["max_life"]
                 sz = max(1, int(b["size"] * frac))
                 a = int(255 * frac)
                 pygame.draw.circle(screen, (*b["color"], a), (int(b["x"]), int(b["y"])), sz)
-
         screen.set_clip(old_clip)
 
         # ── UI panels ──────────────────────────────────────────────────
         self._draw_sidebar(screen)
         self._draw_card_info(screen)
-        self.reveal_button.draw(screen)
-        self.exit_button.draw(screen)
+        btn_a = la.get('buttons', 1.0)
+        if btn_a > 0.01:
+            self.view_all_button.draw(screen)
+            self.reveal_button.draw(screen)
+            self.exit_button.draw(screen)
+        if self._show_collection:
+            self._draw_collection(screen)
+        vig_a = la.get('vignette', 1.0)
+        if vig_a > 0.01:
+            self._draw_vignette(screen)
 
-        # ── Vignette (on top of everything) ───────────────────────────
-        self._draw_vignette(screen)
+        # ═══════════════════════════════════════════════════════════════
+        # ── Entrance overlays ON TOP of everything ───────────────────
+        #  This is the critical fix: these were previously drawn *before*
+        #  screen.fill() and thus invisible.
+        # ═══════════════════════════════════════════════════════════════
+        if stage >= 0 or self._entrance_burst_particles:
+            entrance_overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+
+            # ── Cosmic dawn glow (Stage 0 + early Stage 1 fade-out) ──
+            cosmic_intensity = 0.0
+            if stage == 0:
+                cosmic_intensity = _ease_out_cubic(p)
+            elif stage == 1 and p < 0.35:
+                cosmic_intensity = 1.0 - _ease_out_cubic(p / 0.35)
+
+            if cosmic_intensity > 0.01:
+                glow_r = max(2, int(max_dim * 0.7 * cosmic_intensity))
+                ci = cosmic_intensity
+
+                # Multi-layered expanding light
+                glow_surf = pygame.Surface((glow_r * 2, glow_r * 2), pygame.SRCALPHA)
+                for ring in range(24, 0, -1):
+                    frac = ring / 24.0
+                    rr = int(glow_r * frac)
+                    brightness = int((1.0 - frac * 0.3) * 200 * (0.15 + 0.85 * ci))
+                    if frac > 0.65:
+                        col = (255, 252, 245, brightness)
+                    elif frac > 0.4:
+                        col = (255, 225, 180, brightness * 3 // 4)
+                    elif frac > 0.2:
+                        col = (230, 190, 255, brightness // 2)
+                    else:
+                        col = (180, 150, 255, brightness // 3)
+                    pygame.draw.circle(glow_surf, col, (glow_r, glow_r), rr)
+
+                # Bright white core
+                core_r = max(3, glow_r // 4)
+                for cr in range(core_r, 0, -1):
+                    ca = int((1.0 - cr / core_r) * 255 * ci)
+                    pygame.draw.circle(glow_surf, (255, 255, 255, ca), (glow_r, glow_r), cr)
+
+                entrance_overlay.blit(glow_surf, (cx - glow_r, cy - glow_r))
+
+                # Rotating light rays
+                for i in range(20):
+                    ang = i * math.pi / 10 + t * 0.4
+                    ra = max(0, int(160 * ci * (0.2 + 0.8 * math.sin(t * 3.0 + i * 1.4))))
+                    ray_len = glow_r * (0.6 + 0.4 * math.sin(t * 2.5 + i * 1.1))
+                    ex = cx + math.cos(ang) * ray_len
+                    ey = cy + math.sin(ang) * ray_len
+                    pygame.draw.line(entrance_overlay, (255, 248, 235, ra),
+                                   (cx, cy), (ex, ey), max(1, int(2.5 * ci)))
+
+                # Subtle purple tint during cosmic dawn
+                if ci > 0.3:
+                    tint_a = int((ci - 0.3) * 35)
+                    tint = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+                    tint.fill((180, 140, 255, tint_a))
+                    entrance_overlay.blit(tint, (0, 0))
+
+            # ── Stage 5: golden flash + settle ────────────────────────
+            if stage == 5 and p < 0.5:
+                flash_a = int(_ease_out_cubic(1.0 - p / 0.5) * 80)
+                flash = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+                flash.fill((255, 240, 210, flash_a))
+                entrance_overlay.blit(flash, (0, 0))
+
+            # ── Entrance burst particles ──────────────────────────────
+            for b in list(self._entrance_burst_particles):
+                frac = b["life"] / max(0.001, b["max_life"])
+                sz = max(0.5, b["size"] * (0.15 + 0.85 * frac))
+                a = int(255 * frac * frac)  # quadratic fade for smoother tail
+                if a > 1 and self.tree_rect.collidepoint(int(b["x"]), int(b["y"])):
+                    pygame.draw.circle(entrance_overlay, (*b["color"], a),
+                                     (int(b["x"]), int(b["y"])), max(1, int(sz)))
+                    # Soft glow around larger particles
+                    if b["size"] > 3.0 and frac > 0.5:
+                        ga = int(a * 0.15)
+                        gr = max(1, int(sz * 2))
+                        gp = pygame.Surface((gr * 2, gr * 2), pygame.SRCALPHA)
+                        pygame.draw.circle(gp, (*b["color"], ga), (gr, gr), gr)
+                        entrance_overlay.blit(gp, (int(b["x"]) - gr, int(b["y"]) - gr))
+
+            # ── Subtle warm colour wash building through animation ────
+            if stage >= 1:
+                wash_progress = min(1.0, (stage + p) / 5.0)
+                if 0.0 < wash_progress < 1.0:
+                    wash_a = int(wash_progress * 12)
+                    wash = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+                    wash.fill((255, 200, 120, wash_a))
+                    entrance_overlay.blit(wash, (0, 0))
+
+            screen.blit(entrance_overlay, (0, 0))

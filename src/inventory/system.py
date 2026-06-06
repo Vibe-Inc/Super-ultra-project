@@ -458,12 +458,14 @@ class MAIN_player_inventory(Inventory):
                     except Exception: pass
                     return
                 if hasattr(self, 'open_arcane_quest_btn') and self.open_arcane_quest_btn.rect.collidepoint(mouse_pos):
-                    try: self.app.manager.set_state("arcane_quest")
-                    except Exception: pass
+                    if getattr(self.app, 'arcane_quests_unlocked', False):
+                        try: self.app.manager.set_state("arcane_quest")
+                        except Exception: pass
                     return
                 if hasattr(self, 'open_mysterium_magnum_btn') and self.open_mysterium_magnum_btn.rect.collidepoint(mouse_pos):
-                    try: self.app.manager.set_state("mysterium_magnum")
-                    except Exception: pass
+                    if getattr(self.app, 'mysterium_magnum_unlocked', False):
+                        try: self.app.manager.set_state("mysterium_magnum")
+                        except Exception: pass
                     return
         return super().inventory_interactions(event, manager)
 

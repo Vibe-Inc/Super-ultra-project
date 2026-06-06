@@ -20,6 +20,7 @@ from src.items.items import create_item
 from database.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, DizzinessEffect, SlowEffect
 from src.entities.enemy import Enemy
 from src.entities.npc import NPC
+from src.entities.mage_npc import MageNPC
 from src.entities.projectile import Arrow
 from src.ui.hud import HUD
 from src.ui.widgets import Dialog
@@ -481,6 +482,13 @@ class Game(State):
             "maps/tavern.tmx": (320, 320),
         }
 
+        # Mage NPC spawn positions (pixels) — placed near trees on test-map-2
+        # The center of the map (cols 50-64, rows 40-54) is the lake; this
+        # position is on solid ground near the upper-right detail objects.
+        self.MAGE_NPC_SPAWNS = {
+            "maps/test-map-2.tmx": (2240, 640),
+        }
+
         # Maps where enemy spawning (both default and random) is disabled
         self.NO_ENEMY_SPAWN_MAPS = {"maps/tavern.tmx", "maps/test-map-1.tmx"}
 
@@ -594,6 +602,51 @@ class Game(State):
         except Exception:
             pass
 
+        # ---- Mage NPC (Arcane Quests / Mysterium Magnum gatekeeper) ----
+        if initial_map_path in self.MAGE_NPC_SPAWNS:
+            mg_x, mg_y = self.MAGE_NPC_SPAWNS[initial_map_path]
+        else:
+            mg_x, mg_y = -5000, -5000
+
+        self.mage_npc_first_dialog = [
+            "I sense a great power within you... something ancient, something waiting.",
+            "You must collect the souls of the monsters you defeat.",
+            "Bring them to me, and I shall unlock the Arcane Quests — a path to harness that power."
+        ]
+        self.mage_npc_repeat_dialog = [
+            "The winds whisper of your progress.",
+            "Keep collecting monster souls. The Arcane Quests await."
+        ]
+        self.mage_npc_post_unlock_dialog = [
+            "You have gathered the souls. I can feel their energy resonating.",
+            "Now you must tap into your inner world and transform these souls into a tarot deck.",
+            "This is the Mysterium Magnum — a deck of power, fate, and transformation.",
+            "I shall open the way for you."
+        ]
+        self.mage_npc_post_unlock_repeat_dialog = [
+            "The Mysterium Magnum is now open to you.",
+            "Transform your collected souls into cards of destiny."
+        ]
+
+        self.mage_npc = MageNPC(
+            x=mg_x, y=mg_y,
+            dialog_lines=self.mage_npc_first_dialog,
+            gender='female',
+        )
+
+        # Clamp mage NPC to map bounds
+        try:
+            if initial_map_path in self.MAGE_NPC_SPAWNS and self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                map_w = self.map.current_map.pixel_width
+                map_h = self.map.current_map.pixel_height
+                mg_w = self.mage_npc.image.get_width()
+                mg_h = self.mage_npc.image.get_height()
+                mg_x = max(0, min(mg_x, map_w - mg_w))
+                mg_y = max(0, min(mg_y, map_h - mg_h))
+                self.mage_npc.pos = pygame.Vector2(mg_x, mg_y)
+        except Exception:
+            pass
+
         # Blackjack game state (None when not playing)
         self.blackjack_game = None
 
@@ -691,6 +744,25 @@ class Game(State):
         if not self.card_npc.was_talked:
             return self.card_npc_first_dialog
         return self.card_npc_repeat_dialog
+
+    def _get_mage_npc_dialog(self):
+        """Pick the right mage NPC dialog lines based on the current unlock state."""
+        if not self.app.arcane_quests_unlocked:
+            # First conversation: senses power, tells player to collect souls
+            if not self.mage_npc.was_talked:
+                return self.mage_npc_first_dialog
+            return self.mage_npc_repeat_dialog
+        elif not self.app.mysterium_magnum_unlocked:
+            # Arcane quests unlocked, but Mysterium Magnum not yet
+            # Check if player has at least 1 purple star
+            if getattr(self.app, 'purple_stars', 0) >= 1:
+                if not getattr(self, '_mage_mysterium_dialog_shown', False):
+                    self._mage_mysterium_dialog_shown = True
+                    return self.mage_npc_post_unlock_dialog
+            return self.mage_npc_post_unlock_repeat_dialog if getattr(self, '_mage_mysterium_dialog_shown', False) else self.mage_npc_post_unlock_repeat_dialog
+        else:
+            # Both unlocked
+            return self.mage_npc_post_unlock_repeat_dialog
 
     def use_skill_slot(self, slot_index):
         mouse_screen_pos = pygame.mouse.get_pos()
@@ -1050,6 +1122,25 @@ class Game(State):
                 self.card_npc.pos = pygame.Vector2(-5000, -5000)
                 logger.info(f"No card NPC spawn for map {switched_map_path}; hiding card NPC")
 
+            # Place mage NPC on the new map (or hide if not present)
+            if switched_map_path in self.MAGE_NPC_SPAWNS:
+                mg_x, mg_y = self.MAGE_NPC_SPAWNS[switched_map_path]
+                try:
+                    if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                        map_w = self.map.current_map.pixel_width
+                        map_h = self.map.current_map.pixel_height
+                        mg_w = self.mage_npc.image.get_width()
+                        mg_h = self.mage_npc.image.get_height()
+                        mg_x = max(0, min(mg_x, map_w - mg_w))
+                        mg_y = max(0, min(mg_y, map_h - mg_h))
+                except Exception:
+                    pass
+                self.mage_npc.pos = pygame.Vector2(mg_x, mg_y)
+                logger.info(f"Placed mage NPC for map {switched_map_path} at ({mg_x},{mg_y})")
+            else:
+                self.mage_npc.pos = pygame.Vector2(-5000, -5000)
+                logger.info(f"No mage NPC spawn for map {switched_map_path}; hiding mage NPC")
+
         self.map.update_animation(dt)
 
         # Enemy Spawning Logic
@@ -1168,6 +1259,7 @@ class Game(State):
 
         self.npc.update(self.character.pos)
         self.card_npc.update(self.character.pos)
+        self.mage_npc.update(self.character.pos)
 
         # Update fishing controller
         try:
@@ -1191,6 +1283,15 @@ class Game(State):
                 cnx, cny = self.CARD_NPC_SPAWNS[self.current_map_path]
                 self.card_npc.pos = pygame.Vector2(cnx, cny)
                 logger.info(f"Safety placed card NPC on {self.current_map_path} at ({cnx},{cny})")
+        except Exception:
+            pass
+
+        # Safety: place mage NPC if it should be on this map but is far away
+        try:
+            if self.current_map_path in self.MAGE_NPC_SPAWNS and (self.mage_npc.pos.x < -1000 or self.mage_npc.pos.y < -1000):
+                mgx, mgy = self.MAGE_NPC_SPAWNS[self.current_map_path]
+                self.mage_npc.pos = pygame.Vector2(mgx, mgy)
+                logger.info(f"Safety placed mage NPC on {self.current_map_path} at ({mgx},{mgy})")
         except Exception:
             pass
 
@@ -1312,6 +1413,10 @@ class Game(State):
             card_npc_vis = _is_visible(self.card_npc)
         except Exception:
             card_npc_vis = False
+        try:
+            mage_npc_vis = _is_visible(self.mage_npc)
+        except Exception:
+            mage_npc_vis = False
 
         # Collect all visible entities with their y-position for sorting.
         draw_entities = []
@@ -1319,6 +1424,8 @@ class Game(State):
             draw_entities.append((self.npc.pos.y, 'npc'))
         if card_npc_vis:
             draw_entities.append((self.card_npc.pos.y, 'card_npc'))
+        if mage_npc_vis:
+            draw_entities.append((self.mage_npc.pos.y, 'mage_npc'))
         draw_entities.append((self.character.pos.y, 'player'))
         for item in self.items:
             try:
@@ -1336,6 +1443,8 @@ class Game(State):
                 self.npc.draw(screen, camera_offset)
             elif kind == 'card_npc':
                 self.card_npc.draw(screen, camera_offset)
+            elif kind == 'mage_npc':
+                self.mage_npc.draw(screen, camera_offset)
             elif kind == 'player':
                 self.character.draw(screen, camera_offset)
             elif kind == 'item':
@@ -1480,8 +1589,31 @@ class Game(State):
                 self.use_skill_slot(5)
             
             if event.key == pygame.K_e:
-                # Card NPC interaction takes priority if both are nearby
-                if self.card_npc.is_interactable:
+                # Mage NPC interaction (highest priority)
+                if self.mage_npc.is_interactable:
+                    dialog_lines = self._get_mage_npc_dialog()
+
+                    def on_mage_close():
+                        try:
+                            self.mage_npc.was_talked = True
+                            # On first talk: unlock Arcane Quests
+                            if not self.app.arcane_quests_unlocked:
+                                self.app.arcane_quests_unlocked = True
+                                logger.info("Arcane Quests UNLOCKED by mage NPC!")
+                            # If arcane quests already unlocked and player has purple star: unlock Mysterium Magnum
+                            elif not self.app.mysterium_magnum_unlocked and getattr(self.app, 'purple_stars', 0) >= 1:
+                                self.app.mysterium_magnum_unlocked = True
+                                logger.info("Mysterium Magnum UNLOCKED by mage NPC!")
+                        except Exception:
+                            pass
+
+                    self.app.current_dialog = Dialog(
+                        self.app,
+                        dialog_lines,
+                        on_close=on_mage_close,
+                    )
+                # Card NPC interaction
+                elif self.card_npc.is_interactable:
                     dialog_lines = self._get_card_npc_dialog()
 
                     def on_card_close():

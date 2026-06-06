@@ -290,8 +290,8 @@ class InventoryRenderer:
 
             btn_x = portrait_bg.right + int(cfg.INV_PLAYER_RIGHT_BTN_MARGIN_X * sc) + int(120 * sc)
             # Include the new ARCANE QUESTS and MYSTERIUM MAGNUM buttons in the stack
-            has_arcane = hasattr(inv, 'open_arcane_quest_btn')
-            has_mysterium = hasattr(inv, 'open_mysterium_magnum_btn')
+            has_arcane = hasattr(inv, 'open_arcane_quest_btn') and getattr(inv.app, 'arcane_quests_unlocked', False)
+            has_mysterium = hasattr(inv, 'open_mysterium_magnum_btn') and getattr(inv.app, 'mysterium_magnum_unlocked', False)
             stack_list = [inv.open_skillbar_btn, inv.open_skilltree_btn]
             if has_arcane:
                 stack_list.append(inv.open_arcane_quest_btn)
