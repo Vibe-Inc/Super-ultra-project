@@ -3454,11 +3454,12 @@
 
         <span class="n">selected_node</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes_by_id</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">selected_node_id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_draw_sidebar</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">selected_node</span><span class="p">)</span>
-        <span class="c1"># draw sidebar buttons</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">unlock_button</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-            <span class="k">pass</span>
+        <span class="c1"># draw sidebar buttons (unlock button only visible when a node is selected)</span>
+        <span class="k">if</span> <span class="n">selected_node</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">unlock_button</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">exit_button</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
 
         <span class="c1"># Draw dialog on top if one is active</span>
