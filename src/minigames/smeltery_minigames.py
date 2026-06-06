@@ -69,16 +69,14 @@ def _draw_panel(surface, panel_rect, title, subtitle, fonts, majestic=True):
 
     if majestic:
         time_ms = pygame.time.get_ticks()
-        ray_surface = pygame.Surface(panel_rect.size, pygame.SRCALPHA)
-        for i in range(12):
-            angle = (time_ms * 0.02 + i * 30) % 360
-            rad = math.radians(angle)
-            rad2 = math.radians(angle + 10)
-            length = panel_rect.width
-            p1 = (panel_rect.width // 2, panel_rect.height // 2)
-            p2 = (p1[0] + math.cos(rad) * length, p1[1] + math.sin(rad) * length)
-            p3 = (p1[0] + math.cos(rad2) * length, p1[1] + math.sin(rad2) * length)
-            pygame.draw.polygon(ray_surface, (255, 200, 50, 10), [p1, p2, p3])
+        effect_surface = pygame.Surface(panel_rect.size, pygame.SRCALPHA)
+        
+        # Gentle warm corner glows instead of spinning rays
+        glow_alpha = int(10 + math.sin(time_ms * 0.002) * 5)
+        pygame.draw.circle(effect_surface, (255, 180, 80, glow_alpha), (0, 0), int(panel_rect.width * 0.8))
+        pygame.draw.circle(effect_surface, (255, 100, 50, glow_alpha), (panel_rect.width, panel_rect.height), int(panel_rect.width * 0.8))
+        
+        # Subtle rising embers
         for i in range(25):
             seed = i * 1337
             speed = 20 + (seed % 30)
@@ -86,8 +84,9 @@ def _draw_panel(surface, panel_rect, title, subtitle, fonts, majestic=True):
             y = panel_rect.height - ((time_ms / 1000.0 * speed + seed * 91) % (panel_rect.height + 50))
             wobble = math.sin(time_ms * 0.002 + i) * 15
             alpha = int(abs(math.sin(time_ms * 0.003 + i)) * 150) + 50
-            pygame.draw.circle(ray_surface, (255, 150, 50, alpha), (int(x + wobble), int(y)), 2)
-        surface.blit(ray_surface, panel_rect.topleft, special_flags=pygame.BLEND_RGBA_ADD)
+            pygame.draw.circle(effect_surface, (255, 150, 50, alpha), (int(x + wobble), int(y)), 2)
+            
+        surface.blit(effect_surface, panel_rect.topleft, special_flags=pygame.BLEND_RGBA_ADD)
 
     inner = panel_rect.inflate(-10, -10)
     pygame.draw.rect(surface, ANVIL_BORDER_LIGHT, inner, width=1, border_radius=14)

@@ -41,6 +41,7 @@ class CraftingMinigame(MinigameChain):
         from src.items.items import apply_tier_to_item
 
         self.phase = self.PHASE_RESULT
+        self.current_minigame = None
         
         score = self._total_bonus
         
