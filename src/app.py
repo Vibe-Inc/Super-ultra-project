@@ -139,6 +139,7 @@ class App:
         add_item(4, 0, "war_hammer")
         add_item(5, 0, "mace")
         add_item(6, 0, "spear")
+        add_item(7, 0, "steel_ingot", 5)
         # Row 1 — Ranged weapons + accessories
         # Row 1 — Ranged weapons + gathering tools
         add_item(0, 1, "wooden_bow")

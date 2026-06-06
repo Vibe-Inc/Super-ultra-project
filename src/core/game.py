@@ -35,6 +35,7 @@ from src.combat.base_player_combat import PlayerCombatController
 from src.minigames.blackjack import BlackjackGame
 from src.minigames.roulette import RouletteGame
 from src.minigames.poker import PokerGame
+from src.minigames.crafting import CraftingMinigame
 from src.minigames.fishing import FishingController
 from src.minigames.gathering import GatheringController
 from src.world.gatherable_nodes import GatherableNodeRegistry
@@ -126,6 +127,8 @@ class Game(State):
             Active roulette instance, or None.
         poker_game (PokerGame):
             Active poker instance, or None.
+        crafting_minigame (CraftingMinigame):
+            Active "Tempering" minigame instance, or None.
         spawn_menu (SpawnMenu):
             Debug menu for spawning enemies on demand.
         game_time_seconds (float):
@@ -162,6 +165,8 @@ class Game(State):
             Toggle the merchant's trading interface.
         open_blackjack():
             Launch the blackjack minigame overlay.
+        open_crafting_minigame(crafted_item, consume_callback, smelting_level=1):
+            Launch the Tempering timing minigame for a workbench craft.
         _get_card_npc_dialog():
             Pick the right card-NPC dialog lines for the current state.
         use_skill_slot(slot_index):
@@ -711,6 +716,9 @@ class Game(State):
         self.roulette_game = None
         self.poker_game = None
 
+        # Crafting "Tempering" minigame state (None when not playing)
+        self.crafting_minigame = None
+
         # Debug menu for spawning mobs
         self.spawn_menu = SpawnMenu(
             self.enemy_profile_names,
@@ -920,6 +928,35 @@ class Game(State):
                 on_close=lambda: setattr(self.card_npc, 'was_talked', True),
             )
         self.poker_game = PokerGame(self.app, on_close=on_close, player_money=self.app.money)
+
+    def open_crafting_minigame(self, crafted_item, consume_callback, smelting_level: int = 1):
+        """Launch the Tempering timing minigame for a freshly crafted item.
+
+        ``crafted_item`` is the already-tiered item produced by
+        :meth:`src.inventory.system.CraftingGrid.check_recipes`.  The
+        minigame may further bias the tier up or down based on the
+        player's three hammer strikes.  On close, ``consume_callback``
+        is invoked with the final item and the XP multiplier; it is
+        expected to clear the crafting grid, place the item in the
+        player's cursor, and award the (multiplied) smelting XP.
+        """
+        def on_close(final_item, xp_multiplier, outcome):
+            self.crafting_minigame = None
+            logger.info(
+                f"Crafting minigame closed: outcome={outcome}, "
+                f"final_tier={getattr(final_item, 'tier', 'fine')}, "
+                f"xp_multiplier={xp_multiplier}"
+            )
+            try:
+                consume_callback(final_item, xp_multiplier)
+            except Exception as exc:
+                logger.warning(f"crafting minigame consume callback failed: {exc}")
+        self.crafting_minigame = CraftingMinigame(
+            self.app,
+            crafted_item,
+            on_close=on_close,
+            smelting_level=smelting_level,
+        )
 
     def _get_card_npc_dialog(self):
         if not self.card_npc.was_talked:
@@ -1794,6 +1831,13 @@ class Game(State):
         except Exception:
             pass
 
+        # Tick the crafting tempering minigame (sweeping cursor, timers).
+        try:
+            if getattr(self, 'crafting_minigame', None):
+                self.crafting_minigame.update(dt)
+        except Exception:
+            pass
+
         # Tick the smeltery overlay so coke oven / blast furnace jobs
         # continue to advance even while the overlay is closed.
         try:
@@ -2083,6 +2127,8 @@ class Game(State):
             except Exception:
                 pass
         # Smeltery workstation overlay (workbench / coke oven / blast furnace).
+        # Must draw BEFORE the crafting minigame so the Tempering overlay
+        # renders on top of the smeltery panel, not behind it.
         try:
             if getattr(self, 'smeltery', None) and self.smeltery.is_open:
                 self.smeltery.draw(screen)
@@ -2094,6 +2140,13 @@ class Game(State):
                     pass
         except Exception:
             pass
+        # Crafting "Tempering" minigame overlay (workbench tempering).
+        if getattr(self, 'crafting_minigame', None):
+            try:
+                self.crafting_minigame.update(0.0)  # safety: no-op if not running
+                self.crafting_minigame.draw(screen)
+            except Exception:
+                pass
         # Draw debug spawn / effects menus
         self.spawn_menu.draw(screen)
         try:
@@ -2142,6 +2195,14 @@ class Game(State):
         if self.poker_game:
             try:
                 self.poker_game.handle_event(event)
+                return
+            except Exception:
+                pass
+
+        # If the crafting tempering minigame is active, route all events to it
+        if getattr(self, 'crafting_minigame', None):
+            try:
+                self.crafting_minigame.handle_event(event)
                 return
             except Exception:
                 pass
