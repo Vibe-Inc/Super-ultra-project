@@ -2636,6 +2636,37 @@ class Character:
                     c = (160, 200, 255)
                     dot(to_screen(pos), c, int(100 * (1 - lp) * fade), 1 + int(3 * (1 - lp)))
 
+            elif combat_style == "dagger":
+                # Quick short multi-strike: 3 rapid jabs inside the 200ms attack window.
+                # Uses the same arc orientation convention as 'sword' (base_angle - 270
+                # in the swoosh helper) so the trail lines up with the attack direction.
+                base_angle = -math.degrees(math.atan2(attack_dir.y, attack_dir.x))
+                strike_count = 3
+                s_idx = min(int(p * strike_count), strike_count - 1)
+                s_p = (p * strike_count) - s_idx
+                ext = max(0.0, 1.0 - abs(s_p - 0.5) * 2.0)
+                side = -1 if s_idx % 2 == 0 else 1
+                perp = pygame.Vector2(-attack_dir.y, attack_dir.x)
+                jab_dir = attack_dir + perp * (side * 0.18)
+                if jab_dir.length_squared() > 0:
+                    jab_dir = jab_dir.normalize()
+                else:
+                    jab_dir = attack_dir
+                tip = base_anchor + jab_dir * (self.attack_range * (0.55 + 0.25 * ext))
+                tip_s = to_screen(tip)
+                fade = 1.0 - s_p * 0.55
+                # Bright thin jab line (white-silver whetstone look)
+                gust_line(anchor_s, tip_s, (230, 230, 240), int(190 * fade), max(1, int(3 - s_p * 2)))
+                # Tip spark
+                dot(tip_s, (255, 255, 255), int(220 * fade), 2 + int(2 * fade))
+                if ext > 0.6:
+                    spark_r = 3 + (ext - 0.6) * 12
+                    pygame.draw.circle(screen, (255, 255, 255, int(80 * fade)), tip_s, int(spark_r), 1)
+                # Faint trailing arc at full extension (uses correct sword-style rotation)
+                if ext > 0.5:
+                    arc_alpha = int(120 * fade * (ext - 0.5) * 2.0)
+                    swoosh(anchor_s, base_angle - 270, 30 * (ext - 0.5) * 2.0, 30, (200, 200, 220), 2, arc_alpha, 1)
+
             elif combat_style == "mace":
                 ip = base_anchor + attack_dir * (self.attack_range * min(1.0, p * 1.5))
                 ip_s = to_screen(ip)

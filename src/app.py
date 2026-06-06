@@ -14,6 +14,7 @@ from database.item_db.tools_db import seed_tools
 from database.item_db.fish_db import seed_fish
 from database.item_db.resources_db import seed_resources
 from database.item_db.smeltery_db import seed_smeltery
+from database.item_db.flint_db import seed_flint_items
 from database.crafting_recepies_db import seed_recipes
 from database.GP_database import Gp_database
 import src.config as cfg
@@ -110,6 +111,7 @@ class App:
         seed_fish(db)
         seed_resources(db)
         seed_smeltery(db)
+        seed_flint_items(db)
         seed_recipes(db)
         db.close()
 
