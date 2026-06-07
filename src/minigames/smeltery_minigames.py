@@ -23,60 +23,118 @@ import random
 import pygame
 
 class ParticleSystem:
+    """High-performance particle system with trails, glow layers, and
+    additive blending for spectacular smeltery effects."""
+
     def __init__(self):
         self.particles = []
-        
-    def spawn(self, x, y, count, color, speed_range, size_range, lifetime_range, gravity=0.0):
+        self._pool = []  # reuse dead particle dicts
+
+    def spawn(self, x, y, count, color, speed_range, size_range,
+              lifetime_range, gravity=0.0, trail=False, glow=True,
+              angle_range=None, spin=False):
         for _ in range(count):
-            angle = random.uniform(0, math.tau)
+            angle = random.uniform(*(angle_range or (0, math.tau)))
             speed = random.uniform(*speed_range)
             life = random.uniform(*lifetime_range)
             size = random.uniform(*size_range)
             vx = math.cos(angle) * speed
             vy = math.sin(angle) * speed
-            self.particles.append({
+            p = {
                 "x": x, "y": y, "vx": vx, "vy": vy,
                 "color": color, "size": size, "initial_size": size,
-                "life": life, "max_life": life, "gravity": gravity
-            })
-            
+                "life": life, "max_life": life, "gravity": gravity,
+                "trail": trail, "glow": glow,
+                "spin": random.uniform(-4, 4) if spin else 0.0,
+                "trail_pts": [],
+            }
+            self.particles.append(p)
+
     def update(self, dt):
         for p in self.particles:
+            if p.get("trail"):
+                p["trail_pts"].append((p["x"], p["y"]))
+                if len(p["trail_pts"]) > 8:
+                    p["trail_pts"].pop(0)
             p["x"] += p["vx"] * dt
             p["y"] += p["vy"] * dt
             p["vy"] += p["gravity"] * dt
+            p["vx"] *= (1.0 - 0.3 * dt)
+            if p.get("spin"):
+                ang = p["spin"] * dt
+                cos_a, sin_a = math.cos(ang), math.sin(ang)
+                p["vx"], p["vy"] = (p["vx"] * cos_a - p["vy"] * sin_a,
+                                     p["vx"] * sin_a + p["vy"] * cos_a)
             p["life"] -= dt
         self.particles = [p for p in self.particles if p["life"] > 0]
-        
+
     def draw(self, surface):
         if not self.particles:
             return
         overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
         for p in self.particles:
             progress = p["life"] / p["max_life"]
-            current_size = max(0.1, p["initial_size"] * progress)
-            alpha = int(255 * (progress ** 0.5))
+            sz = max(0.1, p["initial_size"] * (0.3 + 0.7 * progress))
+            alpha = int(255 * (progress ** 0.45))
             r, g, b = p["color"]
-            pygame.draw.circle(overlay, (r, g, b, alpha), (int(p["x"]), int(p["y"])), int(current_size))
-            pygame.draw.circle(overlay, (r, g, b, int(alpha * 0.3)), (int(p["x"]), int(p["y"])), int(current_size * 2.5))
+            ix, iy = int(p["x"]), int(p["y"])
+
+            # Trails
+            if p.get("trail") and len(p["trail_pts"]) > 1:
+                for ti in range(len(p["trail_pts"]) - 1):
+                    ta = int(alpha * (ti / len(p["trail_pts"])) * 0.5)
+                    tp1 = p["trail_pts"][ti]
+                    tp2 = p["trail_pts"][ti + 1]
+                    pygame.draw.line(overlay, (r, g, b, ta),
+                                     (int(tp1[0]), int(tp1[1])),
+                                     (int(tp2[0]), int(tp2[1])),
+                                     max(1, int(sz * 0.6)))
+
+            # Glow layers
+            if p.get("glow"):
+                pygame.draw.circle(overlay, (r, g, b, max(1, alpha // 5)),
+                                   (ix, iy), max(1, int(sz * 3.2)))
+                pygame.draw.circle(overlay, (r, g, b, max(1, alpha // 3)),
+                                   (ix, iy), max(1, int(sz * 1.8)))
+            pygame.draw.circle(overlay, (r, g, b, alpha), (ix, iy), max(1, int(sz)))
+            # Hot core
+            if sz > 2:
+                core_a = min(255, alpha + 40)
+                pygame.draw.circle(overlay,
+                                   (min(255, r + 60), min(255, g + 60), min(255, b + 60), core_a),
+                                   (ix, iy), max(1, int(sz * 0.35)))
         surface.blit(overlay, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
 
+
 class ScreenShake:
+    """Smooth screen-shake with sine-decay and per-axis control."""
+
     def __init__(self):
         self.intensity = 0.0
-        self.decay = 10.0
+        self.decay = 8.0
         self.offset_x = 0
         self.offset_y = 0
-        
+        self._phase_x = 0.0
+        self._phase_y = 0.0
+
     def shake(self, intensity):
         self.intensity = max(self.intensity, intensity)
-        
+        if intensity > 5:
+            self._phase_x = random.uniform(0, math.tau)
+            self._phase_y = random.uniform(0, math.tau)
+
     def update(self, dt):
-        if self.intensity > 0:
-            self.offset_x = random.uniform(-self.intensity, self.intensity)
-            self.offset_y = random.uniform(-self.intensity, self.intensity)
-            self.intensity = max(0.0, self.intensity - self.decay * dt)
+        if self.intensity > 0.1:
+            freq = 35.0
+            self._phase_x += freq * dt
+            self._phase_y += freq * dt * 1.3
+            decay = self.intensity * dt * self.decay
+            self.intensity = max(0.0, self.intensity - decay)
+            amp = self.intensity
+            self.offset_x = math.sin(self._phase_x) * amp * random.uniform(0.7, 1.0)
+            self.offset_y = math.cos(self._phase_y) * amp * random.uniform(0.7, 1.0)
         else:
+            self.intensity = 0.0
             self.offset_x = 0
             self.offset_y = 0
 
@@ -84,94 +142,118 @@ GLOBAL_PARTICLES = ParticleSystem()
 GLOBAL_SHAKE = ScreenShake()
 
 # ============================================================================
-# Majestic Drawing Helpers
+# Drawing Helpers
 # ============================================================================
 
+# ---- Background cache (rebuilt only on screen-size change) ----
+_bg_cache_key = None
+_bg_cache_grad = None
+_bg_cache_vig = None
+
 def _draw_majestic_background(surface):
-    """Draw a rich atmospheric background with layered embers, heat glow,
-    and a subtle vignette for all smeltery minigames."""
-    import math, pygame, random
+    """Draw a stunning atmospheric forge background, optimised for 60 fps.
+
+    Features (all within budget):
+    - Cached deep gradient + cinematic vignette (rebuild on resize only)
+    - 3 pulsing radial heat fires drawn with additive blending
+    - 3-lane animated lava glow at the bottom
+    - 3-layer parallax embers (100 total) with glow halos on near embers
+    """
+    global _bg_cache_key, _bg_cache_grad, _bg_cache_vig
     w, h = surface.get_size()
-    overlay = pygame.Surface((w, h), pygame.SRCALPHA)
     time_ms = pygame.time.get_ticks()
+    t = time_ms * 0.001
 
-    # 1. Deep gradient: dark purple-black at top -> smouldering amber at bottom
-    for y in range(0, h, 2):
-        ratio = y / float(h)
-        sr = ratio * ratio * (3.0 - 2.0 * ratio)          # smoothstep
-        r = int(10 + 58 * sr)
-        g = int(2  + 20 * sr)
-        b = int(14 + 10 * sr)
-        a = int(225 - 25 * sr)
-        col = (r, g, b, a)
-        pygame.draw.line(overlay, col, (0, y), (w, y))
-        if y + 1 < h:
-            pygame.draw.line(overlay, col, (0, y + 1), (w, y + 1))
+    # ---- 1. Cached gradient + vignette ----
+    cache_key = (w, h)
+    if _bg_cache_key != cache_key:
+        _bg_cache_key = cache_key
+        g = pygame.Surface((w, h), pygame.SRCALPHA)
+        for y in range(0, h, 2):
+            ratio = y / float(h)
+            sr = ratio * ratio * (3.0 - 2.0 * ratio)
+            r = int(8 + 65 * sr)
+            gc = int(2 + 22 * sr)
+            b = int(12 + 12 * sr)
+            a = int(235 - 30 * sr)
+            col = (min(255, r), max(0, gc), max(0, b), a)
+            pygame.draw.line(g, col, (0, y), (w, y))
+            if y + 1 < h:
+                pygame.draw.line(g, col, (0, y + 1), (w, y + 1))
+        _bg_cache_grad = g
+        v = pygame.Surface((w, h), pygame.SRCALPHA)
+        edge = max(18, int(min(w, h) * 0.10))
+        for i in range(edge):
+            frac = i / float(edge)
+            a = int((1.0 - frac) ** 2 * 60)
+            pygame.draw.line(v, (0, 0, 0, a), (0, i), (w, i))
+            pygame.draw.line(v, (0, 0, 0, a), (0, h - 1 - i), (w, h - 1 - i))
+            pygame.draw.line(v, (0, 0, 0, a), (i, 0), (i, h))
+            pygame.draw.line(v, (0, 0, 0, a), (w - 1 - i, 0), (w - 1 - i, h))
+        for i in range(min(edge, 25)):
+            a = int((1.0 - i / 25.0) * 14)
+            pygame.draw.line(v, (180, 60, 15, a), (i, 0), (i, h))
+            pygame.draw.line(v, (180, 60, 15, a), (w - 1 - i, 0), (w - 1 - i, h))
+        _bg_cache_vig = v
+    surface.blit(_bg_cache_grad, (0, 0))
 
-    # 2. Animated radial heat glows from below
+    # ---- 2. Pulsing bottom heat glow (additive, no per-pixel work) ----
     heat = pygame.Surface((w, h), pygame.SRCALPHA)
-    p1 = (math.sin(time_ms * 0.0008) + 1) * 0.5
-    p2 = (math.sin(time_ms * 0.0013 + 1.5) + 1) * 0.5
-    p3 = (math.sin(time_ms * 0.0018 + 3.0) + 1) * 0.5
+    bottom_p = (math.sin(t * 0.7) + 1) * 0.5
+    pygame.draw.circle(heat, (200, 65, 18, int(30 + 25 * bottom_p)),
+                       (w // 2, int(h * 1.15)), int(h * 0.50))
+    mid_p = (math.sin(t * 1.1 + 1.5) + 1) * 0.5
+    pygame.draw.circle(heat, (140, 35, 12, int(22 + 18 * mid_p)),
+                       (int(w * 0.22), int(h * 0.95)), int(h * 0.35))
+    pygame.draw.circle(heat, (140, 35, 12, int(22 + 18 * mid_p)),
+                       (int(w * 0.78), int(h * 0.95)), int(h * 0.35))
+    pygame.draw.circle(heat, (255, 80, 20, int(18 + 12 * bottom_p)),
+                       (w // 2, int(h * 1.05)), int(h * 0.25))
+    surface.blit(heat, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
 
-    pygame.draw.circle(heat, (180, 60, 15, int(40 + 30 * p1)),
-                       (int(w * 0.5), int(h * 1.15)), int(h * (0.52 + 0.1 * p1)))
-    pygame.draw.circle(heat, (120, 30, 10, int(30 + 22 * p2)),
-                       (int(w * 0.18), int(h * 0.92)), int(h * (0.38 + 0.08 * p2)))
-    pygame.draw.circle(heat, (75, 12, 110, int(25 + 18 * p3)),
-                       (int(w * 0.82), int(h * 0.96)), int(h * (0.42 + 0.1 * p3)))
-    pygame.draw.circle(heat, (255, 90, 18, int(18 + 12 * p1)),
-                       (int(w * 0.5), int(h * 1.05)), int(h * (0.28 + 0.05 * p1)))
-    overlay.blit(heat, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+    # ---- 3. Animated lava glow bands (3 lanes, simple rects) ----
+    lava = pygame.Surface((w, h), pygame.SRCALPHA)
+    for li in range(3):
+        seed = li * 7919
+        ry = int(h * (0.84 + li * 0.05))
+        pulse = (math.sin(t * (1.2 + li * 0.4) + seed) + 1) * 0.5
+        a = int(18 + 14 * pulse)
+        band_h = 6 + li * 2
+        # Scrolling glow
+        offset = int((t * (10 + li * 5) * (li % 2 * 2 - 1)) % (w + 200)) - 100
+        for seg in range(4):
+            sx = (offset + seg * (w // 3)) % (w + 200) - 100
+            seg_p = (math.sin(t * 2.0 + seg * 0.9 + seed) + 1) * 0.5
+            sa = int(a * (0.5 + 0.5 * seg_p))
+            pygame.draw.rect(lava, (255, int(80 + 40 * seg_p), 15, sa),
+                             (sx, ry - band_h // 2, w // 4, band_h), border_radius=3)
+    surface.blit(lava, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
 
-    # 3. Ember layers (three depths for parallax)
-    # Far – tiny, slow, dim
-    for i in range(45):
-        seed = i * 3571
-        spd = 7 + (seed % 14)
-        ex = (seed * 19) % w
-        ey = h - ((time_ms / 1000.0 * spd + seed * 83) % (h + 160))
-        wb = math.sin(time_ms * 0.001 + i * 0.7) * 14
-        al = int(abs(math.sin(time_ms * 0.0015 + i * 0.5)) * 90) + 25
-        pygame.draw.circle(overlay, (255, int(110 + 80 * math.sin(i * 0.3)), 35, al),
-                           (int(ex + wb), int(ey)), 1)
-    # Mid
-    for i in range(35):
-        seed = i * 7331
-        spd = 16 + (seed % 26)
-        ex = (seed * 19) % w
-        ey = h - ((time_ms / 1000.0 * spd + seed * 83) % (h + 100))
-        wb = math.sin(time_ms * 0.002 + i) * 22
-        al = int(abs(math.sin(time_ms * 0.0025 + i)) * 140) + 55
-        pygame.draw.circle(overlay, (255, int(140 + 110 * math.sin(i)), 48, al),
-                           (int(ex + wb), int(ey)), 2)
-        pygame.draw.circle(overlay, (255, 110, 28, al // 4),
-                           (int(ex + wb), int(ey)), 5)
-    # Near – large, fast, bright
-    for i in range(22):
-        seed = i * 11213
-        spd = 32 + (seed % 42)
-        ex = (seed * 19) % w
-        ey = h - ((time_ms / 1000.0 * spd + seed * 83) % (h + 80))
-        wb = math.sin(time_ms * 0.003 + i * 1.3) * 34
-        al = min(255, int(abs(math.sin(time_ms * 0.003 + i)) * 200) + 50)
-        pygame.draw.circle(overlay, (255, int(175 + 80 * math.sin(i * 0.7)), 55, al),
-                           (int(ex + wb), int(ey)), 3)
-        pygame.draw.circle(overlay, (255, 150, 38, al // 3),
-                           (int(ex + wb), int(ey)), 9)
+    # ---- 4. Ember system (3 depth layers, 100 total) ----
+    embers_surf = pygame.Surface((w, h), pygame.SRCALPHA)
+    ember_layers = [
+        (45, 8,   1, (20, 75),  10, 0.001, 150),
+        (35, 20,  2, (40, 130), 18, 0.002, 90),
+        (20, 45,  3, (60, 220), 28, 0.003, 60),
+    ]
+    for li, (count, spd, sz, al_r, wb_amp, wb_freq, y_off) in enumerate(ember_layers):
+        for i in range(count):
+            seed = i * (3571 + li * 7331)
+            ex = (seed * 19) % w
+            ey = h - ((t * spd + seed * 83) % (h + y_off))
+            wb = math.sin(time_ms * wb_freq + i * 0.7 + li) * wb_amp
+            flicker = abs(math.sin(time_ms * (0.001 + li * 0.0005) + i * 0.5))
+            al = int(flicker * (al_r[1] - al_r[0]) + al_r[0])
+            cg = int(100 + 60 * li)
+            pygame.draw.circle(embers_surf, (255, cg, 25, al),
+                               (int(ex + wb), int(ey)), sz)
+            if li == 2 and sz > 1:
+                pygame.draw.circle(embers_surf, (255, cg, 25, max(1, al // 4)),
+                                   (int(ex + wb), int(ey)), sz * 3)
+    surface.blit(embers_surf, (0, 0))
 
-    # 4. Soft vignette
-    vig = pygame.Surface((w, h), pygame.SRCALPHA)
-    edge = max(18, int(min(w, h) * 0.10))
-    for i in range(edge):
-        a = int(((edge - i) / edge) ** 2 * 50)
-        pygame.draw.line(vig, (0, 0, 0, a), (0, i), (w, i))
-        pygame.draw.line(vig, (0, 0, 0, a), (0, h - 1 - i), (w, h - 1 - i))
-        pygame.draw.line(vig, (0, 0, 0, a), (i, 0), (i, h))
-        pygame.draw.line(vig, (0, 0, 0, a), (w - 1 - i, 0), (w - 1 - i, h))
-    overlay.blit(vig, (0, 0))
-
-    surface.blit(overlay, (0, 0))
+    # ---- 5. Vignette (cached) ----
+    surface.blit(_bg_cache_vig, (0, 0))
 
 
 import src.config as cfg
