@@ -991,6 +991,14 @@ class Game(State):
         for projectile in self.projectiles:
             projectile.update(dt, self.obstacles, self.enemies)
 
+        # Handle thrown weapon landings
+        for projectile in self.projectiles[:]:
+            from src.entities.projectile import ThrownWeapon
+            if isinstance(projectile, ThrownWeapon) and projectile.landed and projectile.will_drop:
+                from src.entities.dropped_item import DroppedItem
+                drop = DroppedItem(projectile.pos.x, projectile.pos.y, projectile.weapon_item, 1)
+                self.items.append(drop)
+
         self.projectiles = [projectile for projectile in self.projectiles if projectile.alive]
 
     def _update_enemy_projectiles(self, dt):
@@ -1591,8 +1599,8 @@ class Game(State):
                     dist = e_center.distance_to(p_center)
                     atk_range = getattr(enemy, "attack_telegraph_range", enemy.attack_range)
                     if dist <= atk_range * 1.5:
-                        self.character.do_parry(enemy)
-                        enemy.attack_phase = 0
+                        if self.character.do_parry(enemy):
+                            enemy.attack_phase = 0
 
         self._update_projectiles(dt)
         self._update_enemy_projectiles(dt)
@@ -2206,16 +2214,17 @@ class Game(State):
             if event.key == pygame.K_F10:
                 self.spawn_menu.toggle()
 
+            if event.key == pygame.K_r:
+                if not self.app.INV_manager.player_inventory_opened:
+                    mouse_pos = pygame.mouse.get_pos()
+                    mouse_world_pos = pygame.Vector2(mouse_pos) + self._get_camera_offset()
+                    self.player_combat.handle_fast_attack(mouse_world_pos)
+
             if event.key == pygame.K_p:
                 if not self.app.INV_manager.player_inventory_opened:
                     mouse_pos = pygame.mouse.get_pos()
                     mouse_world_pos = pygame.Vector2(mouse_pos) + self._get_camera_offset()
                     self.player_combat.handle_throw_weapon(mouse_world_pos)
-
-        if event.type == pygame.MOUSEMOTION:
-            if self.character.blocking:
-                mouse_world_pos = pygame.Vector2(event.pos) + self._get_camera_offset()
-                self.character.update_block_direction(mouse_world_pos)
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
@@ -2230,15 +2239,9 @@ class Game(State):
             elif event.button == 3:
                 if not self.app.INV_manager.player_inventory_opened:
                     # Start blocking
-                    mouse_world_pos = pygame.Vector2(event.pos) + self._get_camera_offset()
                     self.character.start_block()
-                    self.character.update_block_direction(mouse_world_pos)
 
-            elif event.button == 2:
-                # Middle mouse = fast attack
-                if not self.app.INV_manager.player_inventory_opened:
-                    mouse_world_pos = pygame.Vector2(event.pos) + self._get_camera_offset()
-                    self.player_combat.handle_fast_attack(mouse_world_pos)
+
 
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:

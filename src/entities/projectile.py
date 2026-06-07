@@ -3487,3 +3487,76 @@ class ElementalBurst:
                 (240, 240, 180, w_alpha),
             ])
             pygame.draw.line(screen, w_color, (cx, cy), (int(wx), int(wy)), max(1, int(2 * (1 - progress))))
+
+
+class ThrownWeapon:
+    """Projectile for thrown melee weapons.
+
+    Flies in a straight line, stops at max range or on collision,
+    and marks itself as landed so the game can spawn a DroppedItem.
+
+    Attributes:
+        pos (pygame.Vector2): Current world position.
+        direction (pygame.Vector2): Normalised travel direction.
+        speed (float): Pixels-per-second travel speed.
+        max_range (float): Maximum travel distance.
+        traveled (float): Distance travelled so far.
+        weapon_item (Item): The weapon being thrown (used to create drop).
+        will_drop (bool): If True, a DroppedItem is created on landing.
+        alive (bool): Whether the projectile is still active.
+        landed (bool): Set to True when the projectile stops.
+    """
+    def __init__(self, pos, direction, speed, max_range, weapon_item, will_drop=True):
+        self.pos = pygame.Vector2(pos)
+        self.direction = pygame.Vector2(direction)
+        if self.direction.length_squared() == 0:
+            self.direction = pygame.Vector2(1, 0)
+        else:
+            self.direction = self.direction.normalize()
+        self.speed = speed
+        self.max_range = max_range
+        self.traveled = 0.0
+        self.weapon_item = weapon_item
+        self.will_drop = will_drop
+        self.alive = True
+        self.landed = False
+        self.image = weapon_item.resize(32)
+        angle = math.degrees(math.atan2(-self.direction.y, self.direction.x))
+        self.image = pygame.transform.rotate(self.image, angle)
+
+    def get_rect(self):
+        rect = self.image.get_rect()
+        rect.center = (int(self.pos.x), int(self.pos.y))
+        return rect
+
+    def update(self, dt, obstacles, enemies):
+        if not self.alive:
+            return
+        movement = self.direction * self.speed * dt
+        self.pos += movement
+        self.traveled += self.speed * dt
+
+        rect = self.get_rect()
+        for wall in obstacles:
+            if rect.colliderect(wall):
+                self.landed = True
+                self.alive = False
+                return
+
+        for enemy in enemies:
+            if rect.colliderect(enemy.get_rect()):
+                self.landed = True
+                self.alive = False
+                return
+
+        if self.traveled >= self.max_range:
+            self.landed = True
+            self.alive = False
+
+    def draw(self, screen, camera_offset=None):
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+        rect = self.get_rect()
+        rect.x -= int(camera_offset.x)
+        rect.y -= int(camera_offset.y)
+        screen.blit(self.image, rect)

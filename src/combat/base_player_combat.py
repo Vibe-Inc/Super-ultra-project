@@ -356,14 +356,7 @@ class PlayerCombatController:
         self._damage_equipped_weapon(1)
 
     def handle_throw_weapon(self, mouse_pos):
-        """Throw the equipped weapon at the target position."""
-        weapon = self.game.equipped_weapon or self.get_equipped_weapon()
-        if not weapon:
-            return
-
-        if getattr(weapon, "weapon_class", "melee") != "melee":
-            return
-
+        """Throw the weapon from the active hotbar slot toward the cursor."""
         aim_dir = self.get_mouse_aim_direction(mouse_pos)
         if aim_dir.length_squared() == 0:
             return

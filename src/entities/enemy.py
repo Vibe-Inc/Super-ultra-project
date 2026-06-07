@@ -328,6 +328,20 @@ class Enemy:
         if self.attack_phase == ATTACK_PHASE_IDLE:
             return
         self.attack_phase_timer -= dt
+
+        # Continuously update telegraph direction toward player during active phases
+        if self.attack_phase in (ATTACK_PHASE_WIND_UP, ATTACK_PHASE_TELEGRAPH):
+            player = getattr(self, 'target_entity', None)
+            if player is not None and hasattr(player, 'get_rect'):
+                try:
+                    p_pos = pygame.Vector2(player.get_rect().center)
+                    e_pos = pygame.Vector2(self.get_rect().center)
+                    direction = p_pos - e_pos
+                    if direction.length_squared() > 0:
+                        self.attack_anim_dir = direction.normalize()
+                except Exception:
+                    pass
+
         if self.attack_phase_timer <= 0:
             if self.attack_phase == ATTACK_PHASE_WIND_UP:
                 self.attack_phase = ATTACK_PHASE_TELEGRAPH
@@ -407,6 +421,8 @@ class Enemy:
             self.speed = 0.0
             collision_system.handle_movement_and_collision(self, dt, obstacles)
             self._update_animation(dt)
+            if self.stun_timer <= 0:
+                self.speed_multiplier = 1.0
             return
 
         if not active:
@@ -515,17 +531,46 @@ class Enemy:
                 direction = self.attack_anim_dir
             fwd_angle = math.degrees(math.atan2(direction.y, direction.x))
             half_angle = self.attack_telegraph_angle * 0.5
-            alpha_mult = 0.4 if self.attack_phase == ATTACK_PHASE_WIND_UP else 1.0
+            is_telegraph = self.attack_phase == ATTACK_PHASE_TELEGRAPH
+            alpha_mult = 0.5 if self.attack_phase == ATTACK_PHASE_WIND_UP else 1.0
             col = self.attack_telegraph_color
-            a = int(col[3] * alpha_mult) if len(col) > 3 else 80
+            base_a = int(col[3] * alpha_mult) if len(col) > 3 else 80
             r = self.attack_telegraph_range
-            surf_size = int(r * 2 + 20)
+            surf_size = int(r * 2 + 30)
             surf = pygame.Surface((surf_size, surf_size), pygame.SRCALPHA)
-            pygame.draw.arc(surf, (col[0], col[1], col[2], a),
+            # Outer glow layer (wider, dimmer)
+            glw = max(3, int(r * 0.16))
+            outer_col = (col[0], col[1], col[2], base_a // 3)
+            pygame.draw.arc(surf, outer_col,
+                            pygame.Rect(5, 5, surf_size - 10, surf_size - 10),
+                            math.radians(fwd_angle - half_angle - 2),
+                            math.radians(fwd_angle + half_angle + 2),
+                            glw)
+            # Main telegraph arc
+            main_col = (min(255, col[0] + 30), min(255, col[1] + 30), min(255, col[2] + 30), base_a)
+            pygame.draw.arc(surf, main_col,
                             pygame.Rect(10, 10, surf_size - 20, surf_size - 20),
                             math.radians(fwd_angle - half_angle),
                             math.radians(fwd_angle + half_angle),
                             max(2, int(r * 0.08)))
+            # Inner bright core arc (thinner, brighter)
+            inner_col = (min(255, col[0] + 80), min(255, col[1] + 80), min(255, col[2] + 80), base_a)
+            pygame.draw.arc(surf, inner_col,
+                            pygame.Rect(12, 12, surf_size - 24, surf_size - 24),
+                            math.radians(fwd_angle - half_angle + 1),
+                            math.radians(fwd_angle + half_angle - 1),
+                            max(1, int(r * 0.04)))
+            # Pulsing dots along the arc edge during telegraph
+            if is_telegraph:
+                pulse = abs(math.sin(pygame.time.get_ticks() * 0.006))
+                for i in range(6):
+                    t = i / 6.0
+                    ang = math.radians(fwd_angle - half_angle + t * half_angle * 2)
+                    dx = int(math.cos(ang) * (r + 4))
+                    dy = int(math.sin(ang) * (r + 4))
+                    da = int(200 * pulse * (0.5 + 0.5 * math.sin(t * math.pi)))
+                    dot_col = (min(255, col[0] + 100), min(255, col[1] + 100), min(255, col[2] + 100), da)
+                    pygame.draw.circle(surf, dot_col, (surf_size // 2 + dx, surf_size // 2 + dy), 3)
             screen.blit(surf, (sx - surf_size // 2, sy - surf_size // 2),
                         special_flags=pygame.BLEND_ALPHA_SDL2)
 
@@ -539,3 +584,23 @@ class Enemy:
         if self.max_hp > 0:
             health_width = int(bar_width * (self.hp / self.max_hp))
             pygame.draw.rect(screen, (0, 255, 0), (bar_x, bar_y, health_width, bar_height))
+
+        # Stun visual effect (spinning stars above enemy)
+        if self.stun_timer > 0:
+            sx = int(self.pos.x - camera_offset.x + self.image.get_width() // 2)
+            sy = int(self.pos.y - camera_offset.y - 14)
+            now = pygame.time.get_ticks()
+            for i in range(4):
+                angle = now * 0.004 + i * math.pi * 0.5
+                star_r = 4 + int(3 * abs(math.sin(now * 0.005 + i)))
+                sx2 = sx + int(math.cos(angle) * 9)
+                sy2 = sy + int(math.sin(angle) * 6)
+                star_alpha = int(180 + 75 * math.sin(now * 0.008 + i * 2.1))
+                surf = pygame.Surface((star_r * 2 + 2, star_r * 2 + 2), pygame.SRCALPHA)
+                pts = []
+                for j in range(5):
+                    a = math.pi * 2 * j / 5 - math.pi * 0.5
+                    pts.append((star_r + int(math.cos(a) * star_r), star_r + int(math.sin(a) * star_r)))
+                pygame.draw.polygon(surf, (255, 255, 100, star_alpha), pts)
+                screen.blit(surf, (sx2 - star_r, sy2 - star_r),
+                            special_flags=pygame.BLEND_ALPHA_SDL2)

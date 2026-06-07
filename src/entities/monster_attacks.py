@@ -159,8 +159,8 @@ class BruteAttack(BaseAttack):
         self.slow_duration = float(self.config.get("slow_duration", 1.3))
         self.slow_factor = float(self.config.get("slow_factor", 0.6))
         self.slam_anim_duration = float(self.config.get("slam_anim_duration", 0.55))
-        self.slam_wind_up = float(self.config.get("slam_wind_up", 0.35))
-        self.slam_telegraph = float(self.config.get("slam_telegraph", 0.30))
+        self.slam_wind_up = float(self.config.get("slam_wind_up", 0.50))
+        self.slam_telegraph = float(self.config.get("slam_telegraph", 0.45))
 
         self.last_charge_time = -self.charge_cooldown_ms
         self.charge_timer = 0.0
@@ -285,8 +285,8 @@ class VenomousAttack(BaseAttack):
         self.strike_damage_mult = float(self.config.get("strike_damage_mult", 0.9))
         self.strike_range = float(self.config.get("strike_range", 0.0))
         self.strike_anim_duration = float(self.config.get("strike_anim_duration", 0.4))
-        self.wind_up_duration = float(self.config.get("wind_up_duration", 0.20))
-        self.telegraph_duration = float(self.config.get("telegraph_duration", 0.25))
+        self.wind_up_duration = float(self.config.get("wind_up_duration", 0.40))
+        self.telegraph_duration = float(self.config.get("telegraph_duration", 0.45))
 
     def update(self, enemy: object, context: AttackContext):
         player = context.player
@@ -564,8 +564,8 @@ class MeleeAttack(BaseAttack):
         self.strike_anim_duration = float(self.config.get("strike_anim_duration", 0.35))
         self.anim_type = str(self.config.get("anim_type", "")).lower()
         self.anim_strength = float(self.config.get("anim_strength", 1.0))
-        self.wind_up_duration = float(self.config.get("wind_up_duration", 0.25))
-        self.telegraph_duration = float(self.config.get("telegraph_duration", 0.30))
+        self.wind_up_duration = float(self.config.get("wind_up_duration", 0.45))
+        self.telegraph_duration = float(self.config.get("telegraph_duration", 0.50))
 
     def update(self, enemy: object, context: AttackContext):
         player = context.player
