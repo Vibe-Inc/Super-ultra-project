@@ -47,6 +47,9 @@ class WeatherSystem:
         self.fog_clouds = []  # dicts: {x, y, vx, vy, size_idx, alpha, pulse_speed, pulse_offset}
         self._init_fog_clouds()
         
+        # Small fog particles for extra detail
+        self.fog_particles = []
+        
         # Lightning / Thunder settings
         self.lightning_flash_time = 0.0
         self.lightning_flash_max = 0.0
@@ -169,6 +172,7 @@ class WeatherSystem:
             self.rain_particles.clear()
             self.splashes.clear()
             self.puddles.clear()
+            self.fog_particles.clear()
             return
 
         self._update_rain(dt)
@@ -359,6 +363,29 @@ class WeatherSystem:
             elif cloud['y'] + size < 0:
                 cloud['y'] = cfg.SCREEN_HEIGHT + size
 
+        # Update small fog particles
+        if self.current_weather == WeatherState.FOG and len(self.fog_particles) < 180:
+            if random.random() < 0.6:
+                self.fog_particles.append({
+                    'x': random.uniform(-50, cfg.SCREEN_WIDTH + 50),
+                    'y': random.uniform(-50, cfg.SCREEN_HEIGHT + 50),
+                    'vx': random.uniform(15, 40),
+                    'vy': random.uniform(-8, 8),
+                    'life': 0.0,
+                    'max_life': random.uniform(3.0, 7.0),
+                    'size': random.uniform(1.5, 3.5),
+                    'max_alpha': random.uniform(60, 180)
+                })
+
+        for fp in self.fog_particles[:]:
+            fp['x'] += fp['vx'] * dt
+            fp['y'] += fp['vy'] * dt
+            fp['life'] += dt
+            # gentle sine wave drift
+            fp['y'] += math.sin(fp['life'] * 2.5) * 12.0 * dt
+            if fp['life'] >= fp['max_life']:
+                self.fog_particles.remove(fp)
+
     def _update_lightning(self, dt: float):
         if self.current_weather != WeatherState.STORM:
             return
@@ -462,12 +489,12 @@ class WeatherSystem:
             if -r < screen_pos.x < cfg.SCREEN_WIDTH + r and -r < screen_pos.y < cfg.SCREEN_HEIGHT + r:
                 puddle_surf = pygame.Surface((r * 2, r), pygame.SRCALPHA)
                 
-                # Base puddle color: deeply glassy and slightly reflective
-                base_color = (25, 35, 55, int(p['alpha'] * 0.85))
+                # Base puddle color: soft reflective sky color (bright and water-like)
+                base_color = (130, 175, 220, int(p['alpha'] * 0.5))
                 pygame.draw.ellipse(puddle_surf, base_color, (0, 0, r * 2, r))
                 
-                # Soft outer rim to blend with ground
-                rim_color = (80, 110, 140, int(p['alpha'] * 0.4))
+                # Soft outer rim to blend with ground seamlessly
+                rim_color = (160, 200, 235, int(p['alpha'] * 0.25))
                 pygame.draw.ellipse(puddle_surf, rim_color, (0, 0, r * 2, r), max(1, r // 10))
                 
                 # Specular light highlight/glint on top-left of puddle (stunning visual touch!)
@@ -580,6 +607,16 @@ class WeatherSystem:
                 surf.set_alpha(int(255 * alpha_pct * 0.5))  # Higher alpha for visibility
                 screen.blit(surf, (int(cloud['x']), int(cloud['y'])))
                 surf.set_alpha(None)
+
+            # Draw small fog particles (floating mist bits)
+            if self.fog_particles:
+                part_surf = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+                for fp in self.fog_particles:
+                    life_pct = fp['life'] / fp['max_life']
+                    alpha = int(fp['max_alpha'] * (1.0 - (2.0 * life_pct - 1.0)**2))
+                    if alpha > 0:
+                        pygame.draw.circle(part_surf, (240, 248, 255, alpha), (int(fp['x']), int(fp['y'])), fp['size'])
+                screen.blit(part_surf, (0, 0))
 
         # 5. Draw Storm screen ambient darkening
         if self.current_weather == WeatherState.STORM:
