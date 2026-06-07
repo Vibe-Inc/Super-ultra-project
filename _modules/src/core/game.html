@@ -1074,15 +1074,24 @@
 
         <span class="c1"># Peaceful majestic mobs (non-aggressive ambient creatures)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">peaceful_mobs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PeacefulMob</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tavern_cat_respawn_timer</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
 
-        <span class="c1"># Peaceful mob spawn points per map (single mob, random type, like enemies)</span>
+        <span class="c1"># Peaceful mob spawn points per map.</span>
+        <span class="c1"># Supports two value forms per map:</span>
+        <span class="c1">#   - tuple (x, y)             — random mob type from PEACEFUL_MOB_REGISTRY</span>
+        <span class="c1">#   - dict {&quot;pos&quot;: (x, y), &quot;mob_type&quot;: &quot;name&quot;}  — a specific mob type</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">PEACEFUL_MOB_SPAWNS</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;maps/test-map-2.tmx&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1100</span><span class="p">,</span> <span class="mi">800</span><span class="p">),</span>
             <span class="s2">&quot;maps/test-map-3.tmx&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">700</span><span class="p">,</span> <span class="mi">600</span><span class="p">),</span>
+            <span class="c1"># The tavern always has a friendly orange tabby cat prowling</span>
+            <span class="c1"># the common area, looking for handouts and warm hearths.</span>
+            <span class="s2">&quot;maps/tavern.tmx&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">560</span><span class="p">,</span> <span class="mi">480</span><span class="p">),</span> <span class="s2">&quot;mob_type&quot;</span><span class="p">:</span> <span class="s2">&quot;tavern_cat&quot;</span><span class="p">},</span>
         <span class="p">}</span>
 
-        <span class="c1"># Maps where peaceful mob spawning is disabled</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">NO_PEACEFUL_MOB_MAPS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;maps/tavern.tmx&quot;</span><span class="p">,</span> <span class="s2">&quot;maps/test-map-1.tmx&quot;</span><span class="p">,</span> <span class="s2">&quot;maps/test-map-4.tmx&quot;</span><span class="p">}</span>
+        <span class="c1"># Maps where peaceful mob spawning is disabled.</span>
+        <span class="c1"># Note: the tavern is intentionally NOT in this set — the Tavern</span>
+        <span class="c1"># Cat is a signature peaceful mob that must always be present.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">NO_PEACEFUL_MOB_MAPS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;maps/test-map-1.tmx&quot;</span><span class="p">}</span>
 
         <span class="c1"># Enemy spawning system</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">enemy_spawn_timer</span> <span class="o">=</span> <span class="mf">0.0</span>
@@ -1392,16 +1401,42 @@
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loaded </span><span class="si">{</span><span class="n">total</span><span class="si">}</span><span class="s2"> gatherable node(s) across </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gatherables</span><span class="p">)</span><span class="si">}</span><span class="s2"> map(s)&quot;</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_spawn_peaceful_mobs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Spawn a single peaceful mob on the current map (random type, like enemies).&quot;&quot;&quot;</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.peaceful_mob</span><span class="w"> </span><span class="kn">import</span> <span class="n">PEACEFUL_MOB_REGISTRY</span><span class="p">,</span> <span class="n">create_peaceful_mob</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Spawn a single peaceful mob on the current map.</span>
+
+<span class="sd">        Spawn info for a map can be either:</span>
+<span class="sd">          * a tuple ``(x, y)`` — picks a random mob type from</span>
+<span class="sd">            :data:`PEACEFUL_MOB_REGISTRY`.</span>
+<span class="sd">          * a dict ``{&quot;pos&quot;: (x, y), &quot;mob_type&quot;: &quot;name&quot;}`` — always</span>
+<span class="sd">            spawns the specific mob type requested. This is how the</span>
+<span class="sd">            tavern guarantees its signature orange tabby cat is always</span>
+<span class="sd">            prowling the common area.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.peaceful_mob</span><span class="w"> </span><span class="kn">import</span> <span class="n">COMMON_MOB_TYPES</span><span class="p">,</span> <span class="n">PEACEFUL_MOB_REGISTRY</span><span class="p">,</span> <span class="n">create_peaceful_mob</span>
         <span class="n">spawn_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PEACEFUL_MOB_SPAWNS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">spawn_info</span><span class="p">:</span>
             <span class="k">return</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">NO_PEACEFUL_MOB_MAPS</span><span class="p">:</span>
             <span class="k">return</span>
 
-        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">spawn_info</span>
-        <span class="n">mob_type</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">PEACEFUL_MOB_REGISTRY</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+        <span class="c1"># Normalise the two supported spawn-info forms.</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">spawn_info</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">spawn_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pos&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+            <span class="n">mob_type</span> <span class="o">=</span> <span class="n">spawn_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mob_type&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">mob_type</span><span class="p">:</span>
+                <span class="n">mob_type</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">COMMON_MOB_TYPES</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Legacy tuple form</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">spawn_info</span>
+            <span class="n">mob_type</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">COMMON_MOB_TYPES</span><span class="p">)</span>
+
+        <span class="c1"># Validate mob type exists in registry; fall back to a random one</span>
+        <span class="c1"># if the configured type was removed or renamed.</span>
+        <span class="k">if</span> <span class="n">mob_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">PEACEFUL_MOB_REGISTRY</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Configured peaceful mob type &#39;</span><span class="si">{</span><span class="n">mob_type</span><span class="si">}</span><span class="s2">&#39; is not in &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;PEACEFUL_MOB_REGISTRY — falling back to a random type.&quot;</span>
+            <span class="p">)</span>
+            <span class="n">mob_type</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">COMMON_MOB_TYPES</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_position_collision</span><span class="p">(</span>
             <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">40</span><span class="p">),</span>
@@ -1410,9 +1445,15 @@
         <span class="p">):</span>
             <span class="n">mob</span> <span class="o">=</span> <span class="n">create_peaceful_mob</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">mob_type</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">peaceful_mobs</span> <span class="o">=</span> <span class="p">[</span><span class="n">mob</span><span class="p">]</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Spawned </span><span class="si">{</span><span class="n">mob_type</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Spawned </span><span class="si">{</span><span class="n">mob_type</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="si">}</span><span class="s2"> at &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">x</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">y</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Peaceful mob spawn position (</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">) blocked on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Peaceful mob spawn position (</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">) blocked on &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="si">}</span><span class="s2">; will not spawn.&quot;</span>
+            <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_check_position_collision</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rect</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">,</span> <span class="n">obstacles</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">nav_grid</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if a rectangle collides with obstacles or is on an unwalkable tile.&quot;&quot;&quot;</span>
@@ -2889,8 +2930,20 @@
         <span class="c1"># Remove dead peaceful mobs (drop loot, then despawn)</span>
         <span class="k">for</span> <span class="n">mob</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaceful_mobs</span><span class="p">[:]:</span>
             <span class="k">if</span> <span class="n">mob</span><span class="o">.</span><span class="n">is_dead</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">mob</span><span class="o">.</span><span class="n">mob_type</span> <span class="o">==</span> <span class="s2">&quot;tavern_cat&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="o">==</span> <span class="s2">&quot;maps/tavern.tmx&quot;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_tavern_cat_respawn_timer</span> <span class="o">=</span> <span class="mf">5.0</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_drop_peaceful_mob_loot</span><span class="p">(</span><span class="n">mob</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">peaceful_mobs</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">mob</span><span class="p">)</span>
+
+        <span class="c1"># Tavern cat respawn — at most one at a time</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="o">==</span> <span class="s2">&quot;maps/tavern.tmx&quot;</span><span class="p">:</span>
+            <span class="n">has_cat</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">mob_type</span> <span class="o">==</span> <span class="s2">&quot;tavern_cat&quot;</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaceful_mobs</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">has_cat</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_tavern_cat_respawn_timer</span> <span class="o">-=</span> <span class="n">dt</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tavern_cat_respawn_timer</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.peaceful_mob</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_peaceful_mob</span>
+                    <span class="n">cat</span> <span class="o">=</span> <span class="n">create_peaceful_mob</span><span class="p">(</span><span class="mi">560</span><span class="p">,</span> <span class="mi">480</span><span class="p">,</span> <span class="s2">&quot;tavern_cat&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">peaceful_mobs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cat</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
@@ -3635,9 +3688,7 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">smeltery</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
                 <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_nearby_peaceful_mob</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">mob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_nearby_peaceful_mob</span><span class="p">()</span>
-                    <span class="n">msg</span> <span class="o">=</span> <span class="n">mob</span><span class="o">.</span><span class="n">on_player_interact</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">msg</span><span class="p">:</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">current_dialog</span> <span class="o">=</span> <span class="n">Dialog</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="p">[</span><span class="n">msg</span><span class="p">])</span>
+                    <span class="n">mob</span><span class="o">.</span><span class="n">pet</span><span class="p">()</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="c1"># Otherwise toggle the player&#39;s inventory (open/close)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">toggle_inventory</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">MAIN_player_inv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PLAYER_inventory_equipment</span><span class="p">)</span>
