@@ -1,7 +1,10 @@
 import math
 import random
 import pygame
-from database.effects import BurnEffect, ConfusionEffect, DizzinessEffect, FreezeEffect, PoisonEffect, SlowEffect, RootEffect
+from database.effects import (
+    BurnEffect, FreezeEffect, SlowEffect, RootEffect, PoisonEffect,
+    ConfusionEffect, DizzinessEffect,
+)
 from src.core.logger import logger
 
 
@@ -214,6 +217,7 @@ class ArcaneBolt:
         self.damage = damage
         self.burn_duration = burn_duration
         self.burn_dps = burn_dps
+        self.reflected = False
         self.traveled = 0.0
         self.color = color
         self.alive = True
@@ -271,7 +275,7 @@ class ArcaneBolt:
                 self.alive = False
                 return
 
-        if player and rect.colliderect(player.get_rect()):
+        if player and not getattr(self, 'reflected', False) and rect.colliderect(player.get_rect()):
             logger.info(f"ArcaneBolt hit player for {self.damage} damage")
             if self.damage > 0:
                 player.take_damage(self.damage)
@@ -518,17 +522,18 @@ class Bomb:
         if self.exploding:
             self.explosion_timer += dt
             if not self.damage_applied:
-                player_center = self._player_center(player)
-                if player_center:
-                    pdiff = player_center - self.pos
-                    if pdiff.length_squared() <= (self.blast_radius * self.blast_radius):
-                        if self.damage > 0:
-                            player.take_damage(self.damage)
-                        if self.knockback_force > 0:
-                            direction = player_center - self.pos
-                            if direction.length_squared() == 0:
-                                direction = pygame.Vector2(1, 0)
-                            player.pos += direction.normalize() * self.knockback_force
+                if not getattr(self, 'reflected', False):
+                    player_center = self._player_center(player)
+                    if player_center:
+                        pdiff = player_center - self.pos
+                        if pdiff.length_squared() <= (self.blast_radius * self.blast_radius):
+                            if self.damage > 0:
+                                player.take_damage(self.damage)
+                            if self.knockback_force > 0:
+                                direction = player_center - self.pos
+                                if direction.length_squared() == 0:
+                                    direction = pygame.Vector2(1, 0)
+                                player.pos += direction.normalize() * self.knockback_force
                 self.damage_applied = True
 
             for sp in self.shrapnel_particles[:]:
@@ -3488,6 +3493,177 @@ class ElementalBurst:
             ])
             pygame.draw.line(screen, w_color, (cx, cy), (int(wx), int(wy)), max(1, int(2 * (1 - progress))))
 
+class ThrownWeapon:
+    """Projectile for thrown melee weapons.
+
+    Flies in a straight line, stops at max range or on collision,
+    and marks itself as landed so the game can spawn a DroppedItem.
+
+    Attributes:
+        pos (pygame.Vector2): Current world position.
+        direction (pygame.Vector2): Normalised travel direction.
+        speed (float): Pixels-per-second travel speed.
+        max_range (float): Maximum travel distance.
+        traveled (float): Distance travelled so far.
+        weapon_item (Item): The weapon being thrown (used to create drop).
+        will_drop (bool): If True, a DroppedItem is created on landing.
+        alive (bool): Whether the projectile is still active.
+        landed (bool): Set to True when the projectile stops.
+    """
+    def __init__(self, pos, direction, speed, max_range, weapon_item, will_drop=True, damage=0):
+        self.pos = pygame.Vector2(pos)
+        self.direction = pygame.Vector2(direction)
+        if self.direction.length_squared() == 0:
+            self.direction = pygame.Vector2(1, 0)
+        else:
+            self.direction = self.direction.normalize()
+        self.speed = speed
+        self.max_range = max_range
+        self.traveled = 0.0
+        self.weapon_item = weapon_item
+        self.will_drop = will_drop
+        self.damage = damage
+        self.alive = True
+        self.landed = False
+        self.image = weapon_item.resize(32)
+        angle = math.degrees(math.atan2(-self.direction.y, self.direction.x))
+        self.image = pygame.transform.rotate(self.image, angle)
+
+    def get_rect(self):
+        rect = self.image.get_rect()
+        rect.center = (int(self.pos.x), int(self.pos.y))
+        return rect
+
+    def update(self, dt, obstacles, enemies):
+        if not self.alive:
+            return
+        movement = self.direction * self.speed * dt
+        self.pos += movement
+        self.traveled += self.speed * dt
+
+        rect = self.get_rect()
+        for wall in obstacles:
+            if rect.colliderect(wall):
+                self.landed = True
+                self.alive = False
+                return
+
+        for enemy in enemies:
+            if rect.colliderect(enemy.get_rect()):
+                if self.damage > 0:
+                    enemy.take_damage(self.damage)
+                self.landed = True
+                self.alive = False
+                return
+
+        if self.traveled >= self.max_range:
+            self.landed = True
+            self.alive = False
+
+    def draw(self, screen, camera_offset=None):
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+        rect = self.get_rect()
+        rect.x -= int(camera_offset.x)
+        rect.y -= int(camera_offset.y)
+        screen.blit(self.image, rect)
+
+class Shockwave:
+    """Traveling shockwave spawned after a charged sword attack that missed.
+
+    White-pink visual. Radius shrinks from start_radius to end_radius over
+    the travel distance. Deals reduced damage to enemies it passes through.
+    """
+    def __init__(self, pos, direction, speed, max_range, damage,
+                 start_radius=90, end_radius=45):
+        self.pos = pygame.Vector2(pos)
+        self.direction = pygame.Vector2(direction)
+        if self.direction.length_squared() == 0:
+            self.direction = pygame.Vector2(1, 0)
+        else:
+            self.direction = self.direction.normalize()
+        self.speed = speed
+        self.max_range = max_range
+        self.traveled = 0.0
+        self.damage = damage
+        self.start_radius = start_radius
+        self.end_radius = end_radius
+        self.alive = True
+        self._hit_enemies = set()
+
+    def get_rect(self):
+        r = self._current_radius()
+        return pygame.Rect(int(self.pos.x - r), int(self.pos.y - r), int(r * 2), int(r * 2))
+
+    def _current_radius(self):
+        t = min(1.0, self.traveled / self.max_range) if self.max_range > 0 else 1.0
+        return self.start_radius + (self.end_radius - self.start_radius) * t
+
+    def update(self, dt, obstacles, enemies):
+        if not self.alive:
+            return
+        movement = self.direction * self.speed * dt
+        self.pos += movement
+        self.traveled += self.speed * dt
+
+        radius = self._current_radius()
+        radius_sq = radius * radius
+
+        for enemy in enemies:
+            eid = id(enemy)
+            if eid in self._hit_enemies:
+                continue
+            e_center = pygame.Vector2(enemy.get_rect().center)
+            if self.pos.distance_squared_to(e_center) <= radius_sq:
+                enemy.take_damage(self.damage)
+                self._hit_enemies.add(eid)
+
+        for wall in obstacles:
+            if self.get_rect().colliderect(wall):
+                self.alive = False
+                return
+
+        if self.traveled >= self.max_range:
+            self.alive = False
+
+    def draw(self, screen, camera_offset=None):
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+        cx = int(self.pos.x - camera_offset.x)
+        cy = int(self.pos.y - camera_offset.y)
+        radius = self._current_radius()
+        progress = min(1.0, self.traveled / self.max_range) if self.max_range > 0 else 1.0
+        alpha = int(160 * (1.0 - progress * 0.3))
+
+        surf_size = int(radius * 2 + 20)
+        surf = pygame.Surface((surf_size, surf_size), pygame.SRCALPHA)
+
+        pulse = abs(math.sin(pygame.time.get_ticks() * 0.008 + progress * 4))
+
+        inner_r = radius * 0.3
+        core_color = (255, 230, 240, alpha)
+        pygame.draw.circle(surf, core_color, (surf_size // 2, surf_size // 2), inner_r)
+
+        mid_r = radius * 0.65
+        mid_alpha = int(alpha * 0.7 * (0.6 + 0.4 * pulse))
+        pygame.draw.circle(surf, (255, 200, 220, mid_alpha),
+                           (surf_size // 2, surf_size // 2), mid_r,
+                           max(1, int(radius * 0.08)))
+
+        outer_r = radius
+        outer_alpha = int(alpha * 0.35 * (0.5 + 0.5 * pulse))
+        pygame.draw.circle(surf, (255, 180, 210, outer_alpha),
+                           (surf_size // 2, surf_size // 2), outer_r,
+                           max(2, int(radius * 0.06)))
+
+        glow_r = radius + 6
+        glow_alpha = int(alpha * 0.15)
+        pygame.draw.circle(surf, (255, 200, 230, glow_alpha),
+                           (surf_size // 2, surf_size // 2), glow_r,
+                           max(1, int(radius * 0.04)))
+
+        screen.blit(surf, (cx - surf_size // 2, cy - surf_size // 2),
+                    special_flags=pygame.BLEND_ALPHA_SDL2)
 
 class IceShard:
     """
@@ -3548,7 +3724,7 @@ class IceShard:
             if rect.colliderect(wall):
                 self.alive = False
                 return
-        if player and rect.colliderect(player.get_rect()):
+        if player and not getattr(self, 'reflected', False) and rect.colliderect(player.get_rect()):
             if self.damage > 0:
                 player.take_damage(self.damage)
             if self.slow_duration > 0:
@@ -3587,7 +3763,6 @@ class IceShard:
         pygame.draw.polygon(screen, (150, 200, 255), pts, 1)
         pygame.draw.circle(screen, (240, 250, 255), (cx, cy), 3)
         pygame.draw.circle(screen, (255, 255, 255), (cx, cy), 1)
-
 
 class ShadowBolt:
     """
@@ -3646,7 +3821,7 @@ class ShadowBolt:
             if rect.colliderect(wall):
                 self.alive = False
                 return
-        if player and rect.colliderect(player.get_rect()):
+        if player and not getattr(self, 'reflected', False) and rect.colliderect(player.get_rect()):
             if self.damage > 0:
                 player.take_damage(self.damage)
             if self.confuse_duration > 0:
@@ -3697,6 +3872,7 @@ class ShadowBolt:
 # ============================================================
 # CHAIN LIGHTNING BOLT — stormcaller projectile that stuns
 # ============================================================
+
 class ChainLightningBolt:
     """Lightning bolt projectile that applies dizziness on hit."""
     def __init__(self, origin, direction, speed, max_range, damage, dizzy_duration):
@@ -3732,7 +3908,7 @@ class ChainLightningBolt:
         # hit player
         pr = player.get_rect()
         bolt_rect = pygame.Rect(int(self.pos.x) - 4, int(self.pos.y) - 4, 8, 8)
-        if bolt_rect.colliderect(pr):
+        if not getattr(self, 'reflected', False) and bolt_rect.colliderect(pr):
             if self.damage > 0:
                 player.take_damage(self.damage)
             if self.dizzy_duration > 0:
@@ -3785,6 +3961,7 @@ class ChainLightningBolt:
 # ============================================================
 # PLAGUE CLOUD — plaguebearer projectile that poisons on hit
 # ============================================================
+
 class PlagueCloud:
     """Toxic cloud projectile that applies poison and slow on hit."""
     def __init__(self, origin, direction, speed, max_range, damage, poison_duration, poison_dps):
@@ -3816,7 +3993,7 @@ class PlagueCloud:
             self.trail.pop(0)
         pr = player.get_rect()
         cloud_rect = pygame.Rect(int(self.pos.x) - 10, int(self.pos.y) - 10, 20, 20)
-        if cloud_rect.colliderect(pr):
+        if not getattr(self, 'reflected', False) and cloud_rect.colliderect(pr):
             if self.damage > 0:
                 player.take_damage(self.damage)
             if self.poison_duration > 0:

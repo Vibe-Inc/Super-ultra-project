@@ -682,6 +682,38 @@ class WikiMenu(Menu):
                 "Forged in the fires of a forgotten forge, the Guardian is a hulking iron sentinel bound to a place of power.\n\n"
                 "Steam hisses from brass-banded joints and copper pistons pump with every ponderous step. It will not stray far from its post\u2014but woe to any intruder that crosses the threshold it defends.\n\n"
                 "Abilities: Heavy Slam (45 range, knockback), Guard Post (radius 320, leash 90), Patrol Wait (0.8s). Health: 140. Speed: 100.")},
+            {"title": _("The Phantom"), "portrait": "phantom", "body": _(
+                "Some wounds never heal. Some souls never leave. The Phantoms are the remnants of mages who tried to cheat death.\n\n"
+                "Bound to the world by spectral chains, they drift through walls and memory alike, draining life force with a touch that feels like a winter breeze\u2014cold, brief, and leaving you weaker.\n\n"
+                "Abilities: Life Drain (280 speed, heal 35% of damage), Slow (1.5s, 0.65x). Health: 100. Speed: 105.")},
+            {"title": _("The Titan"), "portrait": "titan", "body": _(
+                "The mountains remember the Titans\u2014ancient stone colossi carved by a forgotten race to guard the old roads.\n\n"
+                "Moss and time have worn their features smooth, but the runes etched into their hide still pulse with amber light. When a Titan stomps, the ground itself trembles, and roots erupt to hold you in place.\n\n"
+                "Abilities: Stomp (50 range, knockback 45, root 2.5s), Charge (2\u00d7 speed, 320 cooldown). Health: 220. Speed: 75.")},
+            {"title": _("The Cryomancer"), "portrait": "cryomancer", "body": _(
+                "In the northern ruins where snow falls even in summer, the Cryomancers hold court.\n\n"
+                "These ice-weavers were once scholars of a frost school that has long since crumbled. Now they guard their frozen libraries with jagged shards of crystallized mana. Up close, they unleash a biting nova that freezes blood in the veins.\n\n"
+                "Abilities: Ice Shard (420 speed, 500 range, slow 2.5s), Frost Nova (80 radius, freeze 2s). Health: 85. Speed: 110.")},
+            {"title": _("The Shadowmancer"), "portrait": "shadowmancer", "body": _(
+                "The Shadowmancers speak in whispers to things that dwell between the stars. Their bodies are merely vessels for the void they serve.\n\n"
+                "They flicker and vanish when threatened, reappearing at a safe distance before loosing bolts of concentrated shadow that infest the mind with confusion. To face one is to question your own senses.\n\n"
+                "Abilities: Shadow Bolt (450 speed, 480 range, confuse 3s), Void Escape (260 range teleport). Health: 75. Speed: 125.")},
+            {"title": _("The Revenant"), "portrait": "revenant", "body": _(
+                "A revenant is what happens when a warrior\u2019s rage outlives their flesh. These undying soldiers remember only the fight.\n\n"
+                "Every strike heals them, siphoning life from the wound they just opened. And should you manage to bring one low, its undying will ignites\u2014a surge of pale green soul-fire that restores it to fighting form.\n\n"
+                "Abilities: Lifesteal Slash (30% heal, bleed 3s), Undying Will (35% heal, 2.5s immunity, 15s cooldown). Health: 130. Speed: 110.")},
+            {"title": _("The Molten"), "portrait": "molten", "body": _(
+                "Deep within the earth, where pressure cooks stone into magma, the Molten were born.\n\n"
+                "These hulking fire elementals are living forges. Lava pulses through cracks in their rocky hides, and they burn everything they touch. When angered, they release a searing nova or charge with the unstoppable force of a landslide.\n\n"
+                "Abilities: Fire Nova (100 radius, burn 3.5s, 6 DPS), Lava Charge (2.5\u00d7 speed, 350 cooldown). Health: 150. Speed: 100.")},
+            {"title": _("The Stormcaller"), "portrait": "stormcaller", "body": _(
+                "High atop jagged peaks that pierce the clouds, the Stormcallers conduct their eternal symphony of lightning.\n\n"
+                "These robed tempests hurl crackling bolts that dance with wild energy. If you close the distance, they release a static field that scrambles the senses, leaving you disoriented and vulnerable.\n\n"
+                "Abilities: Chain Lightning (500 speed, 520 range, dizzy 1.8s), Static Field (90 radius, 3s cooldown). Health: 80. Speed: 115.")},
+            {"title": _("The Plaguebearer"), "portrait": "plaguebearer", "body": _(
+                "The Plaguebearers were once healers\u2014until they tried to cure a disease that had no cure. Now they are its carriers.\n\n"
+                "Robes caked with filth and malice, these wretched casters lob clouds of pestilence that poison the air. At close range they erupt in a pestilent nova that saps strength and leaves a creeping sickness in its wake.\n\n"
+                "Abilities: Plague Cloud (380 speed, 460 range, poison 4s, 5.5 DPS), Pestilence Nova (100 radius, slow 2s). Health: 110. Speed: 105.")},
         ]
 
     def _magic_pages(self):

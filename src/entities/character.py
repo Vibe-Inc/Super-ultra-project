@@ -491,6 +491,51 @@ class Character:
         self.last_attack_dir = pygame.Vector2(1, 0)
         self.melee_origin_offset = 6.0
         self.melee_slash_distance = 50.0
+
+        # Charge attack system
+        self.charge_start_time: int = 0
+        self.is_charging: bool = False
+        self.is_charged: bool = False
+        self.charge_threshold: int = 500  # ms to hold for charged attack
+        self.charge_indicator: float = 0.0  # 0..1 progress
+        self.charge_mouse_pos: pygame.Vector2 | None = None
+
+        # Fast attack
+        self.fast_attack_damage_mult: float = 0.6
+        self.fast_attack_knockback_mult: float = 2.0
+        self.fast_attack_stun_duration: float = 0.5
+
+        # Charged attack
+        self.charged_attack_damage_mult: float = 1.8
+        self.charged_attack_range_mult: float = 1.3
+        self.normal_attack_stamina_cost: float = 6.0
+        self.fast_attack_stamina_cost: float = 4.0
+        self.charged_attack_stamina_cost: float = 30.0
+
+        # Block / Parry system
+        self.blocking: bool = False
+        self.block_start_time: int = 0
+        self.parry_window_ms: int = 150  # ms after block start where parry is possible
+        self.block_damage_reduction: float = 0.6  # 60% reduction while blocking
+        self.parry_active: bool = False
+        self.parry_timer: float = 0.0
+        self.parry_success: bool = False
+        self.stamina_parry_cost: float = 50.0  # ~50% of max_stamina (100)
+
+        # Weapon throw
+        self.throw_damage_mult: float = 1.5
+        self.throw_cooldown_ms: int = 2000
+        self.throw_last_time: int = -self.throw_cooldown_ms
+
+        # Stun mechanic (for enemies hit by fast attack, parry)
+        self.stun_applied: bool = False
+
+        # Attack visual tint and scale for different attack types
+        self.attack_visual_tint: tuple | None = None  # (r,g,b,a) or None
+        self.attack_visual_scale: float = 1.0
+        self._combat_style: str = "sword"
+        self._hit_any_enemy: bool = False
+
         self.skillbook = self._build_skillbook()
         self.skillbar = [None for _ in range(6)]
         self.fireball_speed = 420.0
@@ -1800,11 +1845,12 @@ class Character:
         effective_cooldown = self.attack_cooldown * getattr(self, "cooldown_multiplier", 1.0)
         return current_time - self.last_attack_time >= effective_cooldown
 
-    def start_attack(self, current_time=None, show_slash=True):
+    def start_attack(self, current_time=None, show_slash=True, visual_tint=None):
         if current_time is None:
             current_time = pygame.time.get_ticks()
         self.last_attack_time = current_time
         self.is_attacking = show_slash
+        self.attack_visual_tint = visual_tint
 
     def get_effective_attack_damage(self):
         """Compute the final damage of an attack, factoring in weapon + damage_bonus buff."""
@@ -1836,7 +1882,7 @@ class Character:
         if not self.can_attack(current_time):
             return
 
-        self.start_attack(current_time, show_slash=True)
+        self.start_attack(current_time, show_slash=True, visual_tint=self.attack_visual_tint)
         logger.info("Player attacks!")
 
         forward = self.get_forward_direction()
@@ -1877,6 +1923,7 @@ class Character:
             if not hit:
                 continue
 
+            self._hit_any_enemy = True
             logger.info(f"Hit enemy for {self.attack_damage} damage!")
             final_damage = self.get_effective_attack_damage()
             enemy.take_damage(final_damage)
@@ -2097,6 +2144,265 @@ class Character:
             if getattr(self, '_obstacles', None):
                 self._collision_system.resolve_static_collision(enemy, self._obstacles)
 
+    # ── Charge system ──
+    def start_charge(self, mouse_pos=None):
+        current_time = pygame.time.get_ticks()
+        if not self.can_attack(current_time):
+            return
+        self.charge_start_time = current_time
+        self.is_charging = True
+        self.is_charged = False
+        self.charge_indicator = 0.0
+        self.charge_mouse_pos = mouse_pos
+
+    def cancel_charge(self):
+        self.is_charging = False
+        self.is_charged = False
+        self.charge_indicator = 0.0
+        self.charge_start_time = 0
+
+    def update_charge(self):
+        if not self.is_charging:
+            return
+        current_time = pygame.time.get_ticks()
+        elapsed = current_time - self.charge_start_time
+        self.charge_indicator = min(1.0, elapsed / self.charge_threshold)
+        if elapsed >= self.charge_threshold:
+            self.is_charged = True
+
+    def release_charge(self, enemies, aim_direction=None, game_state=None):
+        if self.is_charged:
+            self.attack_charged(enemies, aim_direction, game_state)
+        elif self.is_charging:
+            self.attack_visual_tint = None
+            self.attack_visual_scale = 1.0
+            if not self.consume_stamina(self.normal_attack_stamina_cost):
+                self.cancel_charge()
+                return
+            if self._combat_style == "war_hammer":
+                self.attack_war_hammer(enemies, aim_direction)
+            elif self._combat_style == "mace":
+                self.attack_mace(enemies, aim_direction)
+            elif self._combat_style == "axe":
+                self.attack_axe(enemies, aim_direction)
+            elif self._combat_style == "spear":
+                self.attack_spear(enemies, aim_direction)
+            else:
+                self.attack(enemies, aim_direction=aim_direction)
+        self.cancel_charge()
+
+    # ── Charged attack ──
+    def attack_charged(self, enemies, aim_direction=None, game_state=None):
+        current_time = pygame.time.get_ticks()
+        if not self.consume_stamina(self.charged_attack_stamina_cost):
+            self.attack_visual_tint = None
+            self.attack_visual_scale = 1.0
+            if not self.consume_stamina(self.normal_attack_stamina_cost):
+                return
+            self.attack(enemies, aim_direction=aim_direction)
+            return
+
+        self.attack_visual_tint = (255, 60, 60, 120)  # Red tint for charged attack
+        self.attack_visual_scale = 1.4
+
+        effective_damage = self.attack_damage
+        self.attack_damage = int(self.attack_damage * self.charged_attack_damage_mult)
+        effective_range = self.attack_range
+        self.attack_range = int(self.attack_range * self.charged_attack_range_mult)
+
+        # Track hit detection for shockwave spawning
+        self._hit_any_enemy = False
+
+        # Charged attack with red tint
+        if self._combat_style == "war_hammer":
+            self.attack_war_hammer(enemies, aim_direction)
+        elif self._combat_style == "mace":
+            self.attack_mace(enemies, aim_direction)
+        elif self._combat_style == "axe":
+            self.attack_axe(enemies, aim_direction)
+        elif self._combat_style == "spear":
+            self.attack_spear(enemies, aim_direction)
+        else:
+            self.attack(enemies, aim_direction=aim_direction)
+
+        self.attack_damage = effective_damage
+        self.attack_range = effective_range
+
+        # Spawn shockwave if charged sword attack missed everything
+        if not self._hit_any_enemy and self._combat_style == "sword" and game_state is not None:
+            if aim_direction is None:
+                aim_direction = self.get_forward_direction()
+            aim_dir = pygame.Vector2(aim_direction)
+            if aim_dir.length_squared() > 0:
+                aim_dir = aim_dir.normalize()
+                from src.entities.projectile import Shockwave
+                origin = self.get_melee_anchor() + aim_dir * self.melee_origin_offset
+                max_travel = self.base_attack_range * 4
+                shock = Shockwave(origin, aim_dir, 350.0, max_travel,
+                                  max(1, int(self.attack_damage * 0.5)),
+                                  start_radius=self.base_attack_range * 1.4,
+                                  end_radius=self.base_attack_range * 0.7)
+                game_state.projectiles.append(shock)
+
+    # ── Fast attack ──
+    def attack_fast(self, enemies, aim_direction=None):
+        current_time = pygame.time.get_ticks()
+        if not self.can_attack(current_time):
+            return
+        if not self.consume_stamina(self.fast_attack_stamina_cost):
+            return
+
+        self.attack_visual_tint = (180, 80, 255, 120)
+        self.attack_visual_scale = 0.7
+        self.start_attack(current_time, show_slash=True, visual_tint=self.attack_visual_tint)
+
+        if aim_direction is None:
+            aim_direction = self.get_forward_direction()
+        aim_dir = pygame.Vector2(aim_direction)
+        if aim_dir.length_squared() == 0:
+            aim_dir = pygame.Vector2(1, 0)
+        aim_dir = aim_dir.normalize()
+        self.last_attack_dir = pygame.Vector2(aim_dir)
+
+        range_sq = float(self.attack_range) * float(self.attack_range)
+        origin = self.get_melee_anchor() + aim_dir * self.melee_origin_offset
+        forward = self.get_forward_direction()
+        if forward.length_squared() == 0:
+            forward = pygame.Vector2(1, 0)
+        cone_half_angle = 45.0
+        cos_half_angle = math.cos(math.radians(cone_half_angle))
+
+        for enemy in enemies:
+            enemy_rect = enemy.get_rect()
+            enemy_center = pygame.Vector2(enemy_rect.centerx, enemy_rect.centery)
+            to_enemy = enemy_center - origin
+            dist_sq = to_enemy.length_squared()
+            if dist_sq > range_sq:
+                continue
+
+            if dist_sq == 0:
+                hit = True
+                knock_dir = pygame.Vector2(aim_dir)
+            else:
+                to_enemy_dir = to_enemy.normalize()
+                hit = aim_dir.dot(to_enemy_dir) >= cos_half_angle
+                knock_dir = to_enemy_dir
+
+            if not hit:
+                continue
+
+            final_damage = int(self.get_effective_attack_damage() * self.fast_attack_damage_mult)
+            enemy.take_damage(max(1, final_damage))
+            self._apply_weapon_enchantments(enemy)
+
+            if self.poison_blade:
+                enemy.add_effect(PoisonEffect(self.poison_blade_duration, self.poison_blade_damage_per_sec))
+
+            knockback_force = 40 * self.fast_attack_knockback_mult
+            enemy.pos += knock_dir * knockback_force
+            if hasattr(enemy, "stun"):
+                enemy.stun(self.fast_attack_stun_duration)
+            if getattr(self, '_obstacles', None):
+                self._collision_system.resolve_static_collision(enemy, self._obstacles)
+
+    # ── Block / Parry system ──
+    def start_block(self):
+        self.blocking = True
+        self.block_start_time = pygame.time.get_ticks()
+        self.parry_success = False
+
+    def stop_block(self):
+        was_blocking = self.blocking
+        hold_duration = pygame.time.get_ticks() - self.block_start_time
+        self.blocking = False
+        self.parry_active = False
+        # If block was very brief (< 150ms), return False to signal it was a click, not a hold
+        return not was_blocking or hold_duration < 150
+
+    def is_in_parry_window(self) -> bool:
+        if not self.blocking:
+            return False
+        return (pygame.time.get_ticks() - self.block_start_time) <= self.parry_window_ms
+
+    def do_parry(self, enemy) -> bool:
+        if not self.consume_stamina(self.stamina_parry_cost):
+            return False
+        self.parry_success = True
+        self.parry_active = True
+        if hasattr(enemy, "stun"):
+            enemy.stun(1.5)
+        damage = int(self.get_effective_attack_damage() * 0.5)
+        enemy.take_damage(max(1, damage))
+        return True
+
+    def reflect_projectile(self, projectile) -> bool:
+        if not self.consume_stamina(self.stamina_parry_cost):
+            return False
+        self.parry_success = True
+        self.parry_active = True
+        if hasattr(projectile, "direction"):
+            projectile.direction *= -1
+        if hasattr(projectile, "speed"):
+            projectile.speed *= 1.5
+        projectile.reflected = True
+        projectile.traveled = 0.0
+        projectile.damage = max(1, projectile.damage // 2) if hasattr(projectile, 'damage') else 0
+        return True
+
+    # ── Weapon throw ──
+    def can_throw_weapon(self) -> bool:
+        current_time = pygame.time.get_ticks()
+        return current_time - self.throw_last_time >= self.throw_cooldown_ms
+
+    def throw_weapon(self, enemies, aim_direction=None, game_state=None):
+        current_time = pygame.time.get_ticks()
+        if not self.can_throw_weapon():
+            return
+        if not game_state or not hasattr(game_state, 'INV_manager'):
+            return
+
+        # Take the weapon from the active hotbar slot
+        inv_manager = game_state.INV_manager
+        weapon_slot = inv_manager.take_active_hotbar_item()
+        if weapon_slot is None:
+            return
+        weapon_item, count = weapon_slot
+        if weapon_item is None or not hasattr(weapon_item, 'weapon_class'):
+            return
+        if getattr(weapon_item, 'weapon_class', None) != 'melee':
+            return
+        if hasattr(weapon_item, 'is_broken') and weapon_item.is_broken():
+            return
+
+        self.throw_last_time = current_time
+
+        if aim_direction is None:
+            aim_direction = self.get_forward_direction()
+        aim_dir = pygame.Vector2(aim_direction)
+        if aim_dir.length_squared() == 0:
+            aim_dir = pygame.Vector2(1, 0)
+        aim_dir = aim_dir.normalize()
+
+        # Throw range is inversely proportional to weapon attack range
+        weapon_range = getattr(weapon_item, 'range', 50)
+        throw_range = max(80, min(250, 250 - weapon_range))
+        speed = 300.0
+
+        # If weapon has only 1 durability or less → no drop on landing
+        will_drop = not (getattr(weapon_item, 'durability', 1) <= 1 or getattr(weapon_item, 'unbreakable', False))
+        if will_drop:
+            weapon_item.apply_durability_damage(1)
+
+        # Create the thrown weapon projectile with damage
+        from src.entities.projectile import ThrownWeapon
+        origin = self.get_center() + aim_dir * 20
+        eff = getattr(weapon_item, "get_effective_damage", None)
+        throw_damage = eff(weapon_item.damage) if callable(eff) else weapon_item.damage
+        proj = ThrownWeapon(origin, aim_dir, speed, throw_range, weapon_item, will_drop, damage=throw_damage)
+        if hasattr(game_state, 'projectiles'):
+            game_state.projectiles.append(proj)
+            logger.info(f"Threw weapon {getattr(weapon_item, 'name', 'weapon')}")
+
     def get_rect(self):
         """Returns the collision rectangle (hitbox), updated to the current float position."""
         # Define a smaller hitbox for the feet (e.g., 40x20 pixels)
@@ -2193,6 +2499,11 @@ class Character:
         if self.is_attacking and pygame.time.get_ticks() - self.last_attack_time > 200:
             self.is_attacking = False
 
+        # Update charge state
+        self.update_charge()
+
+        # Blocking slowing is applied after _set_velocity (see below)
+
         # Update Flame Shield active timer
         if self.flame_shield_active:
             self.flame_shield_active_time -= dt
@@ -2283,15 +2594,20 @@ class Character:
                 self.effects.remove(effect)
 
         self._set_velocity()
+        if self.blocking:
+            self.speed = min(self.speed, self.base_speed * 0.5)
         
         # Stamina management (logic from your update method)
         if self.moving and self.is_sprinting:
             self.stamina -= self.stamina_drain_rate * dt
             if self.stamina <= 0:
                 self.stamina = 0
-                self.can_sprint = False  
-        elif not self.moving:
-            self.stamina += self.stamina_regen_rate * dt
+                self.can_sprint = False
+        elif not self.blocking:
+            regen = self.stamina_regen_rate
+            if self.moving:
+                regen *= 0.25
+            self.stamina += regen * dt
             if self.stamina >= self.max_stamina:
                 self.stamina = self.max_stamina
                 self.can_sprint = True
@@ -2404,6 +2720,12 @@ class Character:
                         if player_center.distance_to(enemy_center) < reflect_radius:
                             enemy.take_damage(reflect_damage)
                             logger.info(f"Mystic Barrier reflected {reflect_damage} damage to {enemy.__class__.__name__}!")
+
+        # Block reduces incoming damage
+        if self.blocking and amount > 0:
+            reduced = int(amount * (1.0 - self.block_damage_reduction))
+            logger.info(f"Block reduced damage from {amount} to {reduced}")
+            amount = max(1, reduced)
 
         self.hp -= amount
 
@@ -2597,6 +2919,8 @@ class Character:
         self.death_count += 1
         self.hp = self.max_hp  # reset health
         self.pos = self.spawn_point.copy()  # teleport to spawn
+        self.cancel_charge()
+        self.stop_block()
         logger.info(f"Player respawned at {self.pos}. Death count: {self.death_count}")
 
     def draw(self, screen, camera_offset=None):
@@ -2662,7 +2986,64 @@ class Character:
                 img = img.copy()
                 img.blit(tint, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
             screen.blit(img, draw_pos)
-        
+
+        # ── Charge indicator ──
+        if self.is_charging:
+            center = self.get_center()
+            cx = int(center.x - camera_offset.x)
+            cy = int(center.y - camera_offset.y)
+            charge_progress = self.charge_indicator
+            radius = 10 + int(charge_progress * 15)
+            alpha = int(100 + 155 * charge_progress)
+            color = (255, int(100 * (1 - charge_progress)), int(100 * (1 - charge_progress)), alpha)
+            pygame.draw.circle(screen, color[:3] + (alpha,), (cx, cy), radius, max(1, int(3 - charge_progress * 2)))
+            if charge_progress > 0.5:
+                outer_r = radius + 5 + int((charge_progress - 0.5) * 10)
+                outer_a = int(80 * (charge_progress - 0.5) * 2)
+                pygame.draw.circle(screen, (255, 50, 50, outer_a), (cx, cy), outer_r, 2)
+            # Small particles rising during charge
+            for i in range(3):
+                p_offset = (pygame.time.get_ticks() * 0.003 + i * 2.1) % 3
+                px = cx + int(math.sin(charge_progress * 10 + i * 2.1) * 12)
+                py = cy - 15 - int(p_offset * 12)
+                pa = int(180 * (1 - p_offset / 3) * charge_progress)
+                if pa > 0:
+                    pygame.draw.circle(screen, (255, 100, 100, pa), (px, py), 2)
+
+        # ── Block circle (360°) ──
+        if self.blocking:
+            center = self.get_center()
+            cx = int(center.x - camera_offset.x)
+            cy = int(center.y - camera_offset.y)
+            radius = self.base_attack_range + 10
+            surf_size = int(radius * 2 + 20)
+            surf = pygame.Surface((surf_size, surf_size), pygame.SRCALPHA)
+            # Green block circle (full 360°)
+            pygame.draw.circle(surf, (80, 220, 80, 80),
+                               (surf_size // 2, surf_size // 2), radius,
+                               max(2, int(radius * 0.06)))
+            pygame.draw.circle(surf, (160, 255, 160, 50),
+                               (surf_size // 2, surf_size // 2), radius - 3,
+                               max(1, int(radius * 0.03)))
+            screen.blit(surf, (cx - surf_size // 2, cy - surf_size // 2),
+                        special_flags=pygame.BLEND_ALPHA_SDL2)
+            # Parry window visual (pulsing yellow circle)
+            if self.is_in_parry_window():
+                p_alpha = int(80 + 80 * abs(math.sin(pygame.time.get_ticks() * 0.01)))
+                pygame.draw.circle(surf, (255, 255, 100, p_alpha),
+                                   (surf_size // 2, surf_size // 2), radius + 3,
+                                   max(3, int(radius * 0.08)))
+                screen.blit(surf, (cx - surf_size // 2, cy - surf_size // 2),
+                            special_flags=pygame.BLEND_ALPHA_SDL2)
+            # Parry success flash
+            if self.parry_success:
+                flash_alpha = int(180 * max(0, 1.0 - (pygame.time.get_ticks() - self.block_start_time) / 300))
+                if flash_alpha > 0:
+                    pygame.draw.circle(screen, (255, 255, 100, flash_alpha), (cx, cy),
+                                       radius, max(2, int(radius * 0.06)))
+                    pygame.draw.circle(screen, (255, 255, 200, flash_alpha // 2), (cx, cy),
+                                       radius - 3, max(1, int(radius * 0.03)))
+
         # Draw attack visual based on equipped weapon's combat style — wind-swoosh effects
         if self.is_attacking:
             attack_dir = pygame.Vector2(self.last_attack_dir)
@@ -2713,26 +3094,42 @@ class Character:
             if combat_style == "sword":
                 base_angle = -math.degrees(math.atan2(attack_dir.y, attack_dir.x))
 
+                # Pick colors based on attack type
+                if self.attack_visual_tint is not None:
+                    tr, tg, tb, _ = self.attack_visual_tint
+                    if tr > 200 and tg < 100:
+                        outer_c, mid_c, main_c, inner_c, edge_c = (140, 70, 70), (210, 110, 110), (255, 180, 180), (255, 220, 220), (255, 255, 255)
+                        particle_c = (255, 200, 200)
+                    elif tb > 200 and tr < 200:
+                        outer_c, mid_c, main_c, inner_c, edge_c = (100, 70, 140), (160, 110, 210), (210, 180, 255), (235, 220, 255), (255, 255, 255)
+                        particle_c = (200, 180, 255)
+                    else:
+                        outer_c, mid_c, main_c, inner_c, edge_c = (70, 80, 140), (110, 140, 210), (180, 210, 255), (220, 235, 255), (255, 255, 255)
+                        particle_c = (160, 200, 255)
+                else:
+                    outer_c, mid_c, main_c, inner_c, edge_c = (70, 80, 140), (110, 140, 210), (180, 210, 255), (220, 235, 255), (255, 255, 255)
+                    particle_c = (160, 200, 255)
+
                 swing_total = 140
                 start_offset = 65
                 current_angle = base_angle - 90 + start_offset - swing_total * p
 
                 fade = 1.0 - p * 0.45
                 alpha = int(180 * fade)
-                arc_radius = 60 + 10 * p
+                arc_radius = (60 + 10 * p) * self.attack_visual_scale
                 arc_current = swing_total * p
 
                 # ── Crescent slash trail (procedural, no sprite) ──
                 # Dark outer glow
-                swoosh(anchor_s, base_angle - 270, arc_current, arc_radius + 16, (70, 80, 140), 10, alpha // 5, 2)
+                swoosh(anchor_s, base_angle - 270, arc_current, arc_radius + 16, outer_c, 10, alpha // 5, 2)
                 # Mid glow
-                swoosh(anchor_s, base_angle - 270, arc_current, arc_radius + 8, (110, 140, 210), 7, alpha // 3, 2)
+                swoosh(anchor_s, base_angle - 270, arc_current, arc_radius + 8, mid_c, 7, alpha // 3, 2)
                 # Main crescent body (light)
-                swoosh(anchor_s, base_angle - 270, arc_current, arc_radius, (180, 210, 255), 5, alpha, 3)
+                swoosh(anchor_s, base_angle - 270, arc_current, arc_radius, main_c, 5, alpha, 3)
                 # Bright inner core
-                swoosh(anchor_s, base_angle - 270, arc_current * 0.7, arc_radius * 0.8, (220, 235, 255), 3, alpha, 2)
+                swoosh(anchor_s, base_angle - 270, arc_current * 0.7, arc_radius * 0.8, inner_c, 3, alpha, 2)
                 # Hot cutting edge
-                swoosh(anchor_s, base_angle - 270, arc_current * 0.4, arc_radius * 0.6, (255, 255, 255), 2, int(alpha * 0.8), 1)
+                swoosh(anchor_s, base_angle - 270, arc_current * 0.4, arc_radius * 0.6, edge_c, 2, int(alpha * 0.8), 1)
 
                 # Bright tip flare at the blade edge
                 tip_angle = base_angle + arc_current * 0.5
@@ -2748,8 +3145,7 @@ class Character:
                     dot_angle = base_angle - arc_current * 0.5 + lp * arc_current
                     d = pygame.Vector2(1, 0).rotate(-dot_angle)
                     pos = base_anchor + d * (30 + 40 * lp)
-                    c = (160, 200, 255)
-                    dot(to_screen(pos), c, int(100 * (1 - lp) * fade), 1 + int(3 * (1 - lp)))
+                    dot(to_screen(pos), particle_c, int(100 * (1 - lp) * fade), 1 + int(3 * (1 - lp)))
 
             elif combat_style == "dagger":
                 # A realistic dagger slash. The blade is a shaded steel polygon
@@ -3049,6 +3445,24 @@ class Character:
                     d = attack_dir.rotate(-20 + 40 * lp + i * 18)
                     pos = base_anchor + d * (45 + 30 * lp)
                     dot(to_screen(pos), (255, 255, 255), int(120 * (1 - lp) * fade), 2 + int(3 * (1 - lp)))
+
+            # Color tint overlay for charged/fast attacks
+            if self.attack_visual_tint is not None:
+                tint_r, tint_g, tint_b, tint_a = self.attack_visual_tint
+                tint_fade = int(tint_a * (1.0 - p * 0.7))
+                if tint_fade > 0:
+                    tint_radius = (60 + 10 * p) * self.attack_visual_scale
+                    surf_size = int(tint_radius * 2 + 20)
+                    tint_surf = pygame.Surface((surf_size, surf_size), pygame.SRCALPHA)
+                    pygame.draw.arc(tint_surf, (tint_r, tint_g, tint_b, tint_fade),
+                                    pygame.Rect(surf_size // 2 - tint_radius, surf_size // 2 - tint_radius,
+                                                tint_radius * 2, tint_radius * 2),
+                                    math.radians(270 - 70 * p), math.radians(270 + 70 * p),
+                                    max(2, int(6 * (1 - p * 0.5))))
+                    base_angle = -math.degrees(math.atan2(attack_dir.y, attack_dir.x))
+                    rot = pygame.transform.rotate(tint_surf, base_angle - 270)
+                    rot_rect = rot.get_rect(center=anchor_s)
+                    screen.blit(rot, rot_rect.topleft)
 
         # Draw Flame Shield visual effect
         if self.flame_shield_active:
