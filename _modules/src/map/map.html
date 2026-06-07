@@ -74,12 +74,17 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">src.config</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cfg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.map.locations</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_location_id</span><span class="p">,</span> <span class="n">get_location</span><span class="p">,</span> <span class="n">LOCATION_DEFS</span>
 
 <div class="viewcode-block" id="Map">
 <a class="viewcode-back" href="../../../src.map.html#src.map.map.Map">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Map</span><span class="p">:</span>
     <span class="n">FRINGE_LAYER_NAME</span> <span class="o">=</span> <span class="s2">&quot;details fringe layer&quot;</span>
     <span class="n">FRINGE_LAYER_FADE_ALPHA</span> <span class="o">=</span> <span class="mi">110</span>
+
+    <span class="c1"># Layers to skip when building collision obstacles.</span>
+    <span class="c1"># These are purely decorative wall layers that should not block movement.</span>
+    <span class="n">COLLISION_SKIP_LAYER_NAMES</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;back walls&quot;</span><span class="p">,</span> <span class="s2">&quot;another walls&quot;</span><span class="p">}</span>
 
     <span class="n">ANIMATION_SPEED</span> <span class="o">=</span> <span class="mf">0.2</span>
 
@@ -164,6 +169,29 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_anim_elapsed</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_window_glow</span> <span class="o">=</span> <span class="kc">None</span></div>
 
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_has_valid_tile_property</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">gid</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Verify a tile property entry belongs to the correct tile.</span>
+
+<span class="sd">        pytmx&#39;s gid renumbering can cause tile_properties from one tileset</span>
+<span class="sd">        to be stored at gids that happen to collide with renumbered gids</span>
+<span class="sd">        from a different tileset. Use tiledgidmap to detect this mismatch.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="n">tile_id</span> <span class="o">=</span> <span class="n">props</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tile_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="n">original_gid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">tiledgidmap</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">gid</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">original_gid</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">for</span> <span class="n">ts</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">game_map</span><span class="o">.</span><span class="n">tilesets</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ts</span><span class="o">.</span><span class="n">firstgid</span> <span class="o">&lt;=</span> <span class="n">original_gid</span> <span class="o">&lt;</span> <span class="n">ts</span><span class="o">.</span><span class="n">firstgid</span> <span class="o">+</span> <span class="n">ts</span><span class="o">.</span><span class="n">tilecount</span><span class="p">:</span>
+                <span class="n">expected_gid</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">firstgid</span> <span class="o">+</span> <span class="n">tile_id</span>
+                <span class="k">if</span> <span class="n">original_gid</span> <span class="o">!=</span> <span class="n">expected_gid</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+                <span class="k">break</span>
+        <span class="k">return</span> <span class="kc">True</span>
 
 <div class="viewcode-block" id="Map.ensure_loaded">
 <a class="viewcode-back" href="../../../src.map.html#src.map.map.Map.ensure_loaded">[docs]</a>
@@ -612,6 +640,9 @@
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_fringe_layer</span><span class="p">(</span><span class="n">layer</span><span class="p">):</span>
                     <span class="k">continue</span>
 
+                <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">COLLISION_SKIP_LAYER_NAMES</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
                 <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">gid</span> <span class="ow">in</span> <span class="n">layer</span><span class="p">:</span>
                     <span class="k">if</span> <span class="ow">not</span> <span class="n">gid</span><span class="p">:</span>
                         <span class="k">continue</span>
@@ -621,6 +652,9 @@
                         <span class="k">continue</span>
 
                     <span class="k">if</span> <span class="ow">not</span> <span class="n">tile_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;collidable&quot;</span><span class="p">):</span>
+                        <span class="k">continue</span>
+
+                    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_valid_tile_property</span><span class="p">(</span><span class="n">tile_properties</span><span class="p">,</span> <span class="n">gid</span><span class="p">):</span>
                         <span class="k">continue</span>
 
                     <span class="n">tile_key</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">layer</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
@@ -691,9 +725,11 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">map_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current_map</span> <span class="o">=</span> <span class="n">Map</span><span class="p">(</span><span class="n">map_file</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="o">=</span> <span class="n">map_file</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="o">=</span> <span class="n">map_file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_location_id</span> <span class="o">=</span> <span class="n">get_location_id</span><span class="p">(</span><span class="n">map_file</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">transition_buffer</span> <span class="o">=</span> <span class="mi">150</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">transition_buffer</span> <span class="o">=</span> <span class="mi">80</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transit_exit_positions</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="c1"># Define directional transitions for maps.</span>
         <span class="c1"># Each entry maps a direction (&#39;left&#39;,&#39;right&#39;,&#39;up&#39;,&#39;down&#39;) to a dict with:</span>
         <span class="c1">#  - &#39;map&#39;: target map path</span>
@@ -706,10 +742,10 @@
             <span class="p">},</span>
             <span class="s2">&quot;maps/test-map-2.tmx&quot;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s2">&quot;left&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;map&quot;</span><span class="p">:</span> <span class="s2">&quot;maps/test-map-1.tmx&quot;</span><span class="p">,</span> <span class="s2">&quot;spawn&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;side&quot;</span><span class="p">,</span> <span class="s2">&quot;side&quot;</span><span class="p">:</span> <span class="s2">&quot;right&quot;</span><span class="p">}},</span>
-                <span class="s2">&quot;right&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;map&quot;</span><span class="p">:</span> <span class="s2">&quot;maps/test-map-3.tmx&quot;</span><span class="p">,</span> <span class="s2">&quot;spawn&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;side&quot;</span><span class="p">,</span> <span class="s2">&quot;side&quot;</span><span class="p">:</span> <span class="s2">&quot;left&quot;</span><span class="p">}},</span>
+                <span class="s2">&quot;up&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;map&quot;</span><span class="p">:</span> <span class="s2">&quot;maps/test-map-3.tmx&quot;</span><span class="p">,</span> <span class="s2">&quot;spawn&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;side&quot;</span><span class="p">,</span> <span class="s2">&quot;side&quot;</span><span class="p">:</span> <span class="s2">&quot;bottom_center&quot;</span><span class="p">}},</span>
             <span class="p">},</span>
             <span class="s2">&quot;maps/test-map-3.tmx&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;left&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;map&quot;</span><span class="p">:</span> <span class="s2">&quot;maps/test-map-2.tmx&quot;</span><span class="p">,</span> <span class="s2">&quot;spawn&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;side&quot;</span><span class="p">,</span> <span class="s2">&quot;side&quot;</span><span class="p">:</span> <span class="s2">&quot;right&quot;</span><span class="p">}},</span>
+                <span class="s2">&quot;down&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;map&quot;</span><span class="p">:</span> <span class="s2">&quot;maps/test-map-2.tmx&quot;</span><span class="p">,</span> <span class="s2">&quot;spawn&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;return&quot;</span><span class="p">}},</span>
             <span class="p">},</span>
         <span class="p">}</span></div>
 
@@ -805,6 +841,47 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_teleport_player_to_tile</span><span class="p">(</span><span class="n">player</span><span class="p">,</span> <span class="mi">36</span><span class="p">,</span> <span class="mi">17</span><span class="p">,</span> <span class="n">tile_width</span><span class="p">,</span> <span class="n">tile_height</span><span class="p">)</span>
                 <span class="k">return</span> <span class="n">new_map</span>
 
+        <span class="c1"># Map 3 (Temple) → Map 4 (Cave) at tile (4, 5) — triggers location travel menu</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="o">==</span> <span class="s2">&quot;maps/test-map-3.tmx&quot;</span><span class="p">:</span>
+            <span class="n">col</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">sprite_w</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">//</span> <span class="n">tile_width</span><span class="p">)</span>
+            <span class="n">feet_y</span> <span class="o">=</span> <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">sprite_h</span>
+            <span class="k">if</span> <span class="n">col</span> <span class="o">==</span> <span class="mi">4</span> <span class="ow">and</span> <span class="n">feet_y</span> <span class="o">&gt;=</span> <span class="mi">5</span> <span class="o">*</span> <span class="n">tile_height</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_buffer</span><span class="p">:</span>
+                <span class="n">target_map</span> <span class="o">=</span> <span class="s2">&quot;maps/test-map-4.tmx&quot;</span>
+                <span class="n">target_loc</span> <span class="o">=</span> <span class="n">get_location_id</span><span class="p">(</span><span class="n">target_map</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">target_loc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">target_loc</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_location_id</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;location_exits&quot;</span><span class="p">):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">location_exits</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">location_exits</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current_location_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;map_path&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="p">,</span>
+                        <span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">),</span>
+                    <span class="p">}</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">location_exits</span><span class="p">[</span><span class="n">target_loc</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;map_path&quot;</span><span class="p">:</span> <span class="n">target_map</span><span class="p">,</span>
+                        <span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">15</span> <span class="o">*</span> <span class="n">tile_width</span><span class="p">,</span> <span class="mi">36</span> <span class="o">*</span> <span class="n">tile_height</span><span class="p">),</span>
+                    <span class="p">}</span>
+                    <span class="n">new_map</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;location_transition&quot;</span><span class="p">,</span> <span class="n">target_loc</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">new_map</span>
+
+        <span class="c1"># Map 4 (Cave) → Map 3 (Temple) at bottom centre — triggers location travel menu</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="o">==</span> <span class="s2">&quot;maps/test-map-4.tmx&quot;</span><span class="p">:</span>
+            <span class="n">cave_exit_tiles</span> <span class="o">=</span> <span class="p">[(</span><span class="n">x</span><span class="p">,</span> <span class="mi">39</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">13</span><span class="p">,</span> <span class="mi">18</span><span class="p">)]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_player_overlaps_any_tile</span><span class="p">(</span><span class="n">player_rect</span><span class="p">,</span> <span class="n">tile_width</span><span class="p">,</span> <span class="n">tile_height</span><span class="p">,</span> <span class="n">cave_exit_tiles</span><span class="p">):</span>
+                <span class="n">target_map</span> <span class="o">=</span> <span class="s2">&quot;maps/test-map-3.tmx&quot;</span>
+                <span class="n">target_loc</span> <span class="o">=</span> <span class="n">get_location_id</span><span class="p">(</span><span class="n">target_map</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">target_loc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">target_loc</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_location_id</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;location_exits&quot;</span><span class="p">):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">location_exits</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">location_exits</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current_location_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;map_path&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="p">,</span>
+                        <span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">),</span>
+                    <span class="p">}</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">location_exits</span><span class="p">[</span><span class="n">target_loc</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;map_path&quot;</span><span class="p">:</span> <span class="n">target_map</span><span class="p">,</span>
+                        <span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">tile_width</span><span class="p">,</span> <span class="mi">5</span> <span class="o">*</span> <span class="n">tile_height</span><span class="p">),</span>
+                    <span class="p">}</span>
+                    <span class="n">new_map</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;location_transition&quot;</span><span class="p">,</span> <span class="n">target_loc</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">new_map</span>
+
         <span class="c1"># Directional edge checks (right/left/up/down)</span>
         <span class="c1"># Determine player&#39;s height for vertical checks</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">player_rect</span><span class="p">,</span> <span class="s1">&#39;height&#39;</span><span class="p">):</span>
@@ -813,24 +890,44 @@
             <span class="n">h</span> <span class="o">=</span> <span class="n">player</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
 
         <span class="n">direction</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="n">x</span> <span class="o">+</span> <span class="n">w</span> <span class="o">&gt;=</span> <span class="n">map_width</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_buffer</span><span class="p">:</span>
-            <span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;right&quot;</span>
-        <span class="k">elif</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_buffer</span><span class="p">:</span>
-            <span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;left&quot;</span>
-        <span class="k">elif</span> <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">h</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="n">tmx_data</span><span class="o">.</span><span class="n">height</span> <span class="o">*</span> <span class="n">tile_height</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_buffer</span><span class="p">:</span>
-            <span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;down&quot;</span>
-        <span class="k">elif</span> <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_buffer</span><span class="p">:</span>
-            <span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;up&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="o">==</span> <span class="s2">&quot;maps/test-map-2.tmx&quot;</span>
+                <span class="ow">and</span> <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">&lt;=</span> <span class="mi">10</span><span class="p">):</span>
+            <span class="n">zone_width</span> <span class="o">=</span> <span class="n">map_width</span> <span class="o">/</span> <span class="mf">12.0</span>
+            <span class="n">player_center_x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">w</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="k">if</span> <span class="mi">7</span> <span class="o">*</span> <span class="n">zone_width</span> <span class="o">&lt;=</span> <span class="n">player_center_x</span> <span class="o">&lt;</span> <span class="mi">9</span> <span class="o">*</span> <span class="n">zone_width</span><span class="p">:</span>
+                <span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;up&quot;</span>
+        <span class="k">if</span> <span class="n">direction</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">x</span> <span class="o">+</span> <span class="n">w</span> <span class="o">&gt;=</span> <span class="n">map_width</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_buffer</span><span class="p">:</span>
+                <span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;right&quot;</span>
+            <span class="k">elif</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_buffer</span><span class="p">:</span>
+                <span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;left&quot;</span>
+            <span class="k">elif</span> <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">h</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="n">tmx_data</span><span class="o">.</span><span class="n">height</span> <span class="o">*</span> <span class="n">tile_height</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_buffer</span><span class="p">:</span>
+                <span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;down&quot;</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_buffer</span>
+                  <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="o">!=</span> <span class="s2">&quot;maps/test-map-2.tmx&quot;</span><span class="p">):</span>
+                <span class="n">direction</span> <span class="o">=</span> <span class="s2">&quot;up&quot;</span>
 
         <span class="k">if</span> <span class="n">direction</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">transitions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map_transitions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="p">,</span> <span class="p">{})</span>
             <span class="n">trans</span> <span class="o">=</span> <span class="n">transitions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">direction</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">trans</span><span class="p">:</span>
+                <span class="n">target_map</span> <span class="o">=</span> <span class="n">trans</span><span class="p">[</span><span class="s2">&quot;map&quot;</span><span class="p">]</span>
+                <span class="n">target_loc</span> <span class="o">=</span> <span class="n">get_location_id</span><span class="p">(</span><span class="n">target_map</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">target_loc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">target_loc</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_location_id</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;location_exits&quot;</span><span class="p">):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">location_exits</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">location_exits</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current_location_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;map_path&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="p">,</span>
+                        <span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">),</span>
+                    <span class="p">}</span>
+                    <span class="k">return</span> <span class="p">(</span><span class="s2">&quot;location_transition&quot;</span><span class="p">,</span> <span class="n">target_loc</span><span class="p">)</span>
+
                 <span class="c1"># remember previous position to pick nearest corner if needed</span>
                 <span class="n">old_x</span> <span class="o">=</span> <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span>
                 <span class="n">old_y</span> <span class="o">=</span> <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">transit_exit_positions</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">old_x</span><span class="p">,</span> <span class="n">old_y</span><span class="p">)</span>
 
-                <span class="n">new_map</span> <span class="o">=</span> <span class="n">trans</span><span class="p">[</span><span class="s2">&quot;map&quot;</span><span class="p">]</span>
+                <span class="n">new_map</span> <span class="o">=</span> <span class="n">target_map</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">switch_map</span><span class="p">(</span><span class="n">new_map</span><span class="p">)</span>
                 <span class="c1"># handle spawn</span>
                 <span class="n">spawn</span> <span class="o">=</span> <span class="n">trans</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;spawn&quot;</span><span class="p">)</span>
@@ -913,6 +1010,21 @@
                             <span class="k">else</span><span class="p">:</span>
                                 <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">desired_y</span>
                                 <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">allowed_x_min</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">allowed_x_max</span><span class="p">))</span>
+                        <span class="k">elif</span> <span class="n">side</span> <span class="o">==</span> <span class="s2">&quot;center&quot;</span><span class="p">:</span>
+                            <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">allowed_x_min</span> <span class="o">+</span> <span class="n">allowed_x_max</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+                            <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="p">(</span><span class="n">allowed_y_min</span> <span class="o">+</span> <span class="n">allowed_y_max</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+                        <span class="k">elif</span> <span class="n">side</span> <span class="o">==</span> <span class="s2">&quot;bottom_center&quot;</span><span class="p">:</span>
+                            <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">allowed_x_min</span> <span class="o">+</span> <span class="n">allowed_x_max</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+                            <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">bottom_y</span>
+                    <span class="k">elif</span> <span class="n">spawn</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;return&quot;</span><span class="p">:</span>
+                        <span class="n">saved</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transit_exit_positions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">new_map</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">saved</span><span class="p">:</span>
+                            <span class="n">saved_x</span><span class="p">,</span> <span class="n">saved_y</span> <span class="o">=</span> <span class="n">saved</span>
+                            <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">allowed_x_min</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">saved_x</span><span class="p">,</span> <span class="n">allowed_x_max</span><span class="p">))</span>
+                            <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">allowed_y_min</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">saved_y</span><span class="p">,</span> <span class="n">allowed_y_max</span><span class="p">))</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">allowed_x_min</span> <span class="o">+</span> <span class="n">allowed_x_max</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+                            <span class="n">player</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="p">(</span><span class="n">allowed_y_min</span> <span class="o">+</span> <span class="n">allowed_y_max</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
                     <span class="k">elif</span> <span class="n">spawn</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;tile&quot;</span><span class="p">:</span>
                         <span class="n">sx</span> <span class="o">=</span> <span class="n">spawn</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
                         <span class="n">sy</span> <span class="o">=</span> <span class="n">spawn</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">)</span>
@@ -940,7 +1052,23 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">switch_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_map_path</span><span class="p">):</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Switching map from </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">new_map_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current_map</span> <span class="o">=</span> <span class="n">Map</span><span class="p">(</span><span class="n">new_map_path</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="o">=</span> <span class="n">new_map_path</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="o">=</span> <span class="n">new_map_path</span>
+        <span class="n">new_loc</span> <span class="o">=</span> <span class="n">get_location_id</span><span class="p">(</span><span class="n">new_map_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">new_loc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_location_id</span> <span class="o">=</span> <span class="n">new_loc</span></div>
+
+
+<div class="viewcode-block" id="LocalMap.switch_to_location">
+<a class="viewcode-back" href="../../../src.map.html#src.map.map.LocalMap.switch_to_location">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">switch_to_location</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_id</span><span class="p">):</span>
+        <span class="n">loc</span> <span class="o">=</span> <span class="n">get_location</span><span class="p">(</span><span class="n">location_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">loc</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">loc</span><span class="p">[</span><span class="s2">&quot;maps&quot;</span><span class="p">]:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot switch to location &#39;</span><span class="si">{</span><span class="n">location_id</span><span class="si">}</span><span class="s2">&#39;: no maps available&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">entry_map</span> <span class="o">=</span> <span class="n">loc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;entry_map&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">loc</span><span class="p">[</span><span class="s2">&quot;maps&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_location_id</span> <span class="o">=</span> <span class="n">location_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">switch_map</span><span class="p">(</span><span class="n">entry_map</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">entry_map</span></div>
 
 
 <div class="viewcode-block" id="LocalMap._player_overlaps_any_tile">
