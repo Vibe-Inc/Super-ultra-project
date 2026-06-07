@@ -1154,16 +1154,19 @@
   <tile id="2009">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2010">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2011">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2044">
@@ -1181,6 +1184,7 @@
   <tile id="2046">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2048">
