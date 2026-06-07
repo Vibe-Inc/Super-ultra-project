@@ -27,19 +27,19 @@ class WorldScaleMenu:
         self._open_time = 0.0
 
         s = cfg.ui_scale()
-        self.font_title = cfg.get_font(max(14, int(33 * s)))
-        self.font_section = cfg.get_font(max(11, int(19 * s)))
-        self.font_body = cfg.get_font(max(10, int(17 * s)))
-        self.font_small = cfg.get_font(max(8, int(14 * s)))
-        self.font_level = cfg.get_font(max(16, int(54 * s)))
+        self.font_title = cfg.get_font(max(18, int(44 * s)))
+        self.font_section = cfg.get_font(max(14, int(26 * s)))
+        self.font_body = cfg.get_font(max(13, int(23 * s)))
+        self.font_small = cfg.get_font(max(10, int(19 * s)))
+        self.font_level = cfg.get_font(max(20, int(72 * s)))
 
         self._last_known_level = 0
         self._ever_opened = False
         self._unlock_history = []
         self._latest_unlock_batch = None
 
-        self.panel_w = 520
-        self.panel_h = 700
+        self.panel_w = 680
+        self.panel_h = 840
 
         self.editor_mode = False
         self.editor_input = ""
@@ -56,14 +56,14 @@ class WorldScaleMenu:
             })
 
         self.editor_button = Button(
-            pygame.Rect(0, 0, 110, 28),
+            pygame.Rect(0, 0, 140, 34),
             "Editor", (60, 60, 100), (90, 90, 150),
-            self.font_small, (200, 200, 230), 5, self._toggle_editor,
+            self.font_small, (200, 200, 230), 6, self._toggle_editor,
         )
         self.apply_button = Button(
-            pygame.Rect(0, 0, 80, 24),
+            pygame.Rect(0, 0, 100, 30),
             "Apply", (40, 80, 40), (60, 140, 60),
-            self.font_small, (200, 200, 230), 4, self._apply_editor,
+            self.font_small, (200, 200, 230), 5, self._apply_editor,
         )
 
     def _compute_new_unlocks(self, old_level, new_level):
@@ -252,9 +252,9 @@ class WorldScaleMenu:
         screen.blit(title, tr)
 
         # ── editor button ─────────────────────────────────────
-        eb_x = dx + self.panel_w - 130
+        eb_x = dx + self.panel_w - 165
         eb_y = dy + 14
-        self.editor_button.rect = pygame.Rect(eb_x, eb_y, 110, 28)
+        self.editor_button.rect = pygame.Rect(eb_x, eb_y, 140, 34)
         self.editor_button.draw(screen)
 
         # ── new unlocks ───────────────────────────────────────
@@ -268,11 +268,11 @@ class WorldScaleMenu:
             for lvl, name in abilities:
                 txt = self.font_body.render(f"  + Lv.{lvl}  {name}", True, (255, 255, 200))
                 screen.blit(txt, (dx + 30, lvl_y))
-                lvl_y += 18
+                lvl_y += 24
             for _lvl, tname, tdesc in tags:
                 txt = self.font_body.render(f"  + {tname}  —  {tdesc}", True, (255, 210, 100))
                 screen.blit(txt, (dx + 30, lvl_y))
-                lvl_y += 18
+                lvl_y += 24
             lvl_y += 4
             pygame.draw.line(screen, (70, 60, 40),
                              (dx + 60, lvl_y), (dx + self.panel_w - 60, lvl_y), 1)
@@ -324,10 +324,10 @@ class WorldScaleMenu:
                                 ring_center[1] - lvl_label.get_height() // 2 - 4))
 
         # ── xp bar ────────────────────────────────────────────
-        bar_y = ring_center[1] + ring_r + 16
+        bar_y = ring_center[1] + ring_r + 20
         bar_x = dx + 30
         bar_w = self.panel_w - 60
-        bar_h = 22
+        bar_h = 26
 
         if needed > 0:
             xp_text = self.font_small.render(f"XP: {ws.xp} / {needed}", True, (180, 180, 220))
@@ -391,11 +391,11 @@ class WorldScaleMenu:
                 pygame.draw.circle(screen, (100, 180, 255), (dot_x + 4, ay + 7), 3)
                 txt = self.font_body.render(name, True, (200, 240, 200))
                 screen.blit(txt, (dx + 64, ay))
-                ay += 22
+                ay += 28
         else:
             txt = self.font_small.render("No abilities unlocked yet", True, self.TEXT_DIM)
             screen.blit(txt, (dx + 34, ay))
-            ay += 18
+            ay += 24
 
         # ── enemy tags ────────────────────────────────────────
         tags = ws.get_milestone_tags()
@@ -421,7 +421,7 @@ class WorldScaleMenu:
                 screen.blit(name_surf, (dx + 44, ay + 1))
                 desc_surf = self.font_small.render(desc, True, self.TEXT_DIM)
                 screen.blit(desc_surf, (dx + 140, ay + 2))
-                ay += 22
+                ay += 28
 
         # ── player bonuses ────────────────────────────────────
         ay += 2
@@ -444,13 +444,13 @@ class WorldScaleMenu:
             col = idx % 2
             row = idx // 2
             bx = dx + 30 + col * (col_w + 10)
-            by = ay + row * 18
+            by = ay + row * 24
             color = (180, 220, 180) if active and ws.level > 0 else (90, 90, 100)
             lbl = self.font_small.render(label, True, color)
             v = self.font_small.render(val, True, (200, 200, 220) if active else (100, 100, 110))
             screen.blit(lbl, (bx, by))
             screen.blit(v, (bx + 120, by))
-        ay += ((len(bonus_items) + 1) // 2) * 18 + 6
+        ay += ((len(bonus_items) + 1) // 2) * 24 + 8
 
         # ── enemy stats ───────────────────────────────────────
         div(ay)
@@ -468,17 +468,17 @@ class WorldScaleMenu:
             sx = dx + 30 + i * (stat_w + 10)
             surf = self.font_small.render(text, True, color)
             screen.blit(surf, (sx, ay))
-        ay += 24
+        ay += 30
         div(ay)
 
         # ── editor mode ───────────────────────────────────────
         if self.editor_mode:
-            inp_rect = pygame.Rect(eb_x, eb_y + 34, 110, 24)
+            inp_rect = pygame.Rect(eb_x, eb_y + 42, 140, 30)
             pygame.draw.rect(screen, (15, 15, 30), inp_rect)
             pygame.draw.rect(screen, (150, 150, 200), inp_rect, 1)
             inp_surf = self.font_small.render(self.editor_input or "0", True, (200, 200, 230))
             screen.blit(inp_surf, (inp_rect.x + 4, inp_rect.y + 3))
-            self.apply_button.rect = pygame.Rect(eb_x + 15, eb_y + 62, 80, 24)
+            self.apply_button.rect = pygame.Rect(eb_x + 20, eb_y + 78, 100, 30)
             self.apply_button.draw(screen)
 
         # ── particles ─────────────────────────────────────────
