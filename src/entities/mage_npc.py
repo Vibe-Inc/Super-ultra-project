@@ -1,3 +1,9 @@
+"""
+Mage NPC module for the special NPC that gates arcane quests and the Mysterium Magnum.
+
+Provides the MageNPC class that loads its image from a flat file path.
+"""
+
 import pygame
 from src.entities.npc import NPC
 import src.config as cfg
@@ -9,9 +15,27 @@ class MageNPC(NPC):
     instead of the standard sprite-set directory structure.
 
     Uses the custom mage.png asset placed at assets/characters/mage.png.
+
+    Attributes:
+        Inherits all attributes from NPC.
+
+    Methods:
+        __init__(x, y, dialog_lines, gender):
+            Initialize the Mage NPC with custom image loading.
     """
 
     def __init__(self, x, y, dialog_lines=None, gender='female'):
+        """Initialize the Mage NPC bypassing standard NPC image loading.
+
+        Loads the mage.png directly from assets/characters/ and scales it
+        to 85px height while preserving aspect ratio.
+
+        Args:
+            x (float): World x-coordinate.
+            y (float): World y-coordinate.
+            dialog_lines (list[str] | None): Optional custom dialog lines.
+            gender (str): Gender of the Mage NPC (default 'female').
+        """
         # Bypass NPC.__init__ image loading by calling object.__init__ first,
         # then manually setting all the attributes NPC.__init__ would set.
         self.pos = pygame.Vector2(x, y)

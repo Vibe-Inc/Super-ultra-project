@@ -20,6 +20,113 @@ def _coerce_int(value, default: int = 0) -> int:
         return default
 
 
+# ---------------------------------------------------------------------------
+# Crafting tier helpers
+# ---------------------------------------------------------------------------
+# The workbench can roll any of the seven tiers (horrendous .. legendary)
+# defined in :mod:`database.crafting_tiers_db`.  Each tier carries a stat
+# multiplier and a colour that tints the prefix label in the tooltip.
+#
+# ``apply_tier_to_item`` is the single mutation point: callers (the
+# crafting grid, the anvil when re-forging, future quest rewards, ...)
+# call it on a freshly-built item and the helper scales the relevant
+# stat block, remembers the tier id on the item and clears the
+# ``_was_broken`` flag so a brand-new legendary sword is fully repaired.
+
+def _import_tier_module():
+    """Late import to avoid a circular import with the tier module.
+
+    The tier database pulls ``MAX_SMELTING_LEVEL`` from the smelting
+    skill module and vice versa would be ugly, so both modules
+    only need each other lazily.
+    """
+    from database import crafting_tiers_db
+    return crafting_tiers_db
+
+
+def apply_tier_to_item(item, tier_id: str) -> str:
+    """Scale ``item``'s stats according to ``tier_id`` and stamp the
+    tier on the instance.
+
+    Returns the tier id actually applied (always equal to ``tier_id``
+    for valid input, ``"fine"`` for unknown tiers).
+
+    The helper is a no-op for items that aren't ``Weapon``/``Armor``/
+    ``Tool`` (e.g. resources, consumables), so it's safe to call on any
+    item produced by the crafting grid.
+    """
+    tier_module = _import_tier_module()
+    if not tier_id:
+        tier_id = "fine"
+    info = tier_module.get_tier_data(tier_id)
+    multiplier = float(info.get("multiplier", 1.0))
+    if multiplier == 1.0 and tier_id == "fine":
+        # Even at the baseline tier we still stamp the attribute so the
+        # UI can render the "[Fine]" badge consistently.
+        pass
+
+    item.tier = tier_id
+    item.tier_multiplier = multiplier
+    item.tier_color = tier_module.get_tier_color(tier_id)
+
+    # Weapons, armor and tools get their numeric stats scaled.
+    if hasattr(item, "damage"):
+        try:
+            base = int(round(int(getattr(item, "_base_damage", item.damage)) * multiplier))
+            item.damage = max(1, base)
+        except Exception:
+            pass
+    if hasattr(item, "defense_value"):
+        try:
+            base = int(round(int(getattr(item, "_base_defense_value", item.defense_value)) * multiplier))
+            item.defense_value = max(0, base)
+        except Exception:
+            pass
+    if hasattr(item, "power"):
+        try:
+            base = int(round(int(getattr(item, "_base_power", item.power)) * multiplier))
+            item.power = max(0, base)
+        except Exception:
+            pass
+
+    # Durability scales on the *max* value and is preserved as the same
+    # wear fraction so the wear bar reads the same percentage before /
+    # after re-rolling.  Unbreakable items skip the scaling entirely.
+    if hasattr(item, "max_durability") and not getattr(item, "unbreakable", False):
+        try:
+            old_max = int(getattr(item, "_base_max_durability", item.max_durability))
+            new_max = int(round(old_max * multiplier))
+            new_max = max(1, new_max)
+            old_cur = int(getattr(item, "durability", new_max))
+            old_max_safe = max(1, old_max)
+            wear_fraction = max(0.0, min(1.0, old_cur / float(old_max_safe)))
+            new_cur = int(round(new_max * wear_fraction))
+            if new_cur <= 0 and old_cur > 0:
+                new_cur = 1
+            item.max_durability = new_max
+            item.durability = max(0, min(new_max, new_cur))
+            if item.durability > 0 and hasattr(item, "_was_broken"):
+                item._was_broken = False
+        except Exception:
+            pass
+
+    return tier_id
+
+
+def _stamp_tier(item, tier_id: str) -> str:
+    """Apply a tier to ``item`` if it doesn't already have one stamped.
+
+    Items pulled from the database default to the ``"fine"`` baseline
+    tier so the tooltip is consistent.  The crafting grid, however,
+    stamps the *rolled* tier after the fact, and this helper avoids
+    double-stamping (which would scale the stats twice).
+    """
+    current = getattr(item, "tier", None)
+    if current is None:
+        return apply_tier_to_item(item, tier_id or "fine")
+    return current
+
+
 class DurabilityMixin:
     """Shared durability state and behaviour for ``Weapon`` and ``Tool``.
 
@@ -293,6 +400,32 @@ class Weapon(Item, DurabilityMixin):
                     self.on_hit_effects = []
             elif isinstance(raw_on_hit, list):
                 self.on_hit_effects = list(raw_on_hit)
+        # Crafting tier: a freshly-built weapon defaults to the "fine"
+        # baseline (1.0x) so existing items look the same in tooltips
+        # as before.  ``_base_*`` fields remember the un-scaled values
+        # so a later :func:`apply_tier_to_item` can rescale without
+        # compounding the multipliers.
+        self.tier = "fine"
+        self.tier_multiplier = 1.0
+        self.tier_color = (240, 240, 255)
+        try:
+            self._base_damage = int(self.damage)
+        except Exception:
+            self._base_damage = 1
+        try:
+            self._base_max_durability = int(self.max_durability)
+        except Exception:
+            self._base_max_durability = 1
+
+    @property
+    def display_name(self):
+        """Item name prefixed with the tier badge, e.g. ``[Legendary] Steel Sword``."""
+        try:
+            from database.crafting_tiers_db import get_tier_name, get_tier_color
+            prefix = get_tier_name(self.tier or "fine")
+            return f"{prefix} {self.name}"
+        except Exception:
+            return self.name
 
     def _get_base_stats_text(self):
         weapon_label = f"{_('Weapon')} ({self.weapon_class.capitalize()})"
@@ -300,9 +433,19 @@ class Weapon(Item, DurabilityMixin):
             dur_str = f"{_('Durability')}: ∞"
         else:
             dur_str = f"{_('Durability')}: {int(self.durability)}/{int(self.max_durability)}"
+        # If the tier was applied, show the *base* damage as a faint
+        # second line so the player can see how much the smith
+        # improved the blueprint.
+        try:
+            base_damage = int(getattr(self, "_base_damage", self.damage))
+        except Exception:
+            base_damage = self.damage
+        damage_str = f"{_('Damage')}: {self.damage}"
+        if base_damage != self.damage:
+            damage_str += f"  (base {base_damage})"
         return (
             f"{_('Type')}: {weapon_label}\n"
-            f"{_('Damage')}: {self.damage}\n"
+            f"{damage_str}\n"
             f"{dur_str}\n"
         )
 
@@ -341,7 +484,7 @@ class MeleeWeapon(Weapon):
             f"{_('Style')}: {style_label}\n"
             f"Price: ${self.price}"
         )
-        return f"{self.name}\n{stats}\n{self.description}"
+        return f"{self.display_name}\n{stats}\n{self.description}"
 
 
 class RangedWeapon(Weapon):
@@ -371,11 +514,10 @@ class RangedWeapon(Weapon):
         base_stats = self._get_base_stats_text()
         stats = (
             f"{base_stats}"
-            f"{_('Range')}: {self.range}\n"
             f"{_('Proj. Speed')}: {self.projectile_speed}\n"
             f"Price: ${self.price}"
         )
-        return f"{self.name}\n{stats}\n{self.description}"
+        return f"{self.display_name}\n{stats}\n{self.description}"
 
 
 class Consumable(Item):
@@ -501,6 +643,30 @@ class Armor(Item, DurabilityMixin):
         if max_dur is None:
             max_dur = row.get("max_durability", current_dur)
         self._init_durability(current_dur if current_dur is not None else 100, max_dur)
+        # Crafting tier: default to the "fine" baseline so a freshly-
+        # built armor piece has 1.0x stats.  The crafting grid calls
+        # :func:`apply_tier_to_item` to scale up/down after the roll.
+        self.tier = "fine"
+        self.tier_multiplier = 1.0
+        self.tier_color = (240, 240, 255)
+        try:
+            self._base_defense_value = int(self.defense_value)
+        except Exception:
+            self._base_defense_value = 0
+        try:
+            self._base_max_durability = int(self.max_durability)
+        except Exception:
+            self._base_max_durability = 1
+
+    @property
+    def display_name(self):
+        """Item name prefixed with the tier badge, e.g. ``[Masterwork] Steel Helmet``."""
+        try:
+            from database.crafting_tiers_db import get_tier_name
+            prefix = get_tier_name(self.tier or "fine")
+            return f"{prefix} {self.name}"
+        except Exception:
+            return self.name
 
     def get_effective_defense(self) -> int:
         """Return the damage-reduction contribution of this piece,
@@ -545,50 +711,23 @@ class Armor(Item, DurabilityMixin):
         # Show the *effective* defense so the player understands why a
         # worn piece suddenly feels weaker than the displayed +N.
         effective = self.get_effective_defense()
+        try:
+            base_defense = int(getattr(self, "_base_defense_value", self.defense_value))
+        except Exception:
+            base_defense = self.defense_value
         if effective != self.defense_value:
             defense_str = f"{_('Defense')}: +{self.defense_value} ({effective} effective)"
         else:
             defense_str = f"{_('Defense')}: +{self.defense_value}"
+        if base_defense != self.defense_value:
+            defense_str += f"  (base {base_defense})"
         stats = (
             f"{_('Type')}: {_('Armor')} ({slot_label})\n"
             f"{defense_str}\n"
             f"{dur_str}\n"
             f"Price: ${self.price}"
         )
-        return f"{self.name}\n{stats}\n{self.description}"
-
-
-class Lamp(Item):
-    """Simple handheld lamp item that can be toggled on/off to provide light."""
-    def __init__(self, row: dict | None = None, *, image_path: str = "assets/items/lamp.png"):
-        # Create a minimal row-like dict if none provided
-        if row is None:
-            row = {
-                "id": "hand_lamp",
-                "name": "Hand Lamp",
-                "type": "misc",
-                "max_stack": 1,
-                "price": 15,
-                "description": "A small oil lamp that provides light when turned on.",
-                "image_path": image_path,
-            }
-        super().__init__(row)
-        self.lit = False
-        self.light_radius = 220  # pixels
-        self.intensity = 1.0
-
-    def toggle(self, target=None):
-        self.lit = not self.lit
-        return self.lit
-
-    def use(self, target):
-        # Toggle lamp on the target (player)
-        try:
-            target.active_lamp = self if getattr(target, 'active_lamp', None) is not self else None
-        except Exception:
-            pass
-        self.lit = not self.lit
-        return True
+        return f"{self.display_name}\n{stats}\n{self.description}"
 
 
 class Lantern(Item):
@@ -628,7 +767,7 @@ class LightRing(Armor):
     """Enchanted ring that amplifies the lantern's glow when worn.
 
     Equip this ring in the ring slot to increase both the light radius and
-    intensity of any light-emitting item held in the hotbar (Lantern, Lamp).
+    intensity of any light-emitting item held in the hotbar.
     """
     def __init__(self, row: dict | None = None, *, image_path: str = "assets/items/accessories/Light_ring.png"):
         if row is None:
@@ -705,6 +844,30 @@ class Tool(Item, DurabilityMixin):
         self.gather_type = row.get("gather_type") or None
         self.gather_yield_min = int(row.get("gather_yield_min") or 1)
         self.gather_yield_max = int(row.get("gather_yield_max") or self.gather_yield_min)
+        # Crafting tier: see :class:`Weapon` for the rationale.  The
+        # smeltery's crafting grid calls :func:`apply_tier_to_item` on
+        # the freshly-built tool to rescale ``power`` and durability.
+        self.tier = "fine"
+        self.tier_multiplier = 1.0
+        self.tier_color = (240, 240, 255)
+        try:
+            self._base_power = int(self.power)
+        except Exception:
+            self._base_power = 0
+        try:
+            self._base_max_durability = int(self.max_durability)
+        except Exception:
+            self._base_max_durability = 1
+
+    @property
+    def display_name(self):
+        """Item name prefixed with the tier badge, e.g. ``[Epic] Iron Pickaxe``."""
+        try:
+            from database.crafting_tiers_db import get_tier_name
+            prefix = get_tier_name(self.tier or "fine")
+            return f"{prefix} {self.name}"
+        except Exception:
+            return self.name
 
     def get_tooltip_text(self):
         type_label = self.tool_type.replace("_", " ").title()
@@ -712,10 +875,17 @@ class Tool(Item, DurabilityMixin):
             dur_str = f"{_('Durability')}: ∞"
         else:
             dur_str = f"{_('Durability')}: {int(self.durability)}/{int(self.max_durability)}"
+        try:
+            base_power = int(getattr(self, "_base_power", self.power))
+        except Exception:
+            base_power = self.power
+        power_str = f"{_('Power')}: +{self.power}"
+        if base_power != self.power:
+            power_str += f"  (base {base_power})"
         stats = (
             f"{_('Type')}: {_('Tool')} ({type_label})\n"
             f"{dur_str}\n"
-            f"{_('Power')}: +{self.power}\n"
+            f"{power_str}\n"
         )
         if self.gather_type:
             gather_label = self.gather_type.replace("_", " ").title()
@@ -725,7 +895,7 @@ class Tool(Item, DurabilityMixin):
                 yield_str = f"{self.gather_yield_min}-{self.gather_yield_max}"
             stats += f"{_('Gathers')}: {gather_label} ({yield_str})\n"
         stats += f"Price: ${self.price}"
-        return f"{self.name}\n{stats}\n{self.description}"
+        return f"{self.display_name}\n{stats}\n{self.description}"
 
 
 # ─── Rainbow / Gay Ring ───────────────────────────────────────────────────────
@@ -816,12 +986,6 @@ def create_item(item_id: str):
         Item | None: An instance of a specific item class or None.
     """
     # Built-in quick items (do not require DB presence)
-    if item_id in ("hand_lamp", "lamp"):
-        try:
-            return Lamp(None)
-        except Exception:
-            pass
-
     if item_id == "lantern":
         try:
             return Lantern(None)

@@ -25,6 +25,17 @@ def seed_recipes(db=None):
 
     # ------------------ Minecraft-style stone & wood recipes ------------------
 
+    # String: 2 fiber stacked vertically -> 1 string
+    db.add_shaped_recipe(
+        result_item_id="string",
+        result_amount=1,
+        grid=[
+            ["fiber", None, None],
+            ["fiber", None, None],
+            [None,   None, None]
+        ]
+    )
+
     # Sticks: 2 wood stacked vertically -> 4 sticks
     db.add_shaped_recipe(
         result_item_id="stick",
@@ -305,6 +316,225 @@ def seed_recipes(db=None):
             ["flint", "flint", None],
             [None,   "stick",  None],
             [None,   "stick",  None]
+        ]
+    )
+
+    # ------------------ Hammer tools ------------------
+
+    # Stone Hammer: 4 stone (top row + center) + 2 sticks (centre column)
+    db.add_shaped_recipe(
+        result_item_id="stone_hammer",
+        result_amount=1,
+        grid=[
+            ["stone", "stone", "stone"],
+            ["stone", "stick",  None],
+            [None,    "stick",  None]
+        ]
+    )
+
+    # Iron Hammer: 4 iron_ingot (top row + center) + 2 sticks (centre column)
+    db.add_shaped_recipe(
+        result_item_id="iron_hammer",
+        result_amount=1,
+        grid=[
+            ["iron_ingot", "iron_ingot", "iron_ingot"],
+            ["iron_ingot", "stick",      None],
+            [None,         "stick",      None]
+        ]
+    )
+
+    # ------------------ Melee weapons ------------------
+
+    # Dull Sword: 2 iron_ingot vertically (worn-down blade, no handle)
+    db.add_shaped_recipe(
+        result_item_id="dull_sword",
+        result_amount=1,
+        grid=[
+            ["iron_ingot", None,  None],
+            ["iron_ingot", None,  None],
+            [None,         None,  None]
+        ]
+    )
+
+    # Battle Axe: 3 steel_ingot in axe shape + 2 sticks
+    db.add_shaped_recipe(
+        result_item_id="battle_axe",
+        result_amount=1,
+        grid=[
+            ["steel_ingot", "steel_ingot", None],
+            ["steel_ingot", "stick",       None],
+            [None,          "stick",       None]
+        ]
+    )
+
+    # War Hammer: 4 steel_ingot (top row + center) + 2 sticks
+    db.add_shaped_recipe(
+        result_item_id="war_hammer",
+        result_amount=1,
+        grid=[
+            ["steel_ingot", "steel_ingot", "steel_ingot"],
+            ["steel_ingot", "stick",       None],
+            [None,          "stick",       None]
+        ]
+    )
+
+    # Mace: 3 iron_ingot on top row + 2 sticks
+    db.add_shaped_recipe(
+        result_item_id="mace",
+        result_amount=1,
+        grid=[
+            ["iron_ingot", "iron_ingot", "iron_ingot"],
+            [None,         "stick",      None],
+            [None,         "stick",      None]
+        ]
+    )
+
+    # Spear: 1 iron_ingot tip + 2 sticks shaft
+    db.add_shaped_recipe(
+        result_item_id="spear",
+        result_amount=1,
+        grid=[
+            ["iron_ingot", None,  None],
+            [None,         "stick", None],
+            [None,         "stick", None]
+        ]
+    )
+
+    # ------------------ Ranged weapons ------------------
+
+    # Wooden Bow: 4 sticks in bow shape
+    db.add_shaped_recipe(
+        result_item_id="wooden_bow",
+        result_amount=1,
+        grid=[
+            [None,  "stick", None],
+            ["stick", None,  "stick"],
+            [None,  "stick", None]
+        ]
+    )
+
+    # Hunting Bow: reinforced with string
+    db.add_shaped_recipe(
+        result_item_id="hunting_bow",
+        result_amount=1,
+        grid=[
+            [None,  "stick",  None],
+            ["stick", "string", "stick"],
+            [None,  "stick",  None]
+        ]
+    )
+
+    # Longbow: 4 sticks + string + leather grip
+    db.add_shaped_recipe(
+        result_item_id="longbow",
+        result_amount=1,
+        grid=[
+            [None,    "stick",  "string"],
+            ["stick",  None,    "stick"],
+            [None,    "stick",  None]
+        ]
+    )
+
+    # Crossbow: mechanical - iron_ingot + sticks + string
+    db.add_shaped_recipe(
+        result_item_id="crossbow",
+        result_amount=1,
+        grid=[
+            ["iron_ingot", None,    "string"],
+            [None,         "stick",  None],
+            [None,         "stick",  None]
+        ]
+    )
+
+    # Throwing Dagger: 2 flint stacked vertically
+    db.add_shaped_recipe(
+        result_item_id="throwing_dagger",
+        result_amount=1,
+        grid=[
+            ["flint", None, None],
+            ["flint", None, None],
+            [None,    None, None]
+        ]
+    )
+
+    # ------------------ Leather armor ------------------
+
+    # Leather Gloves: 2 leather in bottom row
+    db.add_shaped_recipe(
+        result_item_id="leather_gloves",
+        result_amount=1,
+        grid=[
+            [None,     None,     None],
+            [None,     None,     None],
+            ["leather", "leather", None]
+        ]
+    )
+
+    # Leather Belt: 3 leather in middle row
+    db.add_shaped_recipe(
+        result_item_id="leather_belt",
+        result_amount=1,
+        grid=[
+            [None,     None,     None],
+            ["leather", "leather", "leather"],
+            [None,     None,     None]
+        ]
+    )
+
+    # ------------------ Charms ------------------
+
+    # Defense Charm: iron_ingot + flint (crude protective charm)
+    db.add_shaped_recipe(
+        result_item_id="defense_charm",
+        result_amount=1,
+        grid=[
+            ["iron_ingot", "flint", None],
+            [None,         None,    None],
+            [None,         None,    None]
+        ]
+    )
+
+    # Silver Charm: silver_ingot + flint (enchanted silver charm)
+    db.add_shaped_recipe(
+        result_item_id="silver_charm",
+        result_amount=1,
+        grid=[
+            ["silver_ingot", "flint", None],
+            [None,           None,    None],
+            [None,           None,    None]
+        ]
+    )
+
+    # Lantern: iron_ingot + 2 coal
+    db.add_shaped_recipe(
+        result_item_id="lantern",
+        result_amount=1,
+        grid=[
+            ["iron_ingot", "coal", None],
+            [None,         "coal",  None],
+            [None,         None,   None]
+        ]
+    )
+
+    # Light Ring: iron_ring + coal + flint (enchanted light source)
+    db.add_shaped_recipe(
+        result_item_id="light_ring",
+        result_amount=1,
+        grid=[
+            ["iron_ring", "coal",  None],
+            ["flint",     None,    None],
+            [None,        None,    None]
+        ]
+    )
+
+    # Gay Ring: steel_ring + coal + flint (rainbow magic)
+    db.add_shaped_recipe(
+        result_item_id="gay_ring",
+        result_amount=1,
+        grid=[
+            ["steel_ring", "coal",  None],
+            ["flint",      None,    None],
+            [None,         None,    None]
         ]
     )
 

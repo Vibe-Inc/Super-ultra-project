@@ -13,13 +13,16 @@ import random
 
 from src.core.logger import logger
 import src.config as cfg
+from src.core.day_night import DayNightVisuals
 from src.core.state import State
+from src.core.save_manager import SaveManager
 from src.entities.character import Character
 from src.map.map import LocalMap
 from src.inventory.system import MAIN_player_inventory, MAIN_player_inventory_equipment, ShopInventory, MAIN_player_hotbar
 from src.items.items import create_item, LightRing
 from database.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, DizzinessEffect, SlowEffect
 from src.entities.enemy import Enemy
+from src.entities.boss import Boss
 from src.entities.npc import NPC
 from src.entities.mage_npc import MageNPC
 from src.entities.projectile import Arrow
@@ -30,8 +33,13 @@ from src.core.collision_system import CollisionSystem
 from src.ai.navigation import NavGrid
 from src.entities.monster_visuals import build_monster_animations
 from src.entities.monster_attacks import build_attack_controller, AttackContext
+from src.entities.boss_visuals import build_boss_animations
+from src.entities.boss_attacks import build_boss_attack_controller
 from src.combat.base_player_combat import PlayerCombatController
 from src.minigames.blackjack import BlackjackGame
+from src.minigames.roulette import RouletteGame
+from src.minigames.poker import PokerGame
+from src.minigames.crafting import CraftingMinigame
 from src.minigames.fishing import FishingController
 from src.minigames.gathering import GatheringController
 from src.world.gatherable_nodes import GatherableNodeRegistry
@@ -119,6 +127,12 @@ class Game(State):
             Merchant shop inventory used by the NPC.
         blackjack_game (BlackjackGame):
             Active blackjack instance, or None.
+        roulette_game (RouletteGame):
+            Active roulette instance, or None.
+        poker_game (PokerGame):
+            Active poker instance, or None.
+        crafting_minigame (CraftingMinigame):
+            Active "Tempering" minigame instance, or None.
         spawn_menu (SpawnMenu):
             Debug menu for spawning enemies on demand.
         game_time_seconds (float):
@@ -155,6 +169,8 @@ class Game(State):
             Toggle the merchant's trading interface.
         open_blackjack():
             Launch the blackjack minigame overlay.
+        open_crafting_minigame(crafted_item, consume_callback, smelting_level=1):
+            Launch the Tempering timing minigame for a workbench craft.
         _get_card_npc_dialog():
             Pick the right card-NPC dialog lines for the current state.
         use_skill_slot(slot_index):
@@ -171,8 +187,9 @@ class Game(State):
             Return True if the in-game clock is currently daytime.
         _update_game_time(dt):
             Advance the in-game clock and update day/night brightness.
-        _get_spawn_info(map_path):
-            Resolve the default enemy spawn info for a given map path.
+        _get_spawn_entries(map_path):
+            Resolve the configured enemy spawn entries for a given map path
+            as a list of {"pos": (x, y), "profile": "name"} dicts.
         _get_camera_offset():
             Compute the camera offset (in world space) for this frame.
         _make_patrol_points(center, radius):
@@ -216,6 +233,8 @@ class Game(State):
 
         initial_map_path = "maps/test-map-1.tmx"
         self.current_map_path = initial_map_path
+        self.intro_played = False
+        self._intro_sequence_active = False
         self.map = LocalMap("Level1", initial_map_path)
         self.discovered_locations = {"peaceful_forest"}
 
@@ -250,6 +269,9 @@ class Game(State):
         self.NIGHT_START = 18 * 3600
         self.DAWN_START = 4 * 3600
         self.NIGHT_BRIGHTNESS = 0.15
+
+        # Majestic day-night visual controller
+        self.day_night = DayNightVisuals()
 
         self.enemy_profiles = {
             "brute": {
@@ -468,13 +490,354 @@ class Game(State):
                     {"item_id": "large_health_potion", "chance": 0.10},
                 ],
             },
+            "phantom": {
+                "visual_style": "phantom",
+                "sprite_set": "MenHuman1(Recolor)",
+                "speed": 105.0,
+                "hp": 100,
+                "damage": 14,
+                "animation_speed": 5.5,
+                "detection_range": 260.0,
+                "attack_range": 40.0,
+                "ai_profile": "stalker",
+                "attack_profile": "phantom",
+                "attack_config": {
+                    "cooldown_ms": 1400,
+                    "damage_mult": 0.8,
+                    "strike_range": 45.0,
+                    "drain_duration": 0.8,
+                    "drain_speed": 280.0,
+                    "drain_heal_fraction": 0.35,
+                    "drain_range": 220.0,
+                    "slow_duration": 1.5,
+                    "slow_factor": 0.65,
+                },
+                "contact_damage": False,
+                "drop_chance": [
+                    {"item_id": "small_health_potion", "chance": 0.25},
+                    {"item_id": "large_health_potion", "chance": 0.10},
+                ],
+            },
+            "titan": {
+                "visual_style": "titan",
+                "sprite_set": "MenHuman1",
+                "speed": 75.0,
+                "hp": 220,
+                "damage": 28,
+                "animation_speed": 4.5,
+                "detection_range": 220.0,
+                "attack_range": 50.0,
+                "ai_profile": "guardian",
+                "attack_profile": "titan",
+                "attack_config": {
+                    "cooldown_ms": 1800,
+                    "charge_cooldown_ms": 3200,
+                    "charge_duration": 0.9,
+                    "charge_speed_mult": 2.0,
+                    "stomp_damage_mult": 1.8,
+                    "root_duration": 2.5,
+                    "knockback_force": 45.0,
+                },
+                "contact_damage": True,
+                "drop_chance": [
+                    {"item_id": "large_health_potion", "chance": 0.90},
+                    {"item_id": "small_health_potion", "chance": 1.0},
+                ],
+            },
+            "cryomancer": {
+                "visual_style": "cryomancer",
+                "sprite_set": "WomanHuman1",
+                "speed": 110.0,
+                "hp": 85,
+                "damage": 15,
+                "animation_speed": 6.5,
+                "detection_range": 280.0,
+                "attack_range": 40.0,
+                "ai_profile": "stalker",
+                "attack_profile": "cryomancer",
+                "attack_config": {
+                    "cooldown_ms": 1100,
+                    "shard_speed": 420.0,
+                    "shard_range": 500.0,
+                    "shard_damage_mult": 0.80,
+                    "freeze_duration": 2.0,
+                    "close_range": 80.0,
+                    "nova_damage_mult": 0.95,
+                    "spread_degrees": 6.0,
+                },
+                "contact_damage": False,
+                "drop_chance": [
+                    {"item_id": "small_health_potion", "chance": 0.30},
+                    {"item_id": "large_health_potion", "chance": 0.10},
+                ],
+            },
+            "shadowmancer": {
+                "visual_style": "shadowmancer",
+                "sprite_set": "WomanHuman1(Recolor)",
+                "speed": 125.0,
+                "hp": 75,
+                "damage": 13,
+                "animation_speed": 7.0,
+                "detection_range": 300.0,
+                "attack_range": 35.0,
+                "ai_profile": "skirmisher",
+                "ai_config": {
+                    "preferred_min": 80.0,
+                    "preferred_max": 180.0,
+                    "orbit_radius": 130.0,
+                },
+                "attack_profile": "shadowmancer",
+                "attack_config": {
+                    "cooldown_ms": 1500,
+                    "step_range": 260.0,
+                    "step_distance": 65.0,
+                    "step_attempts": 5,
+                    "step_spread_degrees": 100.0,
+                    "bolt_speed": 450.0,
+                    "bolt_range": 480.0,
+                    "bolt_damage_mult": 0.85,
+                    "confuse_duration": 3.0,
+                    "spread_degrees": 4.0,
+                },
+                "contact_damage": False,
+                "drop_chance": [
+                    {"item_id": "potion_of_confusion", "chance": 0.35},
+                    {"item_id": "small_health_potion", "chance": 0.20},
+                ],
+            },
+            "revenant": {
+                "visual_style": "revenant",
+                "sprite_set": "MenHuman1(Recolor)",
+                "speed": 110.0,
+                "hp": 130,
+                "damage": 18,
+                "animation_speed": 5.5,
+                "detection_range": 250.0,
+                "attack_range": 42.0,
+                "ai_profile": "stalker",
+                "attack_profile": "revenant",
+                "attack_config": {
+                    "cooldown_ms": 1000,
+                    "damage_mult": 1.05,
+                    "strike_range": 55.0,
+                    "lifesteal_fraction": 0.30,
+                    "bleed_duration": 3.0,
+                    "undying_threshold": 0.20,
+                    "undying_heal_fraction": 0.35,
+                    "undying_immunity_ms": 2500,
+                    "undying_cooldown_ms": 15000,
+                },
+                "contact_damage": False,
+                "drop_chance": [
+                    {"item_id": "large_health_potion", "chance": 0.25},
+                    {"item_id": "small_health_potion", "chance": 0.40},
+                ],
+            },
+            "molten": {
+                "visual_style": "molten",
+                "sprite_set": "MenHuman1",
+                "speed": 100.0,
+                "hp": 150,
+                "damage": 20,
+                "animation_speed": 5.0,
+                "detection_range": 240.0,
+                "attack_range": 45.0,
+                "ai_profile": "guardian",
+                "attack_profile": "molten",
+                "attack_config": {
+                    "cooldown_ms": 1200,
+                    "nova_cooldown_ms": 2800,
+                    "nova_radius": 100.0,
+                    "nova_damage_mult": 1.1,
+                    "burn_duration": 3.5,
+                    "burn_dps": 6.0,
+                    "charge_cooldown_ms": 3500,
+                    "charge_duration": 0.6,
+                    "charge_speed_mult": 2.5,
+                    "charge_damage_mult": 1.3,
+                },
+                "contact_damage": True,
+                "drop_chance": [
+                    {"item_id": "large_health_potion", "chance": 0.35},
+                    {"item_id": "small_health_potion", "chance": 0.50},
+                ],
+            },
+            "stormcaller": {
+                "visual_style": "stormcaller",
+                "sprite_set": "WomanHuman1",
+                "speed": 115.0,
+                "hp": 80,
+                "damage": 14,
+                "animation_speed": 6.5,
+                "detection_range": 300.0,
+                "attack_range": 38.0,
+                "ai_profile": "stalker",
+                "attack_profile": "stormcaller",
+                "attack_config": {
+                    "cooldown_ms": 1000,
+                    "bolt_speed": 500.0,
+                    "bolt_range": 520.0,
+                    "bolt_damage_mult": 0.9,
+                    "dizzy_duration": 1.8,
+                    "cast_range": 360.0,
+                    "spread_degrees": 4.0,
+                    "field_cooldown_ms": 3000,
+                    "field_radius": 90.0,
+                    "field_damage_mult": 0.8,
+                },
+                "contact_damage": False,
+                "drop_chance": [
+                    {"item_id": "small_health_potion", "chance": 0.25},
+                    {"item_id": "large_health_potion", "chance": 0.10},
+                ],
+            },
+            "plaguebearer": {
+                "visual_style": "plaguebearer",
+                "sprite_set": "MenHuman1(Recolor)",
+                "speed": 105.0,
+                "hp": 110,
+                "damage": 14,
+                "animation_speed": 5.5,
+                "detection_range": 280.0,
+                "attack_range": 40.0,
+                "ai_profile": "stalker",
+                "ai_config": {
+                    "preferred_min": 60.0,
+                    "preferred_max": 160.0,
+                    "orbit_radius": 110.0,
+                },
+                "attack_profile": "plaguebearer",
+                "attack_config": {
+                    "cooldown_ms": 1200,
+                    "bolt_speed": 380.0,
+                    "bolt_range": 460.0,
+                    "bolt_damage_mult": 0.85,
+                    "poison_duration": 4.0,
+                    "poison_dps": 5.5,
+                    "cast_range": 340.0,
+                    "spread_degrees": 6.0,
+                    "nova_cooldown_ms": 3200,
+                    "nova_radius": 100.0,
+                    "nova_damage_mult": 1.0,
+                    "nova_slow_duration": 2.0,
+                    "nova_slow_factor": 0.55,
+                },
+                "contact_damage": False,
+                "drop_chance": [
+                    {"item_id": "small_health_potion", "chance": 0.30},
+                    {"item_id": "potion_of_confusion", "chance": 0.15},
+                ],
+            },
+            "chronos": {
+                "visual_style": "chronos",
+                "sprite_set": "MenHuman1(Recolor)",
+                "speed": 120.0,
+                "hp": 600,
+                "damage": 25,
+                "animation_speed": 6.0,
+                "animation_size": (160, 160),
+                "detection_range": 500.0,
+                "attack_range": 70.0,
+                "ai_profile": "chronos",
+                "ai_config": {
+                    "preferred_min": 120.0,
+                    "preferred_max": 250.0,
+                    "orbit_radius": 180.0,
+                    "orbit_interval": 2.5,
+                    "drift_cooldown": 3.0,
+                    "drift_distance": 80.0,
+                    "rift_cooldown": 5.0,
+                    "warp_cooldown": 4.0,
+                    "warp_speed_mult": 2.5,
+                    "warp_duration": 0.6,
+                },
+                "attack_profile": "chronos",
+                "attack_config": {
+                    "cooldown_ms": 1200,
+                    "bolt_speed": 450.0,
+                    "bolt_range": 500.0,
+                    "bolt_damage_mult": 0.85,
+                    "slow_duration": 2.0,
+                    "slow_factor": 0.5,
+                    "melee_damage_mult": 1.2,
+                    "melee_range": 60.0,
+                    "spread_degrees": 5.0,
+                    "burst_cooldown_ms": 3500,
+                    "burst_radius": 100.0,
+                    "burst_damage_mult": 1.0,
+                    "rift_cooldown_ms": 4000,
+                    "rift_distance": 150.0,
+                    "storm_cooldown_ms": 6000,
+                    "storm_radius": 140.0,
+                    "storm_damage_mult": 1.5,
+                    "freeze_duration": 2.0,
+                    "enrage_speed_mult": 1.6,
+                    "nova_cooldown_ms": 5000,
+                    "nova_bolt_count": 8,
+                    "nova_bolt_speed": 350.0,
+                    "nova_bolt_range": 300.0,
+                    "nova_damage_mult": 0.7,
+                    "shard_cooldown_ms": 4500,
+                    "shard_count": 5,
+                    "shard_spread_degrees": 25.0,
+                    "shard_speed": 400.0,
+                    "shard_range": 400.0,
+                    "shard_damage_mult": 0.6,
+                    "cascade_cooldown_ms": 7000,
+                    "cascade_waves": 3,
+                    "cascade_bolts_per_wave": 3,
+                    "cascade_speed": 380.0,
+                    "cascade_range": 450.0,
+                    "cascade_damage_mult": 0.5,
+                    "barrage_cooldown_ms": 8000,
+                    "barrage_bolt_count": 12,
+                    "barrage_speed": 320.0,
+                    "barrage_range": 350.0,
+                    "barrage_damage_mult": 0.45,
+                    "timestop_cooldown_ms": 9000,
+                    "timestop_radius": 120.0,
+                    "timestop_freeze_duration": 1.5,
+                    "timestop_damage_mult": 0.5,
+                    "wave_cooldown_ms": 5500,
+                    "wave_radius": 160.0,
+                    "wave_damage_mult": 0.8,
+                    "rift_cooldown2_ms": 7000,
+                    "rift_duration": 4.0,
+                    "rift_damage_mult": 0.35,
+                    "decay_cooldown_ms": 6500,
+                    "decay_radius": 80.0,
+                    "decay_damage_mult": 0.3,
+                    "reversal_cooldown_ms": 10000,
+                    "reversal_heal": 40,
+                    "reversal_damage_mult": 0.6,
+                },
+                "contact_damage": True,
+                "is_boss": True,
+                "boss_name": "Chronos the Chronicler of Time",
+                "drop_chance": [
+                    {"item_id": "large_health_potion", "chance": 1.0},
+                ],
+            },
         }
         self.enemy_profile_names = list(self.enemy_profiles.keys())
 
         self.ENEMY_SPAWNS = {
             # "maps/test-map-1.tmx": (400, 300), # Якщо закоментувати цей рядок, ворога на старті не буде
-            "maps/test-map-2.tmx": {"pos": (600, 450), "profile": "trickster"},
-            "maps/test-map-3.tmx": {"pos": (300, 200), "profile": "skirmisher"},
+            # Each map can declare multiple distinct enemy spawns (pos + profile).
+            # Both dict-of-one and list-of-many forms are supported; tuples fall
+            # back to the "stalker" profile for backward compatibility.
+            "maps/test-map-2.tmx": [
+                {"pos": (600, 450),   "profile": "trickster"},
+                {"pos": (1500, 1250), "profile": "stalker"},
+                {"pos": (3000, 1800), "profile": "brute"},
+                {"pos": (3200, 400),  "profile": "phantom"},
+            ],
+            "maps/test-map-3.tmx": [
+                {"pos": (300, 200),  "profile": "skirmisher"},
+                {"pos": (900, 500),  "profile": "bomber"},
+                {"pos": (1400, 800), "profile": "phantom"},
+                {"pos": (2200, 1200), "profile": "chronos", "is_boss": True},
+            ],
         }
 
         # NPC spawn positions (pixels). Tavern NPC coordinates corrected to fit map bounds
@@ -502,12 +865,13 @@ class Game(State):
         # Maps where enemy spawning (both default and random) is disabled
         self.NO_ENEMY_SPAWN_MAPS = {"maps/tavern.tmx", "maps/test-map-1.tmx", "maps/test-map-4.tmx"}
 
-        spawn_info = self._get_spawn_info(initial_map_path)
+        spawn_entries = self._get_spawn_entries(initial_map_path)
         if initial_map_path in self.NO_ENEMY_SPAWN_MAPS:
-            spawn_info = None
-        if spawn_info:
-            start_x, start_y = spawn_info["pos"]
-            default_profile = spawn_info.get("profile")
+            spawn_entries = []
+        if spawn_entries:
+            first = spawn_entries[0]
+            start_x, start_y = first["pos"]
+            default_profile = first.get("profile")
         else:
             start_x, start_y = -5000, -5000
             default_profile = None
@@ -515,8 +879,12 @@ class Game(State):
         self.hud = HUD(self.character, app, self.toggle_player_inventory, self.use_skill_slot, open_shop_callback=self.open_shop)
 
         self.enemy = self._create_enemy(start_x, start_y, profile=default_profile)
-        
+
         self.enemies = [self.enemy]
+        # Spawn any additional configured enemies on the starting map.
+        for extra in spawn_entries[1:]:
+            ex, ey = extra["pos"]
+            self.enemies.append(self._create_enemy(ex, ey, profile=extra.get("profile")))
         self.items = []
         
         # Enemy spawning system
@@ -553,6 +921,7 @@ class Game(State):
             create_item("dull_sword"),
             create_item("wooden_bow"),
             create_item("apple"),
+            create_item("gay_ring"),
             create_item("hand_lamp"),
             create_item("lantern"),
             create_item("small_health_potion"),
@@ -586,13 +955,13 @@ class Game(State):
 
         self.card_npc_first_dialog = [
             "Well, well — a fresh face in the tavern!",
-            "Name's Ren. I pass the time with a bit of cards.",
-            "Care for a round of Blackjack? I promise I don't cheat... much."
+            "Name's Ren. I pass the time with some casino games.",
+            "Care for a round of Blackjack, Roulette, or Poker? I promise I don't cheat... much."
         ]
         self.card_npc_repeat_dialog = [
             "Back again? I knew you'd come around.",
-            "The cards have been waiting for you.",
-            "How about another round of Blackjack?"
+            "The tables are waiting for you.",
+            "Would you like to play Blackjack, Roulette, or Poker?"
         ]
         self.card_npc_post_game_dialog = [
             "Thanks for playing! That was a fine round.",
@@ -698,8 +1067,13 @@ class Game(State):
         except Exception:
             pass
 
-        # Blackjack game state (None when not playing)
+        # Blackjack, Roulette & Poker game state (None when not playing)
         self.blackjack_game = None
+        self.roulette_game = None
+        self.poker_game = None
+
+        # Crafting "Tempering" minigame state (None when not playing)
+        self.crafting_minigame = None
 
         # Debug menu for spawning mobs
         self.spawn_menu = SpawnMenu(
@@ -725,24 +1099,34 @@ class Game(State):
         except Exception:
             self.fishing = None
 
+        # Guide article one-shot trigger flags
+        self._triggered_guide_combat = False
+        self._triggered_guide_inventory = False
+        self._triggered_guide_crafting = False
+        self._triggered_guide_leveling = False
+        self._triggered_guide_daynight = False
+        self._triggered_guide_enemies = False
+        self._triggered_guide_skills = False
+        self._triggered_guide_respec = False
+        self._triggered_guide_final = False
+        self._bestiary_encountered = set()
+        self._dusk_was_reached = False
+        self._kill_count = 0
+
         # Gathering minigame controller (chop / mine)
         try:
             self.gathering = GatheringController(self)
         except Exception:
             self.gathering = None
 
-        # Smeltery workstation overlay (workbench + coke oven + blast furnace).
-        # The instance is owned by Game so that smelting jobs keep ticking
-        # even while the overlay is closed.
+        # Smeltery workstation overlay (workbench + coke oven + blast furnace)
         try:
             self.smeltery = SmelteryMenu(app)
         except Exception as exc:
             logger.warning(f"Failed to initialise SmelteryMenu: {exc}")
             self.smeltery = None
 
-        # Per-map gatherable node registries (currently empty: gathering
-        # is driven entirely by the is_*_gatherable tile properties on
-        # the .tmx files -- see src.world.gatherable_nodes).
+        # Per-map gatherable node registries
         self.gatherables: dict[str, GatherableNodeRegistry] = {}
         try:
             self._build_gatherable_registries()
@@ -750,13 +1134,6 @@ class Game(State):
             logger.warning(f"Failed to build gatherable node registries: {exc}")
 
     def _build_gatherable_registries(self) -> None:
-        """Read :mod:`data.gatherable_nodes` once and group the entries
-        by ``map_path`` into :class:`GatherableNodeRegistry` instances.
-
-        The data file is intentionally empty now; the registries exist
-        so the per-map update / draw hooks in :meth:`Game.update` and
-        :meth:`Game.draw_scene` keep working without a guard.
-        """
         try:
             from data.gatherable_nodes import load_gatherable_node_defs
         except Exception as exc:
@@ -807,6 +1184,10 @@ class Game(State):
 
     def toggle_player_inventory(self):
         self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
+        # Guide: Inventory & Items — first inventory open
+        if not self._triggered_guide_inventory:
+            self._triggered_guide_inventory = True
+            self.app.article_tracker.try_open(self.app, "guide", "4. Inventory & Items")
 
     def open_shop(self):
         try:
@@ -841,6 +1222,97 @@ class Game(State):
                 on_close=lambda: setattr(self.card_npc, 'was_talked', True),
             )
         self.blackjack_game = BlackjackGame(self.app, on_close=on_close, player_money=self.app.money)
+
+    def open_roulette(self):
+        def on_close(outcome, net_change):
+            self.roulette_game = None
+            self.app.money += net_change
+            if self.app.money < 0:
+                self.app.money = 0
+            logger.info(f"Roulette closed: outcome={outcome}, net_change={net_change}, money now={self.app.money}")
+            if net_change > 0:
+                post_lines = [
+                    "Thanks for playing! That was a fine round.",
+                    f"You walked away {net_change} gold richer!",
+                    "Come back anytime — the wheel is always spinning."
+                ]
+            elif net_change < 0:
+                post_lines = [
+                    "Thanks for playing! That was a fine round.",
+                    f"Tough luck — you lost {abs(net_change)} gold.",
+                    "Come back anytime — the wheel is always spinning."
+                ]
+            else:
+                post_lines = [
+                    "Thanks for playing! That was a fine round.",
+                    "Come back anytime — the wheel is always spinning."
+                ]
+            self.app.current_dialog = Dialog(
+                self.app,
+                post_lines,
+                on_close=lambda: setattr(self.card_npc, 'was_talked', True),
+            )
+        self.roulette_game = RouletteGame(self.app, on_close=on_close, player_money=self.app.money)
+
+    def open_poker(self):
+        def on_close(outcome, net_change):
+            self.poker_game = None
+            self.app.money += net_change
+            if self.app.money < 0:
+                self.app.money = 0
+            logger.info(f"Poker closed: outcome={outcome}, net_change={net_change}, money now={self.app.money}")
+            if net_change > 0:
+                post_lines = [
+                    "Thanks for playing! That was a fine round.",
+                    f"You walked away {net_change} gold richer!",
+                    "Come back anytime — the cards are always dealt."
+                ]
+            elif net_change < 0:
+                post_lines = [
+                    "Thanks for playing! That was a fine round.",
+                    f"Tough luck — you lost {abs(net_change)} gold.",
+                    "Come back anytime — the cards are always dealt."
+                ]
+            else:
+                post_lines = [
+                    "Thanks for playing! That was a fine round.",
+                    "Come back anytime — the cards are always dealt."
+                ]
+            self.app.current_dialog = Dialog(
+                self.app,
+                post_lines,
+                on_close=lambda: setattr(self.card_npc, 'was_talked', True),
+            )
+        self.poker_game = PokerGame(self.app, on_close=on_close, player_money=self.app.money)
+
+    def open_crafting_minigame(self, crafted_item, consume_callback, smelting_level: int = 1):
+        """Launch the Tempering timing minigame for a freshly crafted item.
+
+        ``crafted_item`` is the already-tiered item produced by
+        :meth:`src.inventory.system.CraftingGrid.check_recipes`.  The
+        minigame may further bias the tier up or down based on the
+        player's three hammer strikes.  On close, ``consume_callback``
+        is invoked with the final item and the XP multiplier; it is
+        expected to clear the crafting grid, place the item in the
+        player's cursor, and award the (multiplied) smelting XP.
+        """
+        def on_close(final_item, xp_multiplier, outcome):
+            self.crafting_minigame = None
+            logger.info(
+                f"Crafting minigame closed: outcome={outcome}, "
+                f"final_tier={getattr(final_item, 'tier', 'fine')}, "
+                f"xp_multiplier={xp_multiplier}"
+            )
+            try:
+                consume_callback(final_item, xp_multiplier)
+            except Exception as exc:
+                logger.warning(f"crafting minigame consume callback failed: {exc}")
+        self.crafting_minigame = CraftingMinigame(
+            self.app,
+            crafted_item,
+            on_close=on_close,
+            smelting_level=smelting_level,
+        )
 
     def _get_card_npc_dialog(self):
         if not self.card_npc.was_talked:
@@ -984,14 +1456,49 @@ class Game(State):
         for projectile in self.projectiles:
             projectile.update(dt, self.obstacles, self.enemies)
 
+        # Handle thrown weapon landings
+        for projectile in self.projectiles[:]:
+            from src.entities.projectile import ThrownWeapon
+            if isinstance(projectile, ThrownWeapon) and projectile.landed and projectile.will_drop:
+                from src.entities.dropped_item import DroppedItem
+                drop = DroppedItem(projectile.pos.x, projectile.pos.y, projectile.weapon_item, 1)
+                self.items.append(drop)
+
         self.projectiles = [projectile for projectile in self.projectiles if projectile.alive]
 
     def _update_enemy_projectiles(self, dt):
         if not self.enemy_projectiles:
             return
 
-        for projectile in self.enemy_projectiles:
+        for projectile in self.enemy_projectiles[:]:
             projectile.update(dt, self.obstacles, self.character)
+            # Parry projectile: if player is in parry window and projectile is close
+            if self.character.is_in_parry_window() and projectile.alive:
+                p_center = self.character.get_center()
+                p_pos = getattr(projectile, "pos", None)
+                if p_pos and p_center.distance_to(p_pos) < 40:
+                    if self.character.reflect_projectile(projectile):
+                        # Projectile is now reflected — it flies back at enemies
+                        pass  # reflect_projectile sets .reflected, reverses direction, halves damage
+
+            # Reflected projectiles damage enemies on contact
+            if getattr(projectile, 'reflected', False) and projectile.alive:
+                from src.entities.projectile import Bomb
+                if isinstance(projectile, Bomb) and getattr(projectile, 'exploding', False):
+                    # Reflected Bomb explosion damages enemies in blast radius
+                    for enemy in self.enemies[:]:
+                        e_center = pygame.Vector2(enemy.get_rect().center)
+                        if projectile.pos.distance_squared_to(e_center) <= (projectile.blast_radius ** 2):
+                            if projectile.damage > 0:
+                                enemy.take_damage(projectile.damage)
+                else:
+                    proj_rect = projectile.get_rect()
+                    for enemy in self.enemies[:]:
+                        if proj_rect.colliderect(enemy.get_rect()):
+                            if hasattr(projectile, 'damage') and projectile.damage > 0:
+                                enemy.take_damage(projectile.damage)
+                            projectile.alive = False
+                            break
 
         self.enemy_projectiles = [projectile for projectile in self.enemy_projectiles if projectile.alive]
 
@@ -1011,35 +1518,36 @@ class Game(State):
         return self.DAY_START <= self.game_time_seconds < self.NIGHT_START
 
     def _update_game_time(self, dt: float):
+        was_day = self.is_daytime()
         self.game_time_seconds = (self.game_time_seconds + dt * self.GAME_SECONDS_PER_REAL_SECOND) % self.GAME_DAY_SECONDS
-        # Smooth brightness interpolation across dawn/dusk and compute a tint color
-        def lerp_color(a: tuple[int, int, int], b: tuple[int, int, int], t: float) -> tuple[int, int, int]:
-            return (int(a[0] + (b[0] - a[0]) * t), int(a[1] + (b[1] - a[1]) * t), int(a[2] + (b[2] - a[2]) * t))
+        # Guide: Day & Night Cycle — first time dusk/night is reached
+        if not self._triggered_guide_daynight and not was_day and not self.is_daytime():
+            self._triggered_guide_daynight = True
+            self.app.article_tracker.try_open(self.app, "guide", "7. Day & Night Cycle")
 
-        if self.DUSK_START <= self.game_time_seconds < self.NIGHT_START:
-            t = (self.game_time_seconds - self.DUSK_START) / (self.NIGHT_START - self.DUSK_START)
-            cfg.ENVIRONMENT_BRIGHTNESS = 1.0 - t * (1.0 - self.NIGHT_BRIGHTNESS)
-            cfg.ENVIRONMENT_TINT = lerp_color(cfg.ENVIRONMENT_DAY_COLOR, cfg.ENVIRONMENT_NIGHT_COLOR, t)
-        elif self.NIGHT_START <= self.game_time_seconds or self.game_time_seconds < self.DAWN_START:
-            cfg.ENVIRONMENT_BRIGHTNESS = self.NIGHT_BRIGHTNESS
-            cfg.ENVIRONMENT_TINT = cfg.ENVIRONMENT_NIGHT_COLOR
-        elif self.DAWN_START <= self.game_time_seconds < self.DAY_START:
-            t = (self.game_time_seconds - self.DAWN_START) / (self.DAY_START - self.DAWN_START)
-            cfg.ENVIRONMENT_BRIGHTNESS = self.NIGHT_BRIGHTNESS + t * (1.0 - self.NIGHT_BRIGHTNESS)
-            cfg.ENVIRONMENT_TINT = lerp_color(cfg.ENVIRONMENT_NIGHT_COLOR, cfg.ENVIRONMENT_DAY_COLOR, t)
-        else:
-            cfg.ENVIRONMENT_BRIGHTNESS = 1.0
-            cfg.ENVIRONMENT_TINT = cfg.ENVIRONMENT_DAY_COLOR
+        self.day_night.update(dt, self.game_time_seconds, self.GAME_DAY_SECONDS)
 
         self.app.profiler.set_gauge("game_time", self._format_game_time())
 
-    def _get_spawn_info(self, map_path: str) -> dict | None:
+    def _get_spawn_entries(self, map_path: str) -> list[dict]:
+        """
+        Normalize the ENEMY_SPAWNS entry for a map into a list of
+        {"pos": (x, y), "profile": "name"} dicts.
+
+        Supports three legacy forms:
+          - list of dicts: returned as-is
+          - single dict: wrapped in a one-element list
+          - (x, y) tuple: wrapped with the default "stalker" profile
+        Returns an empty list if the map has no configured spawns.
+        """
         spawn = self.ENEMY_SPAWNS.get(map_path)
         if not spawn:
-            return None
+            return []
+        if isinstance(spawn, list):
+            return [entry for entry in spawn if entry]
         if isinstance(spawn, dict):
-            return spawn
-        return {"pos": spawn, "profile": "stalker"}
+            return [spawn]
+        return [{"pos": spawn, "profile": "stalker"}]
 
     def _place_npcs_for_map(self, map_path):
         if map_path in self.NPC_SPAWNS:
@@ -1156,17 +1664,7 @@ class Game(State):
         lights = []
         try:
             camera = self._get_camera_offset()
-            # Player light: if player has an active lamp, use it
             player_center = self.character.get_center()
-            if getattr(self.character, 'active_lamp', None) and getattr(self.character.active_lamp, 'lit', False):
-                lamp = self.character.active_lamp
-                screen_pos = (int(player_center.x - camera.x), int(player_center.y - camera.y))
-                lights.append({
-                    'pos': screen_pos,
-                    'radius': int(lamp.light_radius),
-                    'intensity': float(lamp.intensity)
-                })
-
             # Lantern: emit light when the lantern is in the active hotbar slot
             try:
                 hb = getattr(self, 'hotbar', None)
@@ -1253,8 +1751,10 @@ class Game(State):
                 except Exception:
                     pass
 
-            # Window illumination: windows emit warm light at night
-            # Skip for interior maps (e.g. tavern) where windows are on internal walls
+            # Window illumination: windows emit soft light at night.
+            # The warm visual glow is pre-baked on the map layer (Map._window_glow);
+            # these light sources only punch subtle holes in the night overlay.
+            # Skip for interior maps (e.g. tavern) where windows are on internal walls.
             _NO_WINDOW_LIGHT_MAPS = {"maps/tavern.tmx"}
             try:
                 game_map = getattr(self, 'map', None)
@@ -1265,7 +1765,7 @@ class Game(State):
                         lights.append({
                             'pos': screen_pos,
                             'radius': 100,
-                            'intensity': 0.9,
+                            'intensity': 0.7,
                             'full_360': True,
                         })
             except Exception:
@@ -1296,27 +1796,48 @@ class Game(State):
             radius = float(settings.get("patrol_radius", 120.0))
             patrol_points = self._make_patrol_points(pygame.Vector2(x, y), radius)
 
-        enemy = Enemy(
-            x=x,
-            y=y,
-            sprite_set=sprite_set,
-            speed=settings["speed"],
-            hp=settings["hp"],
-            damage=settings["damage"],
-            animation_size=(85, 85),
-            animation_speed=settings.get("animation_speed", 6.0),
-            detection_range=settings.get("detection_range", 250.0),
-            attack_range=settings.get("attack_range", 40.0),
-            patrol_points=patrol_points,
-            ai_profile=ai_profile,
-            ai_config=settings.get("ai_config"),
-            animations=animations,
-            attack_controller=attack_controller,
-            contact_damage=contact_damage,
-            visual_style=visual_style,
-        )
+        is_boss = settings.get("is_boss", False)
+        anim_size = settings.get("animation_size", (85, 85))
+        if is_boss:
+            boss_name = settings.get("boss_name", "Boss")
+            if attack_profile:
+                attack_controller = build_boss_attack_controller(attack_profile, settings.get("attack_config"))
+            animations = None
+            if visual_style:
+                animations = build_boss_animations(visual_style, anim_size)
+            enemy = Boss(
+                x=x, y=y, sprite_set=sprite_set,
+                speed=settings["speed"], hp=settings["hp"], damage=settings["damage"],
+                animation_size=anim_size, animation_speed=settings.get("animation_speed", 6.0),
+                detection_range=settings.get("detection_range", 250.0),
+                attack_range=settings.get("attack_range", 40.0),
+                boss_name=boss_name,
+                patrol_points=patrol_points, ai_profile=ai_profile,
+                ai_config=settings.get("ai_config"), animations=animations,
+                attack_controller=attack_controller, contact_damage=contact_damage,
+                visual_style=visual_style,
+                intro_trigger_distance=450.0,
+            )
+        else:
+            enemy = Enemy(
+                x=x, y=y, sprite_set=sprite_set,
+                speed=settings["speed"], hp=settings["hp"], damage=settings["damage"],
+                animation_size=anim_size, animation_speed=settings.get("animation_speed", 6.0),
+                detection_range=settings.get("detection_range", 250.0),
+                attack_range=settings.get("attack_range", 40.0),
+                patrol_points=patrol_points, ai_profile=ai_profile,
+                ai_config=settings.get("ai_config"), animations=animations,
+                attack_controller=attack_controller, contact_damage=contact_damage,
+                visual_style=visual_style,
+            )
         enemy.target_entity = self.character
         enemy.profile_name = profile_name
+        if isinstance(enemy, Boss):
+            try:
+                screen_w, screen_h = pygame.display.get_surface().get_size()
+                enemy.set_screen_size((screen_w, screen_h))
+            except Exception:
+                pass
         return enemy
 
     def spawn_random_enemy(self):
@@ -1469,7 +1990,36 @@ class Game(State):
         if placed == 0:
             logger.debug(f"Enemy '{getattr(enemy, 'ai_profile', 'unknown')}' had drop_chance entries but none rolled.")
 
+    def _finish_intro(self):
+        """Callback to finish the intro sequence and unlock the game."""
+        self.intro_played = True
+        self._intro_sequence_active = False
+
     def update(self, dt):
+        # Intro Sequence for test-map-1
+        if self.current_map_path == "maps/test-map-1.tmx" and not getattr(self, "intro_played", False) and not getattr(self, "_intro_sequence_active", False):
+            self._intro_sequence_active = True
+
+            # Set player lying down (facing down, frame 0)
+            self.character.direction = "down"
+            self.character.frame_index = 0
+            self.character.image = self.character.animations["down"][0]
+
+            dialog_lines = [
+                '"Arise, Chosen One."',
+                '"I sense the latent magic humming in your blood. You have been selected for a sacred mission."',
+                '"Far to the east, a great dragon slumbers in a mountain cave. You must slay it, or the realm will burn."'
+            ]
+            self.app.current_dialog = Dialog(self.app, dialog_lines, on_close=self._finish_intro)
+
+        tr = self.app.article_tracker
+
+        # Guide intro — only on the very first-ever game start
+        if not self.app.guide_intro_shown:
+            self.app.guide_intro_shown = True
+            SaveManager.save_settings(self.app)
+            tr.try_open(self.app, "guide", "1. Movement & Navigation")
+
         result = self.map.update(self.character)
 
         if isinstance(result, tuple) and result[0] == "location_transition":
@@ -1500,12 +2050,12 @@ class Game(State):
             # Reset enemies list and spawn default one if needed
             self.enemies = []
             
-            spawn_info = self._get_spawn_info(switched_map_path)
-            if switched_map_path not in self.NO_ENEMY_SPAWN_MAPS and spawn_info:
-                new_x, new_y = spawn_info["pos"]
-                profile = spawn_info.get("profile")
-                default_enemy = self._create_enemy(new_x, new_y, profile=profile)
-                self.enemies.append(default_enemy)
+            spawn_entries = self._get_spawn_entries(switched_map_path)
+            if switched_map_path not in self.NO_ENEMY_SPAWN_MAPS and spawn_entries:
+                for entry in spawn_entries:
+                    new_x, new_y = entry["pos"]
+                    profile = entry.get("profile")
+                    self.enemies.append(self._create_enemy(new_x, new_y, profile=profile))
 
             if switched_map_path in self.NPC_SPAWNS:
                     npc_x, npc_y = self.NPC_SPAWNS[switched_map_path]
@@ -1597,7 +2147,21 @@ class Game(State):
 
         self.player_combat.sync_weapon_stats()
 
-        self.character.update(dt, self.collision_handler, self.obstacles)
+        # Boss intro trigger check
+        intro_active = False
+        screen_size = getattr(self, '_screen_size', (1280, 720))
+        for enemy in self.enemies:
+            if isinstance(enemy, Boss) and not enemy.intro_triggered:
+                enemy.check_intro_trigger(self.character.pos, screen_size)
+            if isinstance(enemy, Boss) and enemy.is_intro_active():
+                intro_active = True
+                # Freeze player position during intro
+                enemy.intro.update(dt)
+                if enemy.intro.finished:
+                    intro_active = False
+
+        if not intro_active:
+            self.character.update(dt, self.collision_handler, self.obstacles)
 
         mouse_pos = pygame.mouse.get_pos()
         camera_offset = self._get_camera_offset()
@@ -1630,6 +2194,18 @@ class Game(State):
             ediff = enemy.pos - player_pos
             active = ediff.length_squared() <= lod_sq
             enemy.update(dt, self.collision_handler, self.obstacles, self.nav_grid, attack_context, active=active)
+
+        # Parry check: if player is in parry window and enemy is telegraphing
+        if self.character.is_in_parry_window():
+            for enemy in self.enemies:
+                if hasattr(enemy, "is_attack_telegraphing") and enemy.is_attack_telegraphing():
+                    e_center = pygame.Vector2(enemy.get_rect().center)
+                    p_center = self.character.get_center()
+                    dist = e_center.distance_to(p_center)
+                    atk_range = getattr(enemy, "attack_telegraph_range", enemy.attack_range)
+                    if dist <= atk_range * 1.5:
+                        if self.character.do_parry(enemy):
+                            enemy.attack_phase = 0
 
         self._update_projectiles(dt)
         self._update_enemy_projectiles(dt)
@@ -1680,7 +2256,34 @@ class Game(State):
         for enemy in self.enemies[:]:
             if enemy.is_dead():
                 logger.info("Enemy defeated!")
-                
+                self._kill_count += 1
+                self.app.achievement_manager.unlock("first_blood")
+                self.app.achievement_manager.add_progress("exterminator", 1, 50)
+                self.app.achievement_manager.add_progress("monster_hunter", 1, 200)
+
+                # Bestiary: open article for this enemy type
+                vs = getattr(enemy, "visual_style", None) or getattr(enemy, "ai_profile", "")
+                bestiary_title = {
+                    "brute": "The Brute", "venomous": "The Venomous",
+                    "arcanist": "The Arcanist", "trickster": "The Trickster",
+                    "bomber": "The Bomber", "stalker": "The Stalker",
+                    "skirmisher": "The Skirmisher", "guardian": "The Guardian",
+                }.get(vs.lower() if vs else "")
+                if bestiary_title:
+                    tr.try_open(self.app, "bestiary", bestiary_title)
+
+                # Guide: Combat Basics — first kill
+                if not self._triggered_guide_combat:
+                    self._triggered_guide_combat = True
+                    tr.try_open(self.app, "guide", "2. Combat Basics")
+
+                # Guide: Enemies & Threat Assessment — after 3+ different types encountered
+                if vs:
+                    self._bestiary_encountered.add(vs.lower())
+                    if not self._triggered_guide_enemies and len(self._bestiary_encountered) >= 3:
+                        self._triggered_guide_enemies = True
+                        tr.try_open(self.app, "guide", "8. Enemies & Threat Assessment")
+
                 # Reward scaling based on enemy difficulty (using max_hp as proxy)
                 # Base reward ranges
                 _base_xp_min, _base_xp_max = 30, 60
@@ -1735,6 +2338,13 @@ class Game(State):
         try:
             if getattr(self, 'gathering', None):
                 self.gathering.update(dt)
+        except Exception:
+            pass
+
+        # Tick the crafting tempering minigame (sweeping cursor, timers).
+        try:
+            if getattr(self, 'crafting_minigame', None):
+                self.crafting_minigame.update(dt)
         except Exception:
             pass
 
@@ -1863,6 +2473,7 @@ class Game(State):
         self.spirits = [s for s in self.spirits if s.alive]
 
     def draw_scene(self, screen):
+        self._screen_size = screen.get_size()
         dt = self.app.clock.get_time() / 1000
         self.app.profiler.start_section("game.update")
         self.update(dt)
@@ -1870,6 +2481,14 @@ class Game(State):
 
         self.app.profiler.start_section("game.draw")
         camera_offset = self._get_camera_offset()
+
+        # Boss intro screen shake
+        for enemy in self.enemies:
+            if isinstance(enemy, Boss) and enemy.intro is not None and not enemy.intro.finished:
+                shake = enemy.intro.get_shake_offset()
+                camera_offset = camera_offset + shake
+                break
+
         viewport_rect = pygame.Rect(0, 0, screen.get_width(), screen.get_height())
 
         def _is_visible(entity) -> bool:
@@ -1975,6 +2594,17 @@ class Game(State):
         # tall tile art.
         self.map.draw_fringe_overlay(screen, camera_offset, self.character)
 
+        # Draw HP bars on top of everything (including fringe)
+        for enemy in self.enemies:
+            if _is_visible(enemy):
+                enemy.draw_hp_bar(screen, camera_offset)
+
+        # Draw boss overlays (intro/phase transitions) on top of everything
+        for enemy in self.enemies:
+            if isinstance(enemy, Boss):
+                enemy.draw_overlay(screen)
+                enemy.draw_intro_text(screen)
+
         try:
             if getattr(self, 'gathering', None):
                 self.gathering.draw(screen, camera_offset)
@@ -2010,13 +2640,25 @@ class Game(State):
                 self.app.current_dialog.draw(screen)
             except Exception:
                 pass
-        # Draw blackjack overlay on top of everything
+        # Draw blackjack, roulette, or poker overlay on top of everything
         if self.blackjack_game:
             try:
                 self.blackjack_game.draw(screen)
             except Exception:
                 pass
+        if self.roulette_game:
+            try:
+                self.roulette_game.draw(screen)
+            except Exception:
+                pass
+        if self.poker_game:
+            try:
+                self.poker_game.draw(screen)
+            except Exception:
+                pass
         # Smeltery workstation overlay (workbench / coke oven / blast furnace).
+        # Must draw BEFORE the crafting minigame so the Tempering overlay
+        # renders on top of the smeltery panel, not behind it.
         try:
             if getattr(self, 'smeltery', None) and self.smeltery.is_open:
                 self.smeltery.draw(screen)
@@ -2028,6 +2670,13 @@ class Game(State):
                     pass
         except Exception:
             pass
+        # Crafting "Tempering" minigame overlay (workbench tempering).
+        if getattr(self, 'crafting_minigame', None):
+            try:
+                self.crafting_minigame.update(0.0)  # safety: no-op if not running
+                self.crafting_minigame.draw(screen)
+            except Exception:
+                pass
         # Draw debug spawn / effects menus
         self.spawn_menu.draw(screen)
         try:
@@ -2060,10 +2709,30 @@ class Game(State):
                 self.effects_menu.handle_event(event)
                 return
 
-        # If blackjack game is active, route all events to it
+        # If blackjack, roulette, or poker game is active, route all events to it
         if self.blackjack_game:
             try:
                 self.blackjack_game.handle_event(event)
+                return
+            except Exception:
+                pass
+        if self.roulette_game:
+            try:
+                self.roulette_game.handle_event(event)
+                return
+            except Exception:
+                pass
+        if self.poker_game:
+            try:
+                self.poker_game.handle_event(event)
+                return
+            except Exception:
+                pass
+
+        # If the crafting tempering minigame is active, route all events to it
+        if getattr(self, 'crafting_minigame', None):
+            try:
+                self.crafting_minigame.handle_event(event)
                 return
             except Exception:
                 pass
@@ -2189,6 +2858,10 @@ class Game(State):
                         on_close=on_card_close,
                         on_play_cards=self.open_blackjack,
                         show_play_cards=True,
+                        on_play_roulette=self.open_roulette,
+                        show_play_roulette=True,
+                        on_play_poker=self.open_poker,
+                        show_play_poker=True,
                     )
                 elif self.fishing_npc.is_interactable:
                     self.app.manager.set_state("collection_book")
@@ -2219,6 +2892,18 @@ class Game(State):
             if event.key == pygame.K_F10:
                 self.spawn_menu.toggle()
 
+            if event.key == pygame.K_r:
+                if not self.app.INV_manager.player_inventory_opened:
+                    mouse_pos = pygame.mouse.get_pos()
+                    mouse_world_pos = pygame.Vector2(mouse_pos) + self._get_camera_offset()
+                    self.player_combat.handle_fast_attack(mouse_world_pos)
+
+            if event.key == pygame.K_p:
+                if not self.app.INV_manager.player_inventory_opened:
+                    mouse_pos = pygame.mouse.get_pos()
+                    mouse_world_pos = pygame.Vector2(mouse_pos) + self._get_camera_offset()
+                    self.player_combat.handle_throw_weapon(mouse_world_pos)
+
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
                 if not self.app.INV_manager.player_inventory_opened:
@@ -2228,10 +2913,22 @@ class Game(State):
                     if not hud_click:
                         mouse_world_pos = pygame.Vector2(event.pos) + self._get_camera_offset()
                         self.player_combat.handle_player_attack(mouse_world_pos)
-            
+
             elif event.button == 3:
                 if not self.app.INV_manager.player_inventory_opened:
-                    if getattr(self.app.INV_manager, 'hotbar', None):
-                        self.app.INV_manager.hotbar.use_active_slot()
+                    # Start blocking
+                    self.character.start_block()
+
+
+
+        elif event.type == pygame.MOUSEBUTTONUP:
+            if event.button == 1:
+                if self.character.is_charging:
+                    mouse_world_pos = pygame.Vector2(event.pos) + self._get_camera_offset()
+                    self.player_combat.handle_player_attack_release(mouse_world_pos)
+            elif event.button == 3:
+                was_click = self.character.stop_block()
+                if was_click and getattr(self.app.INV_manager, 'hotbar', None):
+                    self.app.INV_manager.hotbar.use_active_slot()
 
         self.app.INV_manager.PLAYER_inventory_open(event, self.MAIN_player_inv, self.PLAYER_inventory_equipment)

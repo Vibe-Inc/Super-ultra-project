@@ -449,6 +449,7 @@ class InventoryRenderer:
                 self._draw_majestic_mysterium_magnum_button(screen, inv.open_mysterium_magnum_btn, pulse_offset=6.0)
 
         self.draw_base_inventory(screen, inv)
+        self.draw_trashcan(screen, inv)
 
     def _draw_majestic_skill_button(self, screen, button, is_skillbar=True, pulse_offset=0.0):
         rect = button.rect
@@ -981,6 +982,39 @@ class InventoryRenderer:
             hover_pulse = (math.sin(t * 0.008 + pulse_offset) + 1) * 0.3 + 0.4
             hc = tuple(min(255, int(c * hover_pulse)) for c in gold_light)
             pygame.draw.rect(screen, hc, rect, width=hw, border_radius=int(8 * scale))
+
+    def draw_trashcan(self, screen, inv):
+        manager = inv.app.INV_manager
+        rect = inv.get_trash_rect(manager)
+        mx, my = pygame.mouse.get_pos()
+        is_hovered = rect.collidepoint(mx, my)
+
+        pygame.draw.rect(screen, cfg.INV_TRASHCAN_SLOT_COLOR, rect, border_radius=cfg.INV_SLOT_BORDER_RADIUS)
+
+        if is_hovered:
+            hover_surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+            pygame.draw.rect(hover_surf, cfg.INV_TRASHCAN_HOVER_FILL, hover_surf.get_rect(), border_radius=cfg.INV_SLOT_BORDER_RADIUS)
+            screen.blit(hover_surf, rect.topleft)
+            pygame.draw.rect(screen, cfg.INV_TRASHCAN_HOVER_BORDER, rect, width=2, border_radius=cfg.INV_SLOT_BORDER_RADIUS)
+        else:
+            pygame.draw.rect(screen, cfg.INV_TRASHCAN_BORDER_COLOR, rect, width=2, border_radius=cfg.INV_SLOT_BORDER_RADIUS)
+
+        padding = 6
+        body_rect = pygame.Rect(rect.x + padding, rect.y + rect.height // 3, rect.width - padding * 2, rect.height * 2 // 3 - padding)
+        pygame.draw.rect(screen, cfg.INV_TRASHCAN_ICON_COLOR, body_rect, border_radius=2)
+        lid_y = rect.y + rect.height // 3
+        pygame.draw.line(screen, cfg.INV_TRASHCAN_ICON_COLOR,
+                        (rect.x + padding - 2, lid_y),
+                        (rect.x + rect.width - padding + 2, lid_y), 3)
+        handle_y = rect.y + 6
+        pygame.draw.line(screen, cfg.INV_TRASHCAN_ICON_COLOR,
+                        (rect.centerx - 5, handle_y),
+                        (rect.centerx + 5, handle_y), 2)
+
+        label_surf = cfg.INV_nums_font.render(cfg.INV_TRASHCAN_LABEL, True, cfg.INV_TRASHCAN_LABEL_COLOR)
+        label_x = rect.centerx - label_surf.get_width() // 2
+        label_y = rect.bottom + 2
+        screen.blit(label_surf, (label_x, label_y))
 
     def draw_hotbar(self, screen, inv: MAIN_player_hotbar):
         inv.update_position()

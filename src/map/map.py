@@ -74,6 +74,10 @@ class Map:
         549, 550, 552, 553, 554, 556, 557,
     )
 
+    WINDOW_GLOW_RADIUS = 96
+    WINDOW_GLOW_COLOR = (255, 170, 60)
+    WINDOW_GLOW_MAX_ALPHA = 55
+
     def __init__(self, map_file: str):
         self.map_file = map_file
         self.game_map = None
@@ -84,6 +88,7 @@ class Map:
         self._animated_tiles = {"base": [], "fringe": []}
         self._anim_firstgid_map = {}
         self._anim_elapsed = 0.0
+        self._window_glow = None
 
     def ensure_loaded(self) -> bool:
         if self.game_map is None:
@@ -334,6 +339,21 @@ class Map:
         self._window_overlay = window_surf if orange_cache else None
         self._window_positions = window_positions
 
+        # Pre-bake a warm radial glow around each window so it appears
+        # on the map layer (below entities) rather than in the post-FX overlay.
+        if window_positions:
+            glow = pygame.Surface((self.pixel_width, self.pixel_height), pygame.SRCALPHA)
+            r = self.WINDOW_GLOW_RADIUS
+            cr, cg, cb = self.WINDOW_GLOW_COLOR
+            for wx, wy in window_positions:
+                for i in range(r, 0, -2):
+                    frac = i / r
+                    a = int((1.0 - frac) * self.WINDOW_GLOW_MAX_ALPHA)
+                    pygame.draw.circle(glow, (cr, cg, cb, a), (wx, wy), i)
+            self._window_glow = glow
+        else:
+            self._window_glow = None
+
     def get_tmx_data(self):
         if self.ensure_loaded():
             return self.game_map
@@ -390,6 +410,12 @@ class Map:
             else:
                 screen.blit(self._base_render_cache, (-int(camera_offset.x), -int(camera_offset.y)))
         self._draw_animated_tiles(screen, camera_offset, self._animated_tiles["base"])
+
+        if self._window_glow is not None:
+            if camera_offset is None:
+                screen.blit(self._window_glow, (0, 0))
+            else:
+                screen.blit(self._window_glow, (-int(camera_offset.x), -int(camera_offset.y)))
 
         if self._window_overlay is not None and cfg.ENVIRONMENT_BRIGHTNESS < 0.95:
             if camera_offset is None:
@@ -584,6 +610,12 @@ class LocalMap:
 
     def get_obstacles(self):
         return self.current_map.get_obstacles()
+
+    def get_window_positions(self):
+        """Return list of (world_x, world_y) center positions for all window tiles."""
+        if self.current_map is None:
+            return []
+        return self.current_map.get_window_positions()
 
     def update_animation(self, dt):
         if self.current_map:

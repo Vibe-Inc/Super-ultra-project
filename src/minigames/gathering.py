@@ -138,6 +138,24 @@ APPLE_DROP_CHANCE = 0.5
 # Item id granted as a bonus when chopping an apple tree.
 APPLE_DROP_ITEM_ID = "apple"
 
+# When gathering from a sticks tile, the player has a chance to also
+# find plant fibers that can be twisted into string.  The roll uses
+# the same per-chop independent-probability model as the apple tree
+# bonus so a single bush can yield fiber over multiple gathers.
+FIBER_DROP_CHANCE = 0.4
+FIBER_DROP_ITEM_ID = "fiber"
+FIBER_DROP_MIN = 1
+FIBER_DROP_MAX = 2
+
+# When mining stone or iron-ore tiles, a small chance to discover
+# silver ore as a bonus drop. Uses the same per-chop independent
+# probability model as apple / fiber bonuses above.
+SILVER_BONUS_GATHER_TYPES = {"stone", "ore", "iron"}
+SILVER_DROP_CHANCE = 0.08
+SILVER_DROP_ITEM_ID = "silver_ore"
+SILVER_DROP_MIN = 1
+SILVER_DROP_MAX = 1
+
 # UI labels for the per-gather-type action verb.
 GATHER_LABELS = {
     "wood":  "Chopping",
@@ -919,12 +937,51 @@ class GatheringController:
             if apple_obj is not None:
                 apple_added = self._add_to_inventory(apple_obj, 1)
 
-        if added > 0 or apple_added > 0:
+        # Optional bonus drop: gathering sticks has a chance to also
+        # yield plant fibers. Each gather rolls independently.
+        fiber_added = 0
+        if (
+            added > 0
+            and self.target_gather_type == "sticks"
+            and random.random() < FIBER_DROP_CHANCE
+        ):
+            fiber_amount = random.randint(FIBER_DROP_MIN, FIBER_DROP_MAX)
+            try:
+                fiber_obj = create_item(FIBER_DROP_ITEM_ID)
+            except Exception:
+                fiber_obj = None
+            if fiber_obj is not None:
+                fiber_added = self._add_to_inventory(fiber_obj, fiber_amount)
+
+        # Optional bonus drop: mining stone / iron ore has a low
+        # chance to also yield silver ore. Each gather rolls
+        # independently.
+        silver_added = 0
+        if (
+            added > 0
+            and self.target_gather_type in SILVER_BONUS_GATHER_TYPES
+            and random.random() < SILVER_DROP_CHANCE
+        ):
+            silver_amount = random.randint(SILVER_DROP_MIN, SILVER_DROP_MAX)
+            try:
+                silver_obj = create_item(SILVER_DROP_ITEM_ID)
+            except Exception:
+                silver_obj = None
+            if silver_obj is not None:
+                silver_added = self._add_to_inventory(silver_obj, silver_amount)
+
+        if added > 0 or apple_added > 0 or fiber_added > 0 or silver_added > 0:
             nice_name = yield_id.replace("_", " ").title() if yield_id else "Resource"
             msg = f"+{added} {nice_name}" if added > 0 else ""
             if apple_added > 0:
                 joiner = " " if msg else ""
                 msg = f"{msg}{joiner}+1 Apple" if msg else f"+1 Apple"
+            if fiber_added > 0:
+                joiner = " " if msg else ""
+                msg = f"{msg}{joiner}+{fiber_added} Fiber" if msg else f"+{fiber_added} Fiber"
+            if silver_added > 0:
+                joiner = " " if msg else ""
+                msg = f"{msg}{joiner}+{silver_added} Silver Ore" if msg else f"+{silver_added} Silver Ore"
             if not msg:
                 msg = "Got nothing..."
                 self.result = GatheringResult(msg, success=False, duration=1.2)
@@ -947,9 +1004,13 @@ class GatheringController:
             logger.info(
                 f"Gather finished: cluster={self.target_cluster_idx} "
                 f"size={cluster_size} type={self.target_gather_type} "
-                f"yield={added} apple={apple_added} "
+                f"yield={added} apple={apple_added} fiber={fiber_added} "
                 f"cooldown={GATHER_COOLDOWN_DURATION:.0f}s"
             )
+            if self.target_gather_type == "wood" and hasattr(self.game.app, "achievement_manager"):
+                self.game.app.achievement_manager.add_progress("lumberjack", 1, 10)
+                self.game.app.achievement_manager.add_progress("deforestation", 1, 50)
+                self.game.app.achievement_manager.add_progress("industrial_logger", 1, 200)
 
         if self.target_had_tool:
             self._damage_tool()
