@@ -27,19 +27,19 @@ class WorldScaleMenu:
         self._open_time = 0.0
 
         s = cfg.ui_scale()
-        self.font_title = cfg.get_font(max(20, int(46 * s)))
-        self.font_section = cfg.get_font(max(14, int(28 * s)))
-        self.font_body = cfg.get_font(max(13, int(24 * s)))
-        self.font_small = cfg.get_font(max(11, int(19 * s)))
-        self.font_level = cfg.get_font(max(24, int(78 * s)))
+        self.font_title = cfg.get_font(max(26, int(60 * s)))
+        self.font_section = cfg.get_font(max(18, int(36 * s)))
+        self.font_body = cfg.get_font(max(16, int(32 * s)))
+        self.font_small = cfg.get_font(max(14, int(26 * s)))
+        self.font_level = cfg.get_font(max(32, int(96 * s)))
 
         self._last_known_level = 0
         self._ever_opened = False
         self._unlock_history = []
         self._latest_unlock_batch = None
 
-        self.panel_w = 760
-        self.panel_h = 820
+        self.panel_w = 880
+        self.panel_h = 960
 
         self.editor_mode = False
         self.editor_input = ""
