@@ -25,6 +25,7 @@ from database.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, 
 from src.entities.enemy import Enemy
 from src.entities.boss import Boss
 from src.entities.npc import NPC
+from src.entities.archeologist_npc import ArcheologistNPC
 from src.entities.mage_npc import MageNPC
 from src.entities.gambler_npc import GamblerNPC
 from src.entities.projectile import Arrow
@@ -43,8 +44,8 @@ from src.minigames.blackjack import BlackjackGame
 from src.minigames.roulette import RouletteGame
 from src.minigames.poker import PokerGame
 from src.minigames.crafting import CraftingMinigame
-from src.minigames.fishing import FishingController
 from src.minigames.gathering import GatheringController
+from src.minigames.archeologium import ArcheologiumMinigame
 from src.world.gatherable_nodes import GatherableNodeRegistry
 from src.ui.menus.smeltery import SmelteryMenu
 from src.systems.world_scale import WorldScale
@@ -865,6 +866,11 @@ class Game(State):
             "maps/tavern.tmx": (320, 320),
         }
 
+        # Archeologist NPC spawn positions
+        self.ARCHEOLOGIST_NPC_SPAWNS = {
+            "maps/test-map-3.tmx": (576, 1600),
+        }
+
         # Fishing NPC spawn positions (pixels) — placed near the lake
         self.FISHING_NPC_SPAWNS = {
             "maps/test-map-1.tmx": (1120, 1024),
@@ -1014,6 +1020,40 @@ class Game(State):
         except Exception:
             pass
 
+        # ---- Archeologist NPC ----
+        if initial_map_path in self.ARCHEOLOGIST_NPC_SPAWNS:
+            an_x, an_y = self.ARCHEOLOGIST_NPC_SPAWNS[initial_map_path]
+        else:
+            an_x, an_y = -5000, -5000
+
+        self.archeologist_npc_first_dialog = [
+            "Ah, a fellow seeker of knowledge!",
+            "This temple holds many secrets... and artifacts.",
+            "Care to try your hand at the Archeologium? Who knows what you'll find!"
+        ]
+        self.archeologist_npc_repeat_dialog = [
+            "The earth has much to reveal.",
+            "Ready for another dig?"
+        ]
+
+        self.archeologist_npc = ArcheologistNPC(
+            x=an_x, y=an_y,
+            dialog_lines=self.archeologist_npc_first_dialog,
+            gender='male',
+        )
+
+        try:
+            if initial_map_path in self.ARCHEOLOGIST_NPC_SPAWNS and self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                map_w = self.map.current_map.pixel_width
+                map_h = self.map.current_map.pixel_height
+                an_w = self.archeologist_npc.image.get_width()
+                an_h = self.archeologist_npc.image.get_height()
+                an_x = max(0, min(an_x, map_w - an_w))
+                an_y = max(0, min(an_y, map_h - an_h))
+                self.archeologist_npc.pos = pygame.Vector2(an_x, an_y)
+        except Exception:
+            pass
+
         # ---- Fishing NPC (woman near the lake) ----
         fishing_npc_dialog = [
             "Hello there! I come here to fish every day.",
@@ -1096,6 +1136,7 @@ class Game(State):
         self.blackjack_game = None
         self.roulette_game = None
         self.poker_game = None
+        self.archeologium_game = None
 
         # Crafting "Tempering" minigame state (None when not playing)
         self.crafting_minigame = None
@@ -1409,6 +1450,30 @@ class Game(State):
             return self.card_npc_first_dialog
         return self.card_npc_repeat_dialog
 
+    def _get_archeologist_npc_dialog(self):
+        if not self.archeologist_npc.was_talked:
+            return self.archeologist_npc_first_dialog
+        return self.archeologist_npc_repeat_dialog
+
+    def open_archeologium(self):
+        def on_close(outcome, net_change):
+            self.archeologium_game = None
+            self.app.money += net_change
+            if self.app.money < 0:
+                self.app.money = 0
+            logger.info(f"Archeologium closed: outcome={outcome}, net_change={net_change}, money now={self.app.money}")
+            post_lines = [
+                "Fascinating finds! The earth never ceases to amaze.",
+                "Return when you have the itch to dig again."
+            ]
+            self.app.current_dialog = Dialog(
+                self.app,
+                post_lines,
+                on_close=lambda: setattr(self.archeologist_npc, 'was_talked', True)
+            )
+
+        self.archeologium_game = ArcheologiumMinigame(self.app, on_close=on_close, player_money=self.app.money)
+
     def _get_mage_npc_dialog(self):
         """Pick the right mage NPC dialog lines based on the current unlock state."""
         if not self.app.arcane_quests_unlocked:
@@ -1690,6 +1755,22 @@ class Game(State):
             self.card_npc.pos = pygame.Vector2(cx, cy)
         else:
             self.card_npc.pos = pygame.Vector2(-5000, -5000)
+
+        if map_path in self.ARCHEOLOGIST_NPC_SPAWNS:
+            an_x, an_y = self.ARCHEOLOGIST_NPC_SPAWNS[map_path]
+            try:
+                if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                    mw = self.map.current_map.pixel_width
+                    mh = self.map.current_map.pixel_height
+                    an_w = self.archeologist_npc.image.get_width()
+                    an_h = self.archeologist_npc.image.get_height()
+                    an_x = max(0, min(an_x, mw - an_w))
+                    an_y = max(0, min(an_y, mh - an_h))
+            except Exception:
+                pass
+            self.archeologist_npc.pos = pygame.Vector2(an_x, an_y)
+        else:
+            self.archeologist_npc.pos = pygame.Vector2(-5000, -5000)
 
         if map_path in self.FISHING_NPC_SPAWNS:
             fx, fy = self.FISHING_NPC_SPAWNS[map_path]
@@ -2302,6 +2383,25 @@ class Game(State):
                 self.card_npc.pos = pygame.Vector2(-5000, -5000)
                 logger.info(f"No card NPC spawn for map {switched_map_path}; hiding card NPC")
 
+            # Place archeologist NPC on the new map
+            if switched_map_path in self.ARCHEOLOGIST_NPC_SPAWNS:
+                an_x, an_y = self.ARCHEOLOGIST_NPC_SPAWNS[switched_map_path]
+                try:
+                    if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                        map_w = self.map.current_map.pixel_width
+                        map_h = self.map.current_map.pixel_height
+                        an_w = self.archeologist_npc.image.get_width()
+                        an_h = self.archeologist_npc.image.get_height()
+                        an_x = max(0, min(an_x, map_w - an_w))
+                        an_y = max(0, min(an_y, map_h - an_h))
+                except Exception:
+                    pass
+                self.archeologist_npc.pos = pygame.Vector2(an_x, an_y)
+                logger.info(f"Placed archeologist NPC for map {switched_map_path} at ({an_x},{an_y})")
+            else:
+                self.archeologist_npc.pos = pygame.Vector2(-5000, -5000)
+                logger.info(f"No archeologist NPC spawn for map {switched_map_path}; hiding archeologist NPC")
+
             # Place fishing NPC on the new map (or hide if not present)
             if switched_map_path in self.FISHING_NPC_SPAWNS:
                 fn_x, fn_y = self.FISHING_NPC_SPAWNS[switched_map_path]
@@ -2543,6 +2643,7 @@ class Game(State):
 
         self.npc.update(self.character.pos)
         self.card_npc.update(self.character.pos)
+        self.archeologist_npc.update(self.character.pos)
         self.fishing_npc.update(self.character.pos)
         self.mage_npc.update(self.character.pos)
 
@@ -2625,6 +2726,21 @@ class Game(State):
                 cnx, cny = self.CARD_NPC_SPAWNS[self.current_map_path]
                 self.card_npc.pos = pygame.Vector2(cnx, cny)
                 logger.info(f"Safety placed card NPC on {self.current_map_path} at ({cnx},{cny})")
+        except Exception:
+            pass
+
+        # Safety: hide archeologist NPC if it should NOT be on this map, else place it
+        try:
+            if self.current_map_path not in self.ARCHEOLOGIST_NPC_SPAWNS and (self.archeologist_npc.pos.x > -1000 or self.archeologist_npc.pos.y > -1000):
+                self.archeologist_npc.pos = pygame.Vector2(-5000, -5000)
+                logger.info(f"Safety hid archeologist NPC on {self.current_map_path}")
+        except Exception:
+            pass
+        try:
+            if self.current_map_path in self.ARCHEOLOGIST_NPC_SPAWNS and (self.archeologist_npc.pos.x < -1000 or self.archeologist_npc.pos.y < -1000):
+                anx, any_y = self.ARCHEOLOGIST_NPC_SPAWNS[self.current_map_path]
+                self.archeologist_npc.pos = pygame.Vector2(anx, any_y)
+                logger.info(f"Safety placed archeologist NPC on {self.current_map_path} at ({anx},{any_y})")
         except Exception:
             pass
 
@@ -2794,8 +2910,10 @@ class Game(State):
             npc_vis = False
         try:
             card_npc_vis = _is_visible(self.card_npc)
+            archeologist_npc_vis = _is_visible(self.archeologist_npc)
         except Exception:
             card_npc_vis = False
+            archeologist_npc_vis = False
         try:
             fishing_npc_vis = _is_visible(self.fishing_npc)
         except Exception:
@@ -2811,6 +2929,8 @@ class Game(State):
             draw_entities.append((self.npc.pos.y, 'npc'))
         if card_npc_vis:
             draw_entities.append((self.card_npc.pos.y, 'card_npc'))
+        if archeologist_npc_vis:
+            draw_entities.append((self.archeologist_npc.pos.y, 'archeologist_npc'))
         if fishing_npc_vis:
             draw_entities.append((self.fishing_npc.pos.y, 'fishing_npc'))
         if mage_npc_vis:
@@ -2832,6 +2952,8 @@ class Game(State):
                 self.npc.draw(screen, camera_offset)
             elif kind == 'card_npc':
                 self.card_npc.draw(screen, camera_offset)
+            elif kind == 'archeologist_npc':
+                self.archeologist_npc.draw(screen, camera_offset)
             elif kind == 'fishing_npc':
                 self.fishing_npc.draw(screen, camera_offset)
             elif kind == 'mage_npc':
@@ -2916,6 +3038,11 @@ class Game(State):
         if self.blackjack_game:
             try:
                 self.blackjack_game.draw(screen)
+            except Exception:
+                pass
+        if self.archeologium_game:
+            try:
+                self.archeologium_game.draw(screen)
             except Exception:
                 pass
         if self.roulette_game:
@@ -3005,9 +3132,17 @@ class Game(State):
         if self.blackjack_game:
             try:
                 self.blackjack_game.handle_event(event)
-                return
             except Exception:
                 pass
+            return
+
+        if self.archeologium_game:
+            try:
+                self.archeologium_game.handle_event(event)
+            except Exception:
+                pass
+            return
+
         if self.roulette_game:
             try:
                 self.roulette_game.handle_event(event)
@@ -3192,6 +3327,22 @@ class Game(State):
                         show_play_roulette=True,
                         on_play_poker=self.open_poker,
                         show_play_poker=True,
+                    )
+                elif self.archeologist_npc.is_interactable:
+                    dialog_lines = self._get_archeologist_npc_dialog()
+
+                    def on_archeologist_close():
+                        try:
+                            self.archeologist_npc.was_talked = True
+                        except Exception:
+                            pass
+
+                    self.app.current_dialog = Dialog(
+                        self.app,
+                        dialog_lines,
+                        on_close=on_archeologist_close,
+                        on_play_archeologium=self.open_archeologium,
+                        show_play_archeologium=True,
                     )
                 elif self.fishing_npc.is_interactable:
                     self.app.manager.set_state("collection_book")
