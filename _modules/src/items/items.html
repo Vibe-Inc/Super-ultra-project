@@ -1170,6 +1170,17 @@
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">pass</span>
 
+    <span class="k">if</span> <span class="n">item_id</span> <span class="o">==</span> <span class="s2">&quot;hand_lamp&quot;</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">database.GP_database</span><span class="w"> </span><span class="kn">import</span> <span class="n">Gp_database</span>
+            <span class="n">db</span> <span class="o">=</span> <span class="n">Gp_database</span><span class="p">()</span>
+            <span class="n">row</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">get_item</span><span class="p">(</span><span class="n">item_id</span><span class="p">)</span>
+            <span class="n">db</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">row</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">Lantern</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
     <span class="k">if</span> <span class="n">item_id</span> <span class="o">==</span> <span class="s2">&quot;light_ring&quot;</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">LightRing</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>

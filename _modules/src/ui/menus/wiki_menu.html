@@ -417,7 +417,10 @@
 <span class="n">SECTIONS_META</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;bestiary&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;subtitle&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Foes of the Realm&quot;</span><span class="p">),</span> <span class="s2">&quot;icon&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="se">\u2694</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;entries&quot;</span><span class="p">:</span> <span class="p">[</span>
         <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Brute&quot;</span><span class="p">),</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Venomous&quot;</span><span class="p">),</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Arcanist&quot;</span><span class="p">),</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Trickster&quot;</span><span class="p">),</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Bomber&quot;</span><span class="p">),</span>
-        <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Stalker&quot;</span><span class="p">),</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Skirmisher&quot;</span><span class="p">),</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Guardian&quot;</span><span class="p">)]},</span>
+        <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Stalker&quot;</span><span class="p">),</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Skirmisher&quot;</span><span class="p">),</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Guardian&quot;</span><span class="p">),</span>
+        <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Phantom&quot;</span><span class="p">),</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Titan&quot;</span><span class="p">),</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Cryomancer&quot;</span><span class="p">),</span>
+        <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Shadowmancer&quot;</span><span class="p">),</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Revenant&quot;</span><span class="p">),</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Molten&quot;</span><span class="p">),</span>
+        <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Stormcaller&quot;</span><span class="p">),</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Plaguebearer&quot;</span><span class="p">)]},</span>
     <span class="s2">&quot;magic&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;subtitle&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Spells of Power&quot;</span><span class="p">),</span> <span class="s2">&quot;icon&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="se">\u2726</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;entries&quot;</span><span class="p">:</span> <span class="p">[</span>
         <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Fireball&quot;</span><span class="p">),</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Flame Shield&quot;</span><span class="p">),</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Frost Nova&quot;</span><span class="p">),</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Ice Armor&quot;</span><span class="p">),</span>
         <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Glacial Cascade&quot;</span><span class="p">),</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Chain Lightning&quot;</span><span class="p">),</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Thunderstrike&quot;</span><span class="p">),</span>
@@ -773,70 +776,170 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_bestiary_pages</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Brute&quot;</span><span class="p">),</span> <span class="s2">&quot;portrait&quot;</span><span class="p">:</span> <span class="s2">&quot;brute&quot;</span><span class="p">,</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;They say the first Brute was born from a boulder struck by lightning</span><span class="se">\u2014</span><span class="s2">a creature of fury and stone. &quot;</span>
-                <span class="s2">&quot;These hulking warriors patrol the old roads with a single purpose: to crush anything that moves.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;A Brute does not rush. It stalks. It waits. And when the moment is right, it charges with the force of an avalanche.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Abilities: Charge (2.4</span><span class="se">\u00d7</span><span class="s2"> speed, 220 range), Slam (1.5</span><span class="se">\u00d7</span><span class="s2"> damage, knockback, slow 1.5s). Health: 160. Speed: 110.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;They say the first Brute was born from a boulder struck by lightning</span><span class="se">\u2014</span><span class="s2">a creature &quot;</span>
+                <span class="s2">&quot;of fury and stone. These hulking warriors patrol the old roads with a single purpose: &quot;</span>
+                <span class="s2">&quot;to crush anything that moves.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;A Brute does not rush. It stalks. It waits. And when the moment is right, it charges &quot;</span>
+                <span class="s2">&quot;with the force of an avalanche. Its Slam attack deals heavy damage with knockback and &quot;</span>
+                <span class="s2">&quot;leaves you slowed, unable to dodge the next blow.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Abilities: Charge (2.4</span><span class="se">\u00d7</span><span class="s2"> speed, 220 range), Slam (1.5</span><span class="se">\u00d7</span><span class="s2"> damage, knockback, &quot;</span>
+                <span class="s2">&quot;slow 1.5s). Health: 160. Speed: 110.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tactics: Dodge sideways when it charges</span><span class="se">\u2014</span><span class="s2">never backward. After a missed charge, &quot;</span>
+                <span class="s2">&quot;the Brute is vulnerable. Strike hard and retreat before the Slam lands.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Venomous&quot;</span><span class="p">),</span> <span class="s2">&quot;portrait&quot;</span><span class="p">:</span> <span class="s2">&quot;venomous&quot;</span><span class="p">,</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;In the swamplands where even the trees have learned to bite, the Venomous make their dens.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;A single scratch sends poison surging through your veins</span><span class="se">\u2014</span><span class="s2">a creeping decay that grows stronger the longer you ignore it.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Abilities: Poison Strike (4s, 5 DPS). Health: 95. Speed: 130.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;In the swamplands where even the trees have learned to bite, the Venomous make &quot;</span>
+                <span class="s2">&quot;their dens. These serpentine hunters rely on venom to weaken their prey before &quot;</span>
+                <span class="s2">&quot;closing in for the kill.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;A single scratch sends poison surging through your veins</span><span class="se">\u2014</span><span class="s2">a creeping decay &quot;</span>
+                <span class="s2">&quot;that grows stronger the longer you ignore it. The poison stacks, and a prolonged &quot;</span>
+                <span class="s2">&quot;encounter with multiple Venomous foes can overwhelm even the hardiest adventurer.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Abilities: Poison Strike (4s, 5 DPS per stack). Health: 95. Speed: 130.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tactics: Antidotes are non-negotiable. Use ranged attacks to avoid contact poison. &quot;</span>
+                <span class="s2">&quot;If poisoned, retreat and cure before re-engaging.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Arcanist&quot;</span><span class="p">),</span> <span class="s2">&quot;portrait&quot;</span><span class="p">:</span> <span class="s2">&quot;arcanist&quot;</span><span class="p">,</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;Magic is a gift, they say. But some gifts come with a price. The Arcanists are former students who delved too deep.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;These robed figures hurl bolts of searing flame, their aim uncanny and their patience endless.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Abilities: Arcane Bolt (480 speed, 560 range, burn 3.2s). Health: 80. Speed: 115.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;Magic is a gift, they say. But some gifts come with a price. The Arcanists are &quot;</span>
+                <span class="s2">&quot;former students who delved too deep and emerged with minds scorched by forbidden &quot;</span>
+                <span class="s2">&quot;knowledge.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;These robed figures hurl bolts of searing flame with uncanny aim and endless &quot;</span>
+                <span class="s2">&quot;patience. They prefer to keep their distance, kiting relentlessly while their &quot;</span>
+                <span class="s2">&quot;Arcane Bolt burns through your defenses.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Abilities: Arcane Bolt (480 speed, 560 range, burn 3.2s). Health: 80. &quot;</span>
+                <span class="s2">&quot;Speed: 115.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tactics: Close the distance quickly</span><span class="se">\u2014</span><span class="s2">Arcanists are fragile once engaged in &quot;</span>
+                <span class="s2">&quot;melee. Use Shadow Step or Dash to close the gap, then interrupt their casting.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Trickster&quot;</span><span class="p">),</span> <span class="s2">&quot;portrait&quot;</span><span class="p">:</span> <span class="s2">&quot;trickster&quot;</span><span class="p">,</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;Beware the laughter in the dark. The Tricksters delight in confusion and disarray.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Their touch clouds the mind</span><span class="se">\u2014</span><span class="s2">suddenly left is right, forward is back.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Abilities: Blink (240 range), Confuse (2.8s), Dizzy (2.2s). Health: 75. Speed: 150.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;Beware the laughter in the dark. The Tricksters delight in confusion and disarray, &quot;</span>
+                <span class="s2">&quot;weaving shadows into cruel pranks that leave their victims lost and helpless.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Their touch clouds the mind</span><span class="se">\u2014</span><span class="s2">suddenly left is right, forward is back. They &quot;</span>
+                <span class="s2">&quot;blink in and out of visibility, making them maddeningly difficult to pin down.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Abilities: Blink (240 range), Confuse (2.8s), Dizzy (2.2s). Health: 75. &quot;</span>
+                <span class="s2">&quot;Speed: 150.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tactics: Predict their Blink destination and strike preemptively. If Confused, &quot;</span>
+                <span class="s2">&quot;consciously invert your inputs. Their low health makes them quick to eliminate.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Bomber&quot;</span><span class="p">),</span> <span class="s2">&quot;portrait&quot;</span><span class="p">:</span> <span class="s2">&quot;bomber&quot;</span><span class="p">,</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;A hiss of steam, a flicker of arc-light</span><span class="se">\u2014</span><span class="s2">the Bomber lumbers in on riveted peg legs.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Brass-plated and pressure-sealed, these wandering automatons keep their distance while lobbing timed bombs that arc through the air with deceptive grace.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Abilities: Timed Bomb (95 blast radius, 80 knockback, 0.9s fuse). Health: 125. Speed: 105.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;A hiss of steam, a flicker of arc-light</span><span class="se">\u2014</span><span class="s2">the Bomber lumbers in on riveted peg &quot;</span>
+                <span class="s2">&quot;legs. Brass-plated and pressure-sealed, these wandering automatons keep their &quot;</span>
+                <span class="s2">&quot;distance while lobbing timed bombs that arc through the air with deceptive grace.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;The bombs have a 0.9-second fuse, giving you just enough time to react</span><span class="se">\u2014</span><span class="s2">if you &quot;</span>
+                <span class="s2">&quot;are paying attention. The blast radius is punishing, and the knockback can send you &quot;</span>
+                <span class="s2">&quot;into the path of other enemies.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Abilities: Timed Bomb (95 blast radius, 80 knockback, 0.9s fuse). Health: 125. &quot;</span>
+                <span class="s2">&quot;Speed: 105.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tactics: Stay mobile. Never stand still</span><span class="se">\u2014</span><span class="s2">Bombers lead their targets. Close the &quot;</span>
+                <span class="s2">&quot;distance aggressively; Bombers are vulnerable in close quarters.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Stalker&quot;</span><span class="p">),</span> <span class="s2">&quot;portrait&quot;</span><span class="p">:</span> <span class="s2">&quot;stalker&quot;</span><span class="p">,</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;Where shadow pools deep and torchlight fails, the Stalker waits</span><span class="se">\u2014</span><span class="s2">patient, silent, and unseen.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Cloaked and masked, these grim assassins favor the blade over brute strength. They remember your last position long after you&#39;ve broken line of sight, and they are quick to re-pick a fresh path when cut off.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Abilities: Blade Strike (40 range), Memory Trail (3s pursuit after losing sight), Repath (0.5s). Health: 110. Speed: 120.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;Where shadow pools deep and torchlight fails, the Stalker waits</span><span class="se">\u2014</span><span class="s2">patient, &quot;</span>
+                <span class="s2">&quot;silent, and unseen. Cloaked and masked, these grim assassins favor the blade &quot;</span>
+                <span class="s2">&quot;over brute strength.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;They remember your last position long after you have broken line of sight, &quot;</span>
+                <span class="s2">&quot;pursuing with relentless precision. When cut off from their target, they are &quot;</span>
+                <span class="s2">&quot;quick to re-pick a fresh path, making them nearly impossible to shake.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Abilities: Blade Strike (40 range), Memory Trail (3s pursuit after losing sight), &quot;</span>
+                <span class="s2">&quot;Repath (0.5s). Health: 110. Speed: 120.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tactics: Breaking line of sight is not enough</span><span class="se">\u2014</span><span class="s2">keep moving for a full 3 &quot;</span>
+                <span class="s2">&quot;seconds after losing them. Use tight corners and doors to break the Memory Trail.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Skirmisher&quot;</span><span class="p">),</span> <span class="s2">&quot;portrait&quot;</span><span class="p">:</span> <span class="s2">&quot;skirmisher&quot;</span><span class="p">,</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;Swift as the raptor it resembles, the Skirmisher darts across the battlefield with javelin raised and crest fluttering.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;These winged hunters prefer to keep their distance</span><span class="se">\u2014</span><span class="s2">harrying from the fringes, circling, striking, and vanishing before the counter-blow can land. Tribal warpaint marks the kills they&#39;ve claimed.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Abilities: Javelin Toss (35 range), Orbit (preferred 80</span><span class="se">\u2013</span><span class="s2">170, radius 130). Health: 85. Speed: 140.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;Swift as the raptor it resembles, the Skirmisher darts across the battlefield &quot;</span>
+                <span class="s2">&quot;with javelin raised and crest fluttering. These winged hunters prefer to keep &quot;</span>
+                <span class="s2">&quot;their distance</span><span class="se">\u2014</span><span class="s2">harrying from the fringes, circling, striking, and vanishing &quot;</span>
+                <span class="s2">&quot;before the counter-blow can land.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tribal warpaint marks the kills they have claimed, and their javelins find their &quot;</span>
+                <span class="s2">&quot;mark with unsettling accuracy. They orbit their prey at a preferred range, always &quot;</span>
+                <span class="s2">&quot;just out of reach.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Abilities: Javelin Toss (35 range), Orbit (preferred 80</span><span class="se">\u2013</span><span class="s2">170, radius 130). &quot;</span>
+                <span class="s2">&quot;Health: 85. Speed: 140.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tactics: Close in to force them into melee, but watch for the Javelin Toss as &quot;</span>
+                <span class="s2">&quot;you approach. Ranged users should lead their shots</span><span class="se">\u2014</span><span class="s2">their orbit pattern is &quot;</span>
+                <span class="s2">&quot;predictable.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Guardian&quot;</span><span class="p">),</span> <span class="s2">&quot;portrait&quot;</span><span class="p">:</span> <span class="s2">&quot;guardian&quot;</span><span class="p">,</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;Forged in the fires of a forgotten forge, the Guardian is a hulking iron sentinel bound to a place of power.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Steam hisses from brass-banded joints and copper pistons pump with every ponderous step. It will not stray far from its post</span><span class="se">\u2014</span><span class="s2">but woe to any intruder that crosses the threshold it defends.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Abilities: Heavy Slam (45 range, knockback), Guard Post (radius 320, leash 90), Patrol Wait (0.8s). Health: 140. Speed: 100.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;Forged in the fires of a forgotten forge, the Guardian is a hulking iron sentinel &quot;</span>
+                <span class="s2">&quot;bound to a place of power. Steam hisses from brass-banded joints and copper pistons &quot;</span>
+                <span class="s2">&quot;pump with every ponderous step.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;It will not stray far from its post</span><span class="se">\u2014</span><span class="s2">its leash is short and its duty absolute. &quot;</span>
+                <span class="s2">&quot;But woe to any intruder that crosses the threshold it defends. The Guardian&#39;s Heavy &quot;</span>
+                <span class="s2">&quot;Slam sends adventurers flying, and it pursues with relentless, mechanical patience.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Abilities: Heavy Slam (45 range, knockback), Guard Post (radius 320, leash 90), &quot;</span>
+                <span class="s2">&quot;Patrol Wait (0.8s). Health: 140. Speed: 100.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tactics: If possible, avoid engaging Guardians on their home turf. If you must &quot;</span>
+                <span class="s2">&quot;fight, bait the Heavy Slam and strike during the recovery.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Phantom&quot;</span><span class="p">),</span> <span class="s2">&quot;portrait&quot;</span><span class="p">:</span> <span class="s2">&quot;phantom&quot;</span><span class="p">,</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;Some wounds never heal. Some souls never leave. The Phantoms are the remnants of mages who tried to cheat death.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Bound to the world by spectral chains, they drift through walls and memory alike, draining life force with a touch that feels like a winter breeze</span><span class="se">\u2014</span><span class="s2">cold, brief, and leaving you weaker.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Abilities: Life Drain (280 speed, heal 35</span><span class="si">% o</span><span class="s2">f damage), Slow (1.5s, 0.65x). Health: 100. Speed: 105.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;Some wounds never heal. Some souls never leave. The Phantoms are the remnants &quot;</span>
+                <span class="s2">&quot;of mages who tried to cheat death.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Bound to the world by spectral chains, they drift through walls and memory alike, &quot;</span>
+                <span class="s2">&quot;draining life force with a touch that feels like a winter breeze</span><span class="se">\u2014</span><span class="s2">cold, brief, &quot;</span>
+                <span class="s2">&quot;and leaving you weaker.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Abilities: Life Drain (280 speed, heal 35</span><span class="si">% o</span><span class="s2">f damage), Slow (1.5s, 0.65x). &quot;</span>
+                <span class="s2">&quot;Health: 100. Speed: 105.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tactics: Keep moving to avoid Life Drain. Ranged attacks are preferred</span><span class="se">\u2014</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Phantoms are fragile if you keep your distance.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Titan&quot;</span><span class="p">),</span> <span class="s2">&quot;portrait&quot;</span><span class="p">:</span> <span class="s2">&quot;titan&quot;</span><span class="p">,</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;The mountains remember the Titans</span><span class="se">\u2014</span><span class="s2">ancient stone colossi carved by a forgotten race to guard the old roads.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Moss and time have worn their features smooth, but the runes etched into their hide still pulse with amber light. When a Titan stomps, the ground itself trembles, and roots erupt to hold you in place.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Abilities: Stomp (50 range, knockback 45, root 2.5s), Charge (2</span><span class="se">\u00d7</span><span class="s2"> speed, 320 cooldown). Health: 220. Speed: 75.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;The mountains remember the Titans</span><span class="se">\u2014</span><span class="s2">ancient stone colossi carved by a forgotten &quot;</span>
+                <span class="s2">&quot;race to guard the old roads.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Moss and time have worn their features smooth, but the runes etched into their hide &quot;</span>
+                <span class="s2">&quot;still pulse with amber light. When a Titan stomps, the ground itself trembles, and &quot;</span>
+                <span class="s2">&quot;roots erupt to hold you in place.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Abilities: Stomp (50 range, knockback 45, root 2.5s), Charge (2</span><span class="se">\u00d7</span><span class="s2"> speed, &quot;</span>
+                <span class="s2">&quot;320 cooldown). Health: 220. Speed: 75.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tactics: The Titan is slow</span><span class="se">\u2014</span><span class="s2">use hit-and-run tactics. Dodge the Charge sideways &quot;</span>
+                <span class="s2">&quot;and stay outside Stomp range to avoid the root.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Cryomancer&quot;</span><span class="p">),</span> <span class="s2">&quot;portrait&quot;</span><span class="p">:</span> <span class="s2">&quot;cryomancer&quot;</span><span class="p">,</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
                 <span class="s2">&quot;In the northern ruins where snow falls even in summer, the Cryomancers hold court.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;These ice-weavers were once scholars of a frost school that has long since crumbled. Now they guard their frozen libraries with jagged shards of crystallized mana. Up close, they unleash a biting nova that freezes blood in the veins.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Abilities: Ice Shard (420 speed, 500 range, slow 2.5s), Frost Nova (80 radius, freeze 2s). Health: 85. Speed: 110.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;These ice-weavers were once scholars of a frost school that has long since crumbled. &quot;</span>
+                <span class="s2">&quot;Now they guard their frozen libraries with jagged shards of crystallized mana. Up &quot;</span>
+                <span class="s2">&quot;close, they unleash a biting nova that freezes blood in the veins.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Abilities: Ice Shard (420 speed, 500 range, slow 2.5s), Frost Nova (80 radius, &quot;</span>
+                <span class="s2">&quot;freeze 2s). Health: 85. Speed: 110.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tactics: Close the distance quickly to avoid Ice Shard spam, but be ready to dodge &quot;</span>
+                <span class="s2">&quot;Frost Nova when you arrive</span><span class="se">\u2014</span><span class="s2">the freeze is lethal.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Shadowmancer&quot;</span><span class="p">),</span> <span class="s2">&quot;portrait&quot;</span><span class="p">:</span> <span class="s2">&quot;shadowmancer&quot;</span><span class="p">,</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;The Shadowmancers speak in whispers to things that dwell between the stars. Their bodies are merely vessels for the void they serve.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;They flicker and vanish when threatened, reappearing at a safe distance before loosing bolts of concentrated shadow that infest the mind with confusion. To face one is to question your own senses.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Abilities: Shadow Bolt (450 speed, 480 range, confuse 3s), Void Escape (260 range teleport). Health: 75. Speed: 125.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;The Shadowmancers speak in whispers to things that dwell between the stars. Their &quot;</span>
+                <span class="s2">&quot;bodies are merely vessels for the void they serve.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;They flicker and vanish when threatened, reappearing at a safe distance before &quot;</span>
+                <span class="s2">&quot;loosing bolts of concentrated shadow that infest the mind with confusion. To face &quot;</span>
+                <span class="s2">&quot;one is to question your own senses.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Abilities: Shadow Bolt (450 speed, 480 range, confuse 3s), Void Escape (260 range &quot;</span>
+                <span class="s2">&quot;teleport). Health: 75. Speed: 125.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tactics: Pressure them relentlessly to limit Void Escape options. If confused, &quot;</span>
+                <span class="s2">&quot;retreat until the effect clears before re-engaging.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Revenant&quot;</span><span class="p">),</span> <span class="s2">&quot;portrait&quot;</span><span class="p">:</span> <span class="s2">&quot;revenant&quot;</span><span class="p">,</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;A revenant is what happens when a warrior</span><span class="se">\u2019</span><span class="s2">s rage outlives their flesh. These undying soldiers remember only the fight.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Every strike heals them, siphoning life from the wound they just opened. And should you manage to bring one low, its undying will ignites</span><span class="se">\u2014</span><span class="s2">a surge of pale green soul-fire that restores it to fighting form.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Abilities: Lifesteal Slash (30</span><span class="si">% he</span><span class="s2">al, bleed 3s), Undying Will (35</span><span class="si">% he</span><span class="s2">al, 2.5s immunity, 15s cooldown). Health: 130. Speed: 110.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;A revenant is what happens when a warrior</span><span class="se">\u2019</span><span class="s2">s rage outlives their flesh. These &quot;</span>
+                <span class="s2">&quot;undying soldiers remember only the fight.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Every strike heals them, siphoning life from the wound they just opened. And should &quot;</span>
+                <span class="s2">&quot;you manage to bring one low, its undying will ignites</span><span class="se">\u2014</span><span class="s2">a surge of pale green &quot;</span>
+                <span class="s2">&quot;soul-fire that restores it to fighting form.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Abilities: Lifesteal Slash (30</span><span class="si">% he</span><span class="s2">al, bleed 3s), Undying Will (35</span><span class="si">% he</span><span class="s2">al, 2.5s &quot;</span>
+                <span class="s2">&quot;immunity, 15s cooldown). Health: 130. Speed: 110.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tactics: Burst damage is key</span><span class="se">\u2014</span><span class="s2">save your strongest attacks for after Undying &quot;</span>
+                <span class="s2">&quot;Will expires. Avoid trading hits while it is active.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Molten&quot;</span><span class="p">),</span> <span class="s2">&quot;portrait&quot;</span><span class="p">:</span> <span class="s2">&quot;molten&quot;</span><span class="p">,</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
                 <span class="s2">&quot;Deep within the earth, where pressure cooks stone into magma, the Molten were born.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;These hulking fire elementals are living forges. Lava pulses through cracks in their rocky hides, and they burn everything they touch. When angered, they release a searing nova or charge with the unstoppable force of a landslide.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Abilities: Fire Nova (100 radius, burn 3.5s, 6 DPS), Lava Charge (2.5</span><span class="se">\u00d7</span><span class="s2"> speed, 350 cooldown). Health: 150. Speed: 100.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;These hulking fire elementals are living forges. Lava pulses through cracks in their &quot;</span>
+                <span class="s2">&quot;rocky hides, and they burn everything they touch. When angered, they release a searing &quot;</span>
+                <span class="s2">&quot;nova or charge with the unstoppable force of a landslide.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Abilities: Fire Nova (100 radius, burn 3.5s, 6 DPS), Lava Charge (2.5</span><span class="se">\u00d7</span><span class="s2"> speed, &quot;</span>
+                <span class="s2">&quot;350 cooldown). Health: 150. Speed: 100.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tactics: Keep your distance to avoid Fire Nova. When it uses Lava Charge, sidestep &quot;</span>
+                <span class="s2">&quot;and punish the lengthy recovery.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Stormcaller&quot;</span><span class="p">),</span> <span class="s2">&quot;portrait&quot;</span><span class="p">:</span> <span class="s2">&quot;stormcaller&quot;</span><span class="p">,</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;High atop jagged peaks that pierce the clouds, the Stormcallers conduct their eternal symphony of lightning.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;These robed tempests hurl crackling bolts that dance with wild energy. If you close the distance, they release a static field that scrambles the senses, leaving you disoriented and vulnerable.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Abilities: Chain Lightning (500 speed, 520 range, dizzy 1.8s), Static Field (90 radius, 3s cooldown). Health: 80. Speed: 115.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;High atop jagged peaks that pierce the clouds, the Stormcallers conduct their eternal &quot;</span>
+                <span class="s2">&quot;symphony of lightning.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;These robed tempests hurl crackling bolts that dance with wild energy. If you close &quot;</span>
+                <span class="s2">&quot;the distance, they release a static field that scrambles the senses, leaving you &quot;</span>
+                <span class="s2">&quot;disoriented and vulnerable.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Abilities: Chain Lightning (500 speed, 520 range, dizzy 1.8s), Static Field (90 &quot;</span>
+                <span class="s2">&quot;radius, 3s cooldown). Health: 80. Speed: 115.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tactics: Stay spread out to minimize Chain Lightning bounces. Close range triggers &quot;</span>
+                <span class="s2">&quot;Static Field, so time your approach carefully.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;The Plaguebearer&quot;</span><span class="p">),</span> <span class="s2">&quot;portrait&quot;</span><span class="p">:</span> <span class="s2">&quot;plaguebearer&quot;</span><span class="p">,</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;The Plaguebearers were once healers</span><span class="se">\u2014</span><span class="s2">until they tried to cure a disease that had no cure. Now they are its carriers.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Robes caked with filth and malice, these wretched casters lob clouds of pestilence that poison the air. At close range they erupt in a pestilent nova that saps strength and leaves a creeping sickness in its wake.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Abilities: Plague Cloud (380 speed, 460 range, poison 4s, 5.5 DPS), Pestilence Nova (100 radius, slow 2s). Health: 110. Speed: 105.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;The Plaguebearers were once healers</span><span class="se">\u2014</span><span class="s2">until they tried to cure a disease that had &quot;</span>
+                <span class="s2">&quot;no cure. Now they are its carriers.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Robes caked with filth and malice, these wretched casters lob clouds of pestilence &quot;</span>
+                <span class="s2">&quot;that poison the air. At close range they erupt in a pestilent nova that saps strength &quot;</span>
+                <span class="s2">&quot;and leaves a creeping sickness in its wake.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Abilities: Plague Cloud (380 speed, 460 range, poison 4s, 5.5 DPS), Pestilence Nova &quot;</span>
+                <span class="s2">&quot;(100 radius, slow 2s). Health: 110. Speed: 105.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tactics: Antidotes are essential. Stay mobile to avoid Plague Clouds and close the &quot;</span>
+                <span class="s2">&quot;gap quickly before Pestilence Nova recharges.&quot;</span><span class="p">)},</span>
         <span class="p">]</span></div>
 
 
@@ -845,53 +948,147 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_magic_pages</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Fireball&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;The quintessence of destructive magic. A roaring sphere that erupts in glorious conflagration.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Damage: 28 base (area). Range: 520. Knockback: moderate. Pyromancer&#39;s Fury: +25</span><span class="si">% d</span><span class="s2">amage.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;The quintessence of destructive magic. A roaring sphere of condensed flame that &quot;</span>
+                <span class="s2">&quot;erupts in glorious conflagration upon impact.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Summon a fireball that travels toward your target and explodes on contact, &quot;</span>
+                <span class="s2">&quot;scorching everything in its blast radius. No other spell announces your presence &quot;</span>
+                <span class="s2">&quot;with such authority.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Damage: 28 base (area). Range: 520. Knockback: moderate. Pyromancer&#39;s Fury: &quot;</span>
+                <span class="s2">&quot;+25</span><span class="si">% d</span><span class="s2">amage. Use it to break enemy formations or punish clustered foes.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Flame Shield&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
                 <span class="s2">&quot;A wreath of protective flames that scorches any foe foolish enough to approach.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Damage: 8/sec to nearby enemies. Duration: 6 seconds.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;Wreathe yourself in roaring fire for 6 seconds. Enemies within melee range take &quot;</span>
+                <span class="s2">&quot;continuous burn damage, making this ideal for brawling against groups or deterring &quot;</span>
+                <span class="s2">&quot;aggressive pursuers. The flames do not discriminate</span><span class="se">\u2014</span><span class="s2">stand too close to allies &quot;</span>
+                <span class="s2">&quot;and they too will feel the heat.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Damage: 8/sec to nearby enemies. Duration: 6 seconds. Combines well with Ice &quot;</span>
+                <span class="s2">&quot;Armor for a fire-and-ice defensive shell.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Frost Nova&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;A razored ring of ice expanding outward, freezing any enemy caught within.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Radius: 150. Freeze: 3 seconds.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;A razored ring of ice that erupts from your body and expands outward, &quot;</span>
+                <span class="s2">&quot;flash-freezing everything it touches.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;In an instant, a circle of crystalline frost explodes from the caster, freezing &quot;</span>
+                <span class="s2">&quot;enemies solid for 3 seconds. Frozen enemies cannot move or act, making them easy &quot;</span>
+                <span class="s2">&quot;targets for follow-up attacks. The freeze breaks early if the target takes &quot;</span>
+                <span class="s2">&quot;significant damage, so time your burst carefully.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Radius: 150. Freeze: 3 seconds. Excellent setup for Fireball</span><span class="se">\u2014</span><span class="s2">freeze &quot;</span>
+                <span class="s2">&quot;first, then detonate.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Ice Armor&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;A cloak of crystalline frost that absorbs incoming blows.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Absorbs up to 30 damage. Duration: 8s. Attackers within 80px slowed by half.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;A cloak of crystalline frost that wraps around you, absorbing incoming blows and &quot;</span>
+                <span class="s2">&quot;punishing those who strike you.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;For 8 seconds, Ice Armor absorbs up to 30 damage before shattering. While active, &quot;</span>
+                <span class="s2">&quot;any melee attacker within 80 pixels is slowed by half, giving you precious space &quot;</span>
+                <span class="s2">&quot;to reposition or counterattack. The absorption applies before your health pool</span><span class="se">\u2014</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;every point of damage blocked is a point you do not feel.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Absorbs up to 30 damage. Duration: 8s. Attackers within 80px slowed by half. &quot;</span>
+                <span class="s2">&quot;A must-have for melee-range mages.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Glacial Cascade&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;A torrent of ice shards racing forward, dealing 35 damage.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Freeze: 2 seconds. Travels far and wide.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;A torrent of razor-sharp ice shards that races forward in a widening cone, &quot;</span>
+                <span class="s2">&quot;shredding everything in its path.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Launch a cascade of glacial fragments that travels in a broad arc, dealing 35 &quot;</span>
+                <span class="s2">&quot;damage to all enemies caught in its path. The piercing cold freezes targets for &quot;</span>
+                <span class="s2">&quot;2 seconds</span><span class="se">\u2014</span><span class="s2">shorter than Frost Nova but applied at range. The cascade travels &quot;</span>
+                <span class="s2">&quot;far and wide, making it exceptional for corridor fighting and thinning approaching &quot;</span>
+                <span class="s2">&quot;hordes.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Damage: 35. Freeze: 2 seconds. Wide arc, long range. Ideal for controlling &quot;</span>
+                <span class="s2">&quot;chokepoints.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Chain Lightning&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;Leaps from the caster to the nearest foe, then arcs to the next.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Damage: 22/strike. Range: 550. Chain: 180. Up to 5 enemies.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;A crackling bolt of lightning that leaps from the caster to the nearest foe, &quot;</span>
+                <span class="s2">&quot;then arcs to the next, and the next.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Chain Lightning seeks out enemies with unerring accuracy. The initial strike &quot;</span>
+                <span class="s2">&quot;hits your closest target within 550 range, then arcs up to 180 units to the &quot;</span>
+                <span class="s2">&quot;next, chaining across up to 5 enemies. Each strike deals 22 damage</span><span class="se">\u2014</span><span class="s2">less &quot;</span>
+                <span class="s2">&quot;than a Fireball, but the total damage across a full chain is devastating.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Damage: 22/strike. Range: 550. Chain radius: 180. Max chains: 5. Excels against &quot;</span>
+                <span class="s2">&quot;tightly packed groups.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Thunderstrike&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;A column of lightning from the heavens, dealing catastrophic damage.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Damage: 55. Radius: 100. Range: 600.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;A column of pure lightning that crashes down from the heavens, dealing &quot;</span>
+                <span class="s2">&quot;catastrophic single-target damage.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Call upon the sky itself to smite a target within 600 range. The strike lands &quot;</span>
+                <span class="s2">&quot;with a 100-radius blast, dealing 55 damage</span><span class="se">\u2014</span><span class="s2">the hardest-hitting single-instance &quot;</span>
+                <span class="s2">&quot;spell in the arcane arsenal. Use it to eliminate high-priority targets before &quot;</span>
+                <span class="s2">&quot;they close to melee range.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Damage: 55. Radius: 100. Range: 600. Best reserved for elite enemies and bosses.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Entangling Roots&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;Ancient tendrils erupt from the soil, grasping the target.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Root: 4 seconds. Radius: 140. Range: 500.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;Ancient tendrils erupt from the soil beneath your target, grasping and holding &quot;</span>
+                <span class="s2">&quot;them in place.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Call upon the deep earth to bind your enemies. Roots erupt in a 140-radius area &quot;</span>
+                <span class="s2">&quot;at a target location up to 500 units away, holding all caught enemies for 4 &quot;</span>
+                <span class="s2">&quot;seconds. Rooted enemies cannot move but can still attack and use abilities. The &quot;</span>
+                <span class="s2">&quot;roots are vulnerable to fire</span><span class="se">\u2014</span><span class="s2">a clever foe can burn their way free.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Root duration: 4 seconds. Radius: 140. Range: 500. Combines with Fireball or &quot;</span>
+                <span class="s2">&quot;Glacial Cascade for devastating area combos.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Summon Spirit&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;A nature spirit fights at your side</span><span class="se">\u2014</span><span class="s2">a flickering wisp of leaves and light.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Spirit Damage: 15. Duration: 10 seconds.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;A nature spirit fights at your side</span><span class="se">\u2014</span><span class="s2">a flickering wisp of leaves and ancient &quot;</span>
+                <span class="s2">&quot;light that harries your enemies.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Summon a loyal nature spirit from the woodland realm. The spirit lasts 10 seconds, &quot;</span>
+                <span class="s2">&quot;automatically attacking nearby foes for 15 damage per strike. It cannot be targeted &quot;</span>
+                <span class="s2">&quot;or killed, making it a reliable source of supplementary damage. The spirit follows &quot;</span>
+                <span class="s2">&quot;you and prioritizes enemies you are currently fighting.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Spirit Damage: 15 per strike. Duration: 10 seconds. Invaluable for split focus</span><span class="se">\u2014</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;let the spirit harass while you prepare a heavy spell.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Shadow Step&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;Dissolve into darkness and reappear a short distance away.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Range: 300. Invulnerability: 0.5s after arrival.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;Dissolve into shadow and reform a short distance away, leaving your enemies &quot;</span>
+                <span class="s2">&quot;grasping at nothing.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Shadow Step is your ultimate mobility tool. Vanish into darkness at your current &quot;</span>
+                <span class="s2">&quot;location and reappear up to 300 units away in the direction of your choosing. &quot;</span>
+                <span class="s2">&quot;For 0.5 seconds after arrival, you are completely invulnerable</span><span class="se">\u2014</span><span class="s2">long enough &quot;</span>
+                <span class="s2">&quot;to absorb a killing blow or dodge a telegraphed attack.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Range: 300. Invulnerability: 0.5s after arrival. Use to escape deadly situations &quot;</span>
+                <span class="s2">&quot;or reposition for a counterattack.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Dark Pact&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;Rips life force from the caster and detonates it in shadow energy.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Cost: 10% max HP. Damage: 60 shadow. Radius: 150.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;A forbidden pact that rips life force from the caster and detonates it in a &quot;</span>
+                <span class="s2">&quot;burst of shadow energy.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Sacrifice 10</span><span class="si">% o</span><span class="s2">f your maximum health to unleash a blast of shadow damage</span><span class="se">\u2014</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;60 damage to all enemies within a 150-radius area. The health cost is paid &quot;</span>
+                <span class="s2">&quot;instantly and cannot be mitigated. Dark Pact deals the highest area burst damage &quot;</span>
+                <span class="s2">&quot;of any spell, but the price is steep. Use it when the risk is worth the reward.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Cost: 10% max HP. Damage: 60 shadow. Radius: 150. Always carry health potions &quot;</span>
+                <span class="s2">&quot;when this spell is in your arsenal.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Arcane Missiles&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;5 homing projectiles that each deal 14 damage.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;They seek, they find, they destroy.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;Five homing projectiles of pure arcane energy that seek out your enemies with &quot;</span>
+                <span class="s2">&quot;unerring accuracy.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Launch a volley of 5 arcane missiles that each deal 14 damage. The missiles &quot;</span>
+                <span class="s2">&quot;automatically track the nearest enemy within range, curving through the air to &quot;</span>
+                <span class="s2">&quot;find their mark. They can strike multiple targets or focus fire on a single foe. &quot;</span>
+                <span class="s2">&quot;Against a lone enemy, the full volley delivers 70 damage.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Projectiles: 5. Damage: 14 each (70 total if all hit). Homing: yes. They seek, &quot;</span>
+                <span class="s2">&quot;they find, they destroy.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Mystic Barrier&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;A shimmering ward that turns 30</span><span class="si">% o</span><span class="s2">f incoming damage back.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Duration: 5s.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;A shimmering ward of pure arcane energy that surrounds you, reflecting a portion &quot;</span>
+                <span class="s2">&quot;of incoming damage back at your attackers.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;For 5 seconds, Mystic Barrier reduces all damage you take and reflects 30</span><span class="si">% o</span><span class="s2">f it &quot;</span>
+                <span class="s2">&quot;back to the source. The reflected damage scales with the incoming hit</span><span class="se">\u2014</span><span class="s2">the &quot;</span>
+                <span class="s2">&quot;harder they strike, the more they feel. This does not prevent the damage to you, &quot;</span>
+                <span class="s2">&quot;so it is a gamble: you survive the hit, and they feel the sting.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Duration: 5s. Reflection: 30</span><span class="si">% o</span><span class="s2">f incoming. Use against hard-hitting enemies to &quot;</span>
+                <span class="s2">&quot;turn their strength against them.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Berserker&#39;s Rage&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;Raw fury: +50</span><span class="si">% d</span><span class="s2">amage dealt, +20</span><span class="si">% d</span><span class="s2">amage taken.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Duration: 8s. Cooldown: 20s.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;Raw, untamed fury surges through your veins</span><span class="se">\u2014</span><span class="s2">your attacks hit harder, but &quot;</span>
+                <span class="s2">&quot;your defenses crack.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Enter a berserker trance for 8 seconds. All damage you deal is increased by 50%, &quot;</span>
+                <span class="s2">&quot;but all damage you take is increased by 20%. This is the glass cannon&#39;s signature</span><span class="se">\u2014</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;devastating power at a perilous cost. Activate it when you know you can end the &quot;</span>
+                <span class="s2">&quot;fight before the enemy ends you.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Duration: 8s. Cooldown: 20s. Damage dealt: +50%. Damage taken: +20%. Pair with &quot;</span>
+                <span class="s2">&quot;defensive abilities to offset the vulnerability.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Chrono Shift&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;Slows the world around you.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Duration: 3s. Enemies at half speed, you strike 25</span><span class="si">% f</span><span class="s2">aster. Cooldown: 30s.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;Bend the flow of time itself, slowing the world around you to a crawl while you &quot;</span>
+                <span class="s2">&quot;move with supernatural swiftness.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;For 3 seconds, Chrono Shift reduces enemy movement speed by half while increasing &quot;</span>
+                <span class="s2">&quot;your attack speed by 25%. The effect is immediate and disorienting</span><span class="se">\u2014</span><span class="s2">enemies &quot;</span>
+                <span class="s2">&quot;appear to wade through molasses while you dance between their attacks. The long &quot;</span>
+                <span class="s2">&quot;cooldown means you must choose your moment carefully.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Duration: 3s. Enemies: half speed. Your attack speed: +25%. Cooldown: 30s. The &quot;</span>
+                <span class="s2">&quot;ultimate tool for outmaneuvering overwhelming odds.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Dash&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;Propels the user forward in a burst of speed.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Distance is safety. Speed is life.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;Propels the user forward in a burst of speed</span><span class="se">\u2014</span><span class="s2">a short, sharp lunge that &quot;</span>
+                <span class="s2">&quot;can mean the difference between life and death.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Dash grants an instant burst of movement in the direction you are facing. It &quot;</span>
+                <span class="s2">&quot;covers moderate ground in a fraction of a second, passing through enemies and &quot;</span>
+                <span class="s2">&quot;projectiles without taking damage during the dash. The cooldown is short, &quot;</span>
+                <span class="s2">&quot;encouraging frequent use.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Distance is safety. Speed is life. Use Dash to close gaps, evade attacks, or &quot;</span>
+                <span class="s2">&quot;reposition in the heat of battle.&quot;</span><span class="p">)},</span>
         <span class="p">]</span></div>
 
 
@@ -900,26 +1097,81 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_effects_pages</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Boon: Regeneration&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;Accelerated healing</span><span class="se">\u2014</span><span class="s2">restoring health with every heartbeat.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;A steady flow of vitality.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;Accelerated healing that restores health with every heartbeat of the caster.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Regeneration is a beneficial effect that restores a set amount of health each &quot;</span>
+                <span class="s2">&quot;second over its duration. It stacks with passive health recovery and other healing &quot;</span>
+                <span class="s2">&quot;sources. The effect can be applied through potions, spells, food, or environmental &quot;</span>
+                <span class="s2">&quot;effects such as resting at a campfire.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Rate: ~5 HP per second. Duration varies by source. A steady flow of vitality that &quot;</span>
+                <span class="s2">&quot;keeps you in the fight longer.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tip: Let regeneration top you off between fights to conserve potions.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Bane: Poison&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;Creeping death that seeps into the bloodstream.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Deals damage over time. Antidotes are worth their weight in gold.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;Creeping death that seeps into the victim&#39;s bloodstream, dealing damage over &quot;</span>
+                <span class="s2">&quot;time until cured or expired.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Poison is a stacking damage-over-time effect. Each application adds a stack, &quot;</span>
+                <span class="s2">&quot;and each stack deals independent damage per tick. The damage grows more dangerous &quot;</span>
+                <span class="s2">&quot;as stacks accumulate</span><span class="se">\u2014</span><span class="s2">a single Venomous strike may apply one stack, but &quot;</span>
+                <span class="s2">&quot;repeated hits can stack poison to lethal levels quickly.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Duration: 4s per stack. Damage: ~5 DPS per stack. Antidotes remove all poison &quot;</span>
+                <span class="s2">&quot;stacks instantly and are worth their weight in gold. Without antidotes, you must &quot;</span>
+                <span class="s2">&quot;wait for the poison to run its course.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tip: Always carry antidotes before exploring swamp biomes.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Bane: Burn&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;Fire remembers. The Burn effect lingers long after the initial blast.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Immediate and aggressive damage.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;Fire remembers. The Burn effect lingers long after the initial blast, consuming &quot;</span>
+                <span class="s2">&quot;its victim in persistent flame.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Burn is a damage-over-time effect applied by fire-based attacks and environmental &quot;</span>
+                <span class="s2">&quot;hazards such as lava pools and fire traps. Unlike poison, burn does not stack</span><span class="se">\u2014</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;instead, a fresh application refreshes the duration. The damage per tick is higher &quot;</span>
+                <span class="s2">&quot;than poison, making it more dangerous in short bursts.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Duration: ~3.2s per application. Damage: higher DPS than poison. Can be &quot;</span>
+                <span class="s2">&quot;extinguished by rolling or submerging in water.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tip: If you catch fire, roll to put it out. Standing still is a death sentence.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Bane: Confusion&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;Inverts direction</span><span class="se">\u2014</span><span class="s2">up becomes down, left becomes right.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Duration: ~3s. Trust nothing.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;Inverts your controls</span><span class="se">\u2014</span><span class="s2">up becomes down, left becomes right, and your muscle &quot;</span>
+                <span class="s2">&quot;memory becomes your enemy.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Confusion is a disorienting status effect that reverses all directional input for &quot;</span>
+                <span class="s2">&quot;approximately 3 seconds. Every instinct you have developed will betray you. The &quot;</span>
+                <span class="s2">&quot;effect is applied by Trickster enemies and certain shadow-based traps. There is &quot;</span>
+                <span class="s2">&quot;no direct cure</span><span class="se">\u2014</span><span class="s2">you must wait it out.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Duration: ~3s. Effect: directional inversion. No antidote exists. Trust nothing, &quot;</span>
+                <span class="s2">&quot;not even your own hands.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tip: Invert your own thinking. If you need to go left, press right. It takes &quot;</span>
+                <span class="s2">&quot;practice, but it can save your life.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Bane: Dizziness&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;The world spins. Colors smear. Combat becomes a nauseating ordeal.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Often paired with Confusion.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;The world spins around you. Colors smear and blur. Combat becomes a nauseating &quot;</span>
+                <span class="s2">&quot;ordeal.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Dizziness impairs your visual clarity, making it difficult to judge distances &quot;</span>
+                <span class="s2">&quot;and track enemy movements. The screen wobbles and your character&#39;s movement &quot;</span>
+                <span class="s2">&quot;becomes slightly sluggish. Often paired with Confusion by Trickster enemies</span><span class="se">\u2014</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;together, they create a deadly cocktail of disorientation.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Duration: ~2.2s. Effect: visual distortion, slight movement impairment. Often &quot;</span>
+                <span class="s2">&quot;applied alongside Confusion.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tip: If both Confusion and Dizziness are active, retreat to a safe area and &quot;</span>
+                <span class="s2">&quot;wait for both to expire. Fighting through both is a fool&#39;s errand.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Bane: Slow&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;A creeping weight settles into the limbs.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Speed is life. To be slowed is to be marked for death.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;A creeping weight settles into your limbs, slowing your movement to a crawl.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Slow reduces your movement speed by approximately 50</span><span class="si">% f</span><span class="s2">or its duration. The &quot;</span>
+                <span class="s2">&quot;effect can be applied by environmental hazards (deep snow, mud, water), enemy &quot;</span>
+                <span class="s2">&quot;attacks (Ice-based spells, certain creature abilities), or traps. In combat, &quot;</span>
+                <span class="s2">&quot;being slowed is exceptionally dangerous</span><span class="se">\u2014</span><span class="s2">you cannot dodge, you cannot kite, &quot;</span>
+                <span class="s2">&quot;and you cannot retreat.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Duration: ~1.5s to 4s depending on source. Speed reduction: ~50%. Some sources &quot;</span>
+                <span class="s2">&quot;also reduce attack speed.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tip: Speed is life. To be slowed is to be marked for death. Carry cleansing &quot;</span>
+                <span class="s2">&quot;items or avoid hazards that apply this effect.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Bane: Freeze &amp; Root&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;Two faces of the same cursed coin. Both leave you unable to act.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;A frozen or rooted fighter is a dead fighter.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;Two faces of the same cursed coin. Both leave you utterly unable to move, and &quot;</span>
+                <span class="s2">&quot;both are followed by a killing blow.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Freeze encases the target in solid ice, preventing all movement and actions for &quot;</span>
+                <span class="s2">&quot;its duration. The ice can be broken early by taking enough damage</span><span class="se">\u2014</span><span class="s2">make sure &quot;</span>
+                <span class="s2">&quot;your allies are ready to shatter it. Root binds the target&#39;s feet to the earth, &quot;</span>
+                <span class="s2">&quot;preventing movement but allowing attacks and abilities to be used. Root is applied &quot;</span>
+                <span class="s2">&quot;by Entangling Roots and similar nature-based abilities.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Freeze duration: 2</span><span class="se">\u2013</span><span class="s2">3 seconds. Breaks on sufficient damage.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Root duration: 4 seconds. Movement only is blocked; attacks and abilities &quot;</span>
+                <span class="s2">&quot;still work.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tip: A frozen or rooted fighter is a dead fighter. Prioritize cleansing or &quot;</span>
+                <span class="s2">&quot;avoiding these effects above all others.&quot;</span><span class="p">)},</span>
         <span class="p">]</span></div>
 
 
@@ -928,36 +1180,128 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_guide_pages</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;1. Movement &amp; Navigation&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;Move with WASD. Sprint with Shift</span><span class="se">\u2014</span><span class="s2">watch your stamina bar.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Walk into doors and map edges to transition between areas.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;The world is vast and unforgiving. Mastery of movement is your first and most essential &quot;</span>
+                <span class="s2">&quot;skill.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Use the WASD keys to navigate</span><span class="se">\u2014</span><span class="s2">W for north, A for west, S for south, D for east. &quot;</span>
+                <span class="s2">&quot;Hold Shift to sprint, granting you burst speed at the cost of stamina. The yellow &quot;</span>
+                <span class="s2">&quot;stamina bar above your hotbar depletes with every sprinting step and refills when you &quot;</span>
+                <span class="s2">&quot;walk or stand still.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Walk into doorways and map edges to transition between areas. Some transitions are &quot;</span>
+                <span class="s2">&quot;one-way</span><span class="se">\u2014</span><span class="s2">once you descend into a dungeon, the only way out is through.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tip: Keep your stamina reserve for combat. A tired warrior is a dead warrior.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;2. Combat Basics&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;Left-click to attack. Health (red) at top and stamina (blue) above hotbar.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;When health reaches zero, you respawn at your last save point.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;The world does not wait for you to be ready. Learn the rhythm of battle or be &quot;</span>
+                <span class="s2">&quot;consumed by it.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Left-click any nearby enemy to perform a basic attack. Your health bar (red) sits &quot;</span>
+                <span class="s2">&quot;at the top of the screen</span><span class="se">\u2014</span><span class="s2">when it empties, you fall. Your stamina bar (yellow) &quot;</span>
+                <span class="s2">&quot;sits just above the hotbar</span><span class="se">\u2014</span><span class="s2">it fuels both sprinting and special maneuvers. Let &quot;</span>
+                <span class="s2">&quot;neither run dry in a fight.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;When your health reaches zero, you respawn at your last activated save point. &quot;</span>
+                <span class="s2">&quot;Enemies you have slain stay dead, but their patrols will be reinforced. Death is &quot;</span>
+                <span class="s2">&quot;a setback, not an ending.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tip: Kite enemies one at a time when possible. Two foes are twice the trouble; &quot;</span>
+                <span class="s2">&quot;three is a grave.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;3. Skills &amp; Hotbar&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;Press 1-6 for skills. Open Skill Tree from inventory.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Each skill has a cooldown.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;Your arsenal of abilities is bound to the hotbar</span><span class="se">\u2014</span><span class="s2">quick access slots that mean &quot;</span>
+                <span class="s2">&quot;the difference between victory and defeat.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Press keys 1 through 6 to activate the skill in the corresponding hotbar slot. &quot;</span>
+                <span class="s2">&quot;Skills range from offensive spells to defensive wards to mobility tools. Each &quot;</span>
+                <span class="s2">&quot;skill has its own cooldown, shown as a dimming icon that slowly brightens as it &quot;</span>
+                <span class="s2">&quot;becomes available again.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Open the Skill Tree from your inventory screen to spend points earned through &quot;</span>
+                <span class="s2">&quot;leveling. Branches include Fire, Ice, Lightning, Nature, Shadow, and Arcane</span><span class="se">\u2014</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;each with its own philosophy and power.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tip: Build synergy. A Frost Nova to freeze, then a Fireball for double impact.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;4. Inventory &amp; Items&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;Press E. Manage equipment, consume potions, inspect gear.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Point cursor for details. Drag to rearrange.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;Your pack is your lifeline</span><span class="se">\u2014</span><span class="s2">every potion, weapon, and trinket you carry may tip &quot;</span>
+                <span class="s2">&quot;the scales of fate.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Press E to open your inventory. Here you can equip weapons and armor, consume &quot;</span>
+                <span class="s2">&quot;potions by right-clicking, and inspect every item in your possession. Hover your &quot;</span>
+                <span class="s2">&quot;cursor over any item to see its detailed stats, flavor text, and sell value. Drag &quot;</span>
+                <span class="s2">&quot;items with the left mouse button to rearrange your pack or move them between your &quot;</span>
+                <span class="s2">&quot;inventory and other containers.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Equipment slots include head, chest, legs, feet, main hand, and off-hand. Unequip &quot;</span>
+                <span class="s2">&quot;items by dragging them back to your pack.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tip: Keep at least three health potions on you at all times. The wilderness is not &quot;</span>
+                <span class="s2">&quot;merciful.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;5. Crafting &amp; Recipes&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;Combine ingredients in the 3</span><span class="se">\u00d7</span><span class="s2">3 crafting grid.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;The Recipe Book shows known recipes. Experiment to discover more.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;Creation is survival. From the humblest bandage to the mightiest blade, everything &quot;</span>
+                <span class="s2">&quot;must be forged.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Open your inventory and you will find a 3</span><span class="se">\u00d7</span><span class="s2">3 crafting grid. Place ingredients &quot;</span>
+                <span class="s2">&quot;in the correct pattern, and the result appears in the output slot. Drag it into &quot;</span>
+                <span class="s2">&quot;your pack to claim your creation.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;The Recipe Book, accessible from the crafting interface, records every recipe you &quot;</span>
+                <span class="s2">&quot;have discovered. Some recipes are learned from scrolls and schematics found in the &quot;</span>
+                <span class="s2">&quot;world. Others must be discovered through bold experimentation</span><span class="se">\u2014</span><span class="s2">place unfamiliar &quot;</span>
+                <span class="s2">&quot;combinations in the grid and see what emerges.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tip: The grid is small, but the possibilities are endless. Try every combination &quot;</span>
+                <span class="s2">&quot;you can imagine.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;6. Leveling &amp; Experience&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;Defeat enemies for XP. Level up = +20 max HP + Skill Tree point.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Branches: Fire, Ice, Lightning, Nature, Shadow, Arcane.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;Every battle fought, every enemy vanquished, every challenge overcome</span><span class="se">\u2014</span><span class="s2">all of it &quot;</span>
+                <span class="s2">&quot;feeds the fire of your growth.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Defeat enemies to earn experience points (XP). Your progress is tracked in the XP &quot;</span>
+                <span class="s2">&quot;bar at the bottom of the screen. When it fills, you gain a level, which grants +20 &quot;</span>
+                <span class="s2">&quot;maximum health and one Skill Tree point to spend on new abilities or enhance &quot;</span>
+                <span class="s2">&quot;existing ones.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;The Skill Tree branches into six schools of power:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;</span><span class="se">\u2022</span><span class="s2"> Fire </span><span class="se">\u2014</span><span class="s2"> Raw destructive force and area denial.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;</span><span class="se">\u2022</span><span class="s2"> Ice </span><span class="se">\u2014</span><span class="s2"> Crowd control and defensive fortitude.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;</span><span class="se">\u2022</span><span class="s2"> Lightning </span><span class="se">\u2014</span><span class="s2"> Speed and chain damage.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;</span><span class="se">\u2022</span><span class="s2"> Nature </span><span class="se">\u2014</span><span class="s2"> Summoning and sustained warfare.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;</span><span class="se">\u2022</span><span class="s2"> Shadow </span><span class="se">\u2014</span><span class="s2"> Deception and high-risk, high-reward tactics.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;</span><span class="se">\u2022</span><span class="s2"> Arcane </span><span class="se">\u2014</span><span class="s2"> Utility and raw magical power.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tip: You cannot max every branch in a single playthrough. Choose your path wisely.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;7. Day &amp; Night Cycle&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;The world follows day and night. Some enemies are more aggressive at night.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Plan your expeditions accordingly.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;The sun rises and sets in this world, and with the changing light comes shifting &quot;</span>
+                <span class="s2">&quot;danger.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;The full day-night cycle spans roughly 24 minutes of real time. During the day, &quot;</span>
+                <span class="s2">&quot;visibility is high and most enemies follow predictable patrol routes. As dusk &quot;</span>
+                <span class="s2">&quot;falls, shadows lengthen and the creatures of the dark stir.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;At night, many enemies become more aggressive</span><span class="se">\u2014</span><span class="s2">their detection range increases, &quot;</span>
+                <span class="s2">&quot;their damage may rise, and new nocturnal foes emerge from their lairs. The undead, &quot;</span>
+                <span class="s2">&quot;in particular, grow bolder under the cover of darkness.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tip: If you hear howling at night, find shelter or light a torch. Some horrors &quot;</span>
+                <span class="s2">&quot;only hunt in the dark.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;8. Enemies &amp; Threat Assessment&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;Brutes: dodge charge. Venomous: bring antidotes. Arcanists: close distance.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Tricksters: predict. Bombers: stay mobile.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;The realm is teeming with threats, each with its own deadly habits. Know your &quot;</span>
+                <span class="s2">&quot;enemy before it knows you.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;</span><span class="se">\u2022</span><span class="s2"> Brutes </span><span class="se">\u2014</span><span class="s2"> Slow but devastating. Their Charge attack covers ground &quot;</span>
+                <span class="s2">&quot;quickly. Dodge sideways, never backward. Strike after they miss.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;</span><span class="se">\u2022</span><span class="s2"> Venomous </span><span class="se">\u2014</span><span class="s2"> Their poison stacks quickly. Bring antidotes to every &quot;</span>
+                <span class="s2">&quot;swamp encounter. Ranged attacks are safest.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;</span><span class="se">\u2022</span><span class="s2"> Arcanists </span><span class="se">\u2014</span><span class="s2"> Deadly at range, vulnerable up close. Close the distance &quot;</span>
+                <span class="s2">&quot;and interrupt their casting.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;</span><span class="se">\u2022</span><span class="s2"> Tricksters </span><span class="se">\u2014</span><span class="s2"> Unpredictable and maddening. Predict their Blink &quot;</span>
+                <span class="s2">&quot;destination and strike first.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;</span><span class="se">\u2022</span><span class="s2"> Bombers </span><span class="se">\u2014</span><span class="s2"> Timed bombs with a wide blast radius. Stay mobile and &quot;</span>
+                <span class="s2">&quot;never stand still.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;</span><span class="se">\u2022</span><span class="s2"> Stalkers </span><span class="se">\u2014</span><span class="s2"> They remember your position. Breaking line of sight is &quot;</span>
+                <span class="s2">&quot;not enough</span><span class="se">\u2014</span><span class="s2">keep moving for three seconds.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;</span><span class="se">\u2022</span><span class="s2"> Skirmishers </span><span class="se">\u2014</span><span class="s2"> Ranged harriers that orbit at a distance. Close in to &quot;</span>
+                <span class="s2">&quot;force them into melee.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;</span><span class="se">\u2022</span><span class="s2"> Guardians </span><span class="se">\u2014</span><span class="s2"> Immobile sentinels. Lure them to the edge of their &quot;</span>
+                <span class="s2">&quot;leash range if you must engage.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tip: Knowledge is armor. Study each entry in the Bestiary before venturing into &quot;</span>
+                <span class="s2">&quot;unknown territory.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;9. Respeccing &amp; Strategy&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;Your build matters. Focus or spread for versatility.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Adapt. Improvise. Overcome.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;No path is set in stone. The wise warrior evolves with every battle.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Your Skill Tree points shape your playstyle. A focused build</span><span class="se">\u2014</span><span class="s2">investing &quot;</span>
+                <span class="s2">&quot;deeply in a single school</span><span class="se">\u2014</span><span class="s2">unlocks powerful tier-3 and tier-4 abilities that &quot;</span>
+                <span class="s2">&quot;a generalist cannot reach. A spread build offers flexibility, letting you adapt &quot;</span>
+                <span class="s2">&quot;to any situation with a broad toolkit.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;If you find your choices no longer serve you, the respec option allows you to &quot;</span>
+                <span class="s2">&quot;reclaim all spent Skill Tree points and redistribute them. Visit the appropriate &quot;</span>
+                <span class="s2">&quot;NPC or use the respec option in the Skill Tree menu.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Tip: Respeccing is not failure. It is refinement. The best warriors adapt their &quot;</span>
+                <span class="s2">&quot;build to the challenges ahead.&quot;</span><span class="p">)},</span>
             <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;10. Final Words&quot;</span><span class="p">),</span> <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span>
-                <span class="s2">&quot;The road ahead is long and lined with peril. You will fall. You will rise.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;The road ahead is long and lined with peril. You will fall. You will rise. &quot;</span>
+                <span class="s2">&quot;You will fall again</span><span class="se">\u2014</span><span class="s2">and still, you will rise.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Remember: every potion crafted, every skill unlocked, every enemy studied is &quot;</span>
+                <span class="s2">&quot;a thread in the tapestry of your legend. The world remembers what you do. &quot;</span>
+                <span class="s2">&quot;The Codex Arcanum records your discoveries. The forge awaits your hand.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
                 <span class="s2">&quot;Their mistakes are your lessons. Their triumphs are your inheritance.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Now go. The realm awaits.&quot;</span><span class="p">)},</span>
+                <span class="s2">&quot;Now go. The realm awaits</span><span class="se">\u2014</span><span class="s2">and it has never been ready for you.&quot;</span><span class="p">)},</span>
         <span class="p">]</span></div>
 
 
@@ -1080,12 +1424,8 @@
                                              <span class="n">sh</span> <span class="o">-</span> <span class="n">bh</span> <span class="o">-</span> <span class="nb">max</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">28</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)),</span> <span class="n">bw</span><span class="p">,</span> <span class="n">bh</span><span class="p">)</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_show_toc</span><span class="p">:</span>
             <span class="n">ny</span> <span class="o">=</span> <span class="n">sh</span> <span class="o">-</span> <span class="n">bh</span> <span class="o">-</span> <span class="nb">max</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">24</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
-            <span class="n">by2</span> <span class="o">=</span> <span class="n">ny</span> <span class="o">-</span> <span class="n">bh</span> <span class="o">-</span> <span class="nb">max</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
             <span class="n">mx</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">30</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">back_btn</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">mx</span><span class="p">,</span> <span class="n">by2</span><span class="p">,</span> <span class="n">bw</span><span class="p">,</span> <span class="n">bh</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">toc_btn</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">mx</span> <span class="o">+</span> <span class="n">bw</span> <span class="o">+</span> <span class="nb">max</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)),</span> <span class="n">by2</span><span class="p">,</span> <span class="n">bw</span><span class="p">,</span> <span class="n">bh</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">prev_btn</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">mx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">bw</span><span class="p">,</span> <span class="n">bh</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">next_btn</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">sw</span> <span class="o">-</span> <span class="n">bw</span> <span class="o">-</span> <span class="n">mx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">bw</span><span class="p">,</span> <span class="n">bh</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">back_btn</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">mx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">bw</span><span class="p">,</span> <span class="n">bh</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_skip_to_gameplay</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_page</span> <span class="o">==</span> <span class="s2">&quot;guide&quot;</span><span class="p">:</span>
                 <span class="n">pad2</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">24</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
                 <span class="n">box2</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">pad2</span><span class="p">,</span> <span class="n">pad2</span><span class="p">,</span> <span class="n">sw</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">pad2</span><span class="p">,</span> <span class="n">sh</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">pad2</span><span class="p">)</span>
@@ -1097,11 +1437,15 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">begin_btn</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">btn_x2</span><span class="p">,</span> <span class="n">btn_y2</span><span class="p">,</span> <span class="n">btn_w2</span><span class="p">,</span> <span class="n">btn_h2</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">ny</span> <span class="o">=</span> <span class="n">sh</span> <span class="o">-</span> <span class="n">bh</span> <span class="o">-</span> <span class="nb">max</span><span class="p">(</span><span class="mi">40</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">60</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
-            <span class="n">by2</span> <span class="o">=</span> <span class="n">ny</span> <span class="o">-</span> <span class="n">bh</span> <span class="o">-</span> <span class="nb">max</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">24</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
             <span class="n">mx</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">40</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">60</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">back_btn</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">mx</span><span class="p">,</span> <span class="n">by2</span><span class="p">,</span> <span class="n">bw</span><span class="p">,</span> <span class="n">bh</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">toc_btn</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">mx</span> <span class="o">+</span> <span class="n">bw</span> <span class="o">+</span> <span class="nb">max</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)),</span> <span class="n">by2</span><span class="p">,</span> <span class="n">bw</span><span class="p">,</span> <span class="n">bh</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">prev_btn</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">mx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">bw</span><span class="p">,</span> <span class="n">bh</span><span class="p">)</span>
+            <span class="n">gap</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">mx</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sub_page</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">prev_btn</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">bw</span><span class="p">,</span> <span class="n">bh</span><span class="p">)</span>
+                <span class="n">x</span> <span class="o">+=</span> <span class="n">bw</span> <span class="o">+</span> <span class="n">gap</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">back_btn</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">bw</span><span class="p">,</span> <span class="n">bh</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">+=</span> <span class="n">bw</span> <span class="o">+</span> <span class="n">gap</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">toc_btn</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">bw</span><span class="p">,</span> <span class="n">bh</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">next_btn</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">sw</span> <span class="o">-</span> <span class="n">bw</span> <span class="o">-</span> <span class="n">mx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">bw</span><span class="p">,</span> <span class="n">bh</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_skip_to_gameplay</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_page</span> <span class="o">==</span> <span class="s2">&quot;guide&quot;</span><span class="p">:</span>
                 <span class="n">btn_w</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">340</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
@@ -1356,7 +1700,7 @@
                 <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">ar</span><span class="p">,</span> <span class="p">(</span><span class="n">er</span><span class="o">.</span><span class="n">right</span> <span class="o">-</span> <span class="n">ar</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span> <span class="o">-</span> <span class="mi">14</span><span class="p">,</span>
                                  <span class="n">er</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="p">(</span><span class="n">er</span><span class="o">.</span><span class="n">height</span> <span class="o">-</span> <span class="n">ar</span><span class="o">.</span><span class="n">get_height</span><span class="p">())</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">t</span> <span class="o">*</span> <span class="mi">4</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)))</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">_toc_entry_rects</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">er</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_toc_entry_rects</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">er</span><span class="p">,</span> <span class="n">i</span><span class="p">))</span>
 
         <span class="n">hs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">font_small</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">&quot;Select an entry to read&quot;</span><span class="p">),</span> <span class="kc">True</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ink_light</span><span class="p">)</span>
         <span class="n">hs</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mi">140</span> <span class="o">+</span> <span class="mi">60</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">t</span> <span class="o">*</span> <span class="mf">0.8</span><span class="p">)))</span>
@@ -1588,7 +1932,7 @@
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_toc_entry_rects&#39;</span><span class="p">):</span>
                 <span class="k">for</span> <span class="n">er</span><span class="p">,</span> <span class="n">idx</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_toc_entry_rects</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">er</span><span class="o">.</span><span class="n">collidepoint</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pos</span><span class="p">):</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_toc_hover</span> <span class="o">=</span> <span class="n">idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="k">break</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_toc_hover</span> <span class="o">=</span> <span class="n">idx</span><span class="p">;</span> <span class="k">break</span>
         <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">KEYDOWN</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_ESCAPE</span><span class="p">:</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_show_toc</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sub_page</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
