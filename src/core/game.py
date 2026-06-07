@@ -2800,6 +2800,10 @@ class Game(State):
         for enemy in self.enemies[:]:
             if enemy.is_dead():
                 logger.info("Enemy defeated!")
+                
+                if getattr(enemy, "ai_profile", "") == "chronos":
+                    self.app.manager.set_state("ending_animation")
+
                 self._kill_count += 1
                 self.app.achievement_manager.unlock("first_blood")
                 self.app.achievement_manager.add_progress("exterminator", 1, 50)

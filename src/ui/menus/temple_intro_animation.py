@@ -83,7 +83,7 @@ class _RuneSymbol:
         w, h  = self._surf.get_size()
         nw    = max(1, int(w * scale))
         nh    = max(1, int(h * scale))
-        scaled = pygame.transform.smoothscale(self._surf, (nw, nh))
+        scaled = pygame.transform.scale(self._surf, (nw, nh))
         scaled.set_alpha(a)
         screen.blit(scaled, (int(self.x - nw / 2), int(self.y - nh / 2)))
 
@@ -308,8 +308,24 @@ class TempleIntroAnimation:
         self._skip_surf = None
         self._flash_alpha = 0.0
         self._shake_intensity = 0.0
+        self._shake_offset_x = 0.0
+        self._shake_offset_y = 0.0
+        self._shake_phase = 0.0
         self._vignette_alpha = 0.0
         self._lens_flare: _LensFlare | None = None
+        self._cached_sw = 0
+        self._cached_sh = 0
+        self._ember_surf = None
+        self._vp_surf = None
+        self._lt_surf = None
+        self._bp_surf = None
+        self._fx_surf = None
+        self._flare_surf = None
+        self._flash_surf = None
+        self._ov_surf = None
+        self._vig_cache_sw = 0
+        self._vig_cache_sh = 0
+        self._vig_base = None
 
     def on_enter(self):
         self._phase   = 0
@@ -460,7 +476,7 @@ class TempleIntroAnimation:
 
         if self._flash_alpha > 0:
             self._flash_alpha = max(0.0, self._flash_alpha - dt * 150)
-            
+
         if self._phase == 1:
             self._shake_intensity = 6.0 * (self._phase_t / _PHASE_DUR[1])
         elif self._phase == 4:
@@ -471,6 +487,17 @@ class TempleIntroAnimation:
             self._shake_intensity = 50.0 * max(0, 1.0 - (self._phase_t / 0.6))
         else:
             self._shake_intensity = max(0.0, self._shake_intensity - dt * 50)
+
+        # Smooth shake update
+        self._shake_phase += dt * 10.0
+        intensity = self._shake_intensity
+        if intensity > 0.5:
+            sp = self._shake_phase
+            self._shake_offset_x = math.sin(sp) * intensity * 0.7 + math.sin(sp * 2.3) * intensity * 0.3
+            self._shake_offset_y = math.cos(sp * 1.7) * intensity * 0.7 + math.sin(sp * 2.9) * intensity * 0.3
+        else:
+            self._shake_offset_x = 0.0
+            self._shake_offset_y = 0.0
 
     def _spawn_burst(self, cx, cy):
         self._flash_alpha = 255.0
@@ -499,6 +526,19 @@ class TempleIntroAnimation:
                 vx, vy, col, random.randint(3, 9), random.uniform(0.6, 3.0)
             ))
 
+    def _ensure_surfaces(self, sw, sh):
+        if sw == self._cached_sw and sh == self._cached_sh:
+            return
+        self._cached_sw, self._cached_sh = sw, sh
+        self._ember_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        self._vp_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        self._lt_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        self._bp_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        self._fx_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        self._flare_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        self._flash_surf = pygame.Surface((sw, sh))
+        self._ov_surf = pygame.Surface((sw, sh))
+
     def draw(self, screen):
         self.update(self.app.clock.get_time() / 1000.0)
         sw, sh = screen.get_width(), screen.get_height()
@@ -506,11 +546,11 @@ class TempleIntroAnimation:
         t = self._t
         phase = self._phase
         pt = self._phase_t
-        
-        shake_x = random.uniform(-self._shake_intensity, self._shake_intensity)
-        shake_y = random.uniform(-self._shake_intensity, self._shake_intensity)
-        cx += int(shake_x)
-        cy += int(shake_y)
+
+        self._ensure_surfaces(sw, sh)
+
+        sx = int(self._shake_offset_x)
+        sy = int(self._shake_offset_y)
 
         screen.fill(VOID)
         self._draw_nebula(screen, sw, sh, t, cx, cy)
@@ -523,47 +563,47 @@ class TempleIntroAnimation:
                 rune_global = 255
             for rune in self._runes:
                 orig_x, orig_y = rune.x, rune.y
-                rune.x += shake_x
-                rune.y += shake_y
+                rune.x += sx
+                rune.y += sy
                 rune.draw(screen, t * 2.5 if phase >= 4 else t, rune_global)
                 rune.x, rune.y = orig_x, orig_y
 
-        ember_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        self._ember_surf.fill((0, 0, 0, 0))
         for e in self._embers:
             orig_x, orig_y = e.x, e.y
-            e.x += shake_x
-            e.y += shake_y
-            e.draw(ember_surf, t * 2.0 if phase >= 4 else t)
+            e.x += sx
+            e.y += sy
+            e.draw(self._ember_surf, t * 2.0 if phase >= 4 else t)
             e.x, e.y = orig_x, orig_y
         if phase >= 1:
-            screen.blit(ember_surf, (0, 0))
+            screen.blit(self._ember_surf, (0, 0))
 
         if self._v_parts:
-            vp_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            self._vp_surf.fill((0, 0, 0, 0))
             for p in self._v_parts:
                 orig_x, orig_y = p.x, p.y
-                p.x += shake_x
-                p.y += shake_y
-                p.draw(vp_surf)
+                p.x += sx
+                p.y += sy
+                p.draw(self._vp_surf)
                 p.x, p.y = orig_x, orig_y
-            screen.blit(vp_surf, (0, 0))
+            screen.blit(self._vp_surf, (0, 0))
 
         # Lightning
         if self._lightnings:
-            lt_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            self._lt_surf.fill((0, 0, 0, 0))
             for l in self._lightnings:
-                l.draw(lt_surf)
-            screen.blit(lt_surf, (0, 0))
+                l.draw(self._lt_surf)
+            screen.blit(self._lt_surf, (0, 0))
 
         # Blood particles
         if self._blood_parts:
-            bp_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            self._bp_surf.fill((0, 0, 0, 0))
             for bp in self._blood_parts:
-                bp.draw(bp_surf)
-            screen.blit(bp_surf, (0, 0))
+                bp.draw(self._bp_surf)
+            screen.blit(self._bp_surf, (0, 0))
 
         if phase >= 1:
-            self._draw_centre_glow(screen, cx, cy, t, phase, pt)
+            self._draw_centre_glow(screen, cx + sx, cy + sy, t, phase, pt)
 
         if phase in (2, 3):
             line_idx = phase - 2
@@ -573,41 +613,39 @@ class TempleIntroAnimation:
             self._draw_go_text(screen, sw, sh, cx, cy, pt)
 
         if self._shockwaves or self._bursts:
-            fx_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            self._fx_surf.fill((0, 0, 0, 0))
             for w in self._shockwaves:
-                w.draw(fx_surf, shake_x, shake_y)
+                w.draw(self._fx_surf, sx, sy)
             for b in self._bursts:
                 orig_x, orig_y = b.x, b.y
-                b.x += shake_x
-                b.y += shake_y
-                b.draw(fx_surf)
+                b.x += sx
+                b.y += sy
+                b.draw(self._fx_surf)
                 b.x, b.y = orig_x, orig_y
-            screen.blit(fx_surf, (0, 0))
+            screen.blit(self._fx_surf, (0, 0))
 
         if self._lens_flare is not None:
-            flare_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
-            self._lens_flare.draw(flare_surf)
-            screen.blit(flare_surf, (0, 0))
+            self._flare_surf.fill((0, 0, 0, 0))
+            self._lens_flare.draw(self._flare_surf)
+            screen.blit(self._flare_surf, (0, 0))
 
         # Vignette
         if self._vignette_alpha > 1:
             self._draw_vignette(screen, sw, sh)
 
         if self._flash_alpha > 0:
-            flash = pygame.Surface((sw, sh))
-            flash.fill(WHITE_GLOW)
-            flash.set_alpha(int(self._flash_alpha))
-            screen.blit(flash, (0, 0))
+            self._flash_surf.fill(WHITE_GLOW)
+            self._flash_surf.set_alpha(int(self._flash_alpha))
+            screen.blit(self._flash_surf, (0, 0))
 
         if phase == 0:
             screen.fill((0, 0, 0))
         elif phase == 7:
             fade_a = int(255 * ease_out_cubic(min(1.0, pt / _PHASE_DUR[7])))
             if fade_a > 0:
-                ov = pygame.Surface((sw, sh))
-                ov.fill((0, 0, 0))
-                ov.set_alpha(fade_a)
-                screen.blit(ov, (0, 0))
+                self._ov_surf.fill((0, 0, 0))
+                self._ov_surf.set_alpha(fade_a)
+                screen.blit(self._ov_surf, (0, 0))
 
         if self._skip_surf and 1 <= phase <= 5:
             skip_a = int(130 * (0.5 + 0.5 * math.sin(t * 3.0)))
@@ -619,17 +657,20 @@ class TempleIntroAnimation:
             )
 
     def _draw_vignette(self, screen, sw, sh):
-        r = int(math.hypot(sw, sh) / 2)
-        s = pygame.Surface((sw, sh), pygame.SRCALPHA)
-        a = int(self._vignette_alpha)
-        for radius in range(r, 0, -int(r / 30 + 1)):
-            ratio = radius / r
-            ca = int(a * (1 - ratio) ** 2)
-            if ca < 1:
-                continue
-            pygame.draw.circle(s, (0, 0, 0, max(0, min(255, ca))),
-                               (sw // 2, sh // 2), radius)
-        screen.blit(s, (0, 0))
+        if not hasattr(self, '_vig_cache_sw') or self._vig_cache_sw != sw or self._vig_cache_sh != sh:
+            self._vig_cache_sw, self._vig_cache_sh = sw, sh
+            r = int(math.hypot(sw, sh) / 2)
+            self._vig_base = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            for radius in range(r, 0, -max(1, r // 30)):
+                ratio = radius / r
+                ca = int(200 * (1 - ratio) ** 2)
+                if ca < 1:
+                    continue
+                pygame.draw.circle(self._vig_base, (0, 0, 0, max(0, min(255, ca))),
+                                   (sw // 2, sh // 2), radius)
+        v = self._vig_base.copy()
+        v.set_alpha(min(255, int(self._vignette_alpha)))
+        screen.blit(v, (0, 0))
 
     def _draw_nebula(self, screen, sw, sh, t, cx, cy):
         phase_shift = t * 0.15
@@ -665,6 +706,7 @@ class TempleIntroAnimation:
         if phase == 7:
             a_mult = max(0.0, 1.0 - pt / _PHASE_DUR[7])
 
+        ns = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
         for ri in range(r, 0, -4):
             ratio = ri / r
             base_a = int(80 * (1.0 - ratio) * a_mult)
@@ -674,9 +716,8 @@ class TempleIntroAnimation:
                 max(0, min(255, int(20 + 35 * (1 - ratio)))),
                 max(0, min(90, base_a))
             )
-            ns = pygame.Surface((ri * 2, ri * 2), pygame.SRCALPHA)
-            pygame.draw.circle(ns, col, (ri, ri), ri)
-            screen.blit(ns, (cx - ri, cy - ri))
+            pygame.draw.circle(ns, col, (r, r), ri)
+        screen.blit(ns, (cx - r, cy - r))
 
     def _draw_voice_line(self, screen, sw, sh, cx, cy, line_idx, t, pt, phase):
         full_text = _VOICE_LINES[line_idx]
@@ -752,20 +793,21 @@ class TempleIntroAnimation:
         jitter_x = random.uniform(-8, 8)
         jitter_y = random.uniform(-8, 8)
         
-        # Multiple layered glows
+        # Multiple layered glows (render text once per glow layer)
         for scale_mult, col, max_a in [
             (3.0, (100, 0, 0), 60),
             (2.0, (200, 0, 0), 100),
             (1.5, (255, 50, 50), 140),
         ]:
             glow_size = int(max(t_w, t_h) * scale_mult * 0.08)
+            base_text = self._font_go.render(display, True, col)
             glow_s = pygame.Surface((t_w + glow_size * 2, t_h + glow_size * 2), pygame.SRCALPHA)
             for ri in range(glow_size, 0, -2):
                 ratio = ri / glow_size
                 ca = int(max_a * (1 - ratio) ** 2 * (0.5 + 0.5 * math.sin(self._t * 10)))
-                re_render = self._font_go.render(display, True, col)
-                re_render.set_alpha(max(0, min(180, ca)))
-                glow_s.blit(re_render, (glow_size - ri, glow_size - ri))
+                gs = base_text.copy()
+                gs.set_alpha(max(0, min(180, ca)))
+                glow_s.blit(gs, (glow_size - ri, glow_size - ri))
             screen.blit(glow_s,
                         (cx - t_w // 2 - glow_size + jitter_x * 2,
                          cy - t_h // 2 - glow_size + jitter_y * 2))

@@ -89,7 +89,7 @@ class _RuneSymbol:
         w, h  = self._surf.get_size()
         nw    = max(1, int(w * scale))
         nh    = max(1, int(h * scale))
-        scaled = pygame.transform.smoothscale(self._surf, (nw, nh))
+        scaled = pygame.transform.scale(self._surf, (nw, nh))
         scaled.set_alpha(a)
         screen.blit(scaled, (int(self.x - nw / 2), int(self.y - nh / 2)))
 
@@ -323,6 +323,20 @@ class IntroAnimation:
         self._flash_alpha = 0.0
         self._vignette_alpha = 0.0
         self._burst_timer = 0.0
+        self._cached_sw = 0
+        self._cached_sh = 0
+        self._star_surf = None
+        self._ray_surf = None
+        self._ember_surf = None
+        self._vp_surf = None
+        self._ring_surf = None
+        self._fx_surf = None
+        self._flare_surf = None
+        self._sp_surf = None
+        self._flash_surf = None
+        self._vig_cache_sw = 0
+        self._vig_cache_sh = 0
+        self._vig_base = None
 
     # ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -516,6 +530,21 @@ class IntroAnimation:
                 )
             )
 
+    def _ensure_surfaces(self, sw, sh):
+        if sw == self._cached_sw and sh == self._cached_sh:
+            return
+        self._cached_sw, self._cached_sh = sw, sh
+        self._star_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        self._ray_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        self._ember_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        self._vp_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        self._ring_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        self._fx_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        self._flare_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        self._sp_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        self._flash_surf = pygame.Surface((sw, sh))
+        self._ov_surf = pygame.Surface((sw, sh))
+
     # ── Draw ──────────────────────────────────────────────────────────────────
 
     def draw(self, screen):
@@ -526,6 +555,8 @@ class IntroAnimation:
         phase = self._phase
         pt = self._phase_t
 
+        self._ensure_surfaces(sw, sh)
+
         # 1. Background ───────────────────────────────────────────────────────
         screen.fill(VOID)
 
@@ -535,22 +566,22 @@ class IntroAnimation:
         # Stars (visible from phase 1 onwards)
         if phase >= 1:
             star_a = int(255 * min(1.0, pt / 1.5)) if phase == 1 else 255
-            star_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            self._star_surf.fill((0, 0, 0, 0))
             for star in self._stars:
-                star.draw(star_surf, t)
-            star_surf.set_alpha(star_a)
-            screen.blit(star_surf, (0, 0))
+                star.draw(self._star_surf, t)
+            self._star_surf.set_alpha(star_a)
+            screen.blit(self._star_surf, (0, 0))
 
         # 2. Light rays (visible from phase 2 onwards) ────────────────────────
         if phase >= 2:
-            ray_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            self._ray_surf.fill((0, 0, 0, 0))
             for ray in self._light_rays:
-                ray.draw(ray_surf, t)
+                ray.draw(self._ray_surf, t)
             ray_a = 255
             if phase == 6:
                 ray_a = int(255 * max(0.0, 1.0 - pt / _PHASE_DUR[6]))
-            ray_surf.set_alpha(ray_a)
-            screen.blit(ray_surf, (0, 0))
+            self._ray_surf.set_alpha(ray_a)
+            screen.blit(self._ray_surf, (0, 0))
 
         # 3. Runes ────────────────────────────────────────────────────────────
         if phase >= 1:
@@ -561,18 +592,18 @@ class IntroAnimation:
                 rune.draw(screen, t, rune_global)
 
         # 4. Embers ───────────────────────────────────────────────────────────
-        ember_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        self._ember_surf.fill((0, 0, 0, 0))
         for e in self._embers:
-            e.draw(ember_surf, t)
+            e.draw(self._ember_surf, t)
         if phase >= 2:
-            screen.blit(ember_surf, (0, 0))
+            screen.blit(self._ember_surf, (0, 0))
 
         # 5. Voice particles ──────────────────────────────────────────────────
         if self._v_parts:
-            vp_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            self._vp_surf.fill((0, 0, 0, 0))
             for p in self._v_parts:
-                p.draw(vp_surf)
-            screen.blit(vp_surf, (0, 0))
+                p.draw(self._vp_surf)
+            screen.blit(self._vp_surf, (0, 0))
 
         # 6. Centre glow / orb ────────────────────────────────────────────────
         if phase >= 2:
@@ -580,13 +611,13 @@ class IntroAnimation:
 
         # 7. Orb glow rings ───────────────────────────────────────────────────
         if phase >= 2 and self._orb_rings:
-            ring_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            self._ring_surf.fill((0, 0, 0, 0))
             for ring in self._orb_rings:
-                ring.draw(ring_surf, t)
+                ring.draw(self._ring_surf, t)
             if phase == 6:
                 ring_a = int(255 * max(0.0, 1.0 - pt / _PHASE_DUR[6]))
-                ring_surf.set_alpha(ring_a)
-            screen.blit(ring_surf, (0, 0))
+                self._ring_surf.set_alpha(ring_a)
+            screen.blit(self._ring_surf, (0, 0))
 
         # 8. Voice lines ──────────────────────────────────────────────────────
         if 2 <= phase <= 4:
@@ -599,32 +630,31 @@ class IntroAnimation:
 
         # 10. Title sparkles ──────────────────────────────────────────────────
         if self._title_sparkles:
-            sp_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            self._sp_surf.fill((0, 0, 0, 0))
             for s in self._title_sparkles:
-                s.draw(sp_surf)
-            screen.blit(sp_surf, (0, 0))
+                s.draw(self._sp_surf)
+            screen.blit(self._sp_surf, (0, 0))
 
         # 11. Shockwaves & burst particles ─────────────────────────────────────
         if self._shockwaves or self._bursts:
-            fx_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            self._fx_surf.fill((0, 0, 0, 0))
             for w in self._shockwaves:
-                w.draw(fx_surf)
+                w.draw(self._fx_surf)
             for b in self._bursts:
-                b.draw(fx_surf)
-            screen.blit(fx_surf, (0, 0))
+                b.draw(self._fx_surf)
+            screen.blit(self._fx_surf, (0, 0))
 
         # 12. Lens flare ───────────────────────────────────────────────────────
         if self._lens_flare is not None:
-            flare_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
-            self._lens_flare.draw(flare_surf)
-            screen.blit(flare_surf, (0, 0))
+            self._flare_surf.fill((0, 0, 0, 0))
+            self._lens_flare.draw(self._flare_surf)
+            screen.blit(self._flare_surf, (0, 0))
 
         # 13. Flash (burst entry) ──────────────────────────────────────────────
         if self._flash_alpha > 0:
-            flash = pygame.Surface((sw, sh))
-            flash.fill(WHITE_GLOW)
-            flash.set_alpha(int(self._flash_alpha))
-            screen.blit(flash, (0, 0))
+            self._flash_surf.fill(WHITE_GLOW)
+            self._flash_surf.set_alpha(int(self._flash_alpha))
+            screen.blit(self._flash_surf, (0, 0))
 
         # 14. Vignette ─────────────────────────────────────────────────────────
         if self._vignette_alpha > 1:
@@ -632,24 +662,19 @@ class IntroAnimation:
 
         # 15. Fade overlays ────────────────────────────────────────────────────
         if phase == 0:
-            # Pure black — full opacity
             screen.fill((0, 0, 0))
         elif phase == 1:
-            # Fade from black: alpha decreases as pt increases
             fade_a = max(0, int(255 * (1.0 - ease_out_cubic(min(1.0, pt / 1.5)))))
             if fade_a > 0:
-                ov = pygame.Surface((sw, sh))
-                ov.fill((0, 0, 0))
-                ov.set_alpha(fade_a)
-                screen.blit(ov, (0, 0))
+                self._ov_surf.fill((0, 0, 0))
+                self._ov_surf.set_alpha(fade_a)
+                screen.blit(self._ov_surf, (0, 0))
         elif phase == 6:
-            # Fade to black
             fade_a = int(255 * ease_out_cubic(min(1.0, pt / _PHASE_DUR[6])))
             if fade_a > 0:
-                ov = pygame.Surface((sw, sh))
-                ov.fill((0, 0, 0))
-                ov.set_alpha(fade_a)
-                screen.blit(ov, (0, 0))
+                self._ov_surf.fill((0, 0, 0))
+                self._ov_surf.set_alpha(fade_a)
+                screen.blit(self._ov_surf, (0, 0))
 
         # 16. Skip hint ────────────────────────────────────────────────────────
         if self._skip_surf and 1 <= phase <= 4:
@@ -665,17 +690,20 @@ class IntroAnimation:
 
     def _draw_vignette(self, screen, sw, sh):
         """Darken the edges of the screen."""
-        r = int(math.hypot(sw, sh) / 2)
-        s = pygame.Surface((sw, sh), pygame.SRCALPHA)
-        a = int(self._vignette_alpha)
-        for radius in range(r, 0, -int(r / 30 + 1)):
-            ratio = radius / r
-            ca = int(a * (1 - ratio) ** 2)
-            if ca < 1:
-                continue
-            pygame.draw.circle(s, (0, 0, 0, max(0, min(255, ca))),
-                               (sw // 2, sh // 2), radius)
-        screen.blit(s, (0, 0))
+        if not hasattr(self, '_vig_cache_sw') or self._vig_cache_sw != sw or self._vig_cache_sh != sh:
+            self._vig_cache_sw, self._vig_cache_sh = sw, sh
+            r = int(math.hypot(sw, sh) / 2)
+            self._vig_base = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            for radius in range(r, 0, -max(1, r // 30)):
+                ratio = radius / r
+                ca = int(200 * (1 - ratio) ** 2)
+                if ca < 1:
+                    continue
+                pygame.draw.circle(self._vig_base, (0, 0, 0, max(0, min(255, ca))),
+                                   (sw // 2, sh // 2), radius)
+        v = self._vig_base.copy()
+        v.set_alpha(min(255, int(self._vignette_alpha)))
+        screen.blit(v, (0, 0))
 
     def _draw_nebula(self, screen, sw, sh, t):
         """Draw a gently pulsing coloured nebula in the background."""
@@ -708,6 +736,7 @@ class IntroAnimation:
         if phase == 6:
             a_mult = max(0.0, 1.0 - pt / _PHASE_DUR[6])
 
+        ns = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
         for ri in range(r, 0, -3):
             ratio = ri / r
             base_a = int(50 * (1.0 - ratio) * a_mult)
@@ -717,9 +746,8 @@ class IntroAnimation:
                 max(0, min(255, int(180 + 70 * (1 - ratio)))),
                 max(0, min(60, base_a))
             )
-            ns = pygame.Surface((ri * 2, ri * 2), pygame.SRCALPHA)
-            pygame.draw.circle(ns, col, (ri, ri), ri)
-            screen.blit(ns, (cx - ri, cy - ri))
+            pygame.draw.circle(ns, col, (r, r), ri)
+        screen.blit(ns, (cx - r, cy - r))
 
     def _draw_voice_line(self, screen, sw, sh, cx, cy, line_idx, t, pt, phase):
         full_text = _VOICE_LINES[line_idx]
