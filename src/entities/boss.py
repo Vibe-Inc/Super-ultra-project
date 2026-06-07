@@ -649,15 +649,30 @@ class Boss(Enemy):
 
     def draw(self, screen: pygame.Surface, camera_offset=None):
         if self.intro is not None and not self.intro.finished:
-            self.intro.draw_overlay(screen)
             return
         if self.phase_transition is not None and not self.phase_transition.finished:
-            self.phase_transition.draw_overlay(screen)
-            super().draw(screen, camera_offset)
             return
-        super().draw(screen, camera_offset)
-        self._draw_boss_hp_bar(screen)
+        img = self.image
+        if self.direction == "side" and self.flip:
+            img = self.animations_flipped["side"][self.frame_index]
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+        draw_pos = (int(self.pos.x - camera_offset.x), int(self.pos.y - camera_offset.y))
+        screen.blit(img, draw_pos)
         self._draw_phase_aura(screen, camera_offset)
+
+    def draw_overlay(self, screen: pygame.Surface):
+        if self.intro is not None and not self.intro.finished:
+            self.intro.draw_overlay(screen)
+        if self.phase_transition is not None and not self.phase_transition.finished:
+            self.phase_transition.draw_overlay(screen)
+
+    def draw_hp_bar(self, screen: pygame.Surface, camera_offset=None):
+        if self.intro is not None and not self.intro.finished:
+            return
+        if self.phase_transition is not None and not self.phase_transition.finished:
+            return
+        self._draw_boss_hp_bar(screen)
 
     def draw_intro_text(self, screen: pygame.Surface):
         if self.intro is not None and not self.intro.finished:

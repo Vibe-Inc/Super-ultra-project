@@ -2488,11 +2488,6 @@ class Game(State):
             elif kind == 'item':
                 entry[2].draw(screen, camera_offset)
 
-        # Draw boss intro text OVER entities (name + title)
-        for enemy in self.enemies:
-            if isinstance(enemy, Boss):
-                enemy.draw_intro_text(screen)
-
         try:
             if getattr(self, 'fishing', None):
                 self.fishing.draw(screen, camera_offset)
@@ -2513,6 +2508,17 @@ class Game(State):
         # upper halves of trees / rocks and never get hidden behind
         # tall tile art.
         self.map.draw_fringe_overlay(screen, camera_offset, self.character)
+
+        # Draw HP bars on top of everything (including fringe)
+        for enemy in self.enemies:
+            if _is_visible(enemy):
+                enemy.draw_hp_bar(screen, camera_offset)
+
+        # Draw boss overlays (intro/phase transitions) on top of everything
+        for enemy in self.enemies:
+            if isinstance(enemy, Boss):
+                enemy.draw_overlay(screen)
+                enemy.draw_intro_text(screen)
 
         try:
             if getattr(self, 'gathering', None):
