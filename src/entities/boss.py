@@ -652,11 +652,14 @@ class Boss(Enemy):
             return
         if self.phase_transition is not None and not self.phase_transition.finished:
             return
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+        # Draw the windup danger zone FIRST (behind the boss) so it is
+        # visible while the player can still parry.
+        self._draw_attack_windup(screen, camera_offset)
         img = self.image
         if self.direction == "side" and self.flip:
             img = self.animations_flipped["side"][self.frame_index]
-        if camera_offset is None:
-            camera_offset = pygame.Vector2(0, 0)
         draw_pos = (int(self.pos.x - camera_offset.x), int(self.pos.y - camera_offset.y))
         screen.blit(img, draw_pos)
         self._draw_phase_aura(screen, camera_offset)
@@ -679,6 +682,75 @@ class Boss(Enemy):
             self.intro.draw_text(screen)
         if self.phase_transition is not None and not self.phase_transition.finished:
             self.phase_transition.draw_text(screen)
+
+
+    def _draw_attack_windup(self, screen: pygame.Surface, camera_offset=None):
+        """Render the 3-phase melee windup danger zone.
+
+        The boss uses the Enemy 3-phase attack system (windup -> telegraph
+        -> strike). While in windup or telegraph, this method renders a
+        pulsing red arc/circle so the player knows they can parry the
+        incoming melee strike.
+        """
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+        if self._attack_phase not in ("windup", "telegraph"):
+            return
+        total_windup = self._windup_duration + self._telegraph_duration
+        if total_windup <= 0:
+            return
+        phase_prog = min(1.0, self._attack_phase_timer / total_windup)
+        now_ms = pygame.time.get_ticks()
+        pulse = 0.6 + 0.4 * math.sin(now_ms * 0.006 + phase_prog * 8)
+        if self._attack_phase == "telegraph":
+            base = (255, 70, 70)
+            fade = int(110 + 90 * phase_prog * pulse)
+        else:
+            base = (255, 130, 90)
+            fade = int(60 + 70 * phase_prog * pulse)
+        w_rng = self.attack_windup_range * 1.4
+        rect = self.get_rect()
+        enemy_cx = int(rect.centerx - camera_offset.x)
+        enemy_cy = int(rect.centery - camera_offset.y)
+        if getattr(self, "attack_windup_coverage", "arc") == "circle":
+            for layer in range(2):
+                lr = int(w_rng * (0.9 + layer * 0.1))
+                a = max(20, fade // (layer + 1))
+                pygame.draw.circle(
+                    screen, (*base, a),
+                    (enemy_cx, enemy_cy), max(2, lr), max(1, 3 - layer),
+                )
+        else:
+            if self.target_entity:
+                tdir = pygame.Vector2(self.target_entity.pos) - self.pos
+                if tdir.length_squared() > 0:
+                    tdir = tdir.normalize()
+            else:
+                tdir = pygame.Vector2(1, 0)
+            base_angle = -math.degrees(math.atan2(tdir.y, tdir.x))
+            sweep = float(getattr(self, "attack_windup_angle", 130.0)) * 0.85
+            for layer in range(2):
+                sr = int(w_rng * (0.8 + layer * 0.1))
+                sz = max(32, int(sr * 2 + 20))
+                surf2 = pygame.Surface((sz, sz), pygame.SRCALPHA)
+                a = max(20, fade // (layer + 1))
+                pygame.draw.arc(
+                    surf2, (*base, a),
+                    pygame.Rect(sz // 2 - sr, sz // 2 - sr, sr * 2, sr * 2),
+                    math.radians(270 - sweep * 0.5),
+                    math.radians(270 + sweep * 0.5), max(1, 4 - layer),
+                )
+                rotated = pygame.transform.rotate(surf2, base_angle - 270)
+                screen.blit(rotated, rotated.get_rect(center=(enemy_cx, enemy_cy)))
+        try:
+            hint_font = pygame.font.SysFont("arial", 11, bold=True)
+        except Exception:
+            hint_font = pygame.font.Font(None, 14)
+        hint_surf = hint_font.render("PARRY!", True, (255, 255, 200))
+        hint_surf.set_alpha(int(180 + 60 * pulse))
+        hint_x = enemy_cx - hint_surf.get_width() // 2
+        hint_y = enemy_cy - int(w_rng) - hint_surf.get_height() - 6
+        screen.blit(hint_surf, (hint_x, hint_y))
 
     def _draw_phase_aura(self, screen: pygame.Surface, camera_offset=None):
         if camera_offset is None:

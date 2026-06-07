@@ -2,7 +2,7 @@ import math
 import pygame
 import src.config as cfg
 from src.ui.widgets import Tooltip, Button
-from src.inventory.system import Inventory_slider, ShopInventory, MAIN_player_inventory, MAIN_player_inventory_equipment, MAIN_player_hotbar
+from src.inventory.system import Inventory_slider, ShopInventory, MAIN_player_inventory, MAIN_player_inventory_equipment, MAIN_player_hotbar, ChestInventory
 from src.inventory.inventory_renderer import InventoryRenderer
 
 
@@ -176,6 +176,8 @@ class INVENTORY_manager:
         self.player_inventory_opened = False
 
         self.current_shop_inv = None
+        self.current_chest_inv = None
+        self.chest_opened = False
         self.hotbar = None
 
         from src.inventory.system import CraftingGrid
@@ -238,10 +240,21 @@ class INVENTORY_manager:
             overlay.fill((*cfg.INV_OVERLAY_COLOR, int(self.overlay_alpha)))
             screen.blit(overlay, (0, 0))
 
+        chest_drawn = False
         for inv in self.active_inventories:
             if isinstance(inv, ShopInventory):
                 self.renderer.draw_shop(screen, inv)
+            elif isinstance(inv, ChestInventory) and self.chest_opened and not chest_drawn:
+                pl_inv = None
+                for ainv in self.active_inventories:
+                    if isinstance(ainv, MAIN_player_inventory):
+                        pl_inv = ainv
+                        break
+                self.renderer.draw_unified_chest(screen, inv, pl_inv)
+                chest_drawn = True
             elif isinstance(inv, MAIN_player_inventory):
+                if self.chest_opened:
+                    continue
                 self.renderer.draw_player_inventory(screen, inv)
 
                 equip_inv = None
@@ -292,7 +305,7 @@ class INVENTORY_manager:
             self.active_split_popup.handle_event(event)
             return
 
-        if self.player_inventory_opened:
+        if self.player_inventory_opened and not self.chest_opened:
             self.crafting_system.inventory_interactions(event, self)
 
         if self.hotbar: self.hotbar.handle_hotkeys(event)
@@ -417,6 +430,56 @@ class INVENTORY_manager:
             self.add_active_inventory(shop_inv)
             self.current_shop_inv = shop_inv
 
+    def toggle_chest(self, pl_inv, chest_inv):
+        if chest_inv in self.active_inventories:
+            self._return_held_item()
+            self.remove_active_inventory(chest_inv)
+            self.remove_active_inventory(pl_inv)
+            pl_inv.pos_x = cfg.MAIN_INV_pos_x
+            self.player_inventory_opened = False
+            self.chest_opened = False
+            if self.current_chest_inv is chest_inv:
+                self.current_chest_inv = None
+        else:
+            self.player_inventory_opened = True
+            self.chest_opened = True
+            sc = cfg.ui_scale()
+            slot = chest_inv.slot_size
+            border = chest_inv.border
+            player_w = (slot + border) * pl_inv.columns
+            chest_w = (slot + border) * chest_inv.columns
+            gap = int(40 * sc)
+            pad = int(24 * sc)
+            title_h = int(70 * sc)
+            total_w = player_w + gap + chest_w + pad * 2
+
+            panel_x = (cfg.SCREEN_WIDTH - total_w) // 2
+            grid_y = (cfg.SCREEN_HEIGHT - (slot + border) * pl_inv.rows) // 2
+
+            pl_inv.pos_x = panel_x + pad
+            pl_inv.pos_y = grid_y
+            chest_inv.pos_x = panel_x + pad + player_w + gap
+            chest_inv.pos_y = grid_y
+
+            self.add_active_inventory(pl_inv)
+            self.add_active_inventory(chest_inv)
+            self.current_chest_inv = chest_inv
+
+    def close_chest(self, chest_inv):
+        if chest_inv in self.active_inventories:
+            self._return_held_item()
+            self.remove_active_inventory(chest_inv)
+            for inv in list(self.active_inventories):
+                if isinstance(inv, MAIN_player_inventory):
+                    self.remove_active_inventory(inv)
+            gs = self.app.manager.states.get("gameplay")
+            if gs and hasattr(gs, 'MAIN_player_inv'):
+                gs.MAIN_player_inv.pos_x = cfg.MAIN_INV_pos_x
+            self.player_inventory_opened = False
+            self.chest_opened = False
+            if self.current_chest_inv is chest_inv:
+                self.current_chest_inv = None
+
     def get_item_under_mouse(self):
         if not self.active_inventories:
             return None
@@ -465,7 +528,10 @@ class INVENTORY_manager:
 
     def PLAYER_inventory_open(self, event, pl_inv, equip_inv):
         if event.type == pygame.KEYDOWN and event.key == pygame.K_i:
-            self.toggle_inventory(pl_inv, equip_inv)
+            if self.chest_opened and self.current_chest_inv:
+                self.close_chest(self.current_chest_inv)
+            else:
+                self.toggle_inventory(pl_inv, equip_inv)
         if self.player_inventory_opened and event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.MOUSEMOTION):
             self.handle_event(event)
        
