@@ -27,19 +27,19 @@ class WorldScaleMenu:
         self._open_time = 0.0
 
         s = cfg.ui_scale()
-        self.font_title = cfg.get_font(max(14, int(33 * s)))
-        self.font_section = cfg.get_font(max(11, int(19 * s)))
-        self.font_body = cfg.get_font(max(10, int(17 * s)))
-        self.font_small = cfg.get_font(max(8, int(14 * s)))
-        self.font_level = cfg.get_font(max(16, int(54 * s)))
+        self.font_title = cfg.get_font(max(20, int(46 * s)))
+        self.font_section = cfg.get_font(max(14, int(28 * s)))
+        self.font_body = cfg.get_font(max(13, int(24 * s)))
+        self.font_small = cfg.get_font(max(11, int(19 * s)))
+        self.font_level = cfg.get_font(max(24, int(78 * s)))
 
         self._last_known_level = 0
         self._ever_opened = False
         self._unlock_history = []
         self._latest_unlock_batch = None
 
-        self.panel_w = 520
-        self.panel_h = 700
+        self.panel_w = 760
+        self.panel_h = 820
 
         self.editor_mode = False
         self.editor_input = ""
@@ -65,6 +65,15 @@ class WorldScaleMenu:
             "Apply", (40, 80, 40), (60, 140, 60),
             self.font_small, (200, 200, 230), 4, self._apply_editor,
         )
+
+    def _fit_text(self, text, font, max_width):
+        """Trim text with an ellipsis if it would exceed max_width."""
+        if font.size(text)[0] <= max_width:
+            return text
+        ell = "..."
+        while text and font.size(text + ell)[0] > max_width:
+            text = text[:-1]
+        return (text + ell) if text else ell
 
     def _compute_new_unlocks(self, old_level, new_level):
         ability_unlocks = []
@@ -241,7 +250,8 @@ class WorldScaleMenu:
         cx = dx + self.panel_w // 2
 
         # ── title ─────────────────────────────────────────────
-        title = self.font_title.render("WORLD SCALE", True, self.TEXT_MAIN)
+        title_text = self._fit_text("WORLD SCALE", self.font_title, self.panel_w - 40)
+        title = self.font_title.render(title_text, True, self.TEXT_MAIN)
         tr = title.get_rect(centerx=cx, top=dy + 16)
         # title underline glow
         glow_col = (80, 60, 180, int(80 + 40 * math.sin(now * 2)))
@@ -266,20 +276,22 @@ class WorldScaleMenu:
             screen.blit(hdr, (dx + 30, lvl_y))
             lvl_y += hdr.get_height() + 6
             for lvl, name in abilities:
-                txt = self.font_body.render(f"  + Lv.{lvl}  {name}", True, (255, 255, 200))
-                screen.blit(txt, (dx + 30, lvl_y))
-                lvl_y += 18
+                txt_str = self._fit_text(f"  + Lv.{lvl}  {name}", self.font_body, self.panel_w - 80)
+                txt = self.font_body.render(txt_str, True, (255, 255, 200))
+                screen.blit(txt, (dx + 40, lvl_y))
+                lvl_y += self.font_body.get_height() + 4
             for _lvl, tname, tdesc in tags:
-                txt = self.font_body.render(f"  + {tname}  —  {tdesc}", True, (255, 210, 100))
-                screen.blit(txt, (dx + 30, lvl_y))
-                lvl_y += 18
+                txt_str = self._fit_text(f"  + {tname}  —  {tdesc}", self.font_body, self.panel_w - 80)
+                txt = self.font_body.render(txt_str, True, (255, 210, 100))
+                screen.blit(txt, (dx + 40, lvl_y))
+                lvl_y += self.font_body.get_height() + 4
             lvl_y += 4
             pygame.draw.line(screen, (70, 60, 40),
                              (dx + 60, lvl_y), (dx + self.panel_w - 60, lvl_y), 1)
             lvl_y += 14
 
         # ── level + ring ──────────────────────────────────────
-        lvl_str = str(ws.level)
+        lvl_str = self._fit_text(str(ws.level), self.font_level, 180)
         lvl_col = self.ACCENT_GOLD if ws.level >= 55 else self.TEXT_MAIN
         lvl_surf = self.font_level.render(lvl_str, True, lvl_col)
         lvl_glow = self.font_level.render(lvl_str, True, (40, 40, 100))
@@ -324,15 +336,15 @@ class WorldScaleMenu:
                                 ring_center[1] - lvl_label.get_height() // 2 - 4))
 
         # ── xp bar ────────────────────────────────────────────
-        bar_y = ring_center[1] + ring_r + 16
-        bar_x = dx + 30
-        bar_w = self.panel_w - 60
+        bar_y = ring_center[1] + ring_r + 18
+        bar_x = dx + 40
+        bar_w = self.panel_w - 80
         bar_h = 22
 
         if needed > 0:
-            xp_text = self.font_small.render(f"XP: {ws.xp} / {needed}", True, (180, 180, 220))
+            xp_text = self.font_small.render(self._fit_text(f"XP: {ws.xp} / {needed}", self.font_small, self.panel_w - 80), True, (180, 180, 220))
         else:
-            xp_text = self.font_small.render("MAX LEVEL — All upgrades active", True, self.ACCENT_GOLD)
+            xp_text = self.font_small.render(self._fit_text("MAX LEVEL — All upgrades active", self.font_small, self.panel_w - 80), True, self.ACCENT_GOLD)
 
         screen.blit(xp_text, (bar_x, bar_y - 16))
 
@@ -370,32 +382,36 @@ class WorldScaleMenu:
         # ── divider helper ────────────────────────────────────
         def div(y):
             pygame.draw.line(screen, (40, 38, 70),
-                             (dx + 50, y), (dx + self.panel_w - 50, y))
+                             (dx + 40, y), (dx + self.panel_w - 40, y))
 
         def section_hdr(text, y, color=None):
-            surf = self.font_section.render(text, True, color or self.TEXT_MAIN)
-            screen.blit(surf, (dx + 30, y))
+            text_fit = self._fit_text(text, self.font_section, self.panel_w - 80)
+            surf = self.font_section.render(text_fit, True, color or self.TEXT_MAIN)
+            screen.blit(surf, (dx + 40, y))
             return y + surf.get_height() + 4
 
         # ── abilities ─────────────────────────────────────────
-        ay = bar_y + bar_h + 12
+        ay = bar_y + bar_h + 14
         div(ay)
-        ay += 6
+        ay += 10
         ay = section_hdr("UNLOCKED ABILITIES", ay, (180, 200, 255))
 
         if self._unlock_history:
+            row_h = self.font_body.get_height() + 8
             for lvl, name in self._unlock_history:
                 badge = self.font_small.render(f"Lv.{lvl}", True, (140, 200, 255))
-                screen.blit(badge, (dx + 32, ay + 1))
-                dot_x = dx + 28
-                pygame.draw.circle(screen, (100, 180, 255), (dot_x + 4, ay + 7), 3)
-                txt = self.font_body.render(name, True, (200, 240, 200))
-                screen.blit(txt, (dx + 64, ay))
-                ay += 22
+                screen.blit(badge, (dx + 40, ay + 2))
+                dot_x = dx + 36
+                pygame.draw.circle(screen, (100, 180, 255), (dot_x + 4, ay + 10), 4)
+                name_fit = self._fit_text(name, self.font_body, self.panel_w - 140)
+                txt = self.font_body.render(name_fit, True, (200, 240, 200))
+                screen.blit(txt, (dx + 80, ay))
+                ay += row_h
         else:
-            txt = self.font_small.render("No abilities unlocked yet", True, self.TEXT_DIM)
-            screen.blit(txt, (dx + 34, ay))
-            ay += 18
+            txt_str = self._fit_text("No abilities unlocked yet", self.font_small, self.panel_w - 100)
+            txt = self.font_small.render(txt_str, True, self.TEXT_DIM)
+            screen.blit(txt, (dx + 40, ay))
+            ay += self.font_small.get_height() + 6
 
         # ── enemy tags ────────────────────────────────────────
         tags = ws.get_milestone_tags()
@@ -404,6 +420,7 @@ class WorldScaleMenu:
             div(ay)
             ay += 6
             ay = section_hdr("ENEMY BONUSES", ay, (255, 220, 140))
+            row_h = max(self.font_body.get_height(), self.font_small.get_height()) + 8
             for tag in tags:
                 colors = {
                     'aggressive': ((200, 60, 60), "Aggressive"),
@@ -416,12 +433,14 @@ class WorldScaleMenu:
                     'empowered': 'Extra projectiles, lifesteal',
                     'elite': 'Unique per-enemy abilities',
                 }.get(tag, tag)
-                pygame.draw.circle(screen, tc, (dx + 34, ay + 8), 4)
-                name_surf = self.font_body.render(tlabel, True, tc)
-                screen.blit(name_surf, (dx + 44, ay + 1))
-                desc_surf = self.font_small.render(desc, True, self.TEXT_DIM)
-                screen.blit(desc_surf, (dx + 140, ay + 2))
-                ay += 22
+                pygame.draw.circle(screen, tc, (dx + 46, ay + 10), 5)
+                label_fit = self._fit_text(tlabel, self.font_body, 160)
+                name_surf = self.font_body.render(label_fit, True, tc)
+                screen.blit(name_surf, (dx + 60, ay + 1))
+                desc_fit = self._fit_text(desc, self.font_small, self.panel_w - 200)
+                desc_surf = self.font_small.render(desc_fit, True, self.TEXT_DIM)
+                screen.blit(desc_surf, (dx + 220, ay + 3))
+                ay += row_h
 
         # ── player bonuses ────────────────────────────────────
         ay += 2
@@ -439,18 +458,21 @@ class WorldScaleMenu:
             ("Block", f"{60 + t * 15:.0f}%", t > 0.01),
         ]
         # grid: 2 columns
-        col_w = (self.panel_w - 80) // 2
+        col_w = (self.panel_w - 100) // 2
+        row_h = self.font_small.get_height() + 4
         for idx, (label, val, active) in enumerate(bonus_items):
             col = idx % 2
             row = idx // 2
-            bx = dx + 30 + col * (col_w + 10)
-            by = ay + row * 18
+            bx = dx + 40 + col * (col_w + 10)
+            by = ay + row * row_h
             color = (180, 220, 180) if active and ws.level > 0 else (90, 90, 100)
-            lbl = self.font_small.render(label, True, color)
-            v = self.font_small.render(val, True, (200, 200, 220) if active else (100, 100, 110))
+            lbl_text = self._fit_text(label, self.font_small, col_w - 60)
+            v_text = self._fit_text(val, self.font_small, col_w - 100)
+            lbl = self.font_small.render(lbl_text, True, color)
+            v = self.font_small.render(v_text, True, (200, 200, 220) if active else (100, 100, 110))
             screen.blit(lbl, (bx, by))
-            screen.blit(v, (bx + 120, by))
-        ay += ((len(bonus_items) + 1) // 2) * 18 + 6
+            screen.blit(v, (bx + 140, by))
+        ay += ((len(bonus_items) + 1) // 2) * row_h + 8
 
         # ── enemy stats ───────────────────────────────────────
         div(ay)
@@ -463,12 +485,13 @@ class WorldScaleMenu:
             (f"DMG x{dmg:.1f}", (200, 120, 80)),
             (f"SPD x{spd:.1f}", (200, 160, 80)),
         ]
-        stat_w = (self.panel_w - 80) // 3
+        stat_w = (self.panel_w - 100) // 3
         for i, (text, color) in enumerate(stats):
-            sx = dx + 30 + i * (stat_w + 10)
-            surf = self.font_small.render(text, True, color)
+            sx = dx + 40 + i * (stat_w + 10)
+            text_fit = self._fit_text(text, self.font_small, stat_w)
+            surf = self.font_small.render(text_fit, True, color)
             screen.blit(surf, (sx, ay))
-        ay += 24
+        ay += self.font_small.get_height() + 8
         div(ay)
 
         # ── editor mode ───────────────────────────────────────
