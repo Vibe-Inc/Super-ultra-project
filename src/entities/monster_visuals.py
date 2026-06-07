@@ -134,6 +134,83 @@ def _palette_for(style: str) -> dict:
             "steam": (220, 220, 225, 90), "smoke": (90, 80, 75, 110),
             "shadow": (0, 0, 0, 48),
         },
+        "phantom": {
+            "skin": (160, 120, 200), "skin_light": (200, 170, 240), "skin_dark": (80, 50, 130),
+            "skin_mid": (130, 90, 170),
+            "robe": (60, 30, 90), "robe_light": (100, 60, 140), "robe_dark": (30, 15, 50),
+            "accent": (200, 140, 255), "accent_dark": (140, 80, 200),
+            "eye_white": (220, 200, 255), "eye_pupil": (180, 80, 255),
+            "glow": (180, 140, 240, 60), "glow_bright": (220, 180, 255, 100),
+            "wisp": (160, 120, 220, 80), "wisp_bright": (200, 170, 255, 120),
+            "shadow": (0, 0, 0, 48),
+        },
+        "titan": {
+            "stone": (140, 130, 115), "stone_light": (180, 170, 155), "stone_dark": (80, 72, 60),
+            "stone_mid": (110, 100, 88),
+            "rune": (100, 200, 160), "rune_dark": (60, 140, 100), "rune_glow": (140, 240, 200, 80),
+            "moss": (60, 100, 50), "moss_light": (90, 140, 75),
+            "eye_white": (200, 230, 210), "eye_pupil": (80, 200, 140),
+            "crack": (50, 45, 38), "shadow": (0, 0, 0, 48),
+        },
+        "cryomancer": {
+            "robe": (40, 80, 140), "robe_light": (80, 140, 200), "robe_dark": (20, 40, 80),
+            "robe_mid": (60, 110, 170),
+            "skin": (180, 200, 220), "skin_dark": (100, 120, 140),
+            "accent": (140, 200, 255), "accent_dark": (80, 150, 220),
+            "eye_white": (200, 230, 255), "eye_pupil": (100, 180, 255),
+            "crystal": (160, 220, 255), "crystal_light": (200, 240, 255), "crystal_dark": (100, 170, 230),
+            "frost": (180, 230, 255, 70), "glow": (140, 200, 255, 55), "shadow": (0, 0, 0, 48),
+        },
+        "shadowmancer": {
+            "robe": (40, 20, 60), "robe_light": (70, 40, 100), "robe_dark": (20, 10, 35),
+            "robe_mid": (55, 30, 80),
+            "skin": (100, 80, 120), "skin_dark": (60, 40, 80),
+            "accent": (180, 60, 220), "accent_dark": (120, 30, 160),
+            "eye_white": (200, 180, 240), "eye_pupil": (180, 60, 255),
+            "shadow_energy": (100, 40, 160, 70), "shadow_bright": (160, 80, 220, 100),
+            "void": (30, 10, 50), "glow": (140, 60, 200, 55), "shadow": (0, 0, 0, 48),
+        },
+        "revenant": {
+            "armor": (60, 55, 70), "armor_light": (90, 85, 100), "armor_dark": (35, 30, 42),
+            "armor_mid": (72, 66, 82),
+            "bone": (200, 190, 170), "bone_dark": (140, 130, 115),
+            "soul": (120, 220, 180), "soul_dark": (60, 160, 120), "soul_glow": (140, 255, 200, 70),
+            "eye_white": (200, 240, 220), "eye_pupil": (60, 200, 140),
+            "rune": (80, 200, 150), "rune_dark": (40, 140, 90),
+            "tattered": (40, 35, 50), "shadow": (0, 0, 0, 48),
+        },
+        "molten": {
+            "rock": (80, 55, 35), "rock_light": (120, 85, 50), "rock_dark": (45, 28, 15),
+            "rock_mid": (65, 42, 25),
+            "lava": (255, 140, 30), "lava_bright": (255, 200, 80), "lava_dark": (200, 80, 20),
+            "lava_glow": (255, 160, 50, 80),
+            "ember": (255, 100, 20), "ember_bright": (255, 180, 60),
+            "eye_white": (255, 220, 150), "eye_pupil": (255, 100, 20),
+            "crack": (255, 120, 30), "crack_bright": (255, 180, 60),
+            "glow": (255, 100, 20, 55), "shadow": (0, 0, 0, 48),
+        },
+        "stormcaller": {
+            "robe": (30, 40, 90), "robe_light": (60, 80, 150), "robe_dark": (15, 20, 50),
+            "robe_mid": (45, 60, 120),
+            "skin": (170, 180, 210), "skin_dark": (100, 110, 140),
+            "accent": (100, 180, 255), "accent_dark": (50, 120, 200),
+            "eye_white": (200, 230, 255), "eye_pupil": (80, 160, 255),
+            "lightning": (140, 200, 255), "lightning_bright": (200, 230, 255),
+            "lightning_dark": (80, 140, 220),
+            "glow": (100, 180, 255, 60), "spark": (200, 240, 255, 100),
+            "shadow": (0, 0, 0, 48),
+        },
+        "plaguebearer": {
+            "robe": (50, 60, 30), "robe_light": (80, 100, 50), "robe_dark": (25, 30, 15),
+            "robe_mid": (65, 78, 38),
+            "skin": (110, 130, 80), "skin_dark": (70, 85, 50),
+            "accent": (140, 200, 60), "accent_dark": (90, 150, 30),
+            "eye_white": (200, 230, 180), "eye_pupil": (160, 200, 60),
+            "plague": (120, 180, 50), "plague_bright": (160, 220, 80), "plague_dark": (80, 130, 30),
+            "plague_glow": (130, 200, 50, 60),
+            "pustule": (180, 220, 80), "pustule_dark": (120, 160, 40),
+            "glow": (120, 180, 50, 55), "shadow": (0, 0, 0, 48),
+        },
     }
     return palettes.get(style, palettes["brute"])
 
@@ -1622,10 +1699,1227 @@ def _draw_guardian(s, w, h, cx, cy, p, dir, bob, frame):
         pygame.draw.circle(s, p["iron_dark"], (sh_cx, sh_cy), 1)
 
 
+# ============================================================
+# PHANTOM — ghostly wraith with translucent form and trailing wisps
+# ============================================================
+def _draw_phantom(s, w, h, cx, cy, p, dir, bob, frame):
+    _draw_shadow(s, cx, h, p, bob)
+    pulse = [0, 2, 0, -2][frame]
+    hover = [0, -3, 0, 3][frame]
+    lo, ro, la, ra = _walk_offset(frame)
+
+    # ghostly aura — double ring
+    ag = pygame.Surface((w, h), pygame.SRCALPHA)
+    aura_r = 28 + (frame % 2) * 4
+    pygame.draw.circle(ag, p["glow"], (cx, int(h * 0.45) + bob + hover), aura_r)
+    pygame.draw.circle(ag, p["glow_bright"], (cx, int(h * 0.45) + bob + hover), aura_r // 2)
+    pygame.draw.circle(ag, (*p["glow"][:3], 30), (cx, int(h * 0.45) + bob + hover), aura_r + 6)
+    s.blit(ag, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # spectral afterimages (ghostly doubles behind)
+    for ai in range(2):
+        ax_off = (ai + 1) * 6 * (-1 if dir == "side" else 1)
+        ay_off = (ai + 1) * 4
+        a_alpha = max(15, 50 - ai * 20)
+        ag2 = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(ag2, (*p["accent"][:3], a_alpha),
+                           (cx + ax_off, int(h * 0.35) + bob + hover + ay_off), 10 - ai * 2)
+        s.blit(ag2, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # trailing wisps below — more numerous, flowing
+    for wi in range(5):
+        wy = int(h * 0.68) + bob + wi * 5
+        wx = cx + int(math.sin(frame * 1.5 + wi * 2.1) * (8 + wi * 3))
+        wisp_a = max(15, 80 - wi * 14)
+        ws = 5 - wi // 2
+        pygame.draw.ellipse(s, (*p["wisp"][:3], wisp_a), (wx - ws, wy, ws * 2, 6))
+        # inner bright wisp core
+        if wi < 3:
+            pygame.draw.ellipse(s, (*p["wisp_bright"][:3], wisp_a // 2),
+                                (wx - 2, wy + 1, 4, 3))
+
+    # spectral chains hanging from wrists
+    for ci, (chx, chfl) in enumerate([(bx := cx - 12, -1), (cx + 12, 1)]):
+        for link in range(3):
+            ly = int(h * 0.55) + bob + hover + link * 6
+            lx = chx + chfl * 2 + int(math.sin(frame * 1.2 + link + ci) * 2)
+            ls = max(1, 3 - link)
+            la_c = max(40, 120 - link * 25)
+            pygame.draw.ellipse(s, (*p["bone_dark"][:3], la_c), (lx - ls, ly, ls * 2, ls + 1))
+            # chain glow
+            cg = pygame.Surface((w, h), pygame.SRCALPHA)
+            pygame.draw.circle(cg, (*p["accent"][:3], 25), (lx, ly + ls), ls + 2)
+            s.blit(cg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # tattered robe body — double-layer with inner glow seams
+    bw = int(w * 0.52); bh = int(h * 0.44)
+    bx = cx - bw // 2; by = int(h * 0.30) + bob + hover
+    # outer robe
+    pygame.draw.polygon(s, p["robe"],
+        [(bx + 4, by), (bx + bw - 4, by), (bx + bw + 6, by + bh), (bx - 6, by + bh)])
+    # inner robe
+    pygame.draw.polygon(s, p["robe_dark"],
+        [(bx + 8, by + 4), (bx + bw - 8, by + 4), (bx + bw, by + bh - 4), (bx, by + bh - 4)])
+    # inner glow seams — vertical spirit lines
+    for sy2 in range(by + 10, by + bh - 6, 6):
+        glow_c = p["accent"] if sy2 % 12 == 0 else p["accent_dark"]
+        glow_a = 100 + pulse * 15
+        pygame.draw.line(s, (*glow_c[:3], glow_a), (cx - 4, sy2), (cx + 4, sy2), 1)
+    # spectral ribs visible through robe
+    for ri in range(4):
+        rib_y = by + 14 + ri * 7
+        rib_w = 6 + ri * 2
+        pygame.draw.arc(s, (*p["bone"][:3], 80),
+                        (cx - rib_w, rib_y, rib_w * 2, 5), 0.3, math.pi - 0.3, 1)
+    # spirit runes on robe
+    for si in range(3):
+        sr = frame * 0.6 + si * 2.1
+        srx = cx + int(math.sin(sr) * 8)
+        sry = by + 16 + si * 12
+        sg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(sg, (*p["accent"][:3], 40 + pulse * 8), (srx, sry), 3)
+        s.blit(sg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+        pygame.draw.circle(s, p["accent"], (srx, sry), 1)
+
+    # arms (wispy, ethereal) with ghostly trailing effect
+    for ax, fl in [(bx - 6, -1), (bx + bw - 2, 1)]:
+        arm_sway = [0, 2, 0, -2][frame]
+        arm_pts = [
+            (ax + arm_sway, by + 8 + bob),
+            (ax + fl * 14 + arm_sway, by + 20 + bob),
+            (ax + fl * 16 + arm_sway, by + 30 + bob),
+            (ax + fl * 4 + arm_sway, by + 22 + bob),
+        ]
+        pygame.draw.polygon(s, p["robe_dark"], arm_pts)
+        # spectral hand glow
+        hand_x = ax + fl * 16 + arm_sway
+        hand_y = by + 30 + bob
+        hg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(hg, (*p["accent"][:3], 40), (hand_x, hand_y), 5)
+        s.blit(hg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # spectral crown
+    crown_y = int(h * 0.10) + bob + hover
+    crown_pts = [(cx - 10, crown_y + 8), (cx - 7, crown_y), (cx - 3, crown_y + 4),
+                 (cx, crown_y - 4), (cx + 3, crown_y + 4), (cx + 7, crown_y), (cx + 10, crown_y + 8)]
+    pygame.draw.polygon(s, (*p["accent"][:3], 160), crown_pts)
+    pygame.draw.polygon(s, (*p["wisp_bright"][:3], 120), crown_pts, 1)
+    # crown gem
+    cg = pygame.Surface((w, h), pygame.SRCALPHA)
+    pygame.draw.circle(cg, (*p["accent"][:3], 80), (cx, crown_y + 2), 4)
+    s.blit(cg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+    pygame.draw.circle(s, p["accent"], (cx, crown_y + 2), 2)
+
+    # head — translucent with visible skull
+    hr = int(w * 0.19); hx, hy = cx, int(h * 0.20) + bob + hover
+    # ghostly outer glow
+    head_glow = pygame.Surface((w, h), pygame.SRCALPHA)
+    pygame.draw.circle(head_glow, (*p["glow"][:3], 40), (hx, hy), hr + 4)
+    s.blit(head_glow, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+    pygame.draw.circle(s, p["skin_dark"], (hx, hy + 3), hr)
+    pygame.draw.circle(s, p["skin"], (hx, hy), hr)
+    pygame.draw.circle(s, p["skin_light"], (hx, hy), hr - 3)
+    # inner skull hint
+    pygame.draw.ellipse(s, (*p["bone"][:3], 60), (hx - 5, hy - 2, 10, 8))
+    # nose hollow
+    pygame.draw.circle(s, (*p["skin_dark"][:3], 80), (hx, hy + 3), 2)
+
+    # hood — layered with spectral trim
+    pygame.draw.polygon(s, p["robe"],
+        [(hx - hr - 4, hy + 6), (hx - hr + 2, hy - 8), (hx, hy - 14), (hx + hr - 2, hy - 8), (hx + hr + 4, hy + 6)])
+    pygame.draw.polygon(s, p["robe_dark"],
+        [(hx - hr, hy + 4), (hx - hr + 4, hy - 5), (hx, hy - 10), (hx + hr - 4, hy - 5), (hx + hr, hy + 4)])
+    # hood trim glow
+    pygame.draw.line(s, (*p["accent"][:3], 80), (hx - hr + 2, hy - 7), (hx, hy - 13), 1)
+    pygame.draw.line(s, (*p["accent"][:3], 80), (hx, hy - 13), (hx + hr - 2, hy - 7), 1)
+
+    # glowing eyes — with eye trails
+    esp = 7 if dir != "side" else 5; so = 2 if dir == "side" else 0
+    for ex in (hx - esp + so, hx + esp + so):
+        eg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(eg, (180, 120, 255, 50), (ex, hy), 8)
+        pygame.draw.circle(eg, (220, 180, 255, 30), (ex, hy), 12)
+        s.blit(eg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+        pygame.draw.circle(s, p["eye_white"], (ex, hy), 4)
+        pygame.draw.circle(s, p["eye_pupil"], (ex, hy), 2)
+        pygame.draw.circle(s, (255, 255, 255, 180), (ex - 1, hy - 1), 1)
+        # eye trail upward
+        for ti in range(3):
+            ty = hy - 3 - ti * 3
+            ta = max(20, 80 - ti * 25)
+            pygame.draw.circle(s, (*p["accent"][:3], ta), (ex + pulse // 2, ty), 1)
+
+    # floating spirit wisps orbiting — more detailed
+    for wi in range(4):
+        angle = frame * 1.2 + wi * 1.57
+        wr = 16 + wi * 3
+        wx = cx + int(math.cos(angle) * wr)
+        wy = hy - 4 + int(math.sin(angle * 0.7) * 6)
+        ws = max(1, 3 - wi)
+        wa = max(30, 100 - wi * 15)
+        wg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(wg, (*p["accent"][:3], wa // 2), (wx, wy + bob), ws + 2)
+        s.blit(wg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+        pygame.draw.circle(s, (*p["accent"][:3], wa), (wx, wy + bob), ws)
+
+
+# ============================================================
+# TITAN — massive stone golem with glowing runes and moss
+# ============================================================
+def _draw_titan(s, w, h, cx, cy, p, dir, bob, frame):
+    _draw_shadow(s, cx, h, p, bob)
+    lo, ro, la, ra = _walk_offset(frame)
+    clank = [0, -1, 0, 1][frame]
+
+    # ground dust puff on step
+    if frame in (1, 3):
+        for di in range(3):
+            dx = cx + (di - 1) * 8 + lo
+            dy = int(h * 0.72) + bob + 18
+            da = max(20, 60 - di * 15)
+            pygame.draw.circle(s, (*p["stone"][:3], da), (dx, dy), 3 + di)
+
+    # heavy legs with stone blocks and moss
+    leg_y = int(h * 0.70) + bob
+    leg_h = 24
+    for lx, off, side in [(cx - 14 + lo, lo, -1), (cx + 4 + ro, ro, 1)]:
+        lh = leg_h + abs(off)
+        pygame.draw.rect(s, p["stone_dark"], (lx - 2, leg_y, 14, lh), border_radius=3)
+        pygame.draw.rect(s, p["stone"], (lx, leg_y + 2, 10, lh - 4), border_radius=2)
+        pygame.draw.rect(s, p["stone_light"], (lx + 1, leg_y + 2, 8, 3))
+        # stone block lines on leg
+        pygame.draw.line(s, p["crack"], (lx + 1, leg_y + lh // 2), (lx + 9, leg_y + lh // 2), 1)
+        # moss patches
+        pygame.draw.ellipse(s, p["moss"], (lx + 1, leg_y + lh - 5, 6, 4))
+        pygame.draw.ellipse(s, p["moss_light"], (lx + 3, leg_y + lh - 4, 3, 2))
+        # rune on shin
+        shin_g = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(shin_g, (*p["rune"][:3], 35), (lx + 5, leg_y + 6), 3)
+        s.blit(shin_g, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+        pygame.draw.circle(s, p["rune_dark"], (lx + 5, leg_y + 6), 2, 1)
+
+    # massive torso — multi-block stone body
+    bw = int(w * 0.76); bh = int(h * 0.40)
+    bx = cx - bw // 2; by = int(h * 0.28) + bob + clank
+    # outer stone shell
+    pygame.draw.rect(s, p["stone_dark"], (bx - 1, by, bw + 2, bh + 1), border_radius=4)
+    pygame.draw.rect(s, p["stone"], (bx, by + 1, bw, bh - 2), border_radius=3)
+    pygame.draw.rect(s, p["stone_light"], (bx + 3, by + 1, bw - 6, 3))
+    # stone block lines — brick pattern
+    for row in range(3):
+        ry = by + 6 + row * (bh // 3)
+        pygame.draw.line(s, p["crack"], (bx + 4, ry), (bx + bw - 4, ry), 1)
+        col_offset = (row % 2) * ((bw - 16) // 6)
+        for col in range(4):
+            rx = bx + 8 + col * ((bw - 16) // 3) + col_offset
+            if rx < bx + bw - 4:
+                pygame.draw.line(s, p["crack"], (rx, ry), (rx, ry + bh // 3 - 2), 1)
+    # moss growing in cracks
+    for mi in range(2):
+        mx = bx + 10 + mi * (bw - 20)
+        my = by + bh // 3 + 2
+        pygame.draw.ellipse(s, p["moss"], (mx, my, 5, 3))
+
+    # glowing runes on torso — pulsing with connecting lines
+    rune_pulse = [0, 2, 0, -2][frame]
+    rune_positions = [(cx - 12, by + 12), (cx + 12, by + 12),
+                      (cx, by + bh - 10), (cx - 18, by + bh // 2),
+                      (cx + 18, by + bh // 2)]
+    for ri, (rx, ry) in enumerate(rune_positions):
+        rg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(rg, (*p["rune_glow"][:3], 50 + rune_pulse * 10), (rx, ry), 6)
+        s.blit(rg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+        pygame.draw.circle(s, p["rune"], (rx, ry), 3)
+        pygame.draw.circle(s, p["rune_dark"], (rx, ry), 3, 1)
+        pygame.draw.circle(s, (*p["rune"][:3], 80), (rx, ry), 5, 1)
+    # connecting rune lines
+    for ri in range(len(rune_positions) - 1):
+        r1 = rune_positions[ri]
+        r2 = rune_positions[ri + 1]
+        pygame.draw.line(s, (*p["rune_dark"][:3], 60), r1, r2, 1)
+
+    # stone core in chest — glowing green heart
+    core_g = pygame.Surface((w, h), pygame.SRCALPHA)
+    pygame.draw.circle(core_g, (*p["rune"][:3], 60 + rune_pulse * 15), (cx, by + bh // 2), 8)
+    s.blit(core_g, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+    pygame.draw.circle(s, p["rune"], (cx, by + bh // 2), 4)
+    pygame.draw.circle(s, p["rune_dark"], (cx, by + bh // 2), 4, 1)
+    pygame.draw.circle(s, (200, 255, 220), (cx, by + bh // 2), 2)
+
+    # massive stone shoulder pauldrons
+    shoulder_y = by - 2
+    for side in (-1, 1):
+        sx = cx + side * (bw // 2 + 4)
+        # pauldron base
+        pygame.draw.rect(s, p["stone_dark"], (sx - 6, shoulder_y - 4, 12, 10), border_radius=3)
+        pygame.draw.rect(s, p["stone"], (sx - 4, shoulder_y - 3, 8, 8), border_radius=2)
+        pygame.draw.rect(s, p["stone_light"], (sx - 3, shoulder_y - 2, 6, 2))
+        # pauldron spike
+        pygame.draw.polygon(s, p["stone_dark"],
+            [(sx - 3, shoulder_y - 4), (sx, shoulder_y - 10), (sx + 3, shoulder_y - 4)])
+        # moss on pauldron
+        pygame.draw.ellipse(s, p["moss_light"], (sx - 3, shoulder_y - 1, 5, 3))
+
+    # arms (massive stone fists) with cracks and runes
+    shoulder_y2 = by + 4
+    for side, swing in [(-1, la), (1, ra)]:
+        sx = cx + side * (bw // 2 + 2)
+        ex = sx + side * 4 + swing // 2
+        wx2 = sx + side * 6 + swing
+        # upper arm
+        pygame.draw.rect(s, p["stone_dark"], (min(sx, ex), shoulder_y2, abs(ex - sx) + 8, 14), border_radius=3)
+        pygame.draw.rect(s, p["stone"], (min(sx, ex) + 2, shoulder_y2 + 2, abs(ex - sx) + 4, 10), border_radius=2)
+        # crack on arm
+        pygame.draw.line(s, p["crack"], (min(sx, ex) + 3, shoulder_y2 + 5),
+                         (max(sx, ex) + 2, shoulder_y2 + 10), 1)
+        # fist
+        pygame.draw.circle(s, p["stone_dark"], (wx2, shoulder_y2 + 18), 7)
+        pygame.draw.circle(s, p["stone"], (wx2, shoulder_y2 + 18), 5)
+        pygame.draw.circle(s, p["stone_light"], (wx2, shoulder_y2 + 18), 3)
+        # rune on fist
+        fg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(fg, (*p["rune"][:3], 40), (wx2, shoulder_y2 + 18), 4)
+        s.blit(fg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+        # moss on fist
+        pygame.draw.ellipse(s, p["moss_light"], (wx2 - 3, shoulder_y2 + 16, 6, 3))
+
+    # head (blocky stone) with cracks and jaw
+    hr = int(w * 0.20); hx, hy = cx, int(h * 0.18) + bob + clank
+    pygame.draw.rect(s, p["stone_dark"], (hx - hr - 1, hy - hr - 1, hr * 2 + 2, hr * 2 + 2), border_radius=4)
+    pygame.draw.rect(s, p["stone"], (hx - hr, hy - hr, hr * 2, hr * 2), border_radius=3)
+    pygame.draw.rect(s, p["stone_light"], (hx - hr + 3, hy - hr + 2, hr * 2 - 6, 3))
+    # forehead crack
+    pygame.draw.line(s, p["crack"], (hx - 3, hy - hr + 2), (hx + 5, hy - 2), 1)
+    # stone jaw line
+    pygame.draw.line(s, p["crack"], (hx - hr + 4, hy + hr - 4), (hx + hr - 4, hy + hr - 4), 1)
+    # moss on head
+    pygame.draw.ellipse(s, p["moss"], (hx + hr - 6, hy - hr + 1, 5, 3))
+
+    # glowing eyes — with rune glow
+    esp = 7 if dir != "side" else 5; so = 2 if dir == "side" else 0
+    for ex2 in (hx - esp + so, hx + esp + so):
+        eg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(eg, (*p["rune"][:3], 60), (ex2, hy), 7)
+        pygame.draw.circle(eg, (*p["rune"][:3], 30), (ex2, hy), 10)
+        s.blit(eg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+        pygame.draw.circle(s, p["eye_white"], (ex2, hy), 4)
+        pygame.draw.circle(s, p["eye_pupil"], (ex2, hy), 2)
+        pygame.draw.circle(s, (255, 255, 255, 180), (ex2 - 1, hy - 1), 1)
+
+    # moss on shoulders
+    for sx2 in (bx - 4, bx + bw - 6):
+        pygame.draw.ellipse(s, p["moss"], (sx2, by - 3, 8, 5))
+        pygame.draw.ellipse(s, p["moss_light"], (sx2 + 2, by - 2, 4, 3))
+        # tiny vine tendrils
+        pygame.draw.line(s, p["moss"], (sx2 + 4, by - 1), (sx2 + 4, by + 3), 1)
+
+
+# ============================================================
+# CRYOMANCER — ice mage with crystal staff and frost aura
+# ============================================================
+def _draw_cryomancer(s, w, h, cx, cy, p, dir, bob, frame):
+    _draw_shadow(s, cx, h, p, bob)
+    pulse = [0, 2, 0, -2][frame]
+    hover = [0, -2, 0, 2][frame]
+    lo, ro, la, ra = _walk_offset(frame)
+
+    # frost aura — double ring with inner crystal shimmer
+    ag = pygame.Surface((w, h), pygame.SRCALPHA)
+    aura_r = 22 + (frame % 2) * 3
+    pygame.draw.circle(ag, p["frost"], (cx, int(h * 0.42) + bob + hover), aura_r)
+    pygame.draw.circle(ag, (*p["crystal"][:3], 35), (cx, int(h * 0.42) + bob + hover), aura_r + 5)
+    s.blit(ag, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # frost particles floating — snowflake-like
+    for fi in range(6):
+        angle = frame * 0.9 + fi * 1.05
+        dist = 18 + fi * 3 + int(math.sin(frame * 0.6 + fi) * 4)
+        fx = cx + int(math.cos(angle) * dist)
+        fy = int(h * 0.40) + bob + hover + int(math.sin(angle * 0.7) * dist * 0.5)
+        fs = max(1, 3 - fi // 2)
+        fa = max(30, 90 - fi * 12)
+        # crystal diamond shape
+        pygame.draw.polygon(s, (*p["crystal"][:3], fa),
+            [(fx, fy - fs), (fx + fs, fy), (fx, fy + fs), (fx - fs, fy)])
+
+    # frozen breath particles
+    for bi in range(3):
+        bx2 = cx + (bi - 1) * 6
+        by2 = int(h * 0.22) + bob + hover + bi * 3
+        ba = max(20, 60 - bi * 15)
+        pygame.draw.circle(s, (*p["frost"][:3], ba), (bx2, by2), 2 + bi)
+
+    # legs beneath robe
+    _draw_leg_pair(s, cx, int(h * 0.68) + bob, 0, 8, 16, p, lo, ro, "robe_dark", "robe")
+
+    # icicle danglers from robe hem
+    bw = int(w * 0.50); bh = int(h * 0.44)
+    bx = cx - bw // 2; by = int(h * 0.30) + bob + hover
+    # outer robe
+    pygame.draw.polygon(s, p["robe"], [(bx + 6, by), (bx + bw - 6, by), (bx + bw + 6, by + bh), (bx - 6, by + bh)])
+    pygame.draw.polygon(s, p["robe_mid"],
+        [(bx + 10, by + 4), (bx + bw - 10, by + 4), (bx + bw, by + bh - 4), (bx, by + bh - 4)])
+    # icicle trim on robe
+    for ii in range(6):
+        ix = bx + 6 + ii * ((bw - 8) // 5)
+        iy = by + bh - 2
+        ilen = 4 + (ii % 3) * 2
+        pygame.draw.polygon(s, p["crystal"],
+            [(ix, iy), (ix + 3, iy + ilen), (ix + 6, iy)])
+        pygame.draw.polygon(s, p["crystal_light"],
+            [(ix + 1, iy + 1), (ix + 3, iy + ilen - 1), (ix + 5, iy + 1)], 1)
+    # crystal trim on robe
+    pygame.draw.line(s, p["accent"], (bx - 4, by + bh - 6), (bx + bw + 4, by + bh - 6), 2)
+    # ice crystal patterns on robe
+    for sy2 in range(by + 12, by + bh - 8, 10):
+        cc = p["crystal_dark"] if sy2 % 20 == 0 else p["crystal"]
+        pygame.draw.circle(s, cc, (cx, sy2), 2)
+        # small crystal sparkles
+        if sy2 % 20 == 0:
+            cs = pygame.Surface((w, h), pygame.SRCALPHA)
+            pygame.draw.circle(cs, (*p["crystal"][:3], 40), (cx, sy2), 4)
+            s.blit(cs, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # arms with frost sleeves
+    for ax, fl in [(cx - 7, -1), (cx + 7, 1)]:
+        wy2 = int(h * 0.58) + bob + hover
+        pygame.draw.polygon(s, p["robe_dark"],
+            [(ax + pulse // 2, wy2), (ax + fl * 3 + pulse // 2, wy2 + 26), (ax + fl * 5 + pulse // 2, wy2 + 26)])
+        # frost sparkle on hand
+        hand_x = ax + fl * 5 + pulse // 2
+        hand_y = wy2 + 24
+        hg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(hg, (*p["crystal"][:3], 50), (hand_x, hand_y), 5)
+        s.blit(hg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # crystal staff (right side) — more detailed
+    if dir == "side":
+        staff_x = cx + 14
+        staff_top = by - 6
+        staff_bot = by + bh + 10
+        # staff shaft
+        pygame.draw.line(s, p["crystal_dark"], (staff_x, staff_top), (staff_x - 2, staff_bot), 3)
+        pygame.draw.line(s, p["crystal"], (staff_x, staff_top + 1), (staff_x - 2, staff_bot - 1), 1)
+        # staff grip wrapping
+        for gi in range(4):
+            gy = staff_top + 8 + gi * 6
+            pygame.draw.line(s, p["robe_dark"], (staff_x - 2, gy), (staff_x + 2, gy + 2), 1)
+        # crystal on top — multi-faceted
+        crystal_pts = [(staff_x, staff_top - 10), (staff_x - 5, staff_top - 2),
+                       (staff_x - 2, staff_top + 4), (staff_x + 2, staff_top + 4),
+                       (staff_x + 5, staff_top - 2)]
+        pygame.draw.polygon(s, p["crystal"], crystal_pts)
+        pygame.draw.polygon(s, p["crystal_light"], crystal_pts, 1)
+        # crystal facet lines
+        pygame.draw.line(s, p["crystal_dark"], (staff_x, staff_top - 10), (staff_x, staff_top + 4), 1)
+        pygame.draw.line(s, p["crystal_dark"], (staff_x - 5, staff_top - 2), (staff_x + 5, staff_top - 2), 1)
+        # crystal glow — pulsing
+        cg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(cg, (*p["crystal"][:3], 60), (staff_x, staff_top - 3), 8)
+        pygame.draw.circle(cg, (*p["crystal_light"][:3], 30), (staff_x, staff_top - 3), 12)
+        s.blit(cg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+        # crystal spark particles
+        for ci in range(2):
+            c_angle = frame * 1.5 + ci * math.pi
+            c_dist = 6 + int(math.sin(frame * 2 + ci) * 2)
+            csx = staff_x + int(math.cos(c_angle) * c_dist)
+            csy = staff_top - 3 + int(math.sin(c_angle) * c_dist)
+            pygame.draw.circle(s, (*p["crystal_light"][:3], 120), (csx, csy), 1)
+
+    # frost crystal tiara
+    tiara_y = int(h * 0.08) + bob + hover
+    tiara_pts = [(cx - 9, tiara_y + 6), (cx - 6, tiara_y), (cx - 2, tiara_y + 3),
+                 (cx, tiara_y - 3), (cx + 2, tiara_y + 3), (cx + 6, tiara_y), (cx + 9, tiara_y + 6)]
+    pygame.draw.polygon(s, p["crystal"], tiara_pts)
+    pygame.draw.polygon(s, p["crystal_light"], tiara_pts, 1)
+    # tiara center gem
+    tg = pygame.Surface((w, h), pygame.SRCALPHA)
+    pygame.draw.circle(tg, (*p["crystal"][:3], 70), (cx, tiara_y + 1), 4)
+    s.blit(tg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+    pygame.draw.circle(s, p["crystal_light"], (cx, tiara_y + 1), 2)
+
+    # head
+    hr = int(w * 0.17); hx, hy = cx, int(h * 0.18) + bob + hover
+    pygame.draw.circle(s, p["skin"], (hx, hy), hr)
+    pygame.draw.circle(s, (200, 220, 240), (hx, hy), hr - 2)
+    # pointed hat — with frost trim
+    pygame.draw.polygon(s, p["robe"], [(hx - 14, hy - 2), (hx + 14, hy - 2), (hx + 10, hy - 24), (hx - 10, hy - 24)])
+    pygame.draw.polygon(s, p["robe_dark"],
+        [(hx - 10, hy - 4), (hx + 10, hy - 4), (hx + 7, hy - 20), (hx - 7, hy - 20)])
+    pygame.draw.ellipse(s, p["robe_dark"], (hx - 16, hy - 4, 32, 8))
+    pygame.draw.rect(s, p["accent"], (hx - 12, hy - 5, 24, 3), border_radius=1)
+    # hat frost trim
+    pygame.draw.line(s, p["crystal"], (hx - 12, hy - 3), (hx + 12, hy - 3), 1)
+    # crystal on hat
+    pygame.draw.polygon(s, p["crystal"], [(hx, hy - 18), (hx - 3, hy - 14), (hx, hy - 12), (hx + 3, hy - 14)])
+    # hat tip sparkle
+    hg2 = pygame.Surface((w, h), pygame.SRCALPHA)
+    pygame.draw.circle(hg2, (*p["crystal"][:3], 50), (hx, hy - 24), 3)
+    s.blit(hg2, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # eyes — icy blue glow
+    esp = 6 if dir != "side" else 5; so = 2 if dir == "side" else 0
+    for ex3 in (hx - esp + so, hx + esp + so):
+        eg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(eg, (*p["accent"][:3], 35), (ex3, hy + 1), 6)
+        s.blit(eg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+        pygame.draw.circle(s, p["eye_white"], (ex3, hy + 1), 4)
+        pygame.draw.circle(s, p["eye_pupil"], (ex3, hy + 1), 2)
+    _draw_glint(s, hx, hy + 1, esp, so)
+    # frozen tear
+    tear_y = hy + 6
+    pygame.draw.polygon(s, (*p["crystal"][:3], 100), [(hx - 3, tear_y), (hx - 2, tear_y + 4), (hx - 4, tear_y + 2)])
+
+
+# ============================================================
+# SHADOWMANCER — dark hooded mage with shadow energy and void eyes
+# ============================================================
+def _draw_shadowmancer(s, w, h, cx, cy, p, dir, bob, frame):
+    _draw_shadow(s, cx, h, p, bob)
+    pulse = [0, 2, 0, -2][frame]
+    hover = [0, -2, 0, 2][frame]
+    lo, ro, la, ra = _walk_offset(frame)
+
+    # shadow aura — triple ring
+    ag = pygame.Surface((w, h), pygame.SRCALPHA)
+    aura_r = 24 + (frame % 2) * 3
+    pygame.draw.circle(ag, p["glow"], (cx, int(h * 0.42) + bob + hover), aura_r)
+    pygame.draw.circle(ag, (*p["shadow_energy"][:3], 25), (cx, int(h * 0.42) + bob + hover), aura_r + 6)
+    s.blit(ag, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # shadow tendrils from back
+    for ti in range(3):
+        t_angle = frame * 0.7 + ti * 2.1
+        t_len = 12 + ti * 4
+        tx_start = cx + (ti - 1) * 6
+        ty_start = int(h * 0.35) + bob + hover
+        tx_end = tx_start + int(math.cos(t_angle) * t_len)
+        ty_end = ty_start + int(math.sin(t_angle) * t_len) - 8
+        ta = max(20, 70 - ti * 15)
+        pygame.draw.line(s, (*p["void"][:3], ta), (tx_start, ty_start), (tx_end, ty_end), 2 + ti)
+        # tendril tip glow
+        tg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(tg, (*p["accent"][:3], ta // 2), (tx_end, ty_end), 3)
+        s.blit(tg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # shadow wisps orbiting — more detailed
+    for wi in range(4):
+        angle = frame * 1.4 + wi * 1.57
+        wr = 16 + wi * 2
+        wx = cx + int(math.cos(angle) * wr)
+        wy = int(h * 0.40) + bob + hover + int(math.sin(angle * 0.6) * 8)
+        ws = max(1, 3 - wi)
+        wa = max(30, 90 - wi * 15)
+        wg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(wg, (*p["accent"][:3], wa // 2), (wx, wy), ws + 2)
+        s.blit(wg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+        pygame.draw.circle(s, (*p["accent"][:3], wa), (wx, wy), ws)
+
+    # legs beneath robe
+    _draw_leg_pair(s, cx, int(h * 0.68) + bob, 0, 8, 16, p, lo, ro, "robe_dark", "robe")
+
+    # tattered robe — with shadow trim
+    bw = int(w * 0.48); bh = int(h * 0.44)
+    bx = cx - bw // 2; by = int(h * 0.30) + bob + hover
+    pygame.draw.polygon(s, p["robe"],
+        [(bx + 4, by), (bx + bw - 4, by), (bx + bw + 8, by + bh), (bx - 8, by + bh)])
+    pygame.draw.polygon(s, p["robe_dark"],
+        [(bx + 8, by + 4), (bx + bw - 8, by + 4), (bx + bw - 2, by + bh - 4), (bx + 2, by + bh - 4)])
+    # shadow energy seams — pulsing
+    for sy2 in range(by + 10, by + bh - 6, 6):
+        sc = p["accent"] if sy2 % 12 == 0 else p["accent_dark"]
+        seam_a = 100 + pulse * 15
+        pygame.draw.line(s, (*sc[:3], seam_a), (cx - 4, sy2), (cx + 4, sy2), 1)
+    # shadow rune bands on robe
+    for bi in range(3):
+        rb_y = by + 14 + bi * 12
+        rb_a = 60 + pulse * 10
+        pygame.draw.line(s, (*p["accent"][:3], rb_a), (bx + 6, rb_y), (bx + bw - 6, rb_y), 1)
+        # rune dot
+        pygame.draw.circle(s, (*p["accent"][:3], rb_a), (cx, rb_y), 2)
+
+    # arms with shadow energy hands
+    for ax, fl in [(bx - 4, -1), (bx + bw - 2, 1)]:
+        arm_sway = [0, 2, 0, -2][frame]
+        pygame.draw.polygon(s, p["robe_dark"],
+            [(ax + arm_sway, by + 8 + bob), (ax + fl * 14 + arm_sway, by + 20 + bob),
+             (ax + fl * 16 + arm_sway, by + 30 + bob), (ax + fl * 4 + arm_sway, by + 22 + bob)])
+        # shadow energy in hand — pulsing orb
+        hand_x = ax + fl * 14 + arm_sway
+        hand_y = by + 20 + bob
+        eg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(eg, (*p["shadow_energy"][:3], 60), (hand_x, hand_y), 6)
+        pygame.draw.circle(eg, (*p["accent"][:3], 40), (hand_x, hand_y), 9)
+        s.blit(eg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+        # hand energy sparks
+        for si in range(2):
+            s_angle = frame * 2 + si * math.pi
+            s_dist = 5 + int(math.sin(frame * 3 + si) * 2)
+            sx = hand_x + int(math.cos(s_angle) * s_dist)
+            sy = hand_y + int(math.sin(s_angle) * s_dist)
+            pygame.draw.circle(s, (*p["accent"][:3], 150), (sx, sy), 1)
+
+    # void collar — high dark collar
+    collar_y = by - 2
+    pygame.draw.polygon(s, p["void"],
+        [(bx + 2, collar_y + 4), (bx - 4, collar_y - 8), (bx + 6, collar_y - 4)])
+    pygame.draw.polygon(s, p["void"],
+        [(bx + bw - 2, collar_y + 4), (bx + bw + 4, collar_y - 8), (bx + bw - 6, collar_y - 4)])
+
+    # head — with shadow crown
+    hr = int(w * 0.18); hx, hy = cx, int(h * 0.20) + bob + hover
+    pygame.draw.circle(s, p["skin_dark"], (hx, hy + 3), hr)
+    pygame.draw.circle(s, p["skin"], (hx, hy), hr)
+    pygame.draw.circle(s, p["skin_dark"], (hx, hy), hr - 2)
+
+    # deep hood — layered
+    pygame.draw.polygon(s, p["void"],
+        [(hx - hr - 6, hy + 8), (hx - hr, hy - 6), (hx, hy - 16), (hx + hr, hy - 6), (hx + hr + 6, hy + 8)])
+    pygame.draw.polygon(s, p["robe_dark"],
+        [(hx - hr - 2, hy + 6), (hx - hr + 2, hy - 3), (hx, hy - 12), (hx + hr - 2, hy - 3), (hx + hr + 2, hy + 6)])
+    # hood shadow crown tips
+    for side in (-1, 1):
+        crown_x = hx + side * (hr + 2)
+        crown_y = hy - 8
+        pygame.draw.polygon(s, p["void"],
+            [(crown_x, crown_y + 4), (crown_x + side * 4, crown_y - 6), (crown_x + side * 2, crown_y + 2)])
+
+    # glowing void eyes — with multiple eye rings
+    esp = 7 if dir != "side" else 5; so = 2 if dir == "side" else 0
+    for ex4 in (hx - esp + so, hx + esp + so):
+        eg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(eg, (*p["accent"][:3], 60), (ex4, hy), 8)
+        pygame.draw.circle(eg, (*p["accent"][:3], 30), (ex4, hy), 11)
+        s.blit(eg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+        pygame.draw.circle(s, p["eye_white"], (ex4, hy), 4)
+        pygame.draw.circle(s, p["eye_pupil"], (ex4, hy), 3)
+        pygame.draw.circle(s, (255, 200, 255, 180), (ex4 - 1, hy - 1), 1)
+        # shadow flare from eyes
+        flare_len = 6 + pulse
+        flare_dir = 1 if ex4 > hx else -1
+        pygame.draw.line(s, (*p["accent"][:3], 120), (ex4, hy),
+                        (ex4 + flare_dir * flare_len, hy - 2), 2)
+        pygame.draw.line(s, (*p["accent"][:3], 80), (ex4, hy),
+                        (ex4 + flare_dir * (flare_len + 3), hy - 4), 1)
+    # extra shadow eyes (small, on hood)
+    for si in range(2):
+        sex = hx + (si - 0.5) * 8 + so
+        sey = hy - 6
+        seg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(seg, (*p["accent"][:3], 40), (sex, sey), 3)
+        s.blit(seg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+        pygame.draw.circle(s, p["accent"], (sex, sey), 1)
+
+
+# ============================================================
+# REVENANT — undead warrior with soul-glow runes and tattered armor
+# ============================================================
+def _draw_revenant(s, w, h, cx, cy, p, dir, bob, frame):
+    _draw_shadow(s, cx, h, p, bob)
+    lo, ro, la, ra = _walk_offset(frame)
+    pulse = [0, 2, 0, -2][frame]
+
+    # spectral soul aura
+    ag = pygame.Surface((w, h), pygame.SRCALPHA)
+    pygame.draw.circle(ag, (*p["soul"][:3], 30), (cx, int(h * 0.40) + bob), 22 + pulse)
+    s.blit(ag, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # spectral soul trail
+    for si in range(4):
+        sy = int(h * 0.62) + bob + si * 5
+        sx = cx + int(math.sin(frame * 1.2 + si * 1.5) * (6 + si * 2))
+        sa = max(15, 80 - si * 18)
+        pygame.draw.circle(s, (*p["soul"][:3], sa), (sx, sy), 2 + si)
+
+    # soul flame wreath around head
+    for fi in range(5):
+        angle = frame * 1.0 + fi * 1.26
+        fx = cx + int(math.cos(angle) * 14)
+        fy = int(h * 0.18) + bob + int(math.sin(angle * 0.8) * 4)
+        fa = max(30, 100 - fi * 15)
+        pygame.draw.circle(s, (*p["soul"][:3], fa), (fx, fy), 2)
+        fg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(fg, (*p["soul_glow"][:3], fa // 2), (fx, fy), 4)
+        s.blit(fg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # heavy legs with bone joints — more detailed
+    leg_y = int(h * 0.72) + bob
+    for lx, off, side in [(cx - 12 + lo, lo, -1), (cx + 4 + ro, ro, 1)]:
+        lh = 20 + abs(off)
+        pygame.draw.rect(s, p["armor_dark"], (lx - 1, leg_y, 13, lh), border_radius=3)
+        pygame.draw.rect(s, p["armor"], (lx + 1, leg_y + 2, 9, lh - 4), border_radius=2)
+        pygame.draw.rect(s, p["armor_light"], (lx + 2, leg_y + 2, 7, 2))
+        # bone joint
+        pygame.draw.circle(s, p["bone"], (lx + 5, leg_y + lh // 2), 3)
+        pygame.draw.circle(s, p["bone_dark"], (lx + 5, leg_y + lh // 2), 3, 1)
+        # rune glow on shin
+        sg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(sg, (*p["soul"][:3], 30 + pulse * 8), (lx + 5, leg_y + 6), 3)
+        s.blit(sg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # torso armor with glowing runes — dual-layer
+    bw = int(w * 0.55); bh = int(h * 0.38)
+    bx = cx - bw // 2; by = int(h * 0.32) + bob
+    pygame.draw.rect(s, p["armor_dark"], (bx - 1, by, bw + 2, bh + 1), border_radius=4)
+    pygame.draw.rect(s, p["armor"], (bx, by + 1, bw, bh - 2), border_radius=3)
+    pygame.draw.rect(s, p["armor_light"], (bx + 3, by + 1, bw - 6, 3))
+    # armor plate segments
+    for row in range(2):
+        ry = by + 6 + row * (bh // 2)
+        pygame.draw.line(s, p["armor_dark"], (bx + 4, ry), (bx + bw - 4, ry), 1)
+    # glowing rune lines
+    for ry in range(by + 8, by + bh - 4, 6):
+        rc = p["rune"] if ry % 12 == 0 else p["rune_dark"]
+        glow_a = 100 + pulse * 15
+        pygame.draw.line(s, (*rc[:3], glow_a), (bx + 6, ry), (bx + bw - 6, ry), 1)
+        # rune glow
+        rg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(rg, (*p["soul"][:3], 25 + pulse * 8), (cx, ry), 4)
+        s.blit(rg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+    # chest rune symbol
+    cr_g = pygame.Surface((w, h), pygame.SRCALPHA)
+    pygame.draw.circle(cr_g, (*p["soul"][:3], 50 + pulse * 12), (cx, by + bh // 2), 5)
+    s.blit(cr_g, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+    pygame.draw.circle(s, p["rune"], (cx, by + bh // 2), 2)
+
+    # spectral shoulder pauldrons
+    for side in (-1, 1):
+        spx = cx + side * (bw // 2 + 3)
+        spy = by - 2
+        pygame.draw.polygon(s, p["armor_dark"],
+            [(spx - 5, spy + 4), (spx, spy - 4), (spx + 5, spy + 4)])
+        pygame.draw.polygon(s, p["armor"],
+            [(spx - 3, spy + 3), (spx, spy - 2), (spx + 3, spy + 3)])
+        # rune on pauldron
+        pg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(pg, (*p["soul"][:3], 40), (spx, spy), 3)
+        s.blit(pg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # tattered cape — flowing with tatters
+    cape_y = by + bh - 4
+    for ci in range(4):
+        cape_x = cx - 10 + ci * 7 + [0, 2, 0, -2][frame]
+        cape_len = 12 + ci * 3
+        pygame.draw.polygon(s, p["tattered"],
+            [(cape_x, cape_y), (cape_x - 3, cape_y + cape_len),
+             (cape_x + 3, cape_y + cape_len)])
+        # cape edge soul glow
+        if ci % 2 == 0:
+            cg = pygame.Surface((w, h), pygame.SRCALPHA)
+            pygame.draw.circle(cg, (*p["soul"][:3], 20), (cape_x, cape_y + cape_len), 3)
+            s.blit(cg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # arms with bone fists and spectral weapon
+    for ax, fl in [(bx - 6, -1), (bx + bw - 2, 1)]:
+        arm_sway = [0, 2, 0, -2][frame]
+        pygame.draw.polygon(s, p["armor_dark"],
+            [(ax + arm_sway, by + 6 + bob), (ax + fl * 12 + arm_sway, by + 18 + bob),
+             (ax + fl * 14 + arm_sway, by + 28 + bob), (ax + fl * 4 + arm_sway, by + 20 + bob)])
+        pygame.draw.polygon(s, p["armor"],
+            [(ax + arm_sway + 1, by + 8 + bob), (ax + fl * 11 + arm_sway, by + 18 + bob),
+             (ax + fl * 13 + arm_sway, by + 26 + bob), (ax + fl * 5 + arm_sway, by + 20 + bob)])
+        # bone fist
+        fx = ax + fl * 14 + arm_sway
+        fy = by + 28 + bob
+        pygame.draw.circle(s, p["bone"], (fx, fy), 4)
+        pygame.draw.circle(s, p["bone_dark"], (fx, fy), 4, 1)
+        pygame.draw.circle(s, p["bone"], (fx, fy), 2)
+        # soul glow on fist
+        fg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(fg, (*p["soul"][:3], 30), (fx, fy), 6)
+        s.blit(fg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # spectral weapon (right hand) — ethereal blade
+    if dir == "side":
+        wx_base = bx + bw + 2 + [0, 2, 0, -2][frame]
+        wy_base = by + 20 + bob
+        # blade
+        pygame.draw.line(s, (*p["bone"][:3], 180), (wx_base, wy_base), (wx_base + 10, wy_base - 16), 2)
+        pygame.draw.line(s, (*p["soul"][:3], 120), (wx_base, wy_base), (wx_base + 10, wy_base - 16), 1)
+        # blade tip glow
+        bg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(bg, (*p["soul"][:3], 50), (wx_base + 10, wy_base - 16), 3)
+        s.blit(bg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # bone crown
+    crown_y = int(h * 0.10) + bob
+    for bi in range(5):
+        bx2 = cx - 8 + bi * 4
+        bh2 = 6 + (bi % 2) * 4
+        pygame.draw.polygon(s, p["bone"],
+            [(bx2, crown_y + 4), (bx2 + 2, crown_y - bh2), (bx2 + 4, crown_y + 4)])
+        # soul glow on crown tips
+        cg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(cg, (*p["soul"][:3], 40), (bx2 + 2, crown_y - bh2), 2)
+        s.blit(cg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # skull head — detailed with cracks
+    hr = int(w * 0.18); hx, hy = cx, int(h * 0.20) + bob
+    pygame.draw.circle(s, p["bone_dark"], (hx, hy + 2), hr)
+    pygame.draw.circle(s, p["bone"], (hx, hy), hr)
+    # skull cracks
+    pygame.draw.line(s, p["bone_dark"], (hx - 3, hy - hr + 2), (hx + 2, hy - 2), 1)
+    pygame.draw.line(s, p["bone_dark"], (hx + 3, hy - hr + 4), (hx + 1, hy + 2), 1)
+    # cheek hollows
+    pygame.draw.ellipse(s, p["bone_dark"], (hx - 6, hy + 2, 4, 3))
+    pygame.draw.ellipse(s, p["bone_dark"], (hx + 2, hy + 2, 4, 3))
+    # hollow eye sockets with soul glow
+    esp = 6 if dir != "side" else 4; so = 2 if dir == "side" else 0
+    for ex in (hx - esp + so, hx + esp + so):
+        eg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(eg, (*p["soul"][:3], 50), (ex, hy), 7)
+        pygame.draw.circle(eg, (*p["soul"][:3], 25), (ex, hy), 10)
+        s.blit(eg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+        pygame.draw.circle(s, p["eye_white"], (ex, hy), 3)
+        pygame.draw.circle(s, p["eye_pupil"], (ex, hy), 2)
+    # jaw line with teeth
+    pygame.draw.arc(s, p["bone_dark"], (hx - 6, hy + 2, 12, 8), 0.3, math.pi - 0.3, 1)
+    for ti in range(3):
+        tx = hx - 3 + ti * 3
+        pygame.draw.line(s, p["bone"], (tx, hy + 5), (tx, hy + 8), 1)
+
+
+# ============================================================
+# MOLTEN — fire elemental with lava veins and ember aura
+# ============================================================
+def _draw_molten(s, w, h, cx, cy, p, dir, bob, frame):
+    _draw_shadow(s, cx, h, p, bob)
+    pulse = [0, 2, 0, -2][frame]
+    lo, ro, la, ra = _walk_offset(frame)
+
+    # ember aura — triple ring with heat haze
+    ag = pygame.Surface((w, h), pygame.SRCALPHA)
+    aura_r = 20 + (frame % 2) * 4
+    pygame.draw.circle(ag, p["glow"], (cx, int(h * 0.45) + bob), aura_r)
+    pygame.draw.circle(ag, (*p["ember"][:3], 30), (cx, int(h * 0.45) + bob), aura_r + 5)
+    s.blit(ag, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # flowing lava drips — more with trails
+    for di in range(5):
+        angle = frame * 0.8 + di * 1.26
+        drip_d = 12 + int(math.sin(angle) * 6)
+        dx = cx + int(math.cos(angle) * drip_d)
+        dy = int(h * 0.35) + bob + int(math.sin(angle + 1) * 4)
+        pygame.draw.circle(s, p["lava"], (dx, dy), 2)
+        pygame.draw.circle(s, p["lava_bright"], (dx, dy), 1)
+        # drip trail
+        for ti in range(2):
+            ty = dy + (ti + 1) * 4
+            ta = max(30, 100 - ti * 40)
+            pygame.draw.circle(s, (*p["lava"][:3], ta), (dx, ty), 1)
+
+    # magma pool at feet
+    pool_y = int(h * 0.72) + bob
+    pool_w = int(20 + pulse * 2)
+    pygame.draw.ellipse(s, (*p["lava_dark"][:3], 80), (cx - pool_w // 2, pool_y, pool_w, 6))
+    pygame.draw.ellipse(s, (*p["lava"][:3], 60), (cx - pool_w // 2 + 2, pool_y + 1, pool_w - 4, 4))
+
+    # rocky legs with lava cracks and obsidian shards
+    leg_y = int(h * 0.70) + bob
+    for lx, off, side in [(cx - 14 + lo, lo, -1), (cx + 4 + ro, ro, 1)]:
+        lh = 20 + abs(off)
+        pygame.draw.rect(s, p["rock_dark"], (lx - 1, leg_y, 15, lh), border_radius=3)
+        pygame.draw.rect(s, p["rock"], (lx + 1, leg_y + 2, 11, lh - 4), border_radius=2)
+        pygame.draw.rect(s, p["rock_light"], (lx + 2, leg_y + 2, 7, 2))
+        # lava crack — glowing
+        crack_y = leg_y + 6
+        pygame.draw.line(s, p["crack"], (lx + 2, crack_y), (lx + 9, crack_y + 4), 2)
+        pygame.draw.line(s, p["crack_bright"], (lx + 3, crack_y + 1), (lx + 8, crack_y + 3), 1)
+        # obsidian shard on knee
+        pygame.draw.polygon(s, p["rock_dark"],
+            [(lx + 4, leg_y + lh - 3), (lx + 6, leg_y + lh - 8), (lx + 8, leg_y + lh - 3)])
+
+    # massive rocky torso — with obsidian shoulder plates
+    bw = int(w * 0.65); bh = int(h * 0.38)
+    bx = cx - bw // 2; by = int(h * 0.30) + bob
+    pygame.draw.rect(s, p["rock_dark"], (bx - 1, by, bw + 2, bh + 1), border_radius=5)
+    pygame.draw.rect(s, p["rock"], (bx, by + 1, bw, bh - 2), border_radius=4)
+    pygame.draw.rect(s, p["rock_light"], (bx + 3, by + 1, bw - 6, 3))
+    # lava veins across torso — pulsing glow
+    for vy in range(by + 8, by + bh - 4, 5):
+        vx = bx + 6 + int(math.sin(frame * 0.8 + vy * 0.1) * 4)
+        vc = p["crack_bright"] if vy % 10 == 0 else p["crack"]
+        pygame.draw.line(s, vc, (vx, vy), (vx + bw - 12, vy + 2), 2)
+        # inner bright crack
+        pygame.draw.line(s, p["crack_bright"], (vx + 2, vy + 1), (vx + bw - 14, vy + 2), 1)
+        # glow along cracks
+        cg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(cg, (*p["lava"][:3], 35 + pulse * 10), (vx + bw // 4, vy), 5)
+        s.blit(cg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # magma core in chest — glowing
+    core_g = pygame.Surface((w, h), pygame.SRCALPHA)
+    pygame.draw.circle(core_g, (*p["lava"][:3], 70 + pulse * 15), (cx, by + bh // 2), 7)
+    s.blit(core_g, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+    pygame.draw.circle(s, p["lava_bright"], (cx, by + bh // 2), 3)
+    pygame.draw.circle(s, (255, 255, 200), (cx, by + bh // 2), 1)
+
+    # obsidian shoulder plates
+    for side in (-1, 1):
+        spx = cx + side * (bw // 2 + 3)
+        spy = by - 2
+        pygame.draw.polygon(s, p["rock_dark"],
+            [(spx - 6, spy + 5), (spx, spy - 5), (spx + 6, spy + 5)])
+        pygame.draw.polygon(s, p["rock"],
+            [(spx - 4, spy + 3), (spx, spy - 3), (spx + 4, spy + 3)])
+        # lava glow on plate
+        pg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(pg, (*p["lava"][:3], 40), (spx, spy), 3)
+        s.blit(pg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # arms — rocky fists with lava glow — more detailed
+    for ax, fl in [(bx - 4, -1), (bx + bw - 2, 1)]:
+        arm_sway = [0, 2, 0, -2][frame]
+        # upper arm
+        pygame.draw.polygon(s, p["rock_dark"],
+            [(ax + arm_sway, by + 6 + bob), (ax + fl * 14 + arm_sway, by + 18 + bob),
+             (ax + fl * 16 + arm_sway, by + 28 + bob), (ax + fl * 4 + arm_sway, by + 20 + bob)])
+        pygame.draw.polygon(s, p["rock"],
+            [(ax + arm_sway + 1, by + 8 + bob), (ax + fl * 13 + arm_sway, by + 18 + bob),
+             (ax + fl * 15 + arm_sway, by + 26 + bob), (ax + fl * 5 + arm_sway, by + 20 + bob)])
+        # lava fist
+        fx = ax + fl * 16 + arm_sway
+        fy = by + 28 + bob
+        fg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(fg, (*p["lava"][:3], 70), (fx, fy), 8)
+        pygame.draw.circle(fg, (*p["ember"][:3], 40), (fx, fy), 10)
+        s.blit(fg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+        pygame.draw.circle(s, p["rock_dark"], (fx, fy), 6)
+        pygame.draw.circle(s, p["lava"], (fx, fy), 3)
+        pygame.draw.circle(s, p["lava_bright"], (fx, fy), 1)
+        # fist ember particles
+        for ei in range(2):
+            ea = frame * 2 + ei * math.pi
+            ed = 4 + int(math.sin(frame * 3 + ei) * 2)
+            eex = fx + int(math.cos(ea) * ed)
+            eey = fy + int(math.sin(ea) * ed)
+            pygame.draw.circle(s, (*p["ember"][:3], 120), (eex, eey), 1)
+
+    # head — angular rock with volcano horns
+    hr = int(w * 0.19); hx, hy = cx, int(h * 0.18) + bob
+    pygame.draw.rect(s, p["rock_dark"], (hx - hr, hy - hr, hr * 2, hr * 2), border_radius=4)
+    pygame.draw.rect(s, p["rock"], (hx - hr + 2, hy - hr + 2, hr * 2 - 4, hr * 2 - 4), border_radius=3)
+    pygame.draw.rect(s, p["rock_light"], (hx - hr + 4, hy - hr + 2, hr * 2 - 8, 2))
+    # lava crack on forehead
+    pygame.draw.line(s, p["crack_bright"], (hx - 4, hy - hr + 3), (hx + 4, hy - 2), 2)
+    # volcano horns
+    for side in (-1, 1):
+        horn_x = hx + side * (hr - 2)
+        horn_tip_x = hx + side * (hr + 8)
+        horn_tip_y = hy - hr - 4
+        pygame.draw.polygon(s, p["rock_dark"],
+            [(horn_x - 2, hy - hr + 2), (horn_tip_x, horn_tip_y), (horn_x + 2, hy - hr + 2)])
+        # lava glow at horn tip
+        hg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(hg, (*p["lava"][:3], 60), (horn_tip_x, horn_tip_y), 3)
+        s.blit(hg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+        pygame.draw.circle(s, p["lava_bright"], (horn_tip_x, horn_tip_y), 1)
+
+    # glowing lava eyes — with ember iris
+    esp = 7 if dir != "side" else 5; so = 2 if dir == "side" else 0
+    for ex2 in (hx - esp + so, hx + esp + so):
+        eg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(eg, (*p["lava"][:3], 60), (ex2, hy), 7)
+        pygame.draw.circle(eg, (*p["ember"][:3], 30), (ex2, hy), 10)
+        s.blit(eg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+        pygame.draw.circle(s, p["lava_bright"], (ex2, hy), 4)
+        pygame.draw.circle(s, p["eye_white"], (ex2, hy), 2)
+        # ember iris
+        pygame.draw.circle(s, p["ember"], (ex2, hy), 1)
+
+    # ember particles rising — more numerous
+    for ei in range(5):
+        ea = frame * 1.5 + ei * 1.26
+        ed = 10 + ei * 3
+        ex3 = hx + int(math.cos(ea) * ed)
+        ey = hy - hr - 4 - int(frame * 2 % 8) - ei * 3
+        er = max(1, 2 - ei // 2)
+        pygame.draw.circle(s, (*p["ember"][:3], max(30, 160 - ei * 30)), (ex3, ey), er)
+
+
+# ============================================================
+# STORMCALLER — lightning mage with crackling aura and energy orbs
+# ============================================================
+def _draw_stormcaller(s, w, h, cx, cy, p, dir, bob, frame):
+    _draw_shadow(s, cx, h, p, bob)
+    pulse = [0, 2, 0, -2][frame]
+    hover = [0, -3, 0, 3][frame]
+
+    # storm cloud above head
+    cloud_y = int(h * 0.06) + bob + hover
+    cloud_w = 18 + (frame % 2) * 2
+    cg = pygame.Surface((w, h), pygame.SRCALPHA)
+    pygame.draw.ellipse(cg, (40, 50, 80, 60), (cx - cloud_w // 2, cloud_y - 4, cloud_w, 8))
+    pygame.draw.ellipse(cg, (50, 60, 90, 40), (cx - cloud_w // 2 - 4, cloud_y - 2, cloud_w + 8, 6))
+    s.blit(cg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+    # rain drops from cloud
+    for ri in range(3):
+        rx = cx - 6 + ri * 6 + int(math.sin(frame * 0.5 + ri) * 2)
+        ry = cloud_y + 4 + int((frame * 4 + ri * 5) % 12)
+        pygame.draw.line(s, (150, 180, 220, 80), (rx, ry), (rx - 1, ry + 3), 1)
+
+    # crackling lightning aura — double ring
+    ag = pygame.Surface((w, h), pygame.SRCALPHA)
+    aura_r = 18 + (frame % 2) * 3
+    pygame.draw.circle(ag, p["glow"], (cx, int(h * 0.42) + bob + hover), aura_r)
+    pygame.draw.circle(ag, (*p["accent"][:3], 25), (cx, int(h * 0.42) + bob + hover), aura_r + 5)
+    s.blit(ag, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # electric halo — arc above head
+    halo_y = int(h * 0.10) + bob + hover
+    halo_r = 12
+    for hi in range(3):
+        ha = frame * 0.8 + hi * 2.1
+        hx2 = cx + int(math.cos(ha) * halo_r)
+        hy2 = halo_y + int(math.sin(ha) * 4)
+        hg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(hg, (*p["accent"][:3], 40), (hx2, hy2), 2)
+        s.blit(hg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # floating sparks — more numerous
+    for si in range(7):
+        angle = frame * 1.8 + si * 0.9
+        sd = 14 + si * 3
+        sx = cx + int(math.cos(angle) * sd)
+        sy = int(h * 0.40) + bob + hover + int(math.sin(angle * 0.7) * sd * 0.5)
+        ss = max(1, 3 - si // 2)
+        sa = max(25, 100 - si * 12)
+        pygame.draw.circle(s, (*p["spark"][:3], sa), (sx, sy), ss)
+
+    # electric arc between hands
+    la_x = cx - 8; ra_x = cx + 8
+    arc_y = int(h * 0.52) + bob + hover
+    arc_pts = []
+    for ai in range(6):
+        t = ai / 5
+        ax = la_x + (ra_x - la_x) * t + int(math.sin(frame * 6 + ai * 1.5) * 3)
+        ay = arc_y + int(math.sin(t * math.pi) * -6) + int(math.cos(frame * 4 + ai) * 2)
+        arc_pts.append((ax, ay))
+    if len(arc_pts) >= 2:
+        for ai in range(len(arc_pts) - 1):
+            aa = max(30, 120 - ai * 15)
+            pygame.draw.line(s, (*p["accent"][:3], aa), arc_pts[ai], arc_pts[ai + 1], 1)
+
+    # robe — with lightning trim patterns
+    bw = int(w * 0.50); bh = int(h * 0.44)
+    bx = cx - bw // 2; by = int(h * 0.30) + bob + hover
+    pygame.draw.polygon(s, p["robe"], [(bx + 6, by), (bx + bw - 6, by), (bx + bw + 6, by + bh), (bx - 6, by + bh)])
+    pygame.draw.polygon(s, p["robe_mid"],
+        [(bx + 10, by + 4), (bx + bw - 10, by + 4), (bx + bw, by + bh - 4), (bx, by + bh - 4)])
+    # lightning trim — bottom
+    pygame.draw.line(s, p["accent"], (bx - 2, by + bh - 4), (bx + bw + 2, by + bh - 4), 2)
+    # lightning bolt patterns on robe — zigzag
+    for sy2 in range(by + 10, by + bh - 8, 8):
+        bolt_x = bx + 8 + int(math.sin(frame * 0.5 + sy2 * 0.1) * 3)
+        # Z-shaped lightning
+        pygame.draw.line(s, p["accent"], (bolt_x, sy2), (bolt_x + 4, sy2 + 3), 1)
+        pygame.draw.line(s, p["accent"], (bolt_x + 4, sy2 + 3), (bolt_x + 1, sy2 + 6), 1)
+        pygame.draw.line(s, p["accent"], (bolt_x + 1, sy2 + 6), (bolt_x + 5, sy2 + 8), 1)
+    # lightning bolt trim along sides
+    for side_bx in (bx + 2, bx + bw - 2):
+        pygame.draw.line(s, (*p["accent"][:3], 60), (side_bx, by + 4), (side_bx, by + bh - 6), 1)
+
+    # arms with energy — more detailed sleeves
+    for ax, fl in [(cx - 6, -1), (cx + 6, 1)]:
+        wy2 = int(h * 0.58) + bob + hover
+        pygame.draw.polygon(s, p["robe_dark"],
+            [(ax + pulse // 2, wy2), (ax + fl * 3 + pulse // 2, wy2 + 24), (ax + fl * 5 + pulse // 2, wy2 + 24)])
+        pygame.draw.polygon(s, p["robe_mid"],
+            [(ax + pulse // 2 + 1, wy2 + 2), (ax + fl * 2 + pulse // 2, wy2 + 22), (ax + fl * 4 + pulse // 2, wy2 + 22)])
+        # lightning spark at hand — pulsing
+        hand_x = ax + fl * 5 + pulse // 2
+        hand_y = wy2 + 24
+        eg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(eg, (*p["accent"][:3], 60), (hand_x, hand_y), 6)
+        pygame.draw.circle(eg, (*p["spark"][:3], 30), (hand_x, hand_y), 9)
+        s.blit(eg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+        # hand sparks
+        for hi in range(2):
+            ha = frame * 3 + hi * math.pi
+            hd = 4 + int(math.sin(frame * 4 + hi) * 2)
+            hsx = hand_x + int(math.cos(ha) * hd)
+            hsy = hand_y + int(math.sin(ha) * hd)
+            pygame.draw.circle(s, (*p["accent"][:3], 150), (hsx, hsy), 1)
+
+    # head
+    hr = int(w * 0.17); hx, hy = cx, int(h * 0.18) + bob + hover
+    pygame.draw.circle(s, p["skin"], (hx, hy), hr)
+    pygame.draw.circle(s, (190, 200, 230), (hx, hy), hr - 2)
+    # pointed hat — with lightning bolt emblem
+    pygame.draw.polygon(s, p["robe"], [(hx - 14, hy - 2), (hx + 14, hy - 2), (hx + 10, hy - 26), (hx - 10, hy - 26)])
+    pygame.draw.polygon(s, p["robe_dark"],
+        [(hx - 10, hy - 4), (hx + 10, hy - 4), (hx + 7, hy - 22), (hx - 7, hy - 22)])
+    pygame.draw.ellipse(s, p["robe_dark"], (hx - 16, hy - 4, 32, 8))
+    pygame.draw.rect(s, p["accent"], (hx - 12, hy - 5, 24, 3), border_radius=1)
+    # lightning bolt on hat — Z shape
+    pygame.draw.line(s, p["accent"], (hx - 2, hy - 24), (hx + 2, hy - 18), 2)
+    pygame.draw.line(s, p["accent"], (hx + 2, hy - 18), (hx - 2, hy - 16), 2)
+    pygame.draw.line(s, p["accent"], (hx - 2, hy - 16), (hx + 2, hy - 12), 2)
+    # hat tip spark
+    hg2 = pygame.Surface((w, h), pygame.SRCALPHA)
+    pygame.draw.circle(hg2, (*p["accent"][:3], 60), (hx, hy - 26), 3)
+    s.blit(hg2, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # eyes — electric blue glow with spark trails
+    esp = 6 if dir != "side" else 5; so = 2 if dir == "side" else 0
+    for ex3 in (hx - esp + so, hx + esp + so):
+        eg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(eg, (*p["accent"][:3], 40), (ex3, hy + 1), 6)
+        pygame.draw.circle(eg, (*p["accent"][:3], 20), (ex3, hy + 1), 9)
+        s.blit(eg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+        pygame.draw.circle(s, p["eye_white"], (ex3, hy + 1), 4)
+        pygame.draw.circle(s, p["eye_pupil"], (ex3, hy + 1), 2)
+        # eye spark
+        spark_a = frame * 4 + (ex3 > hx)
+        spark_x = ex3 + int(math.cos(spark_a) * 3)
+        spark_y = hy + 1 + int(math.sin(spark_a) * 2)
+        pygame.draw.circle(s, (*p["accent"][:3], 100), (spark_x, spark_y), 1)
+    _draw_glint(s, hx, hy + 1, esp, so)
+
+
+# ============================================================
+# PLAGUEBEARER — toxic spreader with pustules and plague cloud aura
+# ============================================================
+def _draw_plaguebearer(s, w, h, cx, cy, p, dir, bob, frame):
+    _draw_shadow(s, cx, h, p, bob)
+    pulse = [0, 2, 0, -2][frame]
+    lo, ro, la, ra = _walk_offset(frame)
+
+    # toxic aura — triple ring with miasma
+    ag = pygame.Surface((w, h), pygame.SRCALPHA)
+    aura_r = 20 + (frame % 2) * 3
+    pygame.draw.circle(ag, p["plague_glow"], (cx, int(h * 0.45) + bob), aura_r)
+    pygame.draw.circle(ag, (*p["plague"][:3], 25), (cx, int(h * 0.45) + bob), aura_r + 5)
+    s.blit(ag, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # toxic drip particles — more with trails
+    for di in range(5):
+        drip_x = cx + (di - 2) * 8 + int(math.sin(frame * 0.6 + di) * 4)
+        drip_y = int(h * 0.55) + bob + int(math.sin(frame * 0.8 + di * 2) * 3)
+        pygame.draw.circle(s, (*p["plague"][:3], 140), (drip_x, drip_y), 2)
+        # drip trail
+        for ti in range(2):
+            ty = drip_y + (ti + 1) * 4
+            ta = max(20, 80 - ti * 30)
+            pygame.draw.circle(s, (*p["plague_dark"][:3], ta), (drip_x, ty), 1)
+
+    # plague fly particles
+    for fi in range(3):
+        fx = cx + int(math.sin(frame * 1.2 + fi * 2.1) * 16)
+        fy = int(h * 0.30) + bob + int(math.cos(frame * 0.9 + fi * 1.5) * 8)
+        fa = max(30, 80 - fi * 20)
+        # fly body
+        pygame.draw.circle(s, (40, 30, 20, fa), (fx, fy), 1)
+        # tiny wings
+        pygame.draw.line(s, (60, 50, 40, fa), (fx - 1, fy - 1), (fx + 1, fy - 2), 1)
+        pygame.draw.line(s, (60, 50, 40, fa), (fx + 1, fy - 1), (fx - 1, fy - 2), 1)
+
+    # legs beneath robe
+    _draw_leg_pair(s, cx, int(h * 0.68) + bob, 0, 8, 16, p, lo, ro, "robe_dark", "robe")
+
+    # rotting robe — detailed with holes and stains
+    bw = int(w * 0.50); bh = int(h * 0.44)
+    bx = cx - bw // 2; by = int(h * 0.30) + bob
+    pygame.draw.polygon(s, p["robe"], [(bx + 4, by), (bx + bw - 4, by), (bx + bw + 6, by + bh), (bx - 6, by + bh)])
+    pygame.draw.polygon(s, p["robe_mid"],
+        [(bx + 8, by + 4), (bx + bw - 8, by + 4), (bx + bw, by + bh - 4), (bx, by + bh - 4)])
+    # rot holes — more with ragged edges
+    for ri in range(4):
+        rx = bx + 8 + ri * 10
+        ry = by + 6 + (ri % 2) * 8
+        pygame.draw.ellipse(s, p["robe_dark"], (rx, ry, 6, 4))
+        # ragged edge
+        pygame.draw.line(s, p["robe_dark"], (rx + 6, ry + 2), (rx + 8, ry + 1), 1)
+    # toxic stains
+    for si in range(3):
+        sx = bx + 10 + si * 14
+        sy = by + 12 + si * 8
+        stain_a = 40 + pulse * 8
+        pygame.draw.ellipse(s, (*p["plague_dark"][:3], stain_a), (sx, sy, 5, 3))
+    # pustules on robe — more, with glow and ooze
+    for pi in range(5):
+        px = bx + 6 + pi * ((bw - 12) // 4)
+        py = by + 6 + (pi % 2) * 10
+        pglow = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(pglow, (*p["pustule"][:3], 50 + pulse * 10), (px, py), 5)
+        s.blit(pglow, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+        pygame.draw.circle(s, p["pustule"], (px, py), 3)
+        pygame.draw.circle(s, p["pustule_dark"], (px, py), 3, 1)
+        # ooze from pustule
+        if pi % 2 == 0:
+            pygame.draw.line(s, (*p["plague"][:3], 80), (px, py + 3), (px, py + 6), 1)
+            pygame.draw.circle(s, (*p["plague"][:3], 60), (px, py + 6), 1)
+    # mushroom growths on robe
+    for mi in range(2):
+        mx = bx + 8 + mi * (bw - 16)
+        my = by + bh - 8
+        # stem
+        pygame.draw.rect(s, p["plague_dark"], (mx, my, 3, 5))
+        # cap
+        pygame.draw.ellipse(s, p["plague"], (mx - 2, my - 2, 7, 4))
+        pygame.draw.ellipse(s, p["plague_bright"], (mx - 1, my - 1, 5, 2))
+        # spore dots
+        for dot in range(2):
+            pygame.draw.circle(s, p["pustule"], (mx + dot * 2, my - 1), 1)
+
+    # arms with bile drips
+    for ax, fl in [(bx - 4, -1), (bx + bw - 2, 1)]:
+        arm_sway = [0, 2, 0, -2][frame]
+        pygame.draw.polygon(s, p["robe_dark"],
+            [(ax + arm_sway, by + 8 + bob), (ax + fl * 14 + arm_sway, by + 20 + bob),
+             (ax + fl * 16 + arm_sway, by + 30 + bob), (ax + fl * 4 + arm_sway, by + 22 + bob)])
+        # bile drip from hand
+        hand_x = ax + fl * 16 + arm_sway
+        hand_y = by + 30 + bob
+        if pi % 2 == 0:
+            drip_len = 3 + int(math.sin(frame * 0.5) * 2)
+            pygame.draw.line(s, (*p["plague"][:3], 100), (hand_x, hand_y), (hand_x, hand_y + drip_len), 2)
+            pygame.draw.circle(s, (*p["plague"][:3], 80), (hand_x, hand_y + drip_len), 1)
+
+    # head — with toxic hood and fungus
+    hr = int(w * 0.17); hx, hy = cx, int(h * 0.20) + bob
+    pygame.draw.circle(s, p["skin_dark"], (hx, hy + 2), hr)
+    pygame.draw.circle(s, p["skin"], (hx, hy), hr)
+    pygame.draw.circle(s, p["skin_dark"], (hx, hy), hr - 2)
+    # hood
+    pygame.draw.polygon(s, p["robe"], [(hx - hr - 4, hy + 6), (hx - hr + 2, hy - 8), (hx, hy - 14), (hx + hr - 2, hy - 8), (hx + hr + 4, hy + 6)])
+    pygame.draw.polygon(s, p["robe_dark"],
+        [(hx - hr, hy + 4), (hx - hr + 4, hy - 5), (hx, hy - 10), (hx + hr - 4, hy - 5), (hx + hr, hy + 4)])
+    # fungus on hood
+    for fi in range(2):
+        fx = hx - 4 + fi * 8
+        fy = hy - 10
+        pygame.draw.rect(s, p["plague_dark"], (fx, fy, 2, 4))
+        pygame.draw.ellipse(s, p["plague"], (fx - 1, fy - 1, 4, 3))
+    # glowing sickly eyes
+    esp = 6 if dir != "side" else 4; so = 2 if dir == "side" else 0
+    for ex4 in (hx - esp + so, hx + esp + so):
+        eg = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(eg, (*p["accent"][:3], 50), (ex4, hy), 6)
+        pygame.draw.circle(eg, (*p["plague"][:3], 25), (ex4, hy), 9)
+        s.blit(eg, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+        pygame.draw.circle(s, p["eye_white"], (ex4, hy), 3)
+        pygame.draw.circle(s, p["eye_pupil"], (ex4, hy), 2)
+        # eye drip
+        pygame.draw.line(s, (*p["plague"][:3], 60), (ex4, hy + 3), (ex4, hy + 6), 1)
+    # toxic dripping from mouth
+    mouth_y = hy + 4
+    for mi in range(3):
+        md = 3 + mi * 3 + int(math.sin(frame * 0.5 + mi) * 2)
+        m_a = max(20, 120 - mi * 30)
+        pygame.draw.circle(s, (*p["plague"][:3], m_a), (hx + (mi - 1) * 2, mouth_y + md), 2)
+        # drip trail
+        pygame.draw.circle(s, (*p["plague_dark"][:3], m_a // 2), (hx + (mi - 1) * 2, mouth_y + md + 3), 1)
+
+
 DRAW_FUNCS = {
     "brute": _draw_brute, "venomous": _draw_venomous, "arcanist": _draw_arcanist,
     "trickster": _draw_trickster, "bomber": _draw_bomber, "stalker": _draw_stalker,
     "skirmisher": _draw_skirmisher, "guardian": _draw_guardian,
+    "phantom": _draw_phantom, "titan": _draw_titan,
+    "cryomancer": _draw_cryomancer, "shadowmancer": _draw_shadowmancer,
+    "revenant": _draw_revenant, "molten": _draw_molten,
+    "stormcaller": _draw_stormcaller, "plaguebearer": _draw_plaguebearer,
 }
 
 
