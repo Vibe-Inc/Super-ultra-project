@@ -6,8 +6,11 @@ import random
 import pygame
 
 from src.entities.monster_attacks import BaseAttack, AttackContext, _entity_center, _has_line_of_sight, _is_clear
-from src.entities.projectile import TimeBolt, ChronoBurst, TemporalSiphon, EternalChains, ParadoxMirror
-from database.effects import FreezeEffect, SlowEffect, RootEffect
+from src.entities.projectile import (
+    TimeBolt, ChronoBurst, TemporalSiphon, EternalChains, ParadoxMirror,
+    TemporalWave, ChronoRift, DecayZone, TimeStopField,
+)
+from database.effects import FreezeEffect, SlowEffect, RootEffect, LethargyEffect
 
 
 class ChronosAttack(BaseAttack):
@@ -94,6 +97,33 @@ class ChronosAttack(BaseAttack):
         # triple bolt (berserk fan)
         self.last_triple_time = -6000
         self.triple_cooldown_ms = 6000
+        # ─── TIME-THEMED ABILITIES ───
+        # time stop (freeze player)
+        self.timestop_cooldown_ms = int(self.config.get("timestop_cooldown_ms", 9000))
+        self.timestop_radius = float(self.config.get("timestop_radius", 120.0))
+        self.timestop_freeze_duration = float(self.config.get("timestop_freeze_duration", 1.5))
+        self.timestop_damage_mult = float(self.config.get("timestop_damage_mult", 0.5))
+        self.last_timestop_time = -self.timestop_cooldown_ms
+        # temporal wave (expanding ring)
+        self.wave_cooldown_ms = int(self.config.get("wave_cooldown_ms", 5500))
+        self.wave_radius = float(self.config.get("wave_radius", 160.0))
+        self.wave_damage_mult = float(self.config.get("wave_damage_mult", 0.8))
+        self.last_wave_time = -self.wave_cooldown_ms
+        # chrono rift (stationary turret)
+        self.rift_cooldown2_ms = int(self.config.get("rift_cooldown2_ms", 7000))
+        self.rift_duration = float(self.config.get("rift_duration", 4.0))
+        self.rift_damage_mult = float(self.config.get("rift_damage_mult", 0.35))
+        self.last_rift2_time = -self.rift_cooldown2_ms
+        # decay aura (lethargy zone)
+        self.decay_cooldown_ms = int(self.config.get("decay_cooldown_ms", 6500))
+        self.decay_radius = float(self.config.get("decay_radius", 80.0))
+        self.decay_damage_mult = float(self.config.get("decay_damage_mult", 0.3))
+        self.last_decay_time = -self.decay_cooldown_ms
+        # time reversal (heal self, damage player)
+        self.reversal_cooldown_ms = int(self.config.get("reversal_cooldown_ms", 10000))
+        self.reversal_heal = int(self.config.get("reversal_heal", 40))
+        self.reversal_damage_mult = float(self.config.get("reversal_damage_mult", 0.6))
+        self.last_reversal_time = -self.reversal_cooldown_ms
 
     def _get_phase(self, enemy) -> int:
         if hasattr(enemy, "hp") and hasattr(enemy, "max_hp") and enemy.max_hp > 0:
@@ -287,6 +317,100 @@ class ChronosAttack(BaseAttack):
         else:
             self.last_barrage_time = now_ms - self.barrage_cooldown_ms // 2
 
+    # ─── TIME STOP ───
+    def _do_time_stop(self, enemy, context, now_ms, player_pos, enemy_pos):
+        """Create a time-stop field that freezes the player."""
+        damage = max(1, int(enemy.damage * self.timestop_damage_mult))
+        field = TimeStopField(
+            player_pos, damage, self.timestop_radius,
+            self.timestop_freeze_duration, duration=1.0,
+        )
+        context.projectiles.append(field)
+        self.last_timestop_time = now_ms
+        if hasattr(enemy, "trigger_attack_anim"):
+            enemy.trigger_attack_anim(
+                "chronos_storm", 0.6,
+                direction=pygame.Vector2(0, -1), origin=enemy_pos, strength=1.6,
+            )
+
+    # ─── TEMPORAL WAVE ───
+    def _do_temporal_wave(self, enemy, context, now_ms):
+        """Emit an expanding ring of time energy."""
+        enemy_pos = _entity_center(enemy)
+        damage = max(1, int(enemy.damage * self.wave_damage_mult))
+        wave = TemporalWave(
+            enemy_pos, damage, self.wave_radius, duration=0.8,
+            slow_duration=1.5, slow_factor=0.5,
+        )
+        context.projectiles.append(wave)
+        self.last_wave_time = now_ms
+        if hasattr(enemy, "trigger_attack_anim"):
+            enemy.trigger_attack_anim(
+                "chronos_storm", 0.5,
+                direction=pygame.Vector2(0, -1), origin=enemy_pos, strength=1.3,
+            )
+
+    # ─── CHRONO RIFT (stationary turret) ───
+    def _do_chrono_rift(self, enemy, context, now_ms, player_pos, enemy_pos):
+        """Place a rift near the player that fires bolts periodically."""
+        mid = pygame.Vector2(
+            (enemy_pos.x + player_pos.x) / 2,
+            (enemy_pos.y + player_pos.y) / 2,
+        )
+        damage = max(1, int(enemy.damage * self.rift_damage_mult))
+        rift = ChronoRift(
+            mid, damage, self.rift_duration, fire_interval=0.6,
+            bolt_speed=300.0, bolt_range=350.0,
+            slow_duration=1.0, slow_factor=0.7,
+        )
+        context.projectiles.append(rift)
+        self.last_rift2_time = now_ms
+        if hasattr(enemy, "trigger_attack_anim"):
+            enemy.trigger_attack_anim(
+                "chronos_rift", 0.4,
+                direction=pygame.Vector2(0, -1), origin=enemy_pos, strength=1.1,
+            )
+
+    # ─── DECAY AURA ───
+    def _do_decay_aura(self, enemy, context, now_ms, player_pos, enemy_pos):
+        """Place a lingering decay zone that applies lethargy."""
+        damage = max(1, int(enemy.damage * self.decay_damage_mult))
+        zone = DecayZone(
+            player_pos, damage, self.decay_radius, duration=3.5,
+            tick_interval=0.8, lethargy_duration=2.0,
+            slow_factor=0.6, cooldown_mult=1.4,
+        )
+        context.projectiles.append(zone)
+        self.last_decay_time = now_ms
+        if hasattr(enemy, "trigger_attack_anim"):
+            enemy.trigger_attack_anim(
+                "chronos_burst", 0.5,
+                direction=pygame.Vector2(0, -1), origin=enemy_pos, strength=1.2,
+            )
+
+    # ─── TIME REVERSAL ───
+    def _do_time_reversal(self, enemy, context, now_ms, player_pos, enemy_pos):
+        """Reverse time flow — heal Chronos and damage the player."""
+        player = context.player
+        if player is None:
+            return
+        damage = max(1, int(enemy.damage * self.reversal_damage_mult))
+        player.take_damage(damage)
+        if hasattr(enemy, "hp") and hasattr(enemy, "max_hp"):
+            old_hp = enemy.hp
+            enemy.hp = min(enemy.max_hp, enemy.hp + self.reversal_heal)
+        self.last_reversal_time = now_ms
+        if hasattr(enemy, "trigger_attack_anim"):
+            enemy.trigger_attack_anim(
+                "chronos_storm", 0.7,
+                direction=pygame.Vector2(0, -1), origin=enemy_pos, strength=1.5,
+            )
+        # visual burst
+        burst = ChronoBurst(
+            _entity_center(enemy), 0, self.wave_radius * 0.8, 0.4, 0.3,
+        )
+        context.projectiles.append(burst)
+
     def update(self, enemy: object, context: AttackContext):
         player = context.player
         if player is None:
@@ -319,6 +443,12 @@ class ChronosAttack(BaseAttack):
                 self._do_rift_barrage(enemy, context, now_ms, player_pos, enemy_pos)
                 return
 
+            # time reversal (heal self)
+            reversal_ready = (now_ms - self.last_reversal_time) >= self.reversal_cooldown_ms
+            if reversal_ready and enemy.hp < enemy.max_hp * 0.6:
+                self._do_time_reversal(enemy, context, now_ms, player_pos, enemy_pos)
+                return
+
             # triple bolt fan
             triple_ready = (now_ms - self.last_triple_time) >= self.triple_cooldown_ms
             if triple_ready and distance_sq <= (self.bolt_range * self.bolt_range):
@@ -336,8 +466,20 @@ class ChronosAttack(BaseAttack):
                     )
                 return
 
-        # ─── PHASE 3: STORM + MIRROR + CASCADE ───
+        # ─── PHASE 3: STORM + MIRROR + CASCADE + DECAY + REVERSAL ───
         if phase >= 3:
+            # time reversal (heal self, damage player)
+            reversal_ready = (now_ms - self.last_reversal_time) >= self.reversal_cooldown_ms
+            if reversal_ready and enemy.hp < enemy.max_hp * 0.5:
+                self._do_time_reversal(enemy, context, now_ms, player_pos, enemy_pos)
+                return
+
+            # decay aura (lethargy zone on player)
+            decay_ready = (now_ms - self.last_decay_time) >= self.decay_cooldown_ms
+            if decay_ready and distance_sq <= (200.0 * 200.0):
+                self._do_decay_aura(enemy, context, now_ms, player_pos, enemy_pos)
+                return
+
             # chrono cascade
             cascade_ready = (now_ms - self.last_cascade_time) >= self.cascade_cooldown_ms
             if cascade_ready and distance_sq <= (self.cascade_range * self.cascade_range * 1.5):
@@ -376,8 +518,20 @@ class ChronosAttack(BaseAttack):
                     )
                 return
 
-        # ─── PHASE 2: BURST + RIFT + CHAINS + SHARDS ───
+        # ─── PHASE 2: BURST + RIFT + CHAINS + SHARDS + TIME STOP + RIFT TURRET ───
         if phase >= 2:
+            # time stop (freeze player)
+            timestop_ready = (now_ms - self.last_timestop_time) >= self.timestop_cooldown_ms
+            if timestop_ready and distance_sq <= (250.0 * 250.0):
+                self._do_time_stop(enemy, context, now_ms, player_pos, enemy_pos)
+                return
+
+            # chrono rift (stationary turret near player)
+            rift2_ready = (now_ms - self.last_rift2_time) >= self.rift_cooldown2_ms
+            if rift2_ready and distance_sq <= (300.0 * 300.0):
+                self._do_chrono_rift(enemy, context, now_ms, player_pos, enemy_pos)
+                return
+
             # time shards (fan)
             shard_ready = (now_ms - self.last_shard_time) >= self.shard_cooldown_ms
             if shard_ready and distance_sq <= (self.shard_range * self.shard_range * 1.2):
@@ -430,7 +584,12 @@ class ChronosAttack(BaseAttack):
                         )
                     return
 
-        # ─── PHASE 1+: TEMPORAL NOVA ───
+        # ─── PHASE 1+: TEMPORAL NOVA + TEMPORAL WAVE ───
+        wave_ready = (now_ms - self.last_wave_time) >= self.wave_cooldown_ms
+        if wave_ready and distance_sq <= (200.0 * 200.0):
+            self._do_temporal_wave(enemy, context, now_ms)
+            return
+
         nova_ready = (now_ms - self.last_nova_time) >= self.nova_cooldown_ms
         if nova_ready and distance_sq <= (250.0 * 250.0):
             self._do_temporal_nova(enemy, context, now_ms)
