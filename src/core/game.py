@@ -25,6 +25,7 @@ from src.entities.enemy import Enemy
 from src.entities.npc import NPC
 from src.entities.mage_npc import MageNPC
 from src.entities.projectile import Arrow
+from src.entities.peaceful_mob import PeacefulMob, create_all_peaceful_mobs
 from src.ui.hud import HUD
 from src.ui.widgets import Dialog
 from src.ui.debug_menu import SpawnMenu, EffectsMenu
@@ -522,7 +523,21 @@ class Game(State):
         
         self.enemies = [self.enemy]
         self.items = []
-        
+
+        # Peaceful majestic mobs (non-aggressive ambient creatures)
+        self.peaceful_mobs: list[PeacefulMob] = []
+        if initial_map_path not in self.NO_ENEMY_SPAWN_MAPS:
+            try:
+                if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                    map_w = self.map.current_map.pixel_width
+                    map_h = self.map.current_map.pixel_height
+                    self.peaceful_mobs = create_all_peaceful_mobs(map_w // 2, map_h // 2, spread=min(map_w, map_h) * 0.35)
+                else:
+                    self.peaceful_mobs = create_all_peaceful_mobs(960, 540, spread=350.0)
+            except Exception as exc:
+                logger.warning(f"Failed to spawn peaceful mobs: {exc}")
+                self.peaceful_mobs = []
+
         # Enemy spawning system
         self.enemy_spawn_timer = 0.0
         self.enemy_spawn_interval = 30.0 # seconds
@@ -964,6 +979,24 @@ class Game(State):
             return best_pos
         except Exception:
             return None
+
+    def _find_nearby_peaceful_mob(self) -> PeacefulMob | None:
+        """Find the closest PeacefulMob within interaction range, or None."""
+        INTERACT_RANGE = 80.0
+        sq = INTERACT_RANGE * INTERACT_RANGE
+        player_center = self.character.get_center()
+        best: PeacefulMob | None = None
+        best_dist = sq + 1
+        for mob in self.peaceful_mobs:
+            mob_center = pygame.Vector2(
+                mob.pos.x + mob.image.get_width() // 2,
+                mob.pos.y + mob.image.get_height() // 2,
+            )
+            d2 = (mob_center - player_center).length_squared()
+            if d2 <= sq and d2 < best_dist:
+                best = mob
+                best_dist = d2
+        return best
 
     def _draw_smeltery_hint(self, screen, camera_offset):
         """Show a floating 'Press E to use Smeltery' hint above the
@@ -1426,7 +1459,20 @@ class Game(State):
             
             # Reset enemies list and spawn default one if needed
             self.enemies = []
-            
+
+            # Respawn peaceful mobs on the new map
+            self.peaceful_mobs = []
+            if switched_map_path not in self.NO_ENEMY_SPAWN_MAPS:
+                try:
+                    if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                        mw = self.map.current_map.pixel_width
+                        mh = self.map.current_map.pixel_height
+                        self.peaceful_mobs = create_all_peaceful_mobs(mw // 2, mh // 2, spread=min(mw, mh) * 0.35)
+                    else:
+                        self.peaceful_mobs = create_all_peaceful_mobs(960, 540, spread=350.0)
+                except Exception as exc:
+                    logger.warning(f"Failed to respawn peaceful mobs: {exc}")
+
             spawn_info = self._get_spawn_info(switched_map_path)
             if switched_map_path not in self.NO_ENEMY_SPAWN_MAPS and spawn_info:
                 new_x, new_y = spawn_info["pos"]
@@ -1599,6 +1645,10 @@ class Game(State):
         # Update summoned spirits
         self._update_spirits(dt)
 
+        # Update peaceful mobs
+        for mob in self.peaceful_mobs:
+            mob.update(dt, self.character, self.enemies)
+
         self.collision_handler.check_interactions(
             self.character, self.enemies, self.items
         )
@@ -1745,6 +1795,7 @@ class Game(State):
         self.app.profiler.set_gauge("projectiles", len(self.projectiles))
         self.app.profiler.set_gauge("enemy_projectiles", len(self.enemy_projectiles))
         self.app.profiler.set_gauge("spirits", len(self.spirits))
+        self.app.profiler.set_gauge("peaceful_mobs", len(self.peaceful_mobs))
 
     def _apply_ice_armor_slow(self, dt):
         """Slow enemies near the player while Ice Armor is active."""
@@ -1835,6 +1886,13 @@ class Game(State):
         for enemy in self.enemies:
             if _is_visible(enemy):
                 enemy.draw(screen, camera_offset)
+
+        # Draw peaceful mobs
+        for mob in self.peaceful_mobs:
+            try:
+                mob.draw(screen, camera_offset)
+            except Exception:
+                pass
 
         for projectile in self.projectiles:
             if _is_visible(projectile):
@@ -2155,6 +2213,11 @@ class Game(State):
                     self.app.current_dialog = Dialog(self.app, self.npc.dialog_lines, on_close=on_close, on_shop=self.open_shop, show_shop=self.npc.is_merchant)
                 elif self._find_nearby_smeltery_tile() is not None and getattr(self, "smeltery", None):
                     self.smeltery.open()
+                elif self._find_nearby_peaceful_mob() is not None:
+                    mob = self._find_nearby_peaceful_mob()
+                    msg = mob.on_player_interact(self.character)
+                    if msg:
+                        self.app.current_dialog = Dialog(self.app, [msg])
                 else:
                     # Otherwise toggle the player's inventory (open/close)
                     self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
