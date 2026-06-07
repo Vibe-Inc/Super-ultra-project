@@ -200,6 +200,8 @@ class Enemy:
         self.patrol_points = patrol_points or []
         self.patrol_index = 0
         self.detection_range = detection_range
+        self.base_detection_range = detection_range
+        self.weather_speed_multiplier = 1.0
         self.attack_range = attack_range
         self._ai_context = AIContext(dt=0.0, nav_grid=None, obstacles=[], player=None)
 
@@ -391,7 +393,7 @@ class Enemy:
             if self.attack_controller and attack_context:
                 self.attack_controller.update(self, attack_context)
 
-            self.speed = self.base_speed * self.speed_multiplier * self.speed_multiplier_world
+            self.speed = self.base_speed * self.speed_multiplier * self.speed_multiplier_world * getattr(self, 'weather_speed_multiplier', 1.0)
             self._move(dt)
         else:
             self.speed = 0.0

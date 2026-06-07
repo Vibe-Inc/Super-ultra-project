@@ -247,20 +247,27 @@ class PlayerCombatController:
         allowed_angle = 120.0
         return abs(angle) <= allowed_angle
 
+    def _get_targets(self):
+        targets = list(self.game.enemies)
+        if hasattr(self.game, 'peaceful_mobs'):
+            targets.extend(self.game.peaceful_mobs)
+        return targets
+
     def _execute_melee_attack(self, char, aim_dir):
         weapon = self.game.equipped_weapon or self.get_equipped_weapon()
         combat_style = getattr(weapon, "combat_style", "sword") if weapon else "sword"
+        targets = self._get_targets()
         if combat_style == "mace":
-            char.attack_mace(self.game.enemies, aim_direction=aim_dir)
+            char.attack_mace(targets, aim_direction=aim_dir)
         elif combat_style == "axe":
-            char.attack_axe(self.game.enemies, aim_direction=aim_dir)
+            char.attack_axe(targets, aim_direction=aim_dir)
         elif combat_style == "spear":
-            char.attack_spear(self.game.enemies, aim_direction=aim_dir)
+            char.attack_spear(targets, aim_direction=aim_dir)
         elif combat_style == "war_hammer":
-            char.attack_war_hammer(self.game.enemies, aim_direction=aim_dir)
+            char.attack_war_hammer(targets, aim_direction=aim_dir)
         else:
             cone_degrees = float(getattr(weapon, "cone_degrees", 90.0)) if weapon else 90.0
-            char.attack(self.game.enemies, aim_direction=aim_dir, cone_degrees=cone_degrees)
+            char.attack(targets, aim_direction=aim_dir, cone_degrees=cone_degrees)
         self._damage_equipped_weapon(1)
 
     def handle_player_attack(self, mouse_pos):
@@ -323,7 +330,7 @@ class PlayerCombatController:
             char.cancel_charge()
             return
 
-        char.release_charge(self.game.enemies, aim_direction=aim_dir, game_state=self.game)
+        char.release_charge(self._get_targets(), aim_direction=aim_dir, game_state=self.game)
         self._damage_equipped_weapon(1)
 
     def handle_fast_attack(self, mouse_pos):
@@ -353,7 +360,7 @@ class PlayerCombatController:
         if not char.can_attack():
             return
 
-        char.attack_fast(self.game.enemies, aim_direction=aim_dir)
+        char.attack_fast(self._get_targets(), aim_direction=aim_dir)
         self._damage_equipped_weapon(1)
 
     def handle_throw_weapon(self, mouse_pos):
@@ -363,4 +370,4 @@ class PlayerCombatController:
             return
 
         char = self.game.character
-        char.throw_weapon(self.game.enemies, aim_direction=aim_dir, game_state=self.game)
+        char.throw_weapon(self._get_targets(), aim_direction=aim_dir, game_state=self.game)

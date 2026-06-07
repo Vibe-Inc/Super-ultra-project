@@ -59,7 +59,7 @@ _VOICE_HOLD = 1.5
 _VOICE_LINES = [
     '"Arise, Chosen One."',
     '"I sense the latent magic humming in your blood.\nYou have been selected for a sacred mission."',
-    '"Far to the east, a great dragon slumbers in a\nmountain cave. You must slay it, or the realm will burn."',
+    '"Far to the east, a Chronos slumbers in \na mountain cave. You must slay it, or the realm will collapse."',
 ]
 
 # ─── Helper particle classes ───────────────────────────────────────────────────
