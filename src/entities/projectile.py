@@ -1,7 +1,7 @@
 import math
 import random
 import pygame
-from database.effects import BurnEffect, ConfusionEffect, DizzinessEffect, FreezeEffect, PoisonEffect, SlowEffect, RootEffect
+from database.effects import BurnEffect, ConfusionEffect, DizzinessEffect, FreezeEffect, LethargyEffect, PoisonEffect, SlowEffect, RootEffect
 from src.core.logger import logger
 
 

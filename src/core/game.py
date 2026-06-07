@@ -1731,6 +1731,12 @@ class Game(State):
             )
         enemy.target_entity = self.character
         enemy.profile_name = profile_name
+        if isinstance(enemy, Boss):
+            try:
+                screen_w, screen_h = pygame.display.get_surface().get_size()
+                enemy.set_screen_size((screen_w, screen_h))
+            except Exception:
+                pass
         return enemy
 
     def spawn_random_enemy(self):
