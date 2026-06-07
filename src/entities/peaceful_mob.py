@@ -32,6 +32,7 @@ if TYPE_CHECKING:
 CAT_SOUNDS = ["nyaa", "purrr", "meow", "mrrrow", "prrr", "mew", "nya~"]
 
 PEACEFUL_MOB_REGISTRY: dict[str, dict] = {
+
     "grove_titan": {
         "name": "Grove Titan",
         "description": "A small, gentle tree creature that waddles and hums.",
@@ -157,6 +158,7 @@ PEACEFUL_MOB_REGISTRY: dict[str, dict] = {
 
 }
 
+COMMON_MOB_TYPES = [k for k in PEACEFUL_MOB_REGISTRY if k != "tavern_cat"]
 
 # ============================================================
 # PEACEFUL MOB CLASS
@@ -604,7 +606,6 @@ class PeacefulMob:
             "crystal_fox": "The Crystal Fox flicks its tail. Shimmering prismatic light dances across its fur.",
             "fairy_cat": "The Fairy Cat purrs and rubs against your leg. The tiny bells on its collar chime softly.",
             "tavern_cat": "The Tavern Cat purrs loudly and weaves between your ankles. You can hear it meowing for scraps.",
-
         }
 
         msg = interactions.get(self.mob_type, f"The {self.name} regards you serenely.")

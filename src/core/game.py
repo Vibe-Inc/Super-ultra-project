@@ -904,6 +904,7 @@ class Game(State):
 
         # Peaceful majestic mobs (non-aggressive ambient creatures)
         self.peaceful_mobs: list[PeacefulMob] = []
+        self._tavern_cat_respawn_timer: float = 0.0
 
         # Peaceful mob spawn points per map.
         # Supports two value forms per map:
@@ -1204,7 +1205,7 @@ class Game(State):
             tavern guarantees its signature orange tabby cat is always
             prowling the common area.
         """
-        from src.entities.peaceful_mob import PEACEFUL_MOB_REGISTRY, create_peaceful_mob
+        from src.entities.peaceful_mob import COMMON_MOB_TYPES, PEACEFUL_MOB_REGISTRY, create_peaceful_mob
         spawn_info = self.PEACEFUL_MOB_SPAWNS.get(self.current_map_path)
         if not spawn_info:
             return
@@ -1216,11 +1217,11 @@ class Game(State):
             x, y = spawn_info.get("pos", (0, 0))
             mob_type = spawn_info.get("mob_type")
             if not mob_type:
-                mob_type = random.choice(list(PEACEFUL_MOB_REGISTRY.keys()))
+                mob_type = random.choice(COMMON_MOB_TYPES)
         else:
             # Legacy tuple form
             x, y = spawn_info
-            mob_type = random.choice(list(PEACEFUL_MOB_REGISTRY.keys()))
+            mob_type = random.choice(COMMON_MOB_TYPES)
 
         # Validate mob type exists in registry; fall back to a random one
         # if the configured type was removed or renamed.
@@ -1229,7 +1230,7 @@ class Game(State):
                 f"Configured peaceful mob type '{mob_type}' is not in "
                 f"PEACEFUL_MOB_REGISTRY — falling back to a random type."
             )
-            mob_type = random.choice(list(PEACEFUL_MOB_REGISTRY.keys()))
+            mob_type = random.choice(COMMON_MOB_TYPES)
 
         if not self._check_position_collision(
             pygame.Rect(x, y, 40, 40),
@@ -2578,8 +2579,20 @@ class Game(State):
         # Remove dead peaceful mobs (drop loot, then despawn)
         for mob in self.peaceful_mobs[:]:
             if mob.is_dead():
+                if mob.mob_type == "tavern_cat" and self.current_map_path == "maps/tavern.tmx":
+                    self._tavern_cat_respawn_timer = 5.0
                 self._drop_peaceful_mob_loot(mob)
                 self.peaceful_mobs.remove(mob)
+
+        # Tavern cat respawn — at most one at a time
+        if self.current_map_path == "maps/tavern.tmx":
+            has_cat = any(m.mob_type == "tavern_cat" for m in self.peaceful_mobs)
+            if not has_cat:
+                self._tavern_cat_respawn_timer -= dt
+                if self._tavern_cat_respawn_timer <= 0:
+                    from src.entities.peaceful_mob import create_peaceful_mob
+                    cat = create_peaceful_mob(560, 480, "tavern_cat")
+                    self.peaceful_mobs.append(cat)
 
         self.npc.update(self.character.pos)
         self.card_npc.update(self.character.pos)
