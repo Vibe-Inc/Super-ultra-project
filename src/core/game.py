@@ -47,6 +47,8 @@ from src.minigames.fishing import FishingController
 from src.minigames.gathering import GatheringController
 from src.world.gatherable_nodes import GatherableNodeRegistry
 from src.ui.menus.smeltery import SmelteryMenu
+from src.systems.world_scale import WorldScale
+from src.ui.menus.world_scale_menu import WorldScaleMenu
 import inspect
 import database.effects as effects_db
 
@@ -233,6 +235,9 @@ class Game(State):
         logger.info("Initializing Game State...")
         self.character = Character()
         self.character.game_state = self
+        self.world_scale = WorldScale()
+        self.character.recalc_world_scale_bonuses(self.world_scale)
+        self.world_scale_menu = WorldScaleMenu(app, self.world_scale, on_close=self._refresh_world_scale)
 
         initial_map_path = "maps/test-map-1.tmx"
         self.current_map_path = initial_map_path
@@ -1948,6 +1953,15 @@ class Game(State):
                 enemy.set_screen_size((screen_w, screen_h))
             except Exception:
                 pass
+        # Apply world scale to non-boss enemies
+        ws = getattr(self, 'world_scale', None)
+        if ws and ws.level > 0:
+            enemy.apply_world_scale({
+                'hp': ws.enemy_hp_mult(),
+                'damage': ws.enemy_damage_mult(),
+                'speed': ws.enemy_speed_mult(),
+                'range': ws.enemy_range_mult(),
+            })
         return enemy
 
     def spawn_random_enemy(self):
@@ -2163,6 +2177,19 @@ class Game(State):
                 f"{amount}x {item_id} at ({base_x + offset_x}, {base_y + offset_y})"
             )
 
+    def _refresh_world_scale(self):
+        ws = getattr(self, 'world_scale', None)
+        if ws:
+            self.character.recalc_world_scale_bonuses(ws)
+            for enemy in self.enemies:
+                if not enemy.is_boss:
+                    enemy.apply_world_scale({
+                        'hp': ws.enemy_hp_mult(),
+                        'damage': ws.enemy_damage_mult(),
+                        'speed': ws.enemy_speed_mult(),
+                        'range': ws.enemy_range_mult(),
+                    })
+
     def update(self, dt):
         # Update weather system
         if hasattr(self, 'weather'):
@@ -2375,17 +2402,14 @@ class Game(State):
             active = ediff.length_squared() <= lod_sq
             enemy.update(dt, self.collision_handler, self.obstacles, self.nav_grid, attack_context, active=active)
 
-        # Parry check: if player is in parry window and enemy is telegraphing
+        # Parry check against melee enemies
         if self.character.is_in_parry_window():
             for enemy in self.enemies:
-                if hasattr(enemy, "is_attack_telegraphing") and enemy.is_attack_telegraphing():
-                    e_center = pygame.Vector2(enemy.get_rect().center)
-                    p_center = self.character.get_center()
-                    dist = e_center.distance_to(p_center)
-                    atk_range = getattr(enemy, "attack_telegraph_range", enemy.attack_range)
-                    if dist <= atk_range * 1.5:
-                        if self.character.do_parry(enemy):
-                            enemy.attack_phase = 0
+                p_center = self.character.get_center()
+                e_center = pygame.Vector2(enemy.get_rect().center)
+                if p_center.distance_to(e_center) <= enemy.attack_range * 1.2:
+                    if self.character.do_parry(enemy):
+                        pass  # do_parry handles stun + damage
 
         self._update_projectiles(dt)
         self._update_enemy_projectiles(dt)
@@ -2477,6 +2501,11 @@ class Game(State):
                 _scale = enemy.max_hp / 100.0
 
                 xp_gain = int(random.randint(_base_xp_min, _base_xp_max) * _scale)
+                # World scale XP on kill
+                world_xp = max(1, int(enemy.max_hp / 20))
+                if self.world_scale.add_xp(world_xp):
+                    self._refresh_world_scale()
+                    logger.info(f"World Scale Level Up! Now level {self.world_scale.level}")
                 # Soul Harvest: restore HP and add damage stack
                 character = self.character
                 if getattr(character, "soul_harvest", False):
@@ -2940,6 +2969,12 @@ class Game(State):
             self.effects_menu.draw(screen)
         except Exception:
             pass
+        # World scale menu overlay
+        if getattr(self, 'world_scale_menu', None):
+            try:
+                self.world_scale_menu.draw(screen)
+            except Exception:
+                pass
 
     def draw(self, screen):
         self.draw_scene(screen)
@@ -3043,6 +3078,11 @@ class Game(State):
                     return
             except Exception:
                 pass
+
+        # World scale menu (J key)
+        if getattr(self, 'world_scale_menu', None) and self.world_scale_menu.visible:
+            if self.world_scale_menu.handle_event(event):
+                return
 
         if event.type == pygame.MOUSEWHEEL:
             if getattr(self.app.INV_manager, 'hotbar', None):
@@ -3191,6 +3231,9 @@ class Game(State):
             if event.key == pygame.K_F10:
                 self.spawn_menu.toggle()
 
+            if event.key == pygame.K_j:
+                self.world_scale_menu.toggle()
+
             if event.key == pygame.K_r:
                 if not self.app.INV_manager.player_inventory_opened:
                     mouse_pos = pygame.mouse.get_pos()
@@ -3215,7 +3258,10 @@ class Game(State):
 
             elif event.button == 3:
                 if not self.app.INV_manager.player_inventory_opened:
-                    # Start blocking
+                    # Block requires world scale level 10
+                    ws = getattr(self, 'world_scale', None)
+                    if ws and not ws.has_ability('block'):
+                        return
                     self.character.start_block()
 
 

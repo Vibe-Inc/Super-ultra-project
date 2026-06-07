@@ -9,7 +9,7 @@ import pygame
 from typing import TYPE_CHECKING
 
 from src.core.logger import logger
-from src.ui.menus import MainMenu, SettingsMenu, CreditsMenu, PauseMenu, SaveLoadMenu, SkillbarMenu, SkillTreeMenu, RecipeBookMenu, WikiMenu, CollectionBookMenu, ArcaneQuestMenu, MysteriumMagnumMenu, LocationMapMenu, IntroAnimation, AchievementsMenu
+from src.ui.menus import MainMenu, SettingsMenu, CreditsMenu, PauseMenu, SaveLoadMenu, SkillbarMenu, SkillTreeMenu, RecipeBookMenu, WikiMenu, CollectionBookMenu, ArcaneQuestMenu, MysteriumMagnumMenu, LocationMapMenu, IntroAnimation, TempleIntroAnimation, AchievementsMenu
 from src.core.game import Game
 
 if TYPE_CHECKING:
@@ -70,6 +70,7 @@ class StateManager:
             "mysterium_magnum": MysteriumMagnumMenu(app),
             "location_map": LocationMapMenu(app),
             "intro_animation": IntroAnimation(app),
+            "temple_intro_animation": TempleIntroAnimation(app),
             "achievements": AchievementsMenu(app),
         }
         self.current_state = None
@@ -159,6 +160,7 @@ class StateManager:
             "mysterium_magnum": MysteriumMagnumMenu(self.states["main"].app),
             "location_map": LocationMapMenu(self.states["main"].app),
             "intro_animation": self.states["intro_animation"],
+            "temple_intro_animation": self.states["temple_intro_animation"],
             "achievements": AchievementsMenu(self.states["main"].app),
         }
         

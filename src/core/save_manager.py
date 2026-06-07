@@ -389,6 +389,7 @@ class SaveManager:
                 "map_path": game_state.current_map_path if hasattr(game_state, "current_map_path") else "maps/test-map-1.tmx",
                 "character_state": char_state,
                 "intro_played": getattr(game_state, "intro_played", False),
+                "temple_intro_played": getattr(game_state, "temple_intro_played", False),
             },
             "inventory": serialized_inv,
             "hotbar": serialized_hotbar,
@@ -396,6 +397,10 @@ class SaveManager:
             "equipment": serialized_equip,
             "game_time_seconds": int(getattr(game_state, "game_time_seconds", 6 * 3600)),
             "quests": quest_data,
+            "world_scale": {
+                "level": game_state.world_scale.level,
+                "xp": game_state.world_scale.xp,
+            } if hasattr(game_state, "world_scale") else {"level": 0, "xp": 0},
         }
         
         if hasattr(game_state, "current_map_path"):
@@ -475,6 +480,7 @@ class SaveManager:
         char.level = player_data.get("level", 1)
         char.xp_to_next_level = player_data.get("xp_to_next_level", 100)
         game_state.intro_played = player_data.get("intro_played", False)
+        game_state.temple_intro_played = player_data.get("temple_intro_played", False)
 
         # Restore extended character state
         char_state = player_data.get("character_state", {})
@@ -513,6 +519,22 @@ class SaveManager:
             char.attack_cooldown = char.base_attack_cooldown
             if char.max_hp < char.hp:
                 char.hp = char.max_hp
+
+        # Restore world scale
+        ws_data = data.get("world_scale", None)
+        if ws_data and hasattr(game_state, "world_scale"):
+            game_state.world_scale.set_level(max(0, ws_data.get("level", 0)))
+            game_state.world_scale.xp = max(0, ws_data.get("xp", 0))
+            game_state.character.recalc_world_scale_bonuses(game_state.world_scale)
+            # Re-scale all existing enemies
+            for enemy in game_state.enemies:
+                if not enemy.is_boss:
+                    enemy.apply_world_scale({
+                        'hp': game_state.world_scale.enemy_hp_mult(),
+                        'damage': game_state.world_scale.enemy_damage_mult(),
+                        'speed': game_state.world_scale.enemy_speed_mult(),
+                        'range': game_state.world_scale.enemy_range_mult(),
+                    })
         
         # Restore Items Hotbar
         hotbar_data = data.get("hotbar", [])
