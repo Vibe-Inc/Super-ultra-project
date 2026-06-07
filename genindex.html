@@ -790,7 +790,11 @@
 </li>
       <li><a href="src.entities.html#id3">attack_axe() (src.entities.character.Character method)</a>, <a href="src.entities.html#src.entities.character.Character.attack_axe">[1]</a>
 </li>
+      <li><a href="src.entities.html#src.entities.character.Character.attack_charged">attack_charged() (src.entities.character.Character method)</a>
+</li>
       <li><a href="src.entities.html#src.entities.enemy.Enemy.attack_controller">attack_controller (src.entities.enemy.Enemy attribute)</a>
+</li>
+      <li><a href="src.entities.html#src.entities.character.Character.attack_fast">attack_fast() (src.entities.character.Character method)</a>
 </li>
       <li><a href="src.entities.html#id4">attack_mace() (src.entities.character.Character method)</a>, <a href="src.entities.html#src.entities.character.Character.attack_mace">[1]</a>
 </li>
@@ -910,6 +914,10 @@
         <li><a href="src.inventory.html#id5">(src.inventory.system.CraftingLogic static method)</a>
 </li>
       </ul></li>
+      <li><a href="src.entities.html#src.entities.character.Character.can_throw_weapon">can_throw_weapon() (src.entities.character.Character method)</a>
+</li>
+      <li><a href="src.entities.html#src.entities.character.Character.cancel_charge">cancel_charge() (src.entities.character.Character method)</a>
+</li>
       <li><a href="src.ui.html#src.ui.menus.RecipeBookMenu.card_entry_duration">card_entry_duration (src.ui.menus.RecipeBookMenu attribute)</a>
 </li>
       <li><a href="src.ui.html#src.ui.menus.RecipeBookMenu.card_entry_start_time">card_entry_start_time (src.ui.menus.RecipeBookMenu attribute)</a>
@@ -964,10 +972,10 @@
 </li>
       <li><a href="src.items.html#src.items.items.RangedWeapon.cone_degrees">cone_degrees (src.items.items.RangedWeapon attribute)</a>
 </li>
-      <li><a href="src.items.html#src.items.items.Consumable">Consumable (class in src.items.items)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="src.items.html#src.items.items.Consumable">Consumable (class in src.items.items)</a>
+</li>
       <li><a href="src.inventory.html#src.inventory.system.CraftingLogic.consume_ingredients">consume_ingredients() (src.inventory.system.CraftingLogic method)</a>
 
       <ul>
@@ -977,6 +985,8 @@
       <li><a href="src.entities.html#id8">consume_mana() (src.entities.character.Character method)</a>, <a href="src.entities.html#src.entities.character.Character.consume_mana">[1]</a>
 </li>
       <li><a href="src.entities.html#id9">consume_stamina() (src.entities.character.Character method)</a>, <a href="src.entities.html#src.entities.character.Character.consume_stamina">[1]</a>
+</li>
+      <li><a href="src.entities.html#src.entities.enemy.Enemy.consume_strike">consume_strike() (src.entities.enemy.Enemy method)</a>
 </li>
       <li><a href="src.entities.html#src.entities.enemy.Enemy.contact_damage">contact_damage (src.entities.enemy.Enemy attribute)</a>
 </li>
@@ -1096,6 +1106,8 @@
         <li><a href="src.items.html#src.items.items.Weapon.display_name">(src.items.items.Weapon property)</a>
 </li>
       </ul></li>
+      <li><a href="src.entities.html#src.entities.character.Character.do_parry">do_parry() (src.entities.character.Character method)</a>
+</li>
       <li><a href="src.entities.html#src.entities.character.Character.dot">dot() (src.entities.character.Character method)</a>
 </li>
       <li><a href="src.ui.html#src.ui.menus.SkillTreeMenu.drag_origin">drag_origin (src.ui.menus.SkillTreeMenu attribute)</a>
@@ -1622,6 +1634,12 @@
         <li><a href="src.ui.html#src.ui.widgets.Inventory_slider">(class in src.ui.widgets)</a>
 </li>
       </ul></li>
+      <li><a href="src.entities.html#src.entities.enemy.Enemy.is_attack_striking">is_attack_striking() (src.entities.enemy.Enemy method)</a>
+</li>
+      <li><a href="src.entities.html#src.entities.enemy.Enemy.is_attack_telegraphing">is_attack_telegraphing() (src.entities.enemy.Enemy method)</a>
+</li>
+      <li><a href="src.entities.html#src.entities.enemy.Enemy.is_attack_wind_up">is_attack_wind_up() (src.entities.enemy.Enemy method)</a>
+</li>
       <li><a href="src.items.html#src.items.items.DurabilityMixin.is_broken">is_broken() (src.items.items.DurabilityMixin method)</a>
 </li>
       <li><a href="src.core.html#id4">is_daytime() (src.core.game.Game method)</a>, <a href="src.core.html#src.core.game.Game.is_daytime">[1]</a>
@@ -1635,6 +1653,10 @@
       <li><a href="src.inventory.html#src.inventory.system.Inventory.is_hidden">is_hidden (src.inventory.system.Inventory attribute)</a>
 </li>
       <li><a href="src.entities.html#id22">is_immune() (src.entities.character.Character method)</a>, <a href="src.entities.html#src.entities.character.Character.is_immune">[1]</a>
+</li>
+      <li><a href="src.entities.html#src.entities.enemy.Enemy.is_in_attack">is_in_attack() (src.entities.enemy.Enemy method)</a>
+</li>
+      <li><a href="src.entities.html#src.entities.character.Character.is_in_parry_window">is_in_parry_window() (src.entities.character.Character method)</a>
 </li>
       <li><a href="src.entities.html#src.entities.npc.NPC.is_interactable">is_interactable (src.entities.npc.NPC attribute)</a>
 </li>
@@ -2161,6 +2183,8 @@
         <li><a href="src.ui.html#src.ui.widgets.Tooltip.rect">(src.ui.widgets.Tooltip attribute)</a>
 </li>
       </ul></li>
+      <li><a href="src.entities.html#src.entities.character.Character.reflect_projectile">reflect_projectile() (src.entities.character.Character method)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.ui.html#id34">refresh_saves() (src.ui.menus.SaveLoadMenu method)</a>, <a href="src.ui.html#src.ui.menus.SaveLoadMenu.refresh_saves">[1]</a>
@@ -2168,6 +2192,8 @@
       <li><a href="src.core.html#id25">reinit_states() (src.core.state_manager.StateManager method)</a>, <a href="src.core.html#src.core.state_manager.StateManager.reinit_states">[1]</a>
 </li>
       <li><a href="src.core.html#id8">reinit_ui() (src.core.game.Game method)</a>, <a href="src.core.html#src.core.game.Game.reinit_ui">[1]</a>
+</li>
+      <li><a href="src.entities.html#src.entities.character.Character.release_charge">release_charge() (src.entities.character.Character method)</a>
 </li>
       <li><a href="src.items.html#src.items.items.DurabilityMixin.repair">repair() (src.items.items.DurabilityMixin method)</a>
 </li>
@@ -2343,8 +2369,6 @@
 </li>
       <li><a href="src.items.html#src.items.items.RangedWeapon.spread_degrees">spread_degrees (src.items.items.RangedWeapon attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     src
 
@@ -2359,6 +2383,8 @@
         <li><a href="src.html#module-src.app">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     src.config
 
@@ -2523,6 +2549,12 @@
 </li>
       <li><a href="src.entities.html#id51">start_attack() (src.entities.character.Character method)</a>, <a href="src.entities.html#src.entities.character.Character.start_attack">[1]</a>
 </li>
+      <li><a href="src.entities.html#src.entities.enemy.Enemy.start_attack_phase">start_attack_phase() (src.entities.enemy.Enemy method)</a>
+</li>
+      <li><a href="src.entities.html#src.entities.character.Character.start_block">start_block() (src.entities.character.Character method)</a>
+</li>
+      <li><a href="src.entities.html#src.entities.character.Character.start_charge">start_charge() (src.entities.character.Character method)</a>
+</li>
       <li><a href="src.ui.html#id16">start_game() (src.ui.menus.MainMenu method)</a>, <a href="src.ui.html#src.ui.menus.MainMenu.start_game">[1]</a>
 </li>
       <li><a href="src.ui.html#src.ui.widgets.Tooltip.STAT_COLOR">STAT_COLOR (src.ui.widgets.Tooltip attribute)</a>
@@ -2533,6 +2565,8 @@
 </li>
       <li><a href="src.core.html#src.core.state_manager.StateManager.states">states (src.core.state_manager.StateManager attribute)</a>
 </li>
+      <li><a href="src.entities.html#src.entities.character.Character.stop_block">stop_block() (src.entities.character.Character method)</a>
+</li>
       <li><a href="src.ui.html#src.ui.menus.SkillbarMenu.storage_grid_rect">storage_grid_rect (src.ui.menus.SkillbarMenu attribute)</a>
 </li>
       <li><a href="src.ui.html#src.ui.menus.SkillbarMenu.storage_slot_rects">storage_slot_rects (src.ui.menus.SkillbarMenu attribute)</a>
@@ -2540,6 +2574,8 @@
       <li><a href="src.ui.html#src.ui.menus.SkillbarMenu.storage_slots_count">storage_slots_count (src.ui.menus.SkillbarMenu attribute)</a>
 </li>
       <li><a href="src.entities.html#src.entities.character.Character.strength_metric">strength_metric() (src.entities.character.Character method)</a>
+</li>
+      <li><a href="src.entities.html#src.entities.enemy.Enemy.stun">stun() (src.entities.enemy.Enemy method)</a>
 </li>
       <li><a href="src.map.html#id3">switch_map() (src.map.map.LocalMap method)</a>, <a href="src.map.html#src.map.map.LocalMap.switch_map">[1]</a>
 </li>
@@ -2584,6 +2620,8 @@
 </li>
       </ul></li>
       <li><a href="src.ui.html#src.ui.widgets.Button.text_surf">text_surf (src.ui.widgets.Button attribute)</a>
+</li>
+      <li><a href="src.entities.html#src.entities.character.Character.throw_weapon">throw_weapon() (src.entities.character.Character method)</a>
 </li>
       <li><a href="src.map.html#src.map.map.Map.TILESET_ANIMATIONS">TILESET_ANIMATIONS (src.map.map.Map attribute)</a>
 </li>
@@ -2720,6 +2758,8 @@
 </li>
       </ul></li>
       <li><a href="src.html#src.config.update_brightness">update_brightness() (in module src.config)</a>
+</li>
+      <li><a href="src.entities.html#src.entities.character.Character.update_charge">update_charge() (src.entities.character.Character method)</a>
 </li>
       <li><a href="src.html#id8">update_language() (src.app.App method)</a>, <a href="src.html#src.app.App.update_language">[1]</a>
 </li>
