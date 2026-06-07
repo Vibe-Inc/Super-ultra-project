@@ -937,7 +937,9 @@ class Game(State):
                 {"pos": (300, 200),  "profile": "skirmisher"},
                 {"pos": (900, 500),  "profile": "bomber"},
                 {"pos": (1400, 800), "profile": "phantom"},
-                {"pos": (2200, 1200), "profile": "chronos", "is_boss": True},
+            ],
+            "maps/test-map-4.tmx": [
+                {"pos": (480, 640), "profile": "chronos", "is_boss": True},
             ],
         }
 
@@ -964,7 +966,8 @@ class Game(State):
         }
 
         # Maps where enemy spawning (both default and random) is disabled
-        self.NO_ENEMY_SPAWN_MAPS = {"maps/tavern.tmx", "maps/test-map-1.tmx", "maps/test-map-4.tmx"}
+        self.NO_ENEMY_SPAWN_MAPS = {"maps/tavern.tmx", "maps/test-map-1.tmx"}
+        self.NO_RANDOM_ENEMY_SPAWN_MAPS = {"maps/test-map-4.tmx"}
 
         spawn_entries = self._get_spawn_entries(initial_map_path)
         if initial_map_path in self.NO_ENEMY_SPAWN_MAPS:
@@ -998,7 +1001,7 @@ class Game(State):
         }
 
         # Maps where peaceful mob spawning is disabled
-        self.NO_PEACEFUL_MOB_MAPS = {"maps/tavern.tmx", "maps/test-map-1.tmx"}
+        self.NO_PEACEFUL_MOB_MAPS = {"maps/tavern.tmx", "maps/test-map-1.tmx", "maps/test-map-4.tmx"}
 
         # Enemy spawning system
         self.enemy_spawn_timer = 0.0
@@ -2435,7 +2438,7 @@ class Game(State):
         if self.enemy_spawn_timer >= self.enemy_spawn_interval:
             self.enemy_spawn_timer = 0
             # Skip periodic/random spawns on maps where spawning is disabled
-            if self.current_map_path not in self.NO_ENEMY_SPAWN_MAPS:
+            if self.current_map_path not in self.NO_ENEMY_SPAWN_MAPS and self.current_map_path not in self.NO_RANDOM_ENEMY_SPAWN_MAPS:
                 self.spawn_random_enemy()
 
         self.player_combat.sync_weapon_stats()
