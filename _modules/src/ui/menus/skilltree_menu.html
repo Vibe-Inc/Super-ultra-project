@@ -313,7 +313,18 @@
             <span class="n">cfg</span><span class="o">.</span><span class="n">corner_radius</span><span class="p">,</span>
             <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_unlock_selected</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">exit_button</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unlock_button</span><span class="p">]</span>
+        <span class="c1"># Respec button placed above the unlock button in the sidebar</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">respec_button</span> <span class="o">=</span> <span class="n">Button</span><span class="p">(</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">exit_width</span><span class="p">,</span> <span class="n">exit_height</span><span class="p">),</span>
+            <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Respec (0 Gold)&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">130</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">40</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">170</span><span class="p">,</span> <span class="mi">130</span><span class="p">,</span> <span class="mi">60</span><span class="p">),</span>
+            <span class="n">cfg</span><span class="o">.</span><span class="n">button_font</span><span class="p">,</span>
+            <span class="n">cfg</span><span class="o">.</span><span class="n">text_color</span><span class="p">,</span>
+            <span class="n">cfg</span><span class="o">.</span><span class="n">corner_radius</span><span class="p">,</span>
+            <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_respec_clicked</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buttons</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">exit_button</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unlock_button</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">respec_button</span><span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">zoom</span> <span class="o">=</span> <span class="mf">1.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">min_zoom</span> <span class="o">=</span> <span class="mf">0.5</span>
@@ -1685,6 +1696,93 @@
         <span class="n">adjacent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_adjacent_nodes</span><span class="p">(</span><span class="n">node_id</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">adjacent</span> <span class="o">&amp;</span> <span class="n">unlocked</span><span class="p">)</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_spent_points</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">unlocked</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_unlocked_nodes</span><span class="p">()</span>
+        <span class="n">cost_map</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;minor&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;major&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;keystone&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;core&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+        <span class="n">spent</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">node_id</span> <span class="ow">in</span> <span class="n">unlocked</span><span class="p">:</span>
+            <span class="n">node</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes_by_id</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">node</span><span class="p">:</span>
+                <span class="n">kind</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;kind&quot;</span><span class="p">)</span>
+                <span class="n">spent</span> <span class="o">+=</span> <span class="n">cost_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">spent</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_respec_clicked</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">character</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_character</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">character</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">spent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_spent_points</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">spent</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.widgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dialog</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">current_dialog</span> <span class="o">=</span> <span class="n">Dialog</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span>
+                <span class="p">[</span><span class="n">_</span><span class="p">(</span><span class="s2">&quot;Respec Skill Tree&quot;</span><span class="p">),</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;You have not spent any skill points yet.&quot;</span><span class="p">)]</span>
+            <span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="n">cost</span> <span class="o">=</span> <span class="n">spent</span> <span class="o">*</span> <span class="mi">100</span>
+        <span class="n">gold</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;money&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">gold</span> <span class="o">&lt;</span> <span class="n">cost</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.widgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dialog</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">current_dialog</span> <span class="o">=</span> <span class="n">Dialog</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span>
+                <span class="p">[</span>
+                    <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Respec Skill Tree&quot;</span><span class="p">),</span>
+                    <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Not enough gold to respec!&quot;</span><span class="p">),</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Required&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">cost</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Gold&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;You have&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">gold</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Gold&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Player has spent points and has enough gold -&gt; Show confirmation dialogue</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.widgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dialog</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">current_dialog</span> <span class="o">=</span> <span class="n">Dialog</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span>
+            <span class="p">[</span>
+                <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Confirm Respec&quot;</span><span class="p">),</span>
+                <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Reset all skill points and refund them?&quot;</span><span class="p">),</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Cost&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">cost</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Gold&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Your Gold&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">gold</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Gold&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">],</span>
+            <span class="n">show_confirm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">confirm_label</span><span class="o">=</span><span class="n">_</span><span class="p">(</span><span class="s2">&quot;RESPEC&quot;</span><span class="p">),</span>
+            <span class="n">on_confirm</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_execute_respec</span><span class="p">(</span><span class="n">spent</span><span class="p">,</span> <span class="n">cost</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_execute_respec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spent</span><span class="p">,</span> <span class="n">cost</span><span class="p">):</span>
+        <span class="n">character</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_character</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">character</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c1"># 1. Deduct gold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span> <span class="o">-</span> <span class="n">cost</span><span class="p">)</span>
+
+        <span class="c1"># 2. Refund skill points</span>
+        <span class="n">character</span><span class="o">.</span><span class="n">skill_tree_points</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">character</span><span class="p">,</span> <span class="s2">&quot;skill_tree_points&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">spent</span>
+
+        <span class="c1"># 3. Clear unlocked nodes (except &quot;core&quot;)</span>
+        <span class="n">character</span><span class="o">.</span><span class="n">skill_tree_unlocked</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;core&quot;</span><span class="p">}</span>
+
+        <span class="c1"># 4. Call reset_skill_tree on character to reset stats and skills</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">character</span><span class="p">,</span> <span class="s2">&quot;reset_skill_tree&quot;</span><span class="p">):</span>
+            <span class="n">character</span><span class="o">.</span><span class="n">reset_skill_tree</span><span class="p">()</span>
+
+        <span class="c1"># 5. Clear selection in UI</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">selected_node_id</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_zoom</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_pan_offset</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># 6. Trigger unlock animation effect at the core node for visual feedback</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_spawn_unlock_effect</span><span class="p">(</span><span class="s2">&quot;core&quot;</span><span class="p">)</span>
+        <span class="c1"># Flash the screen</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">screen_flash_alpha</span> <span class="o">=</span> <span class="mf">0.8</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">screen_flash_timer</span> <span class="o">=</span> <span class="mf">0.5</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Respec complete: refunded </span><span class="si">{</span><span class="n">spent</span><span class="si">}</span><span class="s2"> points, cost </span><span class="si">{</span><span class="n">cost</span><span class="si">}</span><span class="s2"> gold.&quot;</span><span class="p">)</span>
+
 <div class="viewcode-block" id="SkillTreeMenu._unlock_selected">
 <a class="viewcode-back" href="../../../../src.ui.html#src.ui.menus.SkillTreeMenu._unlock_selected">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_unlock_selected</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -2018,6 +2116,19 @@
                 <span class="n">exit_height</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">unlock_button</span><span class="o">.</span><span class="n">_update_text_surface</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="c1"># position respec button above unlock button</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">respec_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unlock_button</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">exit_height</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="mi">8</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">respec_button</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sidebar_rect</span><span class="o">.</span><span class="n">centerx</span> <span class="o">-</span> <span class="n">exit_width</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="n">respec_y</span><span class="p">,</span>
+                <span class="n">exit_width</span><span class="p">,</span>
+                <span class="n">exit_height</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">respec_button</span><span class="o">.</span><span class="n">_update_text_surface</span><span class="p">()</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">pass</span>
 
@@ -3176,6 +3287,11 @@
             <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="p">(</span><span class="mi">70</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">90</span><span class="p">,</span> <span class="n">alpha</span><span class="p">),</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">py</span><span class="p">),</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">py</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
         <span class="n">py</span> <span class="o">+=</span> <span class="mi">8</span>
 
+        <span class="c1"># Update respec button state and text</span>
+        <span class="n">spent_pts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_spent_points</span><span class="p">()</span>
+        <span class="n">respec_cost</span> <span class="o">=</span> <span class="n">spent_pts</span> <span class="o">*</span> <span class="mi">100</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">respec_button</span><span class="o">.</span><span class="n">set_text</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Respec&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">respec_cost</span><span class="si">}</span><span class="s2"> Gold)&quot;</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="n">selected_node</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># Show empty state hint</span>
             <span class="n">empty</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">small_font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">&quot;Select a node to inspect&quot;</span><span class="p">),</span> <span class="kc">True</span><span class="p">,</span> <span class="p">(</span><span class="mi">110</span><span class="p">,</span> <span class="mi">110</span><span class="p">,</span> <span class="mi">135</span><span class="p">))</span>
@@ -3279,6 +3395,8 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">unlock_button</span><span class="o">.</span><span class="n">set_text</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s2">&quot;✓ Unlocked&quot;</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">unlock_button</span><span class="o">.</span><span class="n">set_text</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Unlock&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> ◆ </span><span class="si">{</span><span class="n">cost</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
 
 
 <div class="viewcode-block" id="SkillTreeMenu.draw">
@@ -3465,6 +3583,10 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">unlock_button</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="k">pass</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">respec_button</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">exit_button</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
 
         <span class="c1"># Draw dialog on top if one is active</span>

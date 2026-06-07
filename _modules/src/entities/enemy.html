@@ -273,6 +273,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">patrol_points</span> <span class="o">=</span> <span class="n">patrol_points</span> <span class="ow">or</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">patrol_index</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">detection_range</span> <span class="o">=</span> <span class="n">detection_range</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">base_detection_range</span> <span class="o">=</span> <span class="n">detection_range</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weather_speed_multiplier</span> <span class="o">=</span> <span class="mf">1.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attack_range</span> <span class="o">=</span> <span class="n">attack_range</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ai_context</span> <span class="o">=</span> <span class="n">AIContext</span><span class="p">(</span><span class="n">dt</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">nav_grid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">obstacles</span><span class="o">=</span><span class="p">[],</span> <span class="n">player</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 
@@ -586,7 +588,7 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attack_controller</span> <span class="ow">and</span> <span class="n">attack_context</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">attack_controller</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attack_context</span><span class="p">)</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_speed</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed_multiplier</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_speed</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed_multiplier</span> <span class="o">*</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;weather_speed_multiplier&#39;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_move</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># Still allow brain/attack updates even when movement is blocked by attack phase</span>

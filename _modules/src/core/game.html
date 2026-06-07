@@ -85,6 +85,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">src.config</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cfg</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.day_night</span><span class="w"> </span><span class="kn">import</span> <span class="n">DayNightVisuals</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.weather</span><span class="w"> </span><span class="kn">import</span> <span class="n">WeatherSystem</span><span class="p">,</span> <span class="n">WeatherState</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.state</span><span class="w"> </span><span class="kn">import</span> <span class="n">State</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.save_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">SaveManager</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.character</span><span class="w"> </span><span class="kn">import</span> <span class="n">Character</span>
@@ -96,6 +97,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.boss</span><span class="w"> </span><span class="kn">import</span> <span class="n">Boss</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.npc</span><span class="w"> </span><span class="kn">import</span> <span class="n">NPC</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.mage_npc</span><span class="w"> </span><span class="kn">import</span> <span class="n">MageNPC</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.gambler_npc</span><span class="w"> </span><span class="kn">import</span> <span class="n">GamblerNPC</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.projectile</span><span class="w"> </span><span class="kn">import</span> <span class="n">Arrow</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.peaceful_mob</span><span class="w"> </span><span class="kn">import</span> <span class="n">PeacefulMob</span><span class="p">,</span> <span class="n">create_peaceful_mob</span><span class="p">,</span> <span class="n">PEACEFUL_MOB_REGISTRY</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.hud</span><span class="w"> </span><span class="kn">import</span> <span class="n">HUD</span>
@@ -348,6 +350,13 @@
 
         <span class="c1"># Majestic day-night visual controller</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">day_night</span> <span class="o">=</span> <span class="n">DayNightVisuals</span><span class="p">()</span>
+
+        <span class="c1"># Dynamic weather controller</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weather</span> <span class="o">=</span> <span class="n">WeatherSystem</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="c1"># Camera shake state</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera_shake_time</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera_shake_intensity</span> <span class="o">=</span> <span class="mf">0.0</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">enemy_profiles</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;brute&quot;</span><span class="p">:</span> <span class="p">{</span>
@@ -1056,11 +1065,9 @@
             <span class="s2">&quot;Come back anytime — the deck&#39;s always shuffled.&quot;</span>
         <span class="p">]</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span> <span class="o">=</span> <span class="n">NPC</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span> <span class="o">=</span> <span class="n">GamblerNPC</span><span class="p">(</span>
             <span class="n">x</span><span class="o">=</span><span class="n">cn_x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">cn_y</span><span class="p">,</span>
-            <span class="n">sprite_set</span><span class="o">=</span><span class="s2">&quot;MenHuman1(Recolor)&quot;</span><span class="p">,</span>
             <span class="n">dialog_lines</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">card_npc_first_dialog</span><span class="p">,</span>
-            <span class="n">is_merchant</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">gender</span><span class="o">=</span><span class="s1">&#39;male&#39;</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -1126,14 +1133,14 @@
             <span class="s2">&quot;Keep collecting monster souls. The Arcane Quests await.&quot;</span>
         <span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc_post_unlock_dialog</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="s2">&quot;You have gathered the souls. I can feel their energy resonating.&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Now you must tap into your inner world and transform these souls into a tarot deck.&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;This is the Mysterium Magnum — a deck of power, fate, and transformation.&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;I shall open the way for you.&quot;</span>
+            <span class="s2">&quot;The Mysterium Magnum has awakened your true potential.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;You are now ready to wield the ancient arts of Rune Crafting.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Bring me your weapons, and I shall bind elemental runes to them.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Let the magic flow through your strikes!&quot;</span>
         <span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc_post_unlock_repeat_dialog</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="s2">&quot;The Mysterium Magnum is now open to you.&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Transform your collected souls into cards of destiny.&quot;</span>
+            <span class="s2">&quot;The elemental forces are at your command.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Would you like to craft a rune or enchant your weapon?&quot;</span>
         <span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc</span> <span class="o">=</span> <span class="n">MageNPC</span><span class="p">(</span>
@@ -1162,6 +1169,9 @@
 
         <span class="c1"># Crafting &quot;Tempering&quot; minigame state (None when not playing)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">crafting_minigame</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rune_minigame</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enchanting_menu</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rune_selection_menu</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="c1"># Debug menu for spawning mobs (enemies + peaceful mobs)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">spawn_menu</span> <span class="o">=</span> <span class="n">SpawnMenu</span><span class="p">(</span>
@@ -1460,6 +1470,36 @@
             <span class="n">on_close</span><span class="o">=</span><span class="n">on_close</span><span class="p">,</span>
             <span class="n">smelting_level</span><span class="o">=</span><span class="n">smelting_level</span><span class="p">,</span>
         <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Game.open_rune_crafting">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.open_rune_crafting">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">open_rune_crafting</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.menus.rune_selection_menu</span><span class="w"> </span><span class="kn">import</span> <span class="n">RuneSelectionMenu</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">on_rune_selected</span><span class="p">(</span><span class="n">rune_type</span><span class="p">):</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.rune_drawing</span><span class="w"> </span><span class="kn">import</span> <span class="n">RuneDrawingMinigame</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">on_close</span><span class="p">(</span><span class="n">won</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rune_minigame</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">if</span> <span class="n">won</span><span class="p">:</span>
+                    <span class="kn">from</span><span class="w"> </span><span class="nn">src.items.items</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_item</span>
+                    <span class="n">rune</span> <span class="o">=</span> <span class="n">create_item</span><span class="p">(</span><span class="n">rune_type</span><span class="p">)</span>
+                    <span class="kn">from</span><span class="w"> </span><span class="nn">src.inventory.system</span><span class="w"> </span><span class="kn">import</span> <span class="n">CraftingLogic</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">CraftingLogic</span><span class="o">.</span><span class="n">add_crafted_item</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">MAIN_player_inv</span><span class="p">,</span> <span class="n">rune</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;hotbar&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">hotbar</span><span class="p">:</span>
+                            <span class="n">CraftingLogic</span><span class="o">.</span><span class="n">add_crafted_item</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hotbar</span><span class="p">,</span> <span class="n">rune</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Crafted a </span><span class="si">{</span><span class="n">rune_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rune_minigame</span> <span class="o">=</span> <span class="n">RuneDrawingMinigame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="n">rune_type</span><span class="o">=</span><span class="n">rune_type</span><span class="p">,</span> <span class="n">on_close</span><span class="o">=</span><span class="n">on_close</span><span class="p">)</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">rune_selection_menu</span> <span class="o">=</span> <span class="n">RuneSelectionMenu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="n">on_select</span><span class="o">=</span><span class="n">on_rune_selected</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rune_selection_menu</span><span class="o">.</span><span class="n">open</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Game.open_enchanting_menu">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.open_enchanting_menu">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">open_enchanting_menu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.menus.enchanting_menu</span><span class="w"> </span><span class="kn">import</span> <span class="n">EnchantingMenu</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enchanting_menu</span> <span class="o">=</span> <span class="n">EnchantingMenu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enchanting_menu</span><span class="o">.</span><span class="n">open</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="Game._get_card_npc_dialog">
@@ -1838,7 +1878,13 @@
             <span class="c1"># center map vertically</span>
             <span class="n">camera_y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">map_height</span> <span class="o">-</span> <span class="n">viewport_height</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">camera_x</span><span class="p">,</span> <span class="n">camera_y</span><span class="p">)</span></div>
+        <span class="n">offset</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">camera_x</span><span class="p">,</span> <span class="n">camera_y</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;camera_shake_time&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+            <span class="n">intensity</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;camera_shake_intensity&#39;</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">)</span>
+            <span class="n">offset</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="n">intensity</span><span class="p">,</span> <span class="n">intensity</span><span class="p">)</span>
+            <span class="n">offset</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="n">intensity</span><span class="p">,</span> <span class="n">intensity</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">offset</span></div>
 
 
 <div class="viewcode-block" id="Game._make_patrol_points">
@@ -2277,6 +2323,14 @@
 <div class="viewcode-block" id="Game.update">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.update">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+        <span class="c1"># Update weather system</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;weather&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">weather</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+
+        <span class="c1"># Update camera shake</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;camera_shake_time&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">camera_shake_time</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">camera_shake_time</span> <span class="o">-</span> <span class="n">dt</span><span class="p">)</span>
+
         <span class="c1"># Intro Sequence for test-map-1</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="o">==</span> <span class="s2">&quot;maps/test-map-1.tmx&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;intro_played&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_intro_sequence_active&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_intro_sequence_active</span> <span class="o">=</span> <span class="kc">True</span>
@@ -2289,7 +2343,7 @@
             <span class="n">dialog_lines</span> <span class="o">=</span> <span class="p">[</span>
                 <span class="s1">&#39;&quot;Arise, Chosen One.&quot;&#39;</span><span class="p">,</span>
                 <span class="s1">&#39;&quot;I sense the latent magic humming in your blood. You have been selected for a sacred mission.&quot;&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;&quot;Far to the east, a great dragon slumbers in a mountain cave. You must slay it, or the realm will burn.&quot;&#39;</span>
+                <span class="s1">&#39;&quot;Far to the east, a Chronos slumbers in a mountain cave. You must slay it, or the realm will collapse.&quot;&#39;</span>
             <span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">current_dialog</span> <span class="o">=</span> <span class="n">Dialog</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="n">dialog_lines</span><span class="p">,</span> <span class="n">on_close</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_finish_intro</span><span class="p">)</span>
 
@@ -2643,6 +2697,21 @@
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">pass</span>
 
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;rune_minigame&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rune_minigame</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;enchanting_menu&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">enchanting_menu</span><span class="o">.</span><span class="n">is_open</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">enchanting_menu</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+            
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;rune_selection_menu&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">rune_selection_menu</span><span class="o">.</span><span class="n">is_open</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rune_selection_menu</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+
         <span class="c1"># Tick the smeltery overlay so coke oven / blast furnace jobs</span>
         <span class="c1"># continue to advance even while the overlay is closed.</span>
         <span class="k">try</span><span class="p">:</span>
@@ -2966,6 +3035,10 @@
             <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="p">,</span> <span class="s1">&#39;current_shop_inv&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">toggle_trade</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">MAIN_player_inv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shop_inv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PLAYER_inventory_equipment</span><span class="p">)</span>
 
+        <span class="c1"># Draw weather overlay</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;weather&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">weather</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+
         <span class="c1"># Dizziness effect (visual)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">dizzy</span><span class="p">:</span>
             <span class="n">alpha</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">100</span> <span class="o">+</span> <span class="mi">50</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">get_ticks</span><span class="p">()</span> <span class="o">*</span> <span class="mf">0.005</span><span class="p">))</span>
@@ -3024,6 +3097,20 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">crafting_minigame</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="k">pass</span>
+        
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;rune_minigame&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rune_minigame</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+                
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;enchanting_menu&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">enchanting_menu</span><span class="o">.</span><span class="n">is_open</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">enchanting_menu</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+            
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;rune_selection_menu&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">rune_selection_menu</span><span class="o">.</span><span class="n">is_open</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rune_selection_menu</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+                
+        <span class="c1"># Draw debug spawn / effects menus</span>
         <span class="c1"># Draw debug spawn / effects menus</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">spawn_menu</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
@@ -3090,6 +3177,21 @@
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="k">pass</span>
 
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;rune_minigame&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rune_minigame</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;enchanting_menu&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">enchanting_menu</span><span class="o">.</span><span class="n">is_open</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enchanting_menu</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
+                <span class="k">return</span>
+                
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;rune_selection_menu&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">rune_selection_menu</span><span class="o">.</span><span class="n">is_open</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rune_selection_menu</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
+                <span class="k">return</span>
+
         <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="s1">&#39;current_dialog&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">current_dialog</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
@@ -3130,6 +3232,19 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">hotbar</span><span class="o">.</span><span class="n">scroll_active_slot</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">KEYDOWN</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_F7</span><span class="p">:</span>
+                <span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+                <span class="n">ach_mgr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">achievement_manager</span>
+                <span class="n">locked_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">aid</span> <span class="k">for</span> <span class="n">aid</span><span class="p">,</span> <span class="n">ach</span> <span class="ow">in</span> <span class="n">ach_mgr</span><span class="o">.</span><span class="n">achievements</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">ach</span><span class="o">.</span><span class="n">unlocked</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">locked_ids</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">ach</span> <span class="ow">in</span> <span class="n">ach_mgr</span><span class="o">.</span><span class="n">achievements</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                        <span class="n">ach</span><span class="o">.</span><span class="n">unlocked</span> <span class="o">=</span> <span class="kc">False</span>
+                        <span class="n">ach</span><span class="o">.</span><span class="n">progress</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="n">ach_mgr</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+                    <span class="n">locked_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ach_mgr</span><span class="o">.</span><span class="n">achievements</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                <span class="k">if</span> <span class="n">locked_ids</span><span class="p">:</span>
+                    <span class="n">ach_mgr</span><span class="o">.</span><span class="n">unlock</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">locked_ids</span><span class="p">))</span>
+
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_ESCAPE</span><span class="p">:</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">player_inventory_opened</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">toggle_inventory</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">MAIN_player_inv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PLAYER_inventory_equipment</span><span class="p">)</span>
@@ -3190,10 +3305,15 @@
                         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                             <span class="k">pass</span>
 
+                    <span class="n">has_mysterium</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="s1">&#39;mysterium_magnum_unlocked&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">current_dialog</span> <span class="o">=</span> <span class="n">Dialog</span><span class="p">(</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span>
                         <span class="n">dialog_lines</span><span class="p">,</span>
                         <span class="n">on_close</span><span class="o">=</span><span class="n">on_mage_close</span><span class="p">,</span>
+                        <span class="n">on_craft_rune</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">open_rune_crafting</span><span class="p">,</span>
+                        <span class="n">show_craft_rune</span><span class="o">=</span><span class="n">has_mysterium</span><span class="p">,</span>
+                        <span class="n">on_enchant_weapon</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">open_enchanting_menu</span><span class="p">,</span>
+                        <span class="n">show_enchant_weapon</span><span class="o">=</span><span class="n">has_mysterium</span><span class="p">,</span>
                     <span class="p">)</span>
                 <span class="c1"># Card NPC interaction</span>
                 <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">is_interactable</span><span class="p">:</span>
@@ -3244,6 +3364,10 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">take_damage</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_F6</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">gain_xp</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_F8</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;weather&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">weather</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">weather</span><span class="o">.</span><span class="n">cycle_weather</span><span class="p">()</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[DEBUG] F8: Cycled weather to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">weather</span><span class="o">.</span><span class="n">current_weather</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_F9</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">skill_tree_points</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[DEBUG] F9: +1 skill tree point. Total: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">skill_tree_points</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>

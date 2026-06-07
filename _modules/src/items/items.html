@@ -528,6 +528,9 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_base_max_durability</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_durability</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_base_max_durability</span> <span class="o">=</span> <span class="mi">1</span>
+        
+        <span class="c1"># Socketed rune (limit 1)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">socketed_rune</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;socketed_rune&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">display_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -557,10 +560,25 @@
         <span class="n">damage_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Damage&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">damage</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">if</span> <span class="n">base_damage</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">damage</span><span class="p">:</span>
             <span class="n">damage_str</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;  (base </span><span class="si">{</span><span class="n">base_damage</span><span class="si">}</span><span class="s2">)&quot;</span>
+            
+        <span class="n">socket_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;socketed_rune&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">socketed_rune</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">socketed_rune</span> <span class="o">==</span> <span class="s2">&quot;fire_rune&quot;</span><span class="p">:</span>
+                <span class="n">socket_str</span> <span class="o">=</span> <span class="s2">&quot;[Socket: Fire Rune] - 10</span><span class="si">% c</span><span class="s2">hance to Burn</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">socketed_rune</span> <span class="o">==</span> <span class="s2">&quot;ice_rune&quot;</span><span class="p">:</span>
+                <span class="n">socket_str</span> <span class="o">=</span> <span class="s2">&quot;[Socket: Ice Rune] - 10</span><span class="si">% c</span><span class="s2">hance to Slow</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">socketed_rune</span> <span class="o">==</span> <span class="s2">&quot;lightning_rune&quot;</span><span class="p">:</span>
+                <span class="n">socket_str</span> <span class="o">=</span> <span class="s2">&quot;[Socket: Lightning Rune] - 10</span><span class="si">% c</span><span class="s2">hance to Daze</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">socketed_rune</span> <span class="o">==</span> <span class="s2">&quot;void_rune&quot;</span><span class="p">:</span>
+                <span class="n">socket_str</span> <span class="o">=</span> <span class="s2">&quot;[Socket: Void Rune] - 10</span><span class="si">% c</span><span class="s2">hance to Curse</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">socket_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;[Socket: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">socketed_rune</span><span class="si">}</span><span class="s2">]</span><span class="se">\n</span><span class="s2">&quot;</span>
+                
         <span class="k">return</span> <span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Type&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">weapon_label</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">damage_str</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dur_str</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">socket_str</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span></div>
 </div>
 

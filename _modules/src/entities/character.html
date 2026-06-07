@@ -479,6 +479,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">spawn_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">base_speed</span> <span class="o">=</span> <span class="mi">200</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">speed_multiplier</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weather_speed_multiplier</span> <span class="o">=</span> <span class="mf">1.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_speed</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sprint_multiplier</span> <span class="o">=</span> <span class="mf">1.8</span> 
         
@@ -1244,6 +1245,112 @@
         <span class="p">})</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Player learned Chrono Shift!&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_try_open_magic_article</span><span class="p">(</span><span class="s2">&quot;Chrono Shift&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Character.reset_skill_tree">
+<a class="viewcode-back" href="../../../src.entities.html#src.entities.character.Character.reset_skill_tree">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reset_skill_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset all skill tree unlocks, refund spent points, and restore base stats.&quot;&quot;&quot;</span>
+        <span class="c1"># 1. Reset skills in skillbook</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skillbook</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;skill_id&quot;</span><span class="p">:</span> <span class="s2">&quot;dash&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Dash&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Quick burst of movement&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">86</span><span class="p">,</span> <span class="mi">132</span><span class="p">,</span> <span class="mi">186</span><span class="p">),</span>
+                <span class="s2">&quot;accent&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">220</span><span class="p">,</span> <span class="mi">235</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
+            <span class="p">},</span>
+        <span class="p">]</span>
+        
+        <span class="c1"># Unbind any removed skills from the skillbar</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">skillbar</span><span class="p">)):</span>
+            <span class="n">skill</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">skillbar</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">skill</span> <span class="ow">and</span> <span class="n">skill</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;skill_id&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;dash&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">skillbar</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># 2. Reset passives</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pyromancers_fury</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">static_field</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">regeneration</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">poison_blade</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mana_flow</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eternal_fortress</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">soul_harvest</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">void_walker</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">elemental_mastery</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># 3. Reset base stats and skill-tree modified stats</span>
+        <span class="c1"># Max HP base = 100 + (level - 1) * 20</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">20</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hp</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_hp</span><span class="p">)</span>
+
+        <span class="c1"># Max Stamina base = 100</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_stamina</span> <span class="o">=</span> <span class="mi">100</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stamina</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stamina</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_stamina</span><span class="p">)</span>
+
+        <span class="c1"># Melee stats</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">base_attack_damage</span> <span class="o">=</span> <span class="mi">15</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attack_damage</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_attack_damage</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attack_range</span> <span class="o">=</span> <span class="mi">65</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attack_cooldown_mult</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+        <span class="c1"># Regeneration stats</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">regeneration_hp_per_sec</span> <span class="o">=</span> <span class="mf">3.0</span>
+
+        <span class="c1"># Speed stats</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">speed_multiplier</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weather_speed_multiplier</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_speed</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed_multiplier</span>
+
+        <span class="c1"># Fireball</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fireball_damage</span> <span class="o">=</span> <span class="mi">28</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fireball_blast_radius</span> <span class="o">=</span> <span class="mf">110.0</span>
+
+        <span class="c1"># Frost Nova</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frost_nova_damage</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frost_nova_freeze_duration</span> <span class="o">=</span> <span class="mf">3.0</span>
+
+        <span class="c1"># Glacial Cascade</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">glacial_cascade_damage</span> <span class="o">=</span> <span class="mi">35</span>
+
+        <span class="c1"># Chain Lightning</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chain_lightning_damage</span> <span class="o">=</span> <span class="mi">22</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chain_lightning_max_targets</span> <span class="o">=</span> <span class="mi">5</span>
+
+        <span class="c1"># Thunderstrike</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thunderstrike_damage</span> <span class="o">=</span> <span class="mi">55</span>
+
+        <span class="c1"># Summon Spirit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">summon_spirit_damage</span> <span class="o">=</span> <span class="mi">15</span>
+
+        <span class="c1"># Poison Blade</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">poison_blade_damage_per_sec</span> <span class="o">=</span> <span class="mf">6.0</span>
+
+        <span class="c1"># Dark Pact</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dark_pact_damage</span> <span class="o">=</span> <span class="mi">60</span>
+
+        <span class="c1"># Arcane Missiles</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">arcane_missiles_damage</span> <span class="o">=</span> <span class="mi">14</span>
+
+        <span class="c1"># Cooldown multi</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skill_cooldown_mult</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+        <span class="c1"># Satellite / keystone specific stats</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">berserkers_rage_duration_bonus</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">berserkers_rage_cooldown_bonus</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">soul_harvest_hp_per_kill</span> <span class="o">=</span> <span class="mi">5</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">soul_harvest_damage_per_stack</span> <span class="o">=</span> <span class="mf">0.02</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">soul_harvest_duration</span> <span class="o">=</span> <span class="mf">8.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">void_walker_dodge_chance</span> <span class="o">=</span> <span class="mf">0.3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">void_walker_teleport_range</span> <span class="o">=</span> <span class="mf">200.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">void_walker_afterimage_damage</span> <span class="o">=</span> <span class="mi">18</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">elemental_damage_mult</span> <span class="o">=</span> <span class="mf">1.35</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">combo_window</span> <span class="o">=</span> <span class="mf">3.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">combo_damage_bonus</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chrono_shift_duration_bonus</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chrono_shift_cooldown_bonus</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Skill tree has been respec&#39;d and player stats have been reset to base.&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Character.get_skill_in_slot">
@@ -2155,19 +2262,43 @@
 
 <span class="sd">        New weapons can declare `on_hit_effects` as a list of effect dicts</span>
 <span class="sd">        (the same shape used by consumable effects) and they will be applied</span>
-<span class="sd">        to the struck enemy here.</span>
+<span class="sd">        to the struck enemy here. Supports socketed runes and chance-based effects.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">weapon</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;equipped_weapon&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">weapon</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span>
-        <span class="n">on_hit</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">weapon</span><span class="p">,</span> <span class="s2">&quot;on_hit_effects&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">on_hit</span><span class="p">:</span>
-            <span class="k">return</span>
+            
+        <span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">database.effects</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_effect</span>  <span class="c1"># local import to avoid cycles</span>
-        <span class="k">for</span> <span class="n">effect_data</span> <span class="ow">in</span> <span class="n">on_hit</span><span class="p">:</span>
+        
+        <span class="n">on_hit</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">weapon</span><span class="p">,</span> <span class="s2">&quot;on_hit_effects&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">effects_to_apply</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">on_hit</span><span class="p">:</span>
+            <span class="n">effects_to_apply</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">on_hit</span><span class="p">)</span>
+            
+        <span class="n">socketed_rune</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">weapon</span><span class="p">,</span> <span class="s2">&quot;socketed_rune&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">socketed_rune</span> <span class="o">==</span> <span class="s2">&quot;fire_rune&quot;</span><span class="p">:</span>
+            <span class="n">effects_to_apply</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;burn&quot;</span><span class="p">,</span> <span class="s2">&quot;duration&quot;</span><span class="p">:</span> <span class="mf">5.0</span><span class="p">,</span> <span class="s2">&quot;damage_per_sec&quot;</span><span class="p">:</span> <span class="mf">3.0</span><span class="p">,</span> <span class="s2">&quot;chance&quot;</span><span class="p">:</span> <span class="mf">0.10</span><span class="p">})</span>
+        <span class="k">elif</span> <span class="n">socketed_rune</span> <span class="o">==</span> <span class="s2">&quot;ice_rune&quot;</span><span class="p">:</span>
+            <span class="n">effects_to_apply</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;slow&quot;</span><span class="p">,</span> <span class="s2">&quot;duration&quot;</span><span class="p">:</span> <span class="mf">3.0</span><span class="p">,</span> <span class="s2">&quot;speed_multiplier&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">&quot;chance&quot;</span><span class="p">:</span> <span class="mf">0.10</span><span class="p">})</span>
+        <span class="k">elif</span> <span class="n">socketed_rune</span> <span class="o">==</span> <span class="s2">&quot;lightning_rune&quot;</span><span class="p">:</span>
+            <span class="n">effects_to_apply</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;dizziness&quot;</span><span class="p">,</span> <span class="s2">&quot;duration&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span> <span class="s2">&quot;chance&quot;</span><span class="p">:</span> <span class="mf">0.10</span><span class="p">})</span>
+        <span class="k">elif</span> <span class="n">socketed_rune</span> <span class="o">==</span> <span class="s2">&quot;void_rune&quot;</span><span class="p">:</span>
+            <span class="n">effects_to_apply</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;curse&quot;</span><span class="p">,</span> <span class="s2">&quot;duration&quot;</span><span class="p">:</span> <span class="mf">5.0</span><span class="p">,</span> <span class="s2">&quot;chance&quot;</span><span class="p">:</span> <span class="mf">0.10</span><span class="p">})</span>
+            
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">effects_to_apply</span><span class="p">:</span>
+            <span class="k">return</span>
+            
+        <span class="k">for</span> <span class="n">effect_data</span> <span class="ow">in</span> <span class="n">effects_to_apply</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">effect_data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
                 <span class="k">continue</span>
-            <span class="n">effect_obj</span> <span class="o">=</span> <span class="n">create_effect</span><span class="p">(</span><span class="n">effect_data</span><span class="p">)</span>
+                
+            <span class="n">effect_data_copy</span> <span class="o">=</span> <span class="n">effect_data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">chance</span> <span class="o">=</span> <span class="n">effect_data_copy</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;chance&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">chance</span><span class="p">:</span>
+                <span class="k">continue</span>
+                
+            <span class="n">effect_obj</span> <span class="o">=</span> <span class="n">create_effect</span><span class="p">(</span><span class="n">effect_data_copy</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">effect_obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">continue</span>
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">enemy</span><span class="p">,</span> <span class="s2">&quot;add_effect&quot;</span><span class="p">):</span>
@@ -2714,7 +2845,7 @@
         <span class="k">if</span> <span class="n">wants_to_sprint</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">stamina</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">can_sprint</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">is_sprinting</span> <span class="o">=</span> <span class="kc">True</span>
 
-        <span class="n">current_speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_speed</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed_multiplier</span>
+        <span class="n">current_speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_speed</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed_multiplier</span> <span class="o">*</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;weather_speed_multiplier&#39;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_sprinting</span><span class="p">:</span>
             <span class="n">current_speed</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sprint_multiplier</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">=</span> <span class="n">current_speed</span> 
