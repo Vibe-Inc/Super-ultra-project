@@ -109,6 +109,8 @@ class App:
         self.icon = pygame.image.load("assets/ui/smug.png")
         pygame.display.set_icon(self.icon)
 
+        self._set_custom_cursor()
+
         i18n.install_language(cfg.LANGUAGE)
         self.create_logo()
 
@@ -383,6 +385,17 @@ class App:
         pygame.mixer.music.load('sounds/LIFE (Instrumental).wav')
         pygame.mixer.music.set_volume(cfg.MUSIC_VOLUME if self.audio == "on" else 0.0)
         pygame.mixer.music.play(-1)
+
+    def _set_custom_cursor(self):
+        try:
+            import os
+            cursor_dir = "assets/misc"
+            pngs = [f for f in os.listdir(cursor_dir) if f.lower().endswith(".png")]
+            if pngs:
+                img = pygame.image.load(os.path.join(cursor_dir, pngs[0]))
+                pygame.mouse.set_cursor(pygame.cursors.Cursor((0, img.get_height() - 1), img))
+        except Exception:
+            pass
 
     def run(self):
         """Main loop of the application.
