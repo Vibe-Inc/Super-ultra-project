@@ -30,19 +30,13 @@ def draw_attack_animation(screen: pygame.Surface, enemy, camera_offset: pygame.V
     sy = int(origin.y - camera_offset.y)
     strength = float(enemy.attack_anim_strength)
 
-    # Universal red wind-up indicator – drawn for every enemy (first ~55% of animation)
-    _draw_windup_indicator(screen, sx, sy, direction, progress, strength, enemy, anim)
-
-    # Per-enemy strike animation — only plays after wind-up phase finishes,
-    # with progress remapped so the strike plays in its own 45% window.
-    if progress > 0.55:
-        strike_p = (progress - 0.55) / 0.45
-        # Scale strike VFX to match the actual damage zone dimensions
-        telegraph_range = getattr(enemy, "attack_telegraph_range", 45.0) or 45.0
-        range_scale = max(0.5, min(2.0, telegraph_range / 45.0))
-        adjusted_strength = strength * range_scale
-        handler = _DISPATCH.get(anim, _draw_generic_strike)
-        handler(screen, sx, sy, direction, strike_p, adjusted_strength, enemy)
+    # Strike VFX plays immediately (the telegraph arc handles wind-up visuals).
+    # Scale strike VFX to match the actual damage zone dimensions.
+    telegraph_range = getattr(enemy, "attack_telegraph_range", 45.0) or 45.0
+    range_scale = max(0.5, min(2.0, telegraph_range / 45.0))
+    adjusted_strength = strength * range_scale
+    handler = _DISPATCH.get(anim, _draw_generic_strike)
+    handler(screen, sx, sy, direction, progress, adjusted_strength, enemy)
 
 
 # --------------------------------------------------------------------------
@@ -151,50 +145,6 @@ def _curve(progress: float, peak: float = 0.5) -> float:
         return progress / peak
     return 1.0 - (progress - peak) / (1.0 - peak)
 
-
-# Attack types whose damage area is a full circle around the enemy (AoE).
-# Used by the universal wind-up to draw a circular indicator instead of a cone.
-_AOE_ATTACKS = frozenset({
-    "cryomancer_nova", "molten_nova", "plaguebearer_nova",
-    "stormcaller_field", "arcanist_burst", "titan_stomp",
-    "revenant_undying", "shadowmancer_blink",
-    "trickster_strike",
-})
-
-
-def _draw_windup_indicator(screen, cx, cy, direction, progress, strength, enemy, anim_type):
-    if progress > 0.55:
-        return
-
-    p = progress / 0.55
-    is_aoe = anim_type.lower() in _AOE_ATTACKS
-
-    telegraph_range = getattr(enemy, "attack_telegraph_range", 60.0) or 60.0
-    r = max(2, int(telegraph_range * strength * p))
-
-    # Brighter, more opaque wind-up — stays visible longer
-    outer_alpha = int(220 * (1 - p * 0.5))
-    inner_alpha = int(160 * (1 - p * 0.4))
-    red_outer = (255, 50, 50, outer_alpha)
-    red_inner = (255, 100, 100, inner_alpha)
-
-    if is_aoe:
-        _aa_circle(screen, red_outer, (cx, cy), r, max(3, int(4 * strength)))
-        inner_r = max(2, int(r * 0.6))
-        _aa_circle(screen, red_inner, (cx, cy), inner_r, max(2, int(3 * strength)))
-    else:
-        fwd_angle = math.degrees(math.atan2(direction.y, direction.x))
-        telegraph_angle = getattr(enemy, "attack_telegraph_angle", 130.0) or 130.0
-        half_angle = telegraph_angle * 0.5
-        _aa_arc(screen, red_outer, (cx, cy), r,
-                math.radians(fwd_angle - half_angle),
-                math.radians(fwd_angle + half_angle),
-                max(4, int(5 * strength)))
-        inner_r = max(2, int(r * 0.6))
-        _aa_arc(screen, red_inner, (cx, cy), inner_r,
-                math.radians(fwd_angle - half_angle),
-                math.radians(fwd_angle + half_angle),
-                max(2, int(3 * strength)))
 
 
 # ============================================================

@@ -80,45 +80,44 @@ class PlayerCombatController:
         return None
 
     def sync_weapon_stats(self):
-        """Update the player character's attack damage, range, and cooldown based on the equipped weapon.
-
-        Handles broken weapons by reverting to bare-handed fallback stats.
-        Also exposes the equipped weapon on the character for on-hit enchantments.
+        """Update the player character's attack damage, range, and cooldown based on the equipped weapon
+        and world scale multipliers.  Without a weapon the player cannot attack.
         """
         weapon = self.get_equipped_weapon()
         self.game.equipped_weapon = weapon
 
         char = self.game.character
-        # Expose the equipped weapon to the character so on-hit enchantments
-        # (Flaming Sword, etc.) can be applied to enemies that get struck.
         char.equipped_weapon = weapon
 
+        ws = getattr(self.game, 'world_scale', None)
+
         if weapon:
-            # Broken weapons revert to the bare-handed fallback so the
-            # player can't keep swinging a 0-durability sword for full
-            # damage.  A broken weapon still occupies the slot visually
-            # until the next ``_damage_equipped_weapon`` call removes
-            # it (see ``handle_player_attack``).
             char._combat_style = getattr(weapon, "combat_style", "sword")
             if getattr(weapon, "is_broken", lambda: False)():
-                char.attack_damage = max(1, char.base_attack_damage // 2)
+                char.attack_damage = 0
                 char.attack_cooldown = char.base_attack_cooldown
-                char.attack_range = char.base_attack_range
+                char.attack_range = 0
             else:
-                # ``get_effective_damage`` is provided by ``DurabilityMixin``;
-                # fall back to the raw damage attribute for items that
-                # somehow lack the mixin.
                 base_dmg = weapon.damage
                 eff = getattr(weapon, "get_effective_damage", None)
-                char.attack_damage = eff(base_dmg) if callable(eff) else base_dmg
-                char.attack_cooldown = getattr(weapon, "cooldown", char.base_attack_cooldown)
-                if getattr(weapon, "weapon_class", "melee") != "bow":
-                    char.attack_range = getattr(weapon, "range", char.base_attack_range)
+                weapon_damage = eff(base_dmg) if callable(eff) else base_dmg
+                if ws:
+                    char.attack_damage = int(char.base_attack_damage * ws.player_damage_mult() + weapon_damage)
                 else:
-                    char.attack_range = char.base_attack_range
+                    char.attack_damage = weapon_damage
+
+                char.attack_cooldown = getattr(weapon, "cooldown", char.base_attack_cooldown)
+
+                wc = getattr(weapon, "weapon_class", "melee")
+                weapon_range = getattr(weapon, "range", char.base_attack_range)
+                if ws:
+                    range_mult = ws.player_ranged_range_mult() if wc == "bow" else ws.player_melee_range_mult()
+                    char.attack_range = max(1, int(weapon_range * range_mult))
+                else:
+                    char.attack_range = weapon_range
         else:
-            char.attack_damage = char.base_attack_damage
-            char.attack_range = char.base_attack_range
+            char.attack_damage = 0
+            char.attack_range = 0
             char.attack_cooldown = char.base_attack_cooldown
 
     def _damage_equipped_weapon(self, amount: int = 1) -> bool:
@@ -220,12 +219,7 @@ class PlayerCombatController:
         return forward_dir.rotate(half_angle_deg if angle > 0 else -half_angle_deg)
 
     def spawn_arrow(self, weapon, direction):
-        """Instantiate a projectile entity and add it to the game state's active projectiles.
-
-        Args:
-            weapon (Item): The ranged weapon used to fire the projectile.
-            direction (pygame.Vector2): The normalized direction vector for the projectile.
-        """
+        """Instantiate a projectile entity and add it to the game state's active projectiles."""
         direction = pygame.Vector2(direction)
         if direction.length_squared() == 0:
             direction = pygame.Vector2(1, 0)
@@ -236,8 +230,10 @@ class PlayerCombatController:
         speed = getattr(weapon, "projectile_speed", 800) or 800
         max_range = getattr(weapon, "range", 500)
         damage = getattr(weapon, "damage", self.game.character.attack_damage)
-        
-        self.game.projectiles.append(Arrow(spawn_pos, direction, speed, max_range, damage))
+
+        ws = getattr(self.game, 'world_scale', None)
+        execute_chance = 0.10 if (ws and ws.has_ability('execute')) else 0.0
+        self.game.projectiles.append(Arrow(spawn_pos, direction, speed, max_range, damage, execute_chance=execute_chance))
 
     def _aim_dir_valid(self, aim_dir, char):
         forward_dir = self.get_attack_direction()
@@ -331,7 +327,11 @@ class PlayerCombatController:
         self._damage_equipped_weapon(1)
 
     def handle_fast_attack(self, mouse_pos):
-        """Execute a fast attack (different key)."""
+        """Execute a fast attack (different key). Requires world scale level 45."""
+        ws = getattr(self.game, 'world_scale', None)
+        if ws and not ws.has_ability('fast_attack'):
+            return
+
         weapon = self.game.equipped_weapon or self.get_equipped_weapon()
         if not weapon:
             return

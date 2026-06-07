@@ -46,7 +46,7 @@ class Arrow:
         draw(screen, camera_offset=None):
             Render the arrow to the screen.
     """
-    def __init__(self, pos, direction, speed, max_range, damage, color=(210, 180, 120)):
+    def __init__(self, pos, direction, speed, max_range, damage, color=(210, 180, 120), execute_chance=0.0):
         self.pos = pygame.Vector2(pos)
         self.direction = pygame.Vector2(direction)
         if self.direction.length_squared() == 0:
@@ -57,6 +57,7 @@ class Arrow:
         self.speed = speed
         self.max_range = max_range
         self.damage = damage
+        self.execute_chance = execute_chance
         self.traveled = 0.0
         self.color = color
         self.alive = True
@@ -97,7 +98,10 @@ class Arrow:
         for enemy in enemies:
             if rect.colliderect(enemy.get_rect()):
                 logger.info(f"Arrow hit enemy {getattr(enemy, 'ai_profile', type(enemy))} for {self.damage} damage")
-                enemy.take_damage(self.damage)
+                if self.execute_chance > 0 and enemy.hp < enemy.max_hp * 0.25 and random.random() < self.execute_chance:
+                    enemy.take_damage(enemy.hp)
+                else:
+                    enemy.take_damage(self.damage)
                 self.alive = False
                 return
 
