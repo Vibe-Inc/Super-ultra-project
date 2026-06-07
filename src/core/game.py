@@ -1172,6 +1172,9 @@ class Game(State):
             is_merchant=False,
             gender='female',
         )
+        self.fishing_npc.image = pygame.transform.scale(
+            pygame.image.load("assets/characters/fisherman.png"), (85, 110)
+        )
 
         # Clamp fishing NPC to map bounds
         try:
