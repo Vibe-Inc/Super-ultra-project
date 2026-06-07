@@ -621,26 +621,3 @@ def create_peaceful_mob(
         A configured PeacefulMob instance.
     """
     return PeacefulMob(x, y, mob_type, custom_config)
-
-
-def create_all_peaceful_mobs(center_x: float, center_y: float, spread: float = 400.0) -> list[PeacefulMob]:
-    """
-    Create one of each peaceful mob type, scattered around a center point.
-    Useful for initial world population.
-
-    Args:
-        center_x: Center X for spawning.
-        center_y: Center Y for spawning.
-        spread: How far from center each mob can be placed.
-
-    Returns:
-        List of PeacefulMob instances.
-    """
-    mobs = []
-    for i, mob_type in enumerate(PEACEFUL_MOB_REGISTRY):
-        angle = (2 * math.pi / len(PEACEFUL_MOB_REGISTRY)) * i + random.uniform(-0.3, 0.3)
-        dist = random.uniform(spread * 0.4, spread)
-        x = center_x + math.cos(angle) * dist
-        y = center_y + math.sin(angle) * dist
-        mobs.append(create_peaceful_mob(x, y, mob_type))
-    return mobs

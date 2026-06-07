@@ -25,7 +25,7 @@ from src.entities.enemy import Enemy
 from src.entities.npc import NPC
 from src.entities.mage_npc import MageNPC
 from src.entities.projectile import Arrow
-from src.entities.peaceful_mob import PeacefulMob, create_all_peaceful_mobs
+from src.entities.peaceful_mob import PeacefulMob, create_peaceful_mob
 from src.ui.hud import HUD
 from src.ui.widgets import Dialog
 from src.ui.debug_menu import SpawnMenu, EffectsMenu
@@ -527,15 +527,14 @@ class Game(State):
         # Peaceful majestic mobs (non-aggressive ambient creatures)
         self.peaceful_mobs: list[PeacefulMob] = []
 
-        # Peaceful mob spawn positions per map (center_x, center_y, spread)
+        # Peaceful mob spawn points per map (single mob, random type, like enemies)
         self.PEACEFUL_MOB_SPAWNS = {
-            "maps/test-map-1.tmx": (600, 600, 500.0),
-            "maps/test-map-2.tmx": (1200, 900, 600.0),
-            "maps/test-map-3.tmx": (800, 700, 500.0),
+            "maps/test-map-2.tmx": (1100, 800),
+            "maps/test-map-3.tmx": (700, 600),
         }
 
         # Maps where peaceful mob spawning is disabled
-        self.NO_PEACEFUL_MOB_MAPS = {"maps/tavern.tmx"}
+        self.NO_PEACEFUL_MOB_MAPS = {"maps/tavern.tmx", "maps/test-map-1.tmx"}
 
         # Enemy spawning system
         self.enemy_spawn_timer = 0.0
@@ -802,34 +801,27 @@ class Game(State):
         logger.info(f"Loaded {total} gatherable node(s) across {len(self.gatherables)} map(s)")
 
     def _spawn_peaceful_mobs(self):
-        """Spawn peaceful mobs for the current map if it has a spawn config."""
-        from src.entities.peaceful_mob import create_all_peaceful_mobs
+        """Spawn a single peaceful mob on the current map (random type, like enemies)."""
+        from src.entities.peaceful_mob import PEACEFUL_MOB_REGISTRY, create_peaceful_mob
         spawn_info = self.PEACEFUL_MOB_SPAWNS.get(self.current_map_path)
-        if spawn_info is None:
+        if not spawn_info:
             return
         if self.current_map_path in self.NO_PEACEFUL_MOB_MAPS:
             return
-        cx, cy, spread = spawn_info
-        self.peaceful_mobs = create_all_peaceful_mobs(cx, cy, spread)
-        # Validate each mob's position — don't let them spawn inside walls or
-        # on unwalkable tiles (same logic as spawn_random_enemy uses).
-        obstacles = getattr(self, 'obstacles', []) or []
-        nav_grid = getattr(self, 'nav_grid', None)
-        for mob in self.peaceful_mobs:
-            rect = mob.get_rect()
-            collides = self._check_position_collision(rect, obstacles, nav_grid)
-            if collides:
-                for _ in range(20):
-                    angle = random.uniform(0, 2 * math.pi)
-                    dist = random.uniform(30, spread * 0.9)
-                    nx = cx + math.cos(angle) * dist
-                    ny = cy + math.sin(angle) * dist
-                    test_rect = pygame.Rect(int(nx), int(ny), rect.width, rect.height)
-                    if not self._check_position_collision(test_rect, obstacles, nav_grid):
-                        mob.pos = pygame.Vector2(nx, ny)
-                        mob.spawn_pos = mob.pos.copy()
-                        break
-        logger.info(f"Spawned {len(self.peaceful_mobs)} peaceful mob(s) for {self.current_map_path}")
+
+        x, y = spawn_info
+        mob_type = random.choice(list(PEACEFUL_MOB_REGISTRY.keys()))
+
+        if not self._check_position_collision(
+            pygame.Rect(x, y, 40, 40),
+            getattr(self, 'obstacles', []) or [],
+            getattr(self, 'nav_grid', None),
+        ):
+            mob = create_peaceful_mob(x, y, mob_type)
+            self.peaceful_mobs = [mob]
+            logger.info(f"Spawned {mob_type} on {self.current_map_path}")
+        else:
+            logger.warning(f"Peaceful mob spawn position ({x}, {y}) blocked on {self.current_map_path}")
 
     def _check_position_collision(self, rect: pygame.Rect, obstacles: list, nav_grid) -> bool:
         """Check if a rectangle collides with obstacles or is on an unwalkable tile."""
