@@ -210,6 +210,8 @@ class Enemy:
         self.attack_anim_dir: pygame.Vector2 = pygame.Vector2(1, 0)
         self.attack_anim_origin: pygame.Vector2 = pygame.Vector2(0, 0)
         self.attack_anim_strength: float = 1.0
+        # Delayed hit for non-3-phase attacks – stores damage to apply after wind-up phase
+        self.attack_anim_hit_pending: dict | None = None
 
         # Three-phase attack system
         self.attack_phase: int = ATTACK_PHASE_IDLE
@@ -319,10 +321,33 @@ class Enemy:
         if not self.attack_anim_type:
             return
         self.attack_anim_elapsed += dt
+        anim_done = False
         if self.attack_anim_elapsed >= self.attack_anim_duration:
             self.attack_anim_type = ""
             self.attack_anim_elapsed = 0.0
             self.attack_anim_duration = 0.0
+            anim_done = True
+
+        # Consume delayed hit after wind-up phase (progress > 0.55)
+        if self.attack_anim_hit_pending is not None:
+            duration = max(0.0001, self.attack_anim_duration or 0.0001)
+            progress = self.attack_anim_elapsed / duration
+            if progress > 0.55 or anim_done:
+                hit = self.attack_anim_hit_pending
+                self.attack_anim_hit_pending = None
+                player = getattr(self, 'target_entity', None)
+                if player is not None:
+                    dmg = hit.get('damage', 0)
+                    if dmg > 0:
+                        player.take_damage(dmg)
+                    kb = hit.get('knockback', 0.0)
+                    if kb > 0:
+                        player.pos += self.attack_anim_dir * kb
+                    for effect in hit.get('effects', []):
+                        player.add_effect(effect)
+                    heal = hit.get('heal', 0)
+                    if heal > 0 and hasattr(self, 'hp') and hasattr(self, 'max_hp'):
+                        self.hp = min(self.max_hp, self.hp + heal)
 
     def _tick_attack_phase(self, dt: float):
         if self.attack_phase == ATTACK_PHASE_IDLE:

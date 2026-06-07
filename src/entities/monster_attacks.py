@@ -388,6 +388,7 @@ class ArcanistAttack(BaseAttack):
         self.burn_dps = float(self.config.get("burn_dps", 4.0))
         self.cast_range = float(self.config.get("cast_range", 320.0))
         self.spread_degrees = float(self.config.get("spread_degrees", 6.0))
+        self.strike_anim_duration = float(self.config.get("strike_anim_duration", 0.35))
 
     def update(self, enemy: object, context: AttackContext):
         player = context.player
@@ -414,6 +415,15 @@ class ArcanistAttack(BaseAttack):
 
         if self.spread_degrees:
             direction = direction.rotate(random.uniform(-self.spread_degrees, self.spread_degrees))
+
+        if hasattr(enemy, "trigger_attack_anim"):
+            enemy.trigger_attack_anim(
+                "caster_burst",
+                self.strike_anim_duration,
+                direction=direction,
+                origin=enemy_pos,
+                strength=1.0,
+            )
 
         damage = max(1, int(enemy.damage * self.bolt_damage_mult))
         bolt = ArcaneBolt(
@@ -697,6 +707,7 @@ class BomberAttack(BaseAttack):
         self.damage_mult = float(self.config.get("damage_mult", 1.1))
         self.knockback_force = float(self.config.get("knockback_force", 80.0))
         self.spread_degrees = float(self.config.get("spread_degrees", 12.0))
+        self.strike_anim_duration = float(self.config.get("strike_anim_duration", 0.35))
 
     def update(self, enemy: object, context: AttackContext):
         player = context.player
@@ -725,6 +736,15 @@ class BomberAttack(BaseAttack):
 
         if self.spread_degrees:
             direction = direction.rotate(random.uniform(-self.spread_degrees, self.spread_degrees))
+
+        if hasattr(enemy, "trigger_attack_anim"):
+            enemy.trigger_attack_anim(
+                "caster_burst",
+                self.strike_anim_duration,
+                direction=direction,
+                origin=enemy_pos,
+                strength=1.0,
+            )
 
         damage = max(1, int(enemy.damage * self.damage_mult))
         bomb = Bomb(
@@ -788,18 +808,14 @@ class PhantomDrain(BaseAttack):
         if not self.ready(context.now_ms):
             return
 
+        direction = player_pos - enemy_pos
+        if direction.length_squared() == 0:
+            direction = pygame.Vector2(1, 0)
         damage = max(1, int(enemy.damage * self.drain_damage_mult))
-        player.take_damage(damage)
         heal_amount = int(damage * self.heal_pct)
-        if heal_amount > 0 and hasattr(enemy, "hp"):
-            enemy.hp = min(getattr(enemy, "max_hp", enemy.hp), enemy.hp + heal_amount)
-        player.add_effect(SlowEffect(self.slow_duration, self.slow_factor))
-        self.last_attack_time = context.now_ms
 
+        # Wind-up animation first, then delayed hit
         if hasattr(enemy, "trigger_attack_anim"):
-            direction = player_pos - enemy_pos
-            if direction.length_squared() == 0:
-                direction = pygame.Vector2(1, 0)
             enemy.trigger_attack_anim(
                 "phantom_drain",
                 self.strike_anim_duration,
@@ -807,6 +823,13 @@ class PhantomDrain(BaseAttack):
                 origin=enemy_pos,
                 strength=1.0,
             )
+        if damage > 0 and hasattr(enemy, "attack_anim_hit_pending"):
+            enemy.attack_anim_hit_pending = {
+                "damage": damage,
+                "heal": heal_amount,
+                "effects": [SlowEffect(self.slow_duration, self.slow_factor)],
+            }
+        self.last_attack_time = context.now_ms
 
 
 class TitanStomp(BaseAttack):
@@ -859,17 +882,13 @@ class TitanStomp(BaseAttack):
             return
 
         damage = max(1, int(enemy.damage * self.slam_damage_mult))
-        player.take_damage(damage)
         direction = player_pos - enemy_pos
         if direction.length_squared() == 0:
             direction = pygame.Vector2(1, 0)
         else:
             direction = direction.normalize()
-        player.pos += direction * self.knockback_force
-        player.add_effect(RootEffect(self.root_duration))
-        player.add_effect(DizzinessEffect(self.stun_duration))
-        self.last_attack_time = context.now_ms
 
+        # Wind-up animation first, then delayed hit
         if hasattr(enemy, "trigger_attack_anim"):
             enemy.trigger_attack_anim(
                 "titan_stomp",
@@ -878,6 +897,13 @@ class TitanStomp(BaseAttack):
                 origin=enemy_pos,
                 strength=1.4,
             )
+        if damage > 0 and hasattr(enemy, "attack_anim_hit_pending"):
+            enemy.attack_anim_hit_pending = {
+                "damage": damage,
+                "knockback": self.knockback_force,
+                "effects": [RootEffect(self.root_duration), DizzinessEffect(self.stun_duration)],
+            }
+        self.last_attack_time = context.now_ms
 
 
 class CryomancerAttack(BaseAttack):
@@ -936,9 +962,7 @@ class CryomancerAttack(BaseAttack):
         nova_ready = (context.now_ms - self.last_nova_time) >= self.nova_cooldown_ms
         if distance_sq <= (self.nova_radius * self.nova_radius) and nova_ready:
             damage = max(1, int(enemy.damage * self.nova_damage_mult))
-            player.take_damage(damage)
-            player.add_effect(FreezeEffect(self.nova_freeze_duration))
-            self.last_nova_time = context.now_ms
+            # Wind-up first, then delayed hit
             if hasattr(enemy, "trigger_attack_anim"):
                 enemy.trigger_attack_anim(
                     "cryomancer_nova",
@@ -947,6 +971,12 @@ class CryomancerAttack(BaseAttack):
                     origin=enemy_pos,
                     strength=1.3,
                 )
+            if damage > 0 and hasattr(enemy, "attack_anim_hit_pending"):
+                enemy.attack_anim_hit_pending = {
+                    "damage": damage,
+                    "effects": [FreezeEffect(self.nova_freeze_duration)],
+                }
+            self.last_nova_time = context.now_ms
             return
 
         # Ranged ice shard
@@ -965,6 +995,15 @@ class CryomancerAttack(BaseAttack):
 
         if self.spread_degrees:
             direction = direction.rotate(random.uniform(-self.spread_degrees, self.spread_degrees))
+
+        if hasattr(enemy, "trigger_attack_anim"):
+            enemy.trigger_attack_anim(
+                "caster_burst",
+                self.strike_anim_duration,
+                direction=direction,
+                origin=enemy_pos,
+                strength=1.0,
+            )
 
         damage = max(1, int(enemy.damage * self.shard_damage_mult))
         from src.entities.projectile import IceShard
@@ -1082,6 +1121,15 @@ class ShadowmancerAttack(BaseAttack):
         if self.spread_degrees:
             direction = direction.rotate(random.uniform(-self.spread_degrees, self.spread_degrees))
 
+        if hasattr(enemy, "trigger_attack_anim"):
+            enemy.trigger_attack_anim(
+                "caster_burst",
+                self.strike_anim_duration,
+                direction=direction,
+                origin=enemy_pos,
+                strength=1.0,
+            )
+
         damage = max(1, int(enemy.damage * self.bolt_damage_mult))
         from src.entities.projectile import ShadowBolt
         bolt = ShadowBolt(
@@ -1166,20 +1214,21 @@ class RevenantAttack(BaseAttack):
                 direction = direction.normalize()
 
             damage = max(1, int(enemy.damage * self.damage_mult))
-            player.take_damage(damage)
-            player.add_effect(BleedEffect(self.bleed_duration, max(1, int(damage * 0.15))))
-
-            # Lifesteal heal
             heal = max(1, int(damage * self.lifesteal_fraction))
-            if hasattr(enemy, "hp") and hasattr(enemy, "max_hp"):
-                enemy.hp = min(enemy.max_hp, enemy.hp + heal)
 
-            self.last_attack_time = context.now_ms
+            # Wind-up first, then delayed hit
             if hasattr(enemy, "trigger_attack_anim"):
                 enemy.trigger_attack_anim(
                     "revenant_slash", 0.45,
                     direction=direction, origin=enemy_pos, strength=1.0,
                 )
+            if damage > 0 and hasattr(enemy, "attack_anim_hit_pending"):
+                enemy.attack_anim_hit_pending = {
+                    "damage": damage,
+                    "heal": heal,
+                    "effects": [BleedEffect(self.bleed_duration, max(1, int(damage * 0.15)))],
+                }
+            self.last_attack_time = context.now_ms
 
 
 # ============================================================
@@ -1240,14 +1289,18 @@ class MoltenAttack(BaseAttack):
             enemy.target = enemy.pos + self.charge_direction * 200
             if distance_sq <= (enemy.attack_range * 1.1) ** 2 and self.ready(context.now_ms):
                 damage = max(1, int(enemy.damage * self.charge_damage_mult))
-                player.take_damage(damage)
-                player.add_effect(BurnEffect(self.burn_duration, self.burn_dps))
-                self.last_attack_time = context.now_ms
+                # Wind-up first, then delayed hit
                 if hasattr(enemy, "trigger_attack_anim"):
                     enemy.trigger_attack_anim(
                         "molten_slam", 0.5,
                         direction=self.charge_direction, origin=enemy_pos, strength=1.2,
                     )
+                if damage > 0 and hasattr(enemy, "attack_anim_hit_pending"):
+                    enemy.attack_anim_hit_pending = {
+                        "damage": damage,
+                        "effects": [BurnEffect(self.burn_duration, self.burn_dps)],
+                    }
+                self.last_attack_time = context.now_ms
                 self.charge_timer = 0.0
             if self.charge_timer <= 0:
                 enemy.speed_multiplier = 1.0
@@ -1259,14 +1312,18 @@ class MoltenAttack(BaseAttack):
         nova_ready = (context.now_ms - self.last_nova_time) >= self.nova_cooldown_ms
         if distance_sq <= (self.nova_radius * self.nova_radius) and nova_ready:
             damage = max(1, int(enemy.damage * self.nova_damage_mult))
-            player.take_damage(damage)
-            player.add_effect(BurnEffect(self.burn_duration, self.burn_dps))
-            self.last_nova_time = context.now_ms
+            # Wind-up first, then delayed hit
             if hasattr(enemy, "trigger_attack_anim"):
                 enemy.trigger_attack_anim(
                     "molten_nova", 0.55,
                     direction=pygame.Vector2(1, 0), origin=enemy_pos, strength=1.4,
                 )
+            if damage > 0 and hasattr(enemy, "attack_anim_hit_pending"):
+                enemy.attack_anim_hit_pending = {
+                    "damage": damage,
+                    "effects": [BurnEffect(self.burn_duration, self.burn_dps)],
+                }
+            self.last_nova_time = context.now_ms
             return
 
         # Charge toward player
@@ -1337,14 +1394,18 @@ class StormcallerAttack(BaseAttack):
         field_ready = (context.now_ms - self.last_field_time) >= self.field_cooldown_ms
         if distance_sq <= (self.field_radius * self.field_radius) and field_ready:
             damage = max(1, int(enemy.damage * self.field_damage_mult))
-            player.take_damage(damage)
-            player.add_effect(DizzinessEffect(self.dizzy_duration))
-            self.last_field_time = context.now_ms
+            # Wind-up first, then delayed hit
             if hasattr(enemy, "trigger_attack_anim"):
                 enemy.trigger_attack_anim(
                     "stormcaller_field", 0.5,
                     direction=pygame.Vector2(1, 0), origin=enemy_pos, strength=1.3,
                 )
+            if damage > 0 and hasattr(enemy, "attack_anim_hit_pending"):
+                enemy.attack_anim_hit_pending = {
+                    "damage": damage,
+                    "effects": [DizzinessEffect(self.dizzy_duration)],
+                }
+            self.last_field_time = context.now_ms
             return
 
         # Ranged chain lightning bolt
@@ -1363,6 +1424,15 @@ class StormcallerAttack(BaseAttack):
 
         if self.spread_degrees:
             direction = direction.rotate(random.uniform(-self.spread_degrees, self.spread_degrees))
+
+        if hasattr(enemy, "trigger_attack_anim"):
+            enemy.trigger_attack_anim(
+                "caster_burst",
+                self.strike_anim_duration,
+                direction=direction,
+                origin=enemy_pos,
+                strength=1.0,
+            )
 
         damage = max(1, int(enemy.damage * self.bolt_damage_mult))
         from src.entities.projectile import ChainLightningBolt
@@ -1432,15 +1502,21 @@ class PlaguebearerAttack(BaseAttack):
         nova_ready = (context.now_ms - self.last_nova_time) >= self.nova_cooldown_ms
         if distance_sq <= (self.nova_radius * self.nova_radius) and nova_ready:
             damage = max(1, int(enemy.damage * self.nova_damage_mult))
-            player.take_damage(damage)
-            player.add_effect(PoisonEffect(self.nova_cooldown_ms / 1000.0 * 1.2, self.poison_dps))
-            player.add_effect(SlowEffect(self.nova_slow_duration, self.nova_slow_factor))
-            self.last_nova_time = context.now_ms
+            # Wind-up first, then delayed hit
             if hasattr(enemy, "trigger_attack_anim"):
                 enemy.trigger_attack_anim(
                     "plaguebearer_nova", 0.55,
                     direction=pygame.Vector2(1, 0), origin=enemy_pos, strength=1.3,
                 )
+            if damage > 0 and hasattr(enemy, "attack_anim_hit_pending"):
+                enemy.attack_anim_hit_pending = {
+                    "damage": damage,
+                    "effects": [
+                        PoisonEffect(self.nova_cooldown_ms / 1000.0 * 1.2, self.poison_dps),
+                        SlowEffect(self.nova_slow_duration, self.nova_slow_factor),
+                    ],
+                }
+            self.last_nova_time = context.now_ms
             return
 
         # Ranged plague bolt
@@ -1459,6 +1535,15 @@ class PlaguebearerAttack(BaseAttack):
 
         if self.spread_degrees:
             direction = direction.rotate(random.uniform(-self.spread_degrees, self.spread_degrees))
+
+        if hasattr(enemy, "trigger_attack_anim"):
+            enemy.trigger_attack_anim(
+                "caster_burst",
+                self.strike_anim_duration,
+                direction=direction,
+                origin=enemy_pos,
+                strength=1.0,
+            )
 
         damage = max(1, int(enemy.damage * self.bolt_damage_mult))
         from src.entities.projectile import PlagueCloud
