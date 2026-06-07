@@ -644,6 +644,47 @@ class LocalMap:
                 self._teleport_player_to_tile(player, 36, 17, tile_width, tile_height)
                 return new_map
 
+        # Map 3 (Temple) → Map 4 (Cave) at tile (4, 5) — triggers location travel menu
+        if self.current_map_path == "maps/test-map-3.tmx":
+            col = int((player.pos.x + sprite_w / 2) // tile_width)
+            feet_y = player.pos.y + sprite_h
+            if col == 4 and feet_y >= 5 * tile_height - self.transition_buffer:
+                target_map = "maps/test-map-4.tmx"
+                target_loc = get_location_id(target_map)
+                if target_loc is not None and target_loc != self.current_location_id:
+                    if not hasattr(self, "location_exits"):
+                        self.location_exits = {}
+                    self.location_exits[self.current_location_id] = {
+                        "map_path": self.current_map_path,
+                        "pos": (player.pos.x, player.pos.y),
+                    }
+                    self.location_exits[target_loc] = {
+                        "map_path": target_map,
+                        "pos": (15 * tile_width, 36 * tile_height),
+                    }
+                    new_map = ("location_transition", target_loc)
+                    return new_map
+
+        # Map 4 (Cave) → Map 3 (Temple) at bottom centre — triggers location travel menu
+        if self.current_map_path == "maps/test-map-4.tmx":
+            cave_exit_tiles = [(x, 39) for x in range(13, 18)]
+            if self._player_overlaps_any_tile(player_rect, tile_width, tile_height, cave_exit_tiles):
+                target_map = "maps/test-map-3.tmx"
+                target_loc = get_location_id(target_map)
+                if target_loc is not None and target_loc != self.current_location_id:
+                    if not hasattr(self, "location_exits"):
+                        self.location_exits = {}
+                    self.location_exits[self.current_location_id] = {
+                        "map_path": self.current_map_path,
+                        "pos": (player.pos.x, player.pos.y),
+                    }
+                    self.location_exits[target_loc] = {
+                        "map_path": target_map,
+                        "pos": (4 * tile_width, 5 * tile_height),
+                    }
+                    new_map = ("location_transition", target_loc)
+                    return new_map
+
         # Directional edge checks (right/left/up/down)
         # Determine player's height for vertical checks
         if hasattr(player_rect, 'height'):

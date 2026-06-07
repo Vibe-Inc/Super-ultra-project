@@ -500,7 +500,7 @@ class Game(State):
         }
 
         # Maps where enemy spawning (both default and random) is disabled
-        self.NO_ENEMY_SPAWN_MAPS = {"maps/tavern.tmx", "maps/test-map-1.tmx"}
+        self.NO_ENEMY_SPAWN_MAPS = {"maps/tavern.tmx", "maps/test-map-1.tmx", "maps/test-map-4.tmx"}
 
         spawn_info = self._get_spawn_info(initial_map_path)
         if initial_map_path in self.NO_ENEMY_SPAWN_MAPS:

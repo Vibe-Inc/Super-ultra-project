@@ -72,6 +72,8 @@ class LocationMapMenu(Menu):
         discovered = getattr(game, "discovered_locations", set())
         game.discovered_locations = discovered
         discovered.add("peaceful_forest")
+        if game.map.current_location_id:
+            discovered.add(game.map.current_location_id)
 
     def _get_surf(self, name, sw, sh):
         key = (name, sw, sh)

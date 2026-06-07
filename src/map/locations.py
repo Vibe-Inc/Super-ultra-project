@@ -21,10 +21,10 @@ LOCATION_DEFS = {
     "cave": {
         "id": "cave",
         "name": "Dark Cave",
-        "maps": [],
+        "maps": ["maps/test-map-4.tmx"],
         "connections": ["temple"],
-        "entry_map": None,
-        "entry_tile": None,
+        "entry_map": "maps/test-map-4.tmx",
+        "entry_tile": (15, 36),
     },
 }
 
