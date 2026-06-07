@@ -754,7 +754,7 @@ class Character:
                 cd_mult = 1.0
             if mana_flow or cd_mult != 1.0:
                 actual = object.__getattribute__(self, name)
-                if actual is not None:
+                if actual is not None and isinstance(actual, (int, float)):
                     mult = (0.8 if mana_flow else 1.0) * cd_mult
                     return int(actual * mult)
         if name.endswith("_damage"):

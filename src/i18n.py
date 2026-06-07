@@ -28,6 +28,11 @@ def install_language(lang_code):
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     locales_dir = os.path.join(base_dir, 'locales')
 
+    # Update global environment for gettext.gettext() to pick up the correct language
+    os.environ['LANGUAGE'] = lang_code
+    gettext.bindtextdomain('messages', locales_dir)
+    gettext.textdomain('messages')
+
     try:
         language = gettext.translation('messages', localedir=locales_dir, languages=[lang_code])
         language.install()
@@ -35,6 +40,7 @@ def install_language(lang_code):
     except FileNotFoundError:
         # Fallback to null translation (English/default) if file not found
         print(f"Translation for '{lang_code}' not found. Falling back to default.")
+        os.environ['LANGUAGE'] = 'en'
         gettext.install('messages', localedir=locales_dir, languages=['en'])
         _current_translation = gettext.NullTranslations()
 

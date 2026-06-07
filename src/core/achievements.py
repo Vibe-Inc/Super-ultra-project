@@ -54,6 +54,24 @@ class AchievementManager:
         self.register(Achievement("scholar", _("Scholar"), _("Read or unlock 20 wiki/guide articles."), max_progress=20))
         self.register(Achievement("lucky_catch", _("Lucky Catch"), _("Catch a Rare or Legendary fish.")))
 
+        # ─── Boss & World Scale progression achievements ───
+        self.register(Achievement("chronos_slayer", _("Chronos Slayer"), _("Defeat Chronos, the Chronicler of Time.")))
+        self.register(Achievement("world_scale_30", _("World Traveler"), _("Reach World Scale level 30."), max_progress=30))
+        self.register(Achievement("world_scale_55", _("Chronarch"), _("Reach World Scale level 55."), max_progress=55))
+        self.register(Achievement("world_scale_60", _("Apex of Time"), _("Reach the maximum World Scale level 60."), max_progress=60))
+
+        # ─── Combat skill mastery achievements ───
+        self.register(Achievement("parry_master", _("Parry Master"), _("Successfully parry 20 enemy attacks."), max_progress=20))
+        self.register(Achievement("charged_warrior", _("Charged Warrior"), _("Land 15 fully charged attacks."), max_progress=15))
+        self.register(Achievement("spell_slinger", _("Spell Slinger"), _("Cast 100 skills or spells."), max_progress=100))
+        self.register(Achievement("shadow_dancer", _("Shadow Dancer"), _("Use Shadow Step 30 times."), max_progress=30))
+
+        # ─── Player progression achievements ───
+        self.register(Achievement("unstoppable", _("Unstoppable"), _("Reach player level 20."), max_progress=20))
+
+        # ─── Combat streak achievements ───
+        self.register(Achievement("speedrunner", _("Blitzkrieg"), _("Defeat 10 enemies within 30 seconds."), max_progress=10))
+
     def register(self, achievement: Achievement):
         self.achievements[achievement.id] = achievement
 
@@ -63,7 +81,7 @@ class AchievementManager:
         if ach and not ach.unlocked:
             ach.unlocked = True
             logger.info(f"Achievement Unlocked: {ach.name}")
-            
+
             # Show a notification if the app has a notification system
             if hasattr(self.app, "manager"):
                 state = self.app.manager.get_state()
@@ -74,7 +92,7 @@ class AchievementManager:
                             gameplay.hud.add_achievement_popup(ach)
                         elif hasattr(gameplay.hud, "add_notification"):
                             gameplay.hud.add_notification(f"Achievement Unlocked: {ach.name}", color=(255, 215, 0))
-            
+
             self.save()
 
     def add_progress(self, achievement_id: str, amount: int, required_amount: int):
@@ -93,10 +111,10 @@ class AchievementManager:
         """Save unlocked achievements to disk."""
         if not os.path.exists("saves"):
             os.makedirs("saves")
-            
+
         data = {
             ach_id: { "unlocked": ach.unlocked, "progress": ach.progress }
-            for ach_id, ach in self.achievements.items() 
+            for ach_id, ach in self.achievements.items()
             if ach.unlocked or ach.progress > 0
         }
         try:
