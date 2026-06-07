@@ -207,6 +207,29 @@ class RecipeBookMenu(Menu):
         self.buttons = []
         self._setup_buttons()
 
+        # Caching
+        self._cached_book_bg = None
+        self._cached_glow_surf = None
+        self._cached_shadow_surf = None
+        self._cached_shine_surf = None
+        self._card_bg_cache = {}
+        self._pre_scaled_grid = {}
+        self._pre_scaled_result = {}
+        self._cached_texts = {}
+        self._prev_book_w = 0
+        self._prev_book_h = 0
+        self._prev_scale = 0
+
+        scale = cfg.ui_scale() * self.book_magnifier
+        grid_slot_size = int(33 * scale)
+        res_icon_size = int(58 * scale) - int(14 * scale)
+        for ing_id, img_surf in self.item_images.items():
+            try:
+                self._pre_scaled_grid[ing_id] = pygame.transform.scale(img_surf, (grid_slot_size - int(6 * scale), grid_slot_size - int(6 * scale)))
+                self._pre_scaled_result[ing_id] = pygame.transform.scale(img_surf, (res_icon_size, res_icon_size))
+            except Exception:
+                pass
+
     def _render_text(self, font, text, color):
         surf = font.render(text, True, color)
         if self.book_magnifier != 1.0:
@@ -446,24 +469,37 @@ class RecipeBookMenu(Menu):
         book_h = int(600 * scale)
         y_offset = int((1.0 - open_progress) * 150 * scale)
 
-        # Radiant golden glow behind the book
+        # Radiant golden glow behind the book (cached)
         glow_size = max(book_w, book_h) + int(80 * scale)
-        glow_surf = pygame.Surface((glow_size, glow_size), pygame.SRCALPHA)
-        pulse = (math.sin(current_time * 0.002) + 1) / 2
-        glow_alpha = int(40 + pulse * 30)
-        for r in range(glow_size // 2, 0, -1):
-            a = int(glow_alpha * (1.0 - r / (glow_size // 2)))
-            if a > 0:
-                pygame.draw.circle(glow_surf, (212, 175, 55, a), (glow_size // 2, glow_size // 2), r)
-        screen.blit(glow_surf, (cx - glow_size // 2, cy + y_offset - glow_size // 2))
+        if self._cached_glow_surf is None or self._cached_glow_surf.get_width() != glow_size:
+            self._cached_glow_surf = pygame.Surface((glow_size, glow_size), pygame.SRCALPHA)
+            pulse = (math.sin(current_time * 0.002) + 1) / 2
+            glow_alpha = int(40 + pulse * 30)
+            for r in range(glow_size // 2, 0, -1):
+                a = int(glow_alpha * (1.0 - r / (glow_size // 2)))
+                if a > 0:
+                    pygame.draw.circle(self._cached_glow_surf, (212, 175, 55, a), (glow_size // 2, glow_size // 2), r)
+        screen.blit(self._cached_glow_surf, (cx - glow_size // 2, cy + y_offset - glow_size // 2))
 
-        # Book shadow
-        shadow_surf = pygame.Surface((book_w + int(40 * scale), book_h + int(20 * scale)), pygame.SRCALPHA)
-        pygame.draw.rect(shadow_surf, (0, 0, 0, 80), (int(20 * scale), 0, book_w, book_h + int(10 * scale)), border_radius=int(20 * scale))
-        screen.blit(shadow_surf, (cx - (book_w + int(40 * scale)) // 2, cy + y_offset - book_h // 2 + int(8 * scale)))
+        # Book shadow (cached)
+        shadow_w = book_w + int(40 * scale)
+        shadow_h = book_h + int(20 * scale)
+        if self._cached_shadow_surf is None or self._cached_shadow_surf.get_width() != shadow_w:
+            self._cached_shadow_surf = pygame.Surface((shadow_w, shadow_h), pygame.SRCALPHA)
+            pygame.draw.rect(self._cached_shadow_surf, (0, 0, 0, 80), (int(20 * scale), 0, book_w, book_h + int(10 * scale)), border_radius=int(20 * scale))
+        screen.blit(self._cached_shadow_surf, (cx - (book_w + int(40 * scale)) // 2, cy + y_offset - book_h // 2 + int(8 * scale)))
 
-        book_surf = pygame.Surface((book_w, book_h), pygame.SRCALPHA)
-        self._draw_book_background(book_surf, book_w, book_h, scale, current_time)
+        # Cached book background (regenerate only on size/scale change)
+        if (self._cached_book_bg is None or self._prev_book_w != book_w or self._prev_book_h != book_h or
+                abs(self._prev_scale - scale) > 0.01):
+            self._cached_book_bg = pygame.Surface((book_w, book_h), pygame.SRCALPHA)
+            self._draw_book_background(self._cached_book_bg, book_w, book_h, scale, current_time)
+            self._prev_book_w = book_w
+            self._prev_book_h = book_h
+            self._prev_scale = scale
+            self._card_bg_cache.clear()
+
+        book_surf = self._cached_book_bg.copy()
         self._draw_recipes_for_current_spread(book_surf, book_w, book_h, scale, content_alpha, current_time)
 
         book_rect = book_surf.get_rect(center=(cx, cy + y_offset))
@@ -471,7 +507,7 @@ class RecipeBookMenu(Menu):
             book_surf.set_alpha(int(255 * open_progress))
         screen.blit(book_surf, book_rect.topleft)
 
-        # Star particles (drawn on top of book)
+        # Star particles
         for particle in self.star_particles:
             px = int(particle.x - cx + book_rect.centerx)
             py = int(particle.y - cy + book_rect.centery)
@@ -494,16 +530,18 @@ class RecipeBookMenu(Menu):
                     pygame.draw.polygon(s, (clr[0], clr[1], clr[2], alpha), pts)
                 screen.blit(s, (px - mid, py - mid))
 
-        # Golden shine sweep across the book
+        # Golden shine sweep across the book (cached)
         shine_t = (current_time * 0.0003) % 1.0
         shine_x = int((shine_t - 0.3) * book_w * 1.4)
         if 0 < shine_x < book_w:
-            shine_surf = pygame.Surface((int(100 * scale), book_h), pygame.SRCALPHA)
-            for sx in range(shine_surf.get_width()):
-                a = int(30 * (1.0 - abs(sx - shine_surf.get_width() / 2) / (shine_surf.get_width() / 2)))
-                if a > 0:
-                    pygame.draw.line(shine_surf, (255, 215, 0, a), (sx, 0), (sx, book_h))
-            screen.blit(shine_surf, (book_rect.x + shine_x, book_rect.y))
+            shine_w = int(100 * scale)
+            if self._cached_shine_surf is None or self._cached_shine_surf.get_width() != shine_w or self._cached_shine_surf.get_height() != book_h:
+                self._cached_shine_surf = pygame.Surface((shine_w, book_h), pygame.SRCALPHA)
+                for sx in range(shine_w):
+                    a = int(30 * (1.0 - abs(sx - shine_w / 2) / (shine_w / 2)))
+                    if a > 0:
+                        pygame.draw.line(self._cached_shine_surf, (255, 215, 0, a), (sx, 0), (sx, book_h))
+            screen.blit(self._cached_shine_surf, (book_rect.x + shine_x, book_rect.y))
 
         # Ambient golden sparkles
         for particle in self.ambient_particles:
@@ -511,10 +549,8 @@ class RecipeBookMenu(Menu):
             py = int(particle.y - cy + book_rect.centery)
             if len(particle.color) == 4:
                 a = int(particle.color[3] * (particle.lifetime / particle.max_lifetime))
-                c = (particle.color[0], particle.color[1], particle.color[2])
-                s = pygame.Surface((particle.size * 4, particle.size * 4), pygame.SRCALPHA)
-                pygame.draw.circle(s, (*c, a), (particle.size * 2, particle.size * 2), particle.size)
-                screen.blit(s, (px - particle.size * 2, py - particle.size * 2))
+                clr = (particle.color[0], particle.color[1], particle.color[2], a)
+                pygame.draw.circle(screen, clr, (px, py), particle.size)
             else:
                 particle.draw(screen, offset=(-cx + book_rect.centerx, -cy + book_rect.centery))
 
@@ -790,23 +826,23 @@ class RecipeBookMenu(Menu):
     def _draw_recipes_for_current_spread(self, surf, w, h, scale, alpha, current_time):
         content_surf = pygame.Surface((w, h), pygame.SRCALPHA)
 
-        # Chapter title on first page
-        if self.current_spread == 0:
+        # Chapter title on first page (cached)
+        title_key = ("title_page", scale)
+        if title_key not in self._card_bg_cache:
+            ts = pygame.Surface((w, h), pygame.SRCALPHA)
             title_text = _("RECIPE BOOK")
             title = self._render_text(cfg.button_font, title_text, (70, 45, 18))
             tx = w // 4 - title.get_width() // 2
             ty = int(30 * scale)
-            content_surf.blit(title, (tx, ty))
+            ts.blit(title, (tx, ty))
 
-            # Illuminated letter frame around title
             ornate_color = (180, 150, 80)
             frame_pad = int(10 * scale)
             frame_rect = pygame.Rect(tx - frame_pad, ty - frame_pad,
                                      title.get_width() + frame_pad * 2, title.get_height() + frame_pad * 2)
-            pygame.draw.rect(content_surf, ornate_color, frame_rect, width=1, border_radius=int(4 * scale))
-            pygame.draw.rect(content_surf, (200, 175, 120), frame_rect.inflate(-int(3*scale), -int(3*scale)), width=1, border_radius=int(3*scale))
+            pygame.draw.rect(ts, ornate_color, frame_rect, width=1, border_radius=int(4 * scale))
+            pygame.draw.rect(ts, (200, 175, 120), frame_rect.inflate(-int(3*scale), -int(3*scale)), width=1, border_radius=int(3*scale))
 
-            # Decorative flourishes
             fl_y = ty + title.get_height() // 2
             line_len = int(70 * scale)
             for side in [-1, 1]:
@@ -814,61 +850,74 @@ class RecipeBookMenu(Menu):
                     sx = tx - frame_pad - int(5 * scale)
                     for li in range(int(line_len)):
                         a = int(80 * (1.0 - li / line_len))
-                        content_surf.set_at((int(sx - li), fl_y), (*ornate_color, a))
+                        ts.set_at((int(sx - li), fl_y), (*ornate_color, a))
                 else:
                     sx = tx + title.get_width() + frame_pad + int(5 * scale)
                     for li in range(int(line_len)):
                         a = int(80 * li / line_len)
-                        content_surf.set_at((int(sx + li), fl_y), (*ornate_color, a))
+                        ts.set_at((int(sx + li), fl_y), (*ornate_color, a))
 
-            # Diamond ends
             for fx in [tx - frame_pad - line_len, tx + title.get_width() + frame_pad + line_len]:
                 pts = [(fx, fl_y - int(5*scale)), (fx + int(4*scale), fl_y), (fx, fl_y + int(5*scale)), (fx - int(4*scale), fl_y)]
-                pygame.draw.polygon(content_surf, ornate_color, pts)
+                pygame.draw.polygon(ts, ornate_color, pts)
 
-            # Subtitle decoration
             sub_y = ty + title.get_height() + int(12 * scale)
             sub_text = _("— Crafting Compendium —")
             sub = self._render_text(cfg.INV_nums_font, sub_text, (140, 120, 80))
-            content_surf.blit(sub, (w // 4 - sub.get_width() // 2, sub_y))
+            ts.blit(sub, (w // 4 - sub.get_width() // 2, sub_y))
+            self._card_bg_cache[title_key] = ts
 
-        # Ornate page numbers with decoration
+        if self.current_spread == 0:
+            content_surf.blit(self._card_bg_cache[title_key], (0, 0))
+
+        # Ornate page numbers with decoration (cached per spread)
         num_color = (160, 130, 80)
         page_left = self.current_spread * 2 + 1
         page_right = self.current_spread * 2 + 2
 
-        left_num = self._render_text(cfg.INV_nums_font, str(page_left), num_color)
-        lx = int(32 * scale)
-        ly = h - int(35 * scale)
-        content_surf.blit(left_num, (lx, ly))
-        for li in range(int(18 * scale)):
-            a = int(70 * (1.0 - li / (18 * scale)))
-            content_surf.set_at((lx - int(18 * scale) + li, ly + left_num.get_height() // 2), (*num_color, a))
+        page_num_key = (page_left, page_right, scale)
+        if page_num_key not in self._card_bg_cache:
+            left_num = self._render_text(cfg.INV_nums_font, str(page_left), num_color)
+            lx = int(32 * scale)
+            ly = h - int(35 * scale)
 
-        right_num = self._render_text(cfg.INV_nums_font, str(page_right), num_color)
-        rx = w - int(40 * scale) - right_num.get_width()
-        ry = h - int(35 * scale)
-        content_surf.blit(right_num, (rx, ry))
-        for li in range(int(18 * scale)):
-            a = int(70 * li / (18 * scale))
-            content_surf.set_at((rx + right_num.get_width() + li, ry + right_num.get_height() // 2), (*num_color, a))
+            right_num = self._render_text(cfg.INV_nums_font, str(page_right), num_color)
+            rx = w - int(40 * scale) - right_num.get_width()
+            ry = h - int(35 * scale)
 
-        # Decorative header flourish
-        header_y = int(62 * scale)
-        dot_color = (200, 175, 120)
-        for side in ['left', 'right']:
-            if side == 'left':
-                hx = int(28 * scale)
-                hw = w // 2 - int(56 * scale)
-            else:
-                hx = w // 2 + int(28 * scale)
-                hw = w // 2 - int(56 * scale)
-            for li in range(hw):
-                a = int(70 * (1.0 - abs(li - hw / 2) / (hw / 2)))
-                content_surf.set_at((hx + li, header_y), (*dot_color, a))
-            for cxp in [hx, hx + hw // 2, hx + hw]:
-                pts = [(cxp, header_y - int(4*scale)), (cxp + int(3*scale), header_y), (cxp, header_y + int(4*scale)), (cxp - int(3*scale), header_y)]
-                pygame.draw.polygon(content_surf, dot_color, pts)
+            pn_surf = pygame.Surface((w, h), pygame.SRCALPHA)
+            pn_surf.blit(left_num, (lx, ly))
+            for li in range(int(18 * scale)):
+                a = int(70 * (1.0 - li / (18 * scale)))
+                pn_surf.set_at((lx - int(18 * scale) + li, ly + left_num.get_height() // 2), (*num_color, a))
+            pn_surf.blit(right_num, (rx, ry))
+            for li in range(int(18 * scale)):
+                a = int(70 * li / (18 * scale))
+                pn_surf.set_at((rx + right_num.get_width() + li, ry + right_num.get_height() // 2), (*num_color, a))
+            self._card_bg_cache[page_num_key] = pn_surf
+        content_surf.blit(self._card_bg_cache[page_num_key], (0, 0))
+
+        # Decorative header flourish (cached per scale)
+        header_key = ("header", scale)
+        if header_key not in self._card_bg_cache:
+            hdr = pygame.Surface((w, h), pygame.SRCALPHA)
+            header_y = int(62 * scale)
+            dot_color = (200, 175, 120)
+            for side in ['left', 'right']:
+                if side == 'left':
+                    hx = int(28 * scale)
+                    hw = w // 2 - int(56 * scale)
+                else:
+                    hx = w // 2 + int(28 * scale)
+                    hw = w // 2 - int(56 * scale)
+                for li in range(hw):
+                    a = int(70 * (1.0 - abs(li - hw / 2) / (hw / 2)))
+                    hdr.set_at((hx + li, header_y), (*dot_color, a))
+                for cxp in [hx, hx + hw // 2, hx + hw]:
+                    pts = [(cxp, header_y - int(4*scale)), (cxp + int(3*scale), header_y), (cxp, header_y + int(4*scale)), (cxp - int(3*scale), header_y)]
+                    pygame.draw.polygon(hdr, dot_color, pts)
+            self._card_bg_cache[header_key] = hdr
+        content_surf.blit(self._card_bg_cache[header_key], (0, 0))
 
         start_idx = self.current_spread * self.recipes_per_spread
         end_idx = min(start_idx + self.recipes_per_spread, len(self.recipes))
@@ -927,52 +976,57 @@ class RecipeBookMenu(Menu):
         content_x = scaled_rect.x
         content_y = scaled_rect.y
 
-        # Shadow
+        # Shadow (only one card hovered, draw directly)
         if hover_amount > 0.1:
             pad = int(16 * scale)
-            shadow_surf = pygame.Surface((scaled_rect.width + pad * 2, scaled_rect.height + pad * 2), pygame.SRCALPHA)
-            shadow_rect = shadow_surf.get_rect()
-            pygame.draw.rect(shadow_surf, (0, 0, 0, int(120 * hover_amount)), shadow_rect, border_radius=int(12 * scale))
+            sw = scaled_rect.width + pad * 2
+            sh = scaled_rect.height + pad * 2
+            shadow_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            shadow_a = int(120 * hover_amount)
+            pygame.draw.rect(shadow_surf, (0, 0, 0, shadow_a), shadow_surf.get_rect(), border_radius=int(12 * scale))
             surf.blit(shadow_surf, (scaled_rect.x - pad, scaled_rect.y + pad))
 
-        # Parchment background
-        card_base = (int(238 - hover_amount * 8), int(225 - hover_amount * 5), int(198 - hover_amount * 8))
-        pygame.draw.rect(surf, card_base, scaled_rect, border_radius=int(10 * scale))
+        # Cached card background (parchment + borders + corners)
+        bg_key = (w, h, scale)
+        if bg_key not in self._card_bg_cache:
+            bg = pygame.Surface((int(w * (1 + 0.08)), int(h * (1 + 0.08))), pygame.SRCALPHA)
+            bg_w, bg_h = bg.get_size()
+            bg_rect = pygame.Rect(0, 0, bg_w, bg_h)
+            card_base = (238, 225, 198)
+            pygame.draw.rect(bg, card_base, bg_rect, border_radius=int(10 * scale))
+            # Parchment grain
+            for _ in range(200):
+                tx = random.randint(0, bg_w - 1)
+                ty = random.randint(0, bg_h - 1)
+                shade = random.randint(0, 1)
+                c = (175, 155, 115) if shade else (215, 195, 165)
+                bg.set_at((tx, ty), (*c, random.randint(5, 18)))
+            # Triple golden border
+            outer_border_colors = [(212, 175, 55), (190, 160, 70), (160, 130, 60)]
+            for bi, bc in enumerate(outer_border_colors):
+                inset = bi * int(2 * scale)
+                rect = pygame.Rect(inset, inset, bg_w - inset * 2, bg_h - inset * 2)
+                pygame.draw.rect(bg, bc, rect, width=1, border_radius=int(10 * scale - bi * 2))
+            # Corner decorations
+            corner_off = int(6 * scale)
+            corner_sz = int(12 * scale)
+            gold_d = (212, 175, 55)
+            for cx, cy in [(corner_off, corner_off), (bg_w - corner_off, corner_off),
+                           (corner_off, bg_h - corner_off), (bg_w - corner_off, bg_h - corner_off)]:
+                pts = [(cx, cy - corner_sz), (cx + corner_sz // 2, cy), (cx, cy + corner_sz), (cx - corner_sz // 2, cy)]
+                pygame.draw.circle(bg, gold_d, (cx, cy), corner_sz, 1)
+                pygame.draw.line(bg, gold_d, (cx - corner_sz, cy), (cx + corner_sz, cy), 1)
+                pygame.draw.line(bg, gold_d, (cx, cy - corner_sz), (cx, cy + corner_sz), 1)
+            self._card_bg_cache[bg_key] = bg
 
-        # Parchment grain
-        tex = pygame.Surface((scaled_rect.width, scaled_rect.height), pygame.SRCALPHA)
-        for _ in range(200):
-            tx = random.randint(0, scaled_rect.width - 1)
-            ty = random.randint(0, scaled_rect.height - 1)
-            shade = random.randint(0, 1)
-            c = (175, 155, 115) if shade else (215, 195, 165)
-            tex.set_at((tx, ty), (*c, random.randint(5, 18)))
-        surf.blit(tex, scaled_rect.topleft)
+        surf.blit(self._card_bg_cache[bg_key], scaled_rect.topleft, area=(0, 0, scaled_rect.width, scaled_rect.height))
 
-        # Triple golden border
-        outer_border_colors = [(212, 175, 55), (190, 160, 70), (160, 130, 60)]
-        for bi, bc in enumerate(outer_border_colors):
-            inset = bi * int(2 * scale)
-            rect = pygame.Rect(scaled_rect.x + inset, scaled_rect.y + inset,
-                               scaled_rect.width - inset * 2, scaled_rect.height - inset * 2)
-            pygame.draw.rect(surf, bc, rect, width=1, border_radius=int(10 * scale - bi * 2))
-
-        # Glow on hover
+        # Glow on hover (only one card hovered at a time, draw directly)
         if hover_amount > 0.2:
-            glow_clr = (255, 215, 0, int(100 * hover_amount))
             glow_surf = pygame.Surface((scaled_rect.width, scaled_rect.height), pygame.SRCALPHA)
-            pygame.draw.rect(glow_surf, glow_clr, glow_surf.get_rect(), width=max(1, int(2.5 * scale)), border_radius=int(10 * scale))
+            glow_a = int(100 * hover_amount)
+            pygame.draw.rect(glow_surf, (255, 215, 0, glow_a), glow_surf.get_rect(), width=max(1, int(2.5 * scale)), border_radius=int(10 * scale))
             surf.blit(glow_surf, scaled_rect.topleft)
-
-        # Corner decorations
-        corner_off = int(6 * scale)
-        corner_sz = int(12 * scale)
-        gold_d = (212, 175, 55)
-        for cx, cy in [(scaled_rect.x + corner_off, scaled_rect.y + corner_off),
-                       (scaled_rect.right - corner_off, scaled_rect.y + corner_off),
-                       (scaled_rect.x + corner_off, scaled_rect.bottom - corner_off),
-                       (scaled_rect.right - corner_off, scaled_rect.bottom - corner_off)]:
-            self._draw_small_flourish(surf, cx, cy, corner_sz, gold_d, 0)
 
         # Title
         formatted_name = recipe['result_id'].replace("_", " ").title()
@@ -1036,12 +1090,16 @@ class RecipeBookMenu(Menu):
 
                 ingredient = matrix[col][row]
                 if ingredient:
-                    if ingredient in self.item_images:
-                        img = self.item_images[ingredient]
-                        icon_size = grid_slot_size - int(6 * scale)
-                        scaled_img = pygame.transform.scale(img, (icon_size, icon_size))
-                        img_rect = scaled_img.get_rect(center=slot_rect.center)
-                        surf.blit(scaled_img, img_rect)
+                    img = self._pre_scaled_grid.get(ingredient)
+                    if img is None:
+                        raw = self.item_images.get(ingredient)
+                        if raw:
+                            icon_size = grid_slot_size - int(6 * scale)
+                            img = pygame.transform.scale(raw, (icon_size, icon_size))
+                            self._pre_scaled_grid[ingredient] = img
+                    if img:
+                        img_rect = img.get_rect(center=slot_rect.center)
+                        surf.blit(img, img_rect)
                     else:
                         ing_text = self._render_text(cfg.INV_nums_font, ingredient[:3].capitalize(), (80, 60, 40))
                         tx = slot_x + (grid_slot_size - ing_text.get_width()) // 2
@@ -1082,17 +1140,27 @@ class RecipeBookMenu(Menu):
         pygame.draw.rect(surf, result_bg, inner_rect, border_radius=int(5 * scale))
 
         if hover_amount > 0.2:
-            glow_surf = pygame.Surface((out_size, out_size), pygame.SRCALPHA)
-            pygame.draw.rect(glow_surf, (255, 215, 0, int(80 * hover_amount)), glow_surf.get_rect(), border_radius=int(8 * scale))
-            surf.blit(glow_surf, (out_x, out_y))
+            og_key = ("og", out_size, scale)
+            if og_key not in self._card_bg_cache:
+                og = pygame.Surface((out_size, out_size), pygame.SRCALPHA)
+                pygame.draw.rect(og, (255, 215, 0, 80), og.get_rect(), border_radius=int(8 * scale))
+                self._card_bg_cache[og_key] = og
+            og_surf = self._card_bg_cache[og_key]
+            og_copy = og_surf.copy()
+            og_copy.set_alpha(int(255 * min(1.0, hover_amount)))
+            surf.blit(og_copy, (out_x, out_y))
 
         res_id = recipe['result_id']
-        if res_id in self.item_images:
-            img = self.item_images[res_id]
-            res_icon_size = out_size - int(14 * scale)
-            scaled_img = pygame.transform.scale(img, (res_icon_size, res_icon_size))
-            img_rect = scaled_img.get_rect(center=out_rect.center)
-            surf.blit(scaled_img, img_rect)
+        img = self._pre_scaled_result.get(res_id)
+        if img is None:
+            raw = self.item_images.get(res_id)
+            if raw:
+                res_icon_size = out_size - int(14 * scale)
+                img = pygame.transform.scale(raw, (res_icon_size, res_icon_size))
+                self._pre_scaled_result[res_id] = img
+        if img:
+            img_rect = img.get_rect(center=out_rect.center)
+            surf.blit(img, img_rect)
         else:
             res_short = self._render_text(cfg.INV_nums_font, res_id[:3].capitalize(), (60, 120, 60))
             rx = out_x + (out_size - res_short.get_width()) // 2
