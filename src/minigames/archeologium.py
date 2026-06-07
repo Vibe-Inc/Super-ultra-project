@@ -2,7 +2,7 @@
 Majestic Archeologium Minigame Module (Minesweeper Variant).
 
 Provides a beautiful, treasure-hunting variation of Minesweeper
-with push-your-luck mechanics, glowing runes, and particle effects.
+with push-your-luck mechanics, difficulties, complications, and particle effects.
 """
 
 import random
@@ -30,15 +30,9 @@ TILE_COVERED = (90, 75, 60)
 TILE_COVERED_HOVER = (110, 95, 80)
 TILE_REVEALED = (40, 35, 30)
 
-ENTRY_COST = 20
-SAFE_REWARD = 1
-ARTIFACT_REWARD = 50
-CLEAR_BONUS = 200
-
-NUM_COLS = 10
-NUM_ROWS = 10
-NUM_CURSES = 15
-NUM_ARTIFACTS = 3
+BASE_SAFE_REWARD = 2
+BASE_ARTIFACT_REWARD = 50
+BASE_CLEAR_BONUS = 200
 
 # Colors for numbers 1-8
 NUMBER_COLORS = {
@@ -51,6 +45,19 @@ NUMBER_COLORS = {
     7: (255, 50, 150),  # Magenta
     8: (255, 255, 255), # White
 }
+
+DIFFICULTIES = {
+    "Easy": {"cols": 8, "rows": 8, "curses": 10, "artifacts": 2, "cost": 10, "mult": 1.0},
+    "Normal": {"cols": 12, "rows": 12, "curses": 25, "artifacts": 4, "cost": 30, "mult": 1.5},
+    "Hard": {"cols": 16, "rows": 16, "curses": 50, "artifacts": 6, "cost": 80, "mult": 2.5},
+}
+
+COMPLICATIONS = [
+    {"id": "volatile", "name": "Volatile Curses", "desc": "Curse penalty is 100% of loot instead of 50%.", "mult": 0.5},
+    {"id": "time", "name": "Time Crunch", "desc": "You have exactly 60 seconds to clear or cash out.", "mult": 0.5},
+    {"id": "blind", "name": "Blind Faith", "desc": "Wards (Flags) are completely disabled.", "mult": 0.8},
+    {"id": "fog", "name": "Fog of War", "desc": "Revealed numbers are obscured unless your mouse is nearby.", "mult": 1.0},
+]
 
 # ---------------------------------------------------------------------------
 # Particle System
@@ -89,7 +96,7 @@ class Particle:
 # ---------------------------------------------------------------------------
 
 class ArcheologiumMinigame:
-    PHASE_START = "start"
+    PHASE_SETUP = "setup"
     PHASE_PLAYING = "playing"
     PHASE_RESULT = "result"
 
@@ -108,42 +115,51 @@ class ArcheologiumMinigame:
         self.font_large = cfg.get_font(max(12, int(32 * cfg.ui_scale())))
         self.font_medium = cfg.get_font(max(10, int(24 * cfg.ui_scale())))
         self.font_small = cfg.get_font(max(8, int(18 * cfg.ui_scale())))
-        # Special bold font for numbers if possible, else just use large
         self.font_numbers = cfg.get_font(max(14, int(28 * cfg.ui_scale())))
 
         # Panel rect
-        panel_w = int(sw * 0.8)
-        panel_h = int(sh * 0.85)
+        panel_w = int(sw * 0.85)
+        panel_h = int(sh * 0.9)
         self.panel_rect = pygame.Rect((sw - panel_w) // 2, (sh - panel_h) // 2, panel_w, panel_h)
         self.bg_surf = self._create_bg_surface(panel_w, panel_h)
 
-        self.phase = self.PHASE_START
-        self.tile_size = int(min(panel_w * 0.6 // NUM_COLS, panel_h * 0.6 // NUM_ROWS))
-        self.grid_rect = pygame.Rect(
-            self.panel_rect.centerx - (NUM_COLS * self.tile_size) // 2,
-            self.panel_rect.y + int(panel_h * 0.25),
-            NUM_COLS * self.tile_size,
-            NUM_ROWS * self.tile_size
-        )
+        self.phase = self.PHASE_SETUP
+        
+        # Setup Selection
+        self.sel_diff = "Normal"
+        self.sel_comps = {"volatile": False, "time": False, "blind": False, "fog": False}
 
-        # Game State
-        self.grid_mines = []     # bool
-        self.grid_artifacts = [] # bool
-        self.grid_numbers = []   # int (0-8)
-        self.grid_revealed = []  # bool
-        self.grid_flagged = []   # bool
+        # Play State
+        self.num_cols = 10
+        self.num_rows = 10
+        self.num_curses = 15
+        self.num_artifacts = 3
+        self.tile_size = 32
+        self.grid_rect = pygame.Rect(0, 0, 0, 0)
+        
+        self.grid_mines = []     
+        self.grid_artifacts = [] 
+        self.grid_numbers = []   
+        self.grid_revealed = []  
+        self.grid_flagged = []   
         self.first_click = True
         
         self.run_gold = 0
         self.particles = []
         self.last_time = pygame.time.get_ticks()
-        
         self.screen_shake = 0.0
+
+        # Timer
+        self.time_left = 0.0
 
         # UI rects
         self._btn_action = None
         self._btn_cash_out = None
         self._btn_close_top = pygame.Rect(self.panel_rect.right - 40, self.panel_rect.y + 10, 30, 30)
+
+        # Interaction rects for Setup
+        self._rects_diff = {}
+        self._rects_comp = {}
 
         self.result_title = ""
         self.result_color = WHITE
@@ -167,54 +183,83 @@ class ArcheologiumMinigame:
     def _can_afford(self, amount: int) -> bool:
         return self._current_money() >= amount
 
+    def _get_current_mult(self):
+        m = DIFFICULTIES[self.sel_diff]["mult"]
+        for c in COMPLICATIONS:
+            if self.sel_comps[c["id"]]:
+                m += c["mult"]
+        return m
+
+    def _start_game(self):
+        cost = DIFFICULTIES[self.sel_diff]["cost"]
+        if not self._can_afford(cost):
+            return
+            
+        self.net_change -= cost
+        self.run_gold = 0
+        self.phase = self.PHASE_PLAYING
+        self.first_click = True
+        self.screen_shake = 0.0
+
+        # Apply Difficulty
+        cfg = DIFFICULTIES[self.sel_diff]
+        self.num_cols = cfg["cols"]
+        self.num_rows = cfg["rows"]
+        self.num_curses = cfg["curses"]
+        self.num_artifacts = cfg["artifacts"]
+        
+        # Calculate grid rendering size
+        pw, ph = self.panel_rect.width, self.panel_rect.height
+        self.tile_size = int(min(pw * 0.7 // self.num_cols, ph * 0.7 // self.num_rows))
+        self.grid_rect = pygame.Rect(
+            self.panel_rect.centerx - (self.num_cols * self.tile_size) // 2,
+            self.panel_rect.y + int(ph * 0.2),
+            self.num_cols * self.tile_size,
+            self.num_rows * self.tile_size
+        )
+
+        self.grid_revealed = [[False for _ in range(self.num_rows)] for _ in range(self.num_cols)]
+        self.grid_flagged = [[False for _ in range(self.num_rows)] for _ in range(self.num_cols)]
+
+        if self.sel_comps["time"]:
+            self.time_left = 60.0
+
     def _generate_grid(self, safe_x, safe_y):
-        self.grid_mines = [[False for _ in range(NUM_ROWS)] for _ in range(NUM_COLS)]
-        self.grid_artifacts = [[False for _ in range(NUM_ROWS)] for _ in range(NUM_COLS)]
-        self.grid_numbers = [[0 for _ in range(NUM_ROWS)] for _ in range(NUM_COLS)]
+        self.grid_mines = [[False for _ in range(self.num_rows)] for _ in range(self.num_cols)]
+        self.grid_artifacts = [[False for _ in range(self.num_rows)] for _ in range(self.num_cols)]
+        self.grid_numbers = [[0 for _ in range(self.num_rows)] for _ in range(self.num_cols)]
 
         # Place Curses
         placed = 0
-        while placed < NUM_CURSES:
-            x = random.randint(0, NUM_COLS - 1)
-            y = random.randint(0, NUM_ROWS - 1)
-            # Prevent mine on first click and immediate surroundings to ensure a safe start
+        while placed < self.num_curses:
+            x = random.randint(0, self.num_cols - 1)
+            y = random.randint(0, self.num_rows - 1)
             if not self.grid_mines[x][y] and max(abs(x - safe_x), abs(y - safe_y)) > 1:
                 self.grid_mines[x][y] = True
                 placed += 1
 
-        # Place Artifacts on safe tiles
+        # Place Artifacts
         placed = 0
-        while placed < NUM_ARTIFACTS:
-            x = random.randint(0, NUM_COLS - 1)
-            y = random.randint(0, NUM_ROWS - 1)
+        while placed < self.num_artifacts:
+            x = random.randint(0, self.num_cols - 1)
+            y = random.randint(0, self.num_rows - 1)
             if not self.grid_mines[x][y] and not self.grid_artifacts[x][y] and (x != safe_x or y != safe_y):
                 self.grid_artifacts[x][y] = True
                 placed += 1
 
         # Calculate numbers
-        for x in range(NUM_COLS):
-            for y in range(NUM_ROWS):
+        for x in range(self.num_cols):
+            for y in range(self.num_rows):
                 if self.grid_mines[x][y]:
                     continue
                 count = 0
                 for dx in (-1, 0, 1):
                     for dy in (-1, 0, 1):
                         nx, ny = x + dx, y + dy
-                        if 0 <= nx < NUM_COLS and 0 <= ny < NUM_ROWS:
+                        if 0 <= nx < self.num_cols and 0 <= ny < self.num_rows:
                             if self.grid_mines[nx][ny]:
                                 count += 1
                 self.grid_numbers[x][y] = count
-
-    def _start_game(self):
-        if not self._can_afford(ENTRY_COST):
-            return
-        self.net_change -= ENTRY_COST
-        self.run_gold = 0
-        self.phase = self.PHASE_PLAYING
-        self.first_click = True
-        self.grid_revealed = [[False for _ in range(NUM_ROWS)] for _ in range(NUM_COLS)]
-        self.grid_flagged = [[False for _ in range(NUM_ROWS)] for _ in range(NUM_COLS)]
-        self.screen_shake = 0.0
 
     def _spawn_explosion(self, cx, cy, color, amount=20, speed_mult=1.0):
         for _ in range(amount):
@@ -234,61 +279,59 @@ class ArcheologiumMinigame:
         self.grid_revealed[x][y] = True
 
         if self.grid_mines[x][y]:
-            # Trigger Curse!
-            self._spawn_explosion(cx, cy, CURSE_GLOW, 50, 2.0)
-            self.screen_shake = 15.0
-            loss = self.run_gold // 2
-            self.run_gold -= loss
+            # Curse Triggered
+            self._spawn_explosion(cx, cy, CURSE_GLOW, 60, 2.5)
+            self.screen_shake = 20.0
+            
+            penalty = self.run_gold if self.sel_comps["volatile"] else self.run_gold // 2
+            self.run_gold -= penalty
             self.net_change += self.run_gold
             self.result_title = "CURSE TRIGGERED!"
             self.result_color = RED
-            # Reveal all mines
-            for mx in range(NUM_COLS):
-                for my in range(NUM_ROWS):
+            for mx in range(self.num_cols):
+                for my in range(self.num_rows):
                     if self.grid_mines[mx][my]:
                         self.grid_revealed[mx][my] = True
             self.phase = self.PHASE_RESULT
             return
 
+        mult = self._get_current_mult()
         if self.grid_artifacts[x][y]:
-            # Artifact found!
-            self._spawn_explosion(cx, cy, GOLD_GLOW, 30, 1.5)
-            self.run_gold += ARTIFACT_REWARD
+            self._spawn_explosion(cx, cy, GOLD_GLOW, 40, 1.8)
+            self.run_gold += int(BASE_ARTIFACT_REWARD * mult)
         else:
-            # Safe tile
             self._spawn_explosion(cx, cy, TILE_COVERED, 5, 0.5)
-            self.run_gold += SAFE_REWARD
+            self.run_gold += int(BASE_SAFE_REWARD * mult)
 
-        # Flood fill if 0
         if self.grid_numbers[x][y] == 0 and not self.grid_artifacts[x][y]:
             for dx in (-1, 0, 1):
                 for dy in (-1, 0, 1):
                     nx, ny = x + dx, y + dy
-                    if 0 <= nx < NUM_COLS and 0 <= ny < NUM_ROWS:
+                    if 0 <= nx < self.num_cols and 0 <= ny < self.num_rows:
                         if not self.grid_revealed[nx][ny]:
                             self._reveal_tile(nx, ny)
 
         self._check_win()
 
     def _toggle_flag(self, x, y):
+        if self.sel_comps["blind"]:
+            return # Wards disabled
         if not self.grid_revealed[x][y]:
             self.grid_flagged[x][y] = not self.grid_flagged[x][y]
 
     def _check_win(self):
-        # Win if all non-mine tiles are revealed
-        for x in range(NUM_COLS):
-            for y in range(NUM_ROWS):
+        for x in range(self.num_cols):
+            for y in range(self.num_rows):
                 if not self.grid_mines[x][y] and not self.grid_revealed[x][y]:
-                    return # not won yet
+                    return
         
-        # Won!
-        self.run_gold += CLEAR_BONUS
+        mult = self._get_current_mult()
+        self.run_gold += int(BASE_CLEAR_BONUS * mult)
         self.net_change += self.run_gold
         self.result_title = "SITE CLEARED!"
         self.result_color = GOLD_GLOW
         self.screen_shake = 5.0
-        # Spawn massive gold explosion
-        self._spawn_explosion(self.panel_rect.centerx, self.panel_rect.centery, GOLD_GLOW, 100, 3.0)
+        self._spawn_explosion(self.panel_rect.centerx, self.panel_rect.centery, GOLD_GLOW, 150, 3.5)
         self.phase = self.PHASE_RESULT
 
     def _cash_out(self):
@@ -318,15 +361,14 @@ class ArcheologiumMinigame:
                 else:
                     self._close("quit")
                 return
-            if self.phase == self.PHASE_START and event.key in (pygame.K_RETURN, pygame.K_SPACE):
+            if self.phase == self.PHASE_SETUP and event.key in (pygame.K_RETURN, pygame.K_SPACE):
                 self._start_game()
             elif self.phase == self.PHASE_RESULT and event.key in (pygame.K_RETURN, pygame.K_SPACE):
-                self.phase = self.PHASE_START
+                self.phase = self.PHASE_SETUP
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             pos = event.pos
             
-            # Close button
             if event.button == 1 and self._btn_close_top.collidepoint(pos):
                 if self.phase == self.PHASE_PLAYING and not self.first_click:
                     self._cash_out()
@@ -334,7 +376,16 @@ class ArcheologiumMinigame:
                     self._close("quit")
                 return
 
-            if self.phase == self.PHASE_START and event.button == 1:
+            if self.phase == self.PHASE_SETUP and event.button == 1:
+                # Check difficulties
+                for diff_name, rect in self._rects_diff.items():
+                    if rect.collidepoint(pos):
+                        self.sel_diff = diff_name
+                # Check complications
+                for comp_id, rect in self._rects_comp.items():
+                    if rect.collidepoint(pos):
+                        self.sel_comps[comp_id] = not self.sel_comps[comp_id]
+                        
                 if self._btn_action and self._btn_action.collidepoint(pos):
                     self._start_game()
             
@@ -346,14 +397,14 @@ class ArcheologiumMinigame:
                 if self.grid_rect.collidepoint(pos):
                     tx = (pos[0] - self.grid_rect.x) // self.tile_size
                     ty = (pos[1] - self.grid_rect.y) // self.tile_size
-                    if event.button == 1: # Left click (Dig)
+                    if event.button == 1:
                         self._reveal_tile(tx, ty)
-                    elif event.button == 3: # Right click (Flag)
+                    elif event.button == 3:
                         self._toggle_flag(tx, ty)
 
             elif self.phase == self.PHASE_RESULT and event.button == 1:
                 if self._btn_action and self._btn_action.collidepoint(pos):
-                    self.phase = self.PHASE_START
+                    self.phase = self.PHASE_SETUP
 
     def _draw_button(self, surface, rect, text, hovered=False, disabled=False, color=GOLD):
         if disabled:
@@ -368,149 +419,215 @@ class ArcheologiumMinigame:
         txt_surf = self.font_medium.render(text, True, tc)
         surface.blit(txt_surf, txt_surf.get_rect(center=rect.center))
 
-    def _update_particles_and_shake(self, dt):
+    def _update_logic(self, dt):
         for p in self.particles:
             p.update(dt)
         self.particles = [p for p in self.particles if p.life > 0]
 
         if self.screen_shake > 0:
-            self.screen_shake -= dt * 30
+            self.screen_shake -= dt * 40
             if self.screen_shake < 0:
                 self.screen_shake = 0
+
+        if self.phase == self.PHASE_PLAYING and self.sel_comps["time"] and not self.first_click:
+            self.time_left -= dt
+            if self.time_left <= 0:
+                self.time_left = 0
+                self.screen_shake = 15.0
+                penalty = self.run_gold if self.sel_comps["volatile"] else self.run_gold // 2
+                self.run_gold -= penalty
+                self.net_change += self.run_gold
+                self.result_title = "TIME OUT! CAVE IN!"
+                self.result_color = RED
+                self.phase = self.PHASE_RESULT
 
     def draw(self, surface: pygame.Surface):
         current_time = pygame.time.get_ticks()
         dt = (current_time - self.last_time) / 1000.0
         self.last_time = current_time
-        self._update_particles_and_shake(dt)
+        self._update_logic(dt)
 
-        # Calculate shake offset
         sx = random.uniform(-self.screen_shake, self.screen_shake)
         sy = random.uniform(-self.screen_shake, self.screen_shake)
 
-        # Dim background
         overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 200))
         surface.blit(overlay, (0, 0))
 
-        # Panel
         surface.blit(self.bg_surf, (self.panel_rect.x + sx, self.panel_rect.y + sy))
         mouse_pos = pygame.mouse.get_pos()
-        # Adjust mouse pos for interaction checks on shaken UI isn't strictly necessary since shake is visual and rapid
 
-        # Close Top Right
         pygame.draw.rect(surface, RED, self._btn_close_top.move(sx, sy), border_radius=4)
         x_surf = self.font_medium.render("X", True, WHITE)
         surface.blit(x_surf, x_surf.get_rect(center=self._btn_close_top.move(sx, sy).center))
 
-        # Header
         title = self.font_title.render("Archeologium", True, GOLD_GLOW)
         surface.blit(title, (self.panel_rect.centerx - title.get_width() // 2 + sx, self.panel_rect.y + 20 + sy))
 
-        money_text = self.font_medium.render(f"Total Gold: {self._current_money()}", True, GOLD)
+        money_text = self.font_medium.render(f"Bank: {self._current_money()}g", True, GOLD)
         surface.blit(money_text, (self.panel_rect.x + 30 + sx, self.panel_rect.y + 30 + sy))
 
-        if self.phase == self.PHASE_START:
-            self._draw_start(surface, mouse_pos, sx, sy)
+        if self.phase == self.PHASE_SETUP:
+            self._draw_setup(surface, mouse_pos, sx, sy)
         elif self.phase == self.PHASE_PLAYING:
             self._draw_playing(surface, mouse_pos, sx, sy)
         elif self.phase == self.PHASE_RESULT:
-            self._draw_playing(surface, (-1000, -1000), sx, sy) # draw grid behind result
+            self._draw_playing(surface, (-1000, -1000), sx, sy) 
             self._draw_result(surface, mouse_pos, sx, sy)
 
-        # Draw particles on top
         for p in self.particles:
             p.draw(surface)
 
-    def _draw_start(self, surface, mouse_pos, sx, sy):
-        desc = [
-            "Welcome to the majestic dig site.",
-            "L-Click to Dig. R-Click to Ward (Flag).",
-            "Numbers indicate adjacent ancient curses.",
-            f"Earn +{SAFE_REWARD}g per safe tile, +{ARTIFACT_REWARD}g per Artifact.",
-            "Hit a Curse? Lose 50% of this run's loot!",
-            f"Clear the site for a +{CLEAR_BONUS}g Bonus.",
-            "Cash Out anytime to keep your findings safely.",
-            "",
-            f"Entry Fee: {ENTRY_COST} Gold"
-        ]
-        
-        y = self.panel_rect.centery - 120 + sy
-        for line in desc:
-            surf = self.font_medium.render(line, True, WHITE)
-            surface.blit(surf, (self.panel_rect.centerx - surf.get_width() // 2 + sx, y))
-            y += 30
+    def _draw_setup(self, surface, mouse_pos, sx, sy):
+        py = self.panel_rect.y + 100 + sy
+        px = self.panel_rect.x + 40 + sx
 
-        btn_w, btn_h = 240, 50
-        self._btn_action = pygame.Rect(self.panel_rect.centerx - btn_w // 2, self.panel_rect.bottom - 100, btn_w, btn_h)
-        can_afford = self._can_afford(ENTRY_COST)
-        self._draw_button(surface, self._btn_action.move(sx, sy), "Pay & Descend", self._btn_action.collidepoint(mouse_pos), not can_afford)
+        # Difficulty Header
+        d_title = self.font_large.render("Select Difficulty", True, GOLD_GLOW)
+        surface.blit(d_title, (px, py))
+        py += 40
+
+        self._rects_diff.clear()
+        for diff in ["Easy", "Normal", "Hard"]:
+            cfg_d = DIFFICULTIES[diff]
+            rect = pygame.Rect(px, py, 300, 40)
+            self._rects_diff[diff] = rect
+            
+            color = GOLD if self.sel_diff == diff else (150, 150, 150)
+            pygame.draw.circle(surface, color, (px + 15, py + 20), 10, width=0 if self.sel_diff == diff else 2)
+            
+            dtx = self.font_medium.render(f"{diff} (Fee: {cfg_d['cost']}g, x{cfg_d['mult']})", True, color)
+            surface.blit(dtx, (px + 40, py + 8))
+            py += 50
+
+        # Complications Header
+        py += 20
+        c_title = self.font_large.render("Complications (Optional)", True, RED)
+        surface.blit(c_title, (px, py))
+        py += 40
+
+        self._rects_comp.clear()
+        for comp in COMPLICATIONS:
+            cid = comp["id"]
+            rect = pygame.Rect(px, py, 600, 40)
+            self._rects_comp[cid] = rect
+            
+            selected = self.sel_comps[cid]
+            color = GOLD_GLOW if selected else (150, 150, 150)
+            
+            pygame.draw.rect(surface, color, (px, py + 10, 20, 20), width=0 if selected else 2, border_radius=4)
+            if selected:
+                pygame.draw.line(surface, OBSIDIAN, (px+4, py+20), (px+8, py+26), 3)
+                pygame.draw.line(surface, OBSIDIAN, (px+8, py+26), (px+16, py+14), 3)
+
+            ctx = self.font_medium.render(f"{comp['name']} (+{comp['mult']}x)", True, color)
+            surface.blit(ctx, (px + 35, py + 8))
+            
+            desc = self.font_small.render(comp["desc"], True, (180, 180, 180))
+            surface.blit(desc, (px + 35, py + 35))
+            
+            py += 60
+
+        # Totals
+        tot_mult = self._get_current_mult()
+        tot_cost = DIFFICULTIES[self.sel_diff]["cost"]
+
+        res_px = self.panel_rect.right - 350 + sx
+        res_py = self.panel_rect.y + 150 + sy
+        pygame.draw.rect(surface, MAHOGANY, (res_px, res_py, 300, 200), border_radius=12)
+        pygame.draw.rect(surface, GOLD, (res_px, res_py, 300, 200), width=3, border_radius=12)
+
+        st1 = self.font_large.render("Total Multiplier", True, WHITE)
+        surface.blit(st1, (res_px + 150 - st1.get_width()//2, res_py + 30))
+        st2 = self.font_title.render(f"x{tot_mult:.1f}", True, GOLD_GLOW)
+        surface.blit(st2, (res_px + 150 - st2.get_width()//2, res_py + 70))
+        st3 = self.font_medium.render(f"Entry Fee: {tot_cost}g", True, RED)
+        surface.blit(st3, (res_px + 150 - st3.get_width()//2, res_py + 130))
+
+        # Start Button
+        btn_w, btn_h = 240, 60
+        self._btn_action = pygame.Rect(self.panel_rect.centerx - btn_w // 2, self.panel_rect.bottom - 100 + sy, btn_w, btn_h)
+        can_afford = self._can_afford(tot_cost)
+        self._draw_button(surface, self._btn_action, "Pay & Descend", self._btn_action.collidepoint(mouse_pos), not can_afford)
 
     def _draw_playing(self, surface, mouse_pos, sx, sy):
-        # Stats UI
         earn_text = self.font_large.render(f"Run Loot: {self.run_gold}g", True, GOLD_GLOW)
         surface.blit(earn_text, (self.panel_rect.x + 40 + sx, self.panel_rect.y + 80 + sy))
+
+        if self.sel_comps["time"]:
+            col = RED if self.time_left < 10 else WHITE
+            time_str = f"{self.time_left:.1f}s"
+            t_text = self.font_title.render(time_str, True, col)
+            surface.blit(t_text, (self.panel_rect.centerx - t_text.get_width()//2 + sx, self.panel_rect.y + 70 + sy))
 
         if self.phase == self.PHASE_PLAYING:
             btn_w, btn_h = 160, 40
             self._btn_cash_out = pygame.Rect(self.panel_rect.right - 40 - btn_w, self.panel_rect.y + 80, btn_w, btn_h)
             self._draw_button(surface, self._btn_cash_out.move(sx, sy), "Cash Out", self._btn_cash_out.collidepoint(mouse_pos), disabled=self.first_click, color=GREEN_TEXT)
 
-        # Grid Background border
         g_rect = self.grid_rect.move(sx, sy)
-        pygame.draw.rect(surface, MAHOGANY, g_rect.inflate(8, 8), border_radius=4)
+        pygame.draw.rect(surface, MAHOGANY, g_rect.inflate(12, 12), border_radius=6)
         pygame.draw.rect(surface, OBSIDIAN, g_rect)
 
-        # Draw Tiles
-        for x in range(NUM_COLS):
-            for y in range(NUM_ROWS):
+        # Fog of War preparation
+        use_fog = self.sel_comps["fog"] and self.phase == self.PHASE_PLAYING
+        mx, my = mouse_pos
+        mtx = (mx - g_rect.x) // self.tile_size
+        mty = (my - g_rect.y) // self.tile_size
+
+        for x in range(self.num_cols):
+            for y in range(self.num_rows):
                 rect = pygame.Rect(g_rect.x + x * self.tile_size, g_rect.y + y * self.tile_size, self.tile_size, self.tile_size)
                 
+                in_light = True
+                if use_fog:
+                    dist = max(abs(x - mtx), abs(y - mty))
+                    if dist > 1:
+                        in_light = False
+
                 if not self.grid_revealed[x][y]:
-                    # Covered Tile
                     hover = rect.collidepoint(mouse_pos) and self.phase == self.PHASE_PLAYING
                     color = TILE_COVERED_HOVER if hover else TILE_COVERED
                     pygame.draw.rect(surface, color, rect.inflate(-2, -2), border_radius=2)
                     
-                    # Bevel effect for 3D stone look
                     pygame.draw.line(surface, (130, 115, 100), rect.topleft, rect.topright, 2)
                     pygame.draw.line(surface, (130, 115, 100), rect.topleft, rect.bottomleft, 2)
                     pygame.draw.line(surface, (50, 40, 30), rect.bottomleft, rect.bottomright, 2)
                     pygame.draw.line(surface, (50, 40, 30), rect.topright, rect.bottomright, 2)
 
-                    if self.grid_flagged[x][y]:
-                        # Runic Ward
+                    if self.grid_flagged[x][y] and in_light:
                         rune = self.font_numbers.render("W", True, CURSE_GLOW)
                         surface.blit(rune, rune.get_rect(center=rect.center))
 
                 else:
-                    # Revealed Tile
                     pygame.draw.rect(surface, TILE_REVEALED, rect.inflate(-2, -2), border_radius=2)
 
                     if self.grid_mines[x][y]:
-                        # Curse
                         pygame.draw.circle(surface, CURSE_GLOW, rect.center, self.tile_size // 3)
                         pygame.draw.circle(surface, BLACK, rect.center, self.tile_size // 4)
                     elif self.grid_artifacts[x][y]:
-                        # Artifact
-                        pygame.draw.polygon(surface, GOLD_GLOW, [
-                            (rect.centerx, rect.top + 5),
-                            (rect.right - 5, rect.centery),
-                            (rect.centerx, rect.bottom - 5),
-                            (rect.left + 5, rect.centery)
-                        ])
+                        if in_light:
+                            pygame.draw.polygon(surface, GOLD_GLOW, [
+                                (rect.centerx, rect.top + 5),
+                                (rect.right - 5, rect.centery),
+                                (rect.centerx, rect.bottom - 5),
+                                (rect.left + 5, rect.centery)
+                            ])
                     else:
-                        # Number
                         num = self.grid_numbers[x][y]
-                        if num > 0:
+                        if num > 0 and in_light:
                             c = NUMBER_COLORS.get(num, WHITE)
                             nsurf = self.font_numbers.render(str(num), True, c)
                             surface.blit(nsurf, nsurf.get_rect(center=rect.center))
 
+                if not in_light:
+                    fog_surf = pygame.Surface(rect.size, pygame.SRCALPHA)
+                    fog_surf.fill((0, 0, 0, 180))
+                    surface.blit(fog_surf, rect)
+
     def _draw_result(self, surface, mouse_pos, sx, sy):
-        # Result Overlay
         overlay = pygame.Surface(self.panel_rect.size, pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 200))
+        overlay.fill((0, 0, 0, 220))
         surface.blit(overlay, (self.panel_rect.x + sx, self.panel_rect.y + sy))
 
         title = self.font_title.render(self.result_title, True, self.result_color)
@@ -521,5 +638,5 @@ class ArcheologiumMinigame:
 
         btn_w, btn_h = 240, 50
         self._btn_action = pygame.Rect(self.panel_rect.centerx - btn_w // 2, self.panel_rect.bottom - 100, btn_w, btn_h)
-        self._draw_button(surface, self._btn_action.move(sx, sy), "Play Again", self._btn_action.collidepoint(mouse_pos))
+        self._draw_button(surface, self._btn_action.move(sx, sy), "Continue", self._btn_action.collidepoint(mouse_pos))
 
