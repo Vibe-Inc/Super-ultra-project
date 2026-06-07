@@ -116,6 +116,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.poker</span><span class="w"> </span><span class="kn">import</span> <span class="n">PokerGame</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.crafting</span><span class="w"> </span><span class="kn">import</span> <span class="n">CraftingMinigame</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.gathering</span><span class="w"> </span><span class="kn">import</span> <span class="n">GatheringController</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.fishing</span><span class="w"> </span><span class="kn">import</span> <span class="n">FishingController</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.archeologium</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArcheologiumMinigame</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.world.gatherable_nodes</span><span class="w"> </span><span class="kn">import</span> <span class="n">GatherableNodeRegistry</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.menus.smeltery</span><span class="w"> </span><span class="kn">import</span> <span class="n">SmelteryMenu</span>
@@ -2726,6 +2727,13 @@
             <span class="n">switched_map_path</span> <span class="o">=</span> <span class="n">result</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="o">=</span> <span class="n">switched_map_path</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Map switched to </span><span class="si">{</span><span class="n">switched_map_path</span><span class="si">}</span><span class="s2">. Respawning enemy...&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Reset fishing state so the player can cast again on the new map</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;fishing&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">fishing</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">pass</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">obstacles</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">get_obstacles</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_rebuild_nav_grid</span><span class="p">()</span>
 
