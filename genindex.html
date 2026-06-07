@@ -735,6 +735,8 @@
       <ul>
         <li><a href="src.core.html#src.core.state.State.app">(src.core.state.State attribute)</a>
 </li>
+        <li><a href="src.inventory.html#src.inventory.system.ChestInventory.app">(src.inventory.system.ChestInventory attribute)</a>
+</li>
         <li><a href="src.inventory.html#src.inventory.system.CraftingGrid.app">(src.inventory.system.CraftingGrid attribute)</a>
 </li>
         <li><a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.app">(src.inventory.system.MAIN_player_hotbar attribute)</a>
@@ -936,11 +938,23 @@
       </ul></li>
       <li><a href="src.inventory.html#id0">check_recipes() (src.inventory.system.CraftingGrid method)</a>, <a href="src.inventory.html#src.inventory.system.CraftingGrid.check_recipes">[1]</a>
 </li>
+      <li><a href="src.core.html#src.core.game.Game.CHEST_INTERACT_RADIUS">CHEST_INTERACT_RADIUS (src.core.game.Game attribute)</a>
+</li>
+      <li><a href="src.core.html#src.core.game.Game.CHEST_TILE_PROPERTY">CHEST_TILE_PROPERTY (src.core.game.Game attribute)</a>
+</li>
+      <li><a href="src.inventory.html#src.inventory.system.ChestInventory">ChestInventory (class in src.inventory.system)</a>
+</li>
       <li><a href="src.ui.html#src.ui.menus.ArcaneQuestMenu.claim_reward">claim_reward() (src.ui.menus.ArcaneQuestMenu method)</a>
 </li>
       <li><a href="src.html#src.app.App.clock">clock (src.app.App attribute)</a>
 </li>
-      <li><a href="src.inventory.html#src.inventory.system.ShopInventory.close_button">close_button (src.inventory.system.ShopInventory attribute)</a>
+      <li><a href="src.inventory.html#src.inventory.system.ChestInventory.close_button">close_button (src.inventory.system.ChestInventory attribute)</a>
+
+      <ul>
+        <li><a href="src.inventory.html#src.inventory.system.ShopInventory.close_button">(src.inventory.system.ShopInventory attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="src.core.html#src.core.game.Game.close_chest">close_chest() (src.core.game.Game method)</a>
 </li>
       <li><a href="src.ui.html#src.ui.menus.ArcaneQuestMenu.close_menu">close_menu() (src.ui.menus.ArcaneQuestMenu method)</a>
 
@@ -960,14 +974,14 @@
 </li>
       <li><a href="src.ui.html#src.ui.widgets.Button.color">color (src.ui.widgets.Button attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.inventory.html#src.inventory.system.Inventory.columns">columns (src.inventory.system.Inventory attribute)</a>
 </li>
       <li><a href="src.items.html#src.items.items.MeleeWeapon.combat_style">combat_style (src.items.items.MeleeWeapon attribute)</a>
 </li>
       <li><a href="src.items.html#src.items.items.RangedWeapon.cone_degrees">cone_degrees (src.items.items.RangedWeapon attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.items.html#src.items.items.Consumable">Consumable (class in src.items.items)</a>
 </li>
       <li><a href="src.inventory.html#src.inventory.system.CraftingLogic.consume_ingredients">consume_ingredients() (src.inventory.system.CraftingLogic method)</a>
@@ -1616,9 +1630,11 @@
 </li>
       <li><a href="src.inventory.html#src.inventory.system.Inventory">Inventory (class in src.inventory.system)</a>
 </li>
-      <li><a href="src.inventory.html#id1">inventory_interactions() (src.inventory.system.CraftingGrid method)</a>, <a href="src.inventory.html#src.inventory.system.CraftingGrid.inventory_interactions">[1]</a>
+      <li><a href="src.inventory.html#src.inventory.system.ChestInventory.inventory_interactions">inventory_interactions() (src.inventory.system.ChestInventory method)</a>
 
       <ul>
+        <li><a href="src.inventory.html#id1">(src.inventory.system.CraftingGrid method)</a>, <a href="src.inventory.html#src.inventory.system.CraftingGrid.inventory_interactions">[1]</a>
+</li>
         <li><a href="src.inventory.html#id8">(src.inventory.system.Inventory method)</a>, <a href="src.inventory.html#src.inventory.system.Inventory.inventory_interactions">[1]</a>
 </li>
         <li><a href="src.inventory.html#id11">(src.inventory.system.MAIN_player_hotbar method)</a>, <a href="src.inventory.html#src.inventory.system.MAIN_player_hotbar.inventory_interactions">[1]</a>
@@ -2197,10 +2213,10 @@
       </ul></li>
       <li><a href="src.entities.html#src.entities.character.Character.reflect_projectile">reflect_projectile() (src.entities.character.Character method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.ui.html#id30">refresh_saves() (src.ui.menus.SaveLoadMenu method)</a>, <a href="src.ui.html#src.ui.menus.SaveLoadMenu.refresh_saves">[1]</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.core.html#id25">reinit_states() (src.core.state_manager.StateManager method)</a>, <a href="src.core.html#src.core.state_manager.StateManager.reinit_states">[1]</a>
 </li>
       <li><a href="src.core.html#id8">reinit_ui() (src.core.game.Game method)</a>, <a href="src.core.html#src.core.game.Game.reinit_ui">[1]</a>
@@ -2209,9 +2225,11 @@
 </li>
       <li><a href="src.items.html#src.items.items.DurabilityMixin.repair">repair() (src.items.items.DurabilityMixin method)</a>
 </li>
-      <li><a href="src.inventory.html#src.inventory.system.CraftingGrid.rescale">rescale() (src.inventory.system.CraftingGrid method)</a>
+      <li><a href="src.inventory.html#src.inventory.system.ChestInventory.rescale">rescale() (src.inventory.system.ChestInventory method)</a>
 
       <ul>
+        <li><a href="src.inventory.html#src.inventory.system.CraftingGrid.rescale">(src.inventory.system.CraftingGrid method)</a>
+</li>
         <li><a href="src.inventory.html#src.inventory.system.ShopInventory.rescale">(src.inventory.system.ShopInventory method)</a>
 </li>
       </ul></li>
@@ -2641,6 +2659,8 @@
 </li>
       <li><a href="src.entities.html#src.entities.character.Character.throw_weapon">throw_weapon() (src.entities.character.Character method)</a>
 </li>
+      <li><a href="src.inventory.html#src.inventory.system.ChestInventory.tile_key">tile_key (src.inventory.system.ChestInventory attribute)</a>
+</li>
       <li><a href="src.map.html#src.map.map.Map.TILESET_ANIMATIONS">TILESET_ANIMATIONS (src.map.map.Map attribute)</a>
 </li>
       <li><a href="src.entities.html#src.entities.enemy.Enemy.time_accumulator">time_accumulator (src.entities.enemy.Enemy attribute)</a>
@@ -2659,14 +2679,14 @@
       </ul></li>
       <li><a href="src.ui.html#src.ui.menus.WikiMenu.toc_btn">toc_btn (src.ui.menus.WikiMenu attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.html#id6">toggle_display_mode() (src.app.App method)</a>, <a href="src.html#src.app.App.toggle_display_mode">[1]</a>
 
       <ul>
         <li><a href="src.ui.html#id35">(src.ui.menus.SettingsMenu method)</a>, <a href="src.ui.html#src.ui.menus.SettingsMenu.toggle_display_mode">[1]</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="src.ui.html#id3">toggle_inventory() (src.ui.hud.HUD method)</a>, <a href="src.ui.html#src.ui.hud.HUD.toggle_inventory">[1]</a>
 </li>
       <li><a href="src.ui.html#src.ui.hud.HUD.toggle_inventory_callback">toggle_inventory_callback (src.ui.hud.HUD attribute)</a>

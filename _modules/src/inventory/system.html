@@ -1415,6 +1415,86 @@
         <span class="k">return</span> <span class="kc">False</span></div>
 </div>
 
+
+
+<div class="viewcode-block" id="ChestInventory">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.ChestInventory">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ChestInventory</span><span class="p">(</span><span class="n">Inventory</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A storage chest inventory that the player can use to deposit and</span>
+<span class="sd">    withdraw items freely.</span>
+
+<span class="sd">    Each chest on the map gets its own instance, identified by its tile</span>
+<span class="sd">    position ``(tile_x, tile_y)``.  Items can be dragged between the</span>
+<span class="sd">    player&#39;s inventory and the chest without restriction.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        app (App): Reference to the main application.</span>
+<span class="sd">        tile_key (tuple[int, int]): The ``(tile_x, tile_y)`` position</span>
+<span class="sd">            that identifies this chest on the current map.</span>
+<span class="sd">        close_button (Button): UI button to dismiss the chest panel.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">,</span> <span class="n">tile_key</span><span class="p">,</span> <span class="n">items_grid</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="o">=</span> <span class="n">app</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tile_key</span> <span class="o">=</span> <span class="n">tile_key</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">()</span>
+        <span class="n">rows</span><span class="p">,</span> <span class="n">columns</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">CHEST_ROWS</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">CHEST_COLUMNS</span>
+        <span class="k">if</span> <span class="n">items_grid</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">items_grid</span> <span class="o">=</span> <span class="p">[[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rows</span><span class="p">)]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">columns</span><span class="p">)]</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">columns</span><span class="p">,</span> <span class="n">rows</span><span class="p">,</span> <span class="n">items_grid</span><span class="p">,</span>
+            <span class="nb">int</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_slot_size</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="nb">int</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_border</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">btn_w</span><span class="p">,</span> <span class="n">btn_h</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">140</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)),</span> <span class="nb">max</span><span class="p">(</span><span class="mi">28</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">38</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close_button</span> <span class="o">=</span> <span class="n">Button</span><span class="p">(</span>
+            <span class="n">rect</span><span class="o">=</span><span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">btn_w</span><span class="p">,</span> <span class="n">btn_h</span><span class="p">),</span>
+            <span class="n">text</span><span class="o">=</span><span class="n">_</span><span class="p">(</span><span class="s2">&quot;CLOSE CHEST&quot;</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">CHEST_CLOSE_BTN_COLOR</span><span class="p">,</span>
+            <span class="n">hover_color</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">CHEST_CLOSE_BTN_HOVER_COLOR</span><span class="p">,</span>
+            <span class="n">font</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">INV_nums_font</span><span class="p">,</span> <span class="n">font_color</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">CHEST_CLOSE_BTN_FONT_COLOR</span><span class="p">,</span>
+            <span class="n">corner_width</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">8</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)),</span> <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_close_chest</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="ChestInventory.rescale">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.ChestInventory.rescale">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">rescale</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">ui_scale</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">slot_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_slot_size</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">border</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">BASE_INV_border</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="n">btn_w</span><span class="p">,</span> <span class="n">btn_h</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">140</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)),</span> <span class="nb">max</span><span class="p">(</span><span class="mi">28</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">38</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close_button</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="n">btn_w</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close_button</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">btn_h</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close_button</span><span class="o">.</span><span class="n">corner_width</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">8</span> <span class="o">*</span> <span class="n">scale</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close_button</span><span class="o">.</span><span class="n">font</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">INV_nums_font</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close_button</span><span class="o">.</span><span class="n">_update_text_surface</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="ChestInventory.inventory_interactions">
+<a class="viewcode-back" href="../../../src.inventory.html#src.inventory.system.ChestInventory.inventory_interactions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">inventory_interactions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">manager</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">!=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">MOUSEBUTTONDOWN</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">mouse_x</span><span class="p">,</span> <span class="n">mouse_y</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mouse</span><span class="o">.</span><span class="n">get_pos</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">close_button</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">close_button</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">collidepoint</span><span class="p">((</span><span class="n">mouse_x</span><span class="p">,</span> <span class="n">mouse_y</span><span class="p">)):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">close_button</span><span class="o">.</span><span class="n">on_click</span><span class="p">()</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">pass</span>
+                <span class="k">return</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">inventory_interactions</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">manager</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_close_chest</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">game_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gameplay&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">game_state</span><span class="p">:</span>
+                <span class="n">game_state</span><span class="o">.</span><span class="n">close_chest</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span></div>
+
 </pre></div>
 
            </div>

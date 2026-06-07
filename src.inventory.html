@@ -100,6 +100,61 @@
 <section id="module-src.inventory.system">
 <span id="src-inventory-system-module"></span><h2>src.inventory.system module<a class="headerlink" href="#module-src.inventory.system" title="Link to this heading"></a></h2>
 <dl class="py class">
+<dt class="sig sig-object py" id="src.inventory.system.ChestInventory">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.inventory.system.</span></span><span class="sig-name descname"><span class="pre">ChestInventory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tile_key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">items_grid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#ChestInventory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.ChestInventory" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.inventory.system.Inventory" title="src.inventory.system.Inventory"><code class="xref py py-class docutils literal notranslate"><span class="pre">Inventory</span></code></a></p>
+<p>A storage chest inventory that the player can use to deposit and
+withdraw items freely.</p>
+<p>Each chest on the map gets its own instance, identified by its tile
+position <code class="docutils literal notranslate"><span class="pre">(tile_x,</span> <span class="pre">tile_y)</span></code>.  Items can be dragged between the
+player’s inventory and the chest without restriction.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.ChestInventory.app">
+<span class="sig-name descname"><span class="pre">app</span></span><a class="headerlink" href="#src.inventory.system.ChestInventory.app" title="Link to this definition"></a></dt>
+<dd><p>Reference to the main application.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="src.html#src.app.App" title="src.app.App">App</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.ChestInventory.tile_key">
+<span class="sig-name descname"><span class="pre">tile_key</span></span><a class="headerlink" href="#src.inventory.system.ChestInventory.tile_key" title="Link to this definition"></a></dt>
+<dd><p>The <code class="docutils literal notranslate"><span class="pre">(tile_x,</span> <span class="pre">tile_y)</span></code> position
+that identifies this chest on the current map.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[int, int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.inventory.system.ChestInventory.close_button">
+<span class="sig-name descname"><span class="pre">close_button</span></span><a class="headerlink" href="#src.inventory.system.ChestInventory.close_button" title="Link to this definition"></a></dt>
+<dd><p>UI button to dismiss the chest panel.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="src.ui.html#src.ui.widgets.Button" title="src.ui.widgets.Button">Button</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.ChestInventory.inventory_interactions">
+<span class="sig-name descname"><span class="pre">inventory_interactions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manager</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#ChestInventory.inventory_interactions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.ChestInventory.inventory_interactions" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.inventory.system.ChestInventory.rescale">
+<span class="sig-name descname"><span class="pre">rescale</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#ChestInventory.rescale"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.ChestInventory.rescale" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="src.inventory.system.CraftingGrid">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.inventory.system.</span></span><span class="sig-name descname"><span class="pre">CraftingGrid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allow_advanced_crafting</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/inventory/system.html#CraftingGrid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.inventory.system.CraftingGrid" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#src.inventory.system.Inventory" title="src.inventory.system.Inventory"><code class="xref py py-class docutils literal notranslate"><span class="pre">Inventory</span></code></a></p>
