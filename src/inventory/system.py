@@ -1209,3 +1209,74 @@ class CraftingLogic:
                     player_inv.items[col][row] = [copy.copy(result_item), amount]
                     return True
         return False
+
+
+class ChestInventory(Inventory):
+    """
+    A storage chest inventory that the player can use to deposit and
+    withdraw items freely.
+
+    Each chest on the map gets its own instance, identified by its tile
+    position ``(tile_x, tile_y)``.  Items can be dragged between the
+    player's inventory and the chest without restriction.
+
+    Attributes:
+        app (App): Reference to the main application.
+        tile_key (tuple[int, int]): The ``(tile_x, tile_y)`` position
+            that identifies this chest on the current map.
+        close_button (Button): UI button to dismiss the chest panel.
+    """
+    def __init__(self, app, tile_key, items_grid=None):
+        self.app = app
+        self.tile_key = tile_key
+        scale = cfg.ui_scale()
+        rows, columns = cfg.CHEST_ROWS, cfg.CHEST_COLUMNS
+        if items_grid is None:
+            items_grid = [[None for _ in range(rows)] for _ in range(columns)]
+        super().__init__(
+            columns, rows, items_grid,
+            int(cfg.BASE_INV_slot_size * scale), 0, 0,
+            int(cfg.BASE_INV_border * scale)
+        )
+        btn_w, btn_h = max(80, int(140 * scale)), max(28, int(38 * scale))
+        self.close_button = Button(
+            rect=pygame.Rect(0, 0, btn_w, btn_h),
+            text=_("CLOSE CHEST"), color=cfg.CHEST_CLOSE_BTN_COLOR,
+            hover_color=cfg.CHEST_CLOSE_BTN_HOVER_COLOR,
+            font=cfg.INV_nums_font, font_color=cfg.CHEST_CLOSE_BTN_FONT_COLOR,
+            corner_width=max(2, int(8 * scale)), on_click=self._close_chest
+        )
+
+    def rescale(self):
+        scale = cfg.ui_scale()
+        self.slot_size = int(cfg.BASE_INV_slot_size * scale)
+        self.border = int(cfg.BASE_INV_border * scale)
+        btn_w, btn_h = max(80, int(140 * scale)), max(28, int(38 * scale))
+        self.close_button.rect.width = btn_w
+        self.close_button.rect.height = btn_h
+        self.close_button.corner_width = max(2, int(8 * scale))
+        self.close_button.font = cfg.INV_nums_font
+        self.close_button._update_text_surface()
+
+    def inventory_interactions(self, event, manager):
+        if event.type != pygame.MOUSEBUTTONDOWN:
+            return
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+
+        if event.button == 1 and self.close_button:
+            if self.close_button.rect.collidepoint((mouse_x, mouse_y)):
+                try:
+                    self.close_button.on_click()
+                except Exception:
+                    pass
+                return
+
+        super().inventory_interactions(event, manager)
+
+    def _close_chest(self):
+        try:
+            game_state = self.app.manager.states.get("gameplay")
+            if game_state:
+                game_state.close_chest(self)
+        except Exception:
+            pass

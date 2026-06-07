@@ -134,6 +134,8 @@ class LocationMapMenu(Menu):
                 new_x, new_y = entry["pos"]
                 profile = entry.get("profile")
                 game.enemies.append(game._create_enemy(new_x, new_y, profile=profile))
+        game.peaceful_mobs = []
+        game._spawn_peaceful_mobs()
         game._place_npcs_for_map(entry_map)
 
         if spawn_pos:

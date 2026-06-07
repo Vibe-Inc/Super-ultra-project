@@ -10,7 +10,7 @@ Phases
 1  RUMBLE  — 2.0 s  — screen shake, red/dark aura fading in
 2  VOICE1  — 1.5 s  — "You're almost there." typewriter
 3  VOICE2  — 1.5 s  — "Just a little further." typewriter
-4  INTENSE — 1.5 s  — faster particle gathering
+4  INTENSE — 1.5 s  — faster particle gathering, lightning
 5  VOICE3  — 1.0 s  — "GO." huge text, fast
 6  BURST   — 2.0 s  — explosive burst
 7  FADE    — 1.5 s  — fade to gameplay
@@ -95,10 +95,10 @@ class _EnergyParticle:
         angle  = random.uniform(0, 2 * math.pi)
         
         if gather:
-            dist = random.uniform(200, max(sw, sh))
+            dist = random.uniform(150, max(sw, sh))
             self.x = sw / 2 + math.cos(angle) * dist
             self.y = sh / 2 + math.sin(angle) * dist
-            self.speed = random.uniform(300, 700)
+            self.speed = random.uniform(300, 800)
             self.vx = 0
             self.vy = 0
         else:
@@ -109,10 +109,10 @@ class _EnergyParticle:
             self.vy = math.sin(angle) * speed - random.uniform(20, 80)
             
         self.life = random.uniform(1.0, 3.0)
-        if gather: self.life = random.uniform(0.5, 1.5)
+        if gather: self.life = random.uniform(0.3, 1.2)
         self.max_life = self.life
-        self.size = random.uniform(2.0, 6.0)
-        self.color = random.choice([GOLD_TEXT, MYSTIC[:3], WHITE_GLOW, (255, 50, 50)])
+        self.size = random.uniform(2.0, 7.0)
+        self.color = random.choice([GOLD_TEXT, MYSTIC[:3], WHITE_GLOW, (255, 50, 50), (255, 100, 0)])
 
     def update(self, dt, cx, cy):
         if self.gather:
@@ -137,9 +137,8 @@ class _EnergyParticle:
         ratio = self.life / self.max_life
         a  = int(255 * ratio * ratio)
         sz = max(1, int(self.size * ratio))
-        s  = pygame.Surface((sz * 2, sz * 2), pygame.SRCALPHA)
-        pygame.draw.circle(s, (*self.color, a), (sz, sz), sz)
-        screen.blit(s, (int(self.x) - sz, int(self.y) - sz))
+        pygame.draw.circle(screen, (*self.color, a),
+                           (int(self.x), int(self.y)), sz)
 
 class _ShockwaveRing:
     def __init__(self, cx, cy, color, speed, max_radius, width=4, delay=0.0):
@@ -173,9 +172,110 @@ class _ShockwaveRing:
         r = int(self.radius)
         if r < 2 or a < 4:
             return
-        s = pygame.Surface((r * 2 + 4, r * 2 + 4), pygame.SRCALPHA)
-        pygame.draw.circle(s, (*self.color, a), (r + 2, r + 2), r, self.width)
-        screen.blit(s, (self.cx - r - 2 + offset_x, self.cy - r - 2 + offset_y))
+        pygame.draw.circle(screen, (*self.color, a),
+                           (int(self.cx + offset_x), int(self.cy + offset_y)),
+                           r, self.width)
+
+
+class _LightningStreak:
+    """A jagged red lightning bolt."""
+    def __init__(self, cx, cy, sw, sh):
+        self.cx = cx
+        self.cy = cy
+        self.sw = sw
+        self.sh = sh
+        self.life = random.uniform(0.1, 0.3)
+        self.max_life = self.life
+        self.points = self._generate()
+        self.alpha = random.randint(60, 150)
+
+    def _generate(self):
+        pts = []
+        x = random.uniform(0, self.sw)
+        y = 0
+        pts.append((x, y))
+        segments = random.randint(4, 9)
+        for _ in range(segments):
+            x += random.uniform(-40, 40)
+            y += self.sh / segments + random.uniform(-20, 20)
+            pts.append((x, y))
+        return pts
+
+    def update(self, dt):
+        self.life -= dt
+
+    def draw(self, surf):
+        if self.life <= 0:
+            return
+        a = int(self.alpha * (self.life / self.max_life))
+        if a < 3:
+            return
+        for i in range(len(self.points) - 1):
+            pygame.draw.line(surf, (255, 50, 50, max(0, min(255, a))),
+                             self.points[i], self.points[i + 1],
+                             max(1, int(3 * (self.life / self.max_life))))
+
+
+class _BloodParticle:
+    """A small red particle that bursts outward."""
+    def __init__(self, x, y):
+        angle = random.uniform(0, 2 * math.pi)
+        speed = random.uniform(50, 200)
+        self.x = x
+        self.y = y
+        self.vx = math.cos(angle) * speed
+        self.vy = math.sin(angle) * speed
+        self.life = random.uniform(0.5, 1.5)
+        self.max_life = self.life
+        self.size = random.uniform(1, 3)
+        self.color = random.choice([(180, 20, 20), (200, 30, 30), (150, 10, 10)])
+
+    def update(self, dt):
+        self.x += self.vx * dt
+        self.y += self.vy * dt
+        self.vy += 30 * dt
+        self.vx *= 0.98
+        self.life -= dt
+
+    def draw(self, surf):
+        if self.life <= 0:
+            return
+        ratio = self.life / self.max_life
+        a = int(200 * ratio)
+        sz = max(1, int(self.size * ratio))
+        pygame.draw.circle(surf, (*self.color, max(0, min(255, a))),
+                           (int(self.x), int(self.y)), sz)
+
+
+class _LensFlare:
+    """A simple lens flare effect for the burst."""
+    def __init__(self, cx, cy):
+        self.cx = cx
+        self.cy = cy
+        self.life = 1.0
+        self.max_life = 0.6
+
+    def update(self, dt):
+        self.life -= dt / self.max_life
+
+    def draw(self, surf):
+        if self.life <= 0:
+            return
+        a = int(200 * self.life * self.life)
+        r = int(40 * (1.0 - self.life))
+        for ri in range(r * 4, 0, -r):
+            ratio = ri / (r * 4)
+            ca = int(a * (1 - ratio) * 0.3)
+            if ca < 2:
+                continue
+            pygame.draw.circle(surf, (255, 180, 150, max(0, min(180, ca))),
+                               (int(self.cx), int(self.cy)), ri)
+        for angle in [0, math.pi / 4, math.pi / 2, 3 * math.pi / 4]:
+            length = int(r * 2.5 * self.life)
+            ex = self.cx + int(math.cos(angle) * length)
+            ey = self.cy + int(math.sin(angle) * length)
+            pygame.draw.line(surf, (255, 180, 150, max(0, min(180, a))),
+                             (self.cx, self.cy), (ex, ey), max(1, int(2 * self.life)))
 
 
 class TempleIntroAnimation:
@@ -187,11 +287,13 @@ class TempleIntroAnimation:
         self._done    = False
         self._skip_requested = False
 
-        self._runes:      list[_RuneSymbol]    = []
+        self._runes:      list[_RuneSymbol]     = []
         self._v_parts:    list[_EnergyParticle] = []
-        self._bursts:     list[LaunchBurst]    = []
-        self._shockwaves: list[_ShockwaveRing] = []
-        self._embers:     list[AmbientEmber]   = []
+        self._bursts:     list[LaunchBurst]     = []
+        self._shockwaves: list[_ShockwaveRing]  = []
+        self._embers:     list[AmbientEmber]    = []
+        self._lightnings: list[_LightningStreak] = []
+        self._blood_parts: list[_BloodParticle]  = []
 
         self._tw_chars   = [0.0, 0.0, 0.0]
         self._tw_speed   = 35.0  # Much faster typing
@@ -206,6 +308,8 @@ class TempleIntroAnimation:
         self._skip_surf = None
         self._flash_alpha = 0.0
         self._shake_intensity = 0.0
+        self._vignette_alpha = 0.0
+        self._lens_flare: _LensFlare | None = None
 
     def on_enter(self):
         self._phase   = 0
@@ -215,14 +319,18 @@ class TempleIntroAnimation:
         self._skip_requested = False
         self._flash_alpha = 0.0
         self._shake_intensity = 0.0
+        self._vignette_alpha = 0.0
+        self._lens_flare = None
 
         sw, sh = self._sw(), self._sh()
 
-        self._runes = [_RuneSymbol(sw, sh, self._font_rune) for _ in range(60)]
-        self._embers = [AmbientEmber(sw, sh) for _ in range(40)]
+        self._runes = [_RuneSymbol(sw, sh, self._font_rune) for _ in range(80)]
+        self._embers = [AmbientEmber(sw, sh) for _ in range(60)]
         self._v_parts    = []
         self._bursts     = []
         self._shockwaves = []
+        self._lightnings = []
+        self._blood_parts = []
         self._tw_chars   = [0.0, 0.0, 0.0]
         self._tw_hold    = [0.0, 0.0, 0.0]
 
@@ -292,6 +400,14 @@ class TempleIntroAnimation:
             if self._phase == 6:
                 self._spawn_burst(cx, cy)
 
+        # Vignette
+        if self._phase >= 4:
+            self._vignette_alpha = min(160, self._vignette_alpha + dt * 40)
+        elif self._phase >= 1:
+            self._vignette_alpha = min(60, self._vignette_alpha + dt * 20)
+        else:
+            self._vignette_alpha = max(0.0, self._vignette_alpha - dt * 50)
+
         for e in self._embers:
             e.update(dt, self._t)
             
@@ -300,15 +416,34 @@ class TempleIntroAnimation:
             p.update(dt, cx, cy)
 
         if 1 <= self._phase <= 3:
-            for _ in range(5):
+            for _ in range(6):
                 self._v_parts.append(_EnergyParticle(sw, sh, gather=False))
-        elif self._phase == 4: # Intense gather
-            for _ in range(15):
+        elif self._phase == 4:
+            for _ in range(25):
                 self._v_parts.append(_EnergyParticle(sw, sh, gather=True))
         elif self._phase == 5:
-            for _ in range(30):
+            for _ in range(40):
                 self._v_parts.append(_EnergyParticle(sw, sh, gather=True))
                 self._v_parts.append(_EnergyParticle(sw, sh, gather=False))
+
+        # Lightning during intense / GO phases
+        if self._phase in (4, 5):
+            if random.random() < 0.08:
+                self._lightnings.append(_LightningStreak(cx, cy, sw, sh))
+        self._lightnings = [l for l in self._lightnings if l.life > 0]
+        for l in self._lightnings:
+            l.update(dt)
+
+        # Blood particles during burst
+        if self._phase == 6:
+            for _ in range(5):
+                self._blood_parts.append(
+                    _BloodParticle(cx + random.uniform(-100, 100),
+                                   cy + random.uniform(-100, 100))
+                )
+        self._blood_parts = [bp for bp in self._blood_parts if bp.life > 0]
+        for bp in self._blood_parts:
+            bp.update(dt)
 
         self._bursts = [b for b in self._bursts if b.lt > 0]
         for b in self._bursts:
@@ -318,39 +453,50 @@ class TempleIntroAnimation:
         for w in self._shockwaves:
             w.update(dt)
 
+        if self._lens_flare is not None:
+            self._lens_flare.update(dt)
+            if self._lens_flare.life <= 0:
+                self._lens_flare = None
+
         if self._flash_alpha > 0:
             self._flash_alpha = max(0.0, self._flash_alpha - dt * 150)
             
         if self._phase == 1:
-            self._shake_intensity = 5.0 * (self._phase_t / _PHASE_DUR[1])
+            self._shake_intensity = 6.0 * (self._phase_t / _PHASE_DUR[1])
         elif self._phase == 4:
-            self._shake_intensity = 15.0 * ease_in_quart(self._phase_t / _PHASE_DUR[4])
+            self._shake_intensity = 18.0 * ease_in_quart(self._phase_t / _PHASE_DUR[4])
         elif self._phase == 5:
-            self._shake_intensity = 25.0
+            self._shake_intensity = 30.0
         elif self._phase == 6:
-            self._shake_intensity = 40.0 * max(0, 1.0 - (self._phase_t / 0.5))
+            self._shake_intensity = 50.0 * max(0, 1.0 - (self._phase_t / 0.6))
         else:
             self._shake_intensity = max(0.0, self._shake_intensity - dt * 50)
 
     def _spawn_burst(self, cx, cy):
         self._flash_alpha = 255.0
+        self._lens_flare = _LensFlare(cx, cy)
         for i, (col, spd, wr) in enumerate([
-            (WHITE_GLOW,   800, 1200),
-            ((255, 100, 100), 600, 1000),
-            (MYSTIC,       400, 800),
-            (GOLD_TEXT,    250, 600),
+            (WHITE_GLOW,     900, 1400),
+            (MYSTIC,         700, 1200),
+            (WHITE_GLOW,     550, 1000),
+            ((255, 100, 100), 400, 800),
+            (GOLD_TEXT,      300, 650),
+            (MYSTIC,         200, 500),
         ]):
-            self._shockwaves.append(_ShockwaveRing(cx, cy, col, spd, wr, width=max(3, 6 - i), delay=i * 0.08))
+            self._shockwaves.append(_ShockwaveRing(cx, cy, col, spd, wr,
+                                                   width=max(2, 6 - i),
+                                                   delay=i * 0.06))
 
-        for _ in range(300):
+        for _ in range(350):
             angle = random.uniform(0, 2 * math.pi)
-            speed = random.uniform(100, 800)
+            speed = random.uniform(100, 900)
             vx = math.cos(angle) * speed
-            vy = math.sin(angle) * speed - random.uniform(0, 100)
-            col = random.choice([WHITE_GLOW, (255, 120, 120), MYSTIC[:3], GOLD_TEXT])
+            vy = math.sin(angle) * speed - random.uniform(0, 120)
+            col = random.choice([WHITE_GLOW, (255, 120, 120), MYSTIC[:3],
+                                 GOLD_TEXT, (255, 80, 80), (200, 30, 30)])
             self._bursts.append(LaunchBurst(
-                cx + random.uniform(-20, 20), cy + random.uniform(-20, 20),
-                vx, vy, col, random.randint(3, 8), random.uniform(0.8, 3.0)
+                cx + random.uniform(-25, 25), cy + random.uniform(-25, 25),
+                vx, vy, col, random.randint(3, 9), random.uniform(0.6, 3.0)
             ))
 
     def draw(self, screen):
@@ -374,13 +520,12 @@ class TempleIntroAnimation:
             if phase == 7:
                 rune_global = int(255 * max(0.0, 1.0 - pt / _PHASE_DUR[7]))
             if phase == 4 or phase == 5:
-                rune_global = 255 # Keep fully lit
+                rune_global = 255
             for rune in self._runes:
-                # Add offset for shake
                 orig_x, orig_y = rune.x, rune.y
                 rune.x += shake_x
                 rune.y += shake_y
-                rune.draw(screen, t * 2.0 if phase >= 4 else t, rune_global)
+                rune.draw(screen, t * 2.5 if phase >= 4 else t, rune_global)
                 rune.x, rune.y = orig_x, orig_y
 
         ember_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
@@ -403,6 +548,20 @@ class TempleIntroAnimation:
                 p.x, p.y = orig_x, orig_y
             screen.blit(vp_surf, (0, 0))
 
+        # Lightning
+        if self._lightnings:
+            lt_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            for l in self._lightnings:
+                l.draw(lt_surf)
+            screen.blit(lt_surf, (0, 0))
+
+        # Blood particles
+        if self._blood_parts:
+            bp_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            for bp in self._blood_parts:
+                bp.draw(bp_surf)
+            screen.blit(bp_surf, (0, 0))
+
         if phase >= 1:
             self._draw_centre_glow(screen, cx, cy, t, phase, pt)
 
@@ -424,6 +583,15 @@ class TempleIntroAnimation:
                 b.draw(fx_surf)
                 b.x, b.y = orig_x, orig_y
             screen.blit(fx_surf, (0, 0))
+
+        if self._lens_flare is not None:
+            flare_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            self._lens_flare.draw(flare_surf)
+            screen.blit(flare_surf, (0, 0))
+
+        # Vignette
+        if self._vignette_alpha > 1:
+            self._draw_vignette(screen, sw, sh)
 
         if self._flash_alpha > 0:
             flash = pygame.Surface((sw, sh))
@@ -450,44 +618,61 @@ class TempleIntroAnimation:
                  sh - self._skip_surf.get_height() - 16)
             )
 
+    def _draw_vignette(self, screen, sw, sh):
+        r = int(math.hypot(sw, sh) / 2)
+        s = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        a = int(self._vignette_alpha)
+        for radius in range(r, 0, -int(r / 30 + 1)):
+            ratio = radius / r
+            ca = int(a * (1 - ratio) ** 2)
+            if ca < 1:
+                continue
+            pygame.draw.circle(s, (0, 0, 0, max(0, min(255, ca))),
+                               (sw // 2, sh // 2), radius)
+        screen.blit(s, (0, 0))
+
     def _draw_nebula(self, screen, sw, sh, t, cx, cy):
         phase_shift = t * 0.15
         for (rx, ry_off, r, col, base_a) in [
             (0.35, -0.10, 0.40, (120, 20, 30), 25),
             (0.50,  0.15, 0.35, (80, 10, 20),  20),
             (-0.10, 0.05, 0.30, (160, 40, 50), 15),
+            (-0.30, 0.25, 0.22, (180, 30, 40), 12),
+            (0.25, -0.22, 0.18, (90, 15, 25),  16),
         ]:
             ncx = int(cx + sw * rx * math.cos(phase_shift))
             ncy = int(cy + sh * ry_off + sh * 0.1 * math.sin(phase_shift * 2.0))
             nr  = int(min(sw, sh) * r)
-            a   = int(base_a + 10 * math.sin(t * 0.8 + rx * 5))
-            a   = max(0, min(50, a))
+            a   = int(base_a + 12 * math.sin(t * 0.8 + rx * 5))
+            a   = max(0, min(55, a))
             ns  = pygame.Surface((nr * 2, nr * 2), pygame.SRCALPHA)
             pygame.draw.circle(ns, (*col, a), (nr, nr), nr)
             screen.blit(ns, (ncx - nr, ncy - nr))
 
     def _draw_centre_glow(self, screen, cx, cy, t, phase, pt):
-        base_r = int(min(self._sw(), self._sh()) * 0.22)
+        base_r = int(min(self._sw(), self._sh()) * 0.25)
         pulse  = 0.8 + 0.2 * math.sin(t * 3.0)
         
         if phase == 4:
-            pulse += 0.3 * (pt / _PHASE_DUR[4]) # grows more intense
+            pulse += 0.4 * (pt / _PHASE_DUR[4])
         elif phase == 5:
-            pulse = 1.5 + 0.2 * math.sin(t * 15.0) # frantic
+            pulse = 1.8 + 0.3 * math.sin(t * 18.0)
+        elif phase == 6:
+            pulse = 1.5 + 0.2 * math.sin(t * 8.0)
             
         r      = int(base_r * pulse)
         a_mult = min(1.0, pt / 1.0) if phase == 1 else 1.0
         if phase == 7:
             a_mult = max(0.0, 1.0 - pt / _PHASE_DUR[7])
 
-        for ri in range(r, 0, -5):
+        for ri in range(r, 0, -4):
             ratio = ri / r
-            base_a = int(60 * (1.0 - ratio) * a_mult)
+            base_a = int(80 * (1.0 - ratio) * a_mult)
             col = (
-                max(0, min(255, int(150 + 105 * (1 - ratio)))),
-                max(0, min(255, int(20 +  60 * (1 - ratio)))),
-                max(0, min(255, int(30 + 40 * (1 - ratio)))),
-                max(0, min(80, base_a))
+                max(0, min(255, int(160 + 95 * (1 - ratio)))),
+                max(0, min(255, int(15 +  50 * (1 - ratio)))),
+                max(0, min(255, int(20 + 35 * (1 - ratio)))),
+                max(0, min(90, base_a))
             )
             ns = pygame.Surface((ri * 2, ri * 2), pygame.SRCALPHA)
             pygame.draw.circle(ns, col, (ri, ri), ri)
@@ -503,36 +688,44 @@ class TempleIntroAnimation:
         total_h = lh * len(lines)
 
         max_line_w = max((self._font_voice.size(ln)[0] for ln in full_text.split("\n")), default=1)
-        pad_x, pad_y = int(50 * cfg.ui_scale()), int(30 * cfg.ui_scale())
+        pad_x, pad_y = int(60 * cfg.ui_scale()), int(35 * cfg.ui_scale())
         panel_w = min(max_line_w + pad_x * 2, sw - 80)
-        panel_h = total_h + pad_y * 2 + int(40 * cfg.ui_scale())
+        panel_h = total_h + pad_y * 2 + int(50 * cfg.ui_scale())
         panel_x = cx - panel_w // 2
         panel_y = cy - panel_h // 2 + int(sh * 0.22)
 
         text_alpha = int(255 * min(1.0, pt / 0.3))
 
         panel_surf = pygame.Surface((panel_w, panel_h), pygame.SRCALPHA)
-        pygame.draw.rect(panel_surf, (15, 2, 5, 210), (0, 0, panel_w, panel_h), border_radius=16)
+        pygame.draw.rect(panel_surf, (15, 2, 5, 220), (0, 0, panel_w, panel_h), border_radius=16)
 
-        bord_a = int(180 + 75 * math.sin(t * 3.5))
+        bord_a = int(200 + 80 * math.sin(t * 3.5))
         pygame.draw.rect(panel_surf, (*MYSTIC[:3], max(0, min(255, bord_a))),
                          (0, 0, panel_w, panel_h), max(2, int(3*cfg.ui_scale())), border_radius=16)
+
+        # Inner glow border
+        in_a = int(70 + 40 * math.sin(t * 2.5 + 1.0))
+        pygame.draw.rect(panel_surf, (*GOLD_TEXT, max(0, min(90, in_a))),
+                         (3, 3, panel_w - 6, panel_h - 6), 1, border_radius=14)
 
         tag_font = cfg.get_font(max(10, int(16 * cfg.ui_scale())))
         tag = tag_font.render("⟨ UNKNOWN ENTITY ⟩", True, (*GOLD_TEXT, 220))
         panel_surf.blit(tag, (panel_w // 2 - tag.get_width() // 2, 12))
 
-        ty = pad_y + int(25 * cfg.ui_scale())
+        ty = pad_y + int(28 * cfg.ui_scale())
         for ln in lines:
             if not ln:
                 ty += lh
                 continue
             txt_surf = self._font_voice.render(ln, True, VOICE_CLR)
             
-            # Glitch effect occasionally
-            if random.random() < 0.05 and shown_chars >= len(full_text):
-                glitch_surf = self._font_voice.render(ln, True, (255, 50, 50))
-                panel_surf.blit(glitch_surf, (panel_w // 2 - txt_surf.get_width() // 2 + random.randint(-4, 4), ty + random.randint(-2, 2)))
+            # Glitch effect — more aggressive
+            if random.random() < 0.08 and shown_chars >= len(full_text):
+                for _ in range(2):
+                    glitch_surf = self._font_voice.render(ln, True, (255, 50, 50))
+                    panel_surf.blit(glitch_surf,
+                                    (panel_w // 2 - txt_surf.get_width() // 2 + random.randint(-6, 6),
+                                     ty + random.randint(-3, 3)))
             
             panel_surf.blit(txt_surf, (panel_w // 2 - txt_surf.get_width() // 2, ty))
             ty += lh
@@ -543,7 +736,7 @@ class TempleIntroAnimation:
         if shown_chars < len(full_text):
             if int(t * 6) % 2 == 0:
                 cur_x = panel_x + panel_w // 2 + self._font_voice.size(lines[-1])[0] // 2 + 5
-                cur_y = panel_y + pad_y + int(25 * cfg.ui_scale()) + (len(lines) - 1) * lh
+                cur_y = panel_y + pad_y + int(28 * cfg.ui_scale()) + (len(lines) - 1) * lh
                 pygame.draw.rect(screen, (*GOLD_TEXT, 220),
                                  (cur_x, cur_y + 2, max(2, int(3 * cfg.ui_scale())), lh - 4))
 
@@ -552,18 +745,38 @@ class TempleIntroAnimation:
         shown_chars = int(self._tw_chars[2])
         display = text[:shown_chars]
         
-        # huge, jittery text
         t_surf = self._font_go.render(display, True, (255, 50, 50))
         t_w = t_surf.get_width()
         t_h = t_surf.get_height()
         
-        jitter_x = random.uniform(-5, 5)
-        jitter_y = random.uniform(-5, 5)
+        jitter_x = random.uniform(-8, 8)
+        jitter_y = random.uniform(-8, 8)
         
-        # Draw red shadow/glow
-        glow = self._font_go.render(display, True, (200, 0, 0))
-        glow.set_alpha(150)
-        screen.blit(glow, (cx - t_w//2 + jitter_x * 2, cy - t_h//2 + jitter_y * 2))
+        # Multiple layered glows
+        for scale_mult, col, max_a in [
+            (3.0, (100, 0, 0), 60),
+            (2.0, (200, 0, 0), 100),
+            (1.5, (255, 50, 50), 140),
+        ]:
+            glow_size = int(max(t_w, t_h) * scale_mult * 0.08)
+            glow_s = pygame.Surface((t_w + glow_size * 2, t_h + glow_size * 2), pygame.SRCALPHA)
+            for ri in range(glow_size, 0, -2):
+                ratio = ri / glow_size
+                ca = int(max_a * (1 - ratio) ** 2 * (0.5 + 0.5 * math.sin(self._t * 10)))
+                re_render = self._font_go.render(display, True, col)
+                re_render.set_alpha(max(0, min(180, ca)))
+                glow_s.blit(re_render, (glow_size - ri, glow_size - ri))
+            screen.blit(glow_s,
+                        (cx - t_w // 2 - glow_size + jitter_x * 2,
+                         cy - t_h // 2 - glow_size + jitter_y * 2))
         
         # Draw main text
-        screen.blit(t_surf, (cx - t_w//2 + jitter_x, cy - t_h//2 + jitter_y))
+        screen.blit(t_surf, (cx - t_w // 2 + jitter_x, cy - t_h // 2 + jitter_y))
+        
+        # Red scanline overlay
+        if random.random() < 0.15:
+            scan_surf = pygame.Surface((t_w, t_h), pygame.SRCALPHA)
+            for sy in range(0, t_h, 3):
+                pygame.draw.line(scan_surf, (255, 0, 0, 60),
+                                 (0, sy), (t_w, sy), 1)
+            screen.blit(scan_surf, (cx - t_w // 2 + jitter_x, cy - t_h // 2 + jitter_y))

@@ -121,9 +121,8 @@ class _VoiceParticle:
         ratio = self.life / self.max_life
         a  = int(220 * ratio * ratio)
         sz = max(1, int(self.size * ratio))
-        s  = pygame.Surface((sz * 2, sz * 2), pygame.SRCALPHA)
-        pygame.draw.circle(s, (*self.color, a), (sz, sz), sz)
-        screen.blit(s, (int(self.x) - sz, int(self.y) - sz))
+        pygame.draw.circle(screen, (*self.color, a),
+                           (int(self.x), int(self.y)), sz)
 
 
 class _ShockwaveRing:
@@ -159,9 +158,125 @@ class _ShockwaveRing:
         r = int(self.radius)
         if r < 2 or a < 4:
             return
-        s = pygame.Surface((r * 2 + 4, r * 2 + 4), pygame.SRCALPHA)
-        pygame.draw.circle(s, (*self.color, a), (r + 2, r + 2), r, self.width)
-        screen.blit(s, (self.cx - r - 2, self.cy - r - 2))
+        pygame.draw.circle(screen, (*self.color, a),
+                           (int(self.cx), int(self.cy)), r, self.width)
+
+
+class _LightRay:
+    """A drifting ray of warm light across the screen."""
+    def __init__(self, sw, sh):
+        self.sw = sw
+        self.sh = sh
+        self._reset()
+
+    def _reset(self):
+        self.y = random.uniform(0, self.sh)
+        self.height = random.uniform(15, 50)
+        self.speed = random.uniform(0.1, 0.3)
+        self.phase = random.uniform(0, 6.28)
+        self.amp = random.uniform(15, 40)
+        self.alpha = random.randint(3, 10)
+        self.width_factor = random.uniform(0.3, 0.7)
+
+    def draw(self, surf, t):
+        cy = self.y + math.sin(t * self.speed + self.phase) * self.amp
+        h = self.height
+        w = int(self.sw * self.width_factor)
+        s = pygame.Surface((w, int(h)), pygame.SRCALPHA)
+        for i in range(int(h)):
+            ratio = 1.0 - abs(i - h / 2) / (h / 2)
+            a = int(self.alpha * max(0, ratio) ** 2)
+            if a < 1:
+                continue
+            c = (255, 230, 180, min(255, a))
+            pygame.draw.line(s, c, (0, i), (w, i))
+        sx = int(self.sw * (1 - self.width_factor) * 0.5)
+        surf.blit(s, (sx, int(cy - h / 2)))
+
+
+class _OrbGlowRing:
+    """A glowing ring orbiting the centre orb."""
+    def __init__(self, cx, cy, radius, speed, color, width=1):
+        self.cx = cx
+        self.cy = cy
+        self.radius = radius
+        self.speed = speed
+        self.color = color
+        self.width = width
+        self.angle = random.uniform(0, 2 * math.pi)
+        self.throb = random.uniform(0, 6.28)
+
+    def draw(self, surf, t):
+        self.angle += self.speed * 0.02
+        ox = self.cx + int(math.cos(self.angle) * self.radius)
+        oy = self.cy + int(math.sin(self.angle) * self.radius)
+        pulse = 0.7 + 0.3 * math.sin(t * 2.0 + self.throb)
+        a = int(80 * pulse)
+        r = max(1, int(2 * pulse))
+        pygame.draw.circle(surf, (*self.color, max(0, min(150, a))),
+                           (ox, oy), r)
+
+
+class _LensFlare:
+    """A simple lens flare effect for the burst."""
+    def __init__(self, cx, cy):
+        self.cx = cx
+        self.cy = cy
+        self.life = 1.0
+        self.max_life = 0.6
+
+    def update(self, dt):
+        self.life -= dt / self.max_life
+
+    def draw(self, surf):
+        if self.life <= 0:
+            return
+        a = int(200 * self.life * self.life)
+        r = int(50 * (1.0 - self.life))
+        # Halo — draw directly on surf
+        for ri in range(r * 4, 0, -r):
+            ratio = ri / (r * 4)
+            ca = int(a * (1 - ratio) * 0.3)
+            if ca < 2:
+                continue
+            pygame.draw.circle(surf, (255, 220, 150, max(0, min(180, ca))),
+                               (int(self.cx), int(self.cy)), ri)
+        # Star flare lines
+        for angle in [0, math.pi / 4, math.pi / 2, 3 * math.pi / 4]:
+            length = int(r * 2.5 * self.life)
+            ex = self.cx + int(math.cos(angle) * length)
+            ey = self.cy + int(math.sin(angle) * length)
+            pygame.draw.line(surf, (255, 220, 150, max(0, min(180, a))),
+                             (self.cx, self.cy), (ex, ey), max(1, int(2 * self.life)))
+
+
+class _TitleSparkle:
+    """A sparkle particle emitted from the title text."""
+    def __init__(self, x, y):
+        self.x = x + random.uniform(-5, 5)
+        self.y = y + random.uniform(-5, 5)
+        self.vx = random.uniform(-10, 10)
+        self.vy = random.uniform(-25, -5)
+        self.life = 1.0
+        self.max_life = random.uniform(0.3, 1.0)
+        self.size = random.uniform(1, 3)
+        angle = random.uniform(0, 6.28)
+        self.color = (255, max(0, min(255, int(200 + 55 * math.sin(angle)))),
+                      max(0, min(255, int(140 + 80 * math.cos(angle)))))
+
+    def update(self, dt):
+        self.x += self.vx * dt
+        self.y += self.vy * dt
+        self.vy += 15 * dt
+        self.life -= dt / self.max_life
+
+    def draw(self, surf):
+        if self.life <= 0:
+            return
+        a = int(255 * self.life)
+        sz = max(0.5, self.size * self.life)
+        pygame.draw.circle(surf, (*self.color, max(0, min(255, a))),
+                           (int(self.x), int(self.y)), int(sz))
 
 
 # ─── Main state ───────────────────────────────────────────────────────────────
@@ -169,20 +284,6 @@ class _ShockwaveRing:
 class IntroAnimation:
     """
     Full-screen cinematic intro that plays once when the player starts the game.
-
-    Attributes:
-        app (App): Main application reference.
-        _phase (int): Current animation phase index.
-        _phase_t (float): Time elapsed inside the current phase.
-        _t (float): Global accumulated time.
-        _done (bool): True once the sequence has completed.
-        _skip_requested (bool): Set to True if the player presses SPACE/ENTER.
-
-    Methods:
-        on_enter(): Reset all state; called when the StateManager activates us.
-        handle_event(event): Handle SPACE/ENTER skip.
-        update(dt): Advance animation timers and particles.
-        draw(screen): Render the current frame.
     """
 
     def __init__(self, app: "App"):
@@ -194,12 +295,16 @@ class IntroAnimation:
         self._skip_requested = False
 
         # Particle lists
-        self._runes:      list[_RuneSymbol]   = []
+        self._runes:      list[_RuneSymbol]    = []
         self._v_parts:    list[_VoiceParticle] = []
-        self._bursts:     list[LaunchBurst]   = []
+        self._bursts:     list[LaunchBurst]    = []
         self._shockwaves: list[_ShockwaveRing] = []
-        self._embers:     list[AmbientEmber]  = []
-        self._stars:      list[Star]          = []
+        self._embers:     list[AmbientEmber]   = []
+        self._stars:      list[Star]           = []
+        self._light_rays: list[_LightRay]      = []
+        self._orb_rings:  list[_OrbGlowRing]   = []
+        self._lens_flare: _LensFlare | None    = None
+        self._title_sparkles: list[_TitleSparkle] = []
 
         # Typewriter state per voice line
         self._tw_chars   = [0.0, 0.0, 0.0]   # fractional char count shown
@@ -216,6 +321,8 @@ class IntroAnimation:
         self._bg = None
         self._skip_surf = None
         self._flash_alpha = 0.0
+        self._vignette_alpha = 0.0
+        self._burst_timer = 0.0
 
     # ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -227,15 +334,25 @@ class IntroAnimation:
         self._done    = False
         self._skip_requested = False
         self._flash_alpha = 0.0
+        self._vignette_alpha = 0.0
+        self._burst_timer = 0.0
+        self._lens_flare = None
 
         sw, sh = self._sw(), self._sh()
 
-        self._runes = [_RuneSymbol(sw, sh, self._font_rune) for _ in range(45)]
-        self._embers = [AmbientEmber(sw, sh) for _ in range(20)]
-        self._stars  = [Star(sw, sh) for _ in range(120)]
+        self._runes = [_RuneSymbol(sw, sh, self._font_rune) for _ in range(70)]
+        self._embers = [AmbientEmber(sw, sh) for _ in range(30)]
+        self._stars  = [Star(sw, sh) for _ in range(200)]
+        self._light_rays = [_LightRay(sw, sh) for _ in range(8)]
+        self._orb_rings = [
+            _OrbGlowRing(sw // 2, sh // 2, int(min(sw, sh) * 0.08 * f), 0.5 + i * 0.3,
+                         random.choice([GOLD_BRIGHT, MYSTIC[:3], WHITE_GLOW]), max(1, 3 - i))
+            for i, f in enumerate([1.0, 1.6, 2.3, 3.0])
+        ]
         self._v_parts    = []
         self._bursts     = []
         self._shockwaves = []
+        self._title_sparkles = []
         self._tw_chars   = [0.0, 0.0, 0.0]
         self._tw_hold    = [0.0, 0.0, 0.0]
 
@@ -310,6 +427,14 @@ class IntroAnimation:
             if self._phase == 5:   # burst eruption
                 self._spawn_burst(cx, cy)
 
+        # ── Vignette ─────────────────────────────────────────────────────────
+        if 2 <= self._phase <= 4:
+            self._vignette_alpha = min(80, self._vignette_alpha + dt * 15)
+        elif self._phase == 5:
+            self._vignette_alpha = 120
+        else:
+            self._vignette_alpha = max(0.0, self._vignette_alpha - dt * 30)
+
         # ── Particles ─────────────────────────────────────────────────────────
         for e in self._embers:
             e.update(dt, self._t)
@@ -319,7 +444,7 @@ class IntroAnimation:
 
         # Spawn voice particles during voice & burst phases
         if 2 <= self._phase <= 5:
-            rate = 3 if self._phase < 5 else 12
+            rate = 4 if self._phase < 5 else 15
             for _ in range(rate):
                 self._v_parts.append(_VoiceParticle(sw, sh))
 
@@ -333,39 +458,61 @@ class IntroAnimation:
         for w in self._shockwaves:
             w.update(dt)
 
+        # Lens flare
+        if self._lens_flare is not None:
+            self._lens_flare.update(dt)
+            if self._lens_flare.life <= 0:
+                self._lens_flare = None
+
+        # Title sparkles during burst
+        if self._phase == 5:
+            self._burst_timer += dt
+            for _ in range(3):
+                self._title_sparkles.append(
+                    _TitleSparkle(cx + random.uniform(-200, 200),
+                                  cy + random.uniform(-60, 60))
+                )
+        self._title_sparkles = [s for s in self._title_sparkles if s.life > 0]
+        for s in self._title_sparkles:
+            s.update(dt)
+
         # Flash alpha — always decays regardless of phase
         if self._flash_alpha > 0:
             self._flash_alpha = max(0.0, self._flash_alpha - dt * 220)
 
     def _spawn_burst(self, cx, cy):
         """Spawn the big particle eruption for phase 5."""
-        self._flash_alpha = 180.0   # softer initial flash — not blinding white
+        self._flash_alpha = 200.0
+        self._lens_flare = _LensFlare(cx, cy)
 
         # Shockwave rings — gold and white only (no purple)
         for i, (col, spd, wr) in enumerate([
-            (GOLD_BRIGHT,  520, 900),
-            (WHITE_GLOW,   380, 700),
-            (GOLD,         260, 550),
-            ((255, 200, 80), 180, 400),
+            (WHITE_GLOW,     550, 1000),
+            (GOLD_BRIGHT,   450, 850),
+            (WHITE_GLOW,    350, 700),
+            (GOLD,          280, 600),
+            (GOLD_BRIGHT,   200, 480),
+            ((255, 220, 120), 150, 380),
         ]):
             self._shockwaves.append(_ShockwaveRing(cx, cy, col, spd, wr,
-                                                   width=max(2, 4 - i),
-                                                   delay=i * 0.12))
+                                                   width=max(2, 5 - i),
+                                                   delay=i * 0.10))
 
         # Burst particles — warm gold and white only
-        for _ in range(180):
+        for _ in range(200):
             angle = random.uniform(0, 2 * math.pi)
-            speed = random.uniform(60, 380)
+            speed = random.uniform(60, 450)
             vx = math.cos(angle) * speed
-            vy = math.sin(angle) * speed - random.uniform(0, 60)
-            col = random.choice([GOLD_BRIGHT, (255, 180, 60), WHITE_GLOW, (255, 220, 120)])
+            vy = math.sin(angle) * speed - random.uniform(0, 80)
+            col = random.choice([GOLD_BRIGHT, (255, 180, 60), WHITE_GLOW,
+                                 (255, 220, 120), (255, 200, 80)])
             self._bursts.append(
                 LaunchBurst(
-                    cx + random.uniform(-15, 15),
-                    cy + random.uniform(-15, 15),
+                    cx + random.uniform(-20, 20),
+                    cy + random.uniform(-20, 20),
                     vx, vy, col,
-                    random.randint(2, 6),
-                    random.uniform(0.5, 2.2)
+                    random.randint(2, 7),
+                    random.uniform(0.5, 2.5)
                 )
             )
 
@@ -394,7 +541,18 @@ class IntroAnimation:
             star_surf.set_alpha(star_a)
             screen.blit(star_surf, (0, 0))
 
-        # 2. Runes ────────────────────────────────────────────────────────────
+        # 2. Light rays (visible from phase 2 onwards) ────────────────────────
+        if phase >= 2:
+            ray_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            for ray in self._light_rays:
+                ray.draw(ray_surf, t)
+            ray_a = 255
+            if phase == 6:
+                ray_a = int(255 * max(0.0, 1.0 - pt / _PHASE_DUR[6]))
+            ray_surf.set_alpha(ray_a)
+            screen.blit(ray_surf, (0, 0))
+
+        # 3. Runes ────────────────────────────────────────────────────────────
         if phase >= 1:
             rune_global = int(255 * min(1.0, pt / 1.0)) if phase == 1 else 255
             if phase == 6:
@@ -402,34 +560,51 @@ class IntroAnimation:
             for rune in self._runes:
                 rune.draw(screen, t, rune_global)
 
-        # 3. Embers ───────────────────────────────────────────────────────────
+        # 4. Embers ───────────────────────────────────────────────────────────
         ember_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
         for e in self._embers:
             e.draw(ember_surf, t)
         if phase >= 2:
             screen.blit(ember_surf, (0, 0))
 
-        # 4. Voice particles ──────────────────────────────────────────────────
+        # 5. Voice particles ──────────────────────────────────────────────────
         if self._v_parts:
             vp_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
             for p in self._v_parts:
                 p.draw(vp_surf)
             screen.blit(vp_surf, (0, 0))
 
-        # 5. Centre glow / orb ────────────────────────────────────────────────
+        # 6. Centre glow / orb ────────────────────────────────────────────────
         if phase >= 2:
             self._draw_centre_glow(screen, cx, cy, t, phase, pt)
 
-        # 6. Voice lines ──────────────────────────────────────────────────────
+        # 7. Orb glow rings ───────────────────────────────────────────────────
+        if phase >= 2 and self._orb_rings:
+            ring_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            for ring in self._orb_rings:
+                ring.draw(ring_surf, t)
+            if phase == 6:
+                ring_a = int(255 * max(0.0, 1.0 - pt / _PHASE_DUR[6]))
+                ring_surf.set_alpha(ring_a)
+            screen.blit(ring_surf, (0, 0))
+
+        # 8. Voice lines ──────────────────────────────────────────────────────
         if 2 <= phase <= 4:
             line_idx = phase - 2
             self._draw_voice_line(screen, sw, sh, cx, cy, line_idx, t, pt, phase)
 
-        # 7. "Arise, Chosen One" grand title (burst phase) ────────────────────
+        # 9. "Arise, Chosen One" grand title (burst phase) ────────────────────
         if phase == 5:
             self._draw_arise_title(screen, sw, sh, cx, cy, pt)
 
-        # 8. Shockwaves & burst particles ─────────────────────────────────────
+        # 10. Title sparkles ──────────────────────────────────────────────────
+        if self._title_sparkles:
+            sp_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            for s in self._title_sparkles:
+                s.draw(sp_surf)
+            screen.blit(sp_surf, (0, 0))
+
+        # 11. Shockwaves & burst particles ─────────────────────────────────────
         if self._shockwaves or self._bursts:
             fx_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
             for w in self._shockwaves:
@@ -438,14 +613,24 @@ class IntroAnimation:
                 b.draw(fx_surf)
             screen.blit(fx_surf, (0, 0))
 
-        # 9. Flash (burst entry) ──────────────────────────────────────────────
+        # 12. Lens flare ───────────────────────────────────────────────────────
+        if self._lens_flare is not None:
+            flare_surf = pygame.Surface((sw, sh), pygame.SRCALPHA)
+            self._lens_flare.draw(flare_surf)
+            screen.blit(flare_surf, (0, 0))
+
+        # 13. Flash (burst entry) ──────────────────────────────────────────────
         if self._flash_alpha > 0:
             flash = pygame.Surface((sw, sh))
             flash.fill(WHITE_GLOW)
             flash.set_alpha(int(self._flash_alpha))
             screen.blit(flash, (0, 0))
 
-        # 10. Fade overlays ────────────────────────────────────────────────────
+        # 14. Vignette ─────────────────────────────────────────────────────────
+        if self._vignette_alpha > 1:
+            self._draw_vignette(screen, sw, sh)
+
+        # 15. Fade overlays ────────────────────────────────────────────────────
         if phase == 0:
             # Pure black — full opacity
             screen.fill((0, 0, 0))
@@ -466,7 +651,7 @@ class IntroAnimation:
                 ov.set_alpha(fade_a)
                 screen.blit(ov, (0, 0))
 
-        # 11. Skip hint ────────────────────────────────────────────────────────
+        # 16. Skip hint ────────────────────────────────────────────────────────
         if self._skip_surf and 1 <= phase <= 4:
             skip_a = int(130 * (0.5 + 0.5 * math.sin(t * 1.8)))
             self._skip_surf.set_alpha(max(0, min(200, skip_a)))
@@ -478,6 +663,20 @@ class IntroAnimation:
 
     # ── Sub-draw helpers ──────────────────────────────────────────────────────
 
+    def _draw_vignette(self, screen, sw, sh):
+        """Darken the edges of the screen."""
+        r = int(math.hypot(sw, sh) / 2)
+        s = pygame.Surface((sw, sh), pygame.SRCALPHA)
+        a = int(self._vignette_alpha)
+        for radius in range(r, 0, -int(r / 30 + 1)):
+            ratio = radius / r
+            ca = int(a * (1 - ratio) ** 2)
+            if ca < 1:
+                continue
+            pygame.draw.circle(s, (0, 0, 0, max(0, min(255, ca))),
+                               (sw // 2, sh // 2), radius)
+        screen.blit(s, (0, 0))
+
     def _draw_nebula(self, screen, sw, sh, t):
         """Draw a gently pulsing coloured nebula in the background."""
         cx, cy = sw // 2, sh // 2
@@ -486,6 +685,8 @@ class IntroAnimation:
             (0.40, -0.12, 0.35, (40, 20, 100), 18),
             (0.60,  0.10, 0.30, (20, 40,  80), 14),
             (-0.05, 0.0,  0.25, (60, 30, 120), 10),
+            (-0.25, 0.20, 0.20, (80, 40, 140), 8),
+            (0.30, -0.25, 0.18, (30, 15, 90),  12),
         ]:
             ncx = int(cx + sw * rx * math.cos(phase_shift))
             ncy = int(cy + sh * ry_off + sh * 0.08 * math.sin(phase_shift * 1.3))
@@ -498,96 +699,110 @@ class IntroAnimation:
 
     def _draw_centre_glow(self, screen, cx, cy, t, phase, pt):
         """Pulsing glow orb at the screen centre."""
-        base_r = int(min(self._sw(), self._sh()) * 0.18)
+        base_r = int(min(self._sw(), self._sh()) * 0.20)
         pulse  = 0.85 + 0.15 * math.sin(t * 1.4)
+        if phase == 5:
+            pulse = 1.2 + 0.3 * math.sin(t * 8.0)
         r      = int(base_r * pulse)
         a_mult = min(1.0, pt / 0.8) if phase == 2 else 1.0
         if phase == 6:
             a_mult = max(0.0, 1.0 - pt / _PHASE_DUR[6])
 
-        for ri in range(r, 0, -4):
+        for ri in range(r, 0, -3):
             ratio = ri / r
-            # Inner: bright lavender → outer: dark purple
-            base_a = int(40 * (1.0 - ratio) * a_mult)
+            base_a = int(50 * (1.0 - ratio) * a_mult)
             col = (
-                max(0, min(255, int(80 + 140 * (1 - ratio)))),
-                max(0, min(255, int(40 +  80 * (1 - ratio)))),
-                max(0, min(255, int(180 + 60 * (1 - ratio)))),
-                max(0, min(50, base_a))
+                max(0, min(255, int(80 + 160 * (1 - ratio)))),
+                max(0, min(255, int(40 +  90 * (1 - ratio)))),
+                max(0, min(255, int(180 + 70 * (1 - ratio)))),
+                max(0, min(60, base_a))
             )
             ns = pygame.Surface((ri * 2, ri * 2), pygame.SRCALPHA)
             pygame.draw.circle(ns, col, (ri, ri), ri)
             screen.blit(ns, (cx - ri, cy - ri))
 
     def _draw_voice_line(self, screen, sw, sh, cx, cy, line_idx, t, pt, phase):
-        """
-        Draw a single voice line using a typewriter effect.
-        The text is centred vertically around the middle of the screen with a
-        panel and decorative border.
-        """
         full_text = _VOICE_LINES[line_idx]
         shown_chars = int(self._tw_chars[line_idx])
         display = full_text[:shown_chars]
 
-        # Split on actual newlines
         lines = display.split("\n")
 
         lh = self._font_voice.get_height() + 4
         total_h = lh * len(lines)
 
-        # Panel bounds
         max_line_w = max((self._font_voice.size(ln)[0] for ln in full_text.split("\n")), default=1)
-        pad_x, pad_y = int(40 * cfg.ui_scale()), int(20 * cfg.ui_scale())
+        pad_x, pad_y = int(50 * cfg.ui_scale()), int(24 * cfg.ui_scale())
         panel_w = min(max_line_w + pad_x * 2, sw - 80)
-        panel_h = total_h + pad_y * 2 + int(30 * cfg.ui_scale())
+        panel_h = total_h + pad_y * 2 + int(40 * cfg.ui_scale())
         panel_x = cx - panel_w // 2
         panel_y = cy - panel_h // 2 + int(sh * 0.18)
 
-        # Fade-in during first 0.4 s of this phase
         text_alpha = int(255 * min(1.0, pt / 0.4))
-        if phase > line_idx + 2:   # next phase has begun → text should fade out
-            pass   # we simply stop showing it (phase guard above)
 
         panel_surf = pygame.Surface((panel_w, panel_h), pygame.SRCALPHA)
 
-        # Dark glass background
-        pygame.draw.rect(panel_surf, (8, 5, 20, 190), (0, 0, panel_w, panel_h), border_radius=12)
+        # Dark glass background with richer alpha
+        pygame.draw.rect(panel_surf, (8, 5, 20, 200), (0, 0, panel_w, panel_h), border_radius=14)
 
         # Gold border — animated glow
-        bord_a = int(160 + 60 * math.sin(t * 1.5))
+        bord_a = int(170 + 70 * math.sin(t * 1.5))
         pygame.draw.rect(panel_surf, (*GOLD, max(0, min(255, bord_a))),
-                         (0, 0, panel_w, panel_h), 2, border_radius=12)
+                         (0, 0, panel_w, panel_h), max(2, int(2 * cfg.ui_scale())), border_radius=14)
+
+        # Inner glow border
+        in_a = int(60 + 30 * math.sin(t * 2.0 + 1.0))
+        pygame.draw.rect(panel_surf, (*GOLD_BRIGHT, max(0, min(80, in_a))),
+                         (3, 3, panel_w - 6, panel_h - 6), 1, border_radius=12)
+
+        # Corner ornaments
+        corner_size = int(16 * cfg.ui_scale())
+        for (cx_off, cy_off, flip_x, flip_y) in [
+            (6, 6, 1, 1), (panel_w - 6 - corner_size, 6, -1, 1),
+            (6, panel_h - 6 - corner_size, 1, -1),
+            (panel_w - 6 - corner_size, panel_h - 6 - corner_size, -1, -1),
+        ]:
+            c_surf = pygame.Surface((corner_size, corner_size), pygame.SRCALPHA)
+            pts = [(0, corner_size), (0, 0), (corner_size, 0)]
+            ca = int(120 + 60 * math.sin(t * 1.2 + cx_off))
+            pygame.draw.lines(c_surf, (*GOLD_BRIGHT, max(0, min(200, ca))), False, pts, 2)
+            if flip_x < 0:
+                c_surf = pygame.transform.flip(c_surf, True, False)
+            if flip_y < 0:
+                c_surf = pygame.transform.flip(c_surf, False, True)
+            panel_surf.blit(c_surf, (cx_off, cy_off))
 
         # Top accent bar
         bar_w = panel_w - 40
         bar_surf = pygame.Surface((bar_w, 2), pygame.SRCALPHA)
         for bx in range(bar_w):
             ratio = 1.0 - abs(bx / bar_w - 0.5) * 2
-            ba = int(200 * ratio * ratio)
+            ba = int(220 * ratio * ratio)
             bar_surf.set_at((bx, 0), (*GOLD_BRIGHT, max(0, min(255, ba))))
-        panel_surf.blit(bar_surf, (20, 4))
+        panel_surf.blit(bar_surf, (20, 6))
 
         # Entity tag
         tag_font = cfg.get_font(max(9, int(14 * cfg.ui_scale())))
-        tag = tag_font.render("⟨ THE VOICE ⟩", True, (*GOLD, 180))
-        panel_surf.blit(tag, (panel_w // 2 - tag.get_width() // 2, 8))
+        tag = tag_font.render("⟨ THE VOICE ⟩", True, (*GOLD, 200))
+        panel_surf.blit(tag, (panel_w // 2 - tag.get_width() // 2, 10))
 
         # Text lines with shimmer
-        ty = pad_y + int(20 * cfg.ui_scale())
+        ty = pad_y + int(22 * cfg.ui_scale())
         for ln in lines:
             if not ln:
                 ty += lh
                 continue
             txt_surf = self._font_voice.render(ln, True, VOICE_CLR)
-            # Add a subtle shimmer
             shimmer_phase = (t * 80 + 0) % (txt_surf.get_width() + 40)
             sh_w = max(1, int(txt_surf.get_width() * 0.12))
             sh_band = pygame.Surface((sh_w, txt_surf.get_height()), pygame.SRCALPHA)
             for sx in range(sh_w):
                 ratio = 1.0 - abs(sx - sh_w / 2) / (sh_w / 2 + 1)
-                sa = int(60 * ratio)
-                pygame.draw.line(sh_band, (*WHITE_GLOW, max(0, min(100, sa))), (sx, 0), (sx, txt_surf.get_height()))
-            txt_surf.blit(sh_band, (int(shimmer_phase - sh_w), 0), special_flags=pygame.BLEND_RGBA_ADD)
+                sa = int(70 * ratio)
+                pygame.draw.line(sh_band, (*WHITE_GLOW, max(0, min(120, sa))),
+                                 (sx, 0), (sx, txt_surf.get_height()))
+            txt_surf.blit(sh_band, (int(shimmer_phase - sh_w), 0),
+                          special_flags=pygame.BLEND_RGBA_ADD)
 
             panel_surf.blit(txt_surf, (panel_w // 2 - txt_surf.get_width() // 2, ty))
             ty += lh
@@ -599,15 +814,11 @@ class IntroAnimation:
         if shown_chars < len(full_text):
             if int(t * 3) % 2 == 0:
                 cur_x = panel_x + panel_w // 2 + self._font_voice.size(lines[-1])[0] // 2 + 3
-                cur_y = panel_y + pad_y + int(20 * cfg.ui_scale()) + (len(lines) - 1) * lh
-                pygame.draw.rect(screen, (*GOLD_BRIGHT, 200),
+                cur_y = panel_y + pad_y + int(22 * cfg.ui_scale()) + (len(lines) - 1) * lh
+                pygame.draw.rect(screen, (*GOLD_BRIGHT, 220),
                                  (cur_x, cur_y + 2, max(1, int(2 * cfg.ui_scale())), lh - 4))
 
     def _draw_arise_title(self, screen, sw, sh, cx, cy, pt):
-        """
-        Render the grand 'ARISE, CHOSEN ONE.' text that dominates the burst phase.
-        Each letter drops in elastically, then glows.
-        """
         dur = _PHASE_DUR[5]
         t_local = min(1.0, pt / (dur * 0.6))
 
@@ -629,12 +840,14 @@ class IntroAnimation:
                     sx += cs.get_width()
                     continue
 
-                # Glow halo
-                if c_eased > 0.5:
-                    glow_a = int(80 * (c_eased - 0.5) * 2 * (0.7 + 0.3 * math.sin(self._t * 3 + i)))
-                    glow_s = self._font_arise.render(c, True, (255, 200, 80))
-                    glow_s.set_alpha(max(0, min(120, glow_a)))
-                    screen.blit(glow_s, (sx - 1, base_y + c_off_y - 1))
+                # Glow halo — richer
+                if c_eased > 0.3:
+                    glow_a = int(120 * c_eased * (0.6 + 0.4 * math.sin(self._t * 4 + i * 2)))
+                    for dx, dy in [(0, 0), (-1, 0), (1, 0), (0, -1), (0, 1),
+                                   (-1, -1), (1, -1), (-1, 1), (1, 1)]:
+                        glow_s = self._font_arise.render(c, True, (255, 200, 80))
+                        glow_s.set_alpha(max(0, min(80, int(glow_a * 0.4))))
+                        screen.blit(glow_s, (sx + dx - 1, base_y + c_off_y + dy - 1))
 
                 cs.set_alpha(c_alpha)
                 screen.blit(cs, (sx, base_y + c_off_y))
@@ -647,9 +860,15 @@ class IntroAnimation:
         # Decorative horizontal line beneath
         line_t = max(0.0, min(1.0, (pt - 0.8) / 0.4))
         if line_t > 0:
-            lw = int(sw * 0.55 * ease_out_cubic(line_t))
+            lw = int(sw * 0.60 * ease_out_cubic(line_t))
             lx = cx - lw // 2
             ly = cy + lh + int(16 * cfg.ui_scale())
-            la = int(200 * line_t)
-            pygame.draw.line(screen, (*GOLD, max(0, min(255, la))), (lx, ly), (lx + lw, ly), max(2, int(3 * cfg.ui_scale())))
-            pygame.draw.line(screen, (*GOLD_BRIGHT, max(0, min(255, la // 2))), (lx, ly - 2), (lx + lw, ly - 2), 1)
+            la = int(220 * line_t)
+            pygame.draw.line(screen, (*GOLD, max(0, min(255, la))),
+                             (lx, ly), (lx + lw, ly), max(2, int(3 * cfg.ui_scale())))
+            pygame.draw.line(screen, (*GOLD_BRIGHT, max(0, min(255, la // 2))),
+                             (lx, ly - 2), (lx + lw, ly - 2), 1)
+            # Decorative dots on ends
+            for dx in [lx, lx + lw]:
+                pygame.draw.circle(screen, (*GOLD_BRIGHT, max(0, min(200, la))),
+                                   (dx, ly), max(2, int(3 * cfg.ui_scale())))

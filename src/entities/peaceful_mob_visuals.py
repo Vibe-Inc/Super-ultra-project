@@ -147,6 +147,23 @@ def _palette_for(style: str) -> dict:
             "tail_tip": (180, 160, 210),
             "shadow": (0, 0, 0, 40),
         },
+        "tavern_cat": {
+            # orange tabby fur
+            "fur": (225, 145, 70), "fur_light": (255, 195, 120),
+            "fur_dark": (170, 95, 35), "fur_mid": (240, 165, 85),
+            "belly": (255, 225, 175),
+            "stripe": (140, 70, 25), "stripe_light": (180, 100, 50),
+            "ear": (175, 100, 45), "ear_inner": (235, 165, 130),
+            "eye_white": (255, 240, 210), "eye_pupil": (60, 130, 50),
+            "eye_slit": (40, 80, 30),
+            "nose": (200, 110, 100),
+            "whisker": (250, 240, 220),
+            "pad": (220, 150, 110),
+            "collar": (170, 50, 50), "collar_light": (210, 80, 80),
+            "tag": (220, 200, 110), "tag_glow": (240, 220, 140),
+            "tail_tip": (245, 180, 110),
+            "shadow": (0, 0, 0, 40),
+        },
 
     }
     return palettes.get(style, palettes["grove_titan"])
@@ -1085,6 +1102,162 @@ def _draw_fairy_cat(s, w, h, cx, cy, p, direction, bob, frame):
 
 
 # ============================================================
+# TAVERN CAT — plump orange tabby that prowls the tavern
+# ============================================================
+def _draw_tavern_cat(s, w, h, cx, cy, p, direction, bob, frame):
+    """A small, plump orange tabby cat with green eyes and a red collar."""
+    _shadow(s, cx, h, p, bob, foot_y=int(h * 0.60) + 12)
+    walk = [0, 1, 0, -1][frame]
+    tail_sway = [0, 4, 0, -4][frame]
+    head_bob = [0, -1, 0, 1][frame]
+
+    # -- tail (long, curled up at the tip) --
+    tail_x = cx - 14
+    tail_y = cy + 2 + bob
+    tail_pts = []
+    for i in range(6):
+        tx = tail_x - i * 4 + tail_sway * (i * 0.15)
+        ty = tail_y + i * 2 + int(math.sin(frame * 0.4 + i) * 2)
+        tail_pts.append((tx, ty))
+    for i in range(len(tail_pts) - 1):
+        pygame.draw.line(s, p["fur_dark"], tail_pts[i], tail_pts[i + 1], max(1, 4 - i // 2))
+        pygame.draw.line(s, p["fur"], tail_pts[i], tail_pts[i + 1], max(1, 3 - i // 2))
+    # tail tip
+    tip = tail_pts[-1]
+    _draw_circle_alpha(s, (*p["tail_tip"][:3], 90), tip, 3)
+    # tail stripes
+    for i in range(1, len(tail_pts) - 1, 2):
+        px, py = tail_pts[i]
+        pygame.draw.line(s, p["stripe"], (px - 1, py - 1), (px + 1, py + 2), 1)
+
+    # -- hind legs (sitting low, plump) --
+    for side in (-1, 1):
+        lx = cx + side * 7
+        ly = int(h * 0.60) + bob
+        pygame.draw.ellipse(s, p["fur_dark"], (lx - 1, ly, 8, 12))
+        pygame.draw.ellipse(s, p["fur"], (lx, ly + 1, 6, 10))
+        pygame.draw.ellipse(s, p["pad"], (lx, ly + 8, 6, 4))
+
+    # -- body (round, plump) --
+    bw = int(w * 0.46)
+    bh = int(h * 0.32)
+    bx = cx - bw // 2
+    by = int(h * 0.34) + bob
+    pygame.draw.ellipse(s, p["fur_dark"], (bx - 2, by - 2, bw + 4, bh + 4))
+    pygame.draw.ellipse(s, p["fur_mid"], (bx - 1, by - 1, bw + 2, bh + 2))
+    pygame.draw.ellipse(s, p["fur"], (bx, by, bw, bh))
+    pygame.draw.ellipse(s, p["fur_light"], (bx + 4, by + 3, bw // 3, bh - 8))
+
+    # -- tabby stripes on back --
+    stripe_positions = [
+        (bx + 6, by + 4, 6), (bx + 14, by + 2, 7),
+        (bx + 22, by + 5, 5), (bx + 30, by + 8, 4),
+    ]
+    for sx, sy, sw in stripe_positions:
+        if sx + sw > bx + bw - 2:
+            continue
+        pygame.draw.line(s, p["stripe"], (sx, sy), (sx + sw, sy - 2), 2)
+        pygame.draw.line(s, p["stripe_light"], (sx + 1, sy - 1), (sx + sw - 1, sy - 3), 1)
+
+    # -- belly (cream colored) --
+    _draw_ellipse_alpha(s, p["belly"], (cx - 7, by + bh - 8, 14, 10))
+
+    # -- front legs --
+    for side in (-1, 1):
+        lx = cx + side * 9
+        ly = int(h * 0.52) + bob
+        leg_walk = walk * side
+        pygame.draw.ellipse(s, p["fur_dark"], (lx + leg_walk - 1, ly, 7, 12))
+        pygame.draw.ellipse(s, p["fur"], (lx + leg_walk, ly + 1, 5, 10))
+        pygame.draw.ellipse(s, p["pad"], (lx + leg_walk, ly + 8, 5, 3))
+
+    # -- neck --
+    neck_x = cx + bw // 2 - 6
+    neck_y = by - 2
+    pygame.draw.polygon(s, p["fur_dark"], [
+        (neck_x - 4, neck_y + 5), (neck_x + 4, neck_y + 5),
+        (neck_x + 3, neck_y - 3), (neck_x - 3, neck_y - 3),
+    ])
+    pygame.draw.polygon(s, p["fur"], [
+        (neck_x - 3, neck_y + 4), (neck_x + 3, neck_y + 4),
+        (neck_x + 2, neck_y - 2), (neck_x - 2, neck_y - 2),
+    ])
+
+    # -- head (round, cat-like) --
+    hr = int(w * 0.16)
+    hx = neck_x + 1
+    hy = neck_y - 5 + head_bob
+    pygame.draw.ellipse(s, p["fur_dark"], (hx - hr - 1, hy - hr // 2 - 1, hr * 2 + 2, hr + 2))
+    pygame.draw.ellipse(s, p["fur_mid"], (hx - hr, hy - hr // 2, hr * 2, hr))
+    pygame.draw.ellipse(s, p["fur"], (hx - hr + 1, hy - hr // 2 + 1, hr * 2 - 2, hr - 2))
+    pygame.draw.ellipse(s, p["fur_light"], (hx - hr + 2, hy - hr // 2 + 2, hr - 1, hr - 4))
+
+    # -- tabby "M" stripe on forehead --
+    pygame.draw.line(s, p["stripe"], (hx - 4, hy - 2), (hx - 2, hy + 1), 1)
+    pygame.draw.line(s, p["stripe"], (hx + 4, hy - 2), (hx + 2, hy + 1), 1)
+    pygame.draw.line(s, p["stripe"], (hx - 2, hy + 1), (hx, hy + 3), 1)
+    pygame.draw.line(s, p["stripe"], (hx + 2, hy + 1), (hx, hy + 3), 1)
+
+    # -- cheek tufts --
+    for side in (-1, 1):
+        _draw_circle_alpha(s, p["fur_light"], (hx + side * 5, hy + 2), 2)
+
+    # -- ears (triangular, pointed) --
+    for side in (-1, 1):
+        ear_x = hx + side * (hr - 3)
+        ear_y = hy - 4
+        pygame.draw.polygon(s, p["fur_dark"], [
+            (ear_x, ear_y), (ear_x + side * 2, ear_y - 8), (ear_x + side * 6, ear_y - 2)
+        ])
+        pygame.draw.polygon(s, p["ear"], [
+            (ear_x + 1, ear_y - 1), (ear_x + side * 2, ear_y - 6), (ear_x + side * 5, ear_y - 2)
+        ])
+        pygame.draw.polygon(s, p["ear_inner"], [
+            (ear_x + 1, ear_y - 1), (ear_x + side * 2, ear_y - 5), (ear_x + side * 4, ear_y - 2)
+        ])
+
+    # -- eyes (green, with vertical slits) --
+    esp = 4
+    blink = frame % 8 == 0
+    for side2 in (-1, 1):
+        ex = hx + side2 * esp
+        ey = hy - 1
+        pygame.draw.circle(s, p["eye_white"], (ex, ey), 3)
+        if blink:
+            pygame.draw.line(s, p["eye_slit"], (ex - 3, ey), (ex + 3, ey), 1)
+        else:
+            pygame.draw.circle(s, p["eye_pupil"], (ex, ey), 2)
+            # vertical slit
+            pygame.draw.ellipse(s, p["eye_slit"], (ex - 1, ey - 2, 2, 4))
+            # highlight
+            pygame.draw.circle(s, (255, 255, 255, 200), (ex + 1, ey - 1), 1)
+
+    # -- nose (pink) --
+    pygame.draw.circle(s, p["nose"], (hx + hr - 2, hy + 1), 1)
+
+    # -- whiskers (subtle) --
+    for side in (-1, 1):
+        for wy in (-1, 1):
+            pygame.draw.line(s, p["whisker"],
+                             (hx + side * 2, hy + 2 + wy),
+                             (hx + side * 8, hy + 1 + wy * 2), 1)
+
+    # -- mouth (small smile) --
+    mouth_y = hy + 3
+    pygame.draw.arc(s, p["nose"], (hx - 2, mouth_y - 1, 4, 3), 3.4, 5.9, 1)
+
+    # -- red collar with brass tag --
+    collar_y = hy + hr // 2 + 1
+    pygame.draw.line(s, p["collar"], (hx - 5, collar_y), (hx + 5, collar_y), 2)
+    pygame.draw.line(s, p["collar_light"], (hx - 5, collar_y - 1), (hx + 5, collar_y - 1), 1)
+    # dangling tag
+    tag_y = collar_y + 3
+    pygame.draw.line(s, p["collar"], (hx, collar_y), (hx, tag_y - 1), 1)
+    _draw_circle_alpha(s, p["tag"], (hx, tag_y), 2)
+    _draw_circle_alpha(s, p["tag_glow"], (hx, tag_y), 3)
+
+
+# ============================================================
 # RENDERER REGISTRY
 # ============================================================
 DRAW_FUNCS = {
@@ -1096,6 +1269,7 @@ DRAW_FUNCS = {
     "moss_rabbit": _draw_moss_rabbit,
     "crystal_fox": _draw_crystal_fox,
     "fairy_cat": _draw_fairy_cat,
+    "tavern_cat": _draw_tavern_cat,
 
 }
 
