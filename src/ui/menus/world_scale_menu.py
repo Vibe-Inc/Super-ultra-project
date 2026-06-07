@@ -27,11 +27,11 @@ class WorldScaleMenu:
         self._open_time = 0.0
 
         s = cfg.ui_scale()
-        self.font_title = cfg.get_font(max(14, int(30 * s)))
-        self.font_section = cfg.get_font(max(11, int(17 * s)))
-        self.font_body = cfg.get_font(max(10, int(15 * s)))
-        self.font_small = cfg.get_font(max(8, int(13 * s)))
-        self.font_level = cfg.get_font(max(16, int(52 * s)))
+        self.font_title = cfg.get_font(max(14, int(33 * s)))
+        self.font_section = cfg.get_font(max(11, int(19 * s)))
+        self.font_body = cfg.get_font(max(10, int(17 * s)))
+        self.font_small = cfg.get_font(max(8, int(14 * s)))
+        self.font_level = cfg.get_font(max(16, int(54 * s)))
 
         self._last_known_level = 0
         self._ever_opened = False
@@ -39,7 +39,7 @@ class WorldScaleMenu:
         self._latest_unlock_batch = None
 
         self.panel_w = 520
-        self.panel_h = 680
+        self.panel_h = 700
 
         self.editor_mode = False
         self.editor_input = ""
@@ -268,12 +268,12 @@ class WorldScaleMenu:
             for lvl, name in abilities:
                 txt = self.font_body.render(f"  + Lv.{lvl}  {name}", True, (255, 255, 200))
                 screen.blit(txt, (dx + 30, lvl_y))
-                lvl_y += 20
+                lvl_y += 18
             for _lvl, tname, tdesc in tags:
                 txt = self.font_body.render(f"  + {tname}  —  {tdesc}", True, (255, 210, 100))
                 screen.blit(txt, (dx + 30, lvl_y))
-                lvl_y += 20
-            lvl_y += 6
+                lvl_y += 18
+            lvl_y += 4
             pygame.draw.line(screen, (70, 60, 40),
                              (dx + 60, lvl_y), (dx + self.panel_w - 60, lvl_y), 1)
             lvl_y += 14
@@ -285,7 +285,7 @@ class WorldScaleMenu:
         lvl_glow = self.font_level.render(lvl_str, True, (40, 40, 100))
 
         ring_center = (dx + 90, lvl_y + lvl_surf.get_height() // 2)
-        ring_r = max(lvl_surf.get_width(), lvl_surf.get_height()) // 2 + 18
+        ring_r = max(lvl_surf.get_width(), lvl_surf.get_height()) // 2 + 14
 
         needed = ws.xp_for_next()
         if needed > 0:
@@ -324,7 +324,7 @@ class WorldScaleMenu:
                                 ring_center[1] - lvl_label.get_height() // 2 - 4))
 
         # ── xp bar ────────────────────────────────────────────
-        bar_y = ring_center[1] + ring_r + 22
+        bar_y = ring_center[1] + ring_r + 16
         bar_x = dx + 30
         bar_w = self.panel_w - 60
         bar_h = 22
@@ -375,38 +375,34 @@ class WorldScaleMenu:
         def section_hdr(text, y, color=None):
             surf = self.font_section.render(text, True, color or self.TEXT_MAIN)
             screen.blit(surf, (dx + 30, y))
-            return y + surf.get_height() + 6
+            return y + surf.get_height() + 4
 
         # ── abilities ─────────────────────────────────────────
-        ay = bar_y + bar_h + 20
+        ay = bar_y + bar_h + 12
         div(ay)
-        ay += 8
+        ay += 6
         ay = section_hdr("UNLOCKED ABILITIES", ay, (180, 200, 255))
 
         if self._unlock_history:
             for lvl, name in self._unlock_history:
-                # card bg
-                card_rect = pygame.Rect(dx + 28, ay, self.panel_w - 56, 24)
-                pygame.draw.rect(screen, self.CARD_BG, card_rect)
-                pygame.draw.rect(screen, (35, 32, 60), card_rect, 1)
-                # level badge
                 badge = self.font_small.render(f"Lv.{lvl}", True, (140, 200, 255))
-                screen.blit(badge, (card_rect.x + 6, card_rect.y + 4))
-                # name
+                screen.blit(badge, (dx + 32, ay + 1))
+                dot_x = dx + 28
+                pygame.draw.circle(screen, (100, 180, 255), (dot_x + 4, ay + 7), 3)
                 txt = self.font_body.render(name, True, (200, 240, 200))
-                screen.blit(txt, (card_rect.x + 60, card_rect.y + 3))
-                ay += 26
+                screen.blit(txt, (dx + 64, ay))
+                ay += 22
         else:
-            txt = self.font_small.render("  No abilities unlocked yet", True, self.TEXT_DIM)
+            txt = self.font_small.render("No abilities unlocked yet", True, self.TEXT_DIM)
             screen.blit(txt, (dx + 34, ay))
-            ay += 20
+            ay += 18
 
         # ── enemy tags ────────────────────────────────────────
         tags = ws.get_milestone_tags()
         if tags:
-            ay += 4
+            ay += 2
             div(ay)
-            ay += 8
+            ay += 6
             ay = section_hdr("ENEMY BONUSES", ay, (255, 220, 140))
             for tag in tags:
                 colors = {
@@ -420,24 +416,17 @@ class WorldScaleMenu:
                     'empowered': 'Extra projectiles, lifesteal',
                     'elite': 'Unique per-enemy abilities',
                 }.get(tag, tag)
-                # tag card
-                card_rect = pygame.Rect(dx + 28, ay, self.panel_w - 56, 26)
-                pygame.draw.rect(screen, (30, 20, 40), card_rect)
-                pygame.draw.rect(screen, (60, 50, 30), card_rect, 1)
-                # colored dot
-                pygame.draw.circle(screen, tc, (card_rect.x + 12, card_rect.y + 13), 4)
-                # name
+                pygame.draw.circle(screen, tc, (dx + 34, ay + 8), 4)
                 name_surf = self.font_body.render(tlabel, True, tc)
-                screen.blit(name_surf, (card_rect.x + 24, card_rect.y + 4))
-                # description
+                screen.blit(name_surf, (dx + 44, ay + 1))
                 desc_surf = self.font_small.render(desc, True, self.TEXT_DIM)
-                screen.blit(desc_surf, (card_rect.x + 140, card_rect.y + 5))
-                ay += 28
+                screen.blit(desc_surf, (dx + 140, ay + 2))
+                ay += 22
 
         # ── player bonuses ────────────────────────────────────
-        ay += 4
+        ay += 2
         div(ay)
-        ay += 8
+        ay += 6
         ay = section_hdr("PLAYER BONUSES", ay, (160, 220, 180))
         t = min(1.0, ws.level / 55.0)
         bonus_items = [
@@ -455,17 +444,17 @@ class WorldScaleMenu:
             col = idx % 2
             row = idx // 2
             bx = dx + 30 + col * (col_w + 10)
-            by = ay + row * 22
+            by = ay + row * 18
             color = (180, 220, 180) if active and ws.level > 0 else (90, 90, 100)
             lbl = self.font_small.render(label, True, color)
             v = self.font_small.render(val, True, (200, 200, 220) if active else (100, 100, 110))
             screen.blit(lbl, (bx, by))
             screen.blit(v, (bx + 120, by))
-        ay += ((len(bonus_items) + 1) // 2) * 22 + 8
+        ay += ((len(bonus_items) + 1) // 2) * 18 + 6
 
         # ── enemy stats ───────────────────────────────────────
         div(ay)
-        ay += 10
+        ay += 8
         hp = ws.enemy_hp_mult()
         dmg = ws.enemy_damage_mult()
         spd = ws.enemy_speed_mult()
