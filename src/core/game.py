@@ -25,6 +25,7 @@ from database.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, 
 from src.entities.enemy import Enemy
 from src.entities.boss import Boss
 from src.entities.npc import NPC
+from src.entities.archeologist_npc import ArcheologistNPC
 from src.entities.mage_npc import MageNPC
 from src.entities.gambler_npc import GamblerNPC
 from src.entities.projectile import Arrow
@@ -43,8 +44,8 @@ from src.minigames.blackjack import BlackjackGame
 from src.minigames.roulette import RouletteGame
 from src.minigames.poker import PokerGame
 from src.minigames.crafting import CraftingMinigame
-from src.minigames.fishing import FishingController
 from src.minigames.gathering import GatheringController
+from src.minigames.archeologium import ArcheologiumMinigame
 from src.world.gatherable_nodes import GatherableNodeRegistry
 from src.ui.menus.smeltery import SmelteryMenu
 from src.systems.world_scale import WorldScale
@@ -312,8 +313,13 @@ class Game(State):
                 },
                 "contact_damage": False,
                 "drop_chance": [
-                    {"item_id": "small_health_potion", "chance": 0.95},
-                    {"item_id": "large_health_potion", "chance": 1.0},
+                    {"item_id": "small_health_potion", "chance": 0.60},
+                    {"item_id": "large_health_potion", "chance": 0.25},
+                    {"item_id": "medium_health_potion", "chance": 0.35},
+                    {"item_id": "iron_ore", "chance": 0.30},
+                    {"item_id": "stone", "chance": 0.45},
+                    {"item_id": "leather", "chance": 0.15},
+                    {"item_id": "stick", "chance": 0.20},
                 ],
             },
             "venomous": {
@@ -335,8 +341,12 @@ class Game(State):
                 },
                 "contact_damage": False,
                 "drop_chance": [
-                    {"item_id": "small_health_potion", "chance": 0.25},
-                    {"item_id": "potion_of_confusion", "chance": 0.20},
+                    {"item_id": "small_health_potion", "chance": 0.30},
+                    {"item_id": "potion_of_confusion", "chance": 0.25},
+                    {"item_id": "potion_of_poison", "chance": 0.20},
+                    {"item_id": "potion_of_burning", "chance": 0.10},
+                    {"item_id": "fiber", "chance": 0.25},
+                    {"item_id": "leather", "chance": 0.10},
                 ],
             },
             "arcanist": {
@@ -364,7 +374,12 @@ class Game(State):
                 "drop_chance": [
                     {"item_id": "small_health_potion", "chance": 0.30},
                     {"item_id": "large_health_potion", "chance": 0.15},
-                    {"item_id": "potion_of_confusion", "chance": 0.10},
+                    {"item_id": "medium_health_potion", "chance": 0.20},
+                    {"item_id": "potion_of_confusion", "chance": 0.12},
+                    {"item_id": "potion_of_burning", "chance": 0.18},
+                    {"item_id": "potion_of_speed", "chance": 0.10},
+                    {"item_id": "string", "chance": 0.15},
+                    {"item_id": "coal", "chance": 0.10},
                 ],
             },
             "trickster": {
@@ -392,7 +407,11 @@ class Game(State):
                 "contact_damage": False,
                 "drop_chance": [
                     {"item_id": "potion_of_confusion", "chance": 0.40},
-                    {"item_id": "small_health_potion", "chance": 0.20},
+                    {"item_id": "small_health_potion", "chance": 0.25},
+                    {"item_id": "potion_of_dizziness", "chance": 0.20},
+                    {"item_id": "potion_of_speed", "chance": 0.15},
+                    {"item_id": "string", "chance": 0.18},
+                    {"item_id": "stick", "chance": 0.12},
                 ],
             },
             "bomber": {
@@ -427,6 +446,11 @@ class Game(State):
                 "drop_chance": [
                     {"item_id": "large_health_potion", "chance": 0.20},
                     {"item_id": "small_health_potion", "chance": 0.30},
+                    {"item_id": "medium_health_potion", "chance": 0.15},
+                    {"item_id": "coal", "chance": 0.25},
+                    {"item_id": "flint", "chance": 0.20},
+                    {"item_id": "stone", "chance": 0.30},
+                    {"item_id": "iron_ore", "chance": 0.10},
                 ],
             },
             "stalker": {
@@ -450,7 +474,12 @@ class Game(State):
                 },
                 "contact_damage": False,
                 "drop_chance": [
-                    {"item_id": "small_health_potion", "chance": 0.20},
+                    {"item_id": "small_health_potion", "chance": 0.25},
+                    {"item_id": "medium_health_potion", "chance": 0.12},
+                    {"item_id": "leather", "chance": 0.18},
+                    {"item_id": "stick", "chance": 0.15},
+                    {"item_id": "apple", "chance": 0.10},
+                    {"item_id": "string", "chance": 0.08},
                 ],
             },
             "skirmisher": {
@@ -476,6 +505,11 @@ class Game(State):
                 "contact_damage": False,
                 "drop_chance": [
                     {"item_id": "small_health_potion", "chance": 0.25},
+                    {"item_id": "medium_health_potion", "chance": 0.12},
+                    {"item_id": "fiber", "chance": 0.20},
+                    {"item_id": "string", "chance": 0.15},
+                    {"item_id": "leather_belt", "chance": 0.05},
+                    {"item_id": "stick", "chance": 0.10},
                 ],
             },
             "guardian": {
@@ -502,8 +536,13 @@ class Game(State):
                 },
                 "contact_damage": False,
                 "drop_chance": [
-                    {"item_id": "small_health_potion", "chance": 0.30},
-                    {"item_id": "large_health_potion", "chance": 0.10},
+                    {"item_id": "small_health_potion", "chance": 0.35},
+                    {"item_id": "large_health_potion", "chance": 0.15},
+                    {"item_id": "medium_health_potion", "chance": 0.20},
+                    {"item_id": "iron_ore", "chance": 0.20},
+                    {"item_id": "stone", "chance": 0.25},
+                    {"item_id": "iron_ring", "chance": 0.05},
+                    {"item_id": "leather_gloves", "chance": 0.04},
                 ],
             },
             "phantom": {
@@ -531,7 +570,11 @@ class Game(State):
                 "contact_damage": False,
                 "drop_chance": [
                     {"item_id": "small_health_potion", "chance": 0.25},
-                    {"item_id": "large_health_potion", "chance": 0.10},
+                    {"item_id": "large_health_potion", "chance": 0.12},
+                    {"item_id": "medium_health_potion", "chance": 0.15},
+                    {"item_id": "string", "chance": 0.18},
+                    {"item_id": "silver_ore", "chance": 0.08},
+                    {"item_id": "light_ring", "chance": 0.03},
                 ],
             },
             "titan": {
@@ -556,8 +599,13 @@ class Game(State):
                 },
                 "contact_damage": True,
                 "drop_chance": [
-                    {"item_id": "large_health_potion", "chance": 0.90},
-                    {"item_id": "small_health_potion", "chance": 1.0},
+                    {"item_id": "large_health_potion", "chance": 0.70},
+                    {"item_id": "small_health_potion", "chance": 0.90},
+                    {"item_id": "medium_health_potion", "chance": 0.50},
+                    {"item_id": "greater_health_potion", "chance": 0.15},
+                    {"item_id": "iron_ingot", "chance": 0.20},
+                    {"item_id": "iron_helmet", "chance": 0.06},
+                    {"item_id": "stone", "chance": 0.40},
                 ],
             },
             "cryomancer": {
@@ -584,7 +632,11 @@ class Game(State):
                 "contact_damage": False,
                 "drop_chance": [
                     {"item_id": "small_health_potion", "chance": 0.30},
-                    {"item_id": "large_health_potion", "chance": 0.10},
+                    {"item_id": "large_health_potion", "chance": 0.12},
+                    {"item_id": "medium_health_potion", "chance": 0.18},
+                    {"item_id": "potion_of_slow", "chance": 0.20},
+                    {"item_id": "stone", "chance": 0.22},
+                    {"item_id": "silver_ore", "chance": 0.08},
                 ],
             },
             "shadowmancer": {
@@ -618,7 +670,12 @@ class Game(State):
                 "contact_damage": False,
                 "drop_chance": [
                     {"item_id": "potion_of_confusion", "chance": 0.35},
-                    {"item_id": "small_health_potion", "chance": 0.20},
+                    {"item_id": "small_health_potion", "chance": 0.25},
+                    {"item_id": "medium_health_potion", "chance": 0.12},
+                    {"item_id": "potion_of_dizziness", "chance": 0.18},
+                    {"item_id": "potion_of_shield", "chance": 0.08},
+                    {"item_id": "string", "chance": 0.15},
+                    {"item_id": "silver_ore", "chance": 0.06},
                 ],
             },
             "revenant": {
@@ -645,8 +702,13 @@ class Game(State):
                 },
                 "contact_damage": False,
                 "drop_chance": [
-                    {"item_id": "large_health_potion", "chance": 0.25},
+                    {"item_id": "large_health_potion", "chance": 0.30},
                     {"item_id": "small_health_potion", "chance": 0.40},
+                    {"item_id": "medium_health_potion", "chance": 0.20},
+                    {"item_id": "potion_of_poison", "chance": 0.15},
+                    {"item_id": "potion_of_strength", "chance": 0.08},
+                    {"item_id": "leather", "chance": 0.18},
+                    {"item_id": "fiber", "chance": 0.12},
                 ],
             },
             "molten": {
@@ -676,6 +738,11 @@ class Game(State):
                 "drop_chance": [
                     {"item_id": "large_health_potion", "chance": 0.35},
                     {"item_id": "small_health_potion", "chance": 0.50},
+                    {"item_id": "medium_health_potion", "chance": 0.25},
+                    {"item_id": "greater_health_potion", "chance": 0.08},
+                    {"item_id": "coal", "chance": 0.35},
+                    {"item_id": "potion_of_burning", "chance": 0.15},
+                    {"item_id": "iron_ore", "chance": 0.18},
                 ],
             },
             "stormcaller": {
@@ -703,8 +770,13 @@ class Game(State):
                 },
                 "contact_damage": False,
                 "drop_chance": [
-                    {"item_id": "small_health_potion", "chance": 0.25},
-                    {"item_id": "large_health_potion", "chance": 0.10},
+                    {"item_id": "small_health_potion", "chance": 0.28},
+                    {"item_id": "large_health_potion", "chance": 0.12},
+                    {"item_id": "medium_health_potion", "chance": 0.18},
+                    {"item_id": "potion_of_haste", "chance": 0.12},
+                    {"item_id": "potion_of_dizziness", "chance": 0.10},
+                    {"item_id": "iron_ore", "chance": 0.15},
+                    {"item_id": "flint", "chance": 0.10},
                 ],
             },
             "plaguebearer": {
@@ -741,7 +813,12 @@ class Game(State):
                 "contact_damage": False,
                 "drop_chance": [
                     {"item_id": "small_health_potion", "chance": 0.30},
-                    {"item_id": "potion_of_confusion", "chance": 0.15},
+                    {"item_id": "medium_health_potion", "chance": 0.15},
+                    {"item_id": "potion_of_confusion", "chance": 0.18},
+                    {"item_id": "potion_of_poison", "chance": 0.22},
+                    {"item_id": "potion_of_lethargy", "chance": 0.12},
+                    {"item_id": "moldy_bread", "chance": 0.20},
+                    {"item_id": "fiber", "chance": 0.10},
                 ],
             },
             "chronos": {
@@ -832,6 +909,16 @@ class Game(State):
                 "boss_name": "Chronos the Chronicler of Time",
                 "drop_chance": [
                     {"item_id": "large_health_potion", "chance": 1.0},
+                    {"item_id": "ultimate_health_potion", "chance": 0.40},
+                    {"item_id": "greater_health_potion", "chance": 0.75},
+                    {"item_id": "potion_of_strength", "chance": 0.60},
+                    {"item_id": "potion_of_haste", "chance": 0.60},
+                    {"item_id": "potion_of_shield", "chance": 0.50},
+                    {"item_id": "silver_charm", "chance": 0.25},
+                    {"item_id": "steel_ring", "chance": 0.20},
+                    {"item_id": "steel_ingot", "chance": 0.35},
+                    {"item_id": "silver_ingot", "chance": 0.30},
+                    {"item_id": "elixir_of_life", "chance": 0.05},
                 ],
             },
         }
@@ -852,7 +939,9 @@ class Game(State):
                 {"pos": (300, 200),  "profile": "skirmisher"},
                 {"pos": (900, 500),  "profile": "bomber"},
                 {"pos": (1400, 800), "profile": "phantom"},
-                {"pos": (2200, 1200), "profile": "chronos", "is_boss": True},
+            ],
+            "maps/test-map-4.tmx": [
+                {"pos": (480, 640), "profile": "chronos", "is_boss": True},
             ],
         }
 
@@ -864,6 +953,11 @@ class Game(State):
         # Card-game NPC spawn positions (pixels) — separate from the merchant NPC
         self.CARD_NPC_SPAWNS = {
             "maps/tavern.tmx": (320, 320),
+        }
+
+        # Archeologist NPC spawn positions
+        self.ARCHEOLOGIST_NPC_SPAWNS = {
+            "maps/test-map-3.tmx": (576, 1600),
         }
 
         # Fishing NPC spawn positions (pixels) — placed near the lake
@@ -879,7 +973,8 @@ class Game(State):
         }
 
         # Maps where enemy spawning (both default and random) is disabled
-        self.NO_ENEMY_SPAWN_MAPS = {"maps/tavern.tmx", "maps/test-map-1.tmx", "maps/test-map-4.tmx"}
+        self.NO_ENEMY_SPAWN_MAPS = {"maps/tavern.tmx", "maps/test-map-1.tmx"}
+        self.NO_RANDOM_ENEMY_SPAWN_MAPS = {"maps/test-map-4.tmx"}
 
         spawn_entries = self._get_spawn_entries(initial_map_path)
         if initial_map_path in self.NO_ENEMY_SPAWN_MAPS:
@@ -905,15 +1000,24 @@ class Game(State):
 
         # Peaceful majestic mobs (non-aggressive ambient creatures)
         self.peaceful_mobs: list[PeacefulMob] = []
+        self._tavern_cat_respawn_timer: float = 0.0
 
-        # Peaceful mob spawn points per map (single mob, random type, like enemies)
+        # Peaceful mob spawn points per map.
+        # Supports two value forms per map:
+        #   - tuple (x, y)             — random mob type from PEACEFUL_MOB_REGISTRY
+        #   - dict {"pos": (x, y), "mob_type": "name"}  — a specific mob type
         self.PEACEFUL_MOB_SPAWNS = {
             "maps/test-map-2.tmx": (1100, 800),
             "maps/test-map-3.tmx": (700, 600),
+            # The tavern always has a friendly orange tabby cat prowling
+            # the common area, looking for handouts and warm hearths.
+            "maps/tavern.tmx": {"pos": (560, 480), "mob_type": "tavern_cat"},
         }
 
-        # Maps where peaceful mob spawning is disabled
-        self.NO_PEACEFUL_MOB_MAPS = {"maps/tavern.tmx", "maps/test-map-1.tmx"}
+        # Maps where peaceful mob spawning is disabled.
+        # Note: the tavern is intentionally NOT in this set — the Tavern
+        # Cat is a signature peaceful mob that must always be present.
+        self.NO_PEACEFUL_MOB_MAPS = {"maps/test-map-1.tmx"}
 
         # Enemy spawning system
         self.enemy_spawn_timer = 0.0
@@ -1015,6 +1119,40 @@ class Game(State):
         except Exception:
             pass
 
+        # ---- Archeologist NPC ----
+        if initial_map_path in self.ARCHEOLOGIST_NPC_SPAWNS:
+            an_x, an_y = self.ARCHEOLOGIST_NPC_SPAWNS[initial_map_path]
+        else:
+            an_x, an_y = -5000, -5000
+
+        self.archeologist_npc_first_dialog = [
+            "Ah, a fellow seeker of knowledge!",
+            "This temple holds many secrets... and artifacts.",
+            "Care to try your hand at the Archeologium? Who knows what you'll find!"
+        ]
+        self.archeologist_npc_repeat_dialog = [
+            "The earth has much to reveal.",
+            "Ready for another dig?"
+        ]
+
+        self.archeologist_npc = ArcheologistNPC(
+            x=an_x, y=an_y,
+            dialog_lines=self.archeologist_npc_first_dialog,
+            gender='male',
+        )
+
+        try:
+            if initial_map_path in self.ARCHEOLOGIST_NPC_SPAWNS and self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                map_w = self.map.current_map.pixel_width
+                map_h = self.map.current_map.pixel_height
+                an_w = self.archeologist_npc.image.get_width()
+                an_h = self.archeologist_npc.image.get_height()
+                an_x = max(0, min(an_x, map_w - an_w))
+                an_y = max(0, min(an_y, map_h - an_h))
+                self.archeologist_npc.pos = pygame.Vector2(an_x, an_y)
+        except Exception:
+            pass
+
         # ---- Fishing NPC (woman near the lake) ----
         fishing_npc_dialog = [
             "Hello there! I come here to fish every day.",
@@ -1097,6 +1235,7 @@ class Game(State):
         self.blackjack_game = None
         self.roulette_game = None
         self.poker_game = None
+        self.archeologium_game = None
 
         # Crafting "Tempering" minigame state (None when not playing)
         self.crafting_minigame = None
@@ -1187,16 +1326,42 @@ class Game(State):
         logger.info(f"Loaded {total} gatherable node(s) across {len(self.gatherables)} map(s)")
 
     def _spawn_peaceful_mobs(self):
-        """Spawn a single peaceful mob on the current map (random type, like enemies)."""
-        from src.entities.peaceful_mob import PEACEFUL_MOB_REGISTRY, create_peaceful_mob
+        """Spawn a single peaceful mob on the current map.
+
+        Spawn info for a map can be either:
+          * a tuple ``(x, y)`` — picks a random mob type from
+            :data:`PEACEFUL_MOB_REGISTRY`.
+          * a dict ``{"pos": (x, y), "mob_type": "name"}`` — always
+            spawns the specific mob type requested. This is how the
+            tavern guarantees its signature orange tabby cat is always
+            prowling the common area.
+        """
+        from src.entities.peaceful_mob import COMMON_MOB_TYPES, PEACEFUL_MOB_REGISTRY, create_peaceful_mob
         spawn_info = self.PEACEFUL_MOB_SPAWNS.get(self.current_map_path)
         if not spawn_info:
             return
         if self.current_map_path in self.NO_PEACEFUL_MOB_MAPS:
             return
 
-        x, y = spawn_info
-        mob_type = random.choice(list(PEACEFUL_MOB_REGISTRY.keys()))
+        # Normalise the two supported spawn-info forms.
+        if isinstance(spawn_info, dict):
+            x, y = spawn_info.get("pos", (0, 0))
+            mob_type = spawn_info.get("mob_type")
+            if not mob_type:
+                mob_type = random.choice(COMMON_MOB_TYPES)
+        else:
+            # Legacy tuple form
+            x, y = spawn_info
+            mob_type = random.choice(COMMON_MOB_TYPES)
+
+        # Validate mob type exists in registry; fall back to a random one
+        # if the configured type was removed or renamed.
+        if mob_type not in PEACEFUL_MOB_REGISTRY:
+            logger.warning(
+                f"Configured peaceful mob type '{mob_type}' is not in "
+                f"PEACEFUL_MOB_REGISTRY — falling back to a random type."
+            )
+            mob_type = random.choice(COMMON_MOB_TYPES)
 
         if not self._check_position_collision(
             pygame.Rect(x, y, 40, 40),
@@ -1205,9 +1370,15 @@ class Game(State):
         ):
             mob = create_peaceful_mob(x, y, mob_type)
             self.peaceful_mobs = [mob]
-            logger.info(f"Spawned {mob_type} on {self.current_map_path}")
+            logger.info(
+                f"Spawned {mob_type} on {self.current_map_path} at "
+                f"({x:.0f}, {y:.0f})"
+            )
         else:
-            logger.warning(f"Peaceful mob spawn position ({x}, {y}) blocked on {self.current_map_path}")
+            logger.warning(
+                f"Peaceful mob spawn position ({x}, {y}) blocked on "
+                f"{self.current_map_path}; will not spawn."
+            )
 
     def _check_position_collision(self, rect: pygame.Rect, obstacles: list, nav_grid) -> bool:
         """Check if a rectangle collides with obstacles or is on an unwalkable tile."""
@@ -1412,6 +1583,30 @@ class Game(State):
         if not self.card_npc.was_talked:
             return self.card_npc_first_dialog
         return self.card_npc_repeat_dialog
+
+    def _get_archeologist_npc_dialog(self):
+        if not self.archeologist_npc.was_talked:
+            return self.archeologist_npc_first_dialog
+        return self.archeologist_npc_repeat_dialog
+
+    def open_archeologium(self):
+        def on_close(outcome, net_change):
+            self.archeologium_game = None
+            self.app.money += net_change
+            if self.app.money < 0:
+                self.app.money = 0
+            logger.info(f"Archeologium closed: outcome={outcome}, net_change={net_change}, money now={self.app.money}")
+            post_lines = [
+                "Fascinating finds! The earth never ceases to amaze.",
+                "Return when you have the itch to dig again."
+            ]
+            self.app.current_dialog = Dialog(
+                self.app,
+                post_lines,
+                on_close=lambda: setattr(self.archeologist_npc, 'was_talked', True)
+            )
+
+        self.archeologium_game = ArcheologiumMinigame(self.app, on_close=on_close, player_money=self.app.money)
 
     def _get_mage_npc_dialog(self):
         """Pick the right mage NPC dialog lines based on the current unlock state."""
@@ -1790,6 +1985,22 @@ class Game(State):
             self.card_npc.pos = pygame.Vector2(cx, cy)
         else:
             self.card_npc.pos = pygame.Vector2(-5000, -5000)
+
+        if map_path in self.ARCHEOLOGIST_NPC_SPAWNS:
+            an_x, an_y = self.ARCHEOLOGIST_NPC_SPAWNS[map_path]
+            try:
+                if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                    mw = self.map.current_map.pixel_width
+                    mh = self.map.current_map.pixel_height
+                    an_w = self.archeologist_npc.image.get_width()
+                    an_h = self.archeologist_npc.image.get_height()
+                    an_x = max(0, min(an_x, mw - an_w))
+                    an_y = max(0, min(an_y, mh - an_h))
+            except Exception:
+                pass
+            self.archeologist_npc.pos = pygame.Vector2(an_x, an_y)
+        else:
+            self.archeologist_npc.pos = pygame.Vector2(-5000, -5000)
 
         if map_path in self.FISHING_NPC_SPAWNS:
             fx, fy = self.FISHING_NPC_SPAWNS[map_path]
@@ -2405,6 +2616,25 @@ class Game(State):
                 self.card_npc.pos = pygame.Vector2(-5000, -5000)
                 logger.info(f"No card NPC spawn for map {switched_map_path}; hiding card NPC")
 
+            # Place archeologist NPC on the new map
+            if switched_map_path in self.ARCHEOLOGIST_NPC_SPAWNS:
+                an_x, an_y = self.ARCHEOLOGIST_NPC_SPAWNS[switched_map_path]
+                try:
+                    if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                        map_w = self.map.current_map.pixel_width
+                        map_h = self.map.current_map.pixel_height
+                        an_w = self.archeologist_npc.image.get_width()
+                        an_h = self.archeologist_npc.image.get_height()
+                        an_x = max(0, min(an_x, map_w - an_w))
+                        an_y = max(0, min(an_y, map_h - an_h))
+                except Exception:
+                    pass
+                self.archeologist_npc.pos = pygame.Vector2(an_x, an_y)
+                logger.info(f"Placed archeologist NPC for map {switched_map_path} at ({an_x},{an_y})")
+            else:
+                self.archeologist_npc.pos = pygame.Vector2(-5000, -5000)
+                logger.info(f"No archeologist NPC spawn for map {switched_map_path}; hiding archeologist NPC")
+
             # Place fishing NPC on the new map (or hide if not present)
             if switched_map_path in self.FISHING_NPC_SPAWNS:
                 fn_x, fn_y = self.FISHING_NPC_SPAWNS[switched_map_path]
@@ -2452,7 +2682,7 @@ class Game(State):
         if self.enemy_spawn_timer >= self.enemy_spawn_interval:
             self.enemy_spawn_timer = 0
             # Skip periodic/random spawns on maps where spawning is disabled
-            if self.current_map_path not in self.NO_ENEMY_SPAWN_MAPS:
+            if self.current_map_path not in self.NO_ENEMY_SPAWN_MAPS and self.current_map_path not in self.NO_RANDOM_ENEMY_SPAWN_MAPS:
                 self.spawn_random_enemy()
 
         self.player_combat.sync_weapon_stats()
@@ -2641,11 +2871,24 @@ class Game(State):
         # Remove dead peaceful mobs (drop loot, then despawn)
         for mob in self.peaceful_mobs[:]:
             if mob.is_dead():
+                if mob.mob_type == "tavern_cat" and self.current_map_path == "maps/tavern.tmx":
+                    self._tavern_cat_respawn_timer = 5.0
                 self._drop_peaceful_mob_loot(mob)
                 self.peaceful_mobs.remove(mob)
 
+        # Tavern cat respawn — at most one at a time
+        if self.current_map_path == "maps/tavern.tmx":
+            has_cat = any(m.mob_type == "tavern_cat" for m in self.peaceful_mobs)
+            if not has_cat:
+                self._tavern_cat_respawn_timer -= dt
+                if self._tavern_cat_respawn_timer <= 0:
+                    from src.entities.peaceful_mob import create_peaceful_mob
+                    cat = create_peaceful_mob(560, 480, "tavern_cat")
+                    self.peaceful_mobs.append(cat)
+
         self.npc.update(self.character.pos)
         self.card_npc.update(self.character.pos)
+        self.archeologist_npc.update(self.character.pos)
         self.fishing_npc.update(self.character.pos)
         self.mage_npc.update(self.character.pos)
 
@@ -2728,6 +2971,21 @@ class Game(State):
                 cnx, cny = self.CARD_NPC_SPAWNS[self.current_map_path]
                 self.card_npc.pos = pygame.Vector2(cnx, cny)
                 logger.info(f"Safety placed card NPC on {self.current_map_path} at ({cnx},{cny})")
+        except Exception:
+            pass
+
+        # Safety: hide archeologist NPC if it should NOT be on this map, else place it
+        try:
+            if self.current_map_path not in self.ARCHEOLOGIST_NPC_SPAWNS and (self.archeologist_npc.pos.x > -1000 or self.archeologist_npc.pos.y > -1000):
+                self.archeologist_npc.pos = pygame.Vector2(-5000, -5000)
+                logger.info(f"Safety hid archeologist NPC on {self.current_map_path}")
+        except Exception:
+            pass
+        try:
+            if self.current_map_path in self.ARCHEOLOGIST_NPC_SPAWNS and (self.archeologist_npc.pos.x < -1000 or self.archeologist_npc.pos.y < -1000):
+                anx, any_y = self.ARCHEOLOGIST_NPC_SPAWNS[self.current_map_path]
+                self.archeologist_npc.pos = pygame.Vector2(anx, any_y)
+                logger.info(f"Safety placed archeologist NPC on {self.current_map_path} at ({anx},{any_y})")
         except Exception:
             pass
 
@@ -2897,8 +3155,10 @@ class Game(State):
             npc_vis = False
         try:
             card_npc_vis = _is_visible(self.card_npc)
+            archeologist_npc_vis = _is_visible(self.archeologist_npc)
         except Exception:
             card_npc_vis = False
+            archeologist_npc_vis = False
         try:
             fishing_npc_vis = _is_visible(self.fishing_npc)
         except Exception:
@@ -2914,6 +3174,8 @@ class Game(State):
             draw_entities.append((self.npc.pos.y, 'npc'))
         if card_npc_vis:
             draw_entities.append((self.card_npc.pos.y, 'card_npc'))
+        if archeologist_npc_vis:
+            draw_entities.append((self.archeologist_npc.pos.y, 'archeologist_npc'))
         if fishing_npc_vis:
             draw_entities.append((self.fishing_npc.pos.y, 'fishing_npc'))
         if mage_npc_vis:
@@ -2935,6 +3197,8 @@ class Game(State):
                 self.npc.draw(screen, camera_offset)
             elif kind == 'card_npc':
                 self.card_npc.draw(screen, camera_offset)
+            elif kind == 'archeologist_npc':
+                self.archeologist_npc.draw(screen, camera_offset)
             elif kind == 'fishing_npc':
                 self.fishing_npc.draw(screen, camera_offset)
             elif kind == 'mage_npc':
@@ -3027,6 +3291,11 @@ class Game(State):
                 self.blackjack_game.draw(screen)
             except Exception:
                 pass
+        if self.archeologium_game:
+            try:
+                self.archeologium_game.draw(screen)
+            except Exception:
+                pass
         if self.roulette_game:
             try:
                 self.roulette_game.draw(screen)
@@ -3114,9 +3383,17 @@ class Game(State):
         if self.blackjack_game:
             try:
                 self.blackjack_game.handle_event(event)
-                return
             except Exception:
                 pass
+            return
+
+        if self.archeologium_game:
+            try:
+                self.archeologium_game.handle_event(event)
+            except Exception:
+                pass
+            return
+
         if self.roulette_game:
             try:
                 self.roulette_game.handle_event(event)
@@ -3308,6 +3585,22 @@ class Game(State):
                         on_play_poker=self.open_poker,
                         show_play_poker=True,
                     )
+                elif self.archeologist_npc.is_interactable:
+                    dialog_lines = self._get_archeologist_npc_dialog()
+
+                    def on_archeologist_close():
+                        try:
+                            self.archeologist_npc.was_talked = True
+                        except Exception:
+                            pass
+
+                    self.app.current_dialog = Dialog(
+                        self.app,
+                        dialog_lines,
+                        on_close=on_archeologist_close,
+                        on_play_archeologium=self.open_archeologium,
+                        show_play_archeologium=True,
+                    )
                 elif self.fishing_npc.is_interactable:
                     self.app.manager.set_state("collection_book")
                 elif self.npc.is_interactable:
@@ -3340,9 +3633,7 @@ class Game(State):
                     )
                 elif self._find_nearby_peaceful_mob() is not None:
                     mob = self._find_nearby_peaceful_mob()
-                    msg = mob.on_player_interact(self.character)
-                    if msg:
-                        self.app.current_dialog = Dialog(self.app, [msg])
+                    mob.pet()
                 else:
                     # Otherwise toggle the player's inventory (open/close)
                     self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
