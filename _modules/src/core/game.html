@@ -97,6 +97,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.npc</span><span class="w"> </span><span class="kn">import</span> <span class="n">NPC</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.mage_npc</span><span class="w"> </span><span class="kn">import</span> <span class="n">MageNPC</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.projectile</span><span class="w"> </span><span class="kn">import</span> <span class="n">Arrow</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.peaceful_mob</span><span class="w"> </span><span class="kn">import</span> <span class="n">PeacefulMob</span><span class="p">,</span> <span class="n">create_peaceful_mob</span><span class="p">,</span> <span class="n">PEACEFUL_MOB_REGISTRY</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.hud</span><span class="w"> </span><span class="kn">import</span> <span class="n">HUD</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.widgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dialog</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.debug_menu</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpawnMenu</span><span class="p">,</span> <span class="n">EffectsMenu</span>
@@ -961,7 +962,19 @@
             <span class="n">ex</span><span class="p">,</span> <span class="n">ey</span> <span class="o">=</span> <span class="n">extra</span><span class="p">[</span><span class="s2">&quot;pos&quot;</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_create_enemy</span><span class="p">(</span><span class="n">ex</span><span class="p">,</span> <span class="n">ey</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="n">extra</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;profile&quot;</span><span class="p">)))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">items</span> <span class="o">=</span> <span class="p">[]</span>
-        
+
+        <span class="c1"># Peaceful majestic mobs (non-aggressive ambient creatures)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">peaceful_mobs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PeacefulMob</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Peaceful mob spawn points per map (single mob, random type, like enemies)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PEACEFUL_MOB_SPAWNS</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;maps/test-map-2.tmx&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1100</span><span class="p">,</span> <span class="mi">800</span><span class="p">),</span>
+            <span class="s2">&quot;maps/test-map-3.tmx&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">700</span><span class="p">,</span> <span class="mi">600</span><span class="p">),</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Maps where peaceful mob spawning is disabled</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">NO_PEACEFUL_MOB_MAPS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;maps/tavern.tmx&quot;</span><span class="p">,</span> <span class="s2">&quot;maps/test-map-1.tmx&quot;</span><span class="p">}</span>
+
         <span class="c1"># Enemy spawning system</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">enemy_spawn_timer</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">enemy_spawn_interval</span> <span class="o">=</span> <span class="mf">30.0</span> <span class="c1"># seconds</span>
@@ -1150,9 +1163,10 @@
         <span class="c1"># Crafting &quot;Tempering&quot; minigame state (None when not playing)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">crafting_minigame</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="c1"># Debug menu for spawning mobs</span>
+        <span class="c1"># Debug menu for spawning mobs (enemies + peaceful mobs)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">spawn_menu</span> <span class="o">=</span> <span class="n">SpawnMenu</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">enemy_profile_names</span><span class="p">,</span>
+            <span class="p">[</span><span class="s2">&quot;--- ENEMIES ---&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemy_profile_names</span>
+            <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;--- PEACEFUL ---&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">PEACEFUL_MOB_REGISTRY</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span>
             <span class="n">on_spawn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_debug_spawn_enemy</span><span class="p">,</span>
             <span class="n">on_close</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">None</span>
         <span class="p">)</span>
@@ -1206,7 +1220,10 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_build_gatherable_registries</span><span class="p">()</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to build gatherable node registries: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to build gatherable node registries: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Spawn peaceful mobs for the starting map</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_spawn_peaceful_mobs</span><span class="p">()</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_build_gatherable_registries</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -1228,6 +1245,40 @@
             <span class="n">registry</span><span class="o">.</span><span class="n">add_def</span><span class="p">(</span><span class="n">definition</span><span class="p">)</span>
         <span class="n">total</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">reg</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span> <span class="k">for</span> <span class="n">reg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">gatherables</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loaded </span><span class="si">{</span><span class="n">total</span><span class="si">}</span><span class="s2"> gatherable node(s) across </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gatherables</span><span class="p">)</span><span class="si">}</span><span class="s2"> map(s)&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_spawn_peaceful_mobs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Spawn a single peaceful mob on the current map (random type, like enemies).&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.peaceful_mob</span><span class="w"> </span><span class="kn">import</span> <span class="n">PEACEFUL_MOB_REGISTRY</span><span class="p">,</span> <span class="n">create_peaceful_mob</span>
+        <span class="n">spawn_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PEACEFUL_MOB_SPAWNS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">spawn_info</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">NO_PEACEFUL_MOB_MAPS</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">spawn_info</span>
+        <span class="n">mob_type</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">PEACEFUL_MOB_REGISTRY</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_position_collision</span><span class="p">(</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">40</span><span class="p">),</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;obstacles&#39;</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="p">[],</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;nav_grid&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+        <span class="p">):</span>
+            <span class="n">mob</span> <span class="o">=</span> <span class="n">create_peaceful_mob</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">mob_type</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">peaceful_mobs</span> <span class="o">=</span> <span class="p">[</span><span class="n">mob</span><span class="p">]</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Spawned </span><span class="si">{</span><span class="n">mob_type</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Peaceful mob spawn position (</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">) blocked on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_position_collision</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rect</span><span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">,</span> <span class="n">obstacles</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">nav_grid</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if a rectangle collides with obstacles or is on an unwalkable tile.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">wall</span> <span class="ow">in</span> <span class="n">obstacles</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">rect</span><span class="o">.</span><span class="n">colliderect</span><span class="p">(</span><span class="n">wall</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">nav_grid</span><span class="p">:</span>
+            <span class="n">cell</span> <span class="o">=</span> <span class="n">nav_grid</span><span class="o">.</span><span class="n">world_to_cell</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">rect</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">rect</span><span class="o">.</span><span class="n">y</span><span class="p">))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">nav_grid</span><span class="o">.</span><span class="n">is_walkable</span><span class="p">(</span><span class="n">cell</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span>
 
 <div class="viewcode-block" id="Game.reinit_ui">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.reinit_ui">[docs]</a>
@@ -1528,6 +1579,24 @@
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_find_nearby_peaceful_mob</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PeacefulMob</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find the closest PeacefulMob within interaction range, or None.&quot;&quot;&quot;</span>
+        <span class="n">INTERACT_RANGE</span> <span class="o">=</span> <span class="mf">80.0</span>
+        <span class="n">sq</span> <span class="o">=</span> <span class="n">INTERACT_RANGE</span> <span class="o">*</span> <span class="n">INTERACT_RANGE</span>
+        <span class="n">player_center</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">get_center</span><span class="p">()</span>
+        <span class="n">best</span><span class="p">:</span> <span class="n">PeacefulMob</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">best_dist</span> <span class="o">=</span> <span class="n">sq</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">mob</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaceful_mobs</span><span class="p">:</span>
+            <span class="n">mob_center</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span>
+                <span class="n">mob</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">mob</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="n">mob</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">mob</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">d2</span> <span class="o">=</span> <span class="p">(</span><span class="n">mob_center</span> <span class="o">-</span> <span class="n">player_center</span><span class="p">)</span><span class="o">.</span><span class="n">length_squared</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">d2</span> <span class="o">&lt;=</span> <span class="n">sq</span> <span class="ow">and</span> <span class="n">d2</span> <span class="o">&lt;</span> <span class="n">best_dist</span><span class="p">:</span>
+                <span class="n">best</span> <span class="o">=</span> <span class="n">mob</span>
+                <span class="n">best_dist</span> <span class="o">=</span> <span class="n">d2</span>
+        <span class="k">return</span> <span class="n">best</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">_draw_smeltery_hint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Show a floating &#39;Press E to use Smeltery&#39; hint above the</span>
 <span class="sd">        nearest smeltery tile when the player is in range.&quot;&quot;&quot;</span>
@@ -1558,8 +1627,9 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">projectiles</span><span class="p">:</span>
             <span class="k">return</span>
 
+        <span class="n">targets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaceful_mobs</span>
         <span class="k">for</span> <span class="n">projectile</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">projectiles</span><span class="p">:</span>
-            <span class="n">projectile</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">obstacles</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">)</span>
+            <span class="n">projectile</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">obstacles</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span>
 
         <span class="c1"># Handle thrown weapon landings</span>
         <span class="k">for</span> <span class="n">projectile</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">projectiles</span><span class="p">[:]:</span>
@@ -2022,6 +2092,16 @@
         <span class="n">offset_x</span> <span class="o">=</span> <span class="mi">100</span>
         <span class="n">spawn_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">offset_x</span>
         <span class="n">spawn_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span>
+
+        <span class="c1"># Peaceful mob spawn</span>
+        <span class="k">if</span> <span class="n">profile_name</span> <span class="ow">in</span> <span class="n">PEACEFUL_MOB_REGISTRY</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.peaceful_mob</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_peaceful_mob</span>
+            <span class="n">mob</span> <span class="o">=</span> <span class="n">create_peaceful_mob</span><span class="p">(</span><span class="n">spawn_x</span><span class="p">,</span> <span class="n">spawn_y</span><span class="p">,</span> <span class="n">profile_name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">peaceful_mobs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mob</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[DEBUG] Spawned peaceful mob </span><span class="si">{</span><span class="n">profile_name</span><span class="si">}</span><span class="s2"> at (</span><span class="si">{</span><span class="n">spawn_x</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">spawn_y</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Enemy spawn</span>
         <span class="n">new_enemy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_enemy</span><span class="p">(</span><span class="n">spawn_x</span><span class="p">,</span> <span class="n">spawn_y</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="n">profile_name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_enemy</span><span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[DEBUG] Spawned </span><span class="si">{</span><span class="n">profile_name</span><span class="si">}</span><span class="s2"> at (</span><span class="si">{</span><span class="n">spawn_x</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">spawn_y</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span></div>
@@ -2145,6 +2225,54 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Callback to finish the intro sequence and unlock the game.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">intro_played</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_intro_sequence_active</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_drop_chance_for_peaceful_mob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mob</span><span class="p">:</span> <span class="n">PeacefulMob</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.peaceful_mob</span><span class="w"> </span><span class="kn">import</span> <span class="n">PEACEFUL_MOB_REGISTRY</span>
+        <span class="k">if</span> <span class="n">mob</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="n">PEACEFUL_MOB_REGISTRY</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">mob</span><span class="o">.</span><span class="n">mob_type</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="k">return</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;drop_chance&quot;</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="p">[]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_drop_peaceful_mob_loot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mob</span><span class="p">:</span> <span class="n">PeacefulMob</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.dropped_item</span><span class="w"> </span><span class="kn">import</span> <span class="n">DroppedItem</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">src.items.items</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_item</span>
+
+        <span class="n">drop_entries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_drop_chance_for_peaceful_mob</span><span class="p">(</span><span class="n">mob</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">drop_entries</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">base_x</span><span class="p">,</span> <span class="n">base_y</span> <span class="o">=</span> <span class="n">mob</span><span class="o">.</span><span class="n">get_rect</span><span class="p">()</span><span class="o">.</span><span class="n">center</span>
+
+        <span class="n">placed</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">drop_entries</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="n">item_id</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;item_id&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">item_id</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">chance</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;chance&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">chance</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">chance</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">amount</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;amount&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">amount</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">amount</span> <span class="o">=</span> <span class="mi">1</span>
+
+            <span class="n">item_obj</span> <span class="o">=</span> <span class="n">create_item</span><span class="p">(</span><span class="n">item_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">item_obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Peaceful mob drop skipped: could not create item &#39;</span><span class="si">{</span><span class="n">item_id</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="n">spread</span> <span class="o">=</span> <span class="mi">18</span>
+            <span class="n">offset_x</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="o">-</span><span class="n">spread</span><span class="p">,</span> <span class="n">spread</span><span class="p">)</span>
+            <span class="n">offset_y</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="o">-</span><span class="n">spread</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">spread</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">drop</span> <span class="o">=</span> <span class="n">DroppedItem</span><span class="p">(</span><span class="n">base_x</span> <span class="o">+</span> <span class="n">offset_x</span><span class="p">,</span> <span class="n">base_y</span> <span class="o">+</span> <span class="n">offset_y</span><span class="p">,</span> <span class="n">item_obj</span><span class="p">,</span> <span class="n">amount</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">drop</span><span class="p">)</span>
+            <span class="n">placed</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Peaceful mob &#39;</span><span class="si">{</span><span class="n">mob</span><span class="o">.</span><span class="n">mob_type</span><span class="si">}</span><span class="s2">&#39; dropped &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">amount</span><span class="si">}</span><span class="s2">x </span><span class="si">{</span><span class="n">item_id</span><span class="si">}</span><span class="s2"> at (</span><span class="si">{</span><span class="n">base_x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">offset_x</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">base_y</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">offset_y</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="p">)</span>
 
 <div class="viewcode-block" id="Game.update">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.update">[docs]</a>
@@ -2209,6 +2337,10 @@
                     <span class="n">new_x</span><span class="p">,</span> <span class="n">new_y</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="s2">&quot;pos&quot;</span><span class="p">]</span>
                     <span class="n">profile</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;profile&quot;</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_create_enemy</span><span class="p">(</span><span class="n">new_x</span><span class="p">,</span> <span class="n">new_y</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="n">profile</span><span class="p">))</span>
+
+            <span class="c1"># Clear peaceful mobs on map switch, then re-spawn for new map</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">peaceful_mobs</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_spawn_peaceful_mobs</span><span class="p">()</span>
 
             <span class="k">if</span> <span class="n">switched_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">NPC_SPAWNS</span><span class="p">:</span>
                     <span class="n">npc_x</span><span class="p">,</span> <span class="n">npc_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">NPC_SPAWNS</span><span class="p">[</span><span class="n">switched_map_path</span><span class="p">]</span>
@@ -2401,6 +2533,10 @@
         <span class="c1"># Update summoned spirits</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_spirits</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
 
+        <span class="c1"># Update peaceful mobs (collision-aware movement like enemies)</span>
+        <span class="k">for</span> <span class="n">mob</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaceful_mobs</span><span class="p">:</span>
+            <span class="n">mob</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">collision_handler</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">obstacles</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">collision_handler</span><span class="o">.</span><span class="n">check_interactions</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span>
         <span class="p">)</span>
@@ -2474,6 +2610,12 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_drop_enemy_loot</span><span class="p">(</span><span class="n">enemy</span><span class="p">)</span>
 
                 <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">enemy</span><span class="p">)</span>
+
+        <span class="c1"># Remove dead peaceful mobs (drop loot, then despawn)</span>
+        <span class="k">for</span> <span class="n">mob</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaceful_mobs</span><span class="p">[:]:</span>
+            <span class="k">if</span> <span class="n">mob</span><span class="o">.</span><span class="n">is_dead</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_drop_peaceful_mob_loot</span><span class="p">(</span><span class="n">mob</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">peaceful_mobs</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">mob</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
@@ -2582,7 +2724,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">set_gauge</span><span class="p">(</span><span class="s2">&quot;enemies&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">set_gauge</span><span class="p">(</span><span class="s2">&quot;projectiles&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">projectiles</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">set_gauge</span><span class="p">(</span><span class="s2">&quot;enemy_projectiles&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">enemy_projectiles</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">set_gauge</span><span class="p">(</span><span class="s2">&quot;spirits&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spirits</span><span class="p">))</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">set_gauge</span><span class="p">(</span><span class="s2">&quot;spirits&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spirits</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">set_gauge</span><span class="p">(</span><span class="s2">&quot;peaceful_mobs&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peaceful_mobs</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="Game._apply_ice_armor_slow">
@@ -2697,6 +2840,13 @@
         <span class="k">for</span> <span class="n">enemy</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">_is_visible</span><span class="p">(</span><span class="n">enemy</span><span class="p">):</span>
                 <span class="n">enemy</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
+
+        <span class="c1"># Draw peaceful mobs</span>
+        <span class="k">for</span> <span class="n">mob</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaceful_mobs</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">mob</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
 
         <span class="k">for</span> <span class="n">projectile</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">projectiles</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">_is_visible</span><span class="p">(</span><span class="n">projectile</span><span class="p">):</span>
@@ -3080,6 +3230,11 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">current_dialog</span> <span class="o">=</span> <span class="n">Dialog</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">dialog_lines</span><span class="p">,</span> <span class="n">on_close</span><span class="o">=</span><span class="n">on_close</span><span class="p">,</span> <span class="n">on_shop</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">open_shop</span><span class="p">,</span> <span class="n">show_shop</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">is_merchant</span><span class="p">)</span>
                 <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_nearby_smeltery_tile</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;smeltery&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">smeltery</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_nearby_peaceful_mob</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">mob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_nearby_peaceful_mob</span><span class="p">()</span>
+                    <span class="n">msg</span> <span class="o">=</span> <span class="n">mob</span><span class="o">.</span><span class="n">on_player_interact</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">msg</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">current_dialog</span> <span class="o">=</span> <span class="n">Dialog</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="p">[</span><span class="n">msg</span><span class="p">])</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="c1"># Otherwise toggle the player&#39;s inventory (open/close)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">toggle_inventory</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">MAIN_player_inv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PLAYER_inventory_equipment</span><span class="p">)</span>
