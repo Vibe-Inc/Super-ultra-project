@@ -96,6 +96,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.enemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enemy</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.boss</span><span class="w"> </span><span class="kn">import</span> <span class="n">Boss</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.npc</span><span class="w"> </span><span class="kn">import</span> <span class="n">NPC</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.archeologist_npc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArcheologistNPC</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.mage_npc</span><span class="w"> </span><span class="kn">import</span> <span class="n">MageNPC</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.gambler_npc</span><span class="w"> </span><span class="kn">import</span> <span class="n">GamblerNPC</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.projectile</span><span class="w"> </span><span class="kn">import</span> <span class="n">Arrow</span>
@@ -114,8 +115,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.roulette</span><span class="w"> </span><span class="kn">import</span> <span class="n">RouletteGame</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.poker</span><span class="w"> </span><span class="kn">import</span> <span class="n">PokerGame</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.crafting</span><span class="w"> </span><span class="kn">import</span> <span class="n">CraftingMinigame</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.fishing</span><span class="w"> </span><span class="kn">import</span> <span class="n">FishingController</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.gathering</span><span class="w"> </span><span class="kn">import</span> <span class="n">GatheringController</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.archeologium</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArcheologiumMinigame</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.world.gatherable_nodes</span><span class="w"> </span><span class="kn">import</span> <span class="n">GatherableNodeRegistry</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.menus.smeltery</span><span class="w"> </span><span class="kn">import</span> <span class="n">SmelteryMenu</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.systems.world_scale</span><span class="w"> </span><span class="kn">import</span> <span class="n">WorldScale</span>
@@ -1028,6 +1029,11 @@
             <span class="s2">&quot;maps/tavern.tmx&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">320</span><span class="p">,</span> <span class="mi">320</span><span class="p">),</span>
         <span class="p">}</span>
 
+        <span class="c1"># Archeologist NPC spawn positions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ARCHEOLOGIST_NPC_SPAWNS</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;maps/test-map-3.tmx&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">576</span><span class="p">,</span> <span class="mi">1600</span><span class="p">),</span>
+        <span class="p">}</span>
+
         <span class="c1"># Fishing NPC spawn positions (pixels) — placed near the lake</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">FISHING_NPC_SPAWNS</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;maps/test-map-1.tmx&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1120</span><span class="p">,</span> <span class="mi">1024</span><span class="p">),</span>
@@ -1178,6 +1184,40 @@
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">pass</span>
 
+        <span class="c1"># ---- Archeologist NPC ----</span>
+        <span class="k">if</span> <span class="n">initial_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ARCHEOLOGIST_NPC_SPAWNS</span><span class="p">:</span>
+            <span class="n">an_x</span><span class="p">,</span> <span class="n">an_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ARCHEOLOGIST_NPC_SPAWNS</span><span class="p">[</span><span class="n">initial_map_path</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">an_x</span><span class="p">,</span> <span class="n">an_y</span> <span class="o">=</span> <span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="o">-</span><span class="mi">5000</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc_first_dialog</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;Ah, a fellow seeker of knowledge!&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;This temple holds many secrets... and artifacts.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Care to try your hand at the Archeologium? Who knows what you&#39;ll find!&quot;</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc_repeat_dialog</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;The earth has much to reveal.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Ready for another dig?&quot;</span>
+        <span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc</span> <span class="o">=</span> <span class="n">ArcheologistNPC</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">an_x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">an_y</span><span class="p">,</span>
+            <span class="n">dialog_lines</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc_first_dialog</span><span class="p">,</span>
+            <span class="n">gender</span><span class="o">=</span><span class="s1">&#39;male&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">initial_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ARCHEOLOGIST_NPC_SPAWNS</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_width</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_height</span><span class="p">:</span>
+                <span class="n">map_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_width</span>
+                <span class="n">map_h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_height</span>
+                <span class="n">an_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>
+                <span class="n">an_h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
+                <span class="n">an_x</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">an_x</span><span class="p">,</span> <span class="n">map_w</span> <span class="o">-</span> <span class="n">an_w</span><span class="p">))</span>
+                <span class="n">an_y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">an_y</span><span class="p">,</span> <span class="n">map_h</span> <span class="o">-</span> <span class="n">an_h</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">an_x</span><span class="p">,</span> <span class="n">an_y</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
         <span class="c1"># ---- Fishing NPC (woman near the lake) ----</span>
         <span class="n">fishing_npc_dialog</span> <span class="o">=</span> <span class="p">[</span>
             <span class="s2">&quot;Hello there! I come here to fish every day.&quot;</span><span class="p">,</span>
@@ -1260,6 +1300,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">blackjack_game</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">roulette_game</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">poker_game</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">archeologium_game</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="c1"># Crafting &quot;Tempering&quot; minigame state (None when not playing)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">crafting_minigame</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1604,6 +1645,33 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_npc_repeat_dialog</span></div>
 
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_archeologist_npc_dialog</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc</span><span class="o">.</span><span class="n">was_talked</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc_first_dialog</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc_repeat_dialog</span>
+
+<div class="viewcode-block" id="Game.open_archeologium">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.open_archeologium">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">open_archeologium</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">on_close</span><span class="p">(</span><span class="n">outcome</span><span class="p">,</span> <span class="n">net_change</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">archeologium_game</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span> <span class="o">+=</span> <span class="n">net_change</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Archeologium closed: outcome=</span><span class="si">{</span><span class="n">outcome</span><span class="si">}</span><span class="s2">, net_change=</span><span class="si">{</span><span class="n">net_change</span><span class="si">}</span><span class="s2">, money now=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">post_lines</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="s2">&quot;Fascinating finds! The earth never ceases to amaze.&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Return when you have the itch to dig again.&quot;</span>
+            <span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">current_dialog</span> <span class="o">=</span> <span class="n">Dialog</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span>
+                <span class="n">post_lines</span><span class="p">,</span>
+                <span class="n">on_close</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc</span><span class="p">,</span> <span class="s1">&#39;was_talked&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">archeologium_game</span> <span class="o">=</span> <span class="n">ArcheologiumMinigame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="n">on_close</span><span class="o">=</span><span class="n">on_close</span><span class="p">,</span> <span class="n">player_money</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">money</span><span class="p">)</span></div>
+
+
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_mage_npc_dialog</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Pick the right mage NPC dialog lines based on the current unlock state.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">arcane_quests_unlocked</span><span class="p">:</span>
@@ -1909,6 +1977,22 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="o">-</span><span class="mi">5000</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ARCHEOLOGIST_NPC_SPAWNS</span><span class="p">:</span>
+            <span class="n">an_x</span><span class="p">,</span> <span class="n">an_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ARCHEOLOGIST_NPC_SPAWNS</span><span class="p">[</span><span class="n">map_path</span><span class="p">]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_width</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_height</span><span class="p">:</span>
+                    <span class="n">mw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_width</span>
+                    <span class="n">mh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_height</span>
+                    <span class="n">an_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>
+                    <span class="n">an_h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
+                    <span class="n">an_x</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">an_x</span><span class="p">,</span> <span class="n">mw</span> <span class="o">-</span> <span class="n">an_w</span><span class="p">))</span>
+                    <span class="n">an_y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">an_y</span><span class="p">,</span> <span class="n">mh</span> <span class="o">-</span> <span class="n">an_h</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">an_x</span><span class="p">,</span> <span class="n">an_y</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="o">-</span><span class="mi">5000</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">FISHING_NPC_SPAWNS</span><span class="p">:</span>
             <span class="n">fx</span><span class="p">,</span> <span class="n">fy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FISHING_NPC_SPAWNS</span><span class="p">[</span><span class="n">map_path</span><span class="p">]</span>
@@ -2550,6 +2634,25 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="o">-</span><span class="mi">5000</span><span class="p">)</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No card NPC spawn for map </span><span class="si">{</span><span class="n">switched_map_path</span><span class="si">}</span><span class="s2">; hiding card NPC&quot;</span><span class="p">)</span>
 
+            <span class="c1"># Place archeologist NPC on the new map</span>
+            <span class="k">if</span> <span class="n">switched_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ARCHEOLOGIST_NPC_SPAWNS</span><span class="p">:</span>
+                <span class="n">an_x</span><span class="p">,</span> <span class="n">an_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ARCHEOLOGIST_NPC_SPAWNS</span><span class="p">[</span><span class="n">switched_map_path</span><span class="p">]</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_width</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_height</span><span class="p">:</span>
+                        <span class="n">map_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_width</span>
+                        <span class="n">map_h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">current_map</span><span class="o">.</span><span class="n">pixel_height</span>
+                        <span class="n">an_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>
+                        <span class="n">an_h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
+                        <span class="n">an_x</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">an_x</span><span class="p">,</span> <span class="n">map_w</span> <span class="o">-</span> <span class="n">an_w</span><span class="p">))</span>
+                        <span class="n">an_y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">an_y</span><span class="p">,</span> <span class="n">map_h</span> <span class="o">-</span> <span class="n">an_h</span><span class="p">))</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">pass</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">an_x</span><span class="p">,</span> <span class="n">an_y</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Placed archeologist NPC for map </span><span class="si">{</span><span class="n">switched_map_path</span><span class="si">}</span><span class="s2"> at (</span><span class="si">{</span><span class="n">an_x</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">an_y</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="o">-</span><span class="mi">5000</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No archeologist NPC spawn for map </span><span class="si">{</span><span class="n">switched_map_path</span><span class="si">}</span><span class="s2">; hiding archeologist NPC&quot;</span><span class="p">)</span>
+
             <span class="c1"># Place fishing NPC on the new map (or hide if not present)</span>
             <span class="k">if</span> <span class="n">switched_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">FISHING_NPC_SPAWNS</span><span class="p">:</span>
                 <span class="n">fn_x</span><span class="p">,</span> <span class="n">fn_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FISHING_NPC_SPAWNS</span><span class="p">[</span><span class="n">switched_map_path</span><span class="p">]</span>
@@ -2791,6 +2894,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mage_npc</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
 
@@ -2873,6 +2977,21 @@
                 <span class="n">cnx</span><span class="p">,</span> <span class="n">cny</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">CARD_NPC_SPAWNS</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">cnx</span><span class="p">,</span> <span class="n">cny</span><span class="p">)</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Safety placed card NPC on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="si">}</span><span class="s2"> at (</span><span class="si">{</span><span class="n">cnx</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">cny</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="c1"># Safety: hide archeologist NPC if it should NOT be on this map, else place it</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ARCHEOLOGIST_NPC_SPAWNS</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1000</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1000</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="o">-</span><span class="mi">5000</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Safety hid archeologist NPC on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ARCHEOLOGIST_NPC_SPAWNS</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">1000</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">1000</span><span class="p">):</span>
+                <span class="n">anx</span><span class="p">,</span> <span class="n">any_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ARCHEOLOGIST_NPC_SPAWNS</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">anx</span><span class="p">,</span> <span class="n">any_y</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Safety placed archeologist NPC on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span><span class="si">}</span><span class="s2"> at (</span><span class="si">{</span><span class="n">anx</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">any_y</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">pass</span>
 
@@ -3057,8 +3176,10 @@
             <span class="n">npc_vis</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">card_npc_vis</span> <span class="o">=</span> <span class="n">_is_visible</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="p">)</span>
+            <span class="n">archeologist_npc_vis</span> <span class="o">=</span> <span class="n">_is_visible</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="n">card_npc_vis</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">archeologist_npc_vis</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">fishing_npc_vis</span> <span class="o">=</span> <span class="n">_is_visible</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -3074,6 +3195,8 @@
             <span class="n">draw_entities</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="s1">&#39;npc&#39;</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">card_npc_vis</span><span class="p">:</span>
             <span class="n">draw_entities</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="s1">&#39;card_npc&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">archeologist_npc_vis</span><span class="p">:</span>
+            <span class="n">draw_entities</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="s1">&#39;archeologist_npc&#39;</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">fishing_npc_vis</span><span class="p">:</span>
             <span class="n">draw_entities</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="s1">&#39;fishing_npc&#39;</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">mage_npc_vis</span><span class="p">:</span>
@@ -3095,6 +3218,8 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">npc</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;card_npc&#39;</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">card_npc</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;archeologist_npc&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;fishing_npc&#39;</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;mage_npc&#39;</span><span class="p">:</span>
@@ -3182,6 +3307,11 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">blackjack_game</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">blackjack_game</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">archeologium_game</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">archeologium_game</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="k">pass</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">roulette_game</span><span class="p">:</span>
@@ -3277,9 +3407,17 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">blackjack_game</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">blackjack_game</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
-                <span class="k">return</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="k">pass</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">archeologium_game</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">archeologium_game</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">return</span>
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">roulette_game</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">roulette_game</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
@@ -3464,6 +3602,22 @@
                         <span class="n">show_play_roulette</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                         <span class="n">on_play_poker</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">open_poker</span><span class="p">,</span>
                         <span class="n">show_play_poker</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc</span><span class="o">.</span><span class="n">is_interactable</span><span class="p">:</span>
+                    <span class="n">dialog_lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_archeologist_npc_dialog</span><span class="p">()</span>
+
+                    <span class="k">def</span><span class="w"> </span><span class="nf">on_archeologist_close</span><span class="p">():</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">archeologist_npc</span><span class="o">.</span><span class="n">was_talked</span> <span class="o">=</span> <span class="kc">True</span>
+                        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                            <span class="k">pass</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">current_dialog</span> <span class="o">=</span> <span class="n">Dialog</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span>
+                        <span class="n">dialog_lines</span><span class="p">,</span>
+                        <span class="n">on_close</span><span class="o">=</span><span class="n">on_archeologist_close</span><span class="p">,</span>
+                        <span class="n">on_play_archeologium</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">open_archeologium</span><span class="p">,</span>
+                        <span class="n">show_play_archeologium</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                     <span class="p">)</span>
                 <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span><span class="o">.</span><span class="n">is_interactable</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;collection_book&quot;</span><span class="p">)</span>

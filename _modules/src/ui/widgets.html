@@ -706,7 +706,8 @@
                  <span class="n">on_play_poker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_play_poker</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                  <span class="n">on_confirm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_confirm</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">confirm_label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">on_craft_rune</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_craft_rune</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                 <span class="n">on_enchant_weapon</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_enchant_weapon</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+                 <span class="n">on_enchant_weapon</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_enchant_weapon</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">on_play_archeologium</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_play_archeologium</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="o">=</span> <span class="n">app</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lines</span> <span class="o">=</span> <span class="n">lines</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lines</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">))</span> <span class="k">else</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">lines</span><span class="p">)]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">on_close</span> <span class="o">=</span> <span class="n">on_close</span>
@@ -725,6 +726,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">show_craft_rune</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">show_craft_rune</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">on_enchant_weapon</span> <span class="o">=</span> <span class="n">on_enchant_weapon</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">show_enchant_weapon</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">show_enchant_weapon</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">on_play_archeologium</span> <span class="o">=</span> <span class="n">on_play_archeologium</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show_play_archeologium</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">show_play_archeologium</span><span class="p">)</span>
 
         <span class="n">sw</span><span class="p">,</span> <span class="n">sh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">screen</span><span class="o">.</span><span class="n">get_size</span><span class="p">()</span>
         <span class="n">w</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mi">800</span><span class="p">,</span> <span class="n">sw</span> <span class="o">-</span> <span class="mi">100</span><span class="p">)</span>
@@ -755,6 +758,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">confirm_button</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">craft_rune_button</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">enchant_weapon_button</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">play_archeologium_button</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="n">action_buttons</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_shop</span><span class="p">:</span>
@@ -772,6 +776,8 @@
             <span class="n">action_buttons</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;craft_rune&#39;</span><span class="p">,</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;CRAFT RUNE&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">110</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">60</span><span class="p">),</span> <span class="p">(</span><span class="mi">160</span><span class="p">,</span> <span class="mi">90</span><span class="p">,</span> <span class="mi">90</span><span class="p">)))</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_enchant_weapon</span><span class="p">:</span>
             <span class="n">action_buttons</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;enchant_weapon&#39;</span><span class="p">,</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;ENCHANT WEAPON&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">110</span><span class="p">),</span> <span class="p">(</span><span class="mi">90</span><span class="p">,</span> <span class="mi">90</span><span class="p">,</span> <span class="mi">160</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_play_archeologium</span><span class="p">:</span>
+            <span class="n">action_buttons</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;archeologium&#39;</span><span class="p">,</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;PLAY ARCHEOLOGIUM&#39;</span><span class="p">),</span> <span class="p">(</span><span class="mi">130</span><span class="p">,</span> <span class="mi">90</span><span class="p">,</span> <span class="mi">50</span><span class="p">),</span> <span class="p">(</span><span class="mi">180</span><span class="p">,</span> <span class="mi">120</span><span class="p">,</span> <span class="mi">80</span><span class="p">)))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_action_buttons</span> <span class="o">=</span> <span class="n">action_buttons</span>
 
@@ -818,6 +824,11 @@
                     <span class="n">placeholder</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">hover</span><span class="p">,</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="p">,</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span> <span class="mi">6</span><span class="p">,</span> <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_enchant_weapon_action</span>
                 <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;archeologium&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">play_archeologium_button</span> <span class="o">=</span> <span class="n">Button</span><span class="p">(</span>
+                    <span class="n">placeholder</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">hover</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="p">,</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span> <span class="mi">6</span><span class="p">,</span> <span class="n">on_click</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_play_archeologium_action</span>
+                <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_layout_buttons</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rect</span><span class="p">):</span>
         <span class="n">btn_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">btn_w</span>
@@ -846,6 +857,8 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">craft_rune_button</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">btn_x</span><span class="p">,</span> <span class="n">btn_y</span><span class="p">,</span> <span class="n">btn_w</span><span class="p">,</span> <span class="n">btn_h</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;enchant_weapon&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">enchant_weapon_button</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">enchant_weapon_button</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">btn_x</span><span class="p">,</span> <span class="n">btn_y</span><span class="p">,</span> <span class="n">btn_w</span><span class="p">,</span> <span class="n">btn_h</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;archeologium&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">play_archeologium_button</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">play_archeologium_button</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">btn_x</span><span class="p">,</span> <span class="n">btn_y</span><span class="p">,</span> <span class="n">btn_w</span><span class="p">,</span> <span class="n">btn_h</span><span class="p">)</span>
             <span class="n">btn_x</span> <span class="o">+=</span> <span class="n">btn_w</span> <span class="o">+</span> <span class="n">gap</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -889,6 +902,9 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_enchant_weapon</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">enchant_weapon_button</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">enchant_weapon_button</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">collidepoint</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pos</span><span class="p">):</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enchant_weapon_button</span><span class="o">.</span><span class="n">on_click</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">enchant_weapon_button</span><span class="o">.</span><span class="n">on_click</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_play_archeologium</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">play_archeologium_button</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">play_archeologium_button</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">collidepoint</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pos</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">play_archeologium_button</span><span class="o">.</span><span class="n">on_click</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">play_archeologium_button</span><span class="o">.</span><span class="n">on_click</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">KEYDOWN</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">K_RETURN</span><span class="p">,</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_ESCAPE</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_close</span><span class="p">()</span></div>
@@ -946,6 +962,14 @@
         <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">on_enchant_weapon</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">on_enchant_weapon</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_close</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_play_archeologium_action</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">on_play_archeologium</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">on_play_archeologium</span><span class="p">()</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="k">pass</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_close</span><span class="p">()</span>
@@ -1168,6 +1192,11 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_enchant_weapon</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">enchant_weapon_button</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">enchant_weapon_button</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">surface</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_play_archeologium</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">play_archeologium_button</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">play_archeologium_button</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">surface</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="k">pass</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ok_button</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">surface</span><span class="p">)</span></div>
