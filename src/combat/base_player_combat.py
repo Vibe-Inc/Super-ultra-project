@@ -99,6 +99,7 @@ class PlayerCombatController:
             # damage.  A broken weapon still occupies the slot visually
             # until the next ``_damage_equipped_weapon`` call removes
             # it (see ``handle_player_attack``).
+            char._combat_style = getattr(weapon, "combat_style", "sword")
             if getattr(weapon, "is_broken", lambda: False)():
                 char.attack_damage = max(1, char.base_attack_damage // 2)
                 char.attack_cooldown = char.base_attack_cooldown
@@ -238,6 +239,34 @@ class PlayerCombatController:
         
         self.game.projectiles.append(Arrow(spawn_pos, direction, speed, max_range, damage))
 
+    def _aim_dir_valid(self, aim_dir, char):
+        forward_dir = self.get_attack_direction()
+        if forward_dir.length_squared() > 0:
+            forward_dir = forward_dir.normalize()
+        else:
+            forward_dir = pygame.Vector2(1, 0)
+        cross = forward_dir.x * aim_dir.y - forward_dir.y * aim_dir.x
+        dot = forward_dir.dot(aim_dir)
+        angle = math.degrees(math.atan2(cross, dot))
+        allowed_angle = 120.0
+        return abs(angle) <= allowed_angle
+
+    def _execute_melee_attack(self, char, aim_dir):
+        weapon = self.game.equipped_weapon or self.get_equipped_weapon()
+        combat_style = getattr(weapon, "combat_style", "sword") if weapon else "sword"
+        if combat_style == "mace":
+            char.attack_mace(self.game.enemies, aim_direction=aim_dir)
+        elif combat_style == "axe":
+            char.attack_axe(self.game.enemies, aim_direction=aim_dir)
+        elif combat_style == "spear":
+            char.attack_spear(self.game.enemies, aim_direction=aim_dir)
+        elif combat_style == "war_hammer":
+            char.attack_war_hammer(self.game.enemies, aim_direction=aim_dir)
+        else:
+            cone_degrees = float(getattr(weapon, "cone_degrees", 90.0)) if weapon else 90.0
+            char.attack(self.game.enemies, aim_direction=aim_dir, cone_degrees=cone_degrees)
+        self._damage_equipped_weapon(1)
+
     def handle_player_attack(self, mouse_pos):
         """Execute the combat action (melee swing or ranged shot) directed at the specified coordinates.
 
@@ -248,9 +277,6 @@ class PlayerCombatController:
         if not weapon:
             return
 
-        # Broken weapons can't be swung/fired.  We resync stats so a
-        # broken weapon the player just placed in the hotbar immediately
-        # reverts to bare-handed damage output.
         if getattr(weapon, "is_broken", lambda: False)():
             self.sync_weapon_stats()
             return
@@ -261,18 +287,7 @@ class PlayerCombatController:
 
         char = self.game.character
 
-        forward_dir = self.get_attack_direction()
-        if forward_dir.length_squared() > 0:
-            forward_dir = forward_dir.normalize()
-        else:
-            forward_dir = pygame.Vector2(1, 0)
-
-        cross = forward_dir.x * aim_dir.y - forward_dir.y * aim_dir.x
-        dot = forward_dir.dot(aim_dir)
-        angle = math.degrees(math.atan2(cross, dot))
-
-        allowed_angle = 120.0
-        if abs(angle) > allowed_angle:
+        if not self._aim_dir_valid(aim_dir, char):
             return
 
         if getattr(weapon, "weapon_class", "melee") == "ranged":
@@ -283,34 +298,69 @@ class PlayerCombatController:
             if spread:
                 aim_dir = aim_dir.rotate(random.uniform(-spread, spread))
             self.spawn_arrow(weapon, aim_dir)
-            # Ranged weapons take 1 durability per shot.  If the bow
-            # breaks we still let the just-fired arrow fly (it's
-            # already in flight) but the next click will be blocked
-            # by the broken-check above.
             self._damage_equipped_weapon(1)
             return
 
         if not char.can_attack():
             return
 
-        combat_style = getattr(weapon, "combat_style", "sword")
+        # Normal attack — use charge system: quick release = normal, held = charged
+        char.start_charge(mouse_pos=mouse_pos)
 
-        if combat_style == "mace":
-            char.attack_mace(self.game.enemies, aim_direction=aim_dir)
-        elif combat_style == "axe":
-            char.attack_axe(self.game.enemies, aim_direction=aim_dir)
-        elif combat_style == "spear":
-            char.attack_spear(self.game.enemies, aim_direction=aim_dir)
-        elif combat_style == "war_hammer":
-            char.attack_war_hammer(self.game.enemies, aim_direction=aim_dir)
-        else:
-            cone_degrees = float(getattr(weapon, "cone_degrees", 90.0))
-            char.attack(self.game.enemies, aim_direction=aim_dir, cone_degrees=cone_degrees)
+    def handle_player_attack_release(self, mouse_pos):
+        """Called when LMB is released. Releases the charge (normal or charged attack)."""
+        char = self.game.character
+        if not char.is_charging:
+            return
 
-        # Melee weapons take 1 durability per successful swing (a single
-        # swing, regardless of how many enemies it hits -- otherwise a
-        # war-hammer in a crowd would tear through durability in seconds).
-        # The actual hit-test result isn't visible here, so we just charge
-        # the swing; if the player whiffs into empty air that's still a
-        # use of the weapon.
+        weapon = self.game.equipped_weapon or self.get_equipped_weapon()
+        if not weapon:
+            char.cancel_charge()
+            return
+
+        aim_dir = self.get_mouse_aim_direction(mouse_pos)
+        if aim_dir.length_squared() == 0:
+            char.cancel_charge()
+            return
+
+        if not self._aim_dir_valid(aim_dir, char):
+            char.cancel_charge()
+            return
+
+        char.release_charge(self.game.enemies, aim_direction=aim_dir, game_state=self.game)
         self._damage_equipped_weapon(1)
+
+    def handle_fast_attack(self, mouse_pos):
+        """Execute a fast attack (different key)."""
+        weapon = self.game.equipped_weapon or self.get_equipped_weapon()
+        if not weapon:
+            return
+
+        if getattr(weapon, "is_broken", lambda: False)():
+            self.sync_weapon_stats()
+            return
+
+        if getattr(weapon, "weapon_class", "melee") != "melee":
+            return
+
+        aim_dir = self.get_mouse_aim_direction(mouse_pos)
+        if aim_dir.length_squared() == 0:
+            return
+
+        char = self.game.character
+        if not self._aim_dir_valid(aim_dir, char):
+            return
+        if not char.can_attack():
+            return
+
+        char.attack_fast(self.game.enemies, aim_direction=aim_dir)
+        self._damage_equipped_weapon(1)
+
+    def handle_throw_weapon(self, mouse_pos):
+        """Throw the weapon from the active hotbar slot toward the cursor."""
+        aim_dir = self.get_mouse_aim_direction(mouse_pos)
+        if aim_dir.length_squared() == 0:
+            return
+
+        char = self.game.character
+        char.throw_weapon(self.game.enemies, aim_direction=aim_dir, game_state=self.game)

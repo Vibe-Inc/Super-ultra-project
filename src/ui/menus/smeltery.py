@@ -638,6 +638,15 @@ class SmelteryMenu:
         self.coke_job = None
         job.fired_flash = 0.6
 
+        # Award base smelting XP for completing the batch.
+        try:
+            from src.systems.smelting_skill import XP_PER_CRAFT
+            skill = self._get_player_smelting_skill()
+            if skill is not None:
+                skill.add_xp(int(XP_PER_CRAFT))
+        except Exception as exc:
+            logger.debug(f"Smeltery: failed to award coke XP: {exc}")
+
         if not self._triggered_skill_mastery:
             self._triggered_skill_mastery = True
             self.app.article_tracker.try_open(self.app, "smeltery", "6. Smelting Skill & Mastery")
@@ -698,6 +707,15 @@ class SmelteryMenu:
         recipe = job.recipe
         self.blast_job = None
         job.fired_flash = 0.6
+
+        # Award base smelting XP for completing the batch.
+        try:
+            from src.systems.smelting_skill import XP_PER_CRAFT
+            skill = self._get_player_smelting_skill()
+            if skill is not None:
+                skill.add_xp(int(XP_PER_CRAFT))
+        except Exception as exc:
+            logger.debug(f"Smeltery: failed to award blast XP: {exc}")
 
         # Launch the minigame chain for high-tier recipes (steel).
         if recipe and get_recipe_minigame_chain(recipe):
