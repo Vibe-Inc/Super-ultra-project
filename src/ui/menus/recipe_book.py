@@ -989,15 +989,13 @@ class RecipeBookMenu(Menu):
         # Cached card background (parchment + borders + corners)
         bg_key = (w, h, scale)
         if bg_key not in self._card_bg_cache:
-            bg = pygame.Surface((int(w * (1 + 0.08)), int(h * (1 + 0.08))), pygame.SRCALPHA)
-            bg_w, bg_h = bg.get_size()
-            bg_rect = pygame.Rect(0, 0, bg_w, bg_h)
+            bg = pygame.Surface((w, h), pygame.SRCALPHA)
             card_base = (238, 225, 198)
-            pygame.draw.rect(bg, card_base, bg_rect, border_radius=int(10 * scale))
+            pygame.draw.rect(bg, card_base, (0, 0, w, h), border_radius=int(10 * scale))
             # Parchment grain
             for _ in range(200):
-                tx = random.randint(0, bg_w - 1)
-                ty = random.randint(0, bg_h - 1)
+                tx = random.randint(0, w - 1)
+                ty = random.randint(0, h - 1)
                 shade = random.randint(0, 1)
                 c = (175, 155, 115) if shade else (215, 195, 165)
                 bg.set_at((tx, ty), (*c, random.randint(5, 18)))
@@ -1005,21 +1003,24 @@ class RecipeBookMenu(Menu):
             outer_border_colors = [(212, 175, 55), (190, 160, 70), (160, 130, 60)]
             for bi, bc in enumerate(outer_border_colors):
                 inset = bi * int(2 * scale)
-                rect = pygame.Rect(inset, inset, bg_w - inset * 2, bg_h - inset * 2)
+                rect = pygame.Rect(inset, inset, w - inset * 2, h - inset * 2)
                 pygame.draw.rect(bg, bc, rect, width=1, border_radius=int(10 * scale - bi * 2))
             # Corner decorations
             corner_off = int(6 * scale)
             corner_sz = int(12 * scale)
             gold_d = (212, 175, 55)
-            for cx, cy in [(corner_off, corner_off), (bg_w - corner_off, corner_off),
-                           (corner_off, bg_h - corner_off), (bg_w - corner_off, bg_h - corner_off)]:
-                pts = [(cx, cy - corner_sz), (cx + corner_sz // 2, cy), (cx, cy + corner_sz), (cx - corner_sz // 2, cy)]
+            for cx, cy in [(corner_off, corner_off), (w - corner_off, corner_off),
+                           (corner_off, h - corner_off), (w - corner_off, h - corner_off)]:
                 pygame.draw.circle(bg, gold_d, (cx, cy), corner_sz, 1)
                 pygame.draw.line(bg, gold_d, (cx - corner_sz, cy), (cx + corner_sz, cy), 1)
                 pygame.draw.line(bg, gold_d, (cx, cy - corner_sz), (cx, cy + corner_sz), 1)
             self._card_bg_cache[bg_key] = bg
 
-        surf.blit(self._card_bg_cache[bg_key], scaled_rect.topleft, area=(0, 0, scaled_rect.width, scaled_rect.height))
+        if scaled_rect.size != (w, h):
+            scaled_bg = pygame.transform.scale(self._card_bg_cache[bg_key], scaled_rect.size)
+            surf.blit(scaled_bg, scaled_rect.topleft)
+        else:
+            surf.blit(self._card_bg_cache[bg_key], scaled_rect.topleft)
 
         # Glow on hover (only one card hovered at a time, draw directly)
         if hover_amount > 0.2:
