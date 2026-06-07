@@ -721,7 +721,8 @@ class Game(State):
 
         # Debug menu for spawning mobs (enemies + peaceful mobs)
         self.spawn_menu = SpawnMenu(
-            self.enemy_profile_names + sorted(PEACEFUL_MOB_REGISTRY.keys()),
+            ["--- ENEMIES ---"] + self.enemy_profile_names
+            + ["--- PEACEFUL ---"] + sorted(PEACEFUL_MOB_REGISTRY.keys()),
             on_spawn=self._debug_spawn_enemy,
             on_close=lambda: None
         )

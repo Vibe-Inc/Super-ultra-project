@@ -61,10 +61,17 @@ class SpawnMenu:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP:
                 self.selected_index = (self.selected_index - 1) % len(self.profiles)
+                while self.profiles[self.selected_index].startswith("---"):
+                    self.selected_index = (self.selected_index - 1) % len(self.profiles)
             elif event.key == pygame.K_DOWN:
                 self.selected_index = (self.selected_index + 1) % len(self.profiles)
+                while self.profiles[self.selected_index].startswith("---"):
+                    self.selected_index = (self.selected_index + 1) % len(self.profiles)
             elif event.key == pygame.K_RETURN:
-                self.on_spawn(self.profiles[self.selected_index])
+                name = self.profiles[self.selected_index]
+                if name.startswith("---"):
+                    return
+                self.on_spawn(name)
                 self.visible = False
                 self.on_close()
             elif event.key == pygame.K_ESCAPE or event.key == pygame.K_F10:
@@ -91,8 +98,13 @@ class SpawnMenu:
 
         # Items
         for i, name in enumerate(self.profiles):
-            color = (255, 255, 100) if i == self.selected_index else (180, 180, 180)
-            text = self.font.render(name.upper(), True, color)
+            is_label = name.startswith("---")
+            if is_label:
+                color = (130, 130, 150)
+                text = self.font.render(name.strip("-"), True, color)
+            else:
+                color = (255, 255, 100) if i == self.selected_index else (180, 180, 180)
+                text = self.font.render(name.upper(), True, color)
             screen.blit(text, (self.rect.x + 20, self.rect.y + 45 + i * 30))
 
 
