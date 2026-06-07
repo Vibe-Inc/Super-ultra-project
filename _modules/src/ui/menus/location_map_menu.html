@@ -212,6 +212,8 @@
                 <span class="n">new_x</span><span class="p">,</span> <span class="n">new_y</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="s2">&quot;pos&quot;</span><span class="p">]</span>
                 <span class="n">profile</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;profile&quot;</span><span class="p">)</span>
                 <span class="n">game</span><span class="o">.</span><span class="n">enemies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">game</span><span class="o">.</span><span class="n">_create_enemy</span><span class="p">(</span><span class="n">new_x</span><span class="p">,</span> <span class="n">new_y</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="n">profile</span><span class="p">))</span>
+        <span class="n">game</span><span class="o">.</span><span class="n">peaceful_mobs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">game</span><span class="o">.</span><span class="n">_spawn_peaceful_mobs</span><span class="p">()</span>
         <span class="n">game</span><span class="o">.</span><span class="n">_place_npcs_for_map</span><span class="p">(</span><span class="n">entry_map</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">spawn_pos</span><span class="p">:</span>

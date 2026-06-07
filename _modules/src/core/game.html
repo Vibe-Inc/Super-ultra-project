@@ -1012,7 +1012,9 @@
                 <span class="p">{</span><span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">300</span><span class="p">,</span> <span class="mi">200</span><span class="p">),</span>  <span class="s2">&quot;profile&quot;</span><span class="p">:</span> <span class="s2">&quot;skirmisher&quot;</span><span class="p">},</span>
                 <span class="p">{</span><span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">900</span><span class="p">,</span> <span class="mi">500</span><span class="p">),</span>  <span class="s2">&quot;profile&quot;</span><span class="p">:</span> <span class="s2">&quot;bomber&quot;</span><span class="p">},</span>
                 <span class="p">{</span><span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1400</span><span class="p">,</span> <span class="mi">800</span><span class="p">),</span> <span class="s2">&quot;profile&quot;</span><span class="p">:</span> <span class="s2">&quot;phantom&quot;</span><span class="p">},</span>
-                <span class="p">{</span><span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">2200</span><span class="p">,</span> <span class="mi">1200</span><span class="p">),</span> <span class="s2">&quot;profile&quot;</span><span class="p">:</span> <span class="s2">&quot;chronos&quot;</span><span class="p">,</span> <span class="s2">&quot;is_boss&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+            <span class="p">],</span>
+            <span class="s2">&quot;maps/test-map-4.tmx&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span><span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">480</span><span class="p">,</span> <span class="mi">640</span><span class="p">),</span> <span class="s2">&quot;profile&quot;</span><span class="p">:</span> <span class="s2">&quot;chronos&quot;</span><span class="p">,</span> <span class="s2">&quot;is_boss&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
             <span class="p">],</span>
         <span class="p">}</span>
 
@@ -1039,7 +1041,8 @@
         <span class="p">}</span>
 
         <span class="c1"># Maps where enemy spawning (both default and random) is disabled</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">NO_ENEMY_SPAWN_MAPS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;maps/tavern.tmx&quot;</span><span class="p">,</span> <span class="s2">&quot;maps/test-map-1.tmx&quot;</span><span class="p">,</span> <span class="s2">&quot;maps/test-map-4.tmx&quot;</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">NO_ENEMY_SPAWN_MAPS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;maps/tavern.tmx&quot;</span><span class="p">,</span> <span class="s2">&quot;maps/test-map-1.tmx&quot;</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">NO_RANDOM_ENEMY_SPAWN_MAPS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;maps/test-map-4.tmx&quot;</span><span class="p">}</span>
 
         <span class="n">spawn_entries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_spawn_entries</span><span class="p">(</span><span class="n">initial_map_path</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">initial_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">NO_ENEMY_SPAWN_MAPS</span><span class="p">:</span>
@@ -1073,7 +1076,7 @@
         <span class="p">}</span>
 
         <span class="c1"># Maps where peaceful mob spawning is disabled</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">NO_PEACEFUL_MOB_MAPS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;maps/tavern.tmx&quot;</span><span class="p">,</span> <span class="s2">&quot;maps/test-map-1.tmx&quot;</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">NO_PEACEFUL_MOB_MAPS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;maps/tavern.tmx&quot;</span><span class="p">,</span> <span class="s2">&quot;maps/test-map-1.tmx&quot;</span><span class="p">,</span> <span class="s2">&quot;maps/test-map-4.tmx&quot;</span><span class="p">}</span>
 
         <span class="c1"># Enemy spawning system</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">enemy_spawn_timer</span> <span class="o">=</span> <span class="mf">0.0</span>
@@ -2594,7 +2597,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemy_spawn_timer</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemy_spawn_interval</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">enemy_spawn_timer</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="c1"># Skip periodic/random spawns on maps where spawning is disabled</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">NO_ENEMY_SPAWN_MAPS</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">NO_ENEMY_SPAWN_MAPS</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">NO_RANDOM_ENEMY_SPAWN_MAPS</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">spawn_random_enemy</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">player_combat</span><span class="o">.</span><span class="n">sync_weapon_stats</span><span class="p">()</span>
