@@ -23,10 +23,12 @@ from src.inventory.system import MAIN_player_inventory, MAIN_player_inventory_eq
 from src.items.items import create_item, LightRing
 from database.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, DizzinessEffect, SlowEffect
 from src.entities.enemy import Enemy
+from src.entities.boss import Boss
 from src.entities.npc import NPC
 from src.entities.mage_npc import MageNPC
 from src.entities.gambler_npc import GamblerNPC
 from src.entities.projectile import Arrow
+from src.entities.peaceful_mob import PeacefulMob, create_peaceful_mob, PEACEFUL_MOB_REGISTRY
 from src.ui.hud import HUD
 from src.ui.widgets import Dialog
 from src.ui.debug_menu import SpawnMenu, EffectsMenu
@@ -34,6 +36,8 @@ from src.core.collision_system import CollisionSystem
 from src.ai.navigation import NavGrid
 from src.entities.monster_visuals import build_monster_animations
 from src.entities.monster_attacks import build_attack_controller, AttackContext
+from src.entities.boss_visuals import build_boss_animations
+from src.entities.boss_attacks import build_boss_attack_controller
 from src.combat.base_player_combat import PlayerCombatController
 from src.minigames.blackjack import BlackjackGame
 from src.minigames.roulette import RouletteGame
@@ -186,8 +190,9 @@ class Game(State):
             Return True if the in-game clock is currently daytime.
         _update_game_time(dt):
             Advance the in-game clock and update day/night brightness.
-        _get_spawn_info(map_path):
-            Resolve the default enemy spawn info for a given map path.
+        _get_spawn_entries(map_path):
+            Resolve the configured enemy spawn entries for a given map path
+            as a list of {"pos": (x, y), "profile": "name"} dicts.
         _get_camera_offset():
             Compute the camera offset (in world space) for this frame.
         _make_patrol_points(center, radius):
@@ -234,6 +239,7 @@ class Game(State):
         self.intro_played = False
         self._intro_sequence_active = False
         self.map = LocalMap("Level1", initial_map_path)
+        self.discovered_locations = {"peaceful_forest"}
 
         self.collision_handler = CollisionSystem()
         
@@ -732,13 +738,116 @@ class Game(State):
                     {"item_id": "potion_of_confusion", "chance": 0.15},
                 ],
             },
+            "chronos": {
+                "visual_style": "chronos",
+                "sprite_set": "MenHuman1(Recolor)",
+                "speed": 120.0,
+                "hp": 600,
+                "damage": 25,
+                "animation_speed": 6.0,
+                "animation_size": (160, 160),
+                "detection_range": 500.0,
+                "attack_range": 70.0,
+                "ai_profile": "chronos",
+                "ai_config": {
+                    "preferred_min": 120.0,
+                    "preferred_max": 250.0,
+                    "orbit_radius": 180.0,
+                    "orbit_interval": 2.5,
+                    "drift_cooldown": 3.0,
+                    "drift_distance": 80.0,
+                    "rift_cooldown": 5.0,
+                    "warp_cooldown": 4.0,
+                    "warp_speed_mult": 2.5,
+                    "warp_duration": 0.6,
+                },
+                "attack_profile": "chronos",
+                "attack_config": {
+                    "cooldown_ms": 1200,
+                    "bolt_speed": 450.0,
+                    "bolt_range": 500.0,
+                    "bolt_damage_mult": 0.85,
+                    "slow_duration": 2.0,
+                    "slow_factor": 0.5,
+                    "melee_damage_mult": 1.2,
+                    "melee_range": 60.0,
+                    "spread_degrees": 5.0,
+                    "burst_cooldown_ms": 3500,
+                    "burst_radius": 100.0,
+                    "burst_damage_mult": 1.0,
+                    "rift_cooldown_ms": 4000,
+                    "rift_distance": 150.0,
+                    "storm_cooldown_ms": 6000,
+                    "storm_radius": 140.0,
+                    "storm_damage_mult": 1.5,
+                    "freeze_duration": 2.0,
+                    "enrage_speed_mult": 1.6,
+                    "nova_cooldown_ms": 5000,
+                    "nova_bolt_count": 8,
+                    "nova_bolt_speed": 350.0,
+                    "nova_bolt_range": 300.0,
+                    "nova_damage_mult": 0.7,
+                    "shard_cooldown_ms": 4500,
+                    "shard_count": 5,
+                    "shard_spread_degrees": 25.0,
+                    "shard_speed": 400.0,
+                    "shard_range": 400.0,
+                    "shard_damage_mult": 0.6,
+                    "cascade_cooldown_ms": 7000,
+                    "cascade_waves": 3,
+                    "cascade_bolts_per_wave": 3,
+                    "cascade_speed": 380.0,
+                    "cascade_range": 450.0,
+                    "cascade_damage_mult": 0.5,
+                    "barrage_cooldown_ms": 8000,
+                    "barrage_bolt_count": 12,
+                    "barrage_speed": 320.0,
+                    "barrage_range": 350.0,
+                    "barrage_damage_mult": 0.45,
+                    "timestop_cooldown_ms": 9000,
+                    "timestop_radius": 120.0,
+                    "timestop_freeze_duration": 1.5,
+                    "timestop_damage_mult": 0.5,
+                    "wave_cooldown_ms": 5500,
+                    "wave_radius": 160.0,
+                    "wave_damage_mult": 0.8,
+                    "rift_cooldown2_ms": 7000,
+                    "rift_duration": 4.0,
+                    "rift_damage_mult": 0.35,
+                    "decay_cooldown_ms": 6500,
+                    "decay_radius": 80.0,
+                    "decay_damage_mult": 0.3,
+                    "reversal_cooldown_ms": 10000,
+                    "reversal_heal": 40,
+                    "reversal_damage_mult": 0.6,
+                },
+                "contact_damage": True,
+                "is_boss": True,
+                "boss_name": "Chronos the Chronicler of Time",
+                "drop_chance": [
+                    {"item_id": "large_health_potion", "chance": 1.0},
+                ],
+            },
         }
         self.enemy_profile_names = list(self.enemy_profiles.keys())
 
         self.ENEMY_SPAWNS = {
             # "maps/test-map-1.tmx": (400, 300), # Якщо закоментувати цей рядок, ворога на старті не буде
-            "maps/test-map-2.tmx": {"pos": (600, 450), "profile": "trickster"},
-            "maps/test-map-3.tmx": {"pos": (300, 200), "profile": "skirmisher"},
+            # Each map can declare multiple distinct enemy spawns (pos + profile).
+            # Both dict-of-one and list-of-many forms are supported; tuples fall
+            # back to the "stalker" profile for backward compatibility.
+            "maps/test-map-2.tmx": [
+                {"pos": (600, 450),   "profile": "trickster"},
+                {"pos": (1500, 1250), "profile": "stalker"},
+                {"pos": (3000, 1800), "profile": "brute"},
+                {"pos": (3200, 400),  "profile": "phantom"},
+            ],
+            "maps/test-map-3.tmx": [
+                {"pos": (300, 200),  "profile": "skirmisher"},
+                {"pos": (900, 500),  "profile": "bomber"},
+                {"pos": (1400, 800), "profile": "phantom"},
+                {"pos": (2200, 1200), "profile": "chronos", "is_boss": True},
+            ],
         }
 
         # NPC spawn positions (pixels). Tavern NPC coordinates corrected to fit map bounds
@@ -764,14 +873,15 @@ class Game(State):
         }
 
         # Maps where enemy spawning (both default and random) is disabled
-        self.NO_ENEMY_SPAWN_MAPS = {"maps/tavern.tmx", "maps/test-map-1.tmx"}
+        self.NO_ENEMY_SPAWN_MAPS = {"maps/tavern.tmx", "maps/test-map-1.tmx", "maps/test-map-4.tmx"}
 
-        spawn_info = self._get_spawn_info(initial_map_path)
+        spawn_entries = self._get_spawn_entries(initial_map_path)
         if initial_map_path in self.NO_ENEMY_SPAWN_MAPS:
-            spawn_info = None
-        if spawn_info:
-            start_x, start_y = spawn_info["pos"]
-            default_profile = spawn_info.get("profile")
+            spawn_entries = []
+        if spawn_entries:
+            first = spawn_entries[0]
+            start_x, start_y = first["pos"]
+            default_profile = first.get("profile")
         else:
             start_x, start_y = -5000, -5000
             default_profile = None
@@ -779,10 +889,26 @@ class Game(State):
         self.hud = HUD(self.character, app, self.toggle_player_inventory, self.use_skill_slot, open_shop_callback=self.open_shop)
 
         self.enemy = self._create_enemy(start_x, start_y, profile=default_profile)
-        
+
         self.enemies = [self.enemy]
+        # Spawn any additional configured enemies on the starting map.
+        for extra in spawn_entries[1:]:
+            ex, ey = extra["pos"]
+            self.enemies.append(self._create_enemy(ex, ey, profile=extra.get("profile")))
         self.items = []
-        
+
+        # Peaceful majestic mobs (non-aggressive ambient creatures)
+        self.peaceful_mobs: list[PeacefulMob] = []
+
+        # Peaceful mob spawn points per map (single mob, random type, like enemies)
+        self.PEACEFUL_MOB_SPAWNS = {
+            "maps/test-map-2.tmx": (1100, 800),
+            "maps/test-map-3.tmx": (700, 600),
+        }
+
+        # Maps where peaceful mob spawning is disabled
+        self.NO_PEACEFUL_MOB_MAPS = {"maps/tavern.tmx", "maps/test-map-1.tmx"}
+
         # Enemy spawning system
         self.enemy_spawn_timer = 0.0
         self.enemy_spawn_interval = 30.0 # seconds
@@ -972,9 +1098,10 @@ class Game(State):
         self.enchanting_menu = None
         self.rune_selection_menu = None
 
-        # Debug menu for spawning mobs
+        # Debug menu for spawning mobs (enemies + peaceful mobs)
         self.spawn_menu = SpawnMenu(
-            self.enemy_profile_names,
+            ["--- ENEMIES ---"] + self.enemy_profile_names
+            + ["--- PEACEFUL ---"] + sorted(PEACEFUL_MOB_REGISTRY.keys()),
             on_spawn=self._debug_spawn_enemy,
             on_close=lambda: None
         )
@@ -1030,6 +1157,9 @@ class Game(State):
         except Exception as exc:
             logger.warning(f"Failed to build gatherable node registries: {exc}")
 
+        # Spawn peaceful mobs for the starting map
+        self._spawn_peaceful_mobs()
+
     def _build_gatherable_registries(self) -> None:
         try:
             from data.gatherable_nodes import load_gatherable_node_defs
@@ -1049,6 +1179,40 @@ class Game(State):
             registry.add_def(definition)
         total = sum(len(reg.nodes) for reg in self.gatherables.values())
         logger.info(f"Loaded {total} gatherable node(s) across {len(self.gatherables)} map(s)")
+
+    def _spawn_peaceful_mobs(self):
+        """Spawn a single peaceful mob on the current map (random type, like enemies)."""
+        from src.entities.peaceful_mob import PEACEFUL_MOB_REGISTRY, create_peaceful_mob
+        spawn_info = self.PEACEFUL_MOB_SPAWNS.get(self.current_map_path)
+        if not spawn_info:
+            return
+        if self.current_map_path in self.NO_PEACEFUL_MOB_MAPS:
+            return
+
+        x, y = spawn_info
+        mob_type = random.choice(list(PEACEFUL_MOB_REGISTRY.keys()))
+
+        if not self._check_position_collision(
+            pygame.Rect(x, y, 40, 40),
+            getattr(self, 'obstacles', []) or [],
+            getattr(self, 'nav_grid', None),
+        ):
+            mob = create_peaceful_mob(x, y, mob_type)
+            self.peaceful_mobs = [mob]
+            logger.info(f"Spawned {mob_type} on {self.current_map_path}")
+        else:
+            logger.warning(f"Peaceful mob spawn position ({x}, {y}) blocked on {self.current_map_path}")
+
+    def _check_position_collision(self, rect: pygame.Rect, obstacles: list, nav_grid) -> bool:
+        """Check if a rectangle collides with obstacles or is on an unwalkable tile."""
+        for wall in obstacles:
+            if rect.colliderect(wall):
+                return True
+        if nav_grid:
+            cell = nav_grid.world_to_cell(pygame.Vector2(rect.x, rect.y))
+            if not nav_grid.is_walkable(cell):
+                return True
+        return False
 
     def reinit_ui(self):
         self.hud = HUD(self.character, self.app, self.toggle_player_inventory, self.use_skill_slot, open_shop_callback=self.open_shop)
@@ -1346,6 +1510,24 @@ class Game(State):
         except Exception:
             return None
 
+    def _find_nearby_peaceful_mob(self) -> PeacefulMob | None:
+        """Find the closest PeacefulMob within interaction range, or None."""
+        INTERACT_RANGE = 80.0
+        sq = INTERACT_RANGE * INTERACT_RANGE
+        player_center = self.character.get_center()
+        best: PeacefulMob | None = None
+        best_dist = sq + 1
+        for mob in self.peaceful_mobs:
+            mob_center = pygame.Vector2(
+                mob.pos.x + mob.image.get_width() // 2,
+                mob.pos.y + mob.image.get_height() // 2,
+            )
+            d2 = (mob_center - player_center).length_squared()
+            if d2 <= sq and d2 < best_dist:
+                best = mob
+                best_dist = d2
+        return best
+
     def _draw_smeltery_hint(self, screen, camera_offset):
         """Show a floating 'Press E to use Smeltery' hint above the
         nearest smeltery tile when the player is in range."""
@@ -1357,8 +1539,8 @@ class Game(State):
         screen_x = int(tile_pos.x - camera_offset.x)
         screen_y = int(tile_pos.y - camera_offset.y)
         font = cfg.tooltip_font_CREDITS
-        text = font.render(_("Press E to use Smeltery"), True, (255, 240, 200))
-        shadow = font.render(_("Press E to use Smeltery"), True, (0, 0, 0))
+        text = font.render(("Press E to use Smeltery"), True, (255, 240, 200))
+        shadow = font.render(("Press E to use Smeltery"), True, (0, 0, 0))
         text_rect = text.get_rect(midbottom=(screen_x, screen_y - 8))
         # Soft backdrop pill for legibility.
         pad_x = int(8 * cfg.ui_scale())
@@ -1374,8 +1556,9 @@ class Game(State):
         if not self.projectiles:
             return
 
+        targets = self.enemies + self.peaceful_mobs
         for projectile in self.projectiles:
-            projectile.update(dt, self.obstacles, self.enemies)
+            projectile.update(dt, self.obstacles, targets)
 
         # Handle thrown weapon landings
         for projectile in self.projectiles[:]:
@@ -1450,13 +1633,90 @@ class Game(State):
 
         self.app.profiler.set_gauge("game_time", self._format_game_time())
 
-    def _get_spawn_info(self, map_path: str) -> dict | None:
+    def _get_spawn_entries(self, map_path: str) -> list[dict]:
+        """
+        Normalize the ENEMY_SPAWNS entry for a map into a list of
+        {"pos": (x, y), "profile": "name"} dicts.
+
+        Supports three legacy forms:
+          - list of dicts: returned as-is
+          - single dict: wrapped in a one-element list
+          - (x, y) tuple: wrapped with the default "stalker" profile
+        Returns an empty list if the map has no configured spawns.
+        """
         spawn = self.ENEMY_SPAWNS.get(map_path)
         if not spawn:
-            return None
+            return []
+        if isinstance(spawn, list):
+            return [entry for entry in spawn if entry]
         if isinstance(spawn, dict):
-            return spawn
-        return {"pos": spawn, "profile": "stalker"}
+            return [spawn]
+        return [{"pos": spawn, "profile": "stalker"}]
+
+    def _place_npcs_for_map(self, map_path):
+        if map_path in self.NPC_SPAWNS:
+            nx, ny = self.NPC_SPAWNS[map_path]
+            try:
+                if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                    mw = self.map.current_map.pixel_width
+                    mh = self.map.current_map.pixel_height
+                    nw = self.npc.image.get_width()
+                    nh = self.npc.image.get_height()
+                    nx = max(0, min(nx, mw - nw))
+                    ny = max(0, min(ny, mh - nh))
+            except Exception:
+                pass
+            self.npc.pos = pygame.Vector2(nx, ny)
+        else:
+            self.npc.pos = pygame.Vector2(-5000, -5000)
+
+        if map_path in self.CARD_NPC_SPAWNS:
+            cx, cy = self.CARD_NPC_SPAWNS[map_path]
+            try:
+                if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                    mw = self.map.current_map.pixel_width
+                    mh = self.map.current_map.pixel_height
+                    cw = self.card_npc.image.get_width()
+                    ch = self.card_npc.image.get_height()
+                    cx = max(0, min(cx, mw - cw))
+                    cy = max(0, min(cy, mh - ch))
+            except Exception:
+                pass
+            self.card_npc.pos = pygame.Vector2(cx, cy)
+        else:
+            self.card_npc.pos = pygame.Vector2(-5000, -5000)
+
+        if map_path in self.FISHING_NPC_SPAWNS:
+            fx, fy = self.FISHING_NPC_SPAWNS[map_path]
+            try:
+                if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                    mw = self.map.current_map.pixel_width
+                    mh = self.map.current_map.pixel_height
+                    fw = self.fishing_npc.image.get_width()
+                    fh = self.fishing_npc.image.get_height()
+                    fx = max(0, min(fx, mw - fw))
+                    fy = max(0, min(fy, mh - fh))
+            except Exception:
+                pass
+            self.fishing_npc.pos = pygame.Vector2(fx, fy)
+        else:
+            self.fishing_npc.pos = pygame.Vector2(-5000, -5000)
+
+        if map_path in self.MAGE_NPC_SPAWNS:
+            mx, my = self.MAGE_NPC_SPAWNS[map_path]
+            try:
+                if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                    mw = self.map.current_map.pixel_width
+                    mh = self.map.current_map.pixel_height
+                    mw_img = self.mage_npc.image.get_width()
+                    mh_img = self.mage_npc.image.get_height()
+                    mx = max(0, min(mx, mw - mw_img))
+                    my = max(0, min(my, mh - mh_img))
+            except Exception:
+                pass
+            self.mage_npc.pos = pygame.Vector2(mx, my)
+        else:
+            self.mage_npc.pos = pygame.Vector2(-5000, -5000)
 
     def _get_camera_offset(self) -> pygame.Vector2:
         viewport_width, viewport_height = self.app.screen.get_size()
@@ -1646,27 +1906,48 @@ class Game(State):
             radius = float(settings.get("patrol_radius", 120.0))
             patrol_points = self._make_patrol_points(pygame.Vector2(x, y), radius)
 
-        enemy = Enemy(
-            x=x,
-            y=y,
-            sprite_set=sprite_set,
-            speed=settings["speed"],
-            hp=settings["hp"],
-            damage=settings["damage"],
-            animation_size=(85, 85),
-            animation_speed=settings.get("animation_speed", 6.0),
-            detection_range=settings.get("detection_range", 250.0),
-            attack_range=settings.get("attack_range", 40.0),
-            patrol_points=patrol_points,
-            ai_profile=ai_profile,
-            ai_config=settings.get("ai_config"),
-            animations=animations,
-            attack_controller=attack_controller,
-            contact_damage=contact_damage,
-            visual_style=visual_style,
-        )
+        is_boss = settings.get("is_boss", False)
+        anim_size = settings.get("animation_size", (85, 85))
+        if is_boss:
+            boss_name = settings.get("boss_name", "Boss")
+            if attack_profile:
+                attack_controller = build_boss_attack_controller(attack_profile, settings.get("attack_config"))
+            animations = None
+            if visual_style:
+                animations = build_boss_animations(visual_style, anim_size)
+            enemy = Boss(
+                x=x, y=y, sprite_set=sprite_set,
+                speed=settings["speed"], hp=settings["hp"], damage=settings["damage"],
+                animation_size=anim_size, animation_speed=settings.get("animation_speed", 6.0),
+                detection_range=settings.get("detection_range", 250.0),
+                attack_range=settings.get("attack_range", 40.0),
+                boss_name=boss_name,
+                patrol_points=patrol_points, ai_profile=ai_profile,
+                ai_config=settings.get("ai_config"), animations=animations,
+                attack_controller=attack_controller, contact_damage=contact_damage,
+                visual_style=visual_style,
+                intro_trigger_distance=450.0,
+            )
+        else:
+            enemy = Enemy(
+                x=x, y=y, sprite_set=sprite_set,
+                speed=settings["speed"], hp=settings["hp"], damage=settings["damage"],
+                animation_size=anim_size, animation_speed=settings.get("animation_speed", 6.0),
+                detection_range=settings.get("detection_range", 250.0),
+                attack_range=settings.get("attack_range", 40.0),
+                patrol_points=patrol_points, ai_profile=ai_profile,
+                ai_config=settings.get("ai_config"), animations=animations,
+                attack_controller=attack_controller, contact_damage=contact_damage,
+                visual_style=visual_style,
+            )
         enemy.target_entity = self.character
         enemy.profile_name = profile_name
+        if isinstance(enemy, Boss):
+            try:
+                screen_w, screen_h = pygame.display.get_surface().get_size()
+                enemy.set_screen_size((screen_w, screen_h))
+            except Exception:
+                pass
         return enemy
 
     def spawn_random_enemy(self):
@@ -1710,6 +1991,16 @@ class Game(State):
         offset_x = 100
         spawn_x = self.character.pos.x + offset_x
         spawn_y = self.character.pos.y
+
+        # Peaceful mob spawn
+        if profile_name in PEACEFUL_MOB_REGISTRY:
+            from src.entities.peaceful_mob import create_peaceful_mob
+            mob = create_peaceful_mob(spawn_x, spawn_y, profile_name)
+            self.peaceful_mobs.append(mob)
+            logger.info(f"[DEBUG] Spawned peaceful mob {profile_name} at ({spawn_x}, {spawn_y})")
+            return
+
+        # Enemy spawn
         new_enemy = self._create_enemy(spawn_x, spawn_y, profile=profile_name)
         self.enemies.append(new_enemy)
         logger.info(f"[DEBUG] Spawned {profile_name} at ({spawn_x}, {spawn_y})")
@@ -1823,6 +2114,54 @@ class Game(State):
         """Callback to finish the intro sequence and unlock the game."""
         self.intro_played = True
         self._intro_sequence_active = False
+    def _get_drop_chance_for_peaceful_mob(self, mob: PeacefulMob) -> list[dict]:
+        from src.entities.peaceful_mob import PEACEFUL_MOB_REGISTRY
+        if mob is None:
+            return []
+        config = PEACEFUL_MOB_REGISTRY.get(mob.mob_type, {})
+        return config.get("drop_chance", []) or []
+
+    def _drop_peaceful_mob_loot(self, mob: PeacefulMob) -> None:
+        from src.entities.dropped_item import DroppedItem
+        from src.items.items import create_item
+
+        drop_entries = self._get_drop_chance_for_peaceful_mob(mob)
+        if not drop_entries:
+            return
+
+        base_x, base_y = mob.get_rect().center
+
+        placed = 0
+        for entry in drop_entries:
+            if not isinstance(entry, dict):
+                continue
+            item_id = entry.get("item_id")
+            if not item_id:
+                continue
+            chance = float(entry.get("chance", 0.0))
+            if chance <= 0.0:
+                continue
+            if random.random() > chance:
+                continue
+            amount = int(entry.get("amount", 1))
+            if amount <= 0:
+                amount = 1
+
+            item_obj = create_item(item_id)
+            if item_obj is None:
+                logger.warning(f"Peaceful mob drop skipped: could not create item '{item_id}'")
+                continue
+
+            spread = 18
+            offset_x = random.randint(-spread, spread)
+            offset_y = random.randint(-spread // 2, spread // 2)
+            drop = DroppedItem(base_x + offset_x, base_y + offset_y, item_obj, amount)
+            self.items.append(drop)
+            placed += 1
+            logger.info(
+                f"Peaceful mob '{mob.mob_type}' dropped "
+                f"{amount}x {item_id} at ({base_x + offset_x}, {base_y + offset_y})"
+            )
 
     def update(self, dt):
         # Update weather system
@@ -1836,7 +2175,7 @@ class Game(State):
         # Intro Sequence for test-map-1
         if self.current_map_path == "maps/test-map-1.tmx" and not getattr(self, "intro_played", False) and not getattr(self, "_intro_sequence_active", False):
             self._intro_sequence_active = True
-            
+
             # Set player lying down (facing down, frame 0)
             self.character.direction = "down"
             self.character.frame_index = 0
@@ -1857,9 +2196,28 @@ class Game(State):
             SaveManager.save_settings(self.app)
             tr.try_open(self.app, "guide", "1. Movement & Navigation")
 
-        switched_map_path = self.map.update(self.character)
+        result = self.map.update(self.character)
 
-        if switched_map_path:
+        if isinstance(result, tuple) and result[0] == "location_transition":
+            target_loc = result[1]
+            if target_loc not in self.discovered_locations:
+                self.discovered_locations.add(target_loc)
+            tmx = self.map.current_map.get_tmx_data()
+            if tmx:
+                mw = tmx.width * tmx.tilewidth
+                mh = tmx.height * tmx.tileheight
+                cx, cy = mw // 2, mh // 2
+                dx = cx - self.character.pos.x
+                dy = cy - self.character.pos.y
+                dist = max(1, (dx * dx + dy * dy) ** 0.5)
+                push = 120.0
+                self.character.pos.x += (dx / dist) * push
+                self.character.pos.y += (dy / dist) * push
+            self.app.manager.set_state("location_map")
+            return
+
+        if result:
+            switched_map_path = result
             self.current_map_path = switched_map_path
             logger.info(f"Map switched to {switched_map_path}. Respawning enemy...")
             self.obstacles = self.map.get_obstacles()
@@ -1868,12 +2226,16 @@ class Game(State):
             # Reset enemies list and spawn default one if needed
             self.enemies = []
             
-            spawn_info = self._get_spawn_info(switched_map_path)
-            if switched_map_path not in self.NO_ENEMY_SPAWN_MAPS and spawn_info:
-                new_x, new_y = spawn_info["pos"]
-                profile = spawn_info.get("profile")
-                default_enemy = self._create_enemy(new_x, new_y, profile=profile)
-                self.enemies.append(default_enemy)
+            spawn_entries = self._get_spawn_entries(switched_map_path)
+            if switched_map_path not in self.NO_ENEMY_SPAWN_MAPS and spawn_entries:
+                for entry in spawn_entries:
+                    new_x, new_y = entry["pos"]
+                    profile = entry.get("profile")
+                    self.enemies.append(self._create_enemy(new_x, new_y, profile=profile))
+
+            # Clear peaceful mobs on map switch, then re-spawn for new map
+            self.peaceful_mobs = []
+            self._spawn_peaceful_mobs()
 
             if switched_map_path in self.NPC_SPAWNS:
                     npc_x, npc_y = self.NPC_SPAWNS[switched_map_path]
@@ -1965,7 +2327,21 @@ class Game(State):
 
         self.player_combat.sync_weapon_stats()
 
-        self.character.update(dt, self.collision_handler, self.obstacles)
+        # Boss intro trigger check
+        intro_active = False
+        screen_size = getattr(self, '_screen_size', (1280, 720))
+        for enemy in self.enemies:
+            if isinstance(enemy, Boss) and not enemy.intro_triggered:
+                enemy.check_intro_trigger(self.character.pos, screen_size)
+            if isinstance(enemy, Boss) and enemy.is_intro_active():
+                intro_active = True
+                # Freeze player position during intro
+                enemy.intro.update(dt)
+                if enemy.intro.finished:
+                    intro_active = False
+
+        if not intro_active:
+            self.character.update(dt, self.collision_handler, self.obstacles)
 
         mouse_pos = pygame.mouse.get_pos()
         camera_offset = self._get_camera_offset()
@@ -2052,6 +2428,10 @@ class Game(State):
         # Update summoned spirits
         self._update_spirits(dt)
 
+        # Update peaceful mobs (collision-aware movement like enemies)
+        for mob in self.peaceful_mobs:
+            mob.update(dt, self.character, self.enemies, self.collision_handler, self.obstacles)
+
         self.collision_handler.check_interactions(
             self.character, self.enemies, self.items
         )
@@ -2126,6 +2506,12 @@ class Game(State):
 
                 self.enemies.remove(enemy)
 
+        # Remove dead peaceful mobs (drop loot, then despawn)
+        for mob in self.peaceful_mobs[:]:
+            if mob.is_dead():
+                self._drop_peaceful_mob_loot(mob)
+                self.peaceful_mobs.remove(mob)
+
         self.npc.update(self.character.pos)
         self.card_npc.update(self.character.pos)
         self.fishing_npc.update(self.character.pos)
@@ -2183,7 +2569,13 @@ class Game(State):
         except Exception:
             pass
 
-        # Safety: if current map defines an NPC spawn but NPC is far away (not placed), place it
+        # Safety: hide NPC if it should NOT be on this map, else place it
+        try:
+            if self.current_map_path not in self.NPC_SPAWNS and (self.npc.pos.x > -1000 or self.npc.pos.y > -1000):
+                self.npc.pos = pygame.Vector2(-5000, -5000)
+                logger.info(f"Safety hid NPC on {self.current_map_path}")
+        except Exception:
+            pass
         try:
             if self.current_map_path in self.NPC_SPAWNS and (self.npc.pos.x < -1000 or self.npc.pos.y < -1000):
                 nx, ny = self.NPC_SPAWNS[self.current_map_path]
@@ -2192,7 +2584,13 @@ class Game(State):
         except Exception:
             pass
 
-        # Safety: place card NPC if it should be on this map but is far away
+        # Safety: hide card NPC if it should NOT be on this map, else place it
+        try:
+            if self.current_map_path not in self.CARD_NPC_SPAWNS and (self.card_npc.pos.x > -1000 or self.card_npc.pos.y > -1000):
+                self.card_npc.pos = pygame.Vector2(-5000, -5000)
+                logger.info(f"Safety hid card NPC on {self.current_map_path}")
+        except Exception:
+            pass
         try:
             if self.current_map_path in self.CARD_NPC_SPAWNS and (self.card_npc.pos.x < -1000 or self.card_npc.pos.y < -1000):
                 cnx, cny = self.CARD_NPC_SPAWNS[self.current_map_path]
@@ -2201,6 +2599,13 @@ class Game(State):
         except Exception:
             pass
 
+        # Safety: hide fishing NPC if it should NOT be on this map
+        try:
+            if self.current_map_path not in self.FISHING_NPC_SPAWNS and (self.fishing_npc.pos.x > -1000 or self.fishing_npc.pos.y > -1000):
+                self.fishing_npc.pos = pygame.Vector2(-5000, -5000)
+                logger.info(f"Safety hid fishing NPC on {self.current_map_path}")
+        except Exception:
+            pass
         # Safety: place fishing NPC if it should be on this map but is far away
         try:
             if self.current_map_path in self.FISHING_NPC_SPAWNS and (self.fishing_npc.pos.x < -1000 or self.fishing_npc.pos.y < -1000):
@@ -2210,6 +2615,13 @@ class Game(State):
         except Exception:
             pass
 
+        # Safety: hide mage NPC if it should NOT be on this map
+        try:
+            if self.current_map_path not in self.MAGE_NPC_SPAWNS and (self.mage_npc.pos.x > -1000 or self.mage_npc.pos.y > -1000):
+                self.mage_npc.pos = pygame.Vector2(-5000, -5000)
+                logger.info(f"Safety hid mage NPC on {self.current_map_path}")
+        except Exception:
+            pass
         # Safety: place mage NPC if it should be on this map but is far away
         try:
             if self.current_map_path in self.MAGE_NPC_SPAWNS and (self.mage_npc.pos.x < -1000 or self.mage_npc.pos.y < -1000):
@@ -2223,6 +2635,7 @@ class Game(State):
         self.app.profiler.set_gauge("projectiles", len(self.projectiles))
         self.app.profiler.set_gauge("enemy_projectiles", len(self.enemy_projectiles))
         self.app.profiler.set_gauge("spirits", len(self.spirits))
+        self.app.profiler.set_gauge("peaceful_mobs", len(self.peaceful_mobs))
 
     def _apply_ice_armor_slow(self, dt):
         """Slow enemies near the player while Ice Armor is active."""
@@ -2292,6 +2705,7 @@ class Game(State):
         self.spirits = [s for s in self.spirits if s.alive]
 
     def draw_scene(self, screen):
+        self._screen_size = screen.get_size()
         dt = self.app.clock.get_time() / 1000
         self.app.profiler.start_section("game.update")
         self.update(dt)
@@ -2299,6 +2713,14 @@ class Game(State):
 
         self.app.profiler.start_section("game.draw")
         camera_offset = self._get_camera_offset()
+
+        # Boss intro screen shake
+        for enemy in self.enemies:
+            if isinstance(enemy, Boss) and enemy.intro is not None and not enemy.intro.finished:
+                shake = enemy.intro.get_shake_offset()
+                camera_offset = camera_offset + shake
+                break
+
         viewport_rect = pygame.Rect(0, 0, screen.get_width(), screen.get_height())
 
         def _is_visible(entity) -> bool:
@@ -2313,6 +2735,13 @@ class Game(State):
         for enemy in self.enemies:
             if _is_visible(enemy):
                 enemy.draw(screen, camera_offset)
+
+        # Draw peaceful mobs
+        for mob in self.peaceful_mobs:
+            try:
+                mob.draw(screen, camera_offset)
+            except Exception:
+                pass
 
         for projectile in self.projectiles:
             if _is_visible(projectile):
@@ -2403,6 +2832,17 @@ class Game(State):
         # upper halves of trees / rocks and never get hidden behind
         # tall tile art.
         self.map.draw_fringe_overlay(screen, camera_offset, self.character)
+
+        # Draw HP bars on top of everything (including fringe)
+        for enemy in self.enemies:
+            if _is_visible(enemy):
+                enemy.draw_hp_bar(screen, camera_offset)
+
+        # Draw boss overlays (intro/phase transitions) on top of everything
+        for enemy in self.enemies:
+            if isinstance(enemy, Boss):
+                enemy.draw_overlay(screen)
+                enemy.draw_intro_text(screen)
 
         try:
             if getattr(self, 'gathering', None):
@@ -2727,6 +3167,11 @@ class Game(State):
                     self.app.current_dialog = Dialog(self.app, self.npc.dialog_lines, on_close=on_close, on_shop=self.open_shop, show_shop=self.npc.is_merchant)
                 elif self._find_nearby_smeltery_tile() is not None and getattr(self, "smeltery", None):
                     self.smeltery.open()
+                elif self._find_nearby_peaceful_mob() is not None:
+                    mob = self._find_nearby_peaceful_mob()
+                    msg = mob.on_player_interact(self.character)
+                    if msg:
+                        self.app.current_dialog = Dialog(self.app, [msg])
                 else:
                     # Otherwise toggle the player's inventory (open/close)
                     self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)

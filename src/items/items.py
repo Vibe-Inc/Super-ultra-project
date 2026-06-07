@@ -1010,6 +1010,17 @@ def create_item(item_id: str):
         except Exception:
             pass
 
+    if item_id == "hand_lamp":
+        try:
+            from database.GP_database import Gp_database
+            db = Gp_database()
+            row = db.get_item(item_id)
+            db.close()
+            if row:
+                return Lantern(row)
+        except Exception:
+            pass
+
     if item_id == "light_ring":
         try:
             return LightRing(None)

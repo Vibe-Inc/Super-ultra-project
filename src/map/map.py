@@ -3,10 +3,15 @@ import pytmx
 import pygame
 from src.core.logger import logger
 import src.config as cfg
+from src.map.locations import get_location_id, get_location, LOCATION_DEFS
 
 class Map:
     FRINGE_LAYER_NAME = "details fringe layer"
     FRINGE_LAYER_FADE_ALPHA = 110
+
+    # Layers to skip when building collision obstacles.
+    # These are purely decorative wall layers that should not block movement.
+    COLLISION_SKIP_LAYER_NAMES = {"back walls", "another walls"}
 
     ANIMATION_SPEED = 0.2
 
@@ -88,6 +93,29 @@ class Map:
         self._anim_firstgid_map = {}
         self._anim_elapsed = 0.0
         self._window_glow = None
+
+    def _has_valid_tile_property(self, props, gid):
+        """Verify a tile property entry belongs to the correct tile.
+
+        pytmx's gid renumbering can cause tile_properties from one tileset
+        to be stored at gids that happen to collide with renumbered gids
+        from a different tileset. Use tiledgidmap to detect this mismatch.
+        """
+        if self.game_map is None:
+            return True
+        tile_id = props.get("id")
+        if tile_id is None:
+            return True
+        original_gid = self.game_map.tiledgidmap.get(gid)
+        if original_gid is None:
+            return True
+        for ts in self.game_map.tilesets:
+            if ts.firstgid <= original_gid < ts.firstgid + ts.tilecount:
+                expected_gid = ts.firstgid + tile_id
+                if original_gid != expected_gid:
+                    return False
+                break
+        return True
 
     def ensure_loaded(self) -> bool:
         if self.game_map is None:
@@ -504,6 +532,9 @@ class Map:
                 if self._is_fringe_layer(layer):
                     continue
 
+                if layer.name.strip().lower() in self.COLLISION_SKIP_LAYER_NAMES:
+                    continue
+
                 for x, y, gid in layer:
                     if not gid:
                         continue
@@ -513,6 +544,9 @@ class Map:
                         continue
 
                     if not tile_properties.get("collidable"):
+                        continue
+
+                    if not self._has_valid_tile_property(tile_properties, gid):
                         continue
 
                     tile_key = (x, y, layer.id)
@@ -577,9 +611,11 @@ class LocalMap:
     def __init__(self, name: str, map_file: str):
         self.name = name
         self.current_map = Map(map_file)
-        self.current_map_path = map_file 
+        self.current_map_path = map_file
+        self.current_location_id = get_location_id(map_file)
 
-        self.transition_buffer = 150 
+        self.transition_buffer = 80
+        self.transit_exit_positions = {}
         # Define directional transitions for maps.
         # Each entry maps a direction ('left','right','up','down') to a dict with:
         #  - 'map': target map path
@@ -592,10 +628,10 @@ class LocalMap:
             },
             "maps/test-map-2.tmx": {
                 "left": {"map": "maps/test-map-1.tmx", "spawn": {"type": "side", "side": "right"}},
-                "right": {"map": "maps/test-map-3.tmx", "spawn": {"type": "side", "side": "left"}},
+                "up": {"map": "maps/test-map-3.tmx", "spawn": {"type": "side", "side": "bottom_center"}},
             },
             "maps/test-map-3.tmx": {
-                "left": {"map": "maps/test-map-2.tmx", "spawn": {"type": "side", "side": "right"}},
+                "down": {"map": "maps/test-map-2.tmx", "spawn": {"type": "return"}},
             },
         }
 
@@ -673,6 +709,47 @@ class LocalMap:
                 self._teleport_player_to_tile(player, 36, 17, tile_width, tile_height)
                 return new_map
 
+        # Map 3 (Temple) → Map 4 (Cave) at tile (4, 5) — triggers location travel menu
+        if self.current_map_path == "maps/test-map-3.tmx":
+            col = int((player.pos.x + sprite_w / 2) // tile_width)
+            feet_y = player.pos.y + sprite_h
+            if col == 4 and feet_y >= 5 * tile_height - self.transition_buffer:
+                target_map = "maps/test-map-4.tmx"
+                target_loc = get_location_id(target_map)
+                if target_loc is not None and target_loc != self.current_location_id:
+                    if not hasattr(self, "location_exits"):
+                        self.location_exits = {}
+                    self.location_exits[self.current_location_id] = {
+                        "map_path": self.current_map_path,
+                        "pos": (player.pos.x, player.pos.y),
+                    }
+                    self.location_exits[target_loc] = {
+                        "map_path": target_map,
+                        "pos": (15 * tile_width, 36 * tile_height),
+                    }
+                    new_map = ("location_transition", target_loc)
+                    return new_map
+
+        # Map 4 (Cave) → Map 3 (Temple) at bottom centre — triggers location travel menu
+        if self.current_map_path == "maps/test-map-4.tmx":
+            cave_exit_tiles = [(x, 39) for x in range(13, 18)]
+            if self._player_overlaps_any_tile(player_rect, tile_width, tile_height, cave_exit_tiles):
+                target_map = "maps/test-map-3.tmx"
+                target_loc = get_location_id(target_map)
+                if target_loc is not None and target_loc != self.current_location_id:
+                    if not hasattr(self, "location_exits"):
+                        self.location_exits = {}
+                    self.location_exits[self.current_location_id] = {
+                        "map_path": self.current_map_path,
+                        "pos": (player.pos.x, player.pos.y),
+                    }
+                    self.location_exits[target_loc] = {
+                        "map_path": target_map,
+                        "pos": (4 * tile_width, 5 * tile_height),
+                    }
+                    new_map = ("location_transition", target_loc)
+                    return new_map
+
         # Directional edge checks (right/left/up/down)
         # Determine player's height for vertical checks
         if hasattr(player_rect, 'height'):
@@ -681,24 +758,44 @@ class LocalMap:
             h = player.image.get_height()
 
         direction = None
-        if x + w >= map_width - self.transition_buffer:
-            direction = "right"
-        elif x <= self.transition_buffer:
-            direction = "left"
-        elif player.pos.y + h >= (tmx_data.height * tile_height) - self.transition_buffer:
-            direction = "down"
-        elif player.pos.y <= self.transition_buffer:
-            direction = "up"
+        if (self.current_map_path == "maps/test-map-2.tmx"
+                and player.pos.y <= 10):
+            zone_width = map_width / 12.0
+            player_center_x = x + w / 2
+            if 7 * zone_width <= player_center_x < 9 * zone_width:
+                direction = "up"
+        if direction is None:
+            if x + w >= map_width - self.transition_buffer:
+                direction = "right"
+            elif x <= self.transition_buffer:
+                direction = "left"
+            elif player.pos.y + h >= (tmx_data.height * tile_height) - self.transition_buffer:
+                direction = "down"
+            elif (player.pos.y <= self.transition_buffer
+                  and self.current_map_path != "maps/test-map-2.tmx"):
+                direction = "up"
 
         if direction is not None:
             transitions = self.map_transitions.get(self.current_map_path, {})
             trans = transitions.get(direction)
             if trans:
+                target_map = trans["map"]
+                target_loc = get_location_id(target_map)
+                if target_loc is not None and target_loc != self.current_location_id:
+                    if not hasattr(self, "location_exits"):
+                        self.location_exits = {}
+                    self.location_exits[self.current_location_id] = {
+                        "map_path": self.current_map_path,
+                        "pos": (player.pos.x, player.pos.y),
+                    }
+                    return ("location_transition", target_loc)
+
                 # remember previous position to pick nearest corner if needed
                 old_x = player.pos.x
                 old_y = player.pos.y
+                self.transit_exit_positions[self.current_map_path] = (old_x, old_y)
 
-                new_map = trans["map"]
+                new_map = target_map
                 self.switch_map(new_map)
                 # handle spawn
                 spawn = trans.get("spawn")
@@ -781,6 +878,21 @@ class LocalMap:
                             else:
                                 player.pos.y = desired_y
                                 player.pos.x = max(allowed_x_min, min(player.pos.x, allowed_x_max))
+                        elif side == "center":
+                            player.pos.x = (allowed_x_min + allowed_x_max) / 2
+                            player.pos.y = (allowed_y_min + allowed_y_max) / 2
+                        elif side == "bottom_center":
+                            player.pos.x = (allowed_x_min + allowed_x_max) / 2
+                            player.pos.y = bottom_y
+                    elif spawn.get("type") == "return":
+                        saved = self.transit_exit_positions.get(new_map)
+                        if saved:
+                            saved_x, saved_y = saved
+                            player.pos.x = max(allowed_x_min, min(saved_x, allowed_x_max))
+                            player.pos.y = max(allowed_y_min, min(saved_y, allowed_y_max))
+                        else:
+                            player.pos.x = (allowed_x_min + allowed_x_max) / 2
+                            player.pos.y = (allowed_y_min + allowed_y_max) / 2
                     elif spawn.get("type") == "tile":
                         sx = spawn.get("x")
                         sy = spawn.get("y")
@@ -806,6 +918,19 @@ class LocalMap:
         logger.info(f"Switching map from {self.current_map_path} to {new_map_path}")
         self.current_map = Map(new_map_path)
         self.current_map_path = new_map_path
+        new_loc = get_location_id(new_map_path)
+        if new_loc is not None:
+            self.current_location_id = new_loc
+
+    def switch_to_location(self, location_id):
+        loc = get_location(location_id)
+        if not loc or not loc["maps"]:
+            logger.warning(f"Cannot switch to location '{location_id}': no maps available")
+            return None
+        entry_map = loc.get("entry_map") or loc["maps"][0]
+        self.current_location_id = location_id
+        self.switch_map(entry_map)
+        return entry_map
 
     def _player_overlaps_any_tile(self, player_rect, tile_width: int, tile_height: int, tile_positions: list[tuple[int, int]]) -> bool:
         for tile_x, tile_y in tile_positions:

@@ -2,6 +2,36 @@
 <map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="120" height="80" tilewidth="32" tileheight="32" infinite="0" nextlayerid="6" nextobjectid="1">
  <tileset firstgid="1" name="Tileset-Terrain2" tilewidth="32" tileheight="32" tilecount="504" columns="36">
   <image source="tilesets/Tileset-Terrain2.png" width="1152" height="448"/>
+  <tile id="155">
+   <properties>
+    <property name="collidable" type="bool" value="true"/>
+   </properties>
+  </tile>
+  <tile id="157">
+   <properties>
+    <property name="collidable" type="bool" value="true"/>
+   </properties>
+  </tile>
+  <tile id="191">
+   <properties>
+    <property name="collidable" type="bool" value="true"/>
+   </properties>
+  </tile>
+  <tile id="193">
+   <properties>
+    <property name="collidable" type="bool" value="true"/>
+   </properties>
+  </tile>
+  <tile id="227">
+   <properties>
+    <property name="collidable" type="bool" value="true"/>
+   </properties>
+  </tile>
+  <tile id="229">
+   <properties>
+    <property name="collidable" type="bool" value="true"/>
+   </properties>
+  </tile>
  </tileset>
  <tileset firstgid="505" name="exterior_2" tilewidth="32" tileheight="32" tilecount="3876" columns="34">
   <image source="tilesets/exterior_2.png" width="1088" height="3648"/>
@@ -33,13 +63,11 @@
   <tile id="1149">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1150">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1182">
@@ -50,13 +78,11 @@
   <tile id="1183">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1184">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1185">
@@ -67,317 +93,251 @@
   <tile id="1217">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1218">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1388">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1389">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1588">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1589">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1590">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1591">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1593">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_an_apple_tree" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1594">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_an_apple_tree" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1623">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1624">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1761">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1762">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1763">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1764">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1773">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_an_apple_tree" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1774">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_an_apple_tree" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1781">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1782">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1795">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1796">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1797">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1798">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1806">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_an_apple_tree" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1807">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_an_apple_tree" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1808">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_an_apple_tree" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1815">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1816">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1817">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1823">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_an_apple_tree" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1824">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_an_apple_tree" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1840">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_an_apple_tree" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1841">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_an_apple_tree" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1842">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_an_apple_tree" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1849">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1850">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1851">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1857">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_an_apple_tree" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1858">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_an_apple_tree" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1891">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_an_apple_tree" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1892">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_an_apple_tree" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1898">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1899">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1931">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1932">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1933">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1934">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1947">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1948">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1951">
@@ -395,60 +355,46 @@
   <tile id="1955">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1956">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
-   </properties>
-  </tile>
-  <tile id="1959">
-   <properties>
-    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1960">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1965">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1966">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1967">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1968">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1981">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1982">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1985">
@@ -466,91 +412,76 @@
   <tile id="1989">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1990">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1994">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1995">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2000">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2001">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2010">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2028">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2029">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2043">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2044">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2045">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2049">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2078">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2079">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2082">
@@ -561,121 +492,101 @@
   <tile id="2083">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2084">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2087">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2088">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2101">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2102">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2117">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2118">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2121">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2122">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2135">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2136">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_flint_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2540">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2541">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2574">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2575">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2576">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2608">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2609">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2610">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_wood_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="2629">
@@ -751,43 +662,36 @@
   <tile id="3096">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3097">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3098">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3099">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3100">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3101">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3102">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3105">
@@ -833,43 +737,36 @@
   <tile id="3130">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3131">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3132">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3133">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3134">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3135">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3136">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3139">
@@ -902,68 +799,64 @@
     <property name="collidable" type="bool" value="true"/>
    </properties>
   </tile>
-  <tile id="3164">
-   <properties>
-    <property name="is_stone_gatherable" type="bool" value="true"/>
-   </properties>
-  </tile>
   <tile id="3165">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3166">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3167">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3168">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3169">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3199">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3200">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3201">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3202">
    <properties>
     <property name="collidable" type="bool" value="true"/>
-    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
  </tileset>
  <tileset firstgid="4381" name="wall-8 - 2 tiles tall-transparency" tilewidth="32" tileheight="32" tilecount="70" columns="10">
   <image source="tilesets/wall-8 - 2 tiles tall-transparency.png" width="320" height="224"/>
+  <tile id="42">
+   <properties>
+    <property name="collidable" type="bool" value="true"/>
+   </properties>
+  </tile>
+  <tile id="52">
+   <properties>
+    <property name="collidable" type="bool" value="true"/>
+   </properties>
+  </tile>
  </tileset>
  <tileset firstgid="4451" name="exterior" tilewidth="32" tileheight="32" tilecount="969" columns="17">
   <image source="tilesets/exterior.png" width="544" height="1824"/>
@@ -1686,12 +1579,12 @@
  </tileset>
  <layer id="1" name="Ground" width="120" height="80">
   <data encoding="csv">
-235,199,236,239,199,272,203,163,239,199,203,199,200,272,201,275,274,163,235,201,235,236,272,271,201,273,201,272,202,203,271,237,274,273,167,238,274,167,163,200,200,275,272,273,273,275,163,199,274,200,237,274,199,201,201,203,273,203,237,201,167,167,167,274,238,239,271,273,203,203,235,275,199,239,200,238,200,275,167,274,237,275,236,203,200,238,275,272,236,235,235,272,163,272,163,275,199,275,236,237,273,202,163,200,273,203,238,236,237,202,236,237,202,235,167,199,237,275,167,236,
-163,236,275,203,237,236,167,167,272,273,200,239,271,275,271,202,200,236,239,275,239,236,163,275,199,237,203,275,200,237,203,199,200,201,274,271,273,163,199,236,274,235,167,163,167,199,163,237,236,271,235,275,237,202,202,237,202,235,273,238,201,163,163,236,202,163,271,199,271,201,274,275,199,167,201,201,271,237,235,273,236,272,163,199,201,237,275,272,275,199,275,273,236,199,237,237,273,200,274,274,271,238,203,271,238,238,272,239,163,274,273,274,239,238,271,203,163,200,235,274,
-167,199,275,201,275,167,272,199,274,163,238,167,236,239,272,201,275,238,201,203,237,203,200,235,272,236,202,237,238,201,272,199,203,274,199,163,239,201,275,239,273,199,273,199,202,274,235,239,272,163,275,202,236,163,237,167,235,273,163,200,274,238,273,272,202,199,236,163,272,237,200,238,238,163,200,237,167,163,199,238,199,235,238,202,236,239,237,235,275,272,239,271,201,275,236,203,200,199,163,202,239,271,203,271,239,271,239,238,274,272,239,271,199,275,167,203,167,271,274,163,
-274,274,236,236,203,274,163,239,239,272,236,203,202,275,163,201,199,272,167,202,239,203,202,236,203,200,272,236,201,201,271,163,238,201,238,275,236,238,239,199,238,272,202,200,272,235,271,272,163,272,236,273,235,237,200,237,237,236,272,274,202,274,239,275,274,272,163,238,201,167,274,202,200,167,203,272,275,203,203,167,199,203,167,238,238,275,239,237,274,236,200,201,200,203,272,203,271,203,201,203,203,163,236,201,199,236,239,167,273,275,201,201,237,202,235,238,199,202,271,167,
-203,272,239,201,273,238,274,275,199,239,273,237,272,235,235,239,239,239,201,203,202,163,199,201,275,201,271,235,167,273,202,237,203,202,163,275,275,199,239,200,273,163,271,271,163,237,239,200,271,163,273,274,236,274,202,273,199,272,236,163,275,201,163,202,274,239,274,237,167,163,201,238,202,272,200,167,272,275,203,237,272,236,272,271,273,203,199,199,200,200,199,203,236,200,203,271,239,200,167,237,237,237,237,236,238,271,237,163,203,235,199,235,273,201,199,200,236,273,273,163,
-199,237,274,275,201,163,237,237,202,199,274,237,238,202,275,200,275,200,235,237,238,239,239,235,235,238,273,202,202,236,163,273,202,272,272,238,274,200,202,274,272,235,236,236,203,274,237,202,271,199,275,238,275,272,271,203,167,203,199,167,167,202,273,274,201,199,274,203,272,238,167,235,163,275,200,273,274,202,163,202,201,235,275,237,238,203,273,274,238,200,275,271,273,235,237,202,272,235,271,236,239,239,202,203,272,237,275,271,274,236,237,271,203,273,199,167,275,199,274,273,
+235,199,236,239,199,272,203,163,239,199,203,199,200,272,201,275,274,163,235,201,235,236,272,271,201,273,201,272,202,203,271,237,274,273,167,238,274,167,163,200,200,275,272,273,273,275,163,199,274,200,237,274,199,201,201,203,273,203,237,201,167,167,167,274,238,239,271,273,203,203,494,382,380,382,382,382,380,380,382,382,381,382,381,380,381,381,381,382,381,459,235,272,163,272,163,275,199,275,236,237,273,202,163,200,273,203,238,236,237,202,236,237,202,235,167,199,237,275,167,236,
+163,236,275,203,237,236,167,167,272,273,200,239,271,275,271,202,200,236,239,275,239,236,163,275,199,237,203,275,200,237,203,199,200,201,274,271,273,163,199,236,274,235,167,163,167,199,163,237,236,271,235,275,237,202,202,237,202,235,273,238,201,163,163,236,202,163,271,199,271,201,459,495,495,493,495,458,458,457,382,382,380,381,459,458,493,493,458,457,494,459,275,273,236,199,237,237,273,200,274,274,271,238,203,271,238,238,272,239,163,274,273,274,239,238,271,203,163,200,235,274,
+167,199,275,201,275,167,272,199,274,163,238,167,236,239,272,201,275,238,201,203,237,203,200,235,272,236,202,237,238,201,272,199,203,274,199,163,239,201,275,239,273,199,273,199,202,274,235,239,272,163,275,202,236,163,237,167,235,273,163,200,274,238,273,272,202,199,236,163,272,237,200,238,238,163,200,237,167,494,493,381,381,495,493,202,236,239,237,235,275,272,239,271,201,275,236,203,200,199,163,202,239,271,203,271,239,271,239,238,274,272,239,271,199,275,167,203,167,271,274,163,
+274,274,236,236,203,274,163,239,239,272,236,203,202,275,163,201,199,272,167,202,239,203,202,236,203,200,272,236,201,201,271,163,238,201,238,275,236,238,239,199,238,272,202,200,272,235,271,272,163,272,236,273,235,237,200,237,237,236,272,274,202,274,239,275,274,272,163,238,201,167,274,202,200,167,203,272,275,495,380,381,382,382,380,238,238,275,239,237,274,236,200,201,200,203,272,203,271,203,201,203,203,163,236,201,199,236,239,167,273,275,201,201,237,202,235,238,199,202,271,167,
+203,272,239,201,273,238,274,275,199,239,273,237,272,235,235,239,239,239,201,203,202,163,199,201,275,201,271,235,167,273,202,237,203,202,163,275,275,199,239,200,273,163,271,271,163,237,239,200,271,163,273,274,236,274,202,273,199,272,236,163,275,201,163,202,274,239,274,237,167,163,201,238,202,272,200,167,272,275,382,382,381,382,272,271,273,203,199,199,200,200,199,203,236,200,203,271,239,200,167,237,237,237,237,236,238,271,237,163,203,235,199,235,273,201,199,200,236,273,273,163,
+199,237,274,275,201,163,237,237,202,199,274,237,238,202,275,200,275,200,235,237,238,239,239,235,235,238,273,202,202,236,163,273,202,272,272,238,274,200,202,274,272,235,236,236,203,274,237,202,271,199,275,238,275,272,271,203,167,203,199,167,167,202,273,274,201,199,274,203,272,238,167,235,163,275,200,273,274,202,163,202,381,381,275,237,238,203,273,274,238,200,275,271,273,235,237,202,272,235,271,236,239,239,202,203,272,237,275,271,274,236,237,271,203,273,199,167,275,199,274,273,
 236,201,236,237,235,235,237,238,167,273,238,239,275,235,200,200,272,274,238,275,201,163,274,236,237,163,163,167,236,199,239,273,163,200,203,239,235,237,271,235,201,271,237,238,199,236,202,235,203,235,203,274,167,203,273,235,163,238,235,272,235,271,237,238,199,167,199,200,271,238,199,202,274,272,271,202,202,202,237,239,239,274,236,237,275,163,235,273,271,199,235,236,236,201,237,271,203,236,200,163,274,163,235,199,202,238,239,272,238,163,167,202,202,272,202,237,272,236,163,200,
 272,167,271,238,199,239,167,239,274,237,202,235,203,237,167,200,271,275,275,202,275,275,199,239,239,271,199,237,275,163,199,200,236,203,271,272,273,239,199,275,163,202,236,203,273,202,237,274,236,236,237,203,199,202,202,272,275,237,202,203,239,203,203,235,167,275,200,275,203,237,271,203,167,272,239,237,200,200,239,235,167,274,238,199,235,200,202,271,239,167,235,239,275,163,163,275,274,236,274,163,167,199,272,201,200,167,274,199,235,235,239,202,236,237,163,273,199,235,271,203,
 238,200,238,163,167,239,199,235,200,167,239,275,167,167,167,202,236,238,237,203,236,271,275,273,273,199,167,163,167,275,200,201,201,235,235,238,199,235,199,272,274,201,200,203,275,272,271,200,273,200,203,201,199,272,167,203,167,201,237,201,203,275,199,271,275,275,275,238,273,273,272,163,200,239,272,236,201,235,202,236,272,275,275,167,163,237,236,199,167,235,236,199,272,199,237,236,238,236,202,237,237,167,200,272,200,167,271,273,201,163,202,199,163,235,239,275,203,199,272,199,
@@ -1770,13 +1663,13 @@
  </layer>
  <layer id="2" name="Details" width="120" height="80">
   <data encoding="csv">
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,5376,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5374,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5373,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5380,0,0,0,0,0,0,0,0,0,0,5373,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5373,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5373,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,343,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,382,383,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,379,0,0,0,0,0,0,0,0,0,157,157,0,0,0,0,0,0,0,0,418,419,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,5376,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,415,416,417,418,419,0,0,416,0,0,193,193,0,0,381,495,383,0,452,453,454,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,452,453,454,0,0,0,452,0,0,229,229,0,0,495,418,419,0,0,5374,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,416,495,380,381,495,495,418,454,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5380,0,0,0,0,0,0,0,0,0,0,5373,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,452,453,416,495,458,418,0,451,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5373,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,452,453,454,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,5373,0,0,0,0,0,0,0,5379,0,0,5373,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5376,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5376,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5374,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5375,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5374,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5373,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5376,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -1854,10 +1747,10 @@
  </layer>
  <layer id="3" name="Collidable" width="120" height="80">
   <data encoding="csv">
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,438,438,438,438,438,4411,4423,4423,4423,4423,4423,4423,4412,254,221,221,221,4414,4423,4423,4423,4423,4423,4423,4415,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,438,438,438,438,4432,4433,4433,4433,4433,4433,4433,4422,156,217,217,158,4424,4433,4433,4433,4433,4433,4433,4434,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,438,438,0,0,438,438,0,0,0,0,0,0,4432,192,217,217,194,220,277,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,228,217,217,230,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
