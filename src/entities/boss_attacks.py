@@ -124,6 +124,13 @@ class ChronosAttack(BaseAttack):
         self.reversal_heal = int(self.config.get("reversal_heal", 40))
         self.reversal_damage_mult = float(self.config.get("reversal_damage_mult", 0.6))
         self.last_reversal_time = -self.reversal_cooldown_ms
+        # 3-phase melee configuration (windup -> telegraph -> strike)
+        self.melee_windup_duration = float(self.config.get("melee_windup_duration", 0.45))
+        self.melee_telegraph_duration = float(self.config.get("melee_telegraph_duration", 0.30))
+        self.melee_strike_duration = float(self.config.get("melee_strike_duration", 0.18))
+        self.melee_arc_angle = float(self.config.get("melee_arc_angle", 140.0))
+        # pending melee state — applied at the end of the 3-phase animation
+        self._pending_melee = None
 
     def _get_phase(self, enemy) -> int:
         if hasattr(enemy, "hp") and hasattr(enemy, "max_hp") and enemy.max_hp > 0:
@@ -196,6 +203,58 @@ class ChronosAttack(BaseAttack):
             enemy.ai_state = "blink"
             return True
         return False
+
+    def _begin_melee_phase(self, enemy, enemy_pos, player_pos, phase, direction):
+        """Start a 3-phase melee attack (windup -> telegraph -> strike)."""
+        damage = max(1, int(enemy.damage * self.melee_damage_mult))
+        knockback = 40.0 if phase < 3 else 70.0
+        self._pending_melee = {
+            "damage": damage,
+            "knockback": knockback,
+            "direction": pygame.Vector2(direction),
+            "phase": phase,
+            "applied": False,
+        }
+        if hasattr(enemy, "start_attack_phase"):
+            enemy.start_attack_phase(
+                wind_up=self.melee_windup_duration,
+                telegraph=self.melee_telegraph_duration,
+                strike_duration=self.melee_strike_duration,
+                telegraph_range=self.melee_range * 1.4,
+                telegraph_angle=self.melee_arc_angle,
+                damage=damage,
+                knockback=knockback,
+            )
+            enemy.attack_windup_range = self.melee_range * 1.4
+            enemy.attack_windup_angle = self.melee_arc_angle
+            enemy.attack_windup_coverage = "arc"
+        if hasattr(enemy, "trigger_attack_anim"):
+            enemy.trigger_attack_anim(
+                "chronos_strike",
+                self.melee_windup_duration + self.melee_telegraph_duration + self.melee_strike_duration,
+                direction=pygame.Vector2(direction),
+                origin=enemy_pos,
+                strength=1.1 + phase * 0.2,
+            )
+
+    def _apply_pending_melee(self, enemy, player):
+        """Apply pending melee damage + knockback on the strike frame."""
+        if not self._pending_melee:
+            return False
+        if not getattr(enemy, "_phase_strike_ready", False):
+            return False
+        if getattr(enemy, "_attack_phase", None) != "strike":
+            return False
+        pm = self._pending_melee
+        if pm.get("applied"):
+            return False
+        if player is not None and pm.get("damage", 0) > 0:
+            player.take_damage(pm["damage"])
+            player.pos += pm["direction"] * pm.get("knockback", 0.0)
+        pm["applied"] = True
+        self._pending_melee = None
+        enemy._phase_strike_ready = False
+        return True
 
     # ─── SPLASH ATTACK: TEMPORAL NOVA ───
     def _do_temporal_nova(self, enemy, context, now_ms):
@@ -435,6 +494,10 @@ class ChronosAttack(BaseAttack):
         else:
             enemy.speed_multiplier = 1.0
 
+        # If a 3-phase melee is in progress, apply the strike damage
+        if self._pending_melee and self._apply_pending_melee(enemy, player):
+            return
+
         # ─── PHASE 4: BERSERK ───
         if phase >= 4:
             # rift barrage
@@ -595,24 +658,20 @@ class ChronosAttack(BaseAttack):
             self._do_temporal_nova(enemy, context, now_ms)
             return
 
-        # ─── MELEE STRIKE ───
+        # ─── MELEE STRIKE (3-phase, parryable) ───
         effective_range = self.melee_range
-        if distance_sq <= (effective_range * effective_range) and self.ready(context.now_ms):
+        in_melee_range = distance_sq <= (effective_range * effective_range)
+        already_attacking = hasattr(enemy, "is_in_attack") and enemy.is_in_attack()
+        if in_melee_range and self.ready(context.now_ms) and not already_attacking:
             direction = player_pos - enemy_pos
             if direction.length_squared() == 0:
                 direction = pygame.Vector2(1, 0)
             else:
                 direction = direction.normalize()
-            damage = max(1, int(enemy.damage * self.melee_damage_mult))
-            player.take_damage(damage)
-            knockback = 40.0 if phase < 3 else 70.0
-            player.pos += direction * knockback
+            self._begin_melee_phase(enemy, enemy_pos, player_pos, phase, direction)
             self.last_attack_time = now_ms
-            if hasattr(enemy, "trigger_attack_anim"):
-                enemy.trigger_attack_anim(
-                    "chronos_strike", self.strike_anim_duration,
-                    direction=direction, origin=enemy_pos, strength=1.1 + phase * 0.2,
-                )
+            return
+        if self._pending_melee and self._apply_pending_melee(enemy, player):
             return
 
         # ─── RANGED ATTACKS ───
