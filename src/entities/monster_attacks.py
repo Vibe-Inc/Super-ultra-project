@@ -165,6 +165,7 @@ class BruteAttack(BaseAttack):
         self.slam_anim_duration = float(self.config.get("slam_anim_duration", 0.55))
         self.slam_wind_up = float(self.config.get("slam_wind_up", 0.50))
         self.slam_telegraph = float(self.config.get("slam_telegraph", 0.45))
+        self.slam_strike_duration = float(self.config.get("slam_strike_duration", 0.15))
 
         self.last_charge_time = -self.charge_cooldown_ms
         self.charge_timer = 0.0
@@ -233,6 +234,7 @@ class BruteAttack(BaseAttack):
             enemy.start_attack_phase(
                 wind_up=self.slam_wind_up,
                 telegraph=self.slam_telegraph,
+                strike_duration=self.slam_strike_duration,
                 telegraph_range=enemy.attack_range * 1.1,
                 telegraph_angle=140.0,
                 telegraph_color=(255, 120, 30, 100),
@@ -291,6 +293,7 @@ class VenomousAttack(BaseAttack):
         self.strike_anim_duration = float(self.config.get("strike_anim_duration", 0.4))
         self.wind_up_duration = float(self.config.get("wind_up_duration", 0.40))
         self.telegraph_duration = float(self.config.get("telegraph_duration", 0.45))
+        self.strike_duration = float(self.config.get("strike_duration", 0.15))
 
     def update(self, enemy: object, context: AttackContext):
         player = context.player
@@ -346,6 +349,7 @@ class VenomousAttack(BaseAttack):
             enemy.start_attack_phase(
                 wind_up=self.wind_up_duration,
                 telegraph=self.telegraph_duration,
+                strike_duration=self.strike_duration,
                 telegraph_range=effective_range,
                 telegraph_angle=100.0,
                 telegraph_color=(80, 200, 80, 100),
@@ -400,6 +404,33 @@ class ArcanistAttack(BaseAttack):
         diff = player_pos - enemy_pos
         distance_sq = diff.length_squared()
 
+        # Handle strike phase (fire bolt via 3-phase system)
+        if hasattr(enemy, "consume_strike") and enemy.consume_strike():
+            direction = player_pos - enemy_pos
+            if direction.length_squared() == 0:
+                direction = pygame.Vector2(1, 0)
+            else:
+                direction = direction.normalize()
+            if self.spread_degrees:
+                direction = direction.rotate(random.uniform(-self.spread_degrees, self.spread_degrees))
+            if hasattr(enemy, "trigger_attack_anim"):
+                enemy.trigger_attack_anim(
+                    "caster_burst", self.strike_anim_duration,
+                    direction=direction, origin=enemy_pos, strength=1.0,
+                )
+            damage = max(1, int(enemy.damage * self.bolt_damage_mult))
+            bolt = ArcaneBolt(
+                enemy_pos, direction,
+                self.bolt_speed, self.bolt_range,
+                damage, self.burn_duration, self.burn_dps,
+            )
+            context.projectiles.append(bolt)
+            self.last_attack_time = context.now_ms
+            return
+
+        if hasattr(enemy, "is_in_attack") and enemy.is_in_attack():
+            return
+
         if distance_sq > (self.cast_range * self.cast_range):
             return
         if not self.ready(context.now_ms):
@@ -407,36 +438,14 @@ class ArcanistAttack(BaseAttack):
         if not _has_line_of_sight(enemy_pos, player_pos, context.obstacles):
             return
 
-        direction = player_pos - enemy_pos
-        if direction.length_squared() == 0:
-            direction = pygame.Vector2(1, 0)
-        else:
-            direction = direction.normalize()
-
-        if self.spread_degrees:
-            direction = direction.rotate(random.uniform(-self.spread_degrees, self.spread_degrees))
-
-        if hasattr(enemy, "trigger_attack_anim"):
-            enemy.trigger_attack_anim(
-                "caster_burst",
-                self.strike_anim_duration,
-                direction=direction,
-                origin=enemy_pos,
-                strength=1.0,
+        if hasattr(enemy, "start_attack_phase"):
+            enemy.start_attack_phase(
+                wind_up=0.25, telegraph=0.30, strike_duration=0.15,
+                telegraph_range=0.0,
+                telegraph_angle=0.0,
+                telegraph_color=(160, 110, 230, 80),
+                damage=0,
             )
-
-        damage = max(1, int(enemy.damage * self.bolt_damage_mult))
-        bolt = ArcaneBolt(
-            enemy_pos,
-            direction,
-            self.bolt_speed,
-            self.bolt_range,
-            damage,
-            self.burn_duration,
-            self.burn_dps,
-        )
-        context.projectiles.append(bolt)
-        self.last_attack_time = context.now_ms
 
 
 class TricksterAttack(BaseAttack):
@@ -489,6 +498,33 @@ class TricksterAttack(BaseAttack):
         diff = player_center - enemy_center
         distance_sq = diff.length_squared()
 
+        # Handle strike phase (teleport damage + VFX via 3-phase system)
+        if hasattr(enemy, "consume_strike") and enemy.consume_strike():
+            new_center = _entity_center(enemy)
+            strike_dir = player_center - new_center
+            if strike_dir.length_squared() == 0:
+                strike_dir = pygame.Vector2(1, 0)
+            ndiff = new_center - player_center
+            struck = False
+            if ndiff.length_squared() <= (self.strike_range * self.strike_range):
+                damage = int(enemy.damage * self.damage_mult)
+                if damage > 0:
+                    player.take_damage(damage)
+                player.add_effect(ConfusionEffect(self.confuse_duration))
+                player.add_effect(DizzinessEffect(self.dizzy_duration))
+                struck = True
+            if hasattr(enemy, "trigger_attack_anim"):
+                enemy.trigger_attack_anim(
+                    "trickster_strike", self.strike_anim_duration,
+                    direction=strike_dir, origin=new_center,
+                    strength=1.1 if struck else 0.9,
+                )
+            self.last_attack_time = context.now_ms
+            return
+
+        if hasattr(enemy, "is_in_attack") and enemy.is_in_attack():
+            return
+
         if distance_sq > (self.step_range * self.step_range):
             return
         if not self.ready(context.now_ms):
@@ -516,29 +552,14 @@ class TricksterAttack(BaseAttack):
         enemy.pos = new_pos
         enemy.ai_state = "blink"
 
-        new_center = _entity_center(enemy)
-        ndiff = new_center - player_center
-        struck = False
-        if ndiff.length_squared() <= (self.strike_range * self.strike_range):
-            damage = int(enemy.damage * self.damage_mult)
-            if damage > 0:
-                player.take_damage(damage)
-            player.add_effect(ConfusionEffect(self.confuse_duration))
-            player.add_effect(DizzinessEffect(self.dizzy_duration))
-            struck = True
-
-        self.last_attack_time = context.now_ms
-
-        if hasattr(enemy, "trigger_attack_anim"):
-            strike_dir = player_center - new_center
-            if strike_dir.length_squared() == 0:
-                strike_dir = pygame.Vector2(1, 0)
-            enemy.trigger_attack_anim(
-                "trickster_strike",
-                self.strike_anim_duration,
-                direction=strike_dir,
-                origin=new_center,
-                strength=1.1 if struck else 0.9,
+        damage = int(enemy.damage * self.damage_mult)
+        if hasattr(enemy, "start_attack_phase"):
+            enemy.start_attack_phase(
+                wind_up=0.15, telegraph=0.20, strike_duration=0.15,
+                telegraph_range=self.strike_range,
+                telegraph_angle=120.0,
+                telegraph_color=(220, 80, 100, 100),
+                damage=damage,
             )
 
 
@@ -580,6 +601,7 @@ class MeleeAttack(BaseAttack):
         self.anim_strength = float(self.config.get("anim_strength", 1.0))
         self.wind_up_duration = float(self.config.get("wind_up_duration", 0.45))
         self.telegraph_duration = float(self.config.get("telegraph_duration", 0.50))
+        self.strike_duration = float(self.config.get("strike_duration", 0.15))
 
     def update(self, enemy: object, context: AttackContext):
         player = context.player
@@ -643,6 +665,7 @@ class MeleeAttack(BaseAttack):
             enemy.start_attack_phase(
                 wind_up=self.wind_up_duration,
                 telegraph=self.telegraph_duration,
+                strike_duration=self.strike_duration,
                 telegraph_range=effective_range,
                 telegraph_angle=130.0,
                 telegraph_color=(255, 100, 100, 100),
@@ -719,46 +742,48 @@ class BomberAttack(BaseAttack):
         diff = player_pos - enemy_pos
         distance_sq = diff.length_squared()
 
+        # Handle strike phase (throw bomb via 3-phase system)
+        if hasattr(enemy, "consume_strike") and enemy.consume_strike():
+            direction = player_pos - enemy_pos
+            if direction.length_squared() == 0:
+                direction = pygame.Vector2(1, 0)
+            else:
+                direction = direction.normalize()
+            if distance_sq < (self.min_range * self.min_range):
+                direction *= -1
+            if self.spread_degrees:
+                direction = direction.rotate(random.uniform(-self.spread_degrees, self.spread_degrees))
+            if hasattr(enemy, "trigger_attack_anim"):
+                enemy.trigger_attack_anim(
+                    "caster_burst", self.strike_anim_duration,
+                    direction=direction, origin=enemy_pos, strength=1.0,
+                )
+            damage = max(1, int(enemy.damage * self.damage_mult))
+            bomb = Bomb(
+                enemy_pos + direction * 20, direction,
+                self.bomb_speed, self.bomb_range,
+                damage, self.blast_radius, self.fuse_time, self.knockback_force,
+            )
+            context.projectiles.append(bomb)
+            self.last_attack_time = context.now_ms
+            return
+
+        if hasattr(enemy, "is_in_attack") and enemy.is_in_attack():
+            return
+
         if distance_sq > (self.throw_range * self.throw_range):
             return
         if not self.ready(context.now_ms):
             return
 
-        direction = player_pos - enemy_pos
-        if direction.length_squared() == 0:
-            direction = pygame.Vector2(1, 0)
-        else:
-            direction = direction.normalize()
-
-        # compare squared distance to avoid an unnecessary sqrt and fix NameError
-        if distance_sq < (self.min_range * self.min_range):
-            direction *= -1
-
-        if self.spread_degrees:
-            direction = direction.rotate(random.uniform(-self.spread_degrees, self.spread_degrees))
-
-        if hasattr(enemy, "trigger_attack_anim"):
-            enemy.trigger_attack_anim(
-                "caster_burst",
-                self.strike_anim_duration,
-                direction=direction,
-                origin=enemy_pos,
-                strength=1.0,
+        if hasattr(enemy, "start_attack_phase"):
+            enemy.start_attack_phase(
+                wind_up=0.25, telegraph=0.30, strike_duration=0.15,
+                telegraph_range=0.0,
+                telegraph_angle=0.0,
+                telegraph_color=(200, 150, 85, 80),
+                damage=0,
             )
-
-        damage = max(1, int(enemy.damage * self.damage_mult))
-        bomb = Bomb(
-            enemy_pos + direction * 20,
-            direction,
-            self.bomb_speed,
-            self.bomb_range,
-            damage,
-            self.blast_radius,
-            self.fuse_time,
-            self.knockback_force,
-        )
-        context.projectiles.append(bomb)
-        self.last_attack_time = context.now_ms
 
 
 class PhantomDrain(BaseAttack):
@@ -803,6 +828,34 @@ class PhantomDrain(BaseAttack):
         distance_sq = diff.length_squared()
 
         effective_range = self.strike_range or float(enemy.attack_range)
+
+        # Handle strike phase (one-shot via 3-phase system)
+        if hasattr(enemy, "consume_strike") and enemy.consume_strike():
+            if distance_sq <= (effective_range * effective_range):
+                direction = player_pos - enemy_pos
+                if direction.length_squared() == 0:
+                    direction = pygame.Vector2(1, 0)
+                else:
+                    direction = direction.normalize()
+                damage = max(1, int(enemy.damage * self.drain_damage_mult))
+                heal_amount = int(damage * self.heal_pct)
+                if damage > 0:
+                    player.take_damage(damage)
+                if heal_amount > 0 and hasattr(enemy, 'hp') and hasattr(enemy, 'max_hp'):
+                    enemy.hp = min(enemy.max_hp, enemy.hp + heal_amount)
+                player.add_effect(SlowEffect(self.slow_duration, self.slow_factor))
+                if hasattr(enemy, "trigger_attack_anim"):
+                    enemy.trigger_attack_anim(
+                        "phantom_drain",
+                        self.strike_anim_duration,
+                        direction=direction, origin=enemy_pos, strength=1.0,
+                    )
+                self.last_attack_time = context.now_ms
+            return
+
+        if hasattr(enemy, "is_in_attack") and enemy.is_in_attack():
+            return
+
         if distance_sq > (effective_range * effective_range):
             return
         if not self.ready(context.now_ms):
@@ -811,25 +864,18 @@ class PhantomDrain(BaseAttack):
         direction = player_pos - enemy_pos
         if direction.length_squared() == 0:
             direction = pygame.Vector2(1, 0)
-        damage = max(1, int(enemy.damage * self.drain_damage_mult))
-        heal_amount = int(damage * self.heal_pct)
+        else:
+            direction = direction.normalize()
 
-        # Wind-up animation first, then delayed hit
-        if hasattr(enemy, "trigger_attack_anim"):
-            enemy.trigger_attack_anim(
-                "phantom_drain",
-                self.strike_anim_duration,
-                direction=direction,
-                origin=enemy_pos,
-                strength=1.0,
+        damage = max(1, int(enemy.damage * self.drain_damage_mult))
+        if hasattr(enemy, "start_attack_phase"):
+            enemy.start_attack_phase(
+                wind_up=0.30, telegraph=0.35,
+                telegraph_range=effective_range,
+                telegraph_angle=100.0,
+                telegraph_color=(120, 60, 180, 100),
+                damage=damage,
             )
-        if damage > 0 and hasattr(enemy, "attack_anim_hit_pending"):
-            enemy.attack_anim_hit_pending = {
-                "damage": damage,
-                "heal": heal_amount,
-                "effects": [SlowEffect(self.slow_duration, self.slow_factor)],
-            }
-        self.last_attack_time = context.now_ms
 
 
 class TitanStomp(BaseAttack):
@@ -876,34 +922,53 @@ class TitanStomp(BaseAttack):
         distance_sq = diff.length_squared()
 
         effective_range = self.strike_range or float(enemy.attack_range)
+
+        # Handle strike phase (one-shot via 3-phase system)
+        if hasattr(enemy, "consume_strike") and enemy.consume_strike():
+            direction = player_pos - enemy_pos
+            if direction.length_squared() == 0:
+                direction = pygame.Vector2(1, 0)
+            else:
+                direction = direction.normalize()
+            damage = max(1, int(enemy.damage * self.slam_damage_mult))
+            if damage > 0 and distance_sq <= (effective_range * effective_range):
+                player.take_damage(damage)
+                player.add_effect(RootEffect(self.root_duration))
+                player.add_effect(DizzinessEffect(self.stun_duration))
+                player.pos += direction * self.knockback_force
+            if hasattr(enemy, "trigger_attack_anim"):
+                enemy.trigger_attack_anim(
+                    "titan_stomp",
+                    self.strike_anim_duration,
+                    direction=direction, origin=enemy_pos, strength=1.4,
+                )
+            self.last_attack_time = context.now_ms
+            return
+
+        if hasattr(enemy, "is_in_attack") and enemy.is_in_attack():
+            return
+
         if distance_sq > (effective_range * effective_range):
             return
         if not self.ready(context.now_ms):
             return
 
-        damage = max(1, int(enemy.damage * self.slam_damage_mult))
         direction = player_pos - enemy_pos
         if direction.length_squared() == 0:
             direction = pygame.Vector2(1, 0)
         else:
             direction = direction.normalize()
 
-        # Wind-up animation first, then delayed hit
-        if hasattr(enemy, "trigger_attack_anim"):
-            enemy.trigger_attack_anim(
-                "titan_stomp",
-                self.strike_anim_duration,
-                direction=direction,
-                origin=enemy_pos,
-                strength=1.4,
+        damage = max(1, int(enemy.damage * self.slam_damage_mult))
+        if hasattr(enemy, "start_attack_phase"):
+            enemy.start_attack_phase(
+                wind_up=0.40, telegraph=0.45, strike_duration=0.25,
+                telegraph_range=effective_range * 1.3,
+                telegraph_angle=360.0,
+                telegraph_color=(140, 130, 110, 100),
+                damage=damage,
+                knockback=self.knockback_force,
             )
-        if damage > 0 and hasattr(enemy, "attack_anim_hit_pending"):
-            enemy.attack_anim_hit_pending = {
-                "damage": damage,
-                "knockback": self.knockback_force,
-                "effects": [RootEffect(self.root_duration), DizzinessEffect(self.stun_duration)],
-            }
-        self.last_attack_time = context.now_ms
 
 
 class CryomancerAttack(BaseAttack):
@@ -958,25 +1023,63 @@ class CryomancerAttack(BaseAttack):
         diff = player_pos - enemy_pos
         distance_sq = diff.length_squared()
 
+        # Handle strike phase for nova (via 3-phase system)
+        if hasattr(enemy, "consume_strike") and enemy.consume_strike():
+            # Nova strike
+            if hasattr(enemy, '_nova_strike') and enemy._nova_strike:
+                damage = max(1, int(enemy.damage * self.nova_damage_mult))
+                if distance_sq <= (self.nova_radius * self.nova_radius) and damage > 0:
+                    player.take_damage(damage)
+                    player.add_effect(FreezeEffect(self.nova_freeze_duration))
+                if hasattr(enemy, "trigger_attack_anim"):
+                    enemy.trigger_attack_anim(
+                        "cryomancer_nova", 0.5,
+                        direction=pygame.Vector2(1, 0), origin=enemy_pos, strength=1.3,
+                    )
+                enemy._nova_strike = False
+                self.last_nova_time = context.now_ms
+            else:
+                # Ranged shard strike
+                direction = player_pos - enemy_pos
+                if direction.length_squared() == 0:
+                    direction = pygame.Vector2(1, 0)
+                else:
+                    direction = direction.normalize()
+                if self.spread_degrees:
+                    direction = direction.rotate(random.uniform(-self.spread_degrees, self.spread_degrees))
+                if hasattr(enemy, "trigger_attack_anim"):
+                    enemy.trigger_attack_anim(
+                        "caster_burst",
+                        self.strike_anim_duration,
+                        direction=direction, origin=enemy_pos, strength=1.0,
+                    )
+                damage = max(1, int(enemy.damage * self.shard_damage_mult))
+                from src.entities.projectile import IceShard
+                shard = IceShard(
+                    enemy_pos, direction,
+                    self.shard_speed, self.shard_range,
+                    damage, self.slow_duration, self.slow_factor,
+                )
+                context.projectiles.append(shard)
+                self.last_attack_time = context.now_ms
+            return
+
+        if hasattr(enemy, "is_in_attack") and enemy.is_in_attack():
+            return
+
         # Close-range frost nova
         nova_ready = (context.now_ms - self.last_nova_time) >= self.nova_cooldown_ms
         if distance_sq <= (self.nova_radius * self.nova_radius) and nova_ready:
             damage = max(1, int(enemy.damage * self.nova_damage_mult))
-            # Wind-up first, then delayed hit
-            if hasattr(enemy, "trigger_attack_anim"):
-                enemy.trigger_attack_anim(
-                    "cryomancer_nova",
-                    0.5,
-                    direction=pygame.Vector2(1, 0),
-                    origin=enemy_pos,
-                    strength=1.3,
+            if hasattr(enemy, "start_attack_phase"):
+                enemy._nova_strike = True
+                enemy.start_attack_phase(
+                    wind_up=0.30, telegraph=0.35, strike_duration=0.20,
+                    telegraph_range=self.nova_radius,
+                    telegraph_angle=360.0,
+                    telegraph_color=(140, 200, 255, 100),
+                    damage=damage,
                 )
-            if damage > 0 and hasattr(enemy, "attack_anim_hit_pending"):
-                enemy.attack_anim_hit_pending = {
-                    "damage": damage,
-                    "effects": [FreezeEffect(self.nova_freeze_duration)],
-                }
-            self.last_nova_time = context.now_ms
             return
 
         # Ranged ice shard
@@ -993,31 +1096,15 @@ class CryomancerAttack(BaseAttack):
         else:
             direction = direction.normalize()
 
-        if self.spread_degrees:
-            direction = direction.rotate(random.uniform(-self.spread_degrees, self.spread_degrees))
-
-        if hasattr(enemy, "trigger_attack_anim"):
-            enemy.trigger_attack_anim(
-                "caster_burst",
-                self.strike_anim_duration,
-                direction=direction,
-                origin=enemy_pos,
-                strength=1.0,
+        if hasattr(enemy, "start_attack_phase"):
+            enemy._nova_strike = False
+            enemy.start_attack_phase(
+                wind_up=0.20, telegraph=0.25, strike_duration=0.12,
+                telegraph_range=0.0,
+                telegraph_angle=0.0,
+                telegraph_color=(140, 200, 255, 80),
+                damage=0,
             )
-
-        damage = max(1, int(enemy.damage * self.shard_damage_mult))
-        from src.entities.projectile import IceShard
-        shard = IceShard(
-            enemy_pos,
-            direction,
-            self.shard_speed,
-            self.shard_range,
-            damage,
-            self.slow_duration,
-            self.slow_factor,
-        )
-        context.projectiles.append(shard)
-        self.last_attack_time = context.now_ms
 
 
 class ShadowmancerAttack(BaseAttack):
@@ -1071,6 +1158,35 @@ class ShadowmancerAttack(BaseAttack):
         diff = player_pos - enemy_pos
         distance_sq = diff.length_squared()
 
+        # Handle strike phase (bolt via 3-phase system)
+        if hasattr(enemy, "consume_strike") and enemy.consume_strike():
+            if getattr(enemy, '_shadow_strike_type', '') == 'bolt':
+                direction = player_pos - enemy_pos
+                if direction.length_squared() == 0:
+                    direction = pygame.Vector2(1, 0)
+                else:
+                    direction = direction.normalize()
+                if self.spread_degrees:
+                    direction = direction.rotate(random.uniform(-self.spread_degrees, self.spread_degrees))
+                if hasattr(enemy, "trigger_attack_anim"):
+                    enemy.trigger_attack_anim(
+                        "caster_burst", self.strike_anim_duration,
+                        direction=direction, origin=enemy_pos, strength=1.0,
+                    )
+                damage = max(1, int(enemy.damage * self.bolt_damage_mult))
+                from src.entities.projectile import ShadowBolt
+                bolt = ShadowBolt(
+                    enemy_pos, direction,
+                    self.bolt_speed, self.bolt_range,
+                    damage, self.confuse_duration,
+                )
+                context.projectiles.append(bolt)
+                self.last_attack_time = context.now_ms
+            return
+
+        if hasattr(enemy, "is_in_attack") and enemy.is_in_attack():
+            return
+
         # Escape teleport when player is too close
         escape_ready = (context.now_ms - self.last_escape_time) >= self.escape_cooldown_ms
         if distance_sq <= (self.escape_range * self.escape_range) and escape_ready:
@@ -1096,11 +1212,8 @@ class ShadowmancerAttack(BaseAttack):
                 self.last_escape_time = context.now_ms
                 if hasattr(enemy, "trigger_attack_anim"):
                     enemy.trigger_attack_anim(
-                        "shadowmancer_blink",
-                        0.35,
-                        direction=direction,
-                        origin=enemy_pos,
-                        strength=0.9,
+                        "shadowmancer_blink", 0.35,
+                        direction=direction, origin=enemy_pos, strength=0.9,
                     )
                 return
 
@@ -1112,36 +1225,15 @@ class ShadowmancerAttack(BaseAttack):
         if not _has_line_of_sight(enemy_pos, player_pos, context.obstacles):
             return
 
-        direction = player_pos - enemy_pos
-        if direction.length_squared() == 0:
-            direction = pygame.Vector2(1, 0)
-        else:
-            direction = direction.normalize()
-
-        if self.spread_degrees:
-            direction = direction.rotate(random.uniform(-self.spread_degrees, self.spread_degrees))
-
-        if hasattr(enemy, "trigger_attack_anim"):
-            enemy.trigger_attack_anim(
-                "caster_burst",
-                self.strike_anim_duration,
-                direction=direction,
-                origin=enemy_pos,
-                strength=1.0,
+        if hasattr(enemy, "start_attack_phase"):
+            enemy._shadow_strike_type = 'bolt'
+            enemy.start_attack_phase(
+                wind_up=0.25, telegraph=0.30, strike_duration=0.15,
+                telegraph_range=0.0,
+                telegraph_angle=0.0,
+                telegraph_color=(160, 80, 220, 80),
+                damage=0,
             )
-
-        damage = max(1, int(enemy.damage * self.bolt_damage_mult))
-        from src.entities.projectile import ShadowBolt
-        bolt = ShadowBolt(
-            enemy_pos,
-            direction,
-            self.bolt_speed,
-            self.bolt_range,
-            damage,
-            self.confuse_duration,
-        )
-        context.projectiles.append(bolt)
-        self.last_attack_time = context.now_ms
 
 
 # ============================================================
@@ -1205,6 +1297,32 @@ class RevenantAttack(BaseAttack):
                     )
                 return
 
+        # Handle strike phase (one-shot via 3-phase system)
+        if hasattr(enemy, "consume_strike") and enemy.consume_strike():
+            if distance_sq <= (self.strike_range * self.strike_range):
+                direction = player_pos - enemy_pos
+                if direction.length_squared() == 0:
+                    direction = pygame.Vector2(1, 0)
+                else:
+                    direction = direction.normalize()
+                damage = max(1, int(enemy.damage * self.damage_mult))
+                heal = max(1, int(damage * self.lifesteal_fraction))
+                if damage > 0:
+                    player.take_damage(damage)
+                if heal > 0 and hasattr(enemy, 'hp') and hasattr(enemy, 'max_hp'):
+                    enemy.hp = min(enemy.max_hp, enemy.hp + heal)
+                player.add_effect(BleedEffect(self.bleed_duration, max(1, int(damage * 0.15))))
+                if hasattr(enemy, "trigger_attack_anim"):
+                    enemy.trigger_attack_anim(
+                        "revenant_slash", 0.45,
+                        direction=direction, origin=enemy_pos, strength=1.0,
+                    )
+                self.last_attack_time = context.now_ms
+            return
+
+        if hasattr(enemy, "is_in_attack") and enemy.is_in_attack():
+            return
+
         # Melee lifesteal strike
         if distance_sq <= (self.strike_range * self.strike_range) and self.ready(context.now_ms):
             direction = player_pos - enemy_pos
@@ -1214,21 +1332,14 @@ class RevenantAttack(BaseAttack):
                 direction = direction.normalize()
 
             damage = max(1, int(enemy.damage * self.damage_mult))
-            heal = max(1, int(damage * self.lifesteal_fraction))
-
-            # Wind-up first, then delayed hit
-            if hasattr(enemy, "trigger_attack_anim"):
-                enemy.trigger_attack_anim(
-                    "revenant_slash", 0.45,
-                    direction=direction, origin=enemy_pos, strength=1.0,
+            if hasattr(enemy, "start_attack_phase"):
+                enemy.start_attack_phase(
+                    wind_up=0.30, telegraph=0.35,
+                    telegraph_range=self.strike_range,
+                    telegraph_angle=130.0,
+                    telegraph_color=(100, 200, 150, 100),
+                    damage=damage,
                 )
-            if damage > 0 and hasattr(enemy, "attack_anim_hit_pending"):
-                enemy.attack_anim_hit_pending = {
-                    "damage": damage,
-                    "heal": heal,
-                    "effects": [BleedEffect(self.bleed_duration, max(1, int(damage * 0.15)))],
-                }
-            self.last_attack_time = context.now_ms
 
 
 # ============================================================
@@ -1281,6 +1392,38 @@ class MoltenAttack(BaseAttack):
         diff = player_pos - enemy_pos
         distance_sq = diff.length_squared()
 
+        # Handle strike phase (via 3-phase system) for nova/slam
+        if hasattr(enemy, "consume_strike") and enemy.consume_strike():
+            if getattr(enemy, '_molten_strike_type', '') == 'nova':
+                damage = max(1, int(enemy.damage * self.nova_damage_mult))
+                if distance_sq <= (self.nova_radius * self.nova_radius) and damage > 0:
+                    player.take_damage(damage)
+                    player.add_effect(BurnEffect(self.burn_duration, self.burn_dps))
+                if hasattr(enemy, "trigger_attack_anim"):
+                    enemy.trigger_attack_anim(
+                        "molten_nova", 0.55,
+                        direction=pygame.Vector2(1, 0), origin=enemy_pos, strength=1.4,
+                    )
+                enemy._molten_strike_type = ''
+                self.last_nova_time = context.now_ms
+            elif getattr(enemy, '_molten_strike_type', '') == 'charge_slam':
+                direction = self.charge_direction
+                damage = max(1, int(enemy.damage * self.charge_damage_mult))
+                if distance_sq <= (enemy.attack_range * 1.1) ** 2 and damage > 0:
+                    player.take_damage(damage)
+                    player.add_effect(BurnEffect(self.burn_duration, self.burn_dps))
+                if hasattr(enemy, "trigger_attack_anim"):
+                    enemy.trigger_attack_anim(
+                        "molten_slam", 0.5,
+                        direction=direction, origin=enemy_pos, strength=1.2,
+                    )
+                enemy._molten_strike_type = ''
+                self.last_attack_time = context.now_ms
+            return
+
+        if hasattr(enemy, "is_in_attack") and enemy.is_in_attack():
+            return
+
         # Active charge
         if self.charge_timer > 0:
             self.charge_timer -= context.dt
@@ -1289,18 +1432,16 @@ class MoltenAttack(BaseAttack):
             enemy.target = enemy.pos + self.charge_direction * 200
             if distance_sq <= (enemy.attack_range * 1.1) ** 2 and self.ready(context.now_ms):
                 damage = max(1, int(enemy.damage * self.charge_damage_mult))
-                # Wind-up first, then delayed hit
-                if hasattr(enemy, "trigger_attack_anim"):
-                    enemy.trigger_attack_anim(
-                        "molten_slam", 0.5,
-                        direction=self.charge_direction, origin=enemy_pos, strength=1.2,
+                if hasattr(enemy, "start_attack_phase"):
+                    enemy._molten_strike_type = 'charge_slam'
+                    enemy.attack_anim_dir = self.charge_direction
+                    enemy.start_attack_phase(
+                        wind_up=0.15, telegraph=0.20, strike_duration=0.12,
+                        telegraph_range=enemy.attack_range * 1.1,
+                        telegraph_angle=110.0,
+                        telegraph_color=(255, 120, 30, 100),
+                        damage=damage,
                     )
-                if damage > 0 and hasattr(enemy, "attack_anim_hit_pending"):
-                    enemy.attack_anim_hit_pending = {
-                        "damage": damage,
-                        "effects": [BurnEffect(self.burn_duration, self.burn_dps)],
-                    }
-                self.last_attack_time = context.now_ms
                 self.charge_timer = 0.0
             if self.charge_timer <= 0:
                 enemy.speed_multiplier = 1.0
@@ -1312,18 +1453,15 @@ class MoltenAttack(BaseAttack):
         nova_ready = (context.now_ms - self.last_nova_time) >= self.nova_cooldown_ms
         if distance_sq <= (self.nova_radius * self.nova_radius) and nova_ready:
             damage = max(1, int(enemy.damage * self.nova_damage_mult))
-            # Wind-up first, then delayed hit
-            if hasattr(enemy, "trigger_attack_anim"):
-                enemy.trigger_attack_anim(
-                    "molten_nova", 0.55,
-                    direction=pygame.Vector2(1, 0), origin=enemy_pos, strength=1.4,
+            if hasattr(enemy, "start_attack_phase"):
+                enemy._molten_strike_type = 'nova'
+                enemy.start_attack_phase(
+                    wind_up=0.30, telegraph=0.35, strike_duration=0.20,
+                    telegraph_range=self.nova_radius,
+                    telegraph_angle=360.0,
+                    telegraph_color=(255, 80, 30, 100),
+                    damage=damage,
                 )
-            if damage > 0 and hasattr(enemy, "attack_anim_hit_pending"):
-                enemy.attack_anim_hit_pending = {
-                    "damage": damage,
-                    "effects": [BurnEffect(self.burn_duration, self.burn_dps)],
-                }
-            self.last_nova_time = context.now_ms
             return
 
         # Charge toward player
@@ -1390,22 +1528,59 @@ class StormcallerAttack(BaseAttack):
         diff = player_pos - enemy_pos
         distance_sq = diff.length_squared()
 
+        # Handle strike phase (via 3-phase system)
+        if hasattr(enemy, "consume_strike") and enemy.consume_strike():
+            if getattr(enemy, '_storm_strike_type', '') == 'field':
+                damage = max(1, int(enemy.damage * self.field_damage_mult))
+                if distance_sq <= (self.field_radius * self.field_radius) and damage > 0:
+                    player.take_damage(damage)
+                    player.add_effect(DizzinessEffect(self.dizzy_duration))
+                if hasattr(enemy, "trigger_attack_anim"):
+                    enemy.trigger_attack_anim(
+                        "stormcaller_field", 0.5,
+                        direction=pygame.Vector2(1, 0), origin=enemy_pos, strength=1.3,
+                    )
+                enemy._storm_strike_type = ''
+                self.last_field_time = context.now_ms
+            else:
+                direction = player_pos - enemy_pos
+                if direction.length_squared() == 0:
+                    direction = pygame.Vector2(1, 0)
+                else:
+                    direction = direction.normalize()
+                if self.spread_degrees:
+                    direction = direction.rotate(random.uniform(-self.spread_degrees, self.spread_degrees))
+                if hasattr(enemy, "trigger_attack_anim"):
+                    enemy.trigger_attack_anim(
+                        "caster_burst", self.strike_anim_duration,
+                        direction=direction, origin=enemy_pos, strength=1.0,
+                    )
+                damage = max(1, int(enemy.damage * self.bolt_damage_mult))
+                from src.entities.projectile import ChainLightningBolt
+                bolt = ChainLightningBolt(
+                    enemy_pos, direction, self.bolt_speed, self.bolt_range,
+                    damage, self.dizzy_duration,
+                )
+                context.projectiles.append(bolt)
+                self.last_attack_time = context.now_ms
+            return
+
+        if hasattr(enemy, "is_in_attack") and enemy.is_in_attack():
+            return
+
         # Close-range static field
         field_ready = (context.now_ms - self.last_field_time) >= self.field_cooldown_ms
         if distance_sq <= (self.field_radius * self.field_radius) and field_ready:
             damage = max(1, int(enemy.damage * self.field_damage_mult))
-            # Wind-up first, then delayed hit
-            if hasattr(enemy, "trigger_attack_anim"):
-                enemy.trigger_attack_anim(
-                    "stormcaller_field", 0.5,
-                    direction=pygame.Vector2(1, 0), origin=enemy_pos, strength=1.3,
+            if hasattr(enemy, "start_attack_phase"):
+                enemy._storm_strike_type = 'field'
+                enemy.start_attack_phase(
+                    wind_up=0.30, telegraph=0.35, strike_duration=0.20,
+                    telegraph_range=self.field_radius,
+                    telegraph_angle=360.0,
+                    telegraph_color=(200, 200, 60, 100),
+                    damage=damage,
                 )
-            if damage > 0 and hasattr(enemy, "attack_anim_hit_pending"):
-                enemy.attack_anim_hit_pending = {
-                    "damage": damage,
-                    "effects": [DizzinessEffect(self.dizzy_duration)],
-                }
-            self.last_field_time = context.now_ms
             return
 
         # Ranged chain lightning bolt
@@ -1422,26 +1597,15 @@ class StormcallerAttack(BaseAttack):
         else:
             direction = direction.normalize()
 
-        if self.spread_degrees:
-            direction = direction.rotate(random.uniform(-self.spread_degrees, self.spread_degrees))
-
-        if hasattr(enemy, "trigger_attack_anim"):
-            enemy.trigger_attack_anim(
-                "caster_burst",
-                self.strike_anim_duration,
-                direction=direction,
-                origin=enemy_pos,
-                strength=1.0,
+        if hasattr(enemy, "start_attack_phase"):
+            enemy._storm_strike_type = 'bolt'
+            enemy.start_attack_phase(
+                wind_up=0.20, telegraph=0.25, strike_duration=0.12,
+                telegraph_range=0.0,
+                telegraph_angle=0.0,
+                telegraph_color=(200, 200, 60, 80),
+                damage=0,
             )
-
-        damage = max(1, int(enemy.damage * self.bolt_damage_mult))
-        from src.entities.projectile import ChainLightningBolt
-        bolt = ChainLightningBolt(
-            enemy_pos, direction, self.bolt_speed, self.bolt_range,
-            damage, self.dizzy_duration,
-        )
-        context.projectiles.append(bolt)
-        self.last_attack_time = context.now_ms
 
 
 # ============================================================
@@ -1498,25 +1662,60 @@ class PlaguebearerAttack(BaseAttack):
         diff = player_pos - enemy_pos
         distance_sq = diff.length_squared()
 
+        # Handle strike phase (via 3-phase system)
+        if hasattr(enemy, "consume_strike") and enemy.consume_strike():
+            if getattr(enemy, '_plague_strike_type', '') == 'nova':
+                damage = max(1, int(enemy.damage * self.nova_damage_mult))
+                if distance_sq <= (self.nova_radius * self.nova_radius) and damage > 0:
+                    player.take_damage(damage)
+                    player.add_effect(PoisonEffect(self.nova_cooldown_ms / 1000.0 * 1.2, self.poison_dps))
+                    player.add_effect(SlowEffect(self.nova_slow_duration, self.nova_slow_factor))
+                if hasattr(enemy, "trigger_attack_anim"):
+                    enemy.trigger_attack_anim(
+                        "plaguebearer_nova", 0.55,
+                        direction=pygame.Vector2(1, 0), origin=enemy_pos, strength=1.3,
+                    )
+                enemy._plague_strike_type = ''
+                self.last_nova_time = context.now_ms
+            else:
+                direction = player_pos - enemy_pos
+                if direction.length_squared() == 0:
+                    direction = pygame.Vector2(1, 0)
+                else:
+                    direction = direction.normalize()
+                if self.spread_degrees:
+                    direction = direction.rotate(random.uniform(-self.spread_degrees, self.spread_degrees))
+                if hasattr(enemy, "trigger_attack_anim"):
+                    enemy.trigger_attack_anim(
+                        "caster_burst", self.strike_anim_duration,
+                        direction=direction, origin=enemy_pos, strength=1.0,
+                    )
+                damage = max(1, int(enemy.damage * self.bolt_damage_mult))
+                from src.entities.projectile import PlagueCloud
+                cloud = PlagueCloud(
+                    enemy_pos, direction, self.bolt_speed, self.bolt_range,
+                    damage, self.poison_duration, self.poison_dps,
+                )
+                context.projectiles.append(cloud)
+                self.last_attack_time = context.now_ms
+            return
+
+        if hasattr(enemy, "is_in_attack") and enemy.is_in_attack():
+            return
+
         # Close-range pestilence nova
         nova_ready = (context.now_ms - self.last_nova_time) >= self.nova_cooldown_ms
         if distance_sq <= (self.nova_radius * self.nova_radius) and nova_ready:
             damage = max(1, int(enemy.damage * self.nova_damage_mult))
-            # Wind-up first, then delayed hit
-            if hasattr(enemy, "trigger_attack_anim"):
-                enemy.trigger_attack_anim(
-                    "plaguebearer_nova", 0.55,
-                    direction=pygame.Vector2(1, 0), origin=enemy_pos, strength=1.3,
+            if hasattr(enemy, "start_attack_phase"):
+                enemy._plague_strike_type = 'nova'
+                enemy.start_attack_phase(
+                    wind_up=0.30, telegraph=0.35, strike_duration=0.20,
+                    telegraph_range=self.nova_radius,
+                    telegraph_angle=360.0,
+                    telegraph_color=(100, 200, 80, 100),
+                    damage=damage,
                 )
-            if damage > 0 and hasattr(enemy, "attack_anim_hit_pending"):
-                enemy.attack_anim_hit_pending = {
-                    "damage": damage,
-                    "effects": [
-                        PoisonEffect(self.nova_cooldown_ms / 1000.0 * 1.2, self.poison_dps),
-                        SlowEffect(self.nova_slow_duration, self.nova_slow_factor),
-                    ],
-                }
-            self.last_nova_time = context.now_ms
             return
 
         # Ranged plague bolt
@@ -1533,26 +1732,15 @@ class PlaguebearerAttack(BaseAttack):
         else:
             direction = direction.normalize()
 
-        if self.spread_degrees:
-            direction = direction.rotate(random.uniform(-self.spread_degrees, self.spread_degrees))
-
-        if hasattr(enemy, "trigger_attack_anim"):
-            enemy.trigger_attack_anim(
-                "caster_burst",
-                self.strike_anim_duration,
-                direction=direction,
-                origin=enemy_pos,
-                strength=1.0,
+        if hasattr(enemy, "start_attack_phase"):
+            enemy._plague_strike_type = 'bolt'
+            enemy.start_attack_phase(
+                wind_up=0.20, telegraph=0.25, strike_duration=0.12,
+                telegraph_range=0.0,
+                telegraph_angle=0.0,
+                telegraph_color=(100, 200, 80, 80),
+                damage=0,
             )
-
-        damage = max(1, int(enemy.damage * self.bolt_damage_mult))
-        from src.entities.projectile import PlagueCloud
-        cloud = PlagueCloud(
-            enemy_pos, direction, self.bolt_speed, self.bolt_range,
-            damage, self.poison_duration, self.poison_dps,
-        )
-        context.projectiles.append(cloud)
-        self.last_attack_time = context.now_ms
 
 
 
