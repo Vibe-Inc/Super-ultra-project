@@ -34,43 +34,43 @@ PEACEFUL_MOB_REGISTRY: dict[str, dict] = {
     "grove_titan": {
         "name": "Grove Titan",
         "description": "A small, gentle tree creature that waddles and hums.",
-        "hp": 9999,
+        "hp": 80,
         "speed": 25,
         "animation_size": (80, 90),
         "animation_speed": 3,
         "aura_color": (140, 200, 100),
         "aura_radius": 110.0,
-        "aura_effect": "stamina_regen",    # passive stamina regeneration
+        "aura_effect": "stamina_regen",
         "aura_magnitude": 3.0,
         "curiosity_range": 180.0,
         "shyness_range": 60.0,
         "wander_radius": 150.0,
         "wander_pause": 5.0,
-        "idle_behavior": "sway",           # gentle side-to-side sway
+        "idle_behavior": "sway",
         "xp_reward": 0,
     },
     "singing_stone": {
         "name": "Singing Stone",
         "description": "A gentle living rock that hums melodically, with glowing runes.",
-        "hp": 9999,
+        "hp": 60,
         "speed": 15,
         "animation_size": (72, 80),
         "animation_speed": 2,
         "aura_color": (200, 220, 160),
         "aura_radius": 100.0,
-        "aura_effect": "xp_bonus",         # XP gain bonus
-        "aura_magnitude": 0.15,            # 15% XP bonus
+        "aura_effect": "xp_bonus",
+        "aura_magnitude": 0.15,
         "curiosity_range": 150.0,
         "shyness_range": 40.0,
         "wander_radius": 80.0,
         "wander_pause": 6.0,
-        "idle_behavior": "hum",            # stays mostly still, pulsing
+        "idle_behavior": "hum",
         "xp_reward": 0,
     },
     "ember_phoenix": {
         "name": "Ember Phoenix",
         "description": "A radiant bird of gentle flame that radiates warmth and healing light.",
-        "hp": 9999,
+        "hp": 50,
         "speed": 50,
         "animation_size": (84, 90),
         "animation_speed": 6,
@@ -88,7 +88,7 @@ PEACEFUL_MOB_REGISTRY: dict[str, dict] = {
     "coral_golem": {
         "name": "Coral Golem",
         "description": "A living coral formation that pulses with deep ocean energy.",
-        "hp": 9999,
+        "hp": 70,
         "speed": 18,
         "animation_size": (76, 80),
         "animation_speed": 2,
@@ -106,7 +106,7 @@ PEACEFUL_MOB_REGISTRY: dict[str, dict] = {
     "void_butterfly": {
         "name": "Void Butterfly",
         "description": "A massive butterfly whose wings reveal glimpses of the distant cosmos.",
-        "hp": 9999,
+        "hp": 40,
         "speed": 30,
         "animation_size": (92, 84),
         "animation_speed": 4,
@@ -124,7 +124,7 @@ PEACEFUL_MOB_REGISTRY: dict[str, dict] = {
     "moss_rabbit": {
         "name": "Moss Rabbit",
         "description": "A fluffy rabbit with moss and tiny flowers growing on its back.",
-        "hp": 9999,
+        "hp": 30,
         "speed": 65,
         "animation_size": (72, 68),
         "animation_speed": 8,
@@ -142,7 +142,7 @@ PEACEFUL_MOB_REGISTRY: dict[str, dict] = {
     "crystal_fox": {
         "name": "Crystal Fox",
         "description": "A sleek fox whose fur shimmers like cut gemstones in the sunlight.",
-        "hp": 9999,
+        "hp": 45,
         "speed": 55,
         "animation_size": (80, 78),
         "animation_speed": 6,
@@ -160,7 +160,7 @@ PEACEFUL_MOB_REGISTRY: dict[str, dict] = {
     "fairy_cat": {
         "name": "Fairy Cat",
         "description": "A graceful feline with iridescent wings and eyes like tiny moons.",
-        "hp": 9999,
+        "hp": 35,
         "speed": 58,
         "animation_size": (78, 80),
         "animation_speed": 7,
@@ -252,9 +252,12 @@ class PeacefulMob:
         self.speed = self.base_speed
         self.velocity = pygame.Vector2(0, 0)
 
-        # Health (effectively immortal)
+        # Health
         self.hp = config["hp"]
         self.max_hp = config["hp"]
+        self.shield = 0.0
+        self.hit_flash_timer = 0.0
+        self.effects: list = []
 
         # Animation
         anim_size = config["animation_size"]
@@ -306,6 +309,27 @@ class PeacefulMob:
         self.met_player: bool = False  # True once player has been nearby
 
         logger.info(f"Spawned peaceful mob {self.name} ({self.mob_type}) at ({x:.0f}, {y:.0f})")
+
+    # ----------------------------------------------------------
+    # COMBAT
+    # ----------------------------------------------------------
+
+    def take_damage(self, amount: int) -> bool:
+        self.hp = max(0, self.hp - amount)
+        self.hit_flash_timer = 0.15
+        logger.info(f"Peaceful mob {self.name} took {amount} damage, HP: {self.hp}/{self.max_hp}")
+        return self.hp <= 0
+
+    def is_dead(self) -> bool:
+        return self.hp <= 0
+
+    def add_effect(self, effect):
+        for e in self.effects:
+            if type(e) == type(effect):
+                self.effects.remove(e)
+                self.effects.append(effect)
+                return
+        self.effects.append(effect)
 
     # ----------------------------------------------------------
     # COLLISION
@@ -666,6 +690,7 @@ class PeacefulMob:
         """
         self.player_ref = player
         self.interaction_cooldown = max(0, self.interaction_cooldown - dt)
+        self.hit_flash_timer = max(0, self.hit_flash_timer - dt)
 
         # Enemy flee behavior (checked first — overrides player curiosity)
         if enemies and self.mood in ("idle", "wander", "curious"):
@@ -735,7 +760,7 @@ class PeacefulMob:
 
     def draw(self, screen: pygame.Surface, camera_offset: pygame.Vector2 | None = None):
         """
-        Draw the peaceful mob (sprite only — no aura, name tag, or particles).
+        Draw the peaceful mob with a health bar (like enemies), no aura/name tag.
         """
         if camera_offset is None:
             camera_offset = pygame.Vector2(0, 0)
@@ -743,9 +768,22 @@ class PeacefulMob:
         img = self.image
         if self.direction == "side" and self.flip:
             img = self.animations_flipped["side"][self.frame_index]
+
         draw_x = int(self.pos.x - camera_offset.x)
         draw_y = int(self.pos.y - camera_offset.y)
         screen.blit(img, (draw_x, draw_y))
+
+        # Health bar (matching enemy style)
+        bar_width = 40
+        bar_height = 5
+        bar_x = self.pos.x - camera_offset.x + (self.image.get_width() - bar_width) // 2
+        bar_y = self.pos.y - camera_offset.y - 10
+
+        pygame.draw.rect(screen, (255, 0, 0), (bar_x, bar_y, bar_width, bar_height))
+
+        if self.max_hp > 0:
+            health_width = int(bar_width * (self.hp / self.max_hp))
+            pygame.draw.rect(screen, (0, 255, 0), (bar_x, bar_y, health_width, bar_height))
 
 
 # ============================================================

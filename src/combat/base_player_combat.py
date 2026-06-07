@@ -293,19 +293,22 @@ class PlayerCombatController:
         if not char.can_attack():
             return
 
+        # Include peaceful mobs as valid targets (same as enemies)
+        all_targets = self.game.enemies + self.game.peaceful_mobs
+
         combat_style = getattr(weapon, "combat_style", "sword")
 
         if combat_style == "mace":
-            char.attack_mace(self.game.enemies, aim_direction=aim_dir)
+            char.attack_mace(all_targets, aim_direction=aim_dir)
         elif combat_style == "axe":
-            char.attack_axe(self.game.enemies, aim_direction=aim_dir)
+            char.attack_axe(all_targets, aim_direction=aim_dir)
         elif combat_style == "spear":
-            char.attack_spear(self.game.enemies, aim_direction=aim_dir)
+            char.attack_spear(all_targets, aim_direction=aim_dir)
         elif combat_style == "war_hammer":
-            char.attack_war_hammer(self.game.enemies, aim_direction=aim_dir)
+            char.attack_war_hammer(all_targets, aim_direction=aim_dir)
         else:
             cone_degrees = float(getattr(weapon, "cone_degrees", 90.0))
-            char.attack(self.game.enemies, aim_direction=aim_dir, cone_degrees=cone_degrees)
+            char.attack(all_targets, aim_direction=aim_dir, cone_degrees=cone_degrees)
 
         # Melee weapons take 1 durability per successful swing (a single
         # swing, regardless of how many enemies it hits -- otherwise a

@@ -1069,8 +1069,9 @@ class Game(State):
         if not self.projectiles:
             return
 
+        targets = self.enemies + self.peaceful_mobs
         for projectile in self.projectiles:
-            projectile.update(dt, self.obstacles, self.enemies)
+            projectile.update(dt, self.obstacles, targets)
 
         self.projectiles = [projectile for projectile in self.projectiles if projectile.alive]
 
@@ -1679,7 +1680,7 @@ class Game(State):
         # Update summoned spirits
         self._update_spirits(dt)
 
-        # Update peaceful mobs (now with collision-aware movement like enemies)
+        # Update peaceful mobs (collision-aware movement like enemies)
         for mob in self.peaceful_mobs:
             mob.update(dt, self.character, self.enemies, self.collision_handler, self.obstacles)
 
@@ -1753,6 +1754,12 @@ class Game(State):
                 self._drop_enemy_loot(enemy)
 
                 self.enemies.remove(enemy)
+
+        # Remove dead peaceful mobs (no loot/XP — just despawn)
+        for mob in self.peaceful_mobs[:]:
+            if mob.is_dead():
+                logger.info(f"Peaceful mob {mob.name} defeated and removed")
+                self.peaceful_mobs.remove(mob)
 
         self.npc.update(self.character.pos)
         self.card_npc.update(self.character.pos)
