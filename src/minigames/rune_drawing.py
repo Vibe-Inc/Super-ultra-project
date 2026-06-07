@@ -181,6 +181,14 @@ class RuneDrawingMinigame:
                             try:
                                 self.app.sound_manager.play_sound("level_up")
                             except Exception: pass
+                            
+                            # Give the player the rune!
+                            from src.items.items import create_item
+                            rune = create_item(self.rune_type)
+                            if rune:
+                                gs = self.app.manager.states.get("gameplay")
+                                if gs:
+                                    self.app.INV_manager.add_item_to_inventory(rune, 1, gs.MAIN_player_inv, getattr(gs, 'hotbar', None))
         else:
             if self.current_node_idx > 0 and self.current_node_idx < len(self.nodes):
                 self.current_node_idx = 0

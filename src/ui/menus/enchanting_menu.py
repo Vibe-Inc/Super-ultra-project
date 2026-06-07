@@ -42,6 +42,7 @@ class EnchantingMenu:
         
         self.particles = []
         self.open_time = 0.0
+        self.scroll_y = 0
         
         self.enchant_effect_time = 0.0
 
@@ -51,6 +52,7 @@ class EnchantingMenu:
         self.selected_rune = None
         self.particles.clear()
         self.open_time = 0.0
+        self.scroll_y = 0
         self.enchant_effect_time = 0.0
         try:
             if getattr(self.app, 'sound_manager', None):
@@ -67,31 +69,40 @@ class EnchantingMenu:
         weapons = []
         try:
             gs = self.app.manager.states["gameplay"]
-            for i, item_data in enumerate(gs.MAIN_player_inv.items):
-                if item_data is not None:
-                    item = item_data[0]
-                    if getattr(item, 'item_type', '') == 'weapon' or hasattr(item, 'on_hit_effects'):
-                        weapons.append(item)
-            for i, item_data in enumerate(gs.PLAYER_inventory_equipment.items):
-                if item_data is not None:
-                    item = item_data[0]
-                    if getattr(item, 'item_type', '') == 'weapon' or hasattr(item, 'on_hit_effects'):
-                        weapons.append(item)
-        except Exception:
-            pass
-        return weapons
+            for col in range(gs.MAIN_player_inv.columns):
+                for row in range(gs.MAIN_player_inv.rows):
+                    item_data = gs.MAIN_player_inv.items[col][row]
+                    if item_data is not None:
+                        item = item_data[0]
+                        if getattr(item, 'item_type', '') == 'weapon' or hasattr(item, 'on_hit_effects'):
+                            weapons.append(item)
+            for col in range(gs.PLAYER_inventory_equipment.columns):
+                for row in range(gs.PLAYER_inventory_equipment.rows):
+                    item_data = gs.PLAYER_inventory_equipment.items[col][row]
+                    if item_data is not None:
+                        item = item_data[0]
+                        if getattr(item, 'item_type', '') == 'weapon' or hasattr(item, 'on_hit_effects'):
+                            weapons.append(item)
+            if hasattr(gs, 'hotbar'):
+                for col in range(gs.hotbar.columns):
+                    for row in range(gs.hotbar.rows):
+                        item_data = gs.hotbar.items[col][row]
+                        if item_data is not None:
+                            item = item_data[0]
+                            if getattr(item, 'item_type', '') == 'weapon' or hasattr(item, 'on_hit_effects'):
+                                weapons.append(item)
+        except Exception as e:
+            logger.error(f"Error getting weapons: {e}")
+        return list({w.id + str(id(w)): w for w in weapons}.values())
 
     def _get_runes(self):
+        from src.items.items import create_item
         runes = []
         try:
-            gs = self.app.manager.states["gameplay"]
-            for i, item_data in enumerate(gs.MAIN_player_inv.items):
-                if item_data is not None:
-                    item = item_data[0]
-                    if item.id in ["fire_rune", "ice_rune"]:
-                        runes.append(item)
-        except Exception:
-            pass
+            # We display all available rune types in the game
+            runes = [create_item("fire_rune"), create_item("ice_rune")]
+        except Exception as e:
+            logger.error(f"Error getting runes: {e}")
         return runes
 
     def handle_event(self, event):
@@ -100,6 +111,16 @@ class EnchantingMenu:
             
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             self.close()
+            return
+            
+        if event.type == pygame.MOUSEWHEEL:
+            self.scroll_y += event.y * 30
+            max_items = max(len(self._get_weapons()), len(self._get_runes()))
+            w_h = 45
+            total_list_h = max_items * (w_h + 8)
+            visible_h = self.h - 240
+            max_scroll = max(0, total_list_h - visible_h)
+            self.scroll_y = max(-max_scroll, min(0, self.scroll_y))
             return
             
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -112,26 +133,29 @@ class EnchantingMenu:
             runes = self._get_runes()
             
             # Weapon clicks
-            start_y = self.y + 120
+            start_y = self.y + 130 + self.scroll_y
             w_w = 320
             w_h = 45
-            for i, w in enumerate(weapons):
-                r = pygame.Rect(self.x + 30, start_y + i * (w_h + 8), w_w, w_h)
-                if r.collidepoint(event.pos):
-                    self.selected_weapon = w
-                    try:
-                        self.app.sound_manager.play_sound("click")
-                    except Exception: pass
-                    
-            # Rune clicks
-            r_w = 320
-            for i, rune in enumerate(runes):
-                r = pygame.Rect(self.x + self.w - r_w - 30, start_y + i * (w_h + 8), r_w, w_h)
-                if r.collidepoint(event.pos):
-                    self.selected_rune = rune
-                    try:
-                        self.app.sound_manager.play_sound("click")
-                    except Exception: pass
+            
+            list_rect = pygame.Rect(self.x, self.y + 120, self.w, self.h - 220)
+            if list_rect.collidepoint(event.pos):
+                for i, w in enumerate(weapons):
+                    r = pygame.Rect(self.x + 30, start_y + i * (w_h + 8), w_w, w_h)
+                    if r.collidepoint(event.pos):
+                        self.selected_weapon = w
+                        try:
+                            self.app.sound_manager.play_sound("click")
+                        except Exception: pass
+                        
+                # Rune clicks
+                r_w = 320
+                for i, rune in enumerate(runes):
+                    r = pygame.Rect(self.x + self.w - r_w - 30, start_y + i * (w_h + 8), r_w, w_h)
+                    if r.collidepoint(event.pos):
+                        self.selected_rune = rune
+                        try:
+                            self.app.sound_manager.play_sound("click")
+                        except Exception: pass
                     
             # Enchant click
             enchant_btn = pygame.Rect(self.x + self.w//2 - 120, self.y + self.h - 80, 240, 55)
@@ -140,32 +164,52 @@ class EnchantingMenu:
                     self._do_enchant()
 
     def _do_enchant(self):
-        try:
-            self.app.sound_manager.play_sound("buy")
-        except Exception: pass
-        
-        self.enchant_effect_time = 1.0
-        self.selected_weapon.socketed_rune = self.selected_rune.id
-        
-        # Consume rune
         gs = self.app.manager.states["gameplay"]
+        
+        # Check if player actually has the rune
         consumed = False
-        for i, item_data in enumerate(gs.MAIN_player_inv.items):
-            if item_data and item_data[0] == self.selected_rune:
-                if item_data[1] > 1:
-                    gs.MAIN_player_inv.items[i][1] -= 1
-                else:
-                    gs.MAIN_player_inv.items[i] = None
-                consumed = True
-                break
+        for col in range(gs.MAIN_player_inv.columns):
+            if consumed: break
+            for row in range(gs.MAIN_player_inv.rows):
+                item_data = gs.MAIN_player_inv.items[col][row]
+                if item_data and item_data[0].id == self.selected_rune.id:
+                    if item_data[1] > 1:
+                        gs.MAIN_player_inv.items[col][row][1] -= 1
+                    else:
+                        gs.MAIN_player_inv.items[col][row] = None
+                    consumed = True
+                    break
+                    
+        if not consumed and hasattr(gs, 'hotbar'):
+            for col in range(gs.hotbar.columns):
+                if consumed: break
+                for row in range(gs.hotbar.rows):
+                    item_data = gs.hotbar.items[col][row]
+                    if item_data and item_data[0].id == self.selected_rune.id:
+                        if item_data[1] > 1:
+                            gs.hotbar.items[col][row][1] -= 1
+                        else:
+                            gs.hotbar.items[col][row] = None
+                        consumed = True
+                        break
                 
         if consumed:
+            try:
+                self.app.sound_manager.play_sound("buy")
+            except Exception: pass
+            
+            self.enchant_effect_time = 1.0
+            self.selected_weapon.socketed_rune = self.selected_rune.id
             logger.info(f"Socketed {self.selected_weapon.name} with rune.")
             self.selected_rune = None
             
-        # Spawn extra particles
-        for _ in range(30):
-            self.particles.append(FloatingParticle(self.rect))
+            # Spawn extra particles
+            for _ in range(30):
+                self.particles.append(FloatingParticle(self.rect))
+        else:
+            try:
+                self.app.sound_manager.play_sound("error")
+            except Exception: pass
 
     def update(self, dt):
         if not self.is_open:
@@ -259,15 +303,23 @@ class EnchantingMenu:
         r_t = self.font.render("Runes", True, (200, 200, 200))
         surface.blit(r_t, (r.right - r_t.get_width() - 40, r.y + 90))
 
-        start_y = r.y + 130
+        # Setup clipping region for scrollable area
+        clip_rect = pygame.Rect(r.x, r.y + 120, r.width, r.height - 220)
+        old_clip = surface.get_clip()
+        surface.set_clip(clip_rect)
+
+        start_y = r.y + 130 + self.scroll_y
         w_w = 320
         w_h = 45
         
         # Draw Weapons List
         for i, w in enumerate(weapons):
             item_r = pygame.Rect(r.left + 30, start_y + i * (w_h + 8), w_w, w_h)
+            if item_r.bottom < clip_rect.top or item_r.top > clip_rect.bottom:
+                continue
+                
             is_sel = (w == self.selected_weapon)
-            is_hov = item_r.collidepoint(m_pos)
+            is_hov = item_r.collidepoint(m_pos) and clip_rect.collidepoint(m_pos)
             bg = (80, 70, 120) if is_sel else ((60, 50, 90) if is_hov else (40, 35, 60))
             
             if is_sel:
@@ -284,24 +336,67 @@ class EnchantingMenu:
             surface.blit(txt, (item_r.x + 15, item_r.centery - txt.get_height()//2))
             
         # Draw Runes List
+        gs = self.app.manager.states.get("gameplay")
         for i, rune in enumerate(runes):
             item_r = pygame.Rect(r.right - w_w - 30, start_y + i * (w_h + 8), w_w, w_h)
+            if item_r.bottom < clip_rect.top or item_r.top > clip_rect.bottom:
+                continue
+                
             is_sel = (rune == self.selected_rune)
-            is_hov = item_r.collidepoint(m_pos)
+            is_hov = item_r.collidepoint(m_pos) and clip_rect.collidepoint(m_pos)
+            
+            # Count player runes
+            count = 0
+            if gs:
+                for col in range(gs.MAIN_player_inv.columns):
+                    for row in range(gs.MAIN_player_inv.rows):
+                        it = gs.MAIN_player_inv.items[col][row]
+                        if it and it[0].id == rune.id:
+                            count += it[1]
+                if hasattr(gs, 'hotbar'):
+                    for col in range(gs.hotbar.columns):
+                        for row in range(gs.hotbar.rows):
+                            it = gs.hotbar.items[col][row]
+                            if it and it[0].id == rune.id:
+                                count += it[1]
+                                
+            can_afford = count > 0
+            
             bg = (120, 60, 80) if is_sel else ((90, 50, 70) if is_hov else (60, 35, 50))
+            if not can_afford:
+                bg = (60, 30, 40) if is_sel else ((50, 25, 35) if is_hov else (40, 20, 30))
             
             if is_sel:
                 self._draw_glowing_rect(surface, item_r, bg, radius=8)
             else:
                 pygame.draw.rect(surface, bg, item_r, border_radius=8)
-                pygame.draw.rect(surface, (150, 80, 100), item_r, width=1, border_radius=8)
+                border_col = (150, 80, 100) if can_afford else (80, 40, 50)
+                pygame.draw.rect(surface, border_col, item_r, width=1, border_radius=8)
                 
-            txt = self.small_font.render(rune.name, True, (255, 230, 230))
+            txt_col = (255, 230, 230) if can_afford else (150, 120, 120)
+            txt = self.small_font.render(f"{rune.name} ({count})", True, txt_col)
             surface.blit(txt, (item_r.x + 15, item_r.centery - txt.get_height()//2))
             
+        surface.set_clip(old_clip)
+            
         # Draw Enchant Button
+        # Check if the player has the selected rune
+        has_selected = False
+        if self.selected_rune and gs:
+            for col in range(gs.MAIN_player_inv.columns):
+                for row in range(gs.MAIN_player_inv.rows):
+                    it = gs.MAIN_player_inv.items[col][row]
+                    if it and it[0].id == self.selected_rune.id:
+                        has_selected = True
+            if not has_selected and hasattr(gs, 'hotbar'):
+                for col in range(gs.hotbar.columns):
+                    for row in range(gs.hotbar.rows):
+                        it = gs.hotbar.items[col][row]
+                        if it and it[0].id == self.selected_rune.id:
+                            has_selected = True
+
         enchant_btn = pygame.Rect(r.centerx - 120, r.bottom - 90, 240, 60)
-        can_enchant = self.selected_weapon is not None and self.selected_rune is not None
+        can_enchant = self.selected_weapon is not None and self.selected_rune is not None and has_selected
         btn_hov = enchant_btn.collidepoint(m_pos)
         
         pulse = (math.sin(self.open_time * 5) + 1) / 2

@@ -1839,7 +1839,7 @@ class Game(State):
             dialog_lines = [
                 '"Arise, Chosen One."',
                 '"I sense the latent magic humming in your blood. You have been selected for a sacred mission."',
-                '"Far to the east, a great dragon slumbers in a mountain cave. You must slay it, or the realm will burn."'
+                '"Far to the east, a Chronos slumbers in a mountain cave. You must slay it, or the realm will collapse."'
             ]
             self.app.current_dialog = Dialog(self.app, dialog_lines, on_close=self._finish_intro)
 
