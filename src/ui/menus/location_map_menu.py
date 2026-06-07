@@ -123,12 +123,17 @@ class LocationMapMenu(Menu):
         game.current_map_path = entry_map
         game.obstacles = game.map.get_obstacles()
         game._rebuild_nav_grid()
+        # Reset character state when entering a new location
+        game.character.confused = False
+        game.character.speed_multiplier = 1.0
+        game.character.effects.clear()
         game.enemies = []
-        spawn_info = game._get_spawn_info(entry_map)
-        if entry_map not in game.NO_ENEMY_SPAWN_MAPS and spawn_info:
-            new_x, new_y = spawn_info["pos"]
-            profile = spawn_info.get("profile")
-            game.enemies = [game._create_enemy(new_x, new_y, profile=profile)]
+        spawn_entries = game._get_spawn_entries(entry_map)
+        if entry_map not in game.NO_ENEMY_SPAWN_MAPS and spawn_entries:
+            for entry in spawn_entries:
+                new_x, new_y = entry["pos"]
+                profile = entry.get("profile")
+                game.enemies.append(game._create_enemy(new_x, new_y, profile=profile))
         game._place_npcs_for_map(entry_map)
 
         if spawn_pos:

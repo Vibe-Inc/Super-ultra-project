@@ -9,6 +9,10 @@ class Map:
     FRINGE_LAYER_NAME = "details fringe layer"
     FRINGE_LAYER_FADE_ALPHA = 110
 
+    # Layers to skip when building collision obstacles.
+    # These are purely decorative wall layers that should not block movement.
+    COLLISION_SKIP_LAYER_NAMES = {"back walls", "another walls"}
+
     ANIMATION_SPEED = 0.2
 
     TILESET_ANIMATIONS = {
@@ -89,6 +93,29 @@ class Map:
         self._anim_firstgid_map = {}
         self._anim_elapsed = 0.0
         self._window_glow = None
+
+    def _has_valid_tile_property(self, props, gid):
+        """Verify a tile property entry belongs to the correct tile.
+
+        pytmx's gid renumbering can cause tile_properties from one tileset
+        to be stored at gids that happen to collide with renumbered gids
+        from a different tileset. Use tiledgidmap to detect this mismatch.
+        """
+        if self.game_map is None:
+            return True
+        tile_id = props.get("id")
+        if tile_id is None:
+            return True
+        original_gid = self.game_map.tiledgidmap.get(gid)
+        if original_gid is None:
+            return True
+        for ts in self.game_map.tilesets:
+            if ts.firstgid <= original_gid < ts.firstgid + ts.tilecount:
+                expected_gid = ts.firstgid + tile_id
+                if original_gid != expected_gid:
+                    return False
+                break
+        return True
 
     def ensure_loaded(self) -> bool:
         if self.game_map is None:
@@ -505,6 +532,9 @@ class Map:
                 if self._is_fringe_layer(layer):
                     continue
 
+                if layer.name.strip().lower() in self.COLLISION_SKIP_LAYER_NAMES:
+                    continue
+
                 for x, y, gid in layer:
                     if not gid:
                         continue
@@ -514,6 +544,9 @@ class Map:
                         continue
 
                     if not tile_properties.get("collidable"):
+                        continue
+
+                    if not self._has_valid_tile_property(tile_properties, gid):
                         continue
 
                     tile_key = (x, y, layer.id)

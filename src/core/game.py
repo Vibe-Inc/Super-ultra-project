@@ -2364,7 +2364,13 @@ class Game(State):
         except Exception:
             pass
 
-        # Safety: if current map defines an NPC spawn but NPC is far away (not placed), place it
+        # Safety: hide NPC if it should NOT be on this map, else place it
+        try:
+            if self.current_map_path not in self.NPC_SPAWNS and (self.npc.pos.x > -1000 or self.npc.pos.y > -1000):
+                self.npc.pos = pygame.Vector2(-5000, -5000)
+                logger.info(f"Safety hid NPC on {self.current_map_path}")
+        except Exception:
+            pass
         try:
             if self.current_map_path in self.NPC_SPAWNS and (self.npc.pos.x < -1000 or self.npc.pos.y < -1000):
                 nx, ny = self.NPC_SPAWNS[self.current_map_path]
@@ -2373,7 +2379,13 @@ class Game(State):
         except Exception:
             pass
 
-        # Safety: place card NPC if it should be on this map but is far away
+        # Safety: hide card NPC if it should NOT be on this map, else place it
+        try:
+            if self.current_map_path not in self.CARD_NPC_SPAWNS and (self.card_npc.pos.x > -1000 or self.card_npc.pos.y > -1000):
+                self.card_npc.pos = pygame.Vector2(-5000, -5000)
+                logger.info(f"Safety hid card NPC on {self.current_map_path}")
+        except Exception:
+            pass
         try:
             if self.current_map_path in self.CARD_NPC_SPAWNS and (self.card_npc.pos.x < -1000 or self.card_npc.pos.y < -1000):
                 cnx, cny = self.CARD_NPC_SPAWNS[self.current_map_path]
@@ -2382,6 +2394,13 @@ class Game(State):
         except Exception:
             pass
 
+        # Safety: hide fishing NPC if it should NOT be on this map
+        try:
+            if self.current_map_path not in self.FISHING_NPC_SPAWNS and (self.fishing_npc.pos.x > -1000 or self.fishing_npc.pos.y > -1000):
+                self.fishing_npc.pos = pygame.Vector2(-5000, -5000)
+                logger.info(f"Safety hid fishing NPC on {self.current_map_path}")
+        except Exception:
+            pass
         # Safety: place fishing NPC if it should be on this map but is far away
         try:
             if self.current_map_path in self.FISHING_NPC_SPAWNS and (self.fishing_npc.pos.x < -1000 or self.fishing_npc.pos.y < -1000):
@@ -2391,6 +2410,13 @@ class Game(State):
         except Exception:
             pass
 
+        # Safety: hide mage NPC if it should NOT be on this map
+        try:
+            if self.current_map_path not in self.MAGE_NPC_SPAWNS and (self.mage_npc.pos.x > -1000 or self.mage_npc.pos.y > -1000):
+                self.mage_npc.pos = pygame.Vector2(-5000, -5000)
+                logger.info(f"Safety hid mage NPC on {self.current_map_path}")
+        except Exception:
+            pass
         # Safety: place mage NPC if it should be on this map but is far away
         try:
             if self.current_map_path in self.MAGE_NPC_SPAWNS and (self.mage_npc.pos.x < -1000 or self.mage_npc.pos.y < -1000):
