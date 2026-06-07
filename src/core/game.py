@@ -14,6 +14,7 @@ import random
 from src.core.logger import logger
 import src.config as cfg
 from src.core.day_night import DayNightVisuals
+from src.core.weather import WeatherSystem, WeatherState
 from src.core.state import State
 from src.core.save_manager import SaveManager
 from src.entities.character import Character
@@ -25,7 +26,9 @@ from src.entities.enemy import Enemy
 from src.entities.boss import Boss
 from src.entities.npc import NPC
 from src.entities.mage_npc import MageNPC
+from src.entities.gambler_npc import GamblerNPC
 from src.entities.projectile import Arrow
+from src.entities.peaceful_mob import PeacefulMob, create_peaceful_mob, PEACEFUL_MOB_REGISTRY
 from src.ui.hud import HUD
 from src.ui.widgets import Dialog
 from src.ui.debug_menu import SpawnMenu, EffectsMenu
@@ -44,6 +47,8 @@ from src.minigames.fishing import FishingController
 from src.minigames.gathering import GatheringController
 from src.world.gatherable_nodes import GatherableNodeRegistry
 from src.ui.menus.smeltery import SmelteryMenu
+from src.systems.world_scale import WorldScale
+from src.ui.menus.world_scale_menu import WorldScaleMenu
 import inspect
 import database.effects as effects_db
 
@@ -230,6 +235,9 @@ class Game(State):
         logger.info("Initializing Game State...")
         self.character = Character()
         self.character.game_state = self
+        self.world_scale = WorldScale()
+        self.character.recalc_world_scale_bonuses(self.world_scale)
+        self.world_scale_menu = WorldScaleMenu(app, self.world_scale, on_close=self._refresh_world_scale)
 
         initial_map_path = "maps/test-map-1.tmx"
         self.current_map_path = initial_map_path
@@ -272,6 +280,13 @@ class Game(State):
 
         # Majestic day-night visual controller
         self.day_night = DayNightVisuals()
+
+        # Dynamic weather controller
+        self.weather = WeatherSystem(self)
+
+        # Camera shake state
+        self.camera_shake_time = 0.0
+        self.camera_shake_intensity = 0.0
 
         self.enemy_profiles = {
             "brute": {
@@ -972,7 +987,19 @@ class Game(State):
             ex, ey = extra["pos"]
             self.enemies.append(self._create_enemy(ex, ey, profile=extra.get("profile")))
         self.items = []
-        
+
+        # Peaceful majestic mobs (non-aggressive ambient creatures)
+        self.peaceful_mobs: list[PeacefulMob] = []
+
+        # Peaceful mob spawn points per map (single mob, random type, like enemies)
+        self.PEACEFUL_MOB_SPAWNS = {
+            "maps/test-map-2.tmx": (1100, 800),
+            "maps/test-map-3.tmx": (700, 600),
+        }
+
+        # Maps where peaceful mob spawning is disabled
+        self.NO_PEACEFUL_MOB_MAPS = {"maps/tavern.tmx", "maps/test-map-1.tmx"}
+
         # Enemy spawning system
         self.enemy_spawn_timer = 0.0
         self.enemy_spawn_interval = 30.0 # seconds
@@ -1054,11 +1081,9 @@ class Game(State):
             "Come back anytime — the deck's always shuffled."
         ]
 
-        self.card_npc = NPC(
+        self.card_npc = GamblerNPC(
             x=cn_x, y=cn_y,
-            sprite_set="MenHuman1(Recolor)",
             dialog_lines=self.card_npc_first_dialog,
-            is_merchant=False,
             gender='male',
         )
 
@@ -1124,14 +1149,14 @@ class Game(State):
             "Keep collecting monster souls. The Arcane Quests await."
         ]
         self.mage_npc_post_unlock_dialog = [
-            "You have gathered the souls. I can feel their energy resonating.",
-            "Now you must tap into your inner world and transform these souls into a tarot deck.",
-            "This is the Mysterium Magnum — a deck of power, fate, and transformation.",
-            "I shall open the way for you."
+            "The Mysterium Magnum has awakened your true potential.",
+            "You are now ready to wield the ancient arts of Rune Crafting.",
+            "Bring me your weapons, and I shall bind elemental runes to them.",
+            "Let the magic flow through your strikes!"
         ]
         self.mage_npc_post_unlock_repeat_dialog = [
-            "The Mysterium Magnum is now open to you.",
-            "Transform your collected souls into cards of destiny."
+            "The elemental forces are at your command.",
+            "Would you like to craft a rune or enchant your weapon?"
         ]
 
         self.mage_npc = MageNPC(
@@ -1160,10 +1185,14 @@ class Game(State):
 
         # Crafting "Tempering" minigame state (None when not playing)
         self.crafting_minigame = None
+        self.rune_minigame = None
+        self.enchanting_menu = None
+        self.rune_selection_menu = None
 
-        # Debug menu for spawning mobs
+        # Debug menu for spawning mobs (enemies + peaceful mobs)
         self.spawn_menu = SpawnMenu(
-            self.enemy_profile_names,
+            ["--- ENEMIES ---"] + self.enemy_profile_names
+            + ["--- PEACEFUL ---"] + sorted(PEACEFUL_MOB_REGISTRY.keys()),
             on_spawn=self._debug_spawn_enemy,
             on_close=lambda: None
         )
@@ -1219,6 +1248,9 @@ class Game(State):
         except Exception as exc:
             logger.warning(f"Failed to build gatherable node registries: {exc}")
 
+        # Spawn peaceful mobs for the starting map
+        self._spawn_peaceful_mobs()
+
     def _build_gatherable_registries(self) -> None:
         try:
             from data.gatherable_nodes import load_gatherable_node_defs
@@ -1238,6 +1270,40 @@ class Game(State):
             registry.add_def(definition)
         total = sum(len(reg.nodes) for reg in self.gatherables.values())
         logger.info(f"Loaded {total} gatherable node(s) across {len(self.gatherables)} map(s)")
+
+    def _spawn_peaceful_mobs(self):
+        """Spawn a single peaceful mob on the current map (random type, like enemies)."""
+        from src.entities.peaceful_mob import PEACEFUL_MOB_REGISTRY, create_peaceful_mob
+        spawn_info = self.PEACEFUL_MOB_SPAWNS.get(self.current_map_path)
+        if not spawn_info:
+            return
+        if self.current_map_path in self.NO_PEACEFUL_MOB_MAPS:
+            return
+
+        x, y = spawn_info
+        mob_type = random.choice(list(PEACEFUL_MOB_REGISTRY.keys()))
+
+        if not self._check_position_collision(
+            pygame.Rect(x, y, 40, 40),
+            getattr(self, 'obstacles', []) or [],
+            getattr(self, 'nav_grid', None),
+        ):
+            mob = create_peaceful_mob(x, y, mob_type)
+            self.peaceful_mobs = [mob]
+            logger.info(f"Spawned {mob_type} on {self.current_map_path}")
+        else:
+            logger.warning(f"Peaceful mob spawn position ({x}, {y}) blocked on {self.current_map_path}")
+
+    def _check_position_collision(self, rect: pygame.Rect, obstacles: list, nav_grid) -> bool:
+        """Check if a rectangle collides with obstacles or is on an unwalkable tile."""
+        for wall in obstacles:
+            if rect.colliderect(wall):
+                return True
+        if nav_grid:
+            cell = nav_grid.world_to_cell(pygame.Vector2(rect.x, rect.y))
+            if not nav_grid.is_walkable(cell):
+                return True
+        return False
 
     def reinit_ui(self):
         self.hud = HUD(self.character, self.app, self.toggle_player_inventory, self.use_skill_slot, open_shop_callback=self.open_shop)
@@ -1400,6 +1466,30 @@ class Game(State):
             smelting_level=smelting_level,
         )
 
+    def open_rune_crafting(self):
+        from src.ui.menus.rune_selection_menu import RuneSelectionMenu
+        def on_rune_selected(rune_type):
+            from src.minigames.rune_drawing import RuneDrawingMinigame
+            def on_close(won):
+                self.rune_minigame = None
+                if won:
+                    from src.items.items import create_item
+                    rune = create_item(rune_type)
+                    from src.inventory.system import CraftingLogic
+                    if not CraftingLogic.add_crafted_item(self.MAIN_player_inv, rune, 1):
+                        if hasattr(self, 'hotbar') and self.hotbar:
+                            CraftingLogic.add_crafted_item(self.hotbar, rune, 1)
+                    logger.info(f"Crafted a {rune_type}")
+            self.rune_minigame = RuneDrawingMinigame(self.app, rune_type=rune_type, on_close=on_close)
+            
+        self.rune_selection_menu = RuneSelectionMenu(self.app, on_select=on_rune_selected)
+        self.rune_selection_menu.open()
+
+    def open_enchanting_menu(self):
+        from src.ui.menus.enchanting_menu import EnchantingMenu
+        self.enchanting_menu = EnchantingMenu(self.app)
+        self.enchanting_menu.open()
+
     def _get_card_npc_dialog(self):
         if not self.card_npc.was_talked:
             return self.card_npc_first_dialog
@@ -1511,6 +1601,24 @@ class Game(State):
         except Exception:
             return None
 
+    def _find_nearby_peaceful_mob(self) -> PeacefulMob | None:
+        """Find the closest PeacefulMob within interaction range, or None."""
+        INTERACT_RANGE = 80.0
+        sq = INTERACT_RANGE * INTERACT_RANGE
+        player_center = self.character.get_center()
+        best: PeacefulMob | None = None
+        best_dist = sq + 1
+        for mob in self.peaceful_mobs:
+            mob_center = pygame.Vector2(
+                mob.pos.x + mob.image.get_width() // 2,
+                mob.pos.y + mob.image.get_height() // 2,
+            )
+            d2 = (mob_center - player_center).length_squared()
+            if d2 <= sq and d2 < best_dist:
+                best = mob
+                best_dist = d2
+        return best
+
     def _draw_smeltery_hint(self, screen, camera_offset):
         """Show a floating 'Press E to use Smeltery' hint above the
         nearest smeltery tile when the player is in range."""
@@ -1539,8 +1647,9 @@ class Game(State):
         if not self.projectiles:
             return
 
+        targets = self.enemies + self.peaceful_mobs
         for projectile in self.projectiles:
-            projectile.update(dt, self.obstacles, self.enemies)
+            projectile.update(dt, self.obstacles, targets)
 
         # Handle thrown weapon landings
         for projectile in self.projectiles[:]:
@@ -1728,7 +1837,13 @@ class Game(State):
             # center map vertically
             camera_y = int((map_height - viewport_height) / 2)
 
-        return pygame.Vector2(camera_x, camera_y)
+        offset = pygame.Vector2(camera_x, camera_y)
+        if getattr(self, 'camera_shake_time', 0.0) > 0.0:
+            import random
+            intensity = getattr(self, 'camera_shake_intensity', 5.0)
+            offset.x += random.uniform(-intensity, intensity)
+            offset.y += random.uniform(-intensity, intensity)
+        return offset
 
     def _make_patrol_points(self, center: pygame.Vector2, radius: float) -> list[tuple[float, float]]:
         return [
@@ -1924,6 +2039,15 @@ class Game(State):
                 enemy.set_screen_size((screen_w, screen_h))
             except Exception:
                 pass
+        # Apply world scale to non-boss enemies
+        ws = getattr(self, 'world_scale', None)
+        if ws and ws.level > 0:
+            enemy.apply_world_scale({
+                'hp': ws.enemy_hp_mult(),
+                'damage': ws.enemy_damage_mult(),
+                'speed': ws.enemy_speed_mult(),
+                'range': ws.enemy_range_mult(),
+            })
         return enemy
 
     def spawn_random_enemy(self):
@@ -1967,6 +2091,16 @@ class Game(State):
         offset_x = 100
         spawn_x = self.character.pos.x + offset_x
         spawn_y = self.character.pos.y
+
+        # Peaceful mob spawn
+        if profile_name in PEACEFUL_MOB_REGISTRY:
+            from src.entities.peaceful_mob import create_peaceful_mob
+            mob = create_peaceful_mob(spawn_x, spawn_y, profile_name)
+            self.peaceful_mobs.append(mob)
+            logger.info(f"[DEBUG] Spawned peaceful mob {profile_name} at ({spawn_x}, {spawn_y})")
+            return
+
+        # Enemy spawn
         new_enemy = self._create_enemy(spawn_x, spawn_y, profile=profile_name)
         self.enemies.append(new_enemy)
         logger.info(f"[DEBUG] Spawned {profile_name} at ({spawn_x}, {spawn_y})")
@@ -2080,8 +2214,77 @@ class Game(State):
         """Callback to finish the intro sequence and unlock the game."""
         self.intro_played = True
         self._intro_sequence_active = False
+    def _get_drop_chance_for_peaceful_mob(self, mob: PeacefulMob) -> list[dict]:
+        from src.entities.peaceful_mob import PEACEFUL_MOB_REGISTRY
+        if mob is None:
+            return []
+        config = PEACEFUL_MOB_REGISTRY.get(mob.mob_type, {})
+        return config.get("drop_chance", []) or []
+
+    def _drop_peaceful_mob_loot(self, mob: PeacefulMob) -> None:
+        from src.entities.dropped_item import DroppedItem
+        from src.items.items import create_item
+
+        drop_entries = self._get_drop_chance_for_peaceful_mob(mob)
+        if not drop_entries:
+            return
+
+        base_x, base_y = mob.get_rect().center
+
+        placed = 0
+        for entry in drop_entries:
+            if not isinstance(entry, dict):
+                continue
+            item_id = entry.get("item_id")
+            if not item_id:
+                continue
+            chance = float(entry.get("chance", 0.0))
+            if chance <= 0.0:
+                continue
+            if random.random() > chance:
+                continue
+            amount = int(entry.get("amount", 1))
+            if amount <= 0:
+                amount = 1
+
+            item_obj = create_item(item_id)
+            if item_obj is None:
+                logger.warning(f"Peaceful mob drop skipped: could not create item '{item_id}'")
+                continue
+
+            spread = 18
+            offset_x = random.randint(-spread, spread)
+            offset_y = random.randint(-spread // 2, spread // 2)
+            drop = DroppedItem(base_x + offset_x, base_y + offset_y, item_obj, amount)
+            self.items.append(drop)
+            placed += 1
+            logger.info(
+                f"Peaceful mob '{mob.mob_type}' dropped "
+                f"{amount}x {item_id} at ({base_x + offset_x}, {base_y + offset_y})"
+            )
+
+    def _refresh_world_scale(self):
+        ws = getattr(self, 'world_scale', None)
+        if ws:
+            self.character.recalc_world_scale_bonuses(ws)
+            for enemy in self.enemies:
+                if not enemy.is_boss:
+                    enemy.apply_world_scale({
+                        'hp': ws.enemy_hp_mult(),
+                        'damage': ws.enemy_damage_mult(),
+                        'speed': ws.enemy_speed_mult(),
+                        'range': ws.enemy_range_mult(),
+                    })
 
     def update(self, dt):
+        # Update weather system
+        if hasattr(self, 'weather'):
+            self.weather.update(dt)
+
+        # Update camera shake
+        if getattr(self, 'camera_shake_time', 0.0) > 0.0:
+            self.camera_shake_time = max(0.0, self.camera_shake_time - dt)
+
         # Intro Sequence for test-map-1
         if self.current_map_path == "maps/test-map-1.tmx" and not getattr(self, "intro_played", False) and not getattr(self, "_intro_sequence_active", False):
             self._intro_sequence_active = True
@@ -2094,7 +2297,7 @@ class Game(State):
             dialog_lines = [
                 '"Arise, Chosen One."',
                 '"I sense the latent magic humming in your blood. You have been selected for a sacred mission."',
-                '"Far to the east, a great dragon slumbers in a mountain cave. You must slay it, or the realm will burn."'
+                '"Far to the east, a Chronos slumbers in a mountain cave. You must slay it, or the realm will collapse."'
             ]
             self.app.current_dialog = Dialog(self.app, dialog_lines, on_close=self._finish_intro)
 
@@ -2142,6 +2345,10 @@ class Game(State):
                     new_x, new_y = entry["pos"]
                     profile = entry.get("profile")
                     self.enemies.append(self._create_enemy(new_x, new_y, profile=profile))
+
+            # Clear peaceful mobs on map switch, then re-spawn for new map
+            self.peaceful_mobs = []
+            self._spawn_peaceful_mobs()
 
             if switched_map_path in self.NPC_SPAWNS:
                     npc_x, npc_y = self.NPC_SPAWNS[switched_map_path]
@@ -2281,17 +2488,14 @@ class Game(State):
             active = ediff.length_squared() <= lod_sq
             enemy.update(dt, self.collision_handler, self.obstacles, self.nav_grid, attack_context, active=active)
 
-        # Parry check: if player is in parry window and enemy is telegraphing
+        # Parry check against melee enemies
         if self.character.is_in_parry_window():
             for enemy in self.enemies:
-                if hasattr(enemy, "is_attack_telegraphing") and enemy.is_attack_telegraphing():
-                    e_center = pygame.Vector2(enemy.get_rect().center)
-                    p_center = self.character.get_center()
-                    dist = e_center.distance_to(p_center)
-                    atk_range = getattr(enemy, "attack_telegraph_range", enemy.attack_range)
-                    if dist <= atk_range * 1.5:
-                        if self.character.do_parry(enemy):
-                            enemy.attack_phase = 0
+                p_center = self.character.get_center()
+                e_center = pygame.Vector2(enemy.get_rect().center)
+                if p_center.distance_to(e_center) <= enemy.attack_range * 1.2:
+                    if self.character.do_parry(enemy):
+                        pass  # do_parry handles stun + damage
 
         self._update_projectiles(dt)
         self._update_enemy_projectiles(dt)
@@ -2333,6 +2537,10 @@ class Game(State):
 
         # Update summoned spirits
         self._update_spirits(dt)
+
+        # Update peaceful mobs (collision-aware movement like enemies)
+        for mob in self.peaceful_mobs:
+            mob.update(dt, self.character, self.enemies, self.collision_handler, self.obstacles)
 
         self.collision_handler.check_interactions(
             self.character, self.enemies, self.items
@@ -2379,6 +2587,11 @@ class Game(State):
                 _scale = enemy.max_hp / 100.0
 
                 xp_gain = int(random.randint(_base_xp_min, _base_xp_max) * _scale)
+                # World scale XP on kill
+                world_xp = max(1, int(enemy.max_hp / 20))
+                if self.world_scale.add_xp(world_xp):
+                    self._refresh_world_scale()
+                    logger.info(f"World Scale Level Up! Now level {self.world_scale.level}")
                 # Soul Harvest: restore HP and add damage stack
                 character = self.character
                 if getattr(character, "soul_harvest", False):
@@ -2408,6 +2621,12 @@ class Game(State):
 
                 self.enemies.remove(enemy)
 
+        # Remove dead peaceful mobs (drop loot, then despawn)
+        for mob in self.peaceful_mobs[:]:
+            if mob.is_dead():
+                self._drop_peaceful_mob_loot(mob)
+                self.peaceful_mobs.remove(mob)
+
         self.npc.update(self.character.pos)
         self.card_npc.update(self.character.pos)
         self.fishing_npc.update(self.character.pos)
@@ -2433,6 +2652,21 @@ class Game(State):
                 self.crafting_minigame.update(dt)
         except Exception:
             pass
+
+        try:
+            if getattr(self, 'rune_minigame', None):
+                self.rune_minigame.update(dt)
+        except Exception:
+            pass
+
+        try:
+            if getattr(self, "enchanting_menu", None) and self.enchanting_menu.is_open:
+                self.enchanting_menu.update(dt)
+        except Exception:
+            pass
+            
+        if getattr(self, "rune_selection_menu", None) and self.rune_selection_menu.is_open:
+            self.rune_selection_menu.update(dt)
 
         # Tick the smeltery overlay so coke oven / blast furnace jobs
         # continue to advance even while the overlay is closed.
@@ -2516,6 +2750,7 @@ class Game(State):
         self.app.profiler.set_gauge("projectiles", len(self.projectiles))
         self.app.profiler.set_gauge("enemy_projectiles", len(self.enemy_projectiles))
         self.app.profiler.set_gauge("spirits", len(self.spirits))
+        self.app.profiler.set_gauge("peaceful_mobs", len(self.peaceful_mobs))
 
     def _apply_ice_armor_slow(self, dt):
         """Slow enemies near the player while Ice Armor is active."""
@@ -2615,6 +2850,13 @@ class Game(State):
         for enemy in self.enemies:
             if _is_visible(enemy):
                 enemy.draw(screen, camera_offset)
+
+        # Draw peaceful mobs
+        for mob in self.peaceful_mobs:
+            try:
+                mob.draw(screen, camera_offset)
+            except Exception:
+                pass
 
         for projectile in self.projectiles:
             if _is_visible(projectile):
@@ -2734,6 +2976,10 @@ class Game(State):
             if getattr(self.app.INV_manager, 'current_shop_inv', None) is not None:
                 self.app.INV_manager.toggle_trade(self.MAIN_player_inv, self.shop_inv, self.PLAYER_inventory_equipment)
 
+        # Draw weather overlay
+        if hasattr(self, 'weather'):
+            self.weather.draw(screen)
+
         # Dizziness effect (visual)
         if self.character.dizzy:
             alpha = int(100 + 50 * math.sin(pygame.time.get_ticks() * 0.005))
@@ -2789,12 +3035,32 @@ class Game(State):
                 self.crafting_minigame.draw(screen)
             except Exception:
                 pass
+        
+        if getattr(self, 'rune_minigame', None):
+            try:
+                self.rune_minigame.draw(screen)
+            except Exception:
+                pass
+                
+        if getattr(self, "enchanting_menu", None) and self.enchanting_menu.is_open:
+            self.enchanting_menu.draw(screen)
+            
+        if getattr(self, "rune_selection_menu", None) and self.rune_selection_menu.is_open:
+            self.rune_selection_menu.draw(screen)
+                
+        # Draw debug spawn / effects menus
         # Draw debug spawn / effects menus
         self.spawn_menu.draw(screen)
         try:
             self.effects_menu.draw(screen)
         except Exception:
             pass
+        # World scale menu overlay
+        if getattr(self, 'world_scale_menu', None):
+            try:
+                self.world_scale_menu.draw(screen)
+            except Exception:
+                pass
 
     def draw(self, screen):
         self.draw_scene(screen)
@@ -2849,6 +3115,21 @@ class Game(State):
             except Exception:
                 pass
 
+        if getattr(self, 'rune_minigame', None):
+            try:
+                self.rune_minigame.handle_event(event)
+                return
+            except Exception:
+                pass
+
+        if getattr(self, "enchanting_menu", None) and self.enchanting_menu.is_open:
+            if self.enchanting_menu.handle_event(event):
+                return
+                
+        if getattr(self, "rune_selection_menu", None) and self.rune_selection_menu.is_open:
+            if self.rune_selection_menu.handle_event(event):
+                return
+
         if getattr(self.app, 'current_dialog', None):
             try:
                 self.app.current_dialog.handle_event(event)
@@ -2884,11 +3165,29 @@ class Game(State):
             except Exception:
                 pass
 
+        # World scale menu (J key)
+        if getattr(self, 'world_scale_menu', None) and self.world_scale_menu.visible:
+            if self.world_scale_menu.handle_event(event):
+                return
+
         if event.type == pygame.MOUSEWHEEL:
             if getattr(self.app.INV_manager, 'hotbar', None):
                 self.app.INV_manager.hotbar.scroll_active_slot(event.y)
 
         if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_F7:
+                import random
+                ach_mgr = self.app.achievement_manager
+                locked_ids = [aid for aid, ach in ach_mgr.achievements.items() if not ach.unlocked]
+                if not locked_ids:
+                    for ach in ach_mgr.achievements.values():
+                        ach.unlocked = False
+                        ach.progress = 0
+                    ach_mgr.save()
+                    locked_ids = list(ach_mgr.achievements.keys())
+                if locked_ids:
+                    ach_mgr.unlock(random.choice(locked_ids))
+
             if event.key == pygame.K_ESCAPE:
                 if self.app.INV_manager.player_inventory_opened:
                     self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
@@ -2949,10 +3248,15 @@ class Game(State):
                         except Exception:
                             pass
 
+                    has_mysterium = getattr(self.app, 'mysterium_magnum_unlocked', False)
                     self.app.current_dialog = Dialog(
                         self.app,
                         dialog_lines,
                         on_close=on_mage_close,
+                        on_craft_rune=self.open_rune_crafting,
+                        show_craft_rune=has_mysterium,
+                        on_enchant_weapon=self.open_enchanting_menu,
+                        show_enchant_weapon=has_mysterium,
                     )
                 # Card NPC interaction
                 elif self.card_npc.is_interactable:
@@ -2989,6 +3293,11 @@ class Game(State):
                     self.app.current_dialog = Dialog(self.app, self.npc.dialog_lines, on_close=on_close, on_shop=self.open_shop, show_shop=self.npc.is_merchant)
                 elif self._find_nearby_smeltery_tile() is not None and getattr(self, "smeltery", None):
                     self.smeltery.open()
+                elif self._find_nearby_peaceful_mob() is not None:
+                    mob = self._find_nearby_peaceful_mob()
+                    msg = mob.on_player_interact(self.character)
+                    if msg:
+                        self.app.current_dialog = Dialog(self.app, [msg])
                 else:
                     # Otherwise toggle the player's inventory (open/close)
                     self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
@@ -2998,11 +3307,18 @@ class Game(State):
                 self.character.take_damage(10)
             if event.key == pygame.K_F6:
                 self.character.gain_xp(50)
+            if event.key == pygame.K_F8:
+                if hasattr(self, 'weather') and self.weather:
+                    self.weather.cycle_weather()
+                    logger.info(f"[DEBUG] F8: Cycled weather to {self.weather.current_weather.name}")
             if event.key == pygame.K_F9:
                 self.character.skill_tree_points += 1
                 logger.info(f"[DEBUG] F9: +1 skill tree point. Total: {self.character.skill_tree_points}")
             if event.key == pygame.K_F10:
                 self.spawn_menu.toggle()
+
+            if event.key == pygame.K_j:
+                self.world_scale_menu.toggle()
 
             if event.key == pygame.K_r:
                 if not self.app.INV_manager.player_inventory_opened:
@@ -3028,7 +3344,10 @@ class Game(State):
 
             elif event.button == 3:
                 if not self.app.INV_manager.player_inventory_opened:
-                    # Start blocking
+                    # Block requires world scale level 10
+                    ws = getattr(self, 'world_scale', None)
+                    if ws and not ws.has_ability('block'):
+                        return
                     self.character.start_block()
 
 

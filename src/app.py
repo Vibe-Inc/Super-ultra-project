@@ -109,6 +109,8 @@ class App:
         self.icon = pygame.image.load("assets/ui/smug.png")
         pygame.display.set_icon(self.icon)
 
+        self._set_custom_cursor()
+
         i18n.install_language(cfg.LANGUAGE)
         self.create_logo()
 
@@ -384,6 +386,17 @@ class App:
         pygame.mixer.music.set_volume(cfg.MUSIC_VOLUME if self.audio == "on" else 0.0)
         pygame.mixer.music.play(-1)
 
+    def _set_custom_cursor(self):
+        try:
+            import os
+            cursor_dir = "assets/misc"
+            pngs = [f for f in os.listdir(cursor_dir) if f.lower().endswith(".png")]
+            if pngs:
+                img = pygame.image.load(os.path.join(cursor_dir, pngs[0]))
+                pygame.mouse.set_cursor(pygame.cursors.Cursor((0, img.get_height() - 1), img))
+        except Exception:
+            pass
+
     def run(self):
         """Main loop of the application.
 
@@ -593,6 +606,14 @@ class App:
                     self.sync_display_size(event.w, event.h)
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_F3:
                     self.toggle_profiler()
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_F4:
+                    if self.manager.get_state() == "gameplay":
+                        gs = self.manager.states.get("gameplay")
+                        if hasattr(gs, 'game_time_seconds') and hasattr(gs, 'is_daytime'):
+                            if gs.is_daytime():
+                                gs.game_time_seconds = 0  # Midnight
+                            else:
+                                gs.game_time_seconds = 12 * 3600  # Noon
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
                     self.toggle_display_mode()
                 self.manager.handle_event(event)

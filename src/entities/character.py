@@ -404,6 +404,7 @@ class Character:
         self.spawn_point = self.pos.copy()
         self.base_speed = 200
         self.speed_multiplier = 1.0
+        self.weather_speed_multiplier = 1.0
         self.speed = self.base_speed
         self.sprint_multiplier = 1.8 
         
@@ -432,6 +433,10 @@ class Character:
         self.level = 1
         self.xp_to_next_level = 100
 
+        # World scale bonus HP (separate from level-up HP)
+        self.world_scale_hp_bonus = 0
+        self.world_speed_mult = 1.0
+
         # Skill tree
         self.skill_tree_points = 0
         self.skill_tree_unlocked = {"core"}
@@ -446,7 +451,8 @@ class Character:
             self.smelting_skill = None
 
         # Stamina system
-        self.max_stamina = 100
+        self.base_max_stamina = 100
+        self.max_stamina = self.base_max_stamina
         self.stamina = self.max_stamina
         self.stamina_drain_rate = 35
         self.stamina_regen_rate = 25
@@ -508,9 +514,12 @@ class Character:
         # Charged attack
         self.charged_attack_damage_mult: float = 1.8
         self.charged_attack_range_mult: float = 1.3
-        self.normal_attack_stamina_cost: float = 6.0
-        self.fast_attack_stamina_cost: float = 4.0
-        self.charged_attack_stamina_cost: float = 30.0
+        self.base_normal_attack_stamina_cost: float = 6.0
+        self.base_fast_attack_stamina_cost: float = 4.0
+        self.base_charged_attack_stamina_cost: float = 30.0
+        self.normal_attack_stamina_cost: float = self.base_normal_attack_stamina_cost
+        self.fast_attack_stamina_cost: float = self.base_fast_attack_stamina_cost
+        self.charged_attack_stamina_cost: float = self.base_charged_attack_stamina_cost
 
         # Block / Parry system
         self.blocking: bool = False
@@ -1091,6 +1100,109 @@ class Character:
         })
         logger.info("Player learned Chrono Shift!")
         self._try_open_magic_article("Chrono Shift")
+
+    def reset_skill_tree(self):
+        """Reset all skill tree unlocks, refund spent points, and restore base stats."""
+        # 1. Reset skills in skillbook
+        self.skillbook = [
+            {
+                "skill_id": "dash",
+                "name": "Dash",
+                "description": "Quick burst of movement",
+                "color": (86, 132, 186),
+                "accent": (220, 235, 255),
+            },
+        ]
+        
+        # Unbind any removed skills from the skillbar
+        for i in range(len(self.skillbar)):
+            skill = self.skillbar[i]
+            if skill and skill.get("skill_id") != "dash":
+                self.skillbar[i] = None
+
+        # 2. Reset passives
+        self.pyromancers_fury = False
+        self.static_field = False
+        self.regeneration = False
+        self.poison_blade = False
+        self.mana_flow = False
+        self.eternal_fortress = False
+        self.soul_harvest = False
+        self.void_walker = False
+        self.elemental_mastery = False
+
+        # 3. Reset base stats and skill-tree modified stats
+        # Max HP base = 100 + (level - 1) * 20
+        self.max_hp = 100 + (self.level - 1) * 20
+        self.hp = min(self.hp, self.max_hp)
+
+        # Max Stamina base = 100
+        self.max_stamina = 100
+        self.stamina = min(self.stamina, self.max_stamina)
+
+        # Melee stats
+        self.base_attack_damage = 15
+        self.attack_damage = self.base_attack_damage
+        self.attack_range = 65
+        self.attack_cooldown_mult = 1.0
+
+        # Regeneration stats
+        self.regeneration_hp_per_sec = 3.0
+
+        # Speed stats
+        self.speed_multiplier = 1.0
+        self.weather_speed_multiplier = 1.0
+        self.speed = self.base_speed * self.speed_multiplier
+
+        # Fireball
+        self.fireball_damage = 28
+        self.fireball_blast_radius = 110.0
+
+        # Frost Nova
+        self.frost_nova_damage = 0
+        self.frost_nova_freeze_duration = 3.0
+
+        # Glacial Cascade
+        self.glacial_cascade_damage = 35
+
+        # Chain Lightning
+        self.chain_lightning_damage = 22
+        self.chain_lightning_max_targets = 5
+
+        # Thunderstrike
+        self.thunderstrike_damage = 55
+
+        # Summon Spirit
+        self.summon_spirit_damage = 15
+
+        # Poison Blade
+        self.poison_blade_damage_per_sec = 6.0
+
+        # Dark Pact
+        self.dark_pact_damage = 60
+
+        # Arcane Missiles
+        self.arcane_missiles_damage = 14
+
+        # Cooldown multi
+        self.skill_cooldown_mult = 1.0
+
+        # Satellite / keystone specific stats
+        self.berserkers_rage_duration_bonus = 0.0
+        self.berserkers_rage_cooldown_bonus = 0
+        self.soul_harvest_hp_per_kill = 5
+        self.soul_harvest_damage_per_stack = 0.02
+        self.soul_harvest_duration = 8.0
+        self.void_walker_dodge_chance = 0.3
+        self.void_walker_teleport_range = 200.0
+        self.void_walker_afterimage_damage = 18
+        self.elemental_damage_mult = 1.35
+        self.combo_window = 3.0
+        self.combo_damage_bonus = 0
+        self.chrono_shift_duration_bonus = 0.0
+        self.chrono_shift_cooldown_bonus = 0
+
+        logger.info("Skill tree has been respec'd and player stats have been reset to base.")
 
     def get_skill_in_slot(self, slot_index):
         if 0 <= slot_index < len(self.skillbar):
@@ -1840,10 +1952,54 @@ class Character:
                 tr.try_open(gs.app, "guide", "10. Final Words")
 
     def can_attack(self, current_time=None):
+        # Cannot attack without an equipped weapon
+        weapon = getattr(self, 'equipped_weapon', None)
+        if weapon is None:
+            return False
         if current_time is None:
             current_time = pygame.time.get_ticks()
         effective_cooldown = self.attack_cooldown * getattr(self, "cooldown_multiplier", 1.0)
         return current_time - self.last_attack_time >= effective_cooldown
+
+    def recalc_world_scale_bonuses(self, world_scale):
+        old_hp_bonus = self.world_scale_hp_bonus
+        self.world_scale_hp_bonus = world_scale.player_hp_bonus()
+        delta = self.world_scale_hp_bonus - old_hp_bonus
+        self.max_hp += delta
+        self.hp = min(self.hp + max(0, delta), self.max_hp)
+        self.world_speed_mult = world_scale.player_speed_mult()
+
+        # Stamina
+        stamina_bonus = world_scale.player_max_stamina_bonus()
+        old_max = self.max_stamina
+        self.max_stamina = self.base_max_stamina + stamina_bonus
+        self.stamina = min(self.stamina, self.max_stamina)
+        # Regen fixed to 25
+        self.stamina_regen_rate = 25
+
+        # Stamina costs
+        cost_mult = world_scale.player_stamina_cost_mult()
+        self.normal_attack_stamina_cost = max(1.0, self.base_normal_attack_stamina_cost * cost_mult)
+        self.fast_attack_stamina_cost = max(1.0, self.base_fast_attack_stamina_cost * cost_mult)
+        self.charged_attack_stamina_cost = max(1.0, self.base_charged_attack_stamina_cost * cost_mult)
+
+        # Fast attack stun
+        self.fast_attack_stun_duration = 0.5 + world_scale.player_fast_attack_stun_bonus()
+
+        # Parry window
+        self.parry_window_ms = 150 + world_scale.player_parry_window_bonus()
+
+        # Block damage reduction (capped at 75%)
+        self.block_damage_reduction = min(0.75, world_scale.player_block_damage_reduction())
+
+    def _apply_damage_to_enemy(self, enemy, damage):
+        gs = getattr(self, 'game_state', None)
+        ws = getattr(gs, 'world_scale', None) if gs else None
+        if ws and ws.has_ability('execute') and enemy.hp < enemy.max_hp * 0.25:
+            if random.random() < 0.10:
+                enemy.take_damage(enemy.hp)
+                return
+        enemy.take_damage(damage)
 
     def start_attack(self, current_time=None, show_slash=True, visual_tint=None):
         if current_time is None:
@@ -1926,7 +2082,7 @@ class Character:
             self._hit_any_enemy = True
             logger.info(f"Hit enemy for {self.attack_damage} damage!")
             final_damage = self.get_effective_attack_damage()
-            enemy.take_damage(final_damage)
+            self._apply_damage_to_enemy(enemy, final_damage)
 
             # Apply weapon on-hit enchantments (Flaming Sword, etc.) if enemy supports it.
             self._apply_weapon_enchantments(enemy)
@@ -1945,19 +2101,43 @@ class Character:
 
         New weapons can declare `on_hit_effects` as a list of effect dicts
         (the same shape used by consumable effects) and they will be applied
-        to the struck enemy here.
+        to the struck enemy here. Supports socketed runes and chance-based effects.
         """
         weapon = getattr(self, "equipped_weapon", None)
         if weapon is None:
             return
-        on_hit = getattr(weapon, "on_hit_effects", None)
-        if not on_hit:
-            return
+            
+        import random
         from database.effects import create_effect  # local import to avoid cycles
-        for effect_data in on_hit:
+        
+        on_hit = getattr(weapon, "on_hit_effects", [])
+        effects_to_apply = []
+        if on_hit:
+            effects_to_apply.extend(on_hit)
+            
+        socketed_rune = getattr(weapon, "socketed_rune", None)
+        if socketed_rune == "fire_rune":
+            effects_to_apply.append({"type": "burn", "duration": 5.0, "damage_per_sec": 3.0, "chance": 0.10})
+        elif socketed_rune == "ice_rune":
+            effects_to_apply.append({"type": "slow", "duration": 3.0, "speed_multiplier": 0.5, "chance": 0.10})
+        elif socketed_rune == "lightning_rune":
+            effects_to_apply.append({"type": "dizziness", "duration": 2.0, "chance": 0.10})
+        elif socketed_rune == "void_rune":
+            effects_to_apply.append({"type": "curse", "duration": 5.0, "chance": 0.10})
+            
+        if not effects_to_apply:
+            return
+            
+        for effect_data in effects_to_apply:
             if not isinstance(effect_data, dict):
                 continue
-            effect_obj = create_effect(effect_data)
+                
+            effect_data_copy = effect_data.copy()
+            chance = effect_data_copy.pop("chance", 1.0)
+            if random.random() > chance:
+                continue
+                
+            effect_obj = create_effect(effect_data_copy)
             if effect_obj is None:
                 continue
             if hasattr(enemy, "add_effect"):
@@ -1998,7 +2178,7 @@ class Character:
 
             logger.info(f"Mace hit enemy for {self.attack_damage} damage!")
             final_damage = self.get_effective_attack_damage()
-            enemy.take_damage(final_damage)
+            self._apply_damage_to_enemy(enemy, final_damage)
             self._apply_weapon_enchantments(enemy)
 
             if self.poison_blade:
@@ -2039,7 +2219,7 @@ class Character:
 
             logger.info(f"Axe spin hit enemy for {self.attack_damage} damage!")
             final_damage = self.get_effective_attack_damage()
-            enemy.take_damage(final_damage)
+            self._apply_damage_to_enemy(enemy, final_damage)
             self._apply_weapon_enchantments(enemy)
 
             if self.poison_blade:
@@ -2087,7 +2267,7 @@ class Character:
 
             logger.info(f"Spear pierced enemy for {self.attack_damage} damage!")
             final_damage = self.get_effective_attack_damage()
-            enemy.take_damage(final_damage)
+            self._apply_damage_to_enemy(enemy, final_damage)
             self._apply_weapon_enchantments(enemy)
 
             if self.poison_blade:
@@ -2129,7 +2309,7 @@ class Character:
 
             logger.info(f"War Hammer crushed enemy for {self.attack_damage} damage!")
             final_damage = self.get_effective_attack_damage()
-            enemy.take_damage(final_damage)
+            self._apply_damage_to_enemy(enemy, final_damage)
             self._apply_weapon_enchantments(enemy)
 
             if self.poison_blade:
@@ -2172,8 +2352,14 @@ class Character:
 
     def release_charge(self, enemies, aim_direction=None, game_state=None):
         if self.is_charged:
-            self.attack_charged(enemies, aim_direction, game_state)
-        elif self.is_charging:
+            gs = getattr(self, 'game_state', None)
+            ws = getattr(gs, 'world_scale', None) if gs else None
+            if ws and not ws.has_ability('charged_attack'):
+                self.is_charged = False
+            if self.is_charged:
+                self.attack_charged(enemies, aim_direction, game_state)
+                return
+        if self.is_charging:
             self.attack_visual_tint = None
             self.attack_visual_scale = 1.0
             if not self.consume_stamina(self.normal_attack_stamina_cost):
@@ -2198,8 +2384,10 @@ class Character:
             self.attack_visual_tint = None
             self.attack_visual_scale = 1.0
             if not self.consume_stamina(self.normal_attack_stamina_cost):
+                self.cancel_charge()
                 return
             self.attack(enemies, aim_direction=aim_direction)
+            self.cancel_charge()
             return
 
         self.attack_visual_tint = (255, 60, 60, 120)  # Red tint for charged attack
@@ -2228,8 +2416,11 @@ class Character:
         self.attack_damage = effective_damage
         self.attack_range = effective_range
 
-        # Spawn shockwave if charged sword attack missed everything
-        if not self._hit_any_enemy and self._combat_style == "sword" and game_state is not None:
+        # Shockwave requires world scale level 35
+        gs = getattr(self, 'game_state', None)
+        ws = getattr(gs, 'world_scale', None) if gs else None
+        shockwave_unlocked = ws is None or ws.has_ability('shockwave')
+        if not self._hit_any_enemy and self._combat_style == "sword" and game_state is not None and shockwave_unlocked:
             if aim_direction is None:
                 aim_direction = self.get_forward_direction()
             aim_dir = pygame.Vector2(aim_direction)
@@ -2237,12 +2428,15 @@ class Character:
                 aim_dir = aim_dir.normalize()
                 from src.entities.projectile import Shockwave
                 origin = self.get_melee_anchor() + aim_dir * self.melee_origin_offset
-                max_travel = self.base_attack_range * 4
+                sw_range_mult = ws.player_shockwave_range_mult() if ws else 1.0
+                sw_damage_mult = ws.player_shockwave_damage_mult() if ws else 1.0
+                max_travel = self.base_attack_range * 4 * sw_range_mult
                 shock = Shockwave(origin, aim_dir, 350.0, max_travel,
-                                  max(1, int(self.attack_damage * 0.5)),
+                                  max(1, int(self.attack_damage * 0.5 * sw_damage_mult)),
                                   start_radius=self.base_attack_range * 1.4,
                                   end_radius=self.base_attack_range * 0.7)
                 game_state.projectiles.append(shock)
+        self.cancel_charge()
 
     # ── Fast attack ──
     def attack_fast(self, enemies, aim_direction=None):
@@ -2292,7 +2486,7 @@ class Character:
                 continue
 
             final_damage = int(self.get_effective_attack_damage() * self.fast_attack_damage_mult)
-            enemy.take_damage(max(1, final_damage))
+            self._apply_damage_to_enemy(enemy, max(1, final_damage))
             self._apply_weapon_enchantments(enemy)
 
             if self.poison_blade:
@@ -2322,6 +2516,11 @@ class Character:
     def is_in_parry_window(self) -> bool:
         if not self.blocking:
             return False
+        # Parry requires world scale level 15
+        gs = getattr(self, 'game_state', None)
+        ws = getattr(gs, 'world_scale', None) if gs else None
+        if ws and not ws.has_ability('parry'):
+            return False
         return (pygame.time.get_ticks() - self.block_start_time) <= self.parry_window_ms
 
     def do_parry(self, enemy) -> bool:
@@ -2332,7 +2531,7 @@ class Character:
         if hasattr(enemy, "stun"):
             enemy.stun(1.5)
         damage = int(self.get_effective_attack_damage() * 0.5)
-        enemy.take_damage(max(1, damage))
+        self._apply_damage_to_enemy(enemy, max(1, damage))
         return True
 
     def reflect_projectile(self, projectile) -> bool:
@@ -2368,8 +2567,6 @@ class Character:
             return
         weapon_item, count = weapon_slot
         if weapon_item is None or not hasattr(weapon_item, 'weapon_class'):
-            return
-        if getattr(weapon_item, 'weapon_class', None) != 'melee':
             return
         if hasattr(weapon_item, 'is_broken') and weapon_item.is_broken():
             return

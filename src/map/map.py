@@ -438,13 +438,13 @@ class Map:
                 screen.blit(self._base_render_cache, (-int(camera_offset.x), -int(camera_offset.y)))
         self._draw_animated_tiles(screen, camera_offset, self._animated_tiles["base"])
 
-        if self._window_glow is not None:
+        if self._window_glow is not None and cfg.ENVIRONMENT_BRIGHTNESS < 0.6:
             if camera_offset is None:
                 screen.blit(self._window_glow, (0, 0))
             else:
                 screen.blit(self._window_glow, (-int(camera_offset.x), -int(camera_offset.y)))
 
-        if self._window_overlay is not None and cfg.ENVIRONMENT_BRIGHTNESS < 0.95:
+        if self._window_overlay is not None and cfg.ENVIRONMENT_BRIGHTNESS < 0.6:
             if camera_offset is None:
                 screen.blit(self._window_overlay, (0, 0))
             else:

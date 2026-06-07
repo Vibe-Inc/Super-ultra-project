@@ -161,7 +161,12 @@ class LocationMapMenu(Menu):
                     else:
                         game.character.pos.x = mw // 2
                         game.character.pos.y = mh // 2
-        self.app.manager.set_state("gameplay")
+        
+        if loc_id == "temple" and not getattr(game, "temple_intro_played", False):
+            game.temple_intro_played = True
+            self.app.manager.set_state("temple_intro_animation")
+        else:
+            self.app.manager.set_state("gameplay")
 
     def _draw_background(self, screen, sw, sh, t):
         overlay = self._get_surf("overlay", sw, sh)
