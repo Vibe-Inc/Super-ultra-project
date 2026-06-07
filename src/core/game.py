@@ -13,6 +13,7 @@ import random
 
 from src.core.logger import logger
 import src.config as cfg
+from src.core.day_night import DayNightVisuals
 from src.core.state import State
 from src.core.save_manager import SaveManager
 from src.entities.character import Character
@@ -33,6 +34,9 @@ from src.entities.monster_visuals import build_monster_animations
 from src.entities.monster_attacks import build_attack_controller, AttackContext
 from src.combat.base_player_combat import PlayerCombatController
 from src.minigames.blackjack import BlackjackGame
+from src.minigames.roulette import RouletteGame
+from src.minigames.poker import PokerGame
+from src.minigames.crafting import CraftingMinigame
 from src.minigames.fishing import FishingController
 from src.minigames.gathering import GatheringController
 from src.world.gatherable_nodes import GatherableNodeRegistry
@@ -120,6 +124,12 @@ class Game(State):
             Merchant shop inventory used by the NPC.
         blackjack_game (BlackjackGame):
             Active blackjack instance, or None.
+        roulette_game (RouletteGame):
+            Active roulette instance, or None.
+        poker_game (PokerGame):
+            Active poker instance, or None.
+        crafting_minigame (CraftingMinigame):
+            Active "Tempering" minigame instance, or None.
         spawn_menu (SpawnMenu):
             Debug menu for spawning enemies on demand.
         game_time_seconds (float):
@@ -156,6 +166,8 @@ class Game(State):
             Toggle the merchant's trading interface.
         open_blackjack():
             Launch the blackjack minigame overlay.
+        open_crafting_minigame(crafted_item, consume_callback, smelting_level=1):
+            Launch the Tempering timing minigame for a workbench craft.
         _get_card_npc_dialog():
             Pick the right card-NPC dialog lines for the current state.
         use_skill_slot(slot_index):
@@ -217,6 +229,8 @@ class Game(State):
 
         initial_map_path = "maps/test-map-1.tmx"
         self.current_map_path = initial_map_path
+        self.intro_played = False
+        self._intro_sequence_active = False
         self.map = LocalMap("Level1", initial_map_path)
 
         self.collision_handler = CollisionSystem()
@@ -250,6 +264,9 @@ class Game(State):
         self.NIGHT_START = 18 * 3600
         self.DAWN_START = 4 * 3600
         self.NIGHT_BRIGHTNESS = 0.15
+
+        # Majestic day-night visual controller
+        self.day_night = DayNightVisuals()
 
         self.enemy_profiles = {
             "brute": {
@@ -468,6 +485,244 @@ class Game(State):
                     {"item_id": "large_health_potion", "chance": 0.10},
                 ],
             },
+            "phantom": {
+                "visual_style": "phantom",
+                "sprite_set": "MenHuman1(Recolor)",
+                "speed": 105.0,
+                "hp": 100,
+                "damage": 14,
+                "animation_speed": 5.5,
+                "detection_range": 260.0,
+                "attack_range": 40.0,
+                "ai_profile": "stalker",
+                "attack_profile": "phantom",
+                "attack_config": {
+                    "cooldown_ms": 1400,
+                    "damage_mult": 0.8,
+                    "strike_range": 45.0,
+                    "drain_duration": 0.8,
+                    "drain_speed": 280.0,
+                    "drain_heal_fraction": 0.35,
+                    "drain_range": 220.0,
+                    "slow_duration": 1.5,
+                    "slow_factor": 0.65,
+                },
+                "contact_damage": False,
+                "drop_chance": [
+                    {"item_id": "small_health_potion", "chance": 0.25},
+                    {"item_id": "large_health_potion", "chance": 0.10},
+                ],
+            },
+            "titan": {
+                "visual_style": "titan",
+                "sprite_set": "MenHuman1",
+                "speed": 75.0,
+                "hp": 220,
+                "damage": 28,
+                "animation_speed": 4.5,
+                "detection_range": 220.0,
+                "attack_range": 50.0,
+                "ai_profile": "guardian",
+                "attack_profile": "titan",
+                "attack_config": {
+                    "cooldown_ms": 1800,
+                    "charge_cooldown_ms": 3200,
+                    "charge_duration": 0.9,
+                    "charge_speed_mult": 2.0,
+                    "stomp_damage_mult": 1.8,
+                    "root_duration": 2.5,
+                    "knockback_force": 45.0,
+                },
+                "contact_damage": True,
+                "drop_chance": [
+                    {"item_id": "large_health_potion", "chance": 0.90},
+                    {"item_id": "small_health_potion", "chance": 1.0},
+                ],
+            },
+            "cryomancer": {
+                "visual_style": "cryomancer",
+                "sprite_set": "WomanHuman1",
+                "speed": 110.0,
+                "hp": 85,
+                "damage": 15,
+                "animation_speed": 6.5,
+                "detection_range": 280.0,
+                "attack_range": 40.0,
+                "ai_profile": "stalker",
+                "attack_profile": "cryomancer",
+                "attack_config": {
+                    "cooldown_ms": 1100,
+                    "shard_speed": 420.0,
+                    "shard_range": 500.0,
+                    "shard_damage_mult": 0.80,
+                    "freeze_duration": 2.0,
+                    "close_range": 80.0,
+                    "nova_damage_mult": 0.95,
+                    "spread_degrees": 6.0,
+                },
+                "contact_damage": False,
+                "drop_chance": [
+                    {"item_id": "small_health_potion", "chance": 0.30},
+                    {"item_id": "large_health_potion", "chance": 0.10},
+                ],
+            },
+            "shadowmancer": {
+                "visual_style": "shadowmancer",
+                "sprite_set": "WomanHuman1(Recolor)",
+                "speed": 125.0,
+                "hp": 75,
+                "damage": 13,
+                "animation_speed": 7.0,
+                "detection_range": 300.0,
+                "attack_range": 35.0,
+                "ai_profile": "skirmisher",
+                "ai_config": {
+                    "preferred_min": 80.0,
+                    "preferred_max": 180.0,
+                    "orbit_radius": 130.0,
+                },
+                "attack_profile": "shadowmancer",
+                "attack_config": {
+                    "cooldown_ms": 1500,
+                    "step_range": 260.0,
+                    "step_distance": 65.0,
+                    "step_attempts": 5,
+                    "step_spread_degrees": 100.0,
+                    "bolt_speed": 450.0,
+                    "bolt_range": 480.0,
+                    "bolt_damage_mult": 0.85,
+                    "confuse_duration": 3.0,
+                    "spread_degrees": 4.0,
+                },
+                "contact_damage": False,
+                "drop_chance": [
+                    {"item_id": "potion_of_confusion", "chance": 0.35},
+                    {"item_id": "small_health_potion", "chance": 0.20},
+                ],
+            },
+            "revenant": {
+                "visual_style": "revenant",
+                "sprite_set": "MenHuman1(Recolor)",
+                "speed": 110.0,
+                "hp": 130,
+                "damage": 18,
+                "animation_speed": 5.5,
+                "detection_range": 250.0,
+                "attack_range": 42.0,
+                "ai_profile": "stalker",
+                "attack_profile": "revenant",
+                "attack_config": {
+                    "cooldown_ms": 1000,
+                    "damage_mult": 1.05,
+                    "strike_range": 55.0,
+                    "lifesteal_fraction": 0.30,
+                    "bleed_duration": 3.0,
+                    "undying_threshold": 0.20,
+                    "undying_heal_fraction": 0.35,
+                    "undying_immunity_ms": 2500,
+                    "undying_cooldown_ms": 15000,
+                },
+                "contact_damage": False,
+                "drop_chance": [
+                    {"item_id": "large_health_potion", "chance": 0.25},
+                    {"item_id": "small_health_potion", "chance": 0.40},
+                ],
+            },
+            "molten": {
+                "visual_style": "molten",
+                "sprite_set": "MenHuman1",
+                "speed": 100.0,
+                "hp": 150,
+                "damage": 20,
+                "animation_speed": 5.0,
+                "detection_range": 240.0,
+                "attack_range": 45.0,
+                "ai_profile": "guardian",
+                "attack_profile": "molten",
+                "attack_config": {
+                    "cooldown_ms": 1200,
+                    "nova_cooldown_ms": 2800,
+                    "nova_radius": 100.0,
+                    "nova_damage_mult": 1.1,
+                    "burn_duration": 3.5,
+                    "burn_dps": 6.0,
+                    "charge_cooldown_ms": 3500,
+                    "charge_duration": 0.6,
+                    "charge_speed_mult": 2.5,
+                    "charge_damage_mult": 1.3,
+                },
+                "contact_damage": True,
+                "drop_chance": [
+                    {"item_id": "large_health_potion", "chance": 0.35},
+                    {"item_id": "small_health_potion", "chance": 0.50},
+                ],
+            },
+            "stormcaller": {
+                "visual_style": "stormcaller",
+                "sprite_set": "WomanHuman1",
+                "speed": 115.0,
+                "hp": 80,
+                "damage": 14,
+                "animation_speed": 6.5,
+                "detection_range": 300.0,
+                "attack_range": 38.0,
+                "ai_profile": "stalker",
+                "attack_profile": "stormcaller",
+                "attack_config": {
+                    "cooldown_ms": 1000,
+                    "bolt_speed": 500.0,
+                    "bolt_range": 520.0,
+                    "bolt_damage_mult": 0.9,
+                    "dizzy_duration": 1.8,
+                    "cast_range": 360.0,
+                    "spread_degrees": 4.0,
+                    "field_cooldown_ms": 3000,
+                    "field_radius": 90.0,
+                    "field_damage_mult": 0.8,
+                },
+                "contact_damage": False,
+                "drop_chance": [
+                    {"item_id": "small_health_potion", "chance": 0.25},
+                    {"item_id": "large_health_potion", "chance": 0.10},
+                ],
+            },
+            "plaguebearer": {
+                "visual_style": "plaguebearer",
+                "sprite_set": "MenHuman1(Recolor)",
+                "speed": 105.0,
+                "hp": 110,
+                "damage": 14,
+                "animation_speed": 5.5,
+                "detection_range": 280.0,
+                "attack_range": 40.0,
+                "ai_profile": "stalker",
+                "ai_config": {
+                    "preferred_min": 60.0,
+                    "preferred_max": 160.0,
+                    "orbit_radius": 110.0,
+                },
+                "attack_profile": "plaguebearer",
+                "attack_config": {
+                    "cooldown_ms": 1200,
+                    "bolt_speed": 380.0,
+                    "bolt_range": 460.0,
+                    "bolt_damage_mult": 0.85,
+                    "poison_duration": 4.0,
+                    "poison_dps": 5.5,
+                    "cast_range": 340.0,
+                    "spread_degrees": 6.0,
+                    "nova_cooldown_ms": 3200,
+                    "nova_radius": 100.0,
+                    "nova_damage_mult": 1.0,
+                    "nova_slow_duration": 2.0,
+                    "nova_slow_factor": 0.55,
+                },
+                "contact_damage": False,
+                "drop_chance": [
+                    {"item_id": "small_health_potion", "chance": 0.30},
+                    {"item_id": "potion_of_confusion", "chance": 0.15},
+                ],
+            },
         }
         self.enemy_profile_names = list(self.enemy_profiles.keys())
 
@@ -553,6 +808,7 @@ class Game(State):
             create_item("dull_sword"),
             create_item("wooden_bow"),
             create_item("apple"),
+            create_item("gay_ring"),
             create_item("hand_lamp"),
             create_item("lantern"),
             create_item("small_health_potion"),
@@ -586,13 +842,13 @@ class Game(State):
 
         self.card_npc_first_dialog = [
             "Well, well — a fresh face in the tavern!",
-            "Name's Ren. I pass the time with a bit of cards.",
-            "Care for a round of Blackjack? I promise I don't cheat... much."
+            "Name's Ren. I pass the time with some casino games.",
+            "Care for a round of Blackjack, Roulette, or Poker? I promise I don't cheat... much."
         ]
         self.card_npc_repeat_dialog = [
             "Back again? I knew you'd come around.",
-            "The cards have been waiting for you.",
-            "How about another round of Blackjack?"
+            "The tables are waiting for you.",
+            "Would you like to play Blackjack, Roulette, or Poker?"
         ]
         self.card_npc_post_game_dialog = [
             "Thanks for playing! That was a fine round.",
@@ -698,8 +954,13 @@ class Game(State):
         except Exception:
             pass
 
-        # Blackjack game state (None when not playing)
+        # Blackjack, Roulette & Poker game state (None when not playing)
         self.blackjack_game = None
+        self.roulette_game = None
+        self.poker_game = None
+
+        # Crafting "Tempering" minigame state (None when not playing)
+        self.crafting_minigame = None
 
         # Debug menu for spawning mobs
         self.spawn_menu = SpawnMenu(
@@ -848,6 +1109,97 @@ class Game(State):
                 on_close=lambda: setattr(self.card_npc, 'was_talked', True),
             )
         self.blackjack_game = BlackjackGame(self.app, on_close=on_close, player_money=self.app.money)
+
+    def open_roulette(self):
+        def on_close(outcome, net_change):
+            self.roulette_game = None
+            self.app.money += net_change
+            if self.app.money < 0:
+                self.app.money = 0
+            logger.info(f"Roulette closed: outcome={outcome}, net_change={net_change}, money now={self.app.money}")
+            if net_change > 0:
+                post_lines = [
+                    "Thanks for playing! That was a fine round.",
+                    f"You walked away {net_change} gold richer!",
+                    "Come back anytime — the wheel is always spinning."
+                ]
+            elif net_change < 0:
+                post_lines = [
+                    "Thanks for playing! That was a fine round.",
+                    f"Tough luck — you lost {abs(net_change)} gold.",
+                    "Come back anytime — the wheel is always spinning."
+                ]
+            else:
+                post_lines = [
+                    "Thanks for playing! That was a fine round.",
+                    "Come back anytime — the wheel is always spinning."
+                ]
+            self.app.current_dialog = Dialog(
+                self.app,
+                post_lines,
+                on_close=lambda: setattr(self.card_npc, 'was_talked', True),
+            )
+        self.roulette_game = RouletteGame(self.app, on_close=on_close, player_money=self.app.money)
+
+    def open_poker(self):
+        def on_close(outcome, net_change):
+            self.poker_game = None
+            self.app.money += net_change
+            if self.app.money < 0:
+                self.app.money = 0
+            logger.info(f"Poker closed: outcome={outcome}, net_change={net_change}, money now={self.app.money}")
+            if net_change > 0:
+                post_lines = [
+                    "Thanks for playing! That was a fine round.",
+                    f"You walked away {net_change} gold richer!",
+                    "Come back anytime — the cards are always dealt."
+                ]
+            elif net_change < 0:
+                post_lines = [
+                    "Thanks for playing! That was a fine round.",
+                    f"Tough luck — you lost {abs(net_change)} gold.",
+                    "Come back anytime — the cards are always dealt."
+                ]
+            else:
+                post_lines = [
+                    "Thanks for playing! That was a fine round.",
+                    "Come back anytime — the cards are always dealt."
+                ]
+            self.app.current_dialog = Dialog(
+                self.app,
+                post_lines,
+                on_close=lambda: setattr(self.card_npc, 'was_talked', True),
+            )
+        self.poker_game = PokerGame(self.app, on_close=on_close, player_money=self.app.money)
+
+    def open_crafting_minigame(self, crafted_item, consume_callback, smelting_level: int = 1):
+        """Launch the Tempering timing minigame for a freshly crafted item.
+
+        ``crafted_item`` is the already-tiered item produced by
+        :meth:`src.inventory.system.CraftingGrid.check_recipes`.  The
+        minigame may further bias the tier up or down based on the
+        player's three hammer strikes.  On close, ``consume_callback``
+        is invoked with the final item and the XP multiplier; it is
+        expected to clear the crafting grid, place the item in the
+        player's cursor, and award the (multiplied) smelting XP.
+        """
+        def on_close(final_item, xp_multiplier, outcome):
+            self.crafting_minigame = None
+            logger.info(
+                f"Crafting minigame closed: outcome={outcome}, "
+                f"final_tier={getattr(final_item, 'tier', 'fine')}, "
+                f"xp_multiplier={xp_multiplier}"
+            )
+            try:
+                consume_callback(final_item, xp_multiplier)
+            except Exception as exc:
+                logger.warning(f"crafting minigame consume callback failed: {exc}")
+        self.crafting_minigame = CraftingMinigame(
+            self.app,
+            crafted_item,
+            on_close=on_close,
+            smelting_level=smelting_level,
+        )
 
     def _get_card_npc_dialog(self):
         if not self.card_npc.was_talked:
@@ -1059,24 +1411,8 @@ class Game(State):
         if not self._triggered_guide_daynight and not was_day and not self.is_daytime():
             self._triggered_guide_daynight = True
             self.app.article_tracker.try_open(self.app, "guide", "7. Day & Night Cycle")
-        # Smooth brightness interpolation across dawn/dusk and compute a tint color
-        def lerp_color(a: tuple[int, int, int], b: tuple[int, int, int], t: float) -> tuple[int, int, int]:
-            return (int(a[0] + (b[0] - a[0]) * t), int(a[1] + (b[1] - a[1]) * t), int(a[2] + (b[2] - a[2]) * t))
 
-        if self.DUSK_START <= self.game_time_seconds < self.NIGHT_START:
-            t = (self.game_time_seconds - self.DUSK_START) / (self.NIGHT_START - self.DUSK_START)
-            cfg.ENVIRONMENT_BRIGHTNESS = 1.0 - t * (1.0 - self.NIGHT_BRIGHTNESS)
-            cfg.ENVIRONMENT_TINT = lerp_color(cfg.ENVIRONMENT_DAY_COLOR, cfg.ENVIRONMENT_NIGHT_COLOR, t)
-        elif self.NIGHT_START <= self.game_time_seconds or self.game_time_seconds < self.DAWN_START:
-            cfg.ENVIRONMENT_BRIGHTNESS = self.NIGHT_BRIGHTNESS
-            cfg.ENVIRONMENT_TINT = cfg.ENVIRONMENT_NIGHT_COLOR
-        elif self.DAWN_START <= self.game_time_seconds < self.DAY_START:
-            t = (self.game_time_seconds - self.DAWN_START) / (self.DAY_START - self.DAWN_START)
-            cfg.ENVIRONMENT_BRIGHTNESS = self.NIGHT_BRIGHTNESS + t * (1.0 - self.NIGHT_BRIGHTNESS)
-            cfg.ENVIRONMENT_TINT = lerp_color(cfg.ENVIRONMENT_NIGHT_COLOR, cfg.ENVIRONMENT_DAY_COLOR, t)
-        else:
-            cfg.ENVIRONMENT_BRIGHTNESS = 1.0
-            cfg.ENVIRONMENT_TINT = cfg.ENVIRONMENT_DAY_COLOR
+        self.day_night.update(dt, self.game_time_seconds, self.GAME_DAY_SECONDS)
 
         self.app.profiler.set_gauge("game_time", self._format_game_time())
 
@@ -1138,17 +1474,7 @@ class Game(State):
         lights = []
         try:
             camera = self._get_camera_offset()
-            # Player light: if player has an active lamp, use it
             player_center = self.character.get_center()
-            if getattr(self.character, 'active_lamp', None) and getattr(self.character.active_lamp, 'lit', False):
-                lamp = self.character.active_lamp
-                screen_pos = (int(player_center.x - camera.x), int(player_center.y - camera.y))
-                lights.append({
-                    'pos': screen_pos,
-                    'radius': int(lamp.light_radius),
-                    'intensity': float(lamp.intensity)
-                })
-
             # Lantern: emit light when the lantern is in the active hotbar slot
             try:
                 hb = getattr(self, 'hotbar', None)
@@ -1235,8 +1561,10 @@ class Game(State):
                 except Exception:
                     pass
 
-            # Window illumination: windows emit warm light at night
-            # Skip for interior maps (e.g. tavern) where windows are on internal walls
+            # Window illumination: windows emit soft light at night.
+            # The warm visual glow is pre-baked on the map layer (Map._window_glow);
+            # these light sources only punch subtle holes in the night overlay.
+            # Skip for interior maps (e.g. tavern) where windows are on internal walls.
             _NO_WINDOW_LIGHT_MAPS = {"maps/tavern.tmx"}
             try:
                 game_map = getattr(self, 'map', None)
@@ -1247,7 +1575,7 @@ class Game(State):
                         lights.append({
                             'pos': screen_pos,
                             'radius': 100,
-                            'intensity': 0.9,
+                            'intensity': 0.7,
                             'full_360': True,
                         })
             except Exception:
@@ -1451,7 +1779,28 @@ class Game(State):
         if placed == 0:
             logger.debug(f"Enemy '{getattr(enemy, 'ai_profile', 'unknown')}' had drop_chance entries but none rolled.")
 
+    def _finish_intro(self):
+        """Callback to finish the intro sequence and unlock the game."""
+        self.intro_played = True
+        self._intro_sequence_active = False
+
     def update(self, dt):
+        # Intro Sequence for test-map-1
+        if self.current_map_path == "maps/test-map-1.tmx" and not getattr(self, "intro_played", False) and not getattr(self, "_intro_sequence_active", False):
+            self._intro_sequence_active = True
+            
+            # Set player lying down (facing down, frame 0)
+            self.character.direction = "down"
+            self.character.frame_index = 0
+            self.character.image = self.character.animations["down"][0]
+
+            dialog_lines = [
+                '"Arise, Chosen One."',
+                '"I sense the latent magic humming in your blood. You have been selected for a sacred mission."',
+                '"Far to the east, a great dragon slumbers in a mountain cave. You must slay it, or the realm will burn."'
+            ]
+            self.app.current_dialog = Dialog(self.app, dialog_lines, on_close=self._finish_intro)
+
         tr = self.app.article_tracker
 
         # Guide intro — only on the very first-ever game start
@@ -1664,6 +2013,9 @@ class Game(State):
             if enemy.is_dead():
                 logger.info("Enemy defeated!")
                 self._kill_count += 1
+                self.app.achievement_manager.unlock("first_blood")
+                self.app.achievement_manager.add_progress("exterminator", 1, 50)
+                self.app.achievement_manager.add_progress("monster_hunter", 1, 200)
 
                 # Bestiary: open article for this enemy type
                 vs = getattr(enemy, "visual_style", None) or getattr(enemy, "ai_profile", "")
@@ -1742,6 +2094,13 @@ class Game(State):
         try:
             if getattr(self, 'gathering', None):
                 self.gathering.update(dt)
+        except Exception:
+            pass
+
+        # Tick the crafting tempering minigame (sweeping cursor, timers).
+        try:
+            if getattr(self, 'crafting_minigame', None):
+                self.crafting_minigame.update(dt)
         except Exception:
             pass
 
@@ -2017,13 +2376,25 @@ class Game(State):
                 self.app.current_dialog.draw(screen)
             except Exception:
                 pass
-        # Draw blackjack overlay on top of everything
+        # Draw blackjack, roulette, or poker overlay on top of everything
         if self.blackjack_game:
             try:
                 self.blackjack_game.draw(screen)
             except Exception:
                 pass
+        if self.roulette_game:
+            try:
+                self.roulette_game.draw(screen)
+            except Exception:
+                pass
+        if self.poker_game:
+            try:
+                self.poker_game.draw(screen)
+            except Exception:
+                pass
         # Smeltery workstation overlay (workbench / coke oven / blast furnace).
+        # Must draw BEFORE the crafting minigame so the Tempering overlay
+        # renders on top of the smeltery panel, not behind it.
         try:
             if getattr(self, 'smeltery', None) and self.smeltery.is_open:
                 self.smeltery.draw(screen)
@@ -2035,6 +2406,13 @@ class Game(State):
                     pass
         except Exception:
             pass
+        # Crafting "Tempering" minigame overlay (workbench tempering).
+        if getattr(self, 'crafting_minigame', None):
+            try:
+                self.crafting_minigame.update(0.0)  # safety: no-op if not running
+                self.crafting_minigame.draw(screen)
+            except Exception:
+                pass
         # Draw debug spawn / effects menus
         self.spawn_menu.draw(screen)
         try:
@@ -2067,10 +2445,30 @@ class Game(State):
                 self.effects_menu.handle_event(event)
                 return
 
-        # If blackjack game is active, route all events to it
+        # If blackjack, roulette, or poker game is active, route all events to it
         if self.blackjack_game:
             try:
                 self.blackjack_game.handle_event(event)
+                return
+            except Exception:
+                pass
+        if self.roulette_game:
+            try:
+                self.roulette_game.handle_event(event)
+                return
+            except Exception:
+                pass
+        if self.poker_game:
+            try:
+                self.poker_game.handle_event(event)
+                return
+            except Exception:
+                pass
+
+        # If the crafting tempering minigame is active, route all events to it
+        if getattr(self, 'crafting_minigame', None):
+            try:
+                self.crafting_minigame.handle_event(event)
                 return
             except Exception:
                 pass
@@ -2196,6 +2594,10 @@ class Game(State):
                         on_close=on_card_close,
                         on_play_cards=self.open_blackjack,
                         show_play_cards=True,
+                        on_play_roulette=self.open_roulette,
+                        show_play_roulette=True,
+                        on_play_poker=self.open_poker,
+                        show_play_poker=True,
                     )
                 elif self.fishing_npc.is_interactable:
                     self.app.manager.set_state("collection_book")

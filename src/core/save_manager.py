@@ -36,6 +36,23 @@ def _append_durability(entry: dict, item) -> None:
         pass
 
 
+def _append_tier(entry: dict, item) -> None:
+    """Stamp the item's crafting tier (if any) onto a save entry.
+
+    Only weapons / armor / tools are tiered, so we look for the
+    ``tier`` attribute that :func:`src.items.items.apply_tier_to_item`
+    sets.  The plain ``"fine"`` baseline is also persisted (rather
+    than skipped) so the save file is self-describing.
+    """
+    tier_id = getattr(item, "tier", None)
+    if not tier_id:
+        return
+    try:
+        entry["tier"] = str(tier_id)
+    except Exception:
+        pass
+
+
 def _apply_durability(item, slot_data: dict) -> None:
     """Restore a previously-saved durability value onto a freshly-
     instantiated item, if the slot data carries one.
@@ -72,6 +89,33 @@ def _apply_durability(item, slot_data: dict) -> None:
         item.durability = max(0, saved_cur)
     if item.durability > 0 and hasattr(item, "_was_broken"):
         item._was_broken = False
+
+
+def _apply_tier(item, slot_data: dict) -> None:
+    """Restore a previously-saved crafting tier onto ``item``.
+
+    A new attribute ``tier`` is stamped on the item.  If the item
+    class supports tier scaling (Weapon / Armor / Tool), the saved
+    multiplier is *re-applied* on top of the base stats read from the
+    database.  Items that pre-date the tier system (no ``tier`` key
+    in the slot data) are left at the database baseline, so saves
+    stay forward-compatible.
+    """
+    if item is None or not isinstance(slot_data, dict):
+        return
+    tier_id = slot_data.get("tier")
+    if not tier_id:
+        return
+    try:
+        from src.items.items import apply_tier_to_item
+        apply_tier_to_item(item, str(tier_id))
+    except Exception:
+        # Tier module isn't importable (very old build): fall back to
+        # stamping just the attribute so the UI can still render a
+        # badge.
+        item.tier = str(tier_id)
+        item.tier_multiplier = 1.0
+        item.tier_color = (240, 240, 255)
 
 
 def _skill_dicts_to_json(items):
@@ -235,6 +279,7 @@ class SaveManager:
                     item, count = slot
                     entry = {"id": item.id, "count": count}
                     _append_durability(entry, item)
+                    _append_tier(entry, item)
                     col_data.append(entry)
                 else:
                     col_data.append(None)
@@ -252,6 +297,7 @@ class SaveManager:
                     item, count = slot
                     entry = {"id": item.id, "count": count}
                     _append_durability(entry, item)
+                    _append_tier(entry, item)
                     col_data.append(entry)
                 else:
                     col_data.append(None)
@@ -267,6 +313,7 @@ class SaveManager:
                     item, count = slot
                     entry = {"id": item.id, "count": count}
                     _append_durability(entry, item)
+                    _append_tier(entry, item)
                     col_data.append(entry)
                 else:
                     col_data.append(None)
@@ -296,6 +343,15 @@ class SaveManager:
         char_state["last_elemental_skill"] = char.__dict__.get("last_elemental_skill", None)
         char_state["spawn_point_x"] = char.__dict__.get("spawn_point", char.pos).x if hasattr(char.__dict__.get("spawn_point", char.pos), "x") else char.pos.x
         char_state["spawn_point_y"] = char.__dict__.get("spawn_point", char.pos).y if hasattr(char.__dict__.get("spawn_point", char.pos), "y") else char.pos.y
+        # Smelting / crafting skill.  Serialised as a flat dict via
+        # :meth:`SmeltingSkill.to_dict` so the schema can grow in the
+        # future without breaking older saves.
+        smelting_skill = char.__dict__.get("smelting_skill", None)
+        if smelting_skill is not None and hasattr(smelting_skill, "to_dict"):
+            try:
+                char_state["smelting_skill"] = smelting_skill.to_dict()
+            except Exception:
+                pass
 
         save_data = {
             "date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -315,6 +371,7 @@ class SaveManager:
                 "xp_to_next_level": char.xp_to_next_level,
                 "map_path": game_state.current_map_path if hasattr(game_state, "current_map_path") else "maps/test-map-1.tmx",
                 "character_state": char_state,
+                "intro_played": getattr(game_state, "intro_played", False),
             },
             "inventory": serialized_inv,
             "hotbar": serialized_hotbar,
@@ -371,6 +428,7 @@ class SaveManager:
                     item = create_item(slot_data["id"])
                     count = slot_data["count"]
                     _apply_durability(item, slot_data)
+                    _apply_tier(item, slot_data)
                     app.MAIN_INV_items[col][row] = [item, count]
                 else:
                     app.MAIN_INV_items[col][row] = None
@@ -398,6 +456,7 @@ class SaveManager:
         char.xp = player_data.get("xp", 0)
         char.level = player_data.get("level", 1)
         char.xp_to_next_level = player_data.get("xp_to_next_level", 100)
+        game_state.intro_played = player_data.get("intro_played", False)
 
         # Restore extended character state
         char_state = player_data.get("character_state", {})
@@ -420,6 +479,15 @@ class SaveManager:
             if "spawn_point_x" in char_state and "spawn_point_y" in char_state:
                 char.spawn_point.x = char_state["spawn_point_x"]
                 char.spawn_point.y = char_state["spawn_point_y"]
+            # Smelting skill: replace the freshly-constructed default
+            # instance with the deserialised one so XP/level persist.
+            if "smelting_skill" in char_state:
+                try:
+                    from src.systems.smelting_skill import SmeltingSkill
+                    loaded = SmeltingSkill.from_dict(char_state["smelting_skill"])
+                    char.smelting_skill = loaded
+                except Exception:
+                    pass
             # Recalculate derived stats
             char.speed = char.base_speed * char.speed_multiplier
             char.attack_damage = char.base_attack_damage
@@ -440,6 +508,7 @@ class SaveManager:
                         item = create_item(slot_data["id"])
                         count = slot_data["count"]
                         _apply_durability(item, slot_data)
+                        _apply_tier(item, slot_data)
                         app.MAIN_HOTBAR_items[col][row] = [item, count]
                     else:
                         app.MAIN_HOTBAR_items[col][row] = None
@@ -454,6 +523,7 @@ class SaveManager:
                     item = create_item(slot_data["id"])
                     count = slot_data["count"]
                     _apply_durability(item, slot_data)
+                    _apply_tier(item, slot_data)
                     equip_inv.items[col][row] = [item, count]
                 else:
                     equip_inv.items[col][row] = None

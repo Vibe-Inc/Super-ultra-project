@@ -436,6 +436,15 @@ class Character:
         self.skill_tree_points = 0
         self.skill_tree_unlocked = {"core"}
 
+        # Smelting / crafting skill.  Gained every time the player
+        # finishes a workbench craft or an anvil repair.  See
+        # :mod:`src.systems.smelting_skill` for the rules.
+        try:
+            from src.systems.smelting_skill import SmeltingSkill
+            self.smelting_skill = SmeltingSkill()
+        except Exception:
+            self.smelting_skill = None
+
         # Stamina system
         self.max_stamina = 100
         self.stamina = self.max_stamina
@@ -538,9 +547,6 @@ class Character:
         self.fireball_last_used = -self.fireball_cooldown
         self.fireball_knockback = 18.0
         self.game_state = None
-
-        # Light/lamp support
-        self.active_lamp = None
 
         # Flame Shield skill
         self.flame_shield_duration = 6.0       # seconds active

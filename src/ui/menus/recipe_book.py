@@ -893,6 +893,14 @@ class RecipeBookMenu(Menu):
         content_surf.set_alpha(alpha)
         surf.blit(content_surf, (0, 0))
 
+    @staticmethod
+    def _recipe_uses_smeltery_materials(recipe):
+        for row in recipe["matrix"]:
+            for ingredient in row:
+                if ingredient in ("iron_ingot", "steel_ingot"):
+                    return True
+        return False
+
     def _draw_recipe_card(self, surf, x, y, w, h, recipe, scale, recipe_idx, current_time):
         card_rect = pygame.Rect(x, y, w, h)
         hover_amount = self.card_hover_animations.get(recipe_idx, 0.0)
@@ -970,6 +978,27 @@ class RecipeBookMenu(Menu):
         formatted_name = recipe['result_id'].replace("_", " ").title()
         title_text = self._render_text(cfg.INV_nums_font, formatted_name, (55, 35, 18))
         surf.blit(title_text, (content_x + int(15 * scale), content_y + int(10 * scale)))
+
+        # "Smeltery only" badge for advanced recipes
+        if self._recipe_uses_smeltery_materials(recipe):
+            badge_text = "SMELTERY"
+            badge_color = (200, 120, 40)
+            badge_font_size = max(8, int(13 * scale))
+            badge_font = cfg.get_font(badge_font_size)
+            badge_surf = badge_font.render(badge_text, True, badge_color)
+            badge_pad = int(4 * scale)
+            badge_x = scaled_rect.right - badge_surf.get_width() - int(10 * scale)
+            badge_y = content_y + int(12 * scale)
+            badge_bg_rect = pygame.Rect(
+                badge_x - badge_pad, badge_y - int(2 * scale),
+                badge_surf.get_width() + badge_pad * 2,
+                badge_surf.get_height() + int(4 * scale),
+            )
+            bg_surf = pygame.Surface(badge_bg_rect.size, pygame.SRCALPHA)
+            pygame.draw.rect(bg_surf, (60, 40, 20, 200), bg_surf.get_rect(), border_radius=int(3 * scale))
+            surf.blit(bg_surf, badge_bg_rect.topleft)
+            pygame.draw.rect(surf, badge_color, badge_bg_rect, width=1, border_radius=int(3 * scale))
+            surf.blit(badge_surf, (badge_x, badge_y))
 
         # Golden underline
         ul_y = content_y + int(10 * scale) + title_text.get_height() + int(3 * scale)

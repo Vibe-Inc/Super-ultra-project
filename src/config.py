@@ -378,6 +378,17 @@ DURABILITY_BAR_COLORS = {
     "broken": (220, 70, 70, 230),
 }
 
+# ============== TRASHCAN ==============
+INV_TRASHCAN_SIZE = 50
+INV_TRASHCAN_SLOT_COLOR = (35, 25, 25)
+INV_TRASHCAN_BORDER_COLOR = (80, 55, 55)
+INV_TRASHCAN_HOVER_BORDER = (220, 80, 80)
+INV_TRASHCAN_HOVER_FILL = (220, 80, 80, 30)
+INV_TRASHCAN_ICON_COLOR = (180, 80, 80)
+INV_TRASHCAN_LABEL = "Trash"
+INV_TRASHCAN_LABEL_COLOR = (140, 100, 100)
+INV_TRASHCAN_GAP = 10
+
 def set_screen_size(screen_width, screen_height):
     """Update the global screen dimensions and recalculate dependent values.
 
@@ -396,3 +407,75 @@ def set_screen_size(screen_width, screen_height):
         update_scaled_fonts()
     except Exception:
         pass
+
+
+# ============== EFFECT BAR STYLING ==============
+EFFECT_BAR_SLOT_SIZE = 72
+EFFECT_BAR_PADDING = 6
+EFFECT_BAR_MAX_VISIBLE = 12          # max icons shown before wrapping
+EFFECT_BAR_GAP = 4                   # gap between rows (for multi-row)
+EFFECT_BAR_BG_COLOR = (18, 20, 28, 200)
+EFFECT_BAR_BORDER_COLOR = (60, 68, 80, 200)
+EFFECT_BAR_BORDER_RADIUS = 6
+
+# Buff = positive effect, Debuff = negative effect
+EFFECT_BAR_BUFF_COLOR = (40, 160, 80)       # green tint
+EFFECT_BAR_DEBUFF_COLOR = (180, 50, 50)     # red tint
+EFFECT_BAR_TIMER_BG_COLOR = (30, 30, 35, 180)
+EFFECT_BAR_TIMER_FILL_COLOR = (255, 220, 80, 220)
+
+# Effect type classification
+EFFECT_BAR_BUFF_TYPES = {
+    "regeneration", "radiant_fortitude", "vampiric_edge", "keen_insight",
+    "strength", "momentum", "haste", "shield",
+}
+EFFECT_BAR_DEBUFF_TYPES = {
+    "poison", "burn", "confusion", "dizziness", "slow", "freeze", "root",
+    "bleed", "blind", "weaken", "curse", "lethargy",
+}
+
+# Short display labels for effects (class name -> label)
+EFFECT_BAR_LABELS = {
+    "regeneration": "Regen",
+    "poison": "Poisn",
+    "burn": "Burn",
+    "confusion": "Conf",
+    "dizziness": "Dizz",
+    "slow": "Slow",
+    "freeze": "Freeze",
+    "root": "Root",
+    "radiant_fortitude": "RFort",
+    "vampiric_edge": "Vamp",
+    "keen_insight": "KIns",
+    "strength": "Str",
+    "momentum": "Momt",
+    "blind": "Bln",
+    "haste": "Haste",
+    "weaken": "Weak",
+    "curse": "Curse",
+    "lethargy": "Leth",
+    "shield": "Shld",
+}
+
+# Hex-like colors for each effect (icon tint)
+EFFECT_BAR_COLORS = {
+    "regeneration": (80, 220, 100),
+    "poison": (120, 200, 40),
+    "burn": (255, 100, 30),
+    "confusion": (200, 130, 255),
+    "dizziness": (180, 180, 200),
+    "slow": (100, 140, 220),
+    "freeze": (60, 180, 255),
+    "root": (60, 160, 60),
+    "radiant_fortitude": (255, 220, 80),
+    "vampiric_edge": (200, 30, 60),
+    "keen_insight": (220, 180, 255),
+    "strength": (200, 80, 60),
+    "momentum": (255, 160, 40),
+    "blind": (100, 100, 120),
+    "haste": (255, 240, 80),
+    "weaken": (160, 80, 80),
+    "curse": (140, 40, 180),
+    "lethargy": (80, 100, 140),
+    "shield": (80, 180, 240),
+}

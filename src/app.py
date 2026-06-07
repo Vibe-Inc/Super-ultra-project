@@ -6,6 +6,7 @@ from src.core.state_manager import StateManager
 from src.core.save_manager import SaveManager
 from src.core.profiling import FrameProfiler, FpsCounter
 from src.core.article_tracker import ArticleUnlockTracker
+from src.core.achievements import AchievementManager
 from src.inventory.inventory_manager import INVENTORY_manager
 from src.items.items import create_item
 from database.item_db.weapons_db import seed_weapons
@@ -16,6 +17,7 @@ from database.item_db.fish_db import seed_fish
 from database.item_db.resources_db import seed_resources
 from database.item_db.smeltery_db import seed_smeltery
 from database.item_db.flint_db import seed_flint_items
+from database.item_db.materials_db import seed_materials
 from database.crafting_recepies_db import seed_recipes
 from database.GP_database import Gp_database
 import src.config as cfg
@@ -119,6 +121,7 @@ class App:
         seed_resources(db)
         seed_smeltery(db)
         seed_flint_items(db)
+        seed_materials(db)
         seed_recipes(db)
         db.close()
 
@@ -138,18 +141,17 @@ class App:
         add_item(4, 0, "war_hammer")
         add_item(5, 0, "mace")
         add_item(6, 0, "spear")
+        add_item(7, 0, "steel_ingot", 5)
         # Row 1 — Ranged weapons + accessories
         # Row 1 — Ranged weapons + gathering tools
-        add_item(0, 1, "wooden_bow")
-        add_item(1, 1, "hunting_bow")
         add_item(2, 1, "longbow")
         add_item(3, 1, "crossbow")
         add_item(4, 1, "throwing_dagger")
         add_item(6, 1, "gay_ring")
-        add_item(7, 1, "light_ring")
         add_item(5, 1, "fishing_rod")
         add_item(6, 1, "stone_axe")
         add_item(7, 1, "iron_pickaxe")
+        add_item(7, 0, "light_ring")
 
         # Row 2 — Potions
         add_item(0, 2, "small_health_potion", 3)
@@ -171,7 +173,7 @@ class App:
         add_item(6, 3, "steel_leggings")
         add_item(7, 3, "steel_boots")
         
-        self.money = 100
+        self._money = 100
         self.purple_stars = 0
         self.revealed_tarot_cards: set[int] = set()
 
@@ -201,6 +203,22 @@ class App:
         self.article_tracker = ArticleUnlockTracker()
         self.article_notifications: list[dict] = []
         self.guide_intro_shown = False
+        
+        # Achievements manager
+        self.achievement_manager = AchievementManager(self)
+
+    @property
+    def money(self):
+        return self._money
+
+    @money.setter
+    def money(self, value):
+        self._money = value
+        if hasattr(self, 'achievement_manager'):
+            if self._money >= 1000:
+                self.achievement_manager.unlock("wealthy")
+            if self._money >= 10000:
+                self.achievement_manager.unlock("tycoon")
 
     def _get_dir_mask(self, radius: int, dir_x: float, dir_y: float) -> "pygame.Surface":
         """Return a cached hemisphere mask that attenuates light behind the character.
@@ -405,6 +423,7 @@ class App:
             self.profiler.start_section("postfx")
             effective_brightness = cfg.USER_SCREEN_BRIGHTNESS
             night_tint = False
+            _is_intro = self.manager.get_state() == "intro_animation"
             if self.manager.get_state() == "gameplay":
                 effective_brightness = cfg.USER_SCREEN_BRIGHTNESS * cfg.ENVIRONMENT_BRIGHTNESS
                 night_tint = cfg.ENVIRONMENT_BRIGHTNESS <= 0.55
@@ -427,9 +446,11 @@ class App:
                 if gs and getattr(gs, 'current_map_path', '') == "maps/tavern.tmx":
                     _skip_night_overlay = True
 
-            if effective_brightness < 1 and not _skip_night_overlay:
+            if effective_brightness < 1 and not _skip_night_overlay and not _is_intro:
                 overlay_alpha = int((1 - effective_brightness) * 255)
-                # Use the environment tint color computed by the game state for dawn/dusk/night
+                # Use the majestic multi-stop tint from the DayNightVisuals
+                # controller (deep indigo at night, warm orange at dawn/dusk,
+                # purple at twilight, etc.)
                 if night_tint:
                     tint = cfg.ENVIRONMENT_TINT
                 else:
@@ -540,6 +561,15 @@ class App:
                     overlay = self._brightness_overlay
 
                 self.screen.blit(overlay, (0, 0))
+
+                # Draw majestic atmospheric effects on top of the overlay:
+                # golden-hour glow, twinkling stars, firefly particles, vignette
+                try:
+                    gs = self.manager.states.get("gameplay")
+                    if gs and hasattr(gs, 'day_night') and gs.day_night:
+                        gs.day_night.draw(self.screen)
+                except Exception:
+                    pass
             self.profiler.end_section("postfx")
 
             if self.manager.get_state() == "gameplay":
