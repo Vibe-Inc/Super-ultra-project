@@ -14,6 +14,7 @@ import random
 from src.core.logger import logger
 import src.config as cfg
 from src.core.day_night import DayNightVisuals
+from src.core.weather import WeatherSystem, WeatherState
 from src.core.state import State
 from src.core.save_manager import SaveManager
 from src.entities.character import Character
@@ -25,6 +26,7 @@ from src.entities.enemy import Enemy
 from src.entities.boss import Boss
 from src.entities.npc import NPC
 from src.entities.mage_npc import MageNPC
+from src.entities.gambler_npc import GamblerNPC
 from src.entities.projectile import Arrow
 from src.entities.peaceful_mob import PeacefulMob, create_peaceful_mob, PEACEFUL_MOB_REGISTRY
 from src.ui.hud import HUD
@@ -273,6 +275,13 @@ class Game(State):
 
         # Majestic day-night visual controller
         self.day_night = DayNightVisuals()
+
+        # Dynamic weather controller
+        self.weather = WeatherSystem(self)
+
+        # Camera shake state
+        self.camera_shake_time = 0.0
+        self.camera_shake_intensity = 0.0
 
         self.enemy_profiles = {
             "brute": {
@@ -981,11 +990,9 @@ class Game(State):
             "Come back anytime — the deck's always shuffled."
         ]
 
-        self.card_npc = NPC(
+        self.card_npc = GamblerNPC(
             x=cn_x, y=cn_y,
-            sprite_set="MenHuman1(Recolor)",
             dialog_lines=self.card_npc_first_dialog,
-            is_merchant=False,
             gender='male',
         )
 
@@ -1051,14 +1058,14 @@ class Game(State):
             "Keep collecting monster souls. The Arcane Quests await."
         ]
         self.mage_npc_post_unlock_dialog = [
-            "You have gathered the souls. I can feel their energy resonating.",
-            "Now you must tap into your inner world and transform these souls into a tarot deck.",
-            "This is the Mysterium Magnum — a deck of power, fate, and transformation.",
-            "I shall open the way for you."
+            "The Mysterium Magnum has awakened your true potential.",
+            "You are now ready to wield the ancient arts of Rune Crafting.",
+            "Bring me your weapons, and I shall bind elemental runes to them.",
+            "Let the magic flow through your strikes!"
         ]
         self.mage_npc_post_unlock_repeat_dialog = [
-            "The Mysterium Magnum is now open to you.",
-            "Transform your collected souls into cards of destiny."
+            "The elemental forces are at your command.",
+            "Would you like to craft a rune or enchant your weapon?"
         ]
 
         self.mage_npc = MageNPC(
@@ -1087,6 +1094,9 @@ class Game(State):
 
         # Crafting "Tempering" minigame state (None when not playing)
         self.crafting_minigame = None
+        self.rune_minigame = None
+        self.enchanting_menu = None
+        self.rune_selection_menu = None
 
         # Debug menu for spawning mobs (enemies + peaceful mobs)
         self.spawn_menu = SpawnMenu(
@@ -1364,6 +1374,30 @@ class Game(State):
             on_close=on_close,
             smelting_level=smelting_level,
         )
+
+    def open_rune_crafting(self):
+        from src.ui.menus.rune_selection_menu import RuneSelectionMenu
+        def on_rune_selected(rune_type):
+            from src.minigames.rune_drawing import RuneDrawingMinigame
+            def on_close(won):
+                self.rune_minigame = None
+                if won:
+                    from src.items.items import create_item
+                    rune = create_item(rune_type)
+                    from src.inventory.system import CraftingLogic
+                    if not CraftingLogic.add_crafted_item(self.MAIN_player_inv, rune, 1):
+                        if hasattr(self, 'hotbar') and self.hotbar:
+                            CraftingLogic.add_crafted_item(self.hotbar, rune, 1)
+                    logger.info(f"Crafted a {rune_type}")
+            self.rune_minigame = RuneDrawingMinigame(self.app, rune_type=rune_type, on_close=on_close)
+            
+        self.rune_selection_menu = RuneSelectionMenu(self.app, on_select=on_rune_selected)
+        self.rune_selection_menu.open()
+
+    def open_enchanting_menu(self):
+        from src.ui.menus.enchanting_menu import EnchantingMenu
+        self.enchanting_menu = EnchantingMenu(self.app)
+        self.enchanting_menu.open()
 
     def _get_card_npc_dialog(self):
         if not self.card_npc.was_talked:
@@ -1712,7 +1746,13 @@ class Game(State):
             # center map vertically
             camera_y = int((map_height - viewport_height) / 2)
 
-        return pygame.Vector2(camera_x, camera_y)
+        offset = pygame.Vector2(camera_x, camera_y)
+        if getattr(self, 'camera_shake_time', 0.0) > 0.0:
+            import random
+            intensity = getattr(self, 'camera_shake_intensity', 5.0)
+            offset.x += random.uniform(-intensity, intensity)
+            offset.y += random.uniform(-intensity, intensity)
+        return offset
 
     def _make_patrol_points(self, center: pygame.Vector2, radius: float) -> list[tuple[float, float]]:
         return [
@@ -2124,6 +2164,14 @@ class Game(State):
             )
 
     def update(self, dt):
+        # Update weather system
+        if hasattr(self, 'weather'):
+            self.weather.update(dt)
+
+        # Update camera shake
+        if getattr(self, 'camera_shake_time', 0.0) > 0.0:
+            self.camera_shake_time = max(0.0, self.camera_shake_time - dt)
+
         # Intro Sequence for test-map-1
         if self.current_map_path == "maps/test-map-1.tmx" and not getattr(self, "intro_played", False) and not getattr(self, "_intro_sequence_active", False):
             self._intro_sequence_active = True
@@ -2136,7 +2184,7 @@ class Game(State):
             dialog_lines = [
                 '"Arise, Chosen One."',
                 '"I sense the latent magic humming in your blood. You have been selected for a sacred mission."',
-                '"Far to the east, a great dragon slumbers in a mountain cave. You must slay it, or the realm will burn."'
+                '"Far to the east, a Chronos slumbers in a mountain cave. You must slay it, or the realm will collapse."'
             ]
             self.app.current_dialog = Dialog(self.app, dialog_lines, on_close=self._finish_intro)
 
@@ -2490,6 +2538,21 @@ class Game(State):
         except Exception:
             pass
 
+        try:
+            if getattr(self, 'rune_minigame', None):
+                self.rune_minigame.update(dt)
+        except Exception:
+            pass
+
+        try:
+            if getattr(self, "enchanting_menu", None) and self.enchanting_menu.is_open:
+                self.enchanting_menu.update(dt)
+        except Exception:
+            pass
+            
+        if getattr(self, "rune_selection_menu", None) and self.rune_selection_menu.is_open:
+            self.rune_selection_menu.update(dt)
+
         # Tick the smeltery overlay so coke oven / blast furnace jobs
         # continue to advance even while the overlay is closed.
         try:
@@ -2798,6 +2861,10 @@ class Game(State):
             if getattr(self.app.INV_manager, 'current_shop_inv', None) is not None:
                 self.app.INV_manager.toggle_trade(self.MAIN_player_inv, self.shop_inv, self.PLAYER_inventory_equipment)
 
+        # Draw weather overlay
+        if hasattr(self, 'weather'):
+            self.weather.draw(screen)
+
         # Dizziness effect (visual)
         if self.character.dizzy:
             alpha = int(100 + 50 * math.sin(pygame.time.get_ticks() * 0.005))
@@ -2853,6 +2920,20 @@ class Game(State):
                 self.crafting_minigame.draw(screen)
             except Exception:
                 pass
+        
+        if getattr(self, 'rune_minigame', None):
+            try:
+                self.rune_minigame.draw(screen)
+            except Exception:
+                pass
+                
+        if getattr(self, "enchanting_menu", None) and self.enchanting_menu.is_open:
+            self.enchanting_menu.draw(screen)
+            
+        if getattr(self, "rune_selection_menu", None) and self.rune_selection_menu.is_open:
+            self.rune_selection_menu.draw(screen)
+                
+        # Draw debug spawn / effects menus
         # Draw debug spawn / effects menus
         self.spawn_menu.draw(screen)
         try:
@@ -2913,6 +2994,21 @@ class Game(State):
             except Exception:
                 pass
 
+        if getattr(self, 'rune_minigame', None):
+            try:
+                self.rune_minigame.handle_event(event)
+                return
+            except Exception:
+                pass
+
+        if getattr(self, "enchanting_menu", None) and self.enchanting_menu.is_open:
+            if self.enchanting_menu.handle_event(event):
+                return
+                
+        if getattr(self, "rune_selection_menu", None) and self.rune_selection_menu.is_open:
+            if self.rune_selection_menu.handle_event(event):
+                return
+
         if getattr(self.app, 'current_dialog', None):
             try:
                 self.app.current_dialog.handle_event(event)
@@ -2953,6 +3049,19 @@ class Game(State):
                 self.app.INV_manager.hotbar.scroll_active_slot(event.y)
 
         if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_F7:
+                import random
+                ach_mgr = self.app.achievement_manager
+                locked_ids = [aid for aid, ach in ach_mgr.achievements.items() if not ach.unlocked]
+                if not locked_ids:
+                    for ach in ach_mgr.achievements.values():
+                        ach.unlocked = False
+                        ach.progress = 0
+                    ach_mgr.save()
+                    locked_ids = list(ach_mgr.achievements.keys())
+                if locked_ids:
+                    ach_mgr.unlock(random.choice(locked_ids))
+
             if event.key == pygame.K_ESCAPE:
                 if self.app.INV_manager.player_inventory_opened:
                     self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
@@ -3013,10 +3122,15 @@ class Game(State):
                         except Exception:
                             pass
 
+                    has_mysterium = getattr(self.app, 'mysterium_magnum_unlocked', False)
                     self.app.current_dialog = Dialog(
                         self.app,
                         dialog_lines,
                         on_close=on_mage_close,
+                        on_craft_rune=self.open_rune_crafting,
+                        show_craft_rune=has_mysterium,
+                        on_enchant_weapon=self.open_enchanting_menu,
+                        show_enchant_weapon=has_mysterium,
                     )
                 # Card NPC interaction
                 elif self.card_npc.is_interactable:
@@ -3067,6 +3181,10 @@ class Game(State):
                 self.character.take_damage(10)
             if event.key == pygame.K_F6:
                 self.character.gain_xp(50)
+            if event.key == pygame.K_F8:
+                if hasattr(self, 'weather') and self.weather:
+                    self.weather.cycle_weather()
+                    logger.info(f"[DEBUG] F8: Cycled weather to {self.weather.current_weather.name}")
             if event.key == pygame.K_F9:
                 self.character.skill_tree_points += 1
                 logger.info(f"[DEBUG] F9: +1 skill tree point. Total: {self.character.skill_tree_points}")

@@ -53,6 +53,12 @@ def _append_tier(entry: dict, item) -> None:
         pass
 
 
+def _append_socket(entry: dict, item) -> None:
+    rune = getattr(item, "socketed_rune", None)
+    if rune:
+        entry["socketed_rune"] = str(rune)
+
+
 def _apply_durability(item, slot_data: dict) -> None:
     """Restore a previously-saved durability value onto a freshly-
     instantiated item, if the slot data carries one.
@@ -116,6 +122,14 @@ def _apply_tier(item, slot_data: dict) -> None:
         item.tier = str(tier_id)
         item.tier_multiplier = 1.0
         item.tier_color = (240, 240, 255)
+
+
+def _apply_socket(item, slot_data: dict) -> None:
+    if item is None or not isinstance(slot_data, dict):
+        return
+    rune = slot_data.get("socketed_rune")
+    if rune and hasattr(item, "socketed_rune"):
+        item.socketed_rune = str(rune)
 
 
 def _skill_dicts_to_json(items):
@@ -280,6 +294,7 @@ class SaveManager:
                     entry = {"id": item.id, "count": count}
                     _append_durability(entry, item)
                     _append_tier(entry, item)
+                    _append_socket(entry, item)
                     col_data.append(entry)
                 else:
                     col_data.append(None)
@@ -298,6 +313,7 @@ class SaveManager:
                     entry = {"id": item.id, "count": count}
                     _append_durability(entry, item)
                     _append_tier(entry, item)
+                    _append_socket(entry, item)
                     col_data.append(entry)
                 else:
                     col_data.append(None)
@@ -314,6 +330,7 @@ class SaveManager:
                     entry = {"id": item.id, "count": count}
                     _append_durability(entry, item)
                     _append_tier(entry, item)
+                    _append_socket(entry, item)
                     col_data.append(entry)
                 else:
                     col_data.append(None)
@@ -429,6 +446,7 @@ class SaveManager:
                     count = slot_data["count"]
                     _apply_durability(item, slot_data)
                     _apply_tier(item, slot_data)
+                    _apply_socket(item, slot_data)
                     app.MAIN_INV_items[col][row] = [item, count]
                 else:
                     app.MAIN_INV_items[col][row] = None
@@ -509,6 +527,7 @@ class SaveManager:
                         count = slot_data["count"]
                         _apply_durability(item, slot_data)
                         _apply_tier(item, slot_data)
+                        _apply_socket(item, slot_data)
                         app.MAIN_HOTBAR_items[col][row] = [item, count]
                     else:
                         app.MAIN_HOTBAR_items[col][row] = None
@@ -524,6 +543,7 @@ class SaveManager:
                     count = slot_data["count"]
                     _apply_durability(item, slot_data)
                     _apply_tier(item, slot_data)
+                    _apply_socket(item, slot_data)
                     equip_inv.items[col][row] = [item, count]
                 else:
                     equip_inv.items[col][row] = None

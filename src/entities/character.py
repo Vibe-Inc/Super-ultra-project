@@ -404,6 +404,7 @@ class Character:
         self.spawn_point = self.pos.copy()
         self.base_speed = 200
         self.speed_multiplier = 1.0
+        self.weather_speed_multiplier = 1.0
         self.speed = self.base_speed
         self.sprint_multiplier = 1.8 
         
@@ -1091,6 +1092,109 @@ class Character:
         })
         logger.info("Player learned Chrono Shift!")
         self._try_open_magic_article("Chrono Shift")
+
+    def reset_skill_tree(self):
+        """Reset all skill tree unlocks, refund spent points, and restore base stats."""
+        # 1. Reset skills in skillbook
+        self.skillbook = [
+            {
+                "skill_id": "dash",
+                "name": "Dash",
+                "description": "Quick burst of movement",
+                "color": (86, 132, 186),
+                "accent": (220, 235, 255),
+            },
+        ]
+        
+        # Unbind any removed skills from the skillbar
+        for i in range(len(self.skillbar)):
+            skill = self.skillbar[i]
+            if skill and skill.get("skill_id") != "dash":
+                self.skillbar[i] = None
+
+        # 2. Reset passives
+        self.pyromancers_fury = False
+        self.static_field = False
+        self.regeneration = False
+        self.poison_blade = False
+        self.mana_flow = False
+        self.eternal_fortress = False
+        self.soul_harvest = False
+        self.void_walker = False
+        self.elemental_mastery = False
+
+        # 3. Reset base stats and skill-tree modified stats
+        # Max HP base = 100 + (level - 1) * 20
+        self.max_hp = 100 + (self.level - 1) * 20
+        self.hp = min(self.hp, self.max_hp)
+
+        # Max Stamina base = 100
+        self.max_stamina = 100
+        self.stamina = min(self.stamina, self.max_stamina)
+
+        # Melee stats
+        self.base_attack_damage = 15
+        self.attack_damage = self.base_attack_damage
+        self.attack_range = 65
+        self.attack_cooldown_mult = 1.0
+
+        # Regeneration stats
+        self.regeneration_hp_per_sec = 3.0
+
+        # Speed stats
+        self.speed_multiplier = 1.0
+        self.weather_speed_multiplier = 1.0
+        self.speed = self.base_speed * self.speed_multiplier
+
+        # Fireball
+        self.fireball_damage = 28
+        self.fireball_blast_radius = 110.0
+
+        # Frost Nova
+        self.frost_nova_damage = 0
+        self.frost_nova_freeze_duration = 3.0
+
+        # Glacial Cascade
+        self.glacial_cascade_damage = 35
+
+        # Chain Lightning
+        self.chain_lightning_damage = 22
+        self.chain_lightning_max_targets = 5
+
+        # Thunderstrike
+        self.thunderstrike_damage = 55
+
+        # Summon Spirit
+        self.summon_spirit_damage = 15
+
+        # Poison Blade
+        self.poison_blade_damage_per_sec = 6.0
+
+        # Dark Pact
+        self.dark_pact_damage = 60
+
+        # Arcane Missiles
+        self.arcane_missiles_damage = 14
+
+        # Cooldown multi
+        self.skill_cooldown_mult = 1.0
+
+        # Satellite / keystone specific stats
+        self.berserkers_rage_duration_bonus = 0.0
+        self.berserkers_rage_cooldown_bonus = 0
+        self.soul_harvest_hp_per_kill = 5
+        self.soul_harvest_damage_per_stack = 0.02
+        self.soul_harvest_duration = 8.0
+        self.void_walker_dodge_chance = 0.3
+        self.void_walker_teleport_range = 200.0
+        self.void_walker_afterimage_damage = 18
+        self.elemental_damage_mult = 1.35
+        self.combo_window = 3.0
+        self.combo_damage_bonus = 0
+        self.chrono_shift_duration_bonus = 0.0
+        self.chrono_shift_cooldown_bonus = 0
+
+        logger.info("Skill tree has been respec'd and player stats have been reset to base.")
 
     def get_skill_in_slot(self, slot_index):
         if 0 <= slot_index < len(self.skillbar):
@@ -1945,19 +2049,43 @@ class Character:
 
         New weapons can declare `on_hit_effects` as a list of effect dicts
         (the same shape used by consumable effects) and they will be applied
-        to the struck enemy here.
+        to the struck enemy here. Supports socketed runes and chance-based effects.
         """
         weapon = getattr(self, "equipped_weapon", None)
         if weapon is None:
             return
-        on_hit = getattr(weapon, "on_hit_effects", None)
-        if not on_hit:
-            return
+            
+        import random
         from database.effects import create_effect  # local import to avoid cycles
-        for effect_data in on_hit:
+        
+        on_hit = getattr(weapon, "on_hit_effects", [])
+        effects_to_apply = []
+        if on_hit:
+            effects_to_apply.extend(on_hit)
+            
+        socketed_rune = getattr(weapon, "socketed_rune", None)
+        if socketed_rune == "fire_rune":
+            effects_to_apply.append({"type": "burn", "duration": 5.0, "damage_per_sec": 3.0, "chance": 0.10})
+        elif socketed_rune == "ice_rune":
+            effects_to_apply.append({"type": "slow", "duration": 3.0, "speed_multiplier": 0.5, "chance": 0.10})
+        elif socketed_rune == "lightning_rune":
+            effects_to_apply.append({"type": "dizziness", "duration": 2.0, "chance": 0.10})
+        elif socketed_rune == "void_rune":
+            effects_to_apply.append({"type": "curse", "duration": 5.0, "chance": 0.10})
+            
+        if not effects_to_apply:
+            return
+            
+        for effect_data in effects_to_apply:
             if not isinstance(effect_data, dict):
                 continue
-            effect_obj = create_effect(effect_data)
+                
+            effect_data_copy = effect_data.copy()
+            chance = effect_data_copy.pop("chance", 1.0)
+            if random.random() > chance:
+                continue
+                
+            effect_obj = create_effect(effect_data_copy)
             if effect_obj is None:
                 continue
             if hasattr(enemy, "add_effect"):
@@ -2447,7 +2575,7 @@ class Character:
         if wants_to_sprint and self.stamina > 0 and self.can_sprint:
             self.is_sprinting = True
 
-        current_speed = self.base_speed * self.speed_multiplier
+        current_speed = self.base_speed * self.speed_multiplier * getattr(self, 'weather_speed_multiplier', 1.0)
         if self.is_sprinting:
             current_speed *= self.sprint_multiplier
         self.speed = current_speed 

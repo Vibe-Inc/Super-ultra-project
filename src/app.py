@@ -593,6 +593,14 @@ class App:
                     self.sync_display_size(event.w, event.h)
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_F3:
                     self.toggle_profiler()
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_F4:
+                    if self.manager.get_state() == "gameplay":
+                        gs = self.manager.states.get("gameplay")
+                        if hasattr(gs, 'game_time_seconds') and hasattr(gs, 'is_daytime'):
+                            if gs.is_daytime():
+                                gs.game_time_seconds = 0  # Midnight
+                            else:
+                                gs.game_time_seconds = 12 * 3600  # Noon
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
                     self.toggle_display_mode()
                 self.manager.handle_event(event)
