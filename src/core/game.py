@@ -25,6 +25,7 @@ from database.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, 
 from src.entities.enemy import Enemy
 from src.entities.npc import NPC
 from src.entities.mage_npc import MageNPC
+from src.entities.gambler_npc import GamblerNPC
 from src.entities.projectile import Arrow
 from src.ui.hud import HUD
 from src.ui.widgets import Dialog
@@ -863,11 +864,9 @@ class Game(State):
             "Come back anytime — the deck's always shuffled."
         ]
 
-        self.card_npc = NPC(
+        self.card_npc = GamblerNPC(
             x=cn_x, y=cn_y,
-            sprite_set="MenHuman1(Recolor)",
             dialog_lines=self.card_npc_first_dialog,
-            is_merchant=False,
             gender='male',
         )
 
