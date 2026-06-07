@@ -526,17 +526,6 @@ class Game(State):
 
         # Peaceful majestic mobs (non-aggressive ambient creatures)
         self.peaceful_mobs: list[PeacefulMob] = []
-        if initial_map_path not in self.NO_ENEMY_SPAWN_MAPS:
-            try:
-                if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
-                    map_w = self.map.current_map.pixel_width
-                    map_h = self.map.current_map.pixel_height
-                    self.peaceful_mobs = create_all_peaceful_mobs(map_w // 2, map_h // 2, spread=min(map_w, map_h) * 0.35)
-                else:
-                    self.peaceful_mobs = create_all_peaceful_mobs(960, 540, spread=350.0)
-            except Exception as exc:
-                logger.warning(f"Failed to spawn peaceful mobs: {exc}")
-                self.peaceful_mobs = []
 
         # Enemy spawning system
         self.enemy_spawn_timer = 0.0
@@ -1460,18 +1449,8 @@ class Game(State):
             # Reset enemies list and spawn default one if needed
             self.enemies = []
 
-            # Respawn peaceful mobs on the new map
+            # Clear peaceful mobs on map switch (spawning disabled)
             self.peaceful_mobs = []
-            if switched_map_path not in self.NO_ENEMY_SPAWN_MAPS:
-                try:
-                    if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
-                        mw = self.map.current_map.pixel_width
-                        mh = self.map.current_map.pixel_height
-                        self.peaceful_mobs = create_all_peaceful_mobs(mw // 2, mh // 2, spread=min(mw, mh) * 0.35)
-                    else:
-                        self.peaceful_mobs = create_all_peaceful_mobs(960, 540, spread=350.0)
-                except Exception as exc:
-                    logger.warning(f"Failed to respawn peaceful mobs: {exc}")
 
             spawn_info = self._get_spawn_info(switched_map_path)
             if switched_map_path not in self.NO_ENEMY_SPAWN_MAPS and spawn_info:
