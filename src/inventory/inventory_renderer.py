@@ -1028,7 +1028,7 @@ class InventoryRenderer:
         title_h = int(70 * sc)
         total_w = player_w + gap + chest_w + pad * 2
         grid_h = (slot + border) * pl_inv.rows + border
-        total_h = grid_h + pad * 2 + title_h
+        total_h = grid_h + pad * 2 + title_h + int(45 * sc)
 
         inv_top = pl_inv.pos_y
         left_x = pl_inv.pos_x
@@ -1149,7 +1149,7 @@ class InventoryRenderer:
         if getattr(chest_inv, 'close_button', None):
             chest_inv.close_button.rect.topleft = (
                 bg_rect.right - chest_inv.close_button.rect.width - int(16 * sc),
-                bg_rect.bottom - chest_inv.close_button.rect.height - int(16 * sc)
+                bg_rect.bottom - chest_inv.close_button.rect.height - int(10 * sc)
             )
             try:
                 chest_inv.close_button._update_text_surface()
