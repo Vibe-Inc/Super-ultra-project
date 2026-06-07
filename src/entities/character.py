@@ -506,12 +506,12 @@ class Character:
         # Block / Parry system
         self.blocking: bool = False
         self.block_start_time: int = 0
-        self.parry_window_ms: int = 200  # ms after block start where parry is possible
+        self.parry_window_ms: int = 150  # ms after block start where parry is possible
         self.block_damage_reduction: float = 0.6  # 60% reduction while blocking
         self.parry_active: bool = False
         self.parry_timer: float = 0.0
         self.parry_success: bool = False
-        self.stamina_parry_cost: float = 25.0
+        self.stamina_parry_cost: float = 50.0  # ~50% of max_stamina (100)
 
         # Weapon throw
         self.throw_damage_mult: float = 1.5
@@ -524,7 +524,8 @@ class Character:
         # Attack visual tint and scale for different attack types
         self.attack_visual_tint: tuple | None = None  # (r,g,b,a) or None
         self.attack_visual_scale: float = 1.0
-
+        self._combat_style: str = "sword"
+        self._hit_any_enemy: bool = False
 
         self.skillbook = self._build_skillbook()
         self.skillbar = [None for _ in range(6)]
@@ -1916,6 +1917,7 @@ class Character:
             if not hit:
                 continue
 
+            self._hit_any_enemy = True
             logger.info(f"Hit enemy for {self.attack_damage} damage!")
             final_damage = self.get_effective_attack_damage()
             enemy.take_damage(final_damage)
@@ -2162,20 +2164,29 @@ class Character:
         if elapsed >= self.charge_threshold:
             self.is_charged = True
 
-    def release_charge(self, enemies, aim_direction=None):
+    def release_charge(self, enemies, aim_direction=None, game_state=None):
         if self.is_charged:
-            self.attack_charged(enemies, aim_direction)
+            self.attack_charged(enemies, aim_direction, game_state)
         elif self.is_charging:
             self.attack_visual_tint = None
             self.attack_visual_scale = 1.0
             if not self.consume_stamina(self.normal_attack_stamina_cost):
                 self.cancel_charge()
                 return
-            self.attack(enemies, aim_direction=aim_direction)
+            if self._combat_style == "war_hammer":
+                self.attack_war_hammer(enemies, aim_direction)
+            elif self._combat_style == "mace":
+                self.attack_mace(enemies, aim_direction)
+            elif self._combat_style == "axe":
+                self.attack_axe(enemies, aim_direction)
+            elif self._combat_style == "spear":
+                self.attack_spear(enemies, aim_direction)
+            else:
+                self.attack(enemies, aim_direction=aim_direction)
         self.cancel_charge()
 
     # ── Charged attack ──
-    def attack_charged(self, enemies, aim_direction=None):
+    def attack_charged(self, enemies, aim_direction=None, game_state=None):
         current_time = pygame.time.get_ticks()
         if not self.consume_stamina(self.charged_attack_stamina_cost):
             self.attack_visual_tint = None
@@ -2193,11 +2204,39 @@ class Character:
         effective_range = self.attack_range
         self.attack_range = int(self.attack_range * self.charged_attack_range_mult)
 
+        # Track hit detection for shockwave spawning
+        self._hit_any_enemy = False
+
         # Charged attack with red tint
-        self.attack(enemies, aim_direction=aim_direction)
+        if self._combat_style == "war_hammer":
+            self.attack_war_hammer(enemies, aim_direction)
+        elif self._combat_style == "mace":
+            self.attack_mace(enemies, aim_direction)
+        elif self._combat_style == "axe":
+            self.attack_axe(enemies, aim_direction)
+        elif self._combat_style == "spear":
+            self.attack_spear(enemies, aim_direction)
+        else:
+            self.attack(enemies, aim_direction=aim_direction)
 
         self.attack_damage = effective_damage
         self.attack_range = effective_range
+
+        # Spawn shockwave if charged sword attack missed everything
+        if not self._hit_any_enemy and self._combat_style == "sword" and game_state is not None:
+            if aim_direction is None:
+                aim_direction = self.get_forward_direction()
+            aim_dir = pygame.Vector2(aim_direction)
+            if aim_dir.length_squared() > 0:
+                aim_dir = aim_dir.normalize()
+                from src.entities.projectile import Shockwave
+                origin = self.get_melee_anchor() + aim_dir * self.melee_origin_offset
+                max_travel = self.base_attack_range * 4
+                shock = Shockwave(origin, aim_dir, 350.0, max_travel,
+                                  max(1, int(self.attack_damage * 0.5)),
+                                  start_radius=self.base_attack_range * 1.4,
+                                  end_radius=self.base_attack_range * 0.7)
+                game_state.projectiles.append(shock)
 
     # ── Fast attack ──
     def attack_fast(self, enemies, aim_direction=None):
@@ -2299,6 +2338,9 @@ class Character:
             projectile.direction *= -1
         if hasattr(projectile, "speed"):
             projectile.speed *= 1.5
+        projectile.reflected = True
+        projectile.traveled = 0.0
+        projectile.damage = max(1, projectile.damage // 2) if hasattr(projectile, 'damage') else 0
         return True
 
     # ── Weapon throw ──
@@ -2345,10 +2387,12 @@ class Character:
         if will_drop:
             weapon_item.apply_durability_damage(1)
 
-        # Create the thrown weapon projectile
+        # Create the thrown weapon projectile with damage
         from src.entities.projectile import ThrownWeapon
         origin = self.get_center() + aim_dir * 20
-        proj = ThrownWeapon(origin, aim_dir, speed, throw_range, weapon_item, will_drop)
+        eff = getattr(weapon_item, "get_effective_damage", None)
+        throw_damage = eff(weapon_item.damage) if callable(eff) else weapon_item.damage
+        proj = ThrownWeapon(origin, aim_dir, speed, throw_range, weapon_item, will_drop, damage=throw_damage)
         if hasattr(game_state, 'projectiles'):
             game_state.projectiles.append(proj)
             logger.info(f"Threw weapon {getattr(weapon_item, 'name', 'weapon')}")
@@ -2965,7 +3009,7 @@ class Character:
             center = self.get_center()
             cx = int(center.x - camera_offset.x)
             cy = int(center.y - camera_offset.y)
-            radius = self.attack_range + 10
+            radius = self.base_attack_range + 10
             surf_size = int(radius * 2 + 20)
             surf = pygame.Surface((surf_size, surf_size), pygame.SRCALPHA)
             # Green block circle (full 360°)

@@ -360,6 +360,10 @@ class Enemy:
                            telegraph_range: float = 0.0, telegraph_angle: float = 130.0,
                            telegraph_color: tuple = (255, 100, 100, 80),
                            damage: int = 0, knockback: float = 0.0, effect=None):
+        # Clear any lingering strike animation so it doesn't overlap new wind-up
+        self.attack_anim_type = ""
+        self.attack_anim_elapsed = 0.0
+        self.attack_anim_duration = 0.0
         self.attack_phase = ATTACK_PHASE_WIND_UP
         self.attack_phase_timer = wind_up
         self.wind_up_duration = wind_up

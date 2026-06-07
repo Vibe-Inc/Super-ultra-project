@@ -99,6 +99,7 @@ class PlayerCombatController:
             # damage.  A broken weapon still occupies the slot visually
             # until the next ``_damage_equipped_weapon`` call removes
             # it (see ``handle_player_attack``).
+            char._combat_style = getattr(weapon, "combat_style", "sword")
             if getattr(weapon, "is_broken", lambda: False)():
                 char.attack_damage = max(1, char.base_attack_damage // 2)
                 char.attack_cooldown = char.base_attack_cooldown
@@ -326,7 +327,7 @@ class PlayerCombatController:
             char.cancel_charge()
             return
 
-        char.release_charge(self.game.enemies, aim_direction=aim_dir)
+        char.release_charge(self.game.enemies, aim_direction=aim_dir, game_state=self.game)
         self._damage_equipped_weapon(1)
 
     def handle_fast_attack(self, mouse_pos):

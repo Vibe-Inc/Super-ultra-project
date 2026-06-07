@@ -1013,15 +1013,27 @@ class Game(State):
                 p_pos = getattr(projectile, "pos", None)
                 if p_pos and p_center.distance_to(p_pos) < 40:
                     if self.character.reflect_projectile(projectile):
-                        # Destroy the projectile and damage nearby enemies instead
-                        projectile.alive = False
-                        parry_damage = max(1, int(self.character.get_effective_attack_damage() * 0.5))
-                        for enemy in self.enemies:
-                            e_center = pygame.Vector2(enemy.get_rect().center)
-                            if p_center.distance_to(e_center) < 150:
-                                enemy.take_damage(parry_damage)
-                                if hasattr(enemy, "stun"):
-                                    enemy.stun(1.0)
+                        # Projectile is now reflected — it flies back at enemies
+                        pass  # reflect_projectile sets .reflected, reverses direction, halves damage
+
+            # Reflected projectiles damage enemies on contact
+            if getattr(projectile, 'reflected', False) and projectile.alive:
+                from src.entities.projectile import Bomb
+                if isinstance(projectile, Bomb) and getattr(projectile, 'exploding', False):
+                    # Reflected Bomb explosion damages enemies in blast radius
+                    for enemy in self.enemies[:]:
+                        e_center = pygame.Vector2(enemy.get_rect().center)
+                        if projectile.pos.distance_squared_to(e_center) <= (projectile.blast_radius ** 2):
+                            if projectile.damage > 0:
+                                enemy.take_damage(projectile.damage)
+                else:
+                    proj_rect = projectile.get_rect()
+                    for enemy in self.enemies[:]:
+                        if proj_rect.colliderect(enemy.get_rect()):
+                            if hasattr(projectile, 'damage') and projectile.damage > 0:
+                                enemy.take_damage(projectile.damage)
+                            projectile.alive = False
+                            break
 
         self.enemy_projectiles = [projectile for projectile in self.enemy_projectiles if projectile.alive]
 
