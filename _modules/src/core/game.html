@@ -118,6 +118,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.gathering</span><span class="w"> </span><span class="kn">import</span> <span class="n">GatheringController</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.world.gatherable_nodes</span><span class="w"> </span><span class="kn">import</span> <span class="n">GatherableNodeRegistry</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.menus.smeltery</span><span class="w"> </span><span class="kn">import</span> <span class="n">SmelteryMenu</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.systems.world_scale</span><span class="w"> </span><span class="kn">import</span> <span class="n">WorldScale</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.ui.menus.world_scale_menu</span><span class="w"> </span><span class="kn">import</span> <span class="n">WorldScaleMenu</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">database.effects</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">effects_db</span>
 
@@ -308,6 +310,9 @@
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Initializing Game State...&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">character</span> <span class="o">=</span> <span class="n">Character</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">game_state</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">world_scale</span> <span class="o">=</span> <span class="n">WorldScale</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">recalc_world_scale_bonuses</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">world_scale</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">world_scale_menu</span> <span class="o">=</span> <span class="n">WorldScaleMenu</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">world_scale</span><span class="p">,</span> <span class="n">on_close</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_refresh_world_scale</span><span class="p">)</span>
 
         <span class="n">initial_map_path</span> <span class="o">=</span> <span class="s2">&quot;maps/test-map-1.tmx&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current_map_path</span> <span class="o">=</span> <span class="n">initial_map_path</span>
@@ -2089,6 +2094,15 @@
                 <span class="n">enemy</span><span class="o">.</span><span class="n">set_screen_size</span><span class="p">((</span><span class="n">screen_w</span><span class="p">,</span> <span class="n">screen_h</span><span class="p">))</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="k">pass</span>
+        <span class="c1"># Apply world scale to non-boss enemies</span>
+        <span class="n">ws</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;world_scale&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ws</span> <span class="ow">and</span> <span class="n">ws</span><span class="o">.</span><span class="n">level</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">enemy</span><span class="o">.</span><span class="n">apply_world_scale</span><span class="p">({</span>
+                <span class="s1">&#39;hp&#39;</span><span class="p">:</span> <span class="n">ws</span><span class="o">.</span><span class="n">enemy_hp_mult</span><span class="p">(),</span>
+                <span class="s1">&#39;damage&#39;</span><span class="p">:</span> <span class="n">ws</span><span class="o">.</span><span class="n">enemy_damage_mult</span><span class="p">(),</span>
+                <span class="s1">&#39;speed&#39;</span><span class="p">:</span> <span class="n">ws</span><span class="o">.</span><span class="n">enemy_speed_mult</span><span class="p">(),</span>
+                <span class="s1">&#39;range&#39;</span><span class="p">:</span> <span class="n">ws</span><span class="o">.</span><span class="n">enemy_range_mult</span><span class="p">(),</span>
+            <span class="p">})</span>
         <span class="k">return</span> <span class="n">enemy</span></div>
 
 
@@ -2320,6 +2334,19 @@
                 <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">amount</span><span class="si">}</span><span class="s2">x </span><span class="si">{</span><span class="n">item_id</span><span class="si">}</span><span class="s2"> at (</span><span class="si">{</span><span class="n">base_x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">offset_x</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">base_y</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">offset_y</span><span class="si">}</span><span class="s2">)&quot;</span>
             <span class="p">)</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_refresh_world_scale</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">ws</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;world_scale&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ws</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">recalc_world_scale_bonuses</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">enemy</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">enemy</span><span class="o">.</span><span class="n">is_boss</span><span class="p">:</span>
+                    <span class="n">enemy</span><span class="o">.</span><span class="n">apply_world_scale</span><span class="p">({</span>
+                        <span class="s1">&#39;hp&#39;</span><span class="p">:</span> <span class="n">ws</span><span class="o">.</span><span class="n">enemy_hp_mult</span><span class="p">(),</span>
+                        <span class="s1">&#39;damage&#39;</span><span class="p">:</span> <span class="n">ws</span><span class="o">.</span><span class="n">enemy_damage_mult</span><span class="p">(),</span>
+                        <span class="s1">&#39;speed&#39;</span><span class="p">:</span> <span class="n">ws</span><span class="o">.</span><span class="n">enemy_speed_mult</span><span class="p">(),</span>
+                        <span class="s1">&#39;range&#39;</span><span class="p">:</span> <span class="n">ws</span><span class="o">.</span><span class="n">enemy_range_mult</span><span class="p">(),</span>
+                    <span class="p">})</span>
+
 <div class="viewcode-block" id="Game.update">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.update">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
@@ -2534,17 +2561,14 @@
             <span class="n">active</span> <span class="o">=</span> <span class="n">ediff</span><span class="o">.</span><span class="n">length_squared</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="n">lod_sq</span>
             <span class="n">enemy</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">collision_handler</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">obstacles</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nav_grid</span><span class="p">,</span> <span class="n">attack_context</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="n">active</span><span class="p">)</span>
 
-        <span class="c1"># Parry check: if player is in parry window and enemy is telegraphing</span>
+        <span class="c1"># Parry check against melee enemies</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">is_in_parry_window</span><span class="p">():</span>
             <span class="k">for</span> <span class="n">enemy</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">enemy</span><span class="p">,</span> <span class="s2">&quot;is_attack_telegraphing&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">enemy</span><span class="o">.</span><span class="n">is_attack_telegraphing</span><span class="p">():</span>
-                    <span class="n">e_center</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">enemy</span><span class="o">.</span><span class="n">get_rect</span><span class="p">()</span><span class="o">.</span><span class="n">center</span><span class="p">)</span>
-                    <span class="n">p_center</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">get_center</span><span class="p">()</span>
-                    <span class="n">dist</span> <span class="o">=</span> <span class="n">e_center</span><span class="o">.</span><span class="n">distance_to</span><span class="p">(</span><span class="n">p_center</span><span class="p">)</span>
-                    <span class="n">atk_range</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">enemy</span><span class="p">,</span> <span class="s2">&quot;attack_telegraph_range&quot;</span><span class="p">,</span> <span class="n">enemy</span><span class="o">.</span><span class="n">attack_range</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">dist</span> <span class="o">&lt;=</span> <span class="n">atk_range</span> <span class="o">*</span> <span class="mf">1.5</span><span class="p">:</span>
-                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">do_parry</span><span class="p">(</span><span class="n">enemy</span><span class="p">):</span>
-                            <span class="n">enemy</span><span class="o">.</span><span class="n">attack_phase</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">p_center</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">get_center</span><span class="p">()</span>
+                <span class="n">e_center</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">enemy</span><span class="o">.</span><span class="n">get_rect</span><span class="p">()</span><span class="o">.</span><span class="n">center</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">p_center</span><span class="o">.</span><span class="n">distance_to</span><span class="p">(</span><span class="n">e_center</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">enemy</span><span class="o">.</span><span class="n">attack_range</span> <span class="o">*</span> <span class="mf">1.2</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">do_parry</span><span class="p">(</span><span class="n">enemy</span><span class="p">):</span>
+                        <span class="k">pass</span>  <span class="c1"># do_parry handles stun + damage</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_projectiles</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_enemy_projectiles</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
@@ -2636,6 +2660,11 @@
                 <span class="n">_scale</span> <span class="o">=</span> <span class="n">enemy</span><span class="o">.</span><span class="n">max_hp</span> <span class="o">/</span> <span class="mf">100.0</span>
 
                 <span class="n">xp_gain</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">_base_xp_min</span><span class="p">,</span> <span class="n">_base_xp_max</span><span class="p">)</span> <span class="o">*</span> <span class="n">_scale</span><span class="p">)</span>
+                <span class="c1"># World scale XP on kill</span>
+                <span class="n">world_xp</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">enemy</span><span class="o">.</span><span class="n">max_hp</span> <span class="o">/</span> <span class="mi">20</span><span class="p">))</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">world_scale</span><span class="o">.</span><span class="n">add_xp</span><span class="p">(</span><span class="n">world_xp</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_refresh_world_scale</span><span class="p">()</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;World Scale Level Up! Now level </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">world_scale</span><span class="o">.</span><span class="n">level</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                 <span class="c1"># Soul Harvest: restore HP and add damage stack</span>
                 <span class="n">character</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span>
                 <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">character</span><span class="p">,</span> <span class="s2">&quot;soul_harvest&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
@@ -3116,7 +3145,13 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">effects_menu</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-            <span class="k">pass</span></div>
+            <span class="k">pass</span>
+        <span class="c1"># World scale menu overlay</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;world_scale_menu&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">world_scale_menu</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span></div>
 
 
 <div class="viewcode-block" id="Game.draw">
@@ -3226,6 +3261,11 @@
                     <span class="k">return</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="k">pass</span>
+
+        <span class="c1"># World scale menu (J key)</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;world_scale_menu&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">world_scale_menu</span><span class="o">.</span><span class="n">visible</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">world_scale_menu</span><span class="o">.</span><span class="n">handle_event</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
+                <span class="k">return</span>
 
         <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">MOUSEWHEEL</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="p">,</span> <span class="s1">&#39;hotbar&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
@@ -3374,6 +3414,9 @@
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_F10</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">spawn_menu</span><span class="o">.</span><span class="n">toggle</span><span class="p">()</span>
 
+            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_j</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">world_scale_menu</span><span class="o">.</span><span class="n">toggle</span><span class="p">()</span>
+
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_r</span><span class="p">:</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">player_inventory_opened</span><span class="p">:</span>
                     <span class="n">mouse_pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mouse</span><span class="o">.</span><span class="n">get_pos</span><span class="p">()</span>
@@ -3398,7 +3441,10 @@
 
             <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">INV_manager</span><span class="o">.</span><span class="n">player_inventory_opened</span><span class="p">:</span>
-                    <span class="c1"># Start blocking</span>
+                    <span class="c1"># Block requires world scale level 10</span>
+                    <span class="n">ws</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;world_scale&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">ws</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">ws</span><span class="o">.</span><span class="n">has_ability</span><span class="p">(</span><span class="s1">&#39;block&#39;</span><span class="p">):</span>
+                        <span class="k">return</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">start_block</span><span class="p">()</span>
 
 
