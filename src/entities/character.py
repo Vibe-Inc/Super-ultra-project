@@ -2049,19 +2049,39 @@ class Character:
 
         New weapons can declare `on_hit_effects` as a list of effect dicts
         (the same shape used by consumable effects) and they will be applied
-        to the struck enemy here.
+        to the struck enemy here. Supports socketed runes and chance-based effects.
         """
         weapon = getattr(self, "equipped_weapon", None)
         if weapon is None:
             return
-        on_hit = getattr(weapon, "on_hit_effects", None)
-        if not on_hit:
-            return
+            
+        import random
         from database.effects import create_effect  # local import to avoid cycles
-        for effect_data in on_hit:
+        
+        on_hit = getattr(weapon, "on_hit_effects", [])
+        effects_to_apply = []
+        if on_hit:
+            effects_to_apply.extend(on_hit)
+            
+        socketed_rune = getattr(weapon, "socketed_rune", None)
+        if socketed_rune == "fire_rune":
+            effects_to_apply.append({"type": "burn", "duration": 5.0, "damage_per_sec": 3.0, "chance": 0.10})
+        elif socketed_rune == "ice_rune":
+            effects_to_apply.append({"type": "slow", "duration": 3.0, "speed_multiplier": 0.5, "chance": 0.10})
+            
+        if not effects_to_apply:
+            return
+            
+        for effect_data in effects_to_apply:
             if not isinstance(effect_data, dict):
                 continue
-            effect_obj = create_effect(effect_data)
+                
+            effect_data_copy = effect_data.copy()
+            chance = effect_data_copy.pop("chance", 1.0)
+            if random.random() > chance:
+                continue
+                
+            effect_obj = create_effect(effect_data_copy)
             if effect_obj is None:
                 continue
             if hasattr(enemy, "add_effect"):

@@ -932,14 +932,14 @@ class Game(State):
             "Keep collecting monster souls. The Arcane Quests await."
         ]
         self.mage_npc_post_unlock_dialog = [
-            "You have gathered the souls. I can feel their energy resonating.",
-            "Now you must tap into your inner world and transform these souls into a tarot deck.",
-            "This is the Mysterium Magnum — a deck of power, fate, and transformation.",
-            "I shall open the way for you."
+            "The Mysterium Magnum has awakened your true potential.",
+            "You are now ready to wield the ancient arts of Rune Crafting.",
+            "Bring me your weapons, and I shall bind elemental runes to them.",
+            "Let the magic flow through your strikes!"
         ]
         self.mage_npc_post_unlock_repeat_dialog = [
-            "The Mysterium Magnum is now open to you.",
-            "Transform your collected souls into cards of destiny."
+            "The elemental forces are at your command.",
+            "Would you like to craft a rune or enchant your weapon?"
         ]
 
         self.mage_npc = MageNPC(
@@ -968,6 +968,8 @@ class Game(State):
 
         # Crafting "Tempering" minigame state (None when not playing)
         self.crafting_minigame = None
+        self.rune_minigame = None
+        self.enchanting_menu = None
 
         # Debug menu for spawning mobs
         self.spawn_menu = SpawnMenu(
@@ -1207,6 +1209,25 @@ class Game(State):
             on_close=on_close,
             smelting_level=smelting_level,
         )
+
+    def open_rune_crafting(self):
+        from src.minigames.rune_drawing import RuneDrawingMinigame
+        import random
+        rune_type = random.choice(["fire_rune", "ice_rune"])
+        def on_close(won):
+            self.rune_minigame = None
+            if won:
+                from src.items.items import create_item
+                rune = create_item(rune_type)
+                if self.app.INV_manager:
+                    self.app.INV_manager.add_item_to_inventory(rune, 1, self.MAIN_player_inv, self.hotbar)
+                logger.info(f"Crafted a {rune_type}")
+        self.rune_minigame = RuneDrawingMinigame(self.app, rune_type=rune_type, on_close=on_close)
+
+    def open_enchanting_menu(self):
+        from src.ui.menus.enchanting_menu import EnchantingMenu
+        self.enchanting_menu = EnchantingMenu(self.app)
+        self.enchanting_menu.open()
 
     def _get_card_npc_dialog(self):
         if not self.card_npc.was_talked:
@@ -2125,6 +2146,18 @@ class Game(State):
         except Exception:
             pass
 
+        try:
+            if getattr(self, 'rune_minigame', None):
+                self.rune_minigame.update(dt)
+        except Exception:
+            pass
+
+        try:
+            if getattr(self, 'enchanting_menu', None):
+                self.enchanting_menu.update(dt)
+        except Exception:
+            pass
+
         # Tick the smeltery overlay so coke oven / blast furnace jobs
         # continue to advance even while the overlay is closed.
         try:
@@ -2438,6 +2471,18 @@ class Game(State):
                 self.crafting_minigame.draw(screen)
             except Exception:
                 pass
+        
+        if getattr(self, 'rune_minigame', None):
+            try:
+                self.rune_minigame.draw(screen)
+            except Exception:
+                pass
+                
+        if getattr(self, 'enchanting_menu', None):
+            try:
+                self.enchanting_menu.draw(screen)
+            except Exception:
+                pass
         # Draw debug spawn / effects menus
         self.spawn_menu.draw(screen)
         try:
@@ -2494,6 +2539,20 @@ class Game(State):
         if getattr(self, 'crafting_minigame', None):
             try:
                 self.crafting_minigame.handle_event(event)
+                return
+            except Exception:
+                pass
+
+        if getattr(self, 'rune_minigame', None):
+            try:
+                self.rune_minigame.handle_event(event)
+                return
+            except Exception:
+                pass
+
+        if getattr(self, 'enchanting_menu', None) and getattr(self.enchanting_menu, 'is_open', False):
+            try:
+                self.enchanting_menu.handle_event(event)
                 return
             except Exception:
                 pass
@@ -2611,10 +2670,15 @@ class Game(State):
                         except Exception:
                             pass
 
+                    has_mysterium = getattr(self.app, 'mysterium_magnum_unlocked', False)
                     self.app.current_dialog = Dialog(
                         self.app,
                         dialog_lines,
                         on_close=on_mage_close,
+                        on_craft_rune=self.open_rune_crafting,
+                        show_craft_rune=has_mysterium,
+                        on_enchant_weapon=self.open_enchanting_menu,
+                        show_enchant_weapon=has_mysterium,
                     )
                 # Card NPC interaction
                 elif self.card_npc.is_interactable:

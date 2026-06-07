@@ -137,6 +137,28 @@ def seed_materials(db):
         description="A fabulous rainbow ring! Creates a gloving rainbow aura around you when equipped."
     )
 
+    _ensure_placeholder_image("assets/items/resources/fire_rune.png", (220, 50, 50), "FR")
+    db.add_generic_item(
+        item_id="fire_rune",
+        item_type="resource",
+        name="Fire Rune",
+        image_path="assets/items/resources/fire_rune.png",
+        price=150,
+        max_stack=10,
+        description="A glowing rune radiating intense heat. Can be socketed into a weapon by an Enchanter."
+    )
+
+    _ensure_placeholder_image("assets/items/resources/ice_rune.png", (50, 150, 220), "IR")
+    db.add_generic_item(
+        item_id="ice_rune",
+        item_type="resource",
+        name="Ice Rune",
+        image_path="assets/items/resources/ice_rune.png",
+        price=150,
+        max_stack=10,
+        description="A cold, crystalline rune. Can be socketed into a weapon by an Enchanter."
+    )
+
 
 if __name__ == "__main__":
     from database.GP_database import Gp_database

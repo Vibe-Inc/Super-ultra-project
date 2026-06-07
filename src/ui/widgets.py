@@ -589,7 +589,9 @@ class Dialog:
                  on_play_cards=None, show_play_cards=False,
                  on_play_roulette=None, show_play_roulette=False,
                  on_play_poker=None, show_play_poker=False,
-                 on_confirm=None, show_confirm=False, confirm_label=None):
+                 on_confirm=None, show_confirm=False, confirm_label=None,
+                 on_craft_rune=None, show_craft_rune=False,
+                 on_enchant_weapon=None, show_enchant_weapon=False):
         self.app = app
         self.lines = lines if isinstance(lines, (list, tuple)) else [str(lines)]
         self.on_close = on_close
@@ -604,6 +606,10 @@ class Dialog:
         self.on_confirm = on_confirm
         self.show_confirm = bool(show_confirm)
         self.confirm_label = confirm_label
+        self.on_craft_rune = on_craft_rune
+        self.show_craft_rune = bool(show_craft_rune)
+        self.on_enchant_weapon = on_enchant_weapon
+        self.show_enchant_weapon = bool(show_enchant_weapon)
 
         sw, sh = self.app.screen.get_size()
         w = min(800, sw - 100)
@@ -632,6 +638,8 @@ class Dialog:
         self.play_roulette_button = None
         self.play_poker_button = None
         self.confirm_button = None
+        self.craft_rune_button = None
+        self.enchant_weapon_button = None
 
         action_buttons = []
         if self.show_shop:
@@ -645,6 +653,10 @@ class Dialog:
         if self.show_confirm:
             lbl = self.confirm_label if self.confirm_label else _('CONFIRM')
             action_buttons.append(('confirm', lbl, (70, 110, 70), (95, 150, 95)))
+        if self.show_craft_rune:
+            action_buttons.append(('craft_rune', _('CRAFT RUNE'), (110, 60, 60), (160, 90, 90)))
+        if self.show_enchant_weapon:
+            action_buttons.append(('enchant_weapon', _('ENCHANT WEAPON'), (60, 60, 110), (90, 90, 160)))
 
         self._action_buttons = action_buttons
 
@@ -681,6 +693,16 @@ class Dialog:
                     placeholder, label, color, hover,
                     self.font, (255, 255, 255), 6, on_click=self._confirm_action
                 )
+            elif kind == 'craft_rune':
+                self.craft_rune_button = Button(
+                    placeholder, label, color, hover,
+                    self.font, (255, 255, 255), 6, on_click=self._craft_rune_action
+                )
+            elif kind == 'enchant_weapon':
+                self.enchant_weapon_button = Button(
+                    placeholder, label, color, hover,
+                    self.font, (255, 255, 255), 6, on_click=self._enchant_weapon_action
+                )
 
     def _layout_buttons(self, rect):
         btn_w = self.btn_w
@@ -705,6 +727,10 @@ class Dialog:
                 self.play_poker_button.rect = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
             elif kind == 'confirm' and self.confirm_button:
                 self.confirm_button.rect = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
+            elif kind == 'craft_rune' and self.craft_rune_button:
+                self.craft_rune_button.rect = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
+            elif kind == 'enchant_weapon' and self.enchant_weapon_button:
+                self.enchant_weapon_button.rect = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
             btn_x += btn_w + gap
 
     def _close(self):
@@ -740,6 +766,12 @@ class Dialog:
             if self.show_confirm and self.confirm_button and self.confirm_button.rect.collidepoint(event.pos):
                 if self.confirm_button.on_click:
                     self.confirm_button.on_click()
+            if self.show_craft_rune and self.craft_rune_button and self.craft_rune_button.rect.collidepoint(event.pos):
+                if self.craft_rune_button.on_click:
+                    self.craft_rune_button.on_click()
+            if self.show_enchant_weapon and self.enchant_weapon_button and self.enchant_weapon_button.rect.collidepoint(event.pos):
+                if self.enchant_weapon_button.on_click:
+                    self.enchant_weapon_button.on_click()
         if event.type == pygame.KEYDOWN:
             if event.key in (pygame.K_RETURN, pygame.K_ESCAPE):
                 self._close()
@@ -764,6 +796,38 @@ class Dialog:
         if callable(self.on_play_roulette):
             try:
                 self.on_play_roulette()
+            except Exception:
+                pass
+        self._close()
+
+    def _play_poker_action(self):
+        if callable(self.on_play_poker):
+            try:
+                self.on_play_poker()
+            except Exception:
+                pass
+        self._close()
+
+    def _confirm_action(self):
+        if callable(self.on_confirm):
+            try:
+                self.on_confirm()
+            except Exception:
+                pass
+        self._close()
+
+    def _craft_rune_action(self):
+        if callable(self.on_craft_rune):
+            try:
+                self.on_craft_rune()
+            except Exception:
+                pass
+        self._close()
+
+    def _enchant_weapon_action(self):
+        if callable(self.on_enchant_weapon):
+            try:
+                self.on_enchant_weapon()
             except Exception:
                 pass
         self._close()
@@ -974,6 +1038,16 @@ class Dialog:
         if self.show_confirm and self.confirm_button:
             try:
                 self.confirm_button.draw(surface)
+            except Exception:
+                pass
+        if self.show_craft_rune and self.craft_rune_button:
+            try:
+                self.craft_rune_button.draw(surface)
+            except Exception:
+                pass
+        if self.show_enchant_weapon and self.enchant_weapon_button:
+            try:
+                self.enchant_weapon_button.draw(surface)
             except Exception:
                 pass
         self.ok_button.draw(surface)
