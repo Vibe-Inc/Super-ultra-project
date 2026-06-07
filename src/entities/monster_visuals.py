@@ -137,8 +137,10 @@ def _palette_for(style: str) -> dict:
         "phantom": {
             "skin": (160, 120, 200), "skin_light": (200, 170, 240), "skin_dark": (80, 50, 130),
             "skin_mid": (130, 90, 170),
+            "bone": (180, 150, 210), "bone_dark": (110, 80, 150),
             "robe": (60, 30, 90), "robe_light": (100, 60, 140), "robe_dark": (30, 15, 50),
             "accent": (200, 140, 255), "accent_dark": (140, 80, 200),
+            "bone": (215, 200, 235), "bone_dark": (140, 110, 170),
             "eye_white": (220, 200, 255), "eye_pupil": (180, 80, 255),
             "glow": (180, 140, 240, 60), "glow_bright": (220, 180, 255, 100),
             "wisp": (160, 120, 220, 80), "wisp_bright": (200, 170, 255, 120),
