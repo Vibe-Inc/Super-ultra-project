@@ -1418,6 +1418,11 @@ class SmelteryMenu:
         # so the smeltery UI underneath is blocked.
         if self.active_minigame is not None:
             self.active_minigame.draw(screen)
+            try:
+                from src.minigames.smeltery_minigames import GLOBAL_PARTICLES
+                GLOBAL_PARTICLES.draw(screen)
+            except Exception:
+                pass
 
     def _draw_workbench_body(self, screen):
         if self.crafting_grid is None:
