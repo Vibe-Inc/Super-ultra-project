@@ -56,14 +56,14 @@ class WorldScaleMenu:
             })
 
         self.editor_button = Button(
-            pygame.Rect(0, 0, 110, 28),
+            pygame.Rect(0, 0, 140, 34),
             "Editor", (60, 60, 100), (90, 90, 150),
-            self.font_small, (200, 200, 230), 5, self._toggle_editor,
+            self.font_small, (200, 200, 230), 6, self._toggle_editor,
         )
         self.apply_button = Button(
-            pygame.Rect(0, 0, 80, 24),
+            pygame.Rect(0, 0, 100, 30),
             "Apply", (40, 80, 40), (60, 140, 60),
-            self.font_small, (200, 200, 230), 4, self._apply_editor,
+            self.font_small, (200, 200, 230), 5, self._apply_editor,
         )
 
     def _fit_text(self, text, font, max_width):
@@ -262,9 +262,9 @@ class WorldScaleMenu:
         screen.blit(title, tr)
 
         # ── editor button ─────────────────────────────────────
-        eb_x = dx + self.panel_w - 130
+        eb_x = dx + self.panel_w - 165
         eb_y = dy + 14
-        self.editor_button.rect = pygame.Rect(eb_x, eb_y, 110, 28)
+        self.editor_button.rect = pygame.Rect(eb_x, eb_y, 140, 34)
         self.editor_button.draw(screen)
 
         # ── new unlocks ───────────────────────────────────────
@@ -496,12 +496,12 @@ class WorldScaleMenu:
 
         # ── editor mode ───────────────────────────────────────
         if self.editor_mode:
-            inp_rect = pygame.Rect(eb_x, eb_y + 34, 110, 24)
+            inp_rect = pygame.Rect(eb_x, eb_y + 42, 140, 30)
             pygame.draw.rect(screen, (15, 15, 30), inp_rect)
             pygame.draw.rect(screen, (150, 150, 200), inp_rect, 1)
             inp_surf = self.font_small.render(self.editor_input or "0", True, (200, 200, 230))
             screen.blit(inp_surf, (inp_rect.x + 4, inp_rect.y + 3))
-            self.apply_button.rect = pygame.Rect(eb_x + 15, eb_y + 62, 80, 24)
+            self.apply_button.rect = pygame.Rect(eb_x + 20, eb_y + 78, 100, 30)
             self.apply_button.draw(screen)
 
         # ── particles ─────────────────────────────────────────
