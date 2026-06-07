@@ -37,8 +37,12 @@ def draw_attack_animation(screen: pygame.Surface, enemy, camera_offset: pygame.V
     # with progress remapped so the strike plays in its own 45% window.
     if progress > 0.55:
         strike_p = (progress - 0.55) / 0.45
+        # Scale strike VFX to match the actual damage zone dimensions
+        telegraph_range = getattr(enemy, "attack_telegraph_range", 45.0) or 45.0
+        range_scale = max(0.5, min(2.0, telegraph_range / 45.0))
+        adjusted_strength = strength * range_scale
         handler = _DISPATCH.get(anim, _draw_generic_strike)
-        handler(screen, sx, sy, direction, strike_p, strength, enemy)
+        handler(screen, sx, sy, direction, strike_p, adjusted_strength, enemy)
 
 
 # --------------------------------------------------------------------------

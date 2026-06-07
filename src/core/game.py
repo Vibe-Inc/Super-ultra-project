@@ -1961,7 +1961,7 @@ class Game(State):
                     atk_range = getattr(enemy, "attack_telegraph_range", enemy.attack_range)
                     if dist <= atk_range * 1.5:
                         if self.character.do_parry(enemy):
-                            enemy.attack_phase = 0
+                            enemy.attack_phase = 0  # reset to IDLE (do_parry also calls stun)
 
         self._update_projectiles(dt)
         self._update_enemy_projectiles(dt)

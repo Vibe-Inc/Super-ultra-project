@@ -49,6 +49,7 @@ ATTACK_PHASE_IDLE = 0
 ATTACK_PHASE_WIND_UP = 1
 ATTACK_PHASE_TELEGRAPH = 2
 ATTACK_PHASE_STRIKE = 3
+ATTACK_PHASE_COOLDOWN = 4
 
 
 class Enemy:
@@ -218,6 +219,7 @@ class Enemy:
         self.attack_phase_timer: float = 0.0
         self.wind_up_duration: float = 0.25
         self.telegraph_duration: float = 0.30
+        self.strike_duration: float = 0.15
         self.attack_telegraph_range: float = 0.0
         self.attack_telegraph_angle: float = 130.0
         self.attack_telegraph_color: tuple = (255, 100, 100, 80)
@@ -374,14 +376,19 @@ class Enemy:
                 self.attack_strike_consumed = False
             elif self.attack_phase == ATTACK_PHASE_TELEGRAPH:
                 self.attack_phase = ATTACK_PHASE_STRIKE
-                self.attack_phase_timer = 0.05
+                self.attack_phase_timer = self.strike_duration
                 self.attack_strike_consumed = False
             elif self.attack_phase == ATTACK_PHASE_STRIKE:
+                self.attack_phase = ATTACK_PHASE_COOLDOWN
+                self.attack_phase_timer = 0.3
+                self.attack_strike_consumed = False
+            elif self.attack_phase == ATTACK_PHASE_COOLDOWN:
                 self.attack_phase = ATTACK_PHASE_IDLE
                 self.attack_phase_timer = 0.0
                 self.attack_strike_consumed = False
 
     def start_attack_phase(self, wind_up: float = 0.25, telegraph: float = 0.30,
+                           strike_duration: float = 0.15,
                            telegraph_range: float = 0.0, telegraph_angle: float = 130.0,
                            telegraph_color: tuple = (255, 100, 100, 80),
                            damage: int = 0, knockback: float = 0.0, effect=None):
@@ -393,6 +400,7 @@ class Enemy:
         self.attack_phase_timer = wind_up
         self.wind_up_duration = wind_up
         self.telegraph_duration = telegraph
+        self.strike_duration = strike_duration
         self.attack_telegraph_range = telegraph_range
         self.attack_telegraph_angle = telegraph_angle
         self.attack_telegraph_color = telegraph_color
@@ -417,6 +425,9 @@ class Enemy:
 
     def is_in_attack(self) -> bool:
         return self.attack_phase != ATTACK_PHASE_IDLE
+
+    def is_in_cooldown(self) -> bool:
+        return self.attack_phase == ATTACK_PHASE_COOLDOWN
 
     def stun(self, duration: float = 1.0):
         self.stun_timer = max(self.stun_timer, duration)
@@ -462,9 +473,10 @@ class Enemy:
             self.image = self.animations[self.direction][self.frame_index]
             return
 
-        # Skip AI and attacks while frozen (speed_multiplier == 0) or during attack wind-up/telegraph
+        # Skip AI and attacks while frozen (speed_multiplier == 0) or during attack wind-up/telegraph/cooldown
         in_attack_anim = self.is_in_attack()
-        move_blocked = self.speed_multiplier <= 0 or (in_attack_anim and self.attack_phase != ATTACK_PHASE_STRIKE)
+        can_move_while_attacking = self.attack_phase in (ATTACK_PHASE_STRIKE, ATTACK_PHASE_COOLDOWN)
+        move_blocked = self.speed_multiplier <= 0 or (in_attack_anim and not can_move_while_attacking)
 
         if not move_blocked:
             self._ai_context.dt = dt
@@ -482,7 +494,7 @@ class Enemy:
             self._move(dt)
         else:
             # Still allow brain/attack updates even when movement is blocked by attack phase
-            if self.attack_controller and attack_context and self.attack_phase == ATTACK_PHASE_IDLE:
+            if self.attack_controller and attack_context and not self.is_in_attack():
                 self.attack_controller.update(self, attack_context)
             self.speed = 0.0
             self.velocity = pygame.Vector2(0, 0)
