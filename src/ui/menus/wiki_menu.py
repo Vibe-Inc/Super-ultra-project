@@ -1209,11 +1209,7 @@ class WikiMenu(Menu):
         elif self._show_toc:
             ny = sh - bh - max(16, int(24 * scale))
             mx = max(20, int(30 * scale))
-            gap = max(8, int(10 * scale))
-            self.prev_btn.rect = pygame.Rect(mx, ny, bw, bh)
-            self.back_btn.rect = pygame.Rect(mx + bw + gap, ny, bw, bh)
-            self.toc_btn.rect = pygame.Rect(mx + 2 * (bw + gap), ny, bw, bh)
-            self.next_btn.rect = pygame.Rect(sw - bw - mx, ny, bw, bh)
+            self.back_btn.rect = pygame.Rect(mx, ny, bw, bh)
             if self._skip_to_gameplay and self._page == "guide":
                 pad2 = max(8, int(24 * scale))
                 box2 = pygame.Rect(pad2, pad2, sw - 2 * pad2, sh - 2 * pad2)
@@ -1227,9 +1223,13 @@ class WikiMenu(Menu):
             ny = sh - bh - max(40, int(60 * scale))
             mx = max(40, int(60 * scale))
             gap = max(8, int(10 * scale))
-            self.prev_btn.rect = pygame.Rect(mx, ny, bw, bh)
-            self.back_btn.rect = pygame.Rect(mx + bw + gap, ny, bw, bh)
-            self.toc_btn.rect = pygame.Rect(mx + 2 * (bw + gap), ny, bw, bh)
+            x = mx
+            if self._sub_page > 0:
+                self.prev_btn.rect = pygame.Rect(x, ny, bw, bh)
+                x += bw + gap
+            self.back_btn.rect = pygame.Rect(x, ny, bw, bh)
+            x += bw + gap
+            self.toc_btn.rect = pygame.Rect(x, ny, bw, bh)
             self.next_btn.rect = pygame.Rect(sw - bw - mx, ny, bw, bh)
             if self._skip_to_gameplay and self._page == "guide":
                 btn_w = max(1, int(340 * scale))
