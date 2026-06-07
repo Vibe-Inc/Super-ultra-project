@@ -650,150 +650,445 @@ class WikiMenu(Menu):
     def _bestiary_pages(self):
         return [
             {"title": _("The Brute"), "portrait": "brute", "body": _(
-                "They say the first Brute was born from a boulder struck by lightning\u2014a creature of fury and stone. "
-                "These hulking warriors patrol the old roads with a single purpose: to crush anything that moves.\n\n"
-                "A Brute does not rush. It stalks. It waits. And when the moment is right, it charges with the force of an avalanche.\n\n"
-                "Abilities: Charge (2.4\u00d7 speed, 220 range), Slam (1.5\u00d7 damage, knockback, slow 1.5s). Health: 160. Speed: 110.")},
+                "They say the first Brute was born from a boulder struck by lightning\u2014a creature "
+                "of fury and stone. These hulking warriors patrol the old roads with a single purpose: "
+                "to crush anything that moves.\n\n"
+                "A Brute does not rush. It stalks. It waits. And when the moment is right, it charges "
+                "with the force of an avalanche. Its Slam attack deals heavy damage with knockback and "
+                "leaves you slowed, unable to dodge the next blow.\n\n"
+                "Abilities: Charge (2.4\u00d7 speed, 220 range), Slam (1.5\u00d7 damage, knockback, "
+                "slow 1.5s). Health: 160. Speed: 110.\n\n"
+                "Tactics: Dodge sideways when it charges\u2014never backward. After a missed charge, "
+                "the Brute is vulnerable. Strike hard and retreat before the Slam lands.")},
             {"title": _("The Venomous"), "portrait": "venomous", "body": _(
-                "In the swamplands where even the trees have learned to bite, the Venomous make their dens.\n\n"
-                "A single scratch sends poison surging through your veins\u2014a creeping decay that grows stronger the longer you ignore it.\n\n"
-                "Abilities: Poison Strike (4s, 5 DPS). Health: 95. Speed: 130.")},
+                "In the swamplands where even the trees have learned to bite, the Venomous make "
+                "their dens. These serpentine hunters rely on venom to weaken their prey before "
+                "closing in for the kill.\n\n"
+                "A single scratch sends poison surging through your veins\u2014a creeping decay "
+                "that grows stronger the longer you ignore it. The poison stacks, and a prolonged "
+                "encounter with multiple Venomous foes can overwhelm even the hardiest adventurer.\n\n"
+                "Abilities: Poison Strike (4s, 5 DPS per stack). Health: 95. Speed: 130.\n\n"
+                "Tactics: Antidotes are non-negotiable. Use ranged attacks to avoid contact poison. "
+                "If poisoned, retreat and cure before re-engaging.")},
             {"title": _("The Arcanist"), "portrait": "arcanist", "body": _(
-                "Magic is a gift, they say. But some gifts come with a price. The Arcanists are former students who delved too deep.\n\n"
-                "These robed figures hurl bolts of searing flame, their aim uncanny and their patience endless.\n\n"
-                "Abilities: Arcane Bolt (480 speed, 560 range, burn 3.2s). Health: 80. Speed: 115.")},
+                "Magic is a gift, they say. But some gifts come with a price. The Arcanists are "
+                "former students who delved too deep and emerged with minds scorched by forbidden "
+                "knowledge.\n\n"
+                "These robed figures hurl bolts of searing flame with uncanny aim and endless "
+                "patience. They prefer to keep their distance, kiting relentlessly while their "
+                "Arcane Bolt burns through your defenses.\n\n"
+                "Abilities: Arcane Bolt (480 speed, 560 range, burn 3.2s). Health: 80. "
+                "Speed: 115.\n\n"
+                "Tactics: Close the distance quickly\u2014Arcanists are fragile once engaged in "
+                "melee. Use Shadow Step or Dash to close the gap, then interrupt their casting.")},
             {"title": _("The Trickster"), "portrait": "trickster", "body": _(
-                "Beware the laughter in the dark. The Tricksters delight in confusion and disarray.\n\n"
-                "Their touch clouds the mind\u2014suddenly left is right, forward is back.\n\n"
-                "Abilities: Blink (240 range), Confuse (2.8s), Dizzy (2.2s). Health: 75. Speed: 150.")},
+                "Beware the laughter in the dark. The Tricksters delight in confusion and disarray, "
+                "weaving shadows into cruel pranks that leave their victims lost and helpless.\n\n"
+                "Their touch clouds the mind\u2014suddenly left is right, forward is back. They "
+                "blink in and out of visibility, making them maddeningly difficult to pin down.\n\n"
+                "Abilities: Blink (240 range), Confuse (2.8s), Dizzy (2.2s). Health: 75. "
+                "Speed: 150.\n\n"
+                "Tactics: Predict their Blink destination and strike preemptively. If Confused, "
+                "consciously invert your inputs. Their low health makes them quick to eliminate.")},
             {"title": _("The Bomber"), "portrait": "bomber", "body": _(
-                "A hiss of steam, a flicker of arc-light\u2014the Bomber lumbers in on riveted peg legs.\n\n"
-                "Brass-plated and pressure-sealed, these wandering automatons keep their distance while lobbing timed bombs that arc through the air with deceptive grace.\n\n"
-                "Abilities: Timed Bomb (95 blast radius, 80 knockback, 0.9s fuse). Health: 125. Speed: 105.")},
+                "A hiss of steam, a flicker of arc-light\u2014the Bomber lumbers in on riveted peg "
+                "legs. Brass-plated and pressure-sealed, these wandering automatons keep their "
+                "distance while lobbing timed bombs that arc through the air with deceptive grace.\n\n"
+                "The bombs have a 0.9-second fuse, giving you just enough time to react\u2014if you "
+                "are paying attention. The blast radius is punishing, and the knockback can send you "
+                "into the path of other enemies.\n\n"
+                "Abilities: Timed Bomb (95 blast radius, 80 knockback, 0.9s fuse). Health: 125. "
+                "Speed: 105.\n\n"
+                "Tactics: Stay mobile. Never stand still\u2014Bombers lead their targets. Close the "
+                "distance aggressively; Bombers are vulnerable in close quarters.")},
             {"title": _("The Stalker"), "portrait": "stalker", "body": _(
-                "Where shadow pools deep and torchlight fails, the Stalker waits\u2014patient, silent, and unseen.\n\n"
-                "Cloaked and masked, these grim assassins favor the blade over brute strength. They remember your last position long after you've broken line of sight, and they are quick to re-pick a fresh path when cut off.\n\n"
-                "Abilities: Blade Strike (40 range), Memory Trail (3s pursuit after losing sight), Repath (0.5s). Health: 110. Speed: 120.")},
+                "Where shadow pools deep and torchlight fails, the Stalker waits\u2014patient, "
+                "silent, and unseen. Cloaked and masked, these grim assassins favor the blade "
+                "over brute strength.\n\n"
+                "They remember your last position long after you have broken line of sight, "
+                "pursuing with relentless precision. When cut off from their target, they are "
+                "quick to re-pick a fresh path, making them nearly impossible to shake.\n\n"
+                "Abilities: Blade Strike (40 range), Memory Trail (3s pursuit after losing sight), "
+                "Repath (0.5s). Health: 110. Speed: 120.\n\n"
+                "Tactics: Breaking line of sight is not enough\u2014keep moving for a full 3 "
+                "seconds after losing them. Use tight corners and doors to break the Memory Trail.")},
             {"title": _("The Skirmisher"), "portrait": "skirmisher", "body": _(
-                "Swift as the raptor it resembles, the Skirmisher darts across the battlefield with javelin raised and crest fluttering.\n\n"
-                "These winged hunters prefer to keep their distance\u2014harrying from the fringes, circling, striking, and vanishing before the counter-blow can land. Tribal warpaint marks the kills they've claimed.\n\n"
-                "Abilities: Javelin Toss (35 range), Orbit (preferred 80\u2013170, radius 130). Health: 85. Speed: 140.")},
+                "Swift as the raptor it resembles, the Skirmisher darts across the battlefield "
+                "with javelin raised and crest fluttering. These winged hunters prefer to keep "
+                "their distance\u2014harrying from the fringes, circling, striking, and vanishing "
+                "before the counter-blow can land.\n\n"
+                "Tribal warpaint marks the kills they have claimed, and their javelins find their "
+                "mark with unsettling accuracy. They orbit their prey at a preferred range, always "
+                "just out of reach.\n\n"
+                "Abilities: Javelin Toss (35 range), Orbit (preferred 80\u2013170, radius 130). "
+                "Health: 85. Speed: 140.\n\n"
+                "Tactics: Close in to force them into melee, but watch for the Javelin Toss as "
+                "you approach. Ranged users should lead their shots\u2014their orbit pattern is "
+                "predictable.")},
             {"title": _("The Guardian"), "portrait": "guardian", "body": _(
-                "Forged in the fires of a forgotten forge, the Guardian is a hulking iron sentinel bound to a place of power.\n\n"
-                "Steam hisses from brass-banded joints and copper pistons pump with every ponderous step. It will not stray far from its post\u2014but woe to any intruder that crosses the threshold it defends.\n\n"
-                "Abilities: Heavy Slam (45 range, knockback), Guard Post (radius 320, leash 90), Patrol Wait (0.8s). Health: 140. Speed: 100.")},
+                "Forged in the fires of a forgotten forge, the Guardian is a hulking iron sentinel "
+                "bound to a place of power. Steam hisses from brass-banded joints and copper pistons "
+                "pump with every ponderous step.\n\n"
+                "It will not stray far from its post\u2014its leash is short and its duty absolute. "
+                "But woe to any intruder that crosses the threshold it defends. The Guardian's Heavy "
+                "Slam sends adventurers flying, and it pursues with relentless, mechanical patience.\n\n"
+                "Abilities: Heavy Slam (45 range, knockback), Guard Post (radius 320, leash 90), "
+                "Patrol Wait (0.8s). Health: 140. Speed: 100.\n\n"
+                "Tactics: If possible, avoid engaging Guardians on their home turf. If you must "
+                "fight, bait the Heavy Slam and strike during the recovery.")},
         ]
 
     def _magic_pages(self):
         return [
             {"title": _("Fireball"), "body": _(
-                "The quintessence of destructive magic. A roaring sphere that erupts in glorious conflagration.\n\n"
-                "Damage: 28 base (area). Range: 520. Knockback: moderate. Pyromancer's Fury: +25% damage.")},
+                "The quintessence of destructive magic. A roaring sphere of condensed flame that "
+                "erupts in glorious conflagration upon impact.\n\n"
+                "Summon a fireball that travels toward your target and explodes on contact, "
+                "scorching everything in its blast radius. No other spell announces your presence "
+                "with such authority.\n\n"
+                "Damage: 28 base (area). Range: 520. Knockback: moderate. Pyromancer's Fury: "
+                "+25% damage. Use it to break enemy formations or punish clustered foes.")},
             {"title": _("Flame Shield"), "body": _(
                 "A wreath of protective flames that scorches any foe foolish enough to approach.\n\n"
-                "Damage: 8/sec to nearby enemies. Duration: 6 seconds.")},
+                "Wreathe yourself in roaring fire for 6 seconds. Enemies within melee range take "
+                "continuous burn damage, making this ideal for brawling against groups or deterring "
+                "aggressive pursuers. The flames do not discriminate\u2014stand too close to allies "
+                "and they too will feel the heat.\n\n"
+                "Damage: 8/sec to nearby enemies. Duration: 6 seconds. Combines well with Ice "
+                "Armor for a fire-and-ice defensive shell.")},
             {"title": _("Frost Nova"), "body": _(
-                "A razored ring of ice expanding outward, freezing any enemy caught within.\n\n"
-                "Radius: 150. Freeze: 3 seconds.")},
+                "A razored ring of ice that erupts from your body and expands outward, "
+                "flash-freezing everything it touches.\n\n"
+                "In an instant, a circle of crystalline frost explodes from the caster, freezing "
+                "enemies solid for 3 seconds. Frozen enemies cannot move or act, making them easy "
+                "targets for follow-up attacks. The freeze breaks early if the target takes "
+                "significant damage, so time your burst carefully.\n\n"
+                "Radius: 150. Freeze: 3 seconds. Excellent setup for Fireball\u2014freeze "
+                "first, then detonate.")},
             {"title": _("Ice Armor"), "body": _(
-                "A cloak of crystalline frost that absorbs incoming blows.\n\n"
-                "Absorbs up to 30 damage. Duration: 8s. Attackers within 80px slowed by half.")},
+                "A cloak of crystalline frost that wraps around you, absorbing incoming blows and "
+                "punishing those who strike you.\n\n"
+                "For 8 seconds, Ice Armor absorbs up to 30 damage before shattering. While active, "
+                "any melee attacker within 80 pixels is slowed by half, giving you precious space "
+                "to reposition or counterattack. The absorption applies before your health pool\u2014"
+                "every point of damage blocked is a point you do not feel.\n\n"
+                "Absorbs up to 30 damage. Duration: 8s. Attackers within 80px slowed by half. "
+                "A must-have for melee-range mages.")},
             {"title": _("Glacial Cascade"), "body": _(
-                "A torrent of ice shards racing forward, dealing 35 damage.\n\n"
-                "Freeze: 2 seconds. Travels far and wide.")},
+                "A torrent of razor-sharp ice shards that races forward in a widening cone, "
+                "shredding everything in its path.\n\n"
+                "Launch a cascade of glacial fragments that travels in a broad arc, dealing 35 "
+                "damage to all enemies caught in its path. The piercing cold freezes targets for "
+                "2 seconds\u2014shorter than Frost Nova but applied at range. The cascade travels "
+                "far and wide, making it exceptional for corridor fighting and thinning approaching "
+                "hordes.\n\n"
+                "Damage: 35. Freeze: 2 seconds. Wide arc, long range. Ideal for controlling "
+                "chokepoints.")},
             {"title": _("Chain Lightning"), "body": _(
-                "Leaps from the caster to the nearest foe, then arcs to the next.\n\n"
-                "Damage: 22/strike. Range: 550. Chain: 180. Up to 5 enemies.")},
+                "A crackling bolt of lightning that leaps from the caster to the nearest foe, "
+                "then arcs to the next, and the next.\n\n"
+                "Chain Lightning seeks out enemies with unerring accuracy. The initial strike "
+                "hits your closest target within 550 range, then arcs up to 180 units to the "
+                "next, chaining across up to 5 enemies. Each strike deals 22 damage\u2014less "
+                "than a Fireball, but the total damage across a full chain is devastating.\n\n"
+                "Damage: 22/strike. Range: 550. Chain radius: 180. Max chains: 5. Excels against "
+                "tightly packed groups.")},
             {"title": _("Thunderstrike"), "body": _(
-                "A column of lightning from the heavens, dealing catastrophic damage.\n\n"
-                "Damage: 55. Radius: 100. Range: 600.")},
+                "A column of pure lightning that crashes down from the heavens, dealing "
+                "catastrophic single-target damage.\n\n"
+                "Call upon the sky itself to smite a target within 600 range. The strike lands "
+                "with a 100-radius blast, dealing 55 damage\u2014the hardest-hitting single-instance "
+                "spell in the arcane arsenal. Use it to eliminate high-priority targets before "
+                "they close to melee range.\n\n"
+                "Damage: 55. Radius: 100. Range: 600. Best reserved for elite enemies and bosses.")},
             {"title": _("Entangling Roots"), "body": _(
-                "Ancient tendrils erupt from the soil, grasping the target.\n\n"
-                "Root: 4 seconds. Radius: 140. Range: 500.")},
+                "Ancient tendrils erupt from the soil beneath your target, grasping and holding "
+                "them in place.\n\n"
+                "Call upon the deep earth to bind your enemies. Roots erupt in a 140-radius area "
+                "at a target location up to 500 units away, holding all caught enemies for 4 "
+                "seconds. Rooted enemies cannot move but can still attack and use abilities. The "
+                "roots are vulnerable to fire\u2014a clever foe can burn their way free.\n\n"
+                "Root duration: 4 seconds. Radius: 140. Range: 500. Combines with Fireball or "
+                "Glacial Cascade for devastating area combos.")},
             {"title": _("Summon Spirit"), "body": _(
-                "A nature spirit fights at your side\u2014a flickering wisp of leaves and light.\n\n"
-                "Spirit Damage: 15. Duration: 10 seconds.")},
+                "A nature spirit fights at your side\u2014a flickering wisp of leaves and ancient "
+                "light that harries your enemies.\n\n"
+                "Summon a loyal nature spirit from the woodland realm. The spirit lasts 10 seconds, "
+                "automatically attacking nearby foes for 15 damage per strike. It cannot be targeted "
+                "or killed, making it a reliable source of supplementary damage. The spirit follows "
+                "you and prioritizes enemies you are currently fighting.\n\n"
+                "Spirit Damage: 15 per strike. Duration: 10 seconds. Invaluable for split focus\u2014"
+                "let the spirit harass while you prepare a heavy spell.")},
             {"title": _("Shadow Step"), "body": _(
-                "Dissolve into darkness and reappear a short distance away.\n\n"
-                "Range: 300. Invulnerability: 0.5s after arrival.")},
+                "Dissolve into shadow and reform a short distance away, leaving your enemies "
+                "grasping at nothing.\n\n"
+                "Shadow Step is your ultimate mobility tool. Vanish into darkness at your current "
+                "location and reappear up to 300 units away in the direction of your choosing. "
+                "For 0.5 seconds after arrival, you are completely invulnerable\u2014long enough "
+                "to absorb a killing blow or dodge a telegraphed attack.\n\n"
+                "Range: 300. Invulnerability: 0.5s after arrival. Use to escape deadly situations "
+                "or reposition for a counterattack.")},
             {"title": _("Dark Pact"), "body": _(
-                "Rips life force from the caster and detonates it in shadow energy.\n\n"
-                "Cost: 10% max HP. Damage: 60 shadow. Radius: 150.")},
+                "A forbidden pact that rips life force from the caster and detonates it in a "
+                "burst of shadow energy.\n\n"
+                "Sacrifice 10% of your maximum health to unleash a blast of shadow damage\u2014"
+                "60 damage to all enemies within a 150-radius area. The health cost is paid "
+                "instantly and cannot be mitigated. Dark Pact deals the highest area burst damage "
+                "of any spell, but the price is steep. Use it when the risk is worth the reward.\n\n"
+                "Cost: 10% max HP. Damage: 60 shadow. Radius: 150. Always carry health potions "
+                "when this spell is in your arsenal.")},
             {"title": _("Arcane Missiles"), "body": _(
-                "5 homing projectiles that each deal 14 damage.\n\n"
-                "They seek, they find, they destroy.")},
+                "Five homing projectiles of pure arcane energy that seek out your enemies with "
+                "unerring accuracy.\n\n"
+                "Launch a volley of 5 arcane missiles that each deal 14 damage. The missiles "
+                "automatically track the nearest enemy within range, curving through the air to "
+                "find their mark. They can strike multiple targets or focus fire on a single foe. "
+                "Against a lone enemy, the full volley delivers 70 damage.\n\n"
+                "Projectiles: 5. Damage: 14 each (70 total if all hit). Homing: yes. They seek, "
+                "they find, they destroy.")},
             {"title": _("Mystic Barrier"), "body": _(
-                "A shimmering ward that turns 30% of incoming damage back.\n\n"
-                "Duration: 5s.")},
+                "A shimmering ward of pure arcane energy that surrounds you, reflecting a portion "
+                "of incoming damage back at your attackers.\n\n"
+                "For 5 seconds, Mystic Barrier reduces all damage you take and reflects 30% of it "
+                "back to the source. The reflected damage scales with the incoming hit\u2014the "
+                "harder they strike, the more they feel. This does not prevent the damage to you, "
+                "so it is a gamble: you survive the hit, and they feel the sting.\n\n"
+                "Duration: 5s. Reflection: 30% of incoming. Use against hard-hitting enemies to "
+                "turn their strength against them.")},
             {"title": _("Berserker's Rage"), "body": _(
-                "Raw fury: +50% damage dealt, +20% damage taken.\n\n"
-                "Duration: 8s. Cooldown: 20s.")},
+                "Raw, untamed fury surges through your veins\u2014your attacks hit harder, but "
+                "your defenses crack.\n\n"
+                "Enter a berserker trance for 8 seconds. All damage you deal is increased by 50%, "
+                "but all damage you take is increased by 20%. This is the glass cannon's signature\u2014"
+                "devastating power at a perilous cost. Activate it when you know you can end the "
+                "fight before the enemy ends you.\n\n"
+                "Duration: 8s. Cooldown: 20s. Damage dealt: +50%. Damage taken: +20%. Pair with "
+                "defensive abilities to offset the vulnerability.")},
             {"title": _("Chrono Shift"), "body": _(
-                "Slows the world around you.\n\n"
-                "Duration: 3s. Enemies at half speed, you strike 25% faster. Cooldown: 30s.")},
+                "Bend the flow of time itself, slowing the world around you to a crawl while you "
+                "move with supernatural swiftness.\n\n"
+                "For 3 seconds, Chrono Shift reduces enemy movement speed by half while increasing "
+                "your attack speed by 25%. The effect is immediate and disorienting\u2014enemies "
+                "appear to wade through molasses while you dance between their attacks. The long "
+                "cooldown means you must choose your moment carefully.\n\n"
+                "Duration: 3s. Enemies: half speed. Your attack speed: +25%. Cooldown: 30s. The "
+                "ultimate tool for outmaneuvering overwhelming odds.")},
             {"title": _("Dash"), "body": _(
-                "Propels the user forward in a burst of speed.\n\n"
-                "Distance is safety. Speed is life.")},
+                "Propels the user forward in a burst of speed\u2014a short, sharp lunge that "
+                "can mean the difference between life and death.\n\n"
+                "Dash grants an instant burst of movement in the direction you are facing. It "
+                "covers moderate ground in a fraction of a second, passing through enemies and "
+                "projectiles without taking damage during the dash. The cooldown is short, "
+                "encouraging frequent use.\n\n"
+                "Distance is safety. Speed is life. Use Dash to close gaps, evade attacks, or "
+                "reposition in the heat of battle.")},
         ]
 
     def _effects_pages(self):
         return [
             {"title": _("Boon: Regeneration"), "body": _(
-                "Accelerated healing\u2014restoring health with every heartbeat.\n\n"
-                "A steady flow of vitality.")},
+                "Accelerated healing that restores health with every heartbeat of the caster.\n\n"
+                "Regeneration is a beneficial effect that restores a set amount of health each "
+                "second over its duration. It stacks with passive health recovery and other healing "
+                "sources. The effect can be applied through potions, spells, food, or environmental "
+                "effects such as resting at a campfire.\n\n"
+                "Rate: ~5 HP per second. Duration varies by source. A steady flow of vitality that "
+                "keeps you in the fight longer.\n\n"
+                "Tip: Let regeneration top you off between fights to conserve potions.")},
             {"title": _("Bane: Poison"), "body": _(
-                "Creeping death that seeps into the bloodstream.\n\n"
-                "Deals damage over time. Antidotes are worth their weight in gold.")},
+                "Creeping death that seeps into the victim's bloodstream, dealing damage over "
+                "time until cured or expired.\n\n"
+                "Poison is a stacking damage-over-time effect. Each application adds a stack, "
+                "and each stack deals independent damage per tick. The damage grows more dangerous "
+                "as stacks accumulate\u2014a single Venomous strike may apply one stack, but "
+                "repeated hits can stack poison to lethal levels quickly.\n\n"
+                "Duration: 4s per stack. Damage: ~5 DPS per stack. Antidotes remove all poison "
+                "stacks instantly and are worth their weight in gold. Without antidotes, you must "
+                "wait for the poison to run its course.\n\n"
+                "Tip: Always carry antidotes before exploring swamp biomes.")},
             {"title": _("Bane: Burn"), "body": _(
-                "Fire remembers. The Burn effect lingers long after the initial blast.\n\n"
-                "Immediate and aggressive damage.")},
+                "Fire remembers. The Burn effect lingers long after the initial blast, consuming "
+                "its victim in persistent flame.\n\n"
+                "Burn is a damage-over-time effect applied by fire-based attacks and environmental "
+                "hazards such as lava pools and fire traps. Unlike poison, burn does not stack\u2014"
+                "instead, a fresh application refreshes the duration. The damage per tick is higher "
+                "than poison, making it more dangerous in short bursts.\n\n"
+                "Duration: ~3.2s per application. Damage: higher DPS than poison. Can be "
+                "extinguished by rolling or submerging in water.\n\n"
+                "Tip: If you catch fire, roll to put it out. Standing still is a death sentence.")},
             {"title": _("Bane: Confusion"), "body": _(
-                "Inverts direction\u2014up becomes down, left becomes right.\n\n"
-                "Duration: ~3s. Trust nothing.")},
+                "Inverts your controls\u2014up becomes down, left becomes right, and your muscle "
+                "memory becomes your enemy.\n\n"
+                "Confusion is a disorienting status effect that reverses all directional input for "
+                "approximately 3 seconds. Every instinct you have developed will betray you. The "
+                "effect is applied by Trickster enemies and certain shadow-based traps. There is "
+                "no direct cure\u2014you must wait it out.\n\n"
+                "Duration: ~3s. Effect: directional inversion. No antidote exists. Trust nothing, "
+                "not even your own hands.\n\n"
+                "Tip: Invert your own thinking. If you need to go left, press right. It takes "
+                "practice, but it can save your life.")},
             {"title": _("Bane: Dizziness"), "body": _(
-                "The world spins. Colors smear. Combat becomes a nauseating ordeal.\n\n"
-                "Often paired with Confusion.")},
+                "The world spins around you. Colors smear and blur. Combat becomes a nauseating "
+                "ordeal.\n\n"
+                "Dizziness impairs your visual clarity, making it difficult to judge distances "
+                "and track enemy movements. The screen wobbles and your character's movement "
+                "becomes slightly sluggish. Often paired with Confusion by Trickster enemies\u2014"
+                "together, they create a deadly cocktail of disorientation.\n\n"
+                "Duration: ~2.2s. Effect: visual distortion, slight movement impairment. Often "
+                "applied alongside Confusion.\n\n"
+                "Tip: If both Confusion and Dizziness are active, retreat to a safe area and "
+                "wait for both to expire. Fighting through both is a fool's errand.")},
             {"title": _("Bane: Slow"), "body": _(
-                "A creeping weight settles into the limbs.\n\n"
-                "Speed is life. To be slowed is to be marked for death.")},
+                "A creeping weight settles into your limbs, slowing your movement to a crawl.\n\n"
+                "Slow reduces your movement speed by approximately 50% for its duration. The "
+                "effect can be applied by environmental hazards (deep snow, mud, water), enemy "
+                "attacks (Ice-based spells, certain creature abilities), or traps. In combat, "
+                "being slowed is exceptionally dangerous\u2014you cannot dodge, you cannot kite, "
+                "and you cannot retreat.\n\n"
+                "Duration: ~1.5s to 4s depending on source. Speed reduction: ~50%. Some sources "
+                "also reduce attack speed.\n\n"
+                "Tip: Speed is life. To be slowed is to be marked for death. Carry cleansing "
+                "items or avoid hazards that apply this effect.")},
             {"title": _("Bane: Freeze & Root"), "body": _(
-                "Two faces of the same cursed coin. Both leave you unable to act.\n\n"
-                "A frozen or rooted fighter is a dead fighter.")},
+                "Two faces of the same cursed coin. Both leave you utterly unable to move, and "
+                "both are followed by a killing blow.\n\n"
+                "Freeze encases the target in solid ice, preventing all movement and actions for "
+                "its duration. The ice can be broken early by taking enough damage\u2014make sure "
+                "your allies are ready to shatter it. Root binds the target's feet to the earth, "
+                "preventing movement but allowing attacks and abilities to be used. Root is applied "
+                "by Entangling Roots and similar nature-based abilities.\n\n"
+                "Freeze duration: 2\u20133 seconds. Breaks on sufficient damage.\n"
+                "Root duration: 4 seconds. Movement only is blocked; attacks and abilities "
+                "still work.\n\n"
+                "Tip: A frozen or rooted fighter is a dead fighter. Prioritize cleansing or "
+                "avoiding these effects above all others.")},
         ]
 
     def _guide_pages(self):
         return [
             {"title": _("1. Movement & Navigation"), "body": _(
-                "Move with WASD. Sprint with Shift\u2014watch your stamina bar.\n\n"
-                "Walk into doors and map edges to transition between areas.")},
+                "The world is vast and unforgiving. Mastery of movement is your first and most essential "
+                "skill.\n\n"
+                "Use the WASD keys to navigate\u2014W for north, A for west, S for south, D for east. "
+                "Hold Shift to sprint, granting you burst speed at the cost of stamina. The yellow "
+                "stamina bar above your hotbar depletes with every sprinting step and refills when you "
+                "walk or stand still.\n\n"
+                "Walk into doorways and map edges to transition between areas. Some transitions are "
+                "one-way\u2014once you descend into a dungeon, the only way out is through.\n\n"
+                "Tip: Keep your stamina reserve for combat. A tired warrior is a dead warrior.")},
             {"title": _("2. Combat Basics"), "body": _(
-                "Left-click to attack. Health (red) at top and stamina (blue) above hotbar.\n\n"
-                "When health reaches zero, you respawn at your last save point.")},
+                "The world does not wait for you to be ready. Learn the rhythm of battle or be "
+                "consumed by it.\n\n"
+                "Left-click any nearby enemy to perform a basic attack. Your health bar (red) sits "
+                "at the top of the screen\u2014when it empties, you fall. Your stamina bar (yellow) "
+                "sits just above the hotbar\u2014it fuels both sprinting and special maneuvers. Let "
+                "neither run dry in a fight.\n\n"
+                "When your health reaches zero, you respawn at your last activated save point. "
+                "Enemies you have slain stay dead, but their patrols will be reinforced. Death is "
+                "a setback, not an ending.\n\n"
+                "Tip: Kite enemies one at a time when possible. Two foes are twice the trouble; "
+                "three is a grave.")},
             {"title": _("3. Skills & Hotbar"), "body": _(
-                "Press 1-6 for skills. Open Skill Tree from inventory.\n\n"
-                "Each skill has a cooldown.")},
+                "Your arsenal of abilities is bound to the hotbar\u2014quick access slots that mean "
+                "the difference between victory and defeat.\n\n"
+                "Press keys 1 through 6 to activate the skill in the corresponding hotbar slot. "
+                "Skills range from offensive spells to defensive wards to mobility tools. Each "
+                "skill has its own cooldown, shown as a dimming icon that slowly brightens as it "
+                "becomes available again.\n\n"
+                "Open the Skill Tree from your inventory screen to spend points earned through "
+                "leveling. Branches include Fire, Ice, Lightning, Nature, Shadow, and Arcane\u2014"
+                "each with its own philosophy and power.\n\n"
+                "Tip: Build synergy. A Frost Nova to freeze, then a Fireball for double impact.")},
             {"title": _("4. Inventory & Items"), "body": _(
-                "Press E. Manage equipment, consume potions, inspect gear.\n\n"
-                "Point cursor for details. Drag to rearrange.")},
+                "Your pack is your lifeline\u2014every potion, weapon, and trinket you carry may tip "
+                "the scales of fate.\n\n"
+                "Press E to open your inventory. Here you can equip weapons and armor, consume "
+                "potions by right-clicking, and inspect every item in your possession. Hover your "
+                "cursor over any item to see its detailed stats, flavor text, and sell value. Drag "
+                "items with the left mouse button to rearrange your pack or move them between your "
+                "inventory and other containers.\n\n"
+                "Equipment slots include head, chest, legs, feet, main hand, and off-hand. Unequip "
+                "items by dragging them back to your pack.\n\n"
+                "Tip: Keep at least three health potions on you at all times. The wilderness is not "
+                "merciful.")},
             {"title": _("5. Crafting & Recipes"), "body": _(
-                "Combine ingredients in the 3\u00d73 crafting grid.\n\n"
-                "The Recipe Book shows known recipes. Experiment to discover more.")},
+                "Creation is survival. From the humblest bandage to the mightiest blade, everything "
+                "must be forged.\n\n"
+                "Open your inventory and you will find a 3\u00d73 crafting grid. Place ingredients "
+                "in the correct pattern, and the result appears in the output slot. Drag it into "
+                "your pack to claim your creation.\n\n"
+                "The Recipe Book, accessible from the crafting interface, records every recipe you "
+                "have discovered. Some recipes are learned from scrolls and schematics found in the "
+                "world. Others must be discovered through bold experimentation\u2014place unfamiliar "
+                "combinations in the grid and see what emerges.\n\n"
+                "Tip: The grid is small, but the possibilities are endless. Try every combination "
+                "you can imagine.")},
             {"title": _("6. Leveling & Experience"), "body": _(
-                "Defeat enemies for XP. Level up = +20 max HP + Skill Tree point.\n\n"
-                "Branches: Fire, Ice, Lightning, Nature, Shadow, Arcane.")},
+                "Every battle fought, every enemy vanquished, every challenge overcome\u2014all of it "
+                "feeds the fire of your growth.\n\n"
+                "Defeat enemies to earn experience points (XP). Your progress is tracked in the XP "
+                "bar at the bottom of the screen. When it fills, you gain a level, which grants +20 "
+                "maximum health and one Skill Tree point to spend on new abilities or enhance "
+                "existing ones.\n\n"
+                "The Skill Tree branches into six schools of power:\n"
+                "\u2022 Fire \u2014 Raw destructive force and area denial.\n"
+                "\u2022 Ice \u2014 Crowd control and defensive fortitude.\n"
+                "\u2022 Lightning \u2014 Speed and chain damage.\n"
+                "\u2022 Nature \u2014 Summoning and sustained warfare.\n"
+                "\u2022 Shadow \u2014 Deception and high-risk, high-reward tactics.\n"
+                "\u2022 Arcane \u2014 Utility and raw magical power.\n\n"
+                "Tip: You cannot max every branch in a single playthrough. Choose your path wisely.")},
             {"title": _("7. Day & Night Cycle"), "body": _(
-                "The world follows day and night. Some enemies are more aggressive at night.\n\n"
-                "Plan your expeditions accordingly.")},
+                "The sun rises and sets in this world, and with the changing light comes shifting "
+                "danger.\n\n"
+                "The full day-night cycle spans roughly 24 minutes of real time. During the day, "
+                "visibility is high and most enemies follow predictable patrol routes. As dusk "
+                "falls, shadows lengthen and the creatures of the dark stir.\n\n"
+                "At night, many enemies become more aggressive\u2014their detection range increases, "
+                "their damage may rise, and new nocturnal foes emerge from their lairs. The undead, "
+                "in particular, grow bolder under the cover of darkness.\n\n"
+                "Tip: If you hear howling at night, find shelter or light a torch. Some horrors "
+                "only hunt in the dark.")},
             {"title": _("8. Enemies & Threat Assessment"), "body": _(
-                "Brutes: dodge charge. Venomous: bring antidotes. Arcanists: close distance.\n\n"
-                "Tricksters: predict. Bombers: stay mobile.")},
+                "The realm is teeming with threats, each with its own deadly habits. Know your "
+                "enemy before it knows you.\n\n"
+                "\u2022 Brutes \u2014 Slow but devastating. Their Charge attack covers ground "
+                "quickly. Dodge sideways, never backward. Strike after they miss.\n"
+                "\u2022 Venomous \u2014 Their poison stacks quickly. Bring antidotes to every "
+                "swamp encounter. Ranged attacks are safest.\n"
+                "\u2022 Arcanists \u2014 Deadly at range, vulnerable up close. Close the distance "
+                "and interrupt their casting.\n"
+                "\u2022 Tricksters \u2014 Unpredictable and maddening. Predict their Blink "
+                "destination and strike first.\n"
+                "\u2022 Bombers \u2014 Timed bombs with a wide blast radius. Stay mobile and "
+                "never stand still.\n"
+                "\u2022 Stalkers \u2014 They remember your position. Breaking line of sight is "
+                "not enough\u2014keep moving for three seconds.\n"
+                "\u2022 Skirmishers \u2014 Ranged harriers that orbit at a distance. Close in to "
+                "force them into melee.\n"
+                "\u2022 Guardians \u2014 Immobile sentinels. Lure them to the edge of their "
+                "leash range if you must engage.\n\n"
+                "Tip: Knowledge is armor. Study each entry in the Bestiary before venturing into "
+                "unknown territory.")},
             {"title": _("9. Respeccing & Strategy"), "body": _(
-                "Your build matters. Focus or spread for versatility.\n\n"
-                "Adapt. Improvise. Overcome.")},
+                "No path is set in stone. The wise warrior evolves with every battle.\n\n"
+                "Your Skill Tree points shape your playstyle. A focused build\u2014investing "
+                "deeply in a single school\u2014unlocks powerful tier-3 and tier-4 abilities that "
+                "a generalist cannot reach. A spread build offers flexibility, letting you adapt "
+                "to any situation with a broad toolkit.\n\n"
+                "If you find your choices no longer serve you, the respec option allows you to "
+                "reclaim all spent Skill Tree points and redistribute them. Visit the appropriate "
+                "NPC or use the respec option in the Skill Tree menu.\n\n"
+                "Tip: Respeccing is not failure. It is refinement. The best warriors adapt their "
+                "build to the challenges ahead.")},
             {"title": _("10. Final Words"), "body": _(
-                "The road ahead is long and lined with peril. You will fall. You will rise.\n\n"
+                "The road ahead is long and lined with peril. You will fall. You will rise. "
+                "You will fall again\u2014and still, you will rise.\n\n"
+                "Remember: every potion crafted, every skill unlocked, every enemy studied is "
+                "a thread in the tapestry of your legend. The world remembers what you do. "
+                "The Codex Arcanum records your discoveries. The forge awaits your hand.\n\n"
                 "Their mistakes are your lessons. Their triumphs are your inheritance.\n\n"
-                "Now go. The realm awaits.")},
+                "Now go. The realm awaits\u2014and it has never been ready for you.")},
         ]
 
     def _smeltery_pages(self):
