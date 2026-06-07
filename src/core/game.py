@@ -811,7 +811,36 @@ class Game(State):
             return
         cx, cy, spread = spawn_info
         self.peaceful_mobs = create_all_peaceful_mobs(cx, cy, spread)
+        # Validate each mob's position — don't let them spawn inside walls or
+        # on unwalkable tiles (same logic as spawn_random_enemy uses).
+        obstacles = getattr(self, 'obstacles', []) or []
+        nav_grid = getattr(self, 'nav_grid', None)
+        for mob in self.peaceful_mobs:
+            rect = mob.get_rect()
+            collides = self._check_position_collision(rect, obstacles, nav_grid)
+            if collides:
+                for _ in range(20):
+                    angle = random.uniform(0, 2 * math.pi)
+                    dist = random.uniform(30, spread * 0.9)
+                    nx = cx + math.cos(angle) * dist
+                    ny = cy + math.sin(angle) * dist
+                    test_rect = pygame.Rect(int(nx), int(ny), rect.width, rect.height)
+                    if not self._check_position_collision(test_rect, obstacles, nav_grid):
+                        mob.pos = pygame.Vector2(nx, ny)
+                        mob.spawn_pos = mob.pos.copy()
+                        break
         logger.info(f"Spawned {len(self.peaceful_mobs)} peaceful mob(s) for {self.current_map_path}")
+
+    def _check_position_collision(self, rect: pygame.Rect, obstacles: list, nav_grid) -> bool:
+        """Check if a rectangle collides with obstacles or is on an unwalkable tile."""
+        for wall in obstacles:
+            if rect.colliderect(wall):
+                return True
+        if nav_grid:
+            cell = nav_grid.world_to_cell(pygame.Vector2(rect.x, rect.y))
+            if not nav_grid.is_walkable(cell):
+                return True
+        return False
 
     def reinit_ui(self):
         self.hud = HUD(self.character, self.app, self.toggle_player_inventory, self.use_skill_slot, open_shop_callback=self.open_shop)
@@ -1650,9 +1679,9 @@ class Game(State):
         # Update summoned spirits
         self._update_spirits(dt)
 
-        # Update peaceful mobs
+        # Update peaceful mobs (now with collision-aware movement like enemies)
         for mob in self.peaceful_mobs:
-            mob.update(dt, self.character, self.enemies)
+            mob.update(dt, self.character, self.enemies, self.collision_handler, self.obstacles)
 
         self.collision_handler.check_interactions(
             self.character, self.enemies, self.items

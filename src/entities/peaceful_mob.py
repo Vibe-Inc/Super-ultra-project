@@ -338,9 +338,17 @@ class PeacefulMob:
             return True  # arrived
         self.velocity = diff.normalize()
         self.moving = True
-        self.pos += self.velocity * self.speed * dt
         self._update_facing()
         return False
+
+    def _apply_movement(self, dt: float, collision_system, obstacles: list | None):
+        """Apply velocity-based movement with collision resolution, like enemies use."""
+        if not obstacles:
+            obstacles = []
+        if self.moving and collision_system is not None:
+            collision_system.handle_movement_and_collision(self, dt, obstacles)
+        elif self.pos is not None and self.velocity.length_squared() > 0:
+            self.pos += self.velocity * self.speed * dt
 
     def _update_facing(self):
         """Update direction and flip based on velocity."""
@@ -644,7 +652,8 @@ class PeacefulMob:
     # UPDATE / DRAW
     # ----------------------------------------------------------
 
-    def update(self, dt: float, player: Character | None = None, enemies: list | None = None):
+    def update(self, dt: float, player: Character | None = None, enemies: list | None = None,
+               collision_system=None, obstacles: list | None = None):
         """
         Update the peaceful mob each frame.
 
@@ -652,6 +661,8 @@ class PeacefulMob:
             dt: Delta time in seconds.
             player: The player character (for aura and behavior).
             enemies: List of enemy entities to flee from.
+            collision_system: CollisionSystem for wall-aware movement (like enemies use).
+            obstacles: List of wall/polygon collision rectangles.
         """
         self.player_ref = player
         self.interaction_cooldown = max(0, self.interaction_cooldown - dt)
@@ -669,6 +680,8 @@ class PeacefulMob:
                 else:
                     self.moving = False
                     self.velocity = pygame.Vector2(0, 0)
+                # Apply collision-aware movement (like enemies do)
+                self._apply_movement(dt, collision_system, obstacles)
                 # skip player-driven behavior when fleeing from enemies
                 # Play animation while fleeing
                 if self.moving:
@@ -690,6 +703,9 @@ class PeacefulMob:
 
         # Behavior
         self._update_behavior(dt)
+
+        # Apply collision-aware movement after behavior sets velocity
+        self._apply_movement(dt, collision_system, obstacles)
 
         # Aura effect
         self._apply_aura(dt)
@@ -719,58 +735,17 @@ class PeacefulMob:
 
     def draw(self, screen: pygame.Surface, camera_offset: pygame.Vector2 | None = None):
         """
-        Draw the peaceful mob, its aura, particles, and floating texts.
+        Draw the peaceful mob (sprite only — no aura, name tag, or particles).
         """
         if camera_offset is None:
             camera_offset = pygame.Vector2(0, 0)
 
-        # --- Aura glow ---
-        dist_to_player = self._player_distance()
-        if dist_to_player is not None and dist_to_player < self.aura_radius * 1.5:
-            aura_surf = pygame.Surface(
-                (int(self.aura_radius * 2), int(self.aura_radius * 2)), pygame.SRCALPHA
-            )
-            # Pulsing aura
-            pulse = 1.0 + 0.1 * math.sin(pygame.time.get_ticks() * 0.003)
-            r = int(self.aura_radius * pulse)
-            color_a = (*self.aura_color[:3], 25)
-            pygame.draw.circle(aura_surf, color_a, (r, r), r)
-            color_b = (*self.aura_color[:3], 15)
-            pygame.draw.circle(aura_surf, color_b, (r, r), r + 10, 3)
-            ax = int(self.pos.x - r + self.image.get_width() // 2 - camera_offset.x)
-            ay = int(self.pos.y - r + self.image.get_height() // 2 - camera_offset.y)
-            screen.blit(aura_surf, (ax, ay), special_flags=pygame.BLEND_ALPHA_SDL2)
-
-        # --- Ground shadow ---
-        shadow_surf = pygame.Surface((40, 12), pygame.SRCALPHA)
-        shadow_cx = 20
-        shadow_color = (0, 0, 0, 40)
-        pygame.draw.ellipse(shadow_surf, shadow_color, (0, 0, 40, 12))
-        sx = int(self.pos.x + self.image.get_width() // 2 - 20 - camera_offset.x)
-        sy = int(self.pos.y + self.image.get_height() - 10 - camera_offset.y)
-        screen.blit(shadow_surf, (sx, sy))
-
-        # --- Sprite ---
         img = self.image
         if self.direction == "side" and self.flip:
             img = self.animations_flipped["side"][self.frame_index]
         draw_x = int(self.pos.x - camera_offset.x)
         draw_y = int(self.pos.y - camera_offset.y)
         screen.blit(img, (draw_x, draw_y))
-
-        # --- Name tag (when close) ---
-        if dist_to_player is not None and dist_to_player < 200:
-            name_surf = pygame.font.Font(None, 20).render(self.name, True, (220, 220, 200))
-            name_surf.set_alpha(200)
-            nx = draw_x + (self.image.get_width() - name_surf.get_width()) // 2
-            ny = draw_y - 16
-            screen.blit(name_surf, (nx, ny))
-
-        # --- Particles ---
-        self._draw_particles(screen, camera_offset)
-
-        # --- Floating texts ---
-        self._draw_floating_texts(screen, camera_offset)
 
 
 # ============================================================
