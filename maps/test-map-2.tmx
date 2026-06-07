@@ -110,6 +110,12 @@
     <property name="collidable" type="bool" value="true"/>
    </properties>
   </tile>
+  <tile id="1555">
+   <properties>
+    <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
+   </properties>
+  </tile>
   <tile id="1588">
    <properties>
     <property name="collidable" type="bool" value="true"/>
@@ -118,11 +124,13 @@
   <tile id="1589">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1590">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1591">
@@ -318,11 +326,13 @@
   <tile id="1932">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1933">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1934">
@@ -333,11 +343,13 @@
   <tile id="1947">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1948">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1951">
@@ -375,11 +387,13 @@
   <tile id="1966">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1967">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1968">
@@ -390,11 +404,13 @@
   <tile id="1981">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1982">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_sticks_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="1985">
@@ -662,36 +678,43 @@
   <tile id="3096">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3097">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3098">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3099">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3100">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3101">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3102">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3105">
@@ -737,36 +760,43 @@
   <tile id="3130">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3131">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3132">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3133">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3134">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3135">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3136">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3139">
@@ -802,26 +832,31 @@
   <tile id="3165">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3166">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3167">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3168">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3169">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3199">
@@ -832,16 +867,19 @@
   <tile id="3200">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3201">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
   <tile id="3202">
    <properties>
     <property name="collidable" type="bool" value="true"/>
+    <property name="is_stone_gatherable" type="bool" value="true"/>
    </properties>
   </tile>
  </tileset>

@@ -311,8 +311,13 @@ class Game(State):
                 },
                 "contact_damage": False,
                 "drop_chance": [
-                    {"item_id": "small_health_potion", "chance": 0.95},
-                    {"item_id": "large_health_potion", "chance": 1.0},
+                    {"item_id": "small_health_potion", "chance": 0.60},
+                    {"item_id": "large_health_potion", "chance": 0.25},
+                    {"item_id": "medium_health_potion", "chance": 0.35},
+                    {"item_id": "iron_ore", "chance": 0.30},
+                    {"item_id": "stone", "chance": 0.45},
+                    {"item_id": "leather", "chance": 0.15},
+                    {"item_id": "stick", "chance": 0.20},
                 ],
             },
             "venomous": {
@@ -334,8 +339,12 @@ class Game(State):
                 },
                 "contact_damage": False,
                 "drop_chance": [
-                    {"item_id": "small_health_potion", "chance": 0.25},
-                    {"item_id": "potion_of_confusion", "chance": 0.20},
+                    {"item_id": "small_health_potion", "chance": 0.30},
+                    {"item_id": "potion_of_confusion", "chance": 0.25},
+                    {"item_id": "potion_of_poison", "chance": 0.20},
+                    {"item_id": "potion_of_burning", "chance": 0.10},
+                    {"item_id": "fiber", "chance": 0.25},
+                    {"item_id": "leather", "chance": 0.10},
                 ],
             },
             "arcanist": {
@@ -363,7 +372,12 @@ class Game(State):
                 "drop_chance": [
                     {"item_id": "small_health_potion", "chance": 0.30},
                     {"item_id": "large_health_potion", "chance": 0.15},
-                    {"item_id": "potion_of_confusion", "chance": 0.10},
+                    {"item_id": "medium_health_potion", "chance": 0.20},
+                    {"item_id": "potion_of_confusion", "chance": 0.12},
+                    {"item_id": "potion_of_burning", "chance": 0.18},
+                    {"item_id": "potion_of_speed", "chance": 0.10},
+                    {"item_id": "string", "chance": 0.15},
+                    {"item_id": "coal", "chance": 0.10},
                 ],
             },
             "trickster": {
@@ -391,7 +405,11 @@ class Game(State):
                 "contact_damage": False,
                 "drop_chance": [
                     {"item_id": "potion_of_confusion", "chance": 0.40},
-                    {"item_id": "small_health_potion", "chance": 0.20},
+                    {"item_id": "small_health_potion", "chance": 0.25},
+                    {"item_id": "potion_of_dizziness", "chance": 0.20},
+                    {"item_id": "potion_of_speed", "chance": 0.15},
+                    {"item_id": "string", "chance": 0.18},
+                    {"item_id": "stick", "chance": 0.12},
                 ],
             },
             "bomber": {
@@ -426,6 +444,11 @@ class Game(State):
                 "drop_chance": [
                     {"item_id": "large_health_potion", "chance": 0.20},
                     {"item_id": "small_health_potion", "chance": 0.30},
+                    {"item_id": "medium_health_potion", "chance": 0.15},
+                    {"item_id": "coal", "chance": 0.25},
+                    {"item_id": "flint", "chance": 0.20},
+                    {"item_id": "stone", "chance": 0.30},
+                    {"item_id": "iron_ore", "chance": 0.10},
                 ],
             },
             "stalker": {
@@ -449,7 +472,12 @@ class Game(State):
                 },
                 "contact_damage": False,
                 "drop_chance": [
-                    {"item_id": "small_health_potion", "chance": 0.20},
+                    {"item_id": "small_health_potion", "chance": 0.25},
+                    {"item_id": "medium_health_potion", "chance": 0.12},
+                    {"item_id": "leather", "chance": 0.18},
+                    {"item_id": "stick", "chance": 0.15},
+                    {"item_id": "apple", "chance": 0.10},
+                    {"item_id": "string", "chance": 0.08},
                 ],
             },
             "skirmisher": {
@@ -475,6 +503,11 @@ class Game(State):
                 "contact_damage": False,
                 "drop_chance": [
                     {"item_id": "small_health_potion", "chance": 0.25},
+                    {"item_id": "medium_health_potion", "chance": 0.12},
+                    {"item_id": "fiber", "chance": 0.20},
+                    {"item_id": "string", "chance": 0.15},
+                    {"item_id": "leather_belt", "chance": 0.05},
+                    {"item_id": "stick", "chance": 0.10},
                 ],
             },
             "guardian": {
@@ -501,8 +534,13 @@ class Game(State):
                 },
                 "contact_damage": False,
                 "drop_chance": [
-                    {"item_id": "small_health_potion", "chance": 0.30},
-                    {"item_id": "large_health_potion", "chance": 0.10},
+                    {"item_id": "small_health_potion", "chance": 0.35},
+                    {"item_id": "large_health_potion", "chance": 0.15},
+                    {"item_id": "medium_health_potion", "chance": 0.20},
+                    {"item_id": "iron_ore", "chance": 0.20},
+                    {"item_id": "stone", "chance": 0.25},
+                    {"item_id": "iron_ring", "chance": 0.05},
+                    {"item_id": "leather_gloves", "chance": 0.04},
                 ],
             },
             "phantom": {
@@ -530,7 +568,11 @@ class Game(State):
                 "contact_damage": False,
                 "drop_chance": [
                     {"item_id": "small_health_potion", "chance": 0.25},
-                    {"item_id": "large_health_potion", "chance": 0.10},
+                    {"item_id": "large_health_potion", "chance": 0.12},
+                    {"item_id": "medium_health_potion", "chance": 0.15},
+                    {"item_id": "string", "chance": 0.18},
+                    {"item_id": "silver_ore", "chance": 0.08},
+                    {"item_id": "light_ring", "chance": 0.03},
                 ],
             },
             "titan": {
@@ -555,8 +597,13 @@ class Game(State):
                 },
                 "contact_damage": True,
                 "drop_chance": [
-                    {"item_id": "large_health_potion", "chance": 0.90},
-                    {"item_id": "small_health_potion", "chance": 1.0},
+                    {"item_id": "large_health_potion", "chance": 0.70},
+                    {"item_id": "small_health_potion", "chance": 0.90},
+                    {"item_id": "medium_health_potion", "chance": 0.50},
+                    {"item_id": "greater_health_potion", "chance": 0.15},
+                    {"item_id": "iron_ingot", "chance": 0.20},
+                    {"item_id": "iron_helmet", "chance": 0.06},
+                    {"item_id": "stone", "chance": 0.40},
                 ],
             },
             "cryomancer": {
@@ -583,7 +630,11 @@ class Game(State):
                 "contact_damage": False,
                 "drop_chance": [
                     {"item_id": "small_health_potion", "chance": 0.30},
-                    {"item_id": "large_health_potion", "chance": 0.10},
+                    {"item_id": "large_health_potion", "chance": 0.12},
+                    {"item_id": "medium_health_potion", "chance": 0.18},
+                    {"item_id": "potion_of_slow", "chance": 0.20},
+                    {"item_id": "stone", "chance": 0.22},
+                    {"item_id": "silver_ore", "chance": 0.08},
                 ],
             },
             "shadowmancer": {
@@ -617,7 +668,12 @@ class Game(State):
                 "contact_damage": False,
                 "drop_chance": [
                     {"item_id": "potion_of_confusion", "chance": 0.35},
-                    {"item_id": "small_health_potion", "chance": 0.20},
+                    {"item_id": "small_health_potion", "chance": 0.25},
+                    {"item_id": "medium_health_potion", "chance": 0.12},
+                    {"item_id": "potion_of_dizziness", "chance": 0.18},
+                    {"item_id": "potion_of_shield", "chance": 0.08},
+                    {"item_id": "string", "chance": 0.15},
+                    {"item_id": "silver_ore", "chance": 0.06},
                 ],
             },
             "revenant": {
@@ -644,8 +700,13 @@ class Game(State):
                 },
                 "contact_damage": False,
                 "drop_chance": [
-                    {"item_id": "large_health_potion", "chance": 0.25},
+                    {"item_id": "large_health_potion", "chance": 0.30},
                     {"item_id": "small_health_potion", "chance": 0.40},
+                    {"item_id": "medium_health_potion", "chance": 0.20},
+                    {"item_id": "potion_of_poison", "chance": 0.15},
+                    {"item_id": "potion_of_strength", "chance": 0.08},
+                    {"item_id": "leather", "chance": 0.18},
+                    {"item_id": "fiber", "chance": 0.12},
                 ],
             },
             "molten": {
@@ -675,6 +736,11 @@ class Game(State):
                 "drop_chance": [
                     {"item_id": "large_health_potion", "chance": 0.35},
                     {"item_id": "small_health_potion", "chance": 0.50},
+                    {"item_id": "medium_health_potion", "chance": 0.25},
+                    {"item_id": "greater_health_potion", "chance": 0.08},
+                    {"item_id": "coal", "chance": 0.35},
+                    {"item_id": "potion_of_burning", "chance": 0.15},
+                    {"item_id": "iron_ore", "chance": 0.18},
                 ],
             },
             "stormcaller": {
@@ -702,8 +768,13 @@ class Game(State):
                 },
                 "contact_damage": False,
                 "drop_chance": [
-                    {"item_id": "small_health_potion", "chance": 0.25},
-                    {"item_id": "large_health_potion", "chance": 0.10},
+                    {"item_id": "small_health_potion", "chance": 0.28},
+                    {"item_id": "large_health_potion", "chance": 0.12},
+                    {"item_id": "medium_health_potion", "chance": 0.18},
+                    {"item_id": "potion_of_haste", "chance": 0.12},
+                    {"item_id": "potion_of_dizziness", "chance": 0.10},
+                    {"item_id": "iron_ore", "chance": 0.15},
+                    {"item_id": "flint", "chance": 0.10},
                 ],
             },
             "plaguebearer": {
@@ -740,7 +811,12 @@ class Game(State):
                 "contact_damage": False,
                 "drop_chance": [
                     {"item_id": "small_health_potion", "chance": 0.30},
-                    {"item_id": "potion_of_confusion", "chance": 0.15},
+                    {"item_id": "medium_health_potion", "chance": 0.15},
+                    {"item_id": "potion_of_confusion", "chance": 0.18},
+                    {"item_id": "potion_of_poison", "chance": 0.22},
+                    {"item_id": "potion_of_lethargy", "chance": 0.12},
+                    {"item_id": "moldy_bread", "chance": 0.20},
+                    {"item_id": "fiber", "chance": 0.10},
                 ],
             },
             "chronos": {
@@ -831,6 +907,16 @@ class Game(State):
                 "boss_name": "Chronos the Chronicler of Time",
                 "drop_chance": [
                     {"item_id": "large_health_potion", "chance": 1.0},
+                    {"item_id": "ultimate_health_potion", "chance": 0.40},
+                    {"item_id": "greater_health_potion", "chance": 0.75},
+                    {"item_id": "potion_of_strength", "chance": 0.60},
+                    {"item_id": "potion_of_haste", "chance": 0.60},
+                    {"item_id": "potion_of_shield", "chance": 0.50},
+                    {"item_id": "silver_charm", "chance": 0.25},
+                    {"item_id": "steel_ring", "chance": 0.20},
+                    {"item_id": "steel_ingot", "chance": 0.35},
+                    {"item_id": "silver_ingot", "chance": 0.30},
+                    {"item_id": "elixir_of_life", "chance": 0.05},
                 ],
             },
         }
