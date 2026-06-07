@@ -138,6 +138,13 @@ class HUD:
         self._active_toast = None
         self._toast_timer = 0.0
 
+        # Achievement Popup state
+        self.achievement_popups = []
+        self.current_achievement_popup = None
+        self.achievement_popup_timer = 0.0
+        self.achievement_popup_particles = []
+        self.achievement_popup_shine = 0.0
+
         try:
             self.hp_icon = pygame.image.load("assets/ui/heart.png")
             ico = max(8,int(50 * cfg.ui_scale()))
@@ -1917,11 +1924,202 @@ class HUD:
                 tsf = self._toast_title_font.render(title, True, (255, 215, 0))
                 tsf.set_alpha(fade)
                 screen.blit(tsf, (px + 40, py + 8))
-
-                ssf = self._toast_font.render(f"Section: {section.title()}", True, (180, 160, 130))
-                ssf.set_alpha(fade)
-                screen.blit(ssf, (px + 40, py + 34))
-
                 hf = self._toast_font.render("Press ESC \u2192 Pause \u2192 Wiki to read", True, (140, 130, 120))
                 hf.set_alpha(fade)
                 screen.blit(hf, (px + 40, py + 56))
+
+        # ── Achievement Popup ──
+        try:
+            self._update_achievement_popup(dt)
+            self._draw_achievement_popup(screen)
+        except Exception as e:
+            logger.error(f"Error drawing achievement popup: {e}")
+
+    def add_achievement_popup(self, achievement):
+        self.achievement_popups.append(achievement)
+        logger.info(f"Queued achievement popup: {achievement.name}")
+
+    def _update_achievement_popup(self, dt):
+        # Update particles
+        alive_particles = []
+        for p in self.achievement_popup_particles:
+            p["x"] += p["vx"] * dt
+            p["y"] += p["vy"] * dt
+            p["vy"] += p["gravity"] * dt
+            p["life"] -= dt
+            if p["life"] > 0:
+                alive_particles.append(p)
+        self.achievement_popup_particles = alive_particles
+
+        # If no active popup, get next from queue
+        if self.current_achievement_popup is None:
+            if self.achievement_popups:
+                self.current_achievement_popup = self.achievement_popups.pop(0)
+                self.achievement_popup_timer = 5.0  # 5 seconds duration
+                self.achievement_popup_shine = -0.5 # Start sweep before card
+        else:
+            self.achievement_popup_timer -= dt
+            if self.achievement_popup_timer <= 0.0:
+                self.current_achievement_popup = None
+            else:
+                # Update shine sweep progress
+                self.achievement_popup_shine += dt * 0.9 # Speed of shine sweep
+                
+                # Spawn particles (wow effect gold dust)
+                # Only spawn particles while active and on screen
+                if self.achievement_popup_timer > 0.5 and random.random() < 0.25:
+                    sw, sh = self.app.screen.get_size()
+                    w = int(450 * cfg.ui_scale())
+                    x_center = sw // 2
+                    # Spawn along card bottom edge
+                    card_y = int(25 * cfg.ui_scale())
+                    h = int(95 * cfg.ui_scale())
+                    
+                    self.achievement_popup_particles.append({
+                        "x": random.uniform(x_center - w // 2, x_center + w // 2),
+                        "y": card_y + h,
+                        "vx": random.uniform(-30, 30),
+                        "vy": random.uniform(-40, 10),
+                        "gravity": 15,
+                        "color": random.choice([(255, 215, 0), (255, 230, 100), (255, 255, 200), (200, 160, 50)]),
+                        "size": random.uniform(1.5, 3.5),
+                        "life": random.uniform(0.6, 1.4),
+                    })
+
+    def _draw_achievement_popup(self, screen):
+        if self.current_achievement_popup is None:
+            return
+
+        sw, sh = screen.get_size()
+        scale = cfg.ui_scale()
+        
+        # Dimensions
+        w = int(460 * scale)
+        h = int(95 * scale)
+        x = (sw - w) // 2
+        
+        # Slide and spring animation
+        # Timer goes from 5.0 down to 0.0
+        # 0.0 to 0.5 is fade/slide out
+        # 4.5 to 5.0 is slide/fade in
+        elapsed = 5.0 - self.achievement_popup_timer
+        
+        alpha = 255
+        target_y = int(25 * scale)
+        start_y = -h - 10
+        
+        if elapsed < 0.6:
+            # Spring ease-out slide in
+            t = elapsed / 0.6
+            # Spring effect formula
+            c4 = (2 * math.pi) / 3
+            spring = math.pow(2, -10 * t) * math.sin((t * 10 - 0.75) * c4) + 1.0
+            y = int(start_y + (target_y - start_y) * spring)
+            alpha = int(255 * min(1.0, t * 1.5))
+        elif self.achievement_popup_timer < 0.6:
+            # Slide out
+            t = self.achievement_popup_timer / 0.6
+            y = int(start_y + (target_y - start_y) * (t * t))
+            alpha = int(255 * t)
+        else:
+            y = target_y
+            alpha = 255
+
+        # Render glassmorphic translucent popup card
+        card_surf = pygame.Surface((w, h), pygame.SRCALPHA)
+        
+        # Deep dark translucent backdrop
+        for step_y in range(h):
+            factor = step_y / h
+            # Deep purple/blue auric tint
+            r_val = int(24 * (1 - factor) + 12 * factor)
+            g_val = int(18 * (1 - factor) + 8 * factor)
+            b_val = int(36 * (1 - factor) + 18 * factor)
+            pygame.draw.line(card_surf, (r_val, g_val, b_val, 230), (0, step_y), (w, step_y))
+
+        # Rotate auric sunburst behind title
+        t_time = self.animation_time
+        sunburst_surf = pygame.Surface((w, h), pygame.SRCALPHA)
+        sun_center_x = int(60 * scale)
+        sun_center_y = h // 2
+        sun_r = int(35 * scale)
+        ray_count = 12
+        for i in range(ray_count):
+            angle = t_time * 0.5 + (math.pi * 2 * i / ray_count)
+            # Draw translucent golden rays
+            p1 = (sun_center_x, sun_center_y)
+            p2 = (sun_center_x + int(math.cos(angle - 0.1) * sun_r), sun_center_y + int(math.sin(angle - 0.1) * sun_r))
+            p3 = (sun_center_x + int(math.cos(angle + 0.1) * sun_r), sun_center_y + int(math.sin(angle + 0.1) * sun_r))
+            pygame.draw.polygon(sunburst_surf, (255, 215, 0, 24), [p1, p2, p3])
+        card_surf.blit(sunburst_surf, (0, 0))
+
+        # Card Border: Majestic double borders in gold
+        pygame.draw.rect(card_surf, (212, 175, 55, 255), (0, 0, w, h), int(2.5 * scale), border_radius=10)
+        pygame.draw.rect(card_surf, (255, 230, 130, 180), (int(2.5*scale), int(2.5*scale), w - int(5*scale), h - int(5*scale)), 1, border_radius=9)
+        
+        # Decorative Diamond corners
+        dia_sz = int(6 * scale)
+        for cx, cy in [(0, 0), (w, 0), (0, h), (w, h)]:
+            pts = [(cx, cy - dia_sz), (cx + dia_sz, cy), (cx, cy + dia_sz), (cx - dia_sz, cy)]
+            # clamp pts to card limits
+            pts = [(max(0, min(w, px)), max(0, min(h, py))) for px, py in pts]
+            pygame.draw.polygon(card_surf, (255, 215, 80, 255), pts)
+
+        # Draw Achievement Badge Icon (Golden Trophy/Star design)
+        badge_rect = pygame.Rect(sun_center_x - int(18 * scale), sun_center_y - int(18 * scale), int(36 * scale), int(36 * scale))
+        pygame.draw.circle(card_surf, (150, 110, 30, 180), badge_rect.center, badge_rect.width // 2)
+        pygame.draw.circle(card_surf, (255, 215, 0), badge_rect.center, badge_rect.width // 2, 2)
+        # Inner Star
+        star_pts = []
+        for i in range(5):
+            a_outer = i * math.pi * 2 / 5 - math.pi / 2
+            a_inner = a_outer + math.pi / 5
+            star_pts.append((badge_rect.centerx + math.cos(a_outer) * 11 * scale, badge_rect.centery + math.sin(a_outer) * 11 * scale))
+            star_pts.append((badge_rect.centerx + math.cos(a_inner) * 5 * scale, badge_rect.centery + math.sin(a_inner) * 5 * scale))
+        pygame.draw.polygon(card_surf, (255, 230, 100), star_pts)
+        
+        # Draw text labels
+        title_font = cfg.get_font(max(8, int(15 * scale)))
+        name_font = cfg.get_font(max(8, int(21 * scale)))
+        desc_font = cfg.get_font(max(7, int(16 * scale)))
+        
+        # Pulse alpha for Header
+        hdr_glow = int(190 + 65 * math.sin(t_time * 6.0))
+        hdr_surf = title_font.render("✦ ACHIEVEMENT UNLOCKED ✦", True, (hdr_glow, 200, 50))
+        card_surf.blit(hdr_surf, (int(100 * scale), int(10 * scale)))
+        
+        # Name
+        name_surf = name_font.render(self.current_achievement_popup.name, True, (255, 235, 180))
+        card_surf.blit(name_surf, (int(100 * scale), int(32 * scale)))
+        
+        # Description
+        desc_surf = desc_font.render(self.current_achievement_popup.description, True, (190, 200, 220))
+        card_surf.blit(desc_surf, (int(100 * scale), int(62 * scale)))
+
+        # ── Sweeping metallic shine effect ──
+        if 0.0 <= self.achievement_popup_shine <= 1.2:
+            shine_x = int(self.achievement_popup_shine * w)
+            shine_w = int(45 * scale)
+            shine_surf = pygame.Surface((w, h), pygame.SRCALPHA)
+            for dx in range(shine_w):
+                sa = int(140 * (1.0 - abs(dx - shine_w // 2) / (shine_w // 2)))
+                pygame.draw.line(shine_surf, (255, 255, 255, sa), (shine_x + dx - h // 2, 0), (shine_x + dx + h // 2, h), int(2 * scale))
+            card_surf.blit(shine_surf, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+
+        # Blit popup card to screen with alpha
+        if alpha < 255:
+            card_surf.set_alpha(alpha)
+        screen.blit(card_surf, (x, y))
+
+        # Draw particles relative to their screen coordinates
+        for p in self.achievement_popup_particles:
+            p_alpha = int(255 * (p["life"] / 1.0)) if p["life"] < 1.0 else 255
+            p_alpha = max(0, min(alpha, p_alpha))
+            if p_alpha > 5:
+                # Golden dust particle glow
+                g_sz = max(1, int(p["size"] * 2.5))
+                g_surf = pygame.Surface((g_sz * 2, g_sz * 2), pygame.SRCALPHA)
+                pygame.draw.circle(g_surf, (*p["color"], p_alpha // 3), (g_sz, g_sz), g_sz)
+                screen.blit(g_surf, (int(p["x"]) - g_sz, int(p["y"]) - g_sz))
+                # Particle core
+                pygame.draw.circle(screen, p["color"], (int(p["x"]), int(p["y"])), max(1, int(p["size"])))

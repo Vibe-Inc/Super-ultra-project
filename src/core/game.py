@@ -2513,6 +2513,19 @@ class Game(State):
                 self.app.INV_manager.hotbar.scroll_active_slot(event.y)
 
         if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_F7:
+                import random
+                ach_mgr = self.app.achievement_manager
+                locked_ids = [aid for aid, ach in ach_mgr.achievements.items() if not ach.unlocked]
+                if not locked_ids:
+                    for ach in ach_mgr.achievements.values():
+                        ach.unlocked = False
+                        ach.progress = 0
+                    ach_mgr.save()
+                    locked_ids = list(ach_mgr.achievements.keys())
+                if locked_ids:
+                    ach_mgr.unlock(random.choice(locked_ids))
+
             if event.key == pygame.K_ESCAPE:
                 if self.app.INV_manager.player_inventory_opened:
                     self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)

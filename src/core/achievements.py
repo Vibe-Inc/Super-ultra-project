@@ -69,8 +69,11 @@ class AchievementManager:
                 state = self.app.manager.get_state()
                 if state == "gameplay":
                     gameplay = self.app.manager.states.get("gameplay")
-                    if gameplay and hasattr(gameplay, "hud") and hasattr(gameplay.hud, "add_notification"):
-                        gameplay.hud.add_notification(f"Achievement Unlocked: {ach.name}", color=(255, 215, 0))
+                    if gameplay and hasattr(gameplay, "hud"):
+                        if hasattr(gameplay.hud, "add_achievement_popup"):
+                            gameplay.hud.add_achievement_popup(ach)
+                        elif hasattr(gameplay.hud, "add_notification"):
+                            gameplay.hud.add_notification(f"Achievement Unlocked: {ach.name}", color=(255, 215, 0))
             
             self.save()
 
