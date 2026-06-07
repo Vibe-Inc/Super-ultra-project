@@ -1743,6 +1743,8 @@ class PlaguebearerAttack(BaseAttack):
             )
 
 
+
+
 def build_attack_controller(profile: str | None, config: dict | None = None) -> BaseAttack | None:
     name = (profile or "").lower()
     if name == "brute":

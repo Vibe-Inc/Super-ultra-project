@@ -467,16 +467,7 @@ class Enemy:
         draw_pos = (int(self.pos.x - camera_offset.x), int(self.pos.y - camera_offset.y))
         screen.blit(img, draw_pos)
 
-        bar_width = 40
-        bar_height = 5
-        bar_x = self.pos.x - camera_offset.x + (85 - bar_width) // 2
-        bar_y = self.pos.y - camera_offset.y - 10
-
-        pygame.draw.rect(screen, (255, 0, 0), (bar_x, bar_y, bar_width, bar_height))
-
-        if self.max_hp > 0:
-            health_width = int(bar_width * (self.hp / self.max_hp))
-            pygame.draw.rect(screen, (0, 255, 0), (bar_x, bar_y, health_width, bar_height))
+        self.draw_hp_bar(screen, camera_offset)
 
         # Stun visual effect (spinning stars above enemy)
         if self.stun_timer > 0:
@@ -516,7 +507,6 @@ class Enemy:
                         screen, (255, 100, 80, fade // (layer + 1)),
                         (enemy_cx, enemy_cy), max(2, lr), max(1, 3 - layer))
             else:
-                # Direction: toward target_entity if available
                 if self.target_entity:
                     tdir = pygame.Vector2(self.target_entity.pos) - self.pos
                     if tdir.length_squared() > 0:
@@ -546,7 +536,6 @@ class Enemy:
             cx = int(origin.x - camera_offset.x)
             cy = int(origin.y - camera_offset.y)
 
-            # ── Wind-up phase (0.0 to 0.25): afterimage danger zone ──
             if progress < 0.25:
                 wp = progress / 0.25
                 fade = int(100 * (1.0 - wp) * wp * 4)
@@ -573,5 +562,18 @@ class Enemy:
                         rotated = pygame.transform.rotate(surf3, base_angle - 270)
                         screen.blit(rotated, rotated.get_rect(center=(cx, cy)))
 
-            # ── Strike phase: dispatch to per-enemy unique visual ──
             draw_attack_animation(screen, self, camera_offset)
+
+    def draw_hp_bar(self, screen: pygame.Surface, camera_offset=None):
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+        bar_width = 40
+        bar_height = 5
+        bar_x = self.pos.x - camera_offset.x + (85 - bar_width) // 2
+        bar_y = self.pos.y - camera_offset.y - 10
+
+        pygame.draw.rect(screen, (255, 0, 0), (bar_x, bar_y, bar_width, bar_height))
+
+        if self.max_hp > 0:
+            health_width = int(bar_width * (self.hp / self.max_hp))
+            pygame.draw.rect(screen, (0, 255, 0), (bar_x, bar_y, health_width, bar_height))

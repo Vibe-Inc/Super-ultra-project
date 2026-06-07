@@ -555,21 +555,306 @@ class GuardianBrain(BaseBrain):
         self._roam(enemy, context, guard_center, self.guard_radius * 0.5, self.roam_interval)
 
 
+class ChronosBrain(BaseBrain):
+    """
+    Phase-aware boss AI for Chronos the Chronicler of Time.
+
+    Behaviors change based on HP phase:
+      Phase 1 (100-70%): Cautious orbit at medium range, occasional melee approach.
+      Phase 2 (70-40%):  Teleport aggressively, use burst range, maintain distance.
+      Phase 3 (40-15%):  Keep far for storm/mirror, rapid repositioning, rift walks.
+      Phase 4 (15-0%):   Berserk chase, close gaps instantly, relentless pressure.
+
+    Unique behaviors:
+      - Temporal Drift: periodic sideways dash to dodge and reposition.
+      - Rift Walk: teleport behind the player to flank.
+      - Time Warp: brief speed burst to close or create distance.
+      - Phase-shift orbit: orbit radius changes with phase.
+    """
+
+    def __init__(self, config: dict | None = None):
+        super().__init__(config)
+        self.memory_duration = float(self.config.get("memory_duration", 4.0))
+        self.memory_timer = 0.0
+        self.last_seen_pos: pygame.Vector2 | None = None
+
+        self.orbit_clockwise = True
+        self.orbit_timer = 0.0
+        self.orbit_interval = float(self.config.get("orbit_interval", 2.5))
+
+        self.drift_timer = 0.0
+        self.drift_cooldown = float(self.config.get("drift_cooldown", 3.0))
+        self.drift_distance = float(self.config.get("drift_distance", 80.0))
+
+        self.rift_timer = 0.0
+        self.rift_cooldown = float(self.config.get("rift_cooldown", 5.0))
+
+        self.warp_timer = 0.0
+        self.warp_cooldown = float(self.config.get("warp_cooldown", 4.0))
+        self.warp_speed_mult = float(self.config.get("warp_speed_mult", 2.5))
+        self.warp_duration = float(self.config.get("warp_duration", 0.6))
+        self.warp_active = False
+        self.warp_remaining = 0.0
+
+        self._phase = 1
+        self._strafe_dir = 1
+
+    def _get_phase(self, enemy) -> int:
+        if hasattr(enemy, "hp") and hasattr(enemy, "max_hp") and enemy.max_hp > 0:
+            ratio = enemy.hp / enemy.max_hp
+            if ratio <= 0.15:
+                return 4
+            if ratio <= 0.40:
+                return 3
+            if ratio <= 0.70:
+                return 2
+        return 1
+
+    def _preferred_distance(self, phase: int) -> tuple[float, float]:
+        if phase == 1:
+            return 100.0, 200.0
+        if phase == 2:
+            return 120.0, 250.0
+        if phase == 3:
+            return 180.0, 320.0
+        return 60.0, 140.0
+
+    def _should_melee(self, phase: int) -> bool:
+        return phase in (1, 4)
+
+    def _try_temporal_drift(self, enemy, context, player_pos, enemy_pos):
+        if self.drift_timer > 0:
+            return False
+        diff = player_pos - enemy_pos
+        if diff.length_squared() == 0:
+            return False
+        perp = pygame.Vector2(-diff.y, diff.x).normalize()
+        if random.random() < 0.5:
+            perp = -perp
+        drift_target = enemy.pos + perp * self.drift_distance
+        if context.nav_grid:
+            drift_target = context.nav_grid.clamp_world(drift_target)
+        enemy.pos = drift_target
+        enemy.ai_state = "blink"
+        self.drift_timer = self.drift_cooldown
+        if hasattr(enemy, "trigger_attack_anim"):
+            enemy.trigger_attack_anim(
+                "chronos_rift", 0.3,
+                direction=perp, origin=enemy_pos, strength=0.8,
+            )
+        return True
+
+    def _try_rift_walk(self, enemy, context, player_pos, enemy_pos):
+        if self.rift_timer > 0:
+            return False
+        diff = player_pos - enemy_pos
+        if diff.length_squared() == 0:
+            return False
+        direction = diff.normalize()
+        behind_player = player_pos + direction * -60.0
+        if context.nav_grid:
+            behind_player = context.nav_grid.clamp_world(behind_player)
+        old_pos = pygame.Vector2(enemy.pos)
+        enemy.pos = behind_player
+        enemy.ai_state = "blink"
+        self.rift_timer = self.rift_cooldown
+        if hasattr(enemy, "trigger_attack_anim"):
+            enemy.trigger_attack_anim(
+                "chronos_rift", 0.4,
+                direction=direction, origin=old_pos, strength=1.2,
+            )
+        return True
+
+    def _try_warp(self, enemy, context, dt):
+        if self.warp_active:
+            self.warp_remaining -= dt
+            if self.warp_remaining <= 0:
+                self.warp_active = False
+                enemy.speed_multiplier = 1.0
+            else:
+                enemy.speed_multiplier = self.warp_speed_mult
+            return
+        if self.warp_timer > 0:
+            return
+        self.warp_active = True
+        self.warp_remaining = self.warp_duration
+        self.warp_timer = self.warp_cooldown
+        enemy.speed_multiplier = self.warp_speed_mult
+
+    def update(self, enemy: object, context: AIContext):
+        player = context.player
+        if player is None:
+            enemy.ai_state = "idle"
+            enemy.target = None
+            self._clear_path()
+            return
+
+        self._phase = self._get_phase(enemy)
+        enemy_pos = _entity_center(enemy)
+        player_pos = _entity_center(player)
+        diff = player_pos - enemy_pos
+        distance_sq = diff.length_squared()
+
+        self.drift_timer = max(0.0, self.drift_timer - context.dt)
+        self.rift_timer = max(0.0, self.rift_timer - context.dt)
+        self.warp_timer = max(0.0, self.warp_timer - context.dt)
+        self.orbit_timer -= context.dt
+
+        if self.warp_active:
+            self._try_warp(enemy, context, context.dt)
+
+        pref_min, pref_max = self._preferred_distance(self._phase)
+
+        # Phase 4: berserk — always chase and try to rift walk behind
+        if self._phase >= 4:
+            ac = getattr(enemy, "attack_controller", None)
+            if ac and hasattr(ac, "enrage_speed_mult"):
+                enemy.speed_multiplier = ac.enrage_speed_mult * 1.3
+            else:
+                enemy.speed_multiplier = 2.0
+            if distance_sq > (pref_max * pref_max):
+                if self._try_rift_walk(enemy, context, player_pos, enemy_pos):
+                    return
+                self._move_to(enemy, context, player_pos)
+                enemy.ai_state = "chase"
+                return
+            if distance_sq <= (pref_min * pref_min):
+                if self._try_temporal_drift(enemy, context, player_pos, enemy_pos):
+                    return
+            self._move_to(enemy, context, player_pos)
+            enemy.ai_state = "chase"
+            return
+
+        # Phase 3: keep distance, use rift and drift frequently
+        if self._phase >= 3:
+            if distance_sq < (pref_min * pref_min):
+                if self._try_rift_walk(enemy, context, player_pos, enemy_pos):
+                    return
+                if self._try_temporal_drift(enemy, context, player_pos, enemy_pos):
+                    return
+                away = (enemy_pos - player_pos)
+                if away.length_squared() > 0:
+                    away = away.normalize()
+                retreat_target = enemy_pos + away * pref_min
+                self._move_to(enemy, context, retreat_target)
+                enemy.ai_state = "retreat"
+                return
+            if distance_sq > (pref_max * pref_max):
+                self._try_warp(enemy, context, context.dt)
+                self._move_to(enemy, context, player_pos)
+                enemy.ai_state = "chase"
+                return
+            # Orbit at preferred range
+            enemy.ai_state = "orbit"
+            if self.orbit_timer <= 0:
+                self.orbit_timer = self.orbit_interval
+                self.orbit_clockwise = random.choice([True, False])
+            direction = diff
+            if direction.length_squared() == 0:
+                direction = pygame.Vector2(1, 0)
+            tangent = pygame.Vector2(-direction.y, direction.x)
+            if not self.orbit_clockwise:
+                tangent = -tangent
+            tangent = tangent.normalize()
+            orbit_radius = (pref_min + pref_max) * 0.5
+            target = player_pos + tangent * orbit_radius
+            self._move_to(enemy, context, target)
+            # Occasionally drift for unpredictability
+            if random.random() < 0.02:
+                self._try_temporal_drift(enemy, context, player_pos, enemy_pos)
+            return
+
+        # Phase 2: mix of orbit and approach
+        if self._phase >= 2:
+            if distance_sq < (pref_min * pref_min):
+                if random.random() < 0.4 and self._try_temporal_drift(enemy, context, player_pos, enemy_pos):
+                    return
+                away = (enemy_pos - player_pos)
+                if away.length_squared() > 0:
+                    away = away.normalize()
+                retreat_target = enemy_pos + away * pref_min
+                self._move_to(enemy, context, retreat_target)
+                enemy.ai_state = "retreat"
+                return
+            if distance_sq > (pref_max * pref_max):
+                self._try_warp(enemy, context, context.dt)
+                self._move_to(enemy, context, player_pos)
+                enemy.ai_state = "chase"
+                return
+            enemy.ai_state = "orbit"
+            if self.orbit_timer <= 0:
+                self.orbit_timer = self.orbit_interval
+                self.orbit_clockwise = random.choice([True, False])
+            direction = diff
+            if direction.length_squared() == 0:
+                direction = pygame.Vector2(1, 0)
+            tangent = pygame.Vector2(-direction.y, direction.x)
+            if not self.orbit_clockwise:
+                tangent = -tangent
+            tangent = tangent.normalize()
+            orbit_radius = (pref_min + pref_max) * 0.5
+            target = player_pos + tangent * orbit_radius
+            self._move_to(enemy, context, target)
+            return
+
+        # Phase 1: cautious, orbit, occasional melee approach
+        if self._should_melee(self._phase) and distance_sq <= (enemy.attack_range * enemy.attack_range):
+            enemy.ai_state = "attack"
+            self._move_to(enemy, context, player_pos)
+            return
+
+        if distance_sq < (pref_min * pref_min):
+            away = (enemy_pos - player_pos)
+            if away.length_squared() > 0:
+                away = away.normalize()
+            retreat_target = enemy_pos + away * pref_min
+            self._move_to(enemy, context, retreat_target)
+            enemy.ai_state = "retreat"
+            return
+
+        if distance_sq > (enemy.detection_range * enemy.detection_range):
+            self.memory_timer = self.memory_duration
+            self.last_seen_pos = pygame.Vector2(player_pos)
+            enemy.ai_state = "chase"
+            self._move_to(enemy, context, player_pos)
+            return
+
+        self.memory_timer = self.memory_duration
+        self.last_seen_pos = pygame.Vector2(player_pos)
+        enemy.ai_state = "orbit"
+        if self.orbit_timer <= 0:
+            self.orbit_timer = self.orbit_interval
+            self.orbit_clockwise = random.choice([True, False])
+
+        direction = diff
+        if direction.length_squared() == 0:
+            direction = pygame.Vector2(1, 0)
+        tangent = pygame.Vector2(-direction.y, direction.x)
+        if not self.orbit_clockwise:
+            tangent = -tangent
+        tangent = tangent.normalize()
+        orbit_radius = (pref_min + pref_max) * 0.5
+        target = player_pos + tangent * orbit_radius
+        self._move_to(enemy, context, target)
+
+
 def build_brain(profile: str | None, config: dict | None = None) -> BaseBrain:
     """Factory function that returns the appropriate AI brain for a profile name.
 
     Args:
         profile (str | None): The AI profile name (e.g. ``"stalker"``, ``"skirmisher"``,
-                               ``"guardian"``). Defaults to ``"stalker"`` when None.
+                               or ``"guardian"``). Defaults to ``"stalker"`` when None.
         config (dict | None): Optional configuration dictionary passed to the brain.
 
     Returns:
         BaseBrain: An instance of the matching brain class (StalkerBrain, SkirmisherBrain,
-                   or GuardianBrain).
+                   GuardianBrain, or ChronosBrain).
     """
     name = (profile or "stalker").lower()
     if name == "skirmisher":
         return SkirmisherBrain(config)
     if name == "guardian":
         return GuardianBrain(config)
+    if name == "chronos":
+        return ChronosBrain(config)
     return StalkerBrain(config)
