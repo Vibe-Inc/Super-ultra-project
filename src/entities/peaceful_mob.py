@@ -3,7 +3,6 @@ Peaceful majestic mobs that roam the world, adding ambient life and wonder.
 
 These creatures are non-aggressive and feature unique behaviors:
   - Wandering / idling with gentle animations
-  - Passive aura effects (healing, speed boost, mana regen, etc.)
   - React to the player's proximity (curiosity, shyness, following)
   - Unique movement patterns per species
 
@@ -38,16 +37,11 @@ PEACEFUL_MOB_REGISTRY: dict[str, dict] = {
         "speed": 25,
         "animation_size": (80, 90),
         "animation_speed": 3,
-        "aura_color": (140, 200, 100),
-        "aura_radius": 110.0,
-        "aura_effect": "stamina_regen",
-        "aura_magnitude": 3.0,
         "curiosity_range": 180.0,
         "shyness_range": 60.0,
         "wander_radius": 150.0,
         "wander_pause": 5.0,
         "idle_behavior": "sway",
-        "xp_reward": 0,
     },
     "singing_stone": {
         "name": "Singing Stone",
@@ -56,16 +50,11 @@ PEACEFUL_MOB_REGISTRY: dict[str, dict] = {
         "speed": 15,
         "animation_size": (72, 80),
         "animation_speed": 2,
-        "aura_color": (200, 220, 160),
-        "aura_radius": 100.0,
-        "aura_effect": "xp_bonus",
-        "aura_magnitude": 0.15,
         "curiosity_range": 150.0,
         "shyness_range": 40.0,
         "wander_radius": 80.0,
         "wander_pause": 6.0,
         "idle_behavior": "hum",
-        "xp_reward": 0,
     },
     "ember_phoenix": {
         "name": "Ember Phoenix",
@@ -74,16 +63,11 @@ PEACEFUL_MOB_REGISTRY: dict[str, dict] = {
         "speed": 50,
         "animation_size": (84, 90),
         "animation_speed": 6,
-        "aura_color": (255, 180, 100),
-        "aura_radius": 120.0,
-        "aura_effect": "heal",
-        "aura_magnitude": 2.0,
         "curiosity_range": 250.0,
         "shyness_range": 90.0,
         "wander_radius": 220.0,
         "wander_pause": 3.0,
         "idle_behavior": "hover",
-        "xp_reward": 0,
     },
     "coral_golem": {
         "name": "Coral Golem",
@@ -92,16 +76,11 @@ PEACEFUL_MOB_REGISTRY: dict[str, dict] = {
         "speed": 18,
         "animation_size": (76, 80),
         "animation_speed": 2,
-        "aura_color": (220, 140, 160),
-        "aura_radius": 100.0,
-        "aura_effect": "stamina_regen",
-        "aura_magnitude": 4.0,
         "curiosity_range": 160.0,
         "shyness_range": 50.0,
         "wander_radius": 90.0,
         "wander_pause": 5.5,
         "idle_behavior": "hum",
-        "xp_reward": 0,
     },
     "void_butterfly": {
         "name": "Void Butterfly",
@@ -110,16 +89,11 @@ PEACEFUL_MOB_REGISTRY: dict[str, dict] = {
         "speed": 30,
         "animation_size": (92, 84),
         "animation_speed": 4,
-        "aura_color": (150, 120, 220),
-        "aura_radius": 130.0,
-        "aura_effect": "mana_regen",
-        "aura_magnitude": 2.5,
         "curiosity_range": 280.0,
         "shyness_range": 120.0,
         "wander_radius": 200.0,
         "wander_pause": 4.0,
         "idle_behavior": "flutter",
-        "xp_reward": 0,
     },
     "moss_rabbit": {
         "name": "Moss Rabbit",
@@ -128,16 +102,11 @@ PEACEFUL_MOB_REGISTRY: dict[str, dict] = {
         "speed": 65,
         "animation_size": (72, 68),
         "animation_speed": 8,
-        "aura_color": (130, 200, 130),
-        "aura_radius": 95.0,
-        "aura_effect": "heal",
-        "aura_magnitude": 1.0,
         "curiosity_range": 260.0,
         "shyness_range": 110.0,
         "wander_radius": 300.0,
         "wander_pause": 2.0,
         "idle_behavior": "flutter",
-        "xp_reward": 0,
     },
     "crystal_fox": {
         "name": "Crystal Fox",
@@ -146,16 +115,11 @@ PEACEFUL_MOB_REGISTRY: dict[str, dict] = {
         "speed": 55,
         "animation_size": (80, 78),
         "animation_speed": 6,
-        "aura_color": (160, 200, 255),
-        "aura_radius": 110.0,
-        "aura_effect": "speed_boost",
-        "aura_magnitude": 0.15,
         "curiosity_range": 240.0,
         "shyness_range": 90.0,
         "wander_radius": 260.0,
         "wander_pause": 2.8,
         "idle_behavior": "prowl",
-        "xp_reward": 0,
     },
     "fairy_cat": {
         "name": "Fairy Cat",
@@ -164,16 +128,11 @@ PEACEFUL_MOB_REGISTRY: dict[str, dict] = {
         "speed": 58,
         "animation_size": (78, 80),
         "animation_speed": 7,
-        "aura_color": (220, 180, 255),
-        "aura_radius": 115.0,
-        "aura_effect": "stamina_regen",
-        "aura_magnitude": 3.5,
         "curiosity_range": 250.0,
         "shyness_range": 95.0,
         "wander_radius": 270.0,
         "wander_pause": 2.2,
         "idle_behavior": "prowl",
-        "xp_reward": 0,
     },
 
 }
@@ -191,7 +150,6 @@ class PeacefulMob:
       - Wander between random points within a radius of its spawn.
       - Idle with species-specific animations (hover, graze, float, etc.).
       - React to the player: curiosity (approach), shyness (retreat).
-      - Emit a passive aura that provides a beneficial effect to the player.
 
     Attributes:
         mob_type (str): Registry key identifying this mob's species.
@@ -199,7 +157,7 @@ class PeacefulMob:
         pos (pygame.Vector2): World position.
         spawn_pos (pygame.Vector2): Original spawn position.
         speed (float): Movement speed in px/s.
-        hp (int): Current HP (effectively infinite for peaceful mobs).
+        hp (int): Current HP.
         max_hp (int): Maximum HP.
         animations (dict): Animation frames by direction.
         animations_flipped (dict): Flipped side frames.
@@ -210,10 +168,6 @@ class PeacefulMob:
         time_accumulator (float): Frame timing.
         flip (bool): Horizontal flip.
         moving (bool): Whether currently moving.
-        aura_color (tuple): RGB color for the aura glow.
-        aura_radius (float): Radius of the passive aura.
-        aura_effect (str): Type of passive effect.
-        aura_magnitude (float): Strength of the passive effect.
         curiosity_range (float): Distance at which mob notices player.
         shyness_range (float): Distance at which mob retreats.
         wander_radius (float): Max distance from spawn to wander.
@@ -223,8 +177,6 @@ class PeacefulMob:
         idle_behavior (str): Species-specific idle animation key.
         mood (str): Current behavioral mood: "idle", "wander", "curious", "shy".
         player_ref (Character | None): Reference to nearby player.
-        particles (list): Ambient particle effects.
-        _aura_timer (float): Timer for aura effect ticks.
     """
 
     def __init__(
@@ -275,12 +227,6 @@ class PeacefulMob:
         self.moving = False
         self._animation_size = anim_size
 
-        # Aura / passive effect
-        self.aura_color = config["aura_color"]
-        self.aura_radius = config["aura_radius"]
-        self.aura_effect = config["aura_effect"]
-        self.aura_magnitude = config["aura_magnitude"]
-
         # Behavior parameters
         self.curiosity_range = config["curiosity_range"]
         self.shyness_range = config["shyness_range"]
@@ -294,12 +240,6 @@ class PeacefulMob:
         self.wander_timer: float = 0.0
         self.idle_timer: float = 0.0
         self.player_ref: Character | None = None
-
-        # Aura effect accumulator
-        self._aura_timer: float = 0.0
-
-        # Ambient particles
-        self.particles: list[dict] = []
 
         # Floating texts
         self.floating_texts: list[dict] = []
@@ -479,131 +419,8 @@ class PeacefulMob:
         return best
 
     # ----------------------------------------------------------
-    # AURA EFFECT
+    # FLOATING TEXT
     # ----------------------------------------------------------
-
-    def _apply_aura(self, dt: float):
-        """Apply the passive aura effect to the nearby player."""
-        if self.player_ref is None:
-            return
-        dist = self._player_distance()
-        if dist is None or dist > self.aura_radius:
-            return
-
-        self._aura_timer += dt
-        if self._aura_timer < 1.0:
-            return
-        self._aura_timer -= 1.0
-
-        player = self.player_ref
-        effect = self.aura_effect
-        magnitude = self.aura_magnitude
-
-        if effect == "heal":
-            if hasattr(player, "hp") and hasattr(player, "max_hp"):
-                if player.hp < player.max_hp:
-                    player.heal(int(magnitude))
-                    self._spawn_floating_text(f"+{int(magnitude)}", (200, 255, 150))
-
-        elif effect == "mana_regen":
-            if hasattr(player, "restore_mana"):
-                player.restore_mana(magnitude)
-                self._spawn_floating_text(f"+{magnitude:.1f} mana", (150, 180, 255))
-
-        elif effect == "stamina_regen":
-            if hasattr(player, "restore_stamina"):
-                player.restore_stamina(magnitude)
-                self._spawn_floating_text(f"+{magnitude:.1f} stam", (180, 220, 140))
-
-        elif effect == "shield":
-            if hasattr(player, "shield"):
-                player.shield = min(player.shield + magnitude, player.max_hp * 0.5)
-                self._spawn_floating_text(f"+{magnitude:.1f} shield", (160, 220, 255))
-
-        elif effect == "speed_boost":
-            if hasattr(player, "speed_multiplier"):
-                current = player.speed_multiplier
-                target = 1.0 + magnitude
-                # Smoothly approach the boost value
-                if current < target:
-                    player.speed_multiplier = min(current + 0.01, target)
-
-        elif effect == "cooldown_reduce":
-            if hasattr(player, "cooldown_multiplier"):
-                target = 1.0 - magnitude
-                if player.cooldown_multiplier > target:
-                    player.cooldown_multiplier = max(target, player.cooldown_multiplier - 0.005)
-
-        elif effect == "damage_boost":
-            if hasattr(player, "damage_bonus"):
-                if player.damage_bonus < magnitude:
-                    player.damage_bonus += 0.1
-
-        elif effect == "xp_bonus":
-            pass  # Applied at XP gain time via a flag check
-
-    def _remove_aura_on_leave(self):
-        """Remove ongoing aura effects when the player leaves range."""
-        if self.player_ref is None:
-            return
-        dist = self._player_distance()
-        if dist is None or dist > self.aura_radius * 1.5:
-            player = self.player_ref
-            if self.aura_effect == "speed_boost" and hasattr(player, "speed_multiplier"):
-                if player.speed_multiplier > 1.0:
-                    player.speed_multiplier = max(1.0, player.speed_multiplier - 0.02)
-            elif self.aura_effect == "cooldown_reduce" and hasattr(player, "cooldown_multiplier"):
-                if player.cooldown_multiplier < 1.0:
-                    player.cooldown_multiplier = min(1.0, player.cooldown_multiplier + 0.01)
-            elif self.aura_effect == "damage_boost" and hasattr(player, "damage_bonus"):
-                if player.damage_bonus > 0:
-                    player.damage_bonus = max(0, player.damage_bonus - 0.1)
-
-    # ----------------------------------------------------------
-    # PARTICLES
-    # ----------------------------------------------------------
-
-    def _spawn_ambient_particles(self, dt: float):
-        """Spawn ambient particles based on mob type."""
-        if random.random() > dt * 2:
-            return
-        angle = random.uniform(0, 2 * math.pi)
-        dist = random.uniform(10, self.aura_radius * 0.6)
-        px = self.pos.x + math.cos(angle) * dist
-        py = self.pos.y + math.sin(angle) * dist
-        self.particles.append({
-            "x": px, "y": py,
-            "vx": random.uniform(-5, 5),
-            "vy": random.uniform(-15, -5),
-            "life": random.uniform(1.0, 2.5),
-            "max_life": 2.5,
-            "color": self.aura_color,
-            "size": random.uniform(1.5, 3.5),
-        })
-
-    def _update_particles(self, dt: float):
-        """Update ambient particles."""
-        for p in self.particles[:]:
-            p["x"] += p["vx"] * dt
-            p["y"] += p["vy"] * dt
-            p["life"] -= dt
-            if p["life"] <= 0:
-                self.particles.remove(p)
-
-    def _draw_particles(self, screen: pygame.Surface, cam: pygame.Vector2):
-        """Draw ambient particles."""
-        for p in self.particles:
-            alpha = max(0, min(255, int(255 * (p["life"] / p["max_life"]))))
-            sx = int(p["x"] - cam.x)
-            sy = int(p["y"] - cam.y)
-            r = max(1, int(p["size"] * (p["life"] / p["max_life"])))
-            color = (*p["color"][:3], alpha)
-            if len(color) == 4 and color[3] < 255:
-                overlay = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
-                pygame.draw.circle(overlay, color, (r, r), r)
-                screen.blit(overlay, (sx - r, sy - r), special_flags=pygame.BLEND_ALPHA_SDL2)
-            else:
-                pygame.draw.circle(screen, p["color"], (sx, sy), r)
 
     # ----------------------------------------------------------
     # FLOATING TEXT
@@ -683,7 +500,7 @@ class PeacefulMob:
 
         Args:
             dt: Delta time in seconds.
-            player: The player character (for aura and behavior).
+            player: The player character (for behavior).
             enemies: List of enemy entities to flee from.
             collision_system: CollisionSystem for wall-aware movement (like enemies use).
             obstacles: List of wall/polygon collision rectangles.
@@ -721,8 +538,6 @@ class PeacefulMob:
                         self.time_accumulator = 0
                         self.frame_index = (self.frame_index + 1) % len(self.animations[self.direction])
                     self.image = self.animations[self.direction][self.frame_index]
-                self._spawn_ambient_particles(dt)
-                self._update_particles(dt)
                 self._update_floating_texts(dt)
                 return
 
@@ -731,10 +546,6 @@ class PeacefulMob:
 
         # Apply collision-aware movement after behavior sets velocity
         self._apply_movement(dt, collision_system, obstacles)
-
-        # Aura effect
-        self._apply_aura(dt)
-        self._remove_aura_on_leave()
 
         # Animation
         if self.moving:
@@ -750,10 +561,6 @@ class PeacefulMob:
                 self.time_accumulator = 0
                 self.frame_index = (self.frame_index + 1) % len(self.animations[self.direction])
             self.image = self.animations[self.direction][self.frame_index]
-
-        # Particles
-        self._spawn_ambient_particles(dt)
-        self._update_particles(dt)
 
         # Floating texts
         self._update_floating_texts(dt)
