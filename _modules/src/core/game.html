@@ -1247,6 +1247,9 @@
             <span class="n">is_merchant</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">gender</span><span class="o">=</span><span class="s1">&#39;female&#39;</span><span class="p">,</span>
         <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fishing_npc</span><span class="o">.</span><span class="n">image</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;assets/characters/fisherman.png&quot;</span><span class="p">),</span> <span class="p">(</span><span class="mi">85</span><span class="p">,</span> <span class="mi">110</span><span class="p">)</span>
+        <span class="p">)</span>
 
         <span class="c1"># Clamp fishing NPC to map bounds</span>
         <span class="k">try</span><span class="p">:</span>
