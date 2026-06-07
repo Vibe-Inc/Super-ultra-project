@@ -1484,6 +1484,55 @@ class Game(State):
         if placed == 0:
             logger.debug(f"Enemy '{getattr(enemy, 'ai_profile', 'unknown')}' had drop_chance entries but none rolled.")
 
+    def _get_drop_chance_for_peaceful_mob(self, mob: PeacefulMob) -> list[dict]:
+        from src.entities.peaceful_mob import PEACEFUL_MOB_REGISTRY
+        if mob is None:
+            return []
+        config = PEACEFUL_MOB_REGISTRY.get(mob.mob_type, {})
+        return config.get("drop_chance", []) or []
+
+    def _drop_peaceful_mob_loot(self, mob: PeacefulMob) -> None:
+        from src.entities.dropped_item import DroppedItem
+        from src.items.items import create_item
+
+        drop_entries = self._get_drop_chance_for_peaceful_mob(mob)
+        if not drop_entries:
+            return
+
+        base_x, base_y = mob.get_rect().center
+
+        placed = 0
+        for entry in drop_entries:
+            if not isinstance(entry, dict):
+                continue
+            item_id = entry.get("item_id")
+            if not item_id:
+                continue
+            chance = float(entry.get("chance", 0.0))
+            if chance <= 0.0:
+                continue
+            if random.random() > chance:
+                continue
+            amount = int(entry.get("amount", 1))
+            if amount <= 0:
+                amount = 1
+
+            item_obj = create_item(item_id)
+            if item_obj is None:
+                logger.warning(f"Peaceful mob drop skipped: could not create item '{item_id}'")
+                continue
+
+            spread = 18
+            offset_x = random.randint(-spread, spread)
+            offset_y = random.randint(-spread // 2, spread // 2)
+            drop = DroppedItem(base_x + offset_x, base_y + offset_y, item_obj, amount)
+            self.items.append(drop)
+            placed += 1
+            logger.info(
+                f"Peaceful mob '{mob.mob_type}' dropped "
+                f"{amount}x {item_id} at ({base_x + offset_x}, {base_y + offset_y})"
+            )
+
     def update(self, dt):
         tr = self.app.article_tracker
 
@@ -1755,10 +1804,10 @@ class Game(State):
 
                 self.enemies.remove(enemy)
 
-        # Remove dead peaceful mobs (no loot/XP — just despawn)
+        # Remove dead peaceful mobs (drop loot, then despawn)
         for mob in self.peaceful_mobs[:]:
             if mob.is_dead():
-                logger.info(f"Peaceful mob {mob.name} defeated and removed")
+                self._drop_peaceful_mob_loot(mob)
                 self.peaceful_mobs.remove(mob)
 
         self.npc.update(self.character.pos)

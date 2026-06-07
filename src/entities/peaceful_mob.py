@@ -42,6 +42,7 @@ PEACEFUL_MOB_REGISTRY: dict[str, dict] = {
         "wander_radius": 150.0,
         "wander_pause": 5.0,
         "idle_behavior": "sway",
+        "drop_chance": [{"item_id": "stick", "chance": 0.5}],
     },
     "singing_stone": {
         "name": "Singing Stone",
@@ -55,6 +56,7 @@ PEACEFUL_MOB_REGISTRY: dict[str, dict] = {
         "wander_radius": 80.0,
         "wander_pause": 6.0,
         "idle_behavior": "hum",
+        "drop_chance": [{"item_id": "stone", "chance": 0.5}],
     },
     "ember_phoenix": {
         "name": "Ember Phoenix",
@@ -68,6 +70,7 @@ PEACEFUL_MOB_REGISTRY: dict[str, dict] = {
         "wander_radius": 220.0,
         "wander_pause": 3.0,
         "idle_behavior": "hover",
+        "drop_chance": [{"item_id": "potion_of_shield", "chance": 0.3}],
     },
     "coral_golem": {
         "name": "Coral Golem",
@@ -94,6 +97,7 @@ PEACEFUL_MOB_REGISTRY: dict[str, dict] = {
         "wander_radius": 200.0,
         "wander_pause": 4.0,
         "idle_behavior": "flutter",
+        "drop_chance": [{"item_id": "coal", "chance": 0.5}],
     },
     "moss_rabbit": {
         "name": "Moss Rabbit",
@@ -107,6 +111,7 @@ PEACEFUL_MOB_REGISTRY: dict[str, dict] = {
         "wander_radius": 300.0,
         "wander_pause": 2.0,
         "idle_behavior": "flutter",
+        "drop_chance": [{"item_id": "moldy_bread", "chance": 0.5}],
     },
     "crystal_fox": {
         "name": "Crystal Fox",
