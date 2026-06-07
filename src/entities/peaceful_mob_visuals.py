@@ -19,81 +19,6 @@ import pygame
 # ============================================================
 def _palette_for(style: str) -> dict:
     palettes = {
-        "starwhale": {
-            # deep celestial body
-            "skin": (30, 40, 90), "skin_light": (60, 80, 160), "skin_dark": (15, 20, 50),
-            "skin_mid": (45, 60, 130),
-            # luminous belly plates
-            "belly": (120, 160, 240), "belly_light": (170, 200, 255), "belly_dark": (70, 100, 180),
-            # star markings
-            "star": (255, 240, 180), "star_bright": (255, 255, 240),
-            "star_dim": (200, 190, 140),
-            # fins / flukes
-            "fin": (40, 60, 140), "fin_light": (80, 110, 200), "fin_dark": (20, 30, 80),
-            "fin_accent": (100, 140, 255, 120),
-            # eye
-            "eye_white": (200, 220, 255), "eye_pupil": (255, 230, 120),
-            "eye_glow": (180, 200, 255, 80),
-            # trailing stardust
-            "dust": (200, 220, 255, 90), "dust_bright": (255, 250, 220, 120),
-            "shadow": (0, 0, 0, 40),
-        },
-        "luminous_deer": {
-            # fur base
-            "fur": (180, 150, 100), "fur_light": (220, 195, 145), "fur_dark": (120, 95, 60),
-            "fur_mid": (200, 175, 125),
-            # luminous glow
-            "glow": (180, 220, 140, 70), "glow_bright": (220, 255, 180, 100),
-            "glow_core": (240, 255, 200),
-            # antlers (crystal light)
-            "antler": (200, 230, 180), "antler_light": (230, 255, 210),
-            "antler_dark": (140, 170, 120), "antler_glow": (200, 255, 160, 100),
-            # eyes
-            "eye_white": (240, 255, 220), "eye_pupil": (60, 80, 30),
-            "eye_ring": (180, 220, 140),
-            # hooves
-            "hoof": (80, 60, 40), "hoof_light": (120, 95, 65),
-            # spots / markings
-            "spot": (220, 240, 180, 80),
-            "shadow": (0, 0, 0, 40),
-        },
-        "crystal_serpent": {
-            # crystal body segments
-            "crystal": (100, 180, 220), "crystal_light": (160, 220, 255),
-            "crystal_dark": (50, 110, 160), "crystal_mid": (130, 200, 240),
-            # inner glow
-            "glow": (180, 230, 255, 80), "glow_bright": (220, 255, 255, 120),
-            "glow_core": (240, 255, 255),
-            # facets / prism highlights
-            "facet": (200, 240, 255, 100), "facet_bright": (255, 255, 255, 140),
-            # belly / underside
-            "belly": (140, 200, 230), "belly_light": (180, 225, 250),
-            # eyes
-            "eye_white": (220, 245, 255), "eye_pupil": (40, 120, 180),
-            "eye_glow": (150, 220, 255, 90),
-            # crystal spines
-            "spine": (170, 220, 250), "spine_light": (210, 245, 255),
-            "shadow": (0, 0, 0, 40),
-        },
-        "aurora_moth": {
-            # body
-            "body": (60, 50, 80), "body_light": (90, 80, 120),
-            "body_dark": (35, 28, 50), "body_mid": (75, 65, 100),
-            # wing colors (aurora gradient)
-            "wing_top": (40, 180, 120), "wing_mid": (80, 140, 220),
-            "wing_bot": (180, 60, 200), "wing_edge": (30, 120, 100),
-            "wing_shimmer": (120, 220, 180, 100),
-            # wing patterns
-            "wing_eye": (200, 255, 180), "wing_eye_dark": (80, 160, 100),
-            "wing_spot": (255, 200, 140, 80),
-            # antennae
-            "antenna": (80, 70, 100), "antenna_tip": (180, 255, 200),
-            # eye
-            "eye_white": (220, 240, 200), "eye_pupil": (30, 20, 40),
-            # dust / scales
-            "dust": (150, 220, 180, 60), "dust_bright": (200, 255, 220, 80),
-            "shadow": (0, 0, 0, 40),
-        },
         "grove_titan": {
             # bark / wood body
             "bark": (90, 70, 45), "bark_light": (130, 105, 70),
@@ -113,40 +38,6 @@ def _palette_for(style: str) -> dict:
             "root": (70, 50, 30), "root_light": (100, 75, 50),
             "shadow": (0, 0, 0, 40),
         },
-        "moon_jelly": {
-            # bell / dome
-            "bell": (140, 160, 220, 160), "bell_light": (180, 200, 255, 180),
-            "bell_dark": (80, 100, 170, 140), "bell_edge": (100, 130, 200, 120),
-            # inner glow
-            "glow": (180, 200, 255, 60), "glow_bright": (220, 235, 255, 90),
-            "glow_core": (240, 245, 255),
-            # tentacles
-            "tentacle": (120, 150, 220, 100), "tentacle_light": (160, 185, 250, 120),
-            "tentacle_bright": (200, 220, 255, 100),
-            # bioluminescent spots
-            "biolum": (180, 220, 255, 120), "biolum_bright": (220, 245, 255, 160),
-            # eye (simple)
-            "eye_inner": (200, 220, 255, 180),
-            "shadow": (0, 0, 0, 30),
-        },
-        "prism_fox": {
-            # fur
-            "fur": (220, 200, 180), "fur_light": (245, 235, 220),
-            "fur_dark": (170, 150, 120), "fur_mid": (200, 185, 165),
-            # tail tip / ear tips (rainbow refraction)
-            "rainbow": (200, 140, 255), "rainbow_alt": (100, 200, 255),
-            "rainbow_warm": (255, 180, 120),
-            # prism markings
-            "prism": (180, 220, 255, 80), "prism_bright": (255, 255, 255, 100),
-            # eyes
-            "eye_white": (250, 245, 240), "eye_pupil": (140, 80, 40),
-            "eye_ring": (200, 160, 255),
-            # nose
-            "nose": (60, 40, 35),
-            # chest / belly
-            "chest": (245, 240, 235), "chest_light": (255, 255, 250),
-            "shadow": (0, 0, 0, 40),
-        },
         "singing_stone": {
             # stone body
             "stone": (150, 140, 130), "stone_light": (190, 182, 172),
@@ -164,8 +55,236 @@ def _palette_for(style: str) -> dict:
             "sound": (200, 220, 180, 60), "sound_bright": (230, 250, 200, 80),
             "shadow": (0, 0, 0, 40),
         },
+        "ember_phoenix": {
+            # feathers (fire)
+            "feather": (220, 120, 40), "feather_light": (255, 180, 80),
+            "feather_dark": (160, 60, 20), "feather_mid": (240, 150, 60),
+            # flame accents
+            "flame": (255, 200, 50), "flame_bright": (255, 240, 150),
+            "flame_core": (255, 255, 220),
+            # wing tips
+            "wing_tip": (200, 80, 30), "wing_glow": (255, 160, 60, 80),
+            # eyes
+            "eye_white": (255, 240, 200), "eye_pupil": (120, 40, 10),
+            "eye_glow": (255, 200, 100, 80),
+            # crest
+            "crest": (255, 160, 50), "crest_bright": (255, 220, 120),
+            # ember particles
+            "ember": (255, 180, 60, 100), "ember_bright": (255, 230, 120, 120),
+            "shadow": (0, 0, 0, 40),
+        },
+        "coral_golem": {
+            # coral body
+            "coral": (210, 120, 130), "coral_light": (240, 160, 170),
+            "coral_dark": (160, 80, 90), "coral_mid": (225, 140, 150),
+            # secondary coral branches
+            "branch": (230, 150, 100), "branch_light": (250, 185, 140),
+            # ocean energy
+            "energy": (80, 160, 200, 80), "energy_bright": (120, 200, 240, 100),
+            # barnacles / detail
+            "barnacle": (190, 170, 150), "barnacle_light": (220, 205, 185),
+            # eyes
+            "eye_bg": (50, 40, 55), "eye_glow": (80, 180, 220, 90),
+            "eye_pupil": (60, 140, 180),
+            # water droplets
+            "water": (120, 180, 220, 80), "water_bright": (170, 210, 240, 100),
+            "shadow": (0, 0, 0, 40),
+        },
+        "void_butterfly": {
+            # body
+            "body": (40, 30, 60), "body_light": (70, 60, 95),
+            "body_dark": (25, 20, 40),
+            # wing colors (cosmic)
+            "wing": (30, 20, 70), "wing_light": (60, 50, 110),
+            "wing_dark": (15, 10, 40),
+            # cosmos pattern on wings
+            "cosmos": (80, 60, 160), "cosmos_bright": (140, 120, 220),
+            "cosmos_star": (220, 210, 255, 120),
+            # nebula accents
+            "nebula": (100, 50, 140, 80), "nebula_bright": (160, 100, 200, 100),
+            # antennae
+            "antenna": (60, 50, 80), "antenna_tip": (160, 140, 220),
+            # eyes
+            "eye_white": (180, 170, 220), "eye_pupil": (30, 20, 50),
+            "shadow": (0, 0, 0, 40),
+        },
+        # ---- NEW MAJESTIC ANIMAL PALETTES ----
+        "moss_rabbit": {
+            "fur": (160, 185, 140), "fur_light": (200, 220, 180),
+            "fur_dark": (110, 135, 90), "fur_mid": (180, 205, 160),
+            "belly": (220, 230, 200),
+            "ear": (130, 100, 90), "ear_inner": (200, 160, 150),
+            "eye_white": (230, 230, 210), "eye_pupil": (50, 40, 30),
+            "nose": (180, 120, 110),
+            "moss": (80, 140, 60), "moss_light": (110, 175, 85),
+            "flower": (240, 180, 200), "flower_light": (255, 210, 230),
+            "flower_dark": (200, 130, 160),
+            "shadow": (0, 0, 0, 40),
+        },
+        "crystal_fox": {
+            "fur": (160, 180, 210), "fur_light": (200, 220, 245),
+            "fur_dark": (105, 125, 155), "fur_mid": (180, 200, 230),
+            "belly": (220, 235, 255),
+            "crystal": (120, 170, 220), "crystal_light": (180, 210, 255, 80),
+            "crystal_glow": (160, 200, 255, 60),
+            "ear": (140, 160, 190), "ear_inner": (200, 180, 200),
+            "eye_white": (220, 230, 250), "eye_pupil": (60, 80, 110),
+            "nose": (40, 45, 60),
+            "tail_tip": (180, 200, 240, 80),
+            "shadow": (0, 0, 0, 40),
+        },
+        "fairy_cat": {
+            "fur": (140, 120, 170), "fur_light": (180, 160, 210),
+            "fur_dark": (95, 75, 125), "fur_mid": (160, 140, 190),
+            "belly": (200, 185, 220),
+            "wing": (180, 150, 220, 80), "wing_bright": (220, 190, 255, 100),
+            "wing_inner": (160, 120, 200, 60),
+            "ear": (120, 100, 150), "ear_inner": (210, 180, 200),
+            "eye_white": (220, 220, 250), "eye_pupil": (40, 30, 60),
+            "nose": (180, 140, 160),
+            "collar": (200, 180, 100), "bell": (255, 220, 80), "bell_glow": (255, 230, 120, 80),
+            "pad": (160, 140, 180),
+            "tail_tip": (180, 160, 210),
+            "shadow": (0, 0, 0, 40),
+        },
+        # ---- 10 NEW MAJESTIC ANIMALS ----
+        "celestial_stag": {
+            "fur": (210, 220, 240), "fur_light": (240, 245, 255),
+            "fur_dark": (140, 155, 185), "fur_mid": (195, 210, 235),
+            "belly": (245, 245, 255),
+            "antler": (245, 230, 170), "antler_light": (255, 245, 200),
+            "antler_glow": (255, 245, 180, 110),
+            "star": (255, 250, 220), "star_glow": (255, 245, 200, 100),
+            "aura_color": (255, 245, 200),
+            "eye_white": (245, 245, 230), "eye_pupil": (90, 70, 130),
+            "nose": (110, 90, 120),
+            "hoof": (90, 80, 100),
+            "shadow": (0, 0, 0, 40),
+        },
+        "lumen_koi": {
+            "scale": (200, 215, 235), "scale_light": (235, 245, 255),
+            "scale_dark": (140, 165, 195), "scale_mid": (190, 210, 230),
+            "belly": (245, 250, 255),
+            "fin": (170, 200, 235, 80), "fin_bright": (210, 230, 250, 100),
+            "glow": (180, 220, 255, 100), "glow_bright": (220, 240, 255, 130),
+            "spot": (180, 210, 255, 110), "spot_glow": (220, 235, 255, 130),
+            "aura_color": (180, 220, 255),
+            "eye_white": (220, 235, 250), "eye_pupil": (60, 80, 120),
+            "whisker": (200, 220, 240),
+            "shadow": (0, 0, 0, 40),
+        },
+        "aurora_wolf": {
+            "fur": (90, 110, 145), "fur_light": (130, 155, 195),
+            "fur_dark": (50, 65, 95), "fur_mid": (105, 130, 170),
+            "belly": (180, 195, 230),
+            "aurora": (110, 220, 180, 100), "aurora_bright": (160, 240, 220, 130),
+            "aurora_pink": (220, 150, 220, 100), "aurora_violet": (160, 130, 230, 100),
+            "aura_color": (110, 220, 200),
+            "eye_white": (200, 220, 240), "eye_pupil": (40, 60, 90),
+            "nose": (50, 60, 80),
+            "claw": (60, 70, 90),
+            "shadow": (0, 0, 0, 40),
+        },
+        "prism_peacock": {
+            "body": (40, 80, 110), "body_light": (70, 130, 170),
+            "body_dark": (20, 50, 80),
+            "feather": (60, 200, 200, 100), "feather_bright": (130, 230, 230, 130),
+            "feather_emerald": (90, 220, 150, 100), "feather_violet": (190, 120, 230, 100),
+            "feather_gold": (255, 220, 110, 100), "feather_ruby": (240, 110, 140, 100),
+            "eye_spot": (90, 200, 220), "eye_spot_bright": (160, 230, 240),
+            "eye_spot_mid": (40, 140, 170),
+            "aura_color": (130, 230, 230),
+            "eye_white": (240, 230, 200), "eye_pupil": (30, 50, 80),
+            "beak": (120, 100, 70), "beak_light": (160, 140, 100),
+            "crown": (250, 200, 80), "crown_bright": (255, 230, 130),
+            "shadow": (0, 0, 0, 40),
+        },
+        "moonlit_unicorn": {
+            "fur": (240, 235, 250), "fur_light": (255, 250, 255),
+            "fur_dark": (200, 195, 220), "fur_mid": (230, 225, 245),
+            "belly": (250, 245, 255),
+            "horn": (255, 240, 200), "horn_light": (255, 250, 230),
+            "horn_glow": (255, 245, 220, 100),
+            "mane": (180, 200, 240), "mane_light": (210, 225, 255),
+            "mane_glow": (200, 220, 255, 100),
+            "aura_color": (200, 220, 255),
+            "eye_white": (230, 235, 250), "eye_pupil": (110, 90, 160),
+            "hoof": (180, 170, 200),
+            "tail_tip": (200, 220, 255, 80),
+            "stardust": (255, 250, 220, 120), "stardust_bright": (255, 250, 240, 150),
+            "shadow": (0, 0, 0, 40),
+        },
+        "starlight_deer": {
+            "fur": (140, 175, 200), "fur_light": (190, 215, 235),
+            "fur_dark": (90, 125, 155), "fur_mid": (160, 190, 215),
+            "belly": (210, 230, 250),
+            "antler": (230, 220, 200), "antler_light": (250, 240, 220),
+            "antler_glow": (180, 220, 255, 110),
+            "star": (200, 230, 255, 130), "star_bright": (240, 250, 255, 150),
+            "spot": (220, 240, 255, 100), "spot_glow": (240, 250, 255, 130),
+            "aura_color": (200, 230, 255),
+            "eye_white": (230, 240, 250), "eye_pupil": (50, 70, 110),
+            "nose": (80, 90, 110),
+            "hoof": (90, 100, 120),
+            "shadow": (0, 0, 0, 40),
+        },
+        "lotus_dragon": {
+            "scale": (180, 220, 200), "scale_light": (220, 250, 230),
+            "scale_dark": (120, 165, 145), "scale_mid": (200, 235, 215),
+            "belly": (240, 250, 235),
+            "lotus": (255, 180, 220), "lotus_light": (255, 220, 240),
+            "lotus_glow": (255, 200, 230, 100),
+            "fin": (170, 220, 210, 80), "fin_bright": (210, 240, 230, 100),
+            "frill": (220, 250, 200, 80), "frill_bright": (240, 255, 220, 100),
+            "aura_color": (255, 200, 230),
+            "eye_white": (220, 240, 230), "eye_pupil": (60, 100, 90),
+            "whisker": (200, 220, 200),
+            "glow": (180, 230, 200, 80),
+            "shadow": (0, 0, 0, 40),
+        },
+        "amber_bee": {
+            "body": (255, 200, 80), "body_light": (255, 230, 150),
+            "body_dark": (200, 140, 50), "body_mid": (240, 180, 90),
+            "stripe": (60, 50, 40), "stripe_light": (90, 75, 60),
+            "wing": (220, 240, 255, 70), "wing_bright": (240, 250, 255, 90),
+            "wing_inner": (200, 225, 250, 60),
+            "pollen": (255, 230, 100, 110), "pollen_bright": (255, 240, 150, 130),
+            "aura_color": (255, 220, 120),
+            "eye_white": (255, 250, 220), "eye_pupil": (30, 20, 10),
+            "antenna": (60, 50, 30), "antenna_tip": (255, 220, 120),
+            "trail": (255, 220, 120, 60),
+            "shadow": (0, 0, 0, 40),
+        },
+        "spirit_otter": {
+            "fur": (200, 220, 240), "fur_light": (230, 240, 255),
+            "fur_dark": (140, 165, 190), "fur_mid": (215, 230, 250),
+            "belly": (235, 245, 255),
+            "wave": (140, 200, 230, 90), "wave_bright": (180, 220, 250, 110),
+            "bubble": (200, 235, 250, 90), "bubble_bright": (230, 245, 255, 110),
+            "pearl": (240, 220, 250, 110), "pearl_glow": (255, 235, 255, 130),
+            "aura_color": (180, 220, 250),
+            "eye_white": (230, 240, 250), "eye_pupil": (60, 80, 110),
+            "nose": (60, 70, 90),
+            "whisker": (220, 230, 240),
+            "claw": (90, 100, 120),
+            "shadow": (0, 0, 0, 40),
+        },
+        "dawn_heron": {
+            "fur": (245, 230, 220), "fur_light": (255, 245, 235),
+            "fur_dark": (190, 165, 150), "fur_mid": (230, 210, 195),
+            "belly": (255, 245, 230),
+            "feather": (255, 200, 170, 100), "feather_bright": (255, 220, 200, 130),
+            "feather_gold": (255, 200, 110, 100), "feather_rose": (255, 170, 180, 100),
+            "mist": (255, 220, 220, 100), "mist_bright": (255, 235, 220, 130),
+            "aura_color": (255, 220, 200),
+            "stardust": (255, 235, 220, 120),
+            "eye_white": (255, 245, 230), "eye_pupil": (110, 70, 60),
+            "beak": (220, 160, 100), "beak_light": (240, 190, 130),
+            "leg": (180, 140, 110), "leg_dark": (140, 100, 80),
+            "shadow": (0, 0, 0, 40),
+        },
     }
-    return palettes.get(style, palettes["starwhale"])
+    return palettes.get(style, palettes["grove_titan"])
 
 
 # ============================================================
@@ -200,466 +319,6 @@ def _shadow(surface, cx, h, p, bob=0):
     """Draw a soft ground shadow."""
     y = h - 10 + bob
     _draw_ellipse_alpha(surface, p["shadow"], (cx - 18, y, 36, 12))
-
-
-# ============================================================
-# STARWHALE — celestial floating whale with stardust trails
-# ============================================================
-def _draw_starwhale(s, w, h, cx, cy, p, direction, bob, frame):
-    """A majestic celestial whale that drifts serenely, trailing stardust."""
-    _shadow(s, cx, h, p, bob)
-
-    # Bobbing offset
-    by = bob
-    swim = [0, 2, 0, -2][frame]
-    tail_flex = [-2, 0, 2, 0][frame]
-
-    # -- stardust trail (behind body) --
-    for i in range(6):
-        angle = frame * 0.4 + i * 1.05
-        dx = int(math.cos(angle) * (18 + i * 6))
-        dy = int(math.sin(angle * 0.7) * (8 + i * 3))
-        alpha = max(20, 80 - i * 12)
-        sz = max(1, 3 - i // 2)
-        _draw_circle_alpha(s, (*p["dust"][:3], alpha), (cx - 25 + dx, cy + by + dy), sz)
-        _draw_circle_alpha(s, (*p["dust_bright"][:3], alpha // 2),
-                           (cx - 30 + dx + 3, cy + by + dy - 2), sz - 1 if sz > 1 else 1)
-
-    # -- tail flukes --
-    tail_x = cx - 32
-    tail_y = cy + 2 + by + tail_flex
-    pygame.draw.polygon(s, p["fin_dark"], [
-        (tail_x, tail_y),
-        (tail_x - 14, tail_y - 14),
-        (tail_x - 6, tail_y),
-        (tail_x - 14, tail_y + 12),
-    ])
-    pygame.draw.polygon(s, p["fin"], [
-        (tail_x + 1, tail_y),
-        (tail_x - 12, tail_y - 12),
-        (tail_x - 5, tail_y),
-        (tail_x - 12, tail_y + 10),
-    ])
-    # tail fin accent
-    pygame.draw.polygon(s, p["fin_accent"], [
-        (tail_x - 3, tail_y - 5),
-        (tail_x - 10, tail_y - 10),
-        (tail_x - 5, tail_y - 2),
-    ])
-
-    # -- main body (elongated ellipse) --
-    bw = int(w * 0.58)
-    bh = int(h * 0.38)
-    bx = cx - bw // 2 + swim
-    by2 = cy - bh // 2 + by
-    pygame.draw.ellipse(s, p["skin_dark"], (bx - 1, by2 - 1, bw + 2, bh + 2))
-    pygame.draw.ellipse(s, p["skin"], (bx, by2, bw, bh))
-    pygame.draw.ellipse(s, p["skin_light"], (bx + 4, by2 + 2, bw // 3, bh - 6))
-
-    # -- belly plates --
-    belly_w = int(bw * 0.7)
-    belly_h = int(bh * 0.45)
-    belly_x = cx - belly_w // 2 + swim
-    belly_y = by2 + bh - belly_h - 2
-    pygame.draw.ellipse(s, p["belly_dark"], (belly_x, belly_y, belly_w, belly_h))
-    pygame.draw.ellipse(s, p["belly"], (belly_x + 2, belly_y + 2, belly_w - 4, belly_h - 4))
-    pygame.draw.ellipse(s, p["belly_light"], (belly_x + 4, belly_y + 3, belly_w // 2, belly_h - 6))
-    # plate lines
-    for i in range(3):
-        ly = belly_y + 4 + i * (belly_h // 4)
-        pygame.draw.line(s, p["belly_dark"], (belly_x + 4, ly), (belly_x + belly_w - 4, ly), 1)
-
-    # -- pectoral fins --
-    for side in (-1, 1):
-        fin_cx = cx + side * (bw // 2 - 4) + swim
-        fin_cy = by2 + int(bh * 0.6)
-        fin_pts = [
-            (fin_cx, fin_cy),
-            (fin_cx + side * 12, fin_cy + 8 + swim),
-            (fin_cx + side * 18, fin_cy + 3),
-            (fin_cx + side * 10, fin_cy - 2),
-        ]
-        pygame.draw.polygon(s, p["fin_dark"], fin_pts)
-        pygame.draw.polygon(s, p["fin"], [
-            (fin_cx + 1, fin_cy + 1),
-            (fin_cx + side * 11, fin_cy + 7 + swim),
-            (fin_cx + side * 16, fin_cy + 3),
-            (fin_cx + side * 9, fin_cy - 1),
-        ])
-
-    # -- dorsal ridge --
-    for i in range(5):
-        rx = bx + 10 + i * (bw - 20) // 4
-        ry = by2 - 2
-        rh = 3 + (2 if i == 2 else 0)
-        pygame.draw.polygon(s, p["fin_dark"], [(rx, ry), (rx - 2, ry - rh), (rx + 2, ry - rh)])
-        pygame.draw.polygon(s, p["fin"], [(rx, ry - 1), (rx - 1, ry - rh + 1), (rx + 1, ry - rh + 1)])
-
-    # -- star markings on body --
-    for i in range(4):
-        sx = bx + 10 + i * (bw - 20) // 3
-        sy = by2 + int(bh * 0.3) + ([0, 2, -1, 1][i])
-        pulse = 1 if (frame + i) % 3 == 0 else 0
-        _draw_circle_alpha(s, (*p["star"][:3], 150 + pulse * 50), (sx, sy + by), 2 + pulse)
-        _draw_circle_alpha(s, (*p["star_bright"][:3], 100), (sx, sy + by), 4 + pulse)
-        # small star rays
-        for angle_off in [0, 1.57, 3.14, 4.71]:
-            ex = sx + int(math.cos(angle_off + frame * 0.2) * 4)
-            ey = sy + by + int(math.sin(angle_off + frame * 0.2) * 4)
-            pygame.draw.line(s, (*p["star"][:3], 80), (sx, sy + by), (ex, ey), 1)
-
-    # -- head / eye --
-    head_x = cx + bw // 2 - 6 + swim
-    head_y = cy + by - 2
-    # eye
-    _draw_circle_alpha(s, p["eye_glow"], (head_x + 2, head_y), 8)
-    _draw_circle_alpha(s, p["eye_white"], (head_x + 2, head_y), 5)
-    _draw_circle_alpha(s, p["eye_pupil"], (head_x + 3, head_y), 3)
-    _draw_circle_alpha(s, (255, 255, 255, 150), (head_x + 4, head_y - 1), 1)
-
-    # mouth line
-    pygame.draw.arc(s, p["skin_dark"], (head_x - 8, head_y + 2, 16, 8), 0.3, 2.8, 1)
-
-    # -- barnacles / detail --
-    for i in range(3):
-        bx2 = bx + 8 + i * 12
-        by3 = by2 + bh // 2 + 2
-        _draw_circle_alpha(s, (*p["belly"][:3], 80), (bx2, by3), 2)
-
-    # -- extra glow aura --
-    aura = pygame.Surface((w, h), pygame.SRCALPHA)
-    pulse_r = int(w * 0.38) + (frame % 2) * 3
-    _draw_circle_alpha(aura, (*p["dust"][:3], 25), (cx + swim, cy + by), pulse_r)
-    s.blit(aura, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
-
-
-# ============================================================
-# LUMINOUS DEER — glowing forest deer with crystal antlers
-# ============================================================
-def _draw_luminous_deer(s, w, h, cx, cy, p, direction, bob, frame):
-    """A serene forest deer whose antlers glow with crystallized light."""
-    _shadow(s, cx, h, p, bob)
-    walk = [0, 1, 0, -1][frame]
-    head_bob = [0, -1, 0, 1][frame]
-
-    # -- ground glow aura --
-    aura = pygame.Surface((w, h), pygame.SRCALPHA)
-    _draw_ellipse_alpha(aura, p["glow"], (cx - 25, h - 18 + bob, 50, 14))
-    s.blit(aura, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
-
-    # -- legs --
-    leg_y = int(h * 0.62)
-    for lx, off in [(cx - 10 + walk, walk), (cx + 4 - walk, -walk)]:
-        # upper leg
-        pygame.draw.rect(s, p["fur_dark"], (lx, leg_y + bob, 7, 16), border_radius=2)
-        pygame.draw.rect(s, p["fur"], (lx + 1, leg_y + bob + 1, 5, 14), border_radius=1)
-        # lower leg
-        pygame.draw.rect(s, p["fur_dark"], (lx + 1, leg_y + 14 + bob, 5, 10), border_radius=1)
-        # hoof
-        pygame.draw.rect(s, p["hoof"], (lx, leg_y + 22 + bob, 7, 4), border_radius=1)
-        pygame.draw.rect(s, p["hoof_light"], (lx + 1, leg_y + 22 + bob, 5, 2), border_radius=1)
-        # glow at ankle
-        _draw_circle_alpha(s, (*p["glow"][:3], 40), (lx + 3, leg_y + 14 + bob), 4)
-
-    # -- body --
-    bw = int(w * 0.44)
-    bh = int(h * 0.30)
-    bx = cx - bw // 2
-    by = int(h * 0.32) + bob
-    pygame.draw.ellipse(s, p["fur_dark"], (bx - 1, by - 1, bw + 2, bh + 2))
-    pygame.draw.ellipse(s, p["fur"], (bx, by, bw, bh))
-    pygame.draw.ellipse(s, p["fur_light"], (bx + 3, by + 3, bw // 3, bh - 6))
-
-    # -- luminous spots --
-    for i in range(5):
-        sx = bx + 6 + i * (bw - 12) // 4
-        sy = by + 4 + ([0, 3, -1, 2, -2][i])
-        pulse = 1 if (frame + i) % 2 == 0 else 0
-        _draw_circle_alpha(s, (*p["spot"][:3], 60 + pulse * 30), (sx, sy), 3 + pulse)
-
-    # -- neck --
-    neck_x = cx + bw // 2 - 6
-    neck_y = by - 4
-    pygame.draw.polygon(s, p["fur_dark"], [
-        (neck_x - 5, neck_y + 8), (neck_x + 5, neck_y + 8),
-        (neck_x + 3, neck_y - 6), (neck_x - 3, neck_y - 6),
-    ])
-    pygame.draw.polygon(s, p["fur"], [
-        (neck_x - 4, neck_y + 7), (neck_x + 4, neck_y + 7),
-        (neck_x + 2, neck_y - 4), (neck_x - 2, neck_y - 4),
-    ])
-
-    # -- head --
-    hr = int(w * 0.13)
-    hx = neck_x
-    hy = neck_y - 8 + head_bob
-    pygame.draw.ellipse(s, p["fur_dark"], (hx - hr - 1, hy - hr // 2 - 1, hr * 2 + 2, hr + 2))
-    pygame.draw.ellipse(s, p["fur"], (hx - hr, hy - hr // 2, hr * 2, hr))
-    pygame.draw.ellipse(s, p["fur_light"], (hx - hr + 2, hy - hr // 2 + 1, hr, hr - 3))
-
-    # -- ears --
-    for side in (-1, 1):
-        ear_x = hx + side * (hr - 1)
-        ear_y = hy - 6
-        pygame.draw.polygon(s, p["fur_dark"], [
-            (ear_x, ear_y), (ear_x + side * 4, ear_y - 10), (ear_x + side * 7, ear_y - 4)
-        ])
-        pygame.draw.polygon(s, p["fur"], [
-            (ear_x + 1, ear_y - 1), (ear_x + side * 4, ear_y - 8), (ear_x + side * 6, ear_y - 4)
-        ])
-        # inner ear glow
-        _draw_circle_alpha(s, (*p["glow"][:3], 50), (ear_x + side * 3, ear_y - 5), 3)
-
-    # -- crystal antlers (the signature feature) --
-    for side in (-1, 1):
-        base_x = hx + side * (hr // 2)
-        base_y = hy - hr // 2 - 1
-        # main branch
-        tip_x = base_x + side * 14
-        tip_y = base_y - 18
-        pygame.draw.line(s, p["antler_dark"], (base_x, base_y), (tip_x, tip_y), 3)
-        pygame.draw.line(s, p["antler"], (base_x, base_y), (tip_x, tip_y), 2)
-        # side branch
-        br_x = base_x + side * 8
-        br_y = base_y - 10
-        pygame.draw.line(s, p["antler_dark"], (br_x, br_y), (br_x + side * 8, br_y - 8), 2)
-        pygame.draw.line(s, p["antler"], (br_x, br_y), (br_x + side * 8, br_y - 8), 1)
-        # crystal tips glow
-        _draw_circle_alpha(s, (*p["antler_glow"][:3], 80 + (frame % 2) * 30), (tip_x, tip_y), 4)
-        _draw_circle_alpha(s, (*p["antler_glow"][:3], 50), (br_x + side * 8, br_y - 8), 3)
-        # glow aura around antlers
-        _draw_circle_alpha(s, (*p["antler_glow"][:3], 25), (base_x + side * 7, base_y - 8), 10)
-
-    # -- eyes --
-    esp = 4
-    for ex in (hx - esp, hx + esp):
-        _draw_circle_alpha(s, p["eye_ring"], (ex, hy), 5)
-        _draw_circle_alpha(s, p["eye_white"], (ex, hy), 3)
-        _draw_circle_alpha(s, p["eye_pupil"], (ex, hy), 2)
-        _draw_circle_alpha(s, (255, 255, 255, 180), (ex - 1, hy - 1), 1)
-
-    # -- tail --
-    tail_x = bx - 2
-    tail_y = by + bh // 2
-    tail_wag = [0, 3, 0, -3][frame]
-    pygame.draw.ellipse(s, p["fur_dark"], (tail_x - 4 + tail_wag, tail_y - 4, 10, 8))
-    pygame.draw.ellipse(s, p["fur_light"], (tail_x - 2 + tail_wag, tail_y - 3, 6, 6))
-    _draw_circle_alpha(s, (*p["glow"][:3], 40), (tail_x + tail_wag, tail_y), 5)
-
-
-# ============================================================
-# CRYSTAL SERPENT — gentle serpentine creature of living crystal
-# ============================================================
-def _draw_crystal_serpent(s, w, h, cx, cy, p, direction, bob, frame):
-    """A gentle serpentine creature made of living crystal, refracting light."""
-    _shadow(s, cx, h, p, bob)
-    sway = [0, 3, 0, -3][frame]
-    coil = [0, 1, 0, -1][frame]
-
-    # -- body coils (3 segments, overlapping) --
-    segments = []
-    for i in range(5):
-        seg_x = cx + int(math.sin(frame * 0.8 + i * 1.2) * (12 - i * 2))
-        seg_y = cy + int(i * (h * 0.12)) + bob
-        seg_r = int(w * 0.18) - i * 2
-        segments.append((seg_x, seg_y, max(seg_r, 4)))
-
-    # draw back to front
-    for i in range(len(segments) - 1, -1, -1):
-        sx, sy, sr = segments[i]
-        # crystal segment body
-        _draw_circle_alpha(s, p["crystal_dark"], (sx + sway // 2, sy), sr + 1)
-        _draw_circle_alpha(s, p["crystal"], (sx + sway // 2, sy), sr)
-        _draw_circle_alpha(s, p["crystal_light"], (sx + sway // 2 - 1, sy - 1), sr - 2 if sr > 3 else 1)
-        # facet highlights
-        facet_angle = frame * 0.5 + i * 1.0
-        fx = sx + int(math.cos(facet_angle) * (sr - 2))
-        fy = sy + int(math.sin(facet_angle) * (sr - 2))
-        _draw_circle_alpha(s, p["facet"], (fx + sway // 2, fy), 2)
-        if (frame + i) % 3 == 0:
-            _draw_circle_alpha(s, p["facet_bright"], (fx + sway // 2, fy), 1)
-        # inner glow
-        _draw_circle_alpha(s, (*p["glow"][:3], 40), (sx + sway // 2, sy), sr + 4)
-
-    # -- crystal spines along the back --
-    for i in range(0, len(segments) - 1):
-        sx, sy, sr = segments[i]
-        spine_angle = -math.pi / 2 + math.sin(frame * 0.3 + i) * 0.3
-        for j in range(2):
-            sa = spine_angle + j * 0.4 - 0.2
-            sp_x = sx + int(math.cos(sa) * sr)
-            sp_y = sy + int(math.sin(sa) * sr)
-            sp_tip_x = sp_x + int(math.cos(sa) * 6)
-            sp_tip_y = sp_y + int(math.sin(sa) * 6)
-            pygame.draw.line(s, p["spine"], (sp_x + sway // 2, sp_y),
-                             (sp_tip_x + sway // 2, sp_tip_y), 2)
-            _draw_circle_alpha(s, (*p["glow_bright"][:3], 60),
-                               (sp_tip_x + sway // 2, sp_tip_y), 2)
-
-    # -- head --
-    head_seg = segments[0]
-    hx, hy, hr = head_seg[0], head_seg[1], head_seg[2]
-    # eye glow
-    for side in (-1, 1):
-        ex = hx + side * (hr // 2) + sway // 2
-        ey = hy - 2
-        _draw_circle_alpha(s, p["eye_glow"], (ex, ey), 5)
-        _draw_circle_alpha(s, p["eye_white"], (ex, ey), 3)
-        _draw_circle_alpha(s, p["eye_pupil"], (ex, ey), 2)
-        _draw_circle_alpha(s, (255, 255, 255, 180), (ex, ey - 1), 1)
-
-    # -- trailing sparkle particles --
-    for i in range(4):
-        angle = frame * 0.6 + i * 1.57
-        last_seg = segments[-1]
-        px = last_seg[0] + int(math.cos(angle) * 10)
-        py = last_seg[1] + int(math.sin(angle) * 8) + i * 3
-        alpha = max(20, 80 - i * 15)
-        _draw_circle_alpha(s, (*p["glow_bright"][:3], alpha), (px + sway // 2, py), 2)
-
-
-# ============================================================
-# AURORA MOTH — massive moth with wings displaying aurora colors
-# ============================================================
-def _draw_aurora_moth(s, w, h, cx, cy, p, direction, bob, frame):
-    """A massive ethereal moth whose wings shimmer with aurora borealis colors."""
-    _shadow(s, cx, h, p, bob)
-    wing_flap = [0, 4, 0, -4][frame]
-    antenna_sway = [0, 2, 0, -2][frame]
-
-    # -- wing aura glow --
-    aura = pygame.Surface((w, h), pygame.SRCALPHA)
-    _draw_ellipse_alpha(aura, (*p["wing_shimmer"][:3], 30),
-                        (cx - w // 2, cy - h // 2 + bob, w, h))
-    s.blit(aura, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
-
-    # -- wings (4 wings: upper pair larger, lower pair smaller) --
-    for side in (-1, 1):
-        # Upper wing
-        uw_x = cx + side * 4
-        uw_y = cy - 2 + bob
-        uw_pts = [
-            (uw_x, uw_y),
-            (uw_x + side * (28 + wing_flap), uw_y - 16),
-            (uw_x + side * (34 + wing_flap), uw_y - 4),
-            (uw_x + side * (26 + wing_flap), uw_y + 10),
-            (uw_x + side * 8, uw_y + 8),
-        ]
-        # wing gradient layers
-        pygame.draw.polygon(s, p["wing_edge"], uw_pts)
-        uw_inner = [
-            (uw_x + side * 3, uw_y - 1),
-            (uw_x + side * (24 + wing_flap), uw_y - 13),
-            (uw_x + side * (28 + wing_flap), uw_y - 3),
-            (uw_x + side * (22 + wing_flap), uw_y + 7),
-            (uw_x + side * 8, uw_y + 6),
-        ]
-        pygame.draw.polygon(s, p["wing_top"], uw_inner)
-        # mid section
-        uw_mid = [
-            (uw_x + side * 6, uw_y),
-            (uw_x + side * (18 + wing_flap), uw_y - 8),
-            (uw_x + side * (20 + wing_flap), uw_y),
-            (uw_x + side * (14 + wing_flap), uw_y + 5),
-            (uw_x + side * 8, uw_y + 3),
-        ]
-        pygame.draw.polygon(s, p["wing_mid"], uw_mid)
-        # wing eye spot
-        spot_cx = uw_x + side * (18 + wing_flap)
-        spot_cy = uw_y - 4
-        _draw_circle_alpha(s, p["wing_eye_dark"], (spot_cx, spot_cy), 5)
-        _draw_circle_alpha(s, p["wing_eye"], (spot_cx, spot_cy), 3)
-        pulse = 1 if frame % 2 == 0 else 0
-        _draw_circle_alpha(s, (*p["wing_shimmer"][:3], 80 + pulse * 40), (spot_cx, spot_cy), 6)
-
-        # wing veins
-        for vi in range(3):
-            vx_end = uw_x + side * (12 + vi * 8 + wing_flap)
-            vy_end = uw_y - 10 + vi * 6
-            pygame.draw.line(s, (*p["wing_edge"][:3],), (uw_x + side * 2, uw_y),
-                             (vx_end, vy_end), 1)
-
-        # Lower wing (smaller)
-        lw_x = cx + side * 3
-        lw_y = cy + 6 + bob
-        lw_pts = [
-            (lw_x, lw_y),
-            (lw_x + side * (20 - wing_flap), lw_y + 2),
-            (lw_x + side * (22 - wing_flap), lw_y + 14),
-            (lw_x + side * (12 - wing_flap), lw_y + 16),
-            (lw_x + side * 4, lw_y + 8),
-        ]
-        pygame.draw.polygon(s, p["wing_edge"], lw_pts)
-        lw_inner = [
-            (lw_x + side * 2, lw_y + 1),
-            (lw_x + side * (17 - wing_flap), lw_y + 3),
-            (lw_x + side * (18 - wing_flap), lw_y + 12),
-            (lw_x + side * (10 - wing_flap), lw_y + 14),
-            (lw_x + side * 5, lw_y + 7),
-        ]
-        pygame.draw.polygon(s, p["wing_bot"], lw_inner)
-        # lower wing spot
-        ls_cx = lw_x + side * (12 - wing_flap)
-        ls_cy = lw_y + 8
-        _draw_circle_alpha(s, p["wing_eye_dark"], (ls_cx, ls_cy), 3)
-        _draw_circle_alpha(s, p["wing_eye"], (ls_cx, ls_cy), 2)
-
-    # -- body (fuzzy thorax + abdomen) --
-    body_y = cy - 4 + bob
-    # thorax
-    pygame.draw.ellipse(s, p["body_dark"], (cx - 5, body_y - 1, 10, 12))
-    pygame.draw.ellipse(s, p["body"], (cx - 4, body_y, 8, 10))
-    pygame.draw.ellipse(s, p["body_light"], (cx - 2, body_y + 1, 4, 6))
-    # abdomen (longer, segmented)
-    for seg in range(3):
-        seg_y = body_y + 10 + seg * 5
-        seg_w = 6 - seg
-        pygame.draw.ellipse(s, p["body_dark"], (cx - seg_w // 2 - 1, seg_y - 1, seg_w + 2, 6))
-        pygame.draw.ellipse(s, p["body_mid"], (cx - seg_w // 2, seg_y, seg_w, 5))
-
-    # -- fuzzy texture on thorax --
-    for fi in range(4):
-        fx = cx - 3 + fi * 2
-        fy = body_y + 2 + (fi % 2)
-        _draw_circle_alpha(s, (*p["body_light"][:3], 80), (fx, fy), 1)
-
-    # -- head --
-    hy = body_y - 4
-    _draw_circle_alpha(s, p["body_dark"], (cx, hy), 5)
-    _draw_circle_alpha(s, p["body"], (cx, hy), 4)
-    # eyes
-    for side in (-1, 1):
-        ex = cx + side * 3
-        _draw_circle_alpha(s, p["eye_white"], (ex, hy - 1), 2)
-        _draw_circle_alpha(s, p["eye_pupil"], (ex, hy - 1), 1)
-
-    # -- antennae (feathery) --
-    for side in (-1, 1):
-        base_x = cx + side * 2
-        base_y = hy - 3
-        tip_x = base_x + side * (8 + antenna_sway)
-        tip_y = base_y - 12
-        pygame.draw.line(s, p["antenna"], (base_x, base_y), (tip_x, tip_y), 1)
-        # feathery barbs
-        for bi in range(4):
-            bx2 = base_x + int((tip_x - base_x) * bi / 4)
-            by2 = base_y + int((tip_y - base_y) * bi / 4)
-            pygame.draw.line(s, p["antenna"], (bx2, by2),
-                             (bx2 + side * 3, by2 - 2), 1)
-        # glowing tips
-        _draw_circle_alpha(s, (*p["antenna_tip"][:3], 120), (tip_x, tip_y), 2)
-        _draw_circle_alpha(s, (*p["antenna_tip"][:3], 50), (tip_x, tip_y), 4)
-
-    # -- trailing dust particles --
-    for i in range(5):
-        angle = frame * 0.5 + i * 1.26
-        dx = int(math.cos(angle) * (10 + i * 4))
-        dy = int(math.sin(angle * 0.6) * (6 + i * 3))
-        alpha = max(15, 60 - i * 10)
-        _draw_circle_alpha(s, (*p["dust"][:3], alpha), (cx + dx, cy + bob + 20 + dy), 2)
-        if i % 2 == 0:
-            _draw_circle_alpha(s, (*p["dust_bright"][:3], alpha // 2),
-                               (cx + dx + 2, cy + bob + 20 + dy - 1), 1)
 
 
 # ============================================================
@@ -777,252 +436,6 @@ def _draw_grove_titan(s, w, h, cx, cy, p, direction, bob, frame):
 
 
 # ============================================================
-# MOON JELLYFISH — ethereal floating jellyfish with moonlight glow
-# ============================================================
-def _draw_moon_jelly(s, w, h, cx, cy, p, direction, bob, frame):
-    """An ethereal floating jellyfish that glows with soft moonlight."""
-    _shadow(s, cx, h, p, bob)
-    pulse = [0, 2, 0, -2][frame]
-    tentacle_sway = [0, 3, 0, -3][frame]
-
-    # -- main glow aura --
-    aura = pygame.Surface((w, h), pygame.SRCALPHA)
-    aura_r = int(w * 0.40) + pulse
-    _draw_circle_alpha(aura, (*p["glow"][:3], 35), (cx, cy + bob), aura_r)
-    s.blit(aura, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
-
-    # -- tentacles (drawn first, behind bell) --
-    tentacle_base_y = cy + 6 + bob
-    for i in range(6):
-        tx_base = cx - 15 + i * 6
-        sway_off = int(math.sin(frame * 0.8 + i * 0.9) * (4 + tentacle_sway))
-        tx_end = tx_base + sway_off
-        ty_end = tentacle_base_y + 18 + i * 2
-        # wavy tentacle using line segments
-        points = []
-        segments = 5
-        for seg in range(segments + 1):
-            t = seg / segments
-            px = tx_base + int(sway_off * t)
-            py = tentacle_base_y + int((ty_end - tentacle_base_y) * t)
-            px += int(math.sin(frame * 1.2 + i + seg * 0.8) * 3 * t)
-            points.append((px, py))
-        if len(points) >= 2:
-            alpha = 80 + (i % 2) * 30
-            color = p["tentacle"] if i % 2 == 0 else p["tentacle_light"]
-            for j in range(len(points) - 1):
-                pygame.draw.line(s, (*color[:3], alpha), points[j], points[j + 1], 2)
-            # bright tip
-            _draw_circle_alpha(s, (*p["tentacle_bright"][:3], alpha // 2), points[-1], 2)
-
-    # -- bell / dome --
-    bell_w = int(w * 0.52)
-    bell_h = int(h * 0.34)
-    bell_x = cx - bell_w // 2
-    bell_y = cy - bell_h // 2 + bob + pulse
-
-    # outer glow
-    _draw_ellipse_alpha(s, (*p["bell_edge"][:3], 80),
-                        (bell_x - 4, bell_y - 2, bell_w + 8, bell_h + 6))
-    # main bell
-    _draw_ellipse_alpha(s, p["bell_dark"], (bell_x - 1, bell_y, bell_w + 2, bell_h + 2))
-    _draw_ellipse_alpha(s, p["bell"], (bell_x, bell_y + 1, bell_w, bell_h))
-    _draw_ellipse_alpha(s, p["bell_light"],
-                        (bell_x + 4, bell_y + 2, bell_w // 3, bell_h - 4))
-
-    # inner glow rings
-    for ring_i in range(3):
-        ring_r = bell_w // 3 - ring_i * 4
-        if ring_r > 2:
-            _draw_ellipse_alpha(s, (*p["glow_bright"][:3], 40 - ring_i * 10),
-                                (cx - ring_r // 2, cy + bob - ring_r // 4 + pulse,
-                                 ring_r, ring_r // 2))
-
-    # -- bioluminescent spots on bell --
-    spot_positions = [
-        (cx - 8, cy - 6 + bob + pulse), (cx + 8, cy - 6 + bob + pulse),
-        (cx, cy - 10 + bob + pulse), (cx - 4, cy + bob + pulse),
-        (cx + 4, cy + bob + pulse),
-    ]
-    for sx, sy in spot_positions:
-        bright = 1 if (frame + sx) % 3 == 0 else 0
-        _draw_circle_alpha(s, p["biolum"], (sx, sy), 3 + bright)
-        _draw_circle_alpha(s, p["biolum_bright"], (sx, sy), 2)
-
-    # -- frilly bell margin --
-    for i in range(8):
-        mx = bell_x + 2 + i * (bell_w - 4) // 7
-        my = bell_y + bell_h - 2
-        frill = [0, 2, 0, -2][(frame + i) % 4]
-        pygame.draw.ellipse(s, (*p["bell_edge"][:3], 70),
-                            (mx - 2, my + frill - 1, 5, 4))
-
-    # -- simple eye-like spots --
-    for side in (-1, 1):
-        ex = cx + side * 6
-        ey = cy - 4 + bob + pulse
-        _draw_circle_alpha(s, p["eye_inner"], (ex, ey), 3)
-        _draw_circle_alpha(s, (*p["glow_bright"][:3], 120), (ex, ey), 2)
-
-
-# ============================================================
-# PRISM FOX — elegant fox that refracts light into rainbows
-# ============================================================
-def _draw_prism_fox(s, w, h, cx, cy, p, direction, bob, frame):
-    """An elegant fox-like creature whose fur refracts light into rainbows."""
-    _shadow(s, cx, h, p, bob)
-    walk = [0, 1, 0, -1][frame]
-    tail_wag = [0, 4, 0, -4][frame]
-
-    # -- tail (large, fluffy) --
-    tail_x = cx - 18
-    tail_y = cy + 4 + bob
-    # tail shape
-    tail_pts = [
-        (tail_x, tail_y),
-        (tail_x - 14 + tail_wag, tail_y - 10),
-        (tail_x - 20 + tail_wag, tail_y - 16),
-        (tail_x - 16 + tail_wag, tail_y - 20),
-        (tail_x - 8, tail_y - 12),
-    ]
-    pygame.draw.polygon(s, p["fur_dark"], tail_pts)
-    tail_inner = [
-        (tail_x + 1, tail_y + 1),
-        (tail_x - 12 + tail_wag, tail_y - 8),
-        (tail_x - 17 + tail_wag, tail_y - 14),
-        (tail_x - 14 + tail_wag, tail_y - 17),
-        (tail_x - 8, tail_y - 10),
-    ]
-    pygame.draw.polygon(s, p["fur"], tail_inner)
-    # rainbow tip
-    tip_x = tail_x - 18 + tail_wag
-    tip_y = tail_y - 18
-    _draw_circle_alpha(s, p["rainbow"], (tip_x, tip_y), 5)
-    _draw_circle_alpha(s, p["rainbow_alt"], (tip_x - 2, tip_y + 2), 3)
-    _draw_circle_alpha(s, p["rainbow_warm"], (tip_x + 2, tip_y - 1), 3)
-    # prism glow on tail
-    _draw_circle_alpha(s, (*p["prism"][:3], 40), (tail_x - 10 + tail_wag, tail_y - 12), 8)
-
-    # -- hind legs --
-    for side in (-1, 1):
-        lx = cx + side * 6 - 2
-        ly = int(h * 0.62) + bob
-        pygame.draw.rect(s, p["fur_dark"], (lx, ly, 6, 14), border_radius=2)
-        pygame.draw.rect(s, p["fur"], (lx + 1, ly + 1, 4, 12), border_radius=1)
-        pygame.draw.rect(s, p["fur_light"], (lx + 1, ly + 1, 2, 8), border_radius=1)
-        # paw
-        pygame.draw.ellipse(s, p["fur_dark"], (lx - 1, ly + 12, 8, 4))
-
-    # -- body --
-    bw = int(w * 0.44)
-    bh = int(h * 0.28)
-    bx = cx - bw // 2 + 2
-    by = int(h * 0.36) + bob
-    pygame.draw.ellipse(s, p["fur_dark"], (bx - 1, by - 1, bw + 2, bh + 2))
-    pygame.draw.ellipse(s, p["fur"], (bx, by, bw, bh))
-    pygame.draw.ellipse(s, p["fur_light"], (bx + 3, by + 3, bw // 3, bh - 6))
-
-    # -- prism markings on fur --
-    for i in range(3):
-        mx = bx + 8 + i * (bw - 16) // 2
-        my = by + bh // 2
-        pulse = 1 if (frame + i) % 2 == 0 else 0
-        _draw_circle_alpha(s, (*p["prism"][:3], 50 + pulse * 30), (mx, my), 3 + pulse)
-        # rainbow refraction lines
-        for j, color_key in enumerate(["rainbow", "rainbow_alt", "rainbow_warm"]):
-            angle = frame * 0.3 + j * 1.05
-            lx2 = mx + int(math.cos(angle) * 5)
-            ly2 = my + int(math.sin(angle) * 4)
-            _draw_circle_alpha(s, (*p[color_key][:3], 30), (lx2, ly2), 2)
-
-    # -- front legs --
-    for side in (-1, 1):
-        lx = cx + side * 8 + 2
-        ly = int(h * 0.52) + bob
-        leg_walk = walk * side
-        pygame.draw.rect(s, p["fur_dark"], (lx + leg_walk, ly, 6, 18), border_radius=2)
-        pygame.draw.rect(s, p["fur"], (lx + 1 + leg_walk, ly + 1, 4, 16), border_radius=1)
-        pygame.draw.rect(s, p["fur_light"], (lx + 1 + leg_walk, ly + 1, 2, 10), border_radius=1)
-        pygame.draw.ellipse(s, p["fur_dark"], (lx - 1 + leg_walk, ly + 16, 8, 4))
-
-    # -- chest / belly --
-    chest_x = cx
-    chest_y = by + bh - 2
-    _draw_ellipse_alpha(s, p["chest"], (chest_x - 6, chest_y - 3, 12, 8))
-    _draw_ellipse_alpha(s, p["chest_light"], (chest_x - 4, chest_y - 2, 8, 5))
-
-    # -- neck --
-    neck_x = cx + 8
-    neck_y = by - 2
-    pygame.draw.polygon(s, p["fur_dark"], [
-        (neck_x - 4, neck_y + 6), (neck_x + 4, neck_y + 6),
-        (neck_x + 3, neck_y - 4), (neck_x - 3, neck_y - 4),
-    ])
-    pygame.draw.polygon(s, p["fur"], [
-        (neck_x - 3, neck_y + 5), (neck_x + 3, neck_y + 5),
-        (neck_x + 2, neck_y - 2), (neck_x - 2, neck_y - 2),
-    ])
-
-    # -- head --
-    hr = int(w * 0.14)
-    hx = neck_x + 2
-    hy = neck_y - 6
-    # head shape (slightly pointed)
-    pygame.draw.ellipse(s, p["fur_dark"], (hx - hr - 1, hy - hr // 2 - 1, hr * 2 + 2, hr + 2))
-    pygame.draw.ellipse(s, p["fur"], (hx - hr, hy - hr // 2, hr * 2, hr))
-    pygame.draw.ellipse(s, p["fur_light"], (hx - hr + 2, hy - hr // 2 + 1, hr, hr - 3))
-
-    # -- ears --
-    for side in (-1, 1):
-        ear_x = hx + side * (hr - 2)
-        ear_y = hy - 4
-        pygame.draw.polygon(s, p["fur_dark"], [
-            (ear_x, ear_y), (ear_x + side * 3, ear_y - 12), (ear_x + side * 7, ear_y - 3)
-        ])
-        pygame.draw.polygon(s, p["fur"], [
-            (ear_x + 1, ear_y - 1), (ear_x + side * 3, ear_y - 10), (ear_x + side * 6, ear_y - 3)
-        ])
-        # rainbow ear tip
-        _draw_circle_alpha(s, p["rainbow"], (ear_x + side * 3, ear_y - 10), 2)
-
-    # -- snout --
-    snout_x = hx + hr - 1
-    snout_y = hy + 2
-    pygame.draw.ellipse(s, p["fur"], (snout_x - 2, snout_y - 2, 8, 6))
-    pygame.draw.ellipse(s, p["fur_light"], (snout_x - 1, snout_y - 1, 6, 4))
-    # nose
-    _draw_circle_alpha(s, p["nose"], (snout_x + 3, snout_y), 2)
-
-    # -- eyes --
-    esp = 5
-    for side2 in (-1, 1):
-        ex = hx + side2 * (esp - 1)
-        ey = hy - 1
-        _draw_circle_alpha(s, p["eye_ring"], (ex, ey), 4)
-        _draw_circle_alpha(s, p["eye_white"], (ex, ey), 3)
-        _draw_circle_alpha(s, p["eye_pupil"], (ex, ey), 2)
-        _draw_circle_alpha(s, (255, 255, 255, 180), (ex - 1, ey - 1), 1)
-
-    # -- whiskers --
-    for side2 in (-1, 1):
-        for wi in range(2):
-            wx_start = snout_x + 2
-            wy_start = snout_y + wi * 2 - 1
-            wx_end = wx_start + side2 * 12
-            wy_end = wy_start + (wi - 1) * 3
-            pygame.draw.line(s, (*p["fur_light"][:3],), (wx_start, wy_start), (wx_end, wy_end), 1)
-
-    # -- prism rainbow arc effect --
-    for i in range(5):
-        angle = frame * 0.4 + i * 0.6
-        rx = cx + int(math.cos(angle) * 22)
-        ry = cy + int(math.sin(angle * 0.7) * 14) + bob
-        alpha = max(15, 50 - i * 8)
-        color = [p["rainbow"], p["rainbow_alt"], p["rainbow_warm"]][i % 3]
-        _draw_circle_alpha(s, (*color[:3], alpha), (rx, ry), 2)
-
-
-# ============================================================
 # SINGING STONE — living rock creature with embedded crystals
 # ============================================================
 def _draw_singing_stone(s, w, h, cx, cy, p, direction, bob, frame):
@@ -1133,17 +546,1232 @@ def _draw_singing_stone(s, w, h, cx, cy, p, direction, bob, frame):
 
 
 # ============================================================
+# EMBER PHOENIX — radiant bird of gentle flame
+# ============================================================
+def _draw_ember_phoenix(s, w, h, cx, cy, p, direction, bob, frame):
+    """A radiant bird of gentle flame that radiates warmth and healing light."""
+    _shadow(s, cx, h, p, bob)
+    wing_flap = [0, 5, 0, -5][frame]
+    head_bob = [0, -1, 0, 1][frame]
+
+    # -- flame aura --
+    aura = pygame.Surface((w, h), pygame.SRCALPHA)
+    pulse_r = int(w * 0.35) + (frame % 2) * 3
+    _draw_circle_alpha(aura, (*p["wing_glow"][:3], 20), (cx, cy + bob), pulse_r)
+    s.blit(aura, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # -- tail feathers (long, flowing flames) --
+    tail_base_x = cx - 10
+    tail_base_y = cy + 6 + bob
+    for i in range(5):
+        angle = math.pi + 0.3 * (i - 2) + math.sin(frame * 0.4 + i) * 0.2
+        length = 18 + i * 3
+        tx = tail_base_x + int(math.cos(angle) * length)
+        ty = tail_base_y + int(math.sin(angle) * length)
+        colors = [p["feather_dark"], p["feather"], p["feather_light"], p["flame"], p["flame_bright"]]
+        pygame.draw.line(s, colors[i], (tail_base_x, tail_base_y), (tx, ty), 3 - i // 2)
+        _draw_circle_alpha(s, (*p["flame_bright"][:3], 60), (tx, ty), 2)
+
+    # -- wings (spread, flame-like) --
+    for side in (-1, 1):
+        wing_x = cx + side * 4
+        wing_y = cy - 2 + bob
+        # outer wing
+        wing_pts = [
+            (wing_x, wing_y),
+            (wing_x + side * (22 + wing_flap), wing_y - 14),
+            (wing_x + side * (28 + wing_flap), wing_y - 6),
+            (wing_x + side * (24 + wing_flap), wing_y + 6),
+            (wing_x + side * 6, wing_y + 6),
+        ]
+        pygame.draw.polygon(s, p["wing_tip"], wing_pts)
+        # inner wing
+        wing_inner = [
+            (wing_x + side * 2, wing_y),
+            (wing_x + side * (18 + wing_flap), wing_y - 10),
+            (wing_x + side * (22 + wing_flap), wing_y - 4),
+            (wing_x + side * (18 + wing_flap), wing_y + 4),
+            (wing_x + side * 6, wing_y + 4),
+        ]
+        pygame.draw.polygon(s, p["feather_dark"], wing_inner)
+        # flame layer
+        wing_flame = [
+            (wing_x + side * 4, wing_y + 1),
+            (wing_x + side * (14 + wing_flap), wing_y - 6),
+            (wing_x + side * (16 + wing_flap), wing_y),
+            (wing_x + side * (12 + wing_flap), wing_y + 3),
+            (wing_x + side * 6, wing_y + 2),
+        ]
+        pygame.draw.polygon(s, p["feather"], wing_flame)
+        # flame tip highlights
+        _draw_circle_alpha(s, (*p["flame"][:3], 80),
+                           (wing_x + side * (20 + wing_flap), wing_y - 8), 4)
+        _draw_circle_alpha(s, (*p["flame_bright"][:3], 60),
+                           (wing_x + side * (18 + wing_flap), wing_y - 6), 3)
+
+    # -- body --
+    bw = int(w * 0.30)
+    bh = int(h * 0.28)
+    bx = cx - bw // 2
+    by = int(h * 0.32) + bob
+    pygame.draw.ellipse(s, p["feather_dark"], (bx - 1, by - 1, bw + 2, bh + 2))
+    pygame.draw.ellipse(s, p["feather"], (bx, by, bw, bh))
+    pygame.draw.ellipse(s, p["feather_light"], (bx + 2, by + 2, bw // 3, bh - 4))
+
+    # -- neck --
+    neck_x = cx + 4
+    neck_y = by - 4
+    pygame.draw.polygon(s, p["feather_dark"], [
+        (neck_x - 3, neck_y + 6), (neck_x + 3, neck_y + 6),
+        (neck_x + 2, neck_y - 6), (neck_x - 2, neck_y - 6),
+    ])
+    pygame.draw.polygon(s, p["feather"], [
+        (neck_x - 2, neck_y + 5), (neck_x + 2, neck_y + 5),
+        (neck_x + 1, neck_y - 4), (neck_x - 1, neck_y - 4),
+    ])
+
+    # -- head --
+    hx = neck_x + 1
+    hy = neck_y - 8 + head_bob
+    hr = 7
+    pygame.draw.ellipse(s, p["feather_dark"], (hx - hr, hy - hr // 2, hr * 2, hr))
+    pygame.draw.ellipse(s, p["feather"], (hx - hr + 1, hy - hr // 2 + 1, hr * 2 - 2, hr - 2))
+    pygame.draw.ellipse(s, p["feather_light"], (hx - hr + 2, hy - hr // 2 + 1, hr, hr - 3))
+
+    # -- crest (flame crown) --
+    for i in range(3):
+        crest_x = hx + (i - 1) * 3
+        crest_y = hy - hr // 2
+        crest_h = 8 + (1 if i == 1 else 0)
+        flame_wave = [0, 1, 0, -1][(frame + i) % 4]
+        pygame.draw.line(s, p["crest"], (crest_x, crest_y),
+                         (crest_x + flame_wave, crest_y - crest_h), 2)
+        _draw_circle_alpha(s, (*p["flame_bright"][:3], 80),
+                           (crest_x + flame_wave, crest_y - crest_h), 2)
+
+    # -- eyes --
+    for side in (-1, 1):
+        ex = hx + side * 3
+        ey = hy - 1
+        _draw_circle_alpha(s, p["eye_glow"], (ex, ey), 4)
+        _draw_circle_alpha(s, p["eye_white"], (ex, ey), 2)
+        _draw_circle_alpha(s, p["eye_pupil"], (ex, ey), 1)
+
+    # -- beak --
+    beak_x = hx + hr - 1
+    beak_y = hy + 2
+    pygame.draw.polygon(s, p["flame"], [
+        (beak_x, beak_y - 2), (beak_x + 6, beak_y), (beak_x, beak_y + 2),
+    ])
+
+    # -- ember particles --
+    for i in range(5):
+        angle = frame * 0.5 + i * 1.26
+        ex = cx + int(math.cos(angle) * (12 + i * 3))
+        ey = cy + int(math.sin(angle) * 10) + bob + 8
+        alpha = max(15, 70 - i * 12)
+        _draw_circle_alpha(s, (*p["ember"][:3], alpha), (ex, ey), 2)
+        if i % 2 == 0:
+            _draw_circle_alpha(s, (*p["ember_bright"][:3], alpha // 2), (ex + 1, ey - 1), 1)
+
+
+# ============================================================
+# CORAL GOLEM — living coral formation with ocean energy
+# ============================================================
+def _draw_coral_golem(s, w, h, cx, cy, p, direction, bob, frame):
+    """A living coral formation that pulses with deep ocean energy."""
+    _shadow(s, cx, h, p, bob)
+    pulse = [0, 1, 0, -1][frame]
+
+    # -- ocean energy glow --
+    aura = pygame.Surface((w, h), pygame.SRCALPHA)
+    _draw_circle_alpha(aura, (*p["energy"][:3], 20), (cx, cy + bob), int(w * 0.35))
+    s.blit(aura, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # -- base / feet (root-like coral) --
+    for side in (-1, 1):
+        foot_x = cx + side * 8
+        foot_y = cy + 18 + bob
+        for t in range(3):
+            tx = foot_x + (t - 1) * 4
+            pygame.draw.line(s, p["coral_dark"], (foot_x, foot_y), (tx, foot_y + 6), 3)
+            pygame.draw.line(s, p["coral"], (foot_x, foot_y + 1), (tx, foot_y + 5), 1)
+
+    # -- main body (rounded, bumpy coral) --
+    bw = int(w * 0.44)
+    bh = int(h * 0.42)
+    bx = cx - bw // 2
+    by = int(h * 0.28) + bob + pulse
+
+    pygame.draw.ellipse(s, p["coral_dark"], (bx - 1, by - 1, bw + 2, bh + 2))
+    pygame.draw.ellipse(s, p["coral"], (bx, by, bw, bh))
+    pygame.draw.ellipse(s, p["coral_light"], (bx + 3, by + 3, bw // 3, bh // 3))
+
+    # -- coral bumps / texture --
+    bump_positions = [
+        (bx + 6, by + 6, 4), (bx + bw - 10, by + 8, 3),
+        (bx + bw // 2, by + 4, 5), (bx + 4, by + bh // 2, 3),
+        (bx + bw - 6, by + bh // 2, 4),
+    ]
+    for mx, my, mr in bump_positions:
+        _draw_circle_alpha(s, p["coral_dark"], (mx, my + pulse), mr)
+        _draw_circle_alpha(s, p["coral"], (mx, my + pulse), mr - 1)
+
+    # -- coral branches growing from body --
+    branch_configs = [
+        (-1, -12, 10), (1, -14, 12), (-1, -6, 8), (1, -8, 9),
+    ]
+    for side, y_off, length in branch_configs:
+        bx_start = cx + side * (bw // 4)
+        by_start = by + y_off
+        bx_end = bx_start + side * 6
+        by_end = by_start - length
+        pygame.draw.line(s, p["coral_dark"], (bx_start, by_start), (bx_end, by_end), 3)
+        pygame.draw.line(s, p["branch"], (bx_start, by_start + 1), (bx_end, by_end), 2)
+        # branch tip (glowing)
+        tip_pulse = 1 if (frame + bx_start) % 3 == 0 else 0
+        _draw_circle_alpha(s, p["branch_light"], (bx_end, by_end), 3 + tip_pulse)
+
+    # -- barnacles / detail --
+    for bx2, by2 in [(bx + 8, by + bh // 2), (bx + bw - 10, by + bh // 3)]:
+        _draw_circle_alpha(s, p["barnacle"], (bx2, by2 + pulse), 3)
+        _draw_circle_alpha(s, p["barnacle_light"], (bx2, by2 + pulse), 2)
+
+    # -- face (simple glowing eyes) --
+    face_y = by + int(bh * 0.30)
+    for side in (-1, 1):
+        ex = cx + side * 7
+        ey = face_y
+        _draw_circle_alpha(s, p["eye_bg"], (ex, ey), 4)
+        _draw_circle_alpha(s, p["eye_glow"], (ex, ey), 3)
+        _draw_circle_alpha(s, p["eye_pupil"], (ex, ey), 2)
+
+    # -- ocean energy pulses --
+    for i in range(3):
+        wave_phase = (frame + i) % 4
+        wave_r = 12 + wave_phase * 5
+        wave_alpha = max(10, 40 - wave_phase * 10)
+        _draw_circle_alpha(s, (*p["energy_bright"][:3], wave_alpha), (cx, cy + bob), wave_r)
+
+    # -- water droplet particles --
+    for i in range(3):
+        angle = frame * 0.4 + i * 2.1
+        dx = cx + int(math.cos(angle) * 16)
+        dy = cy + int(math.sin(angle) * 10) + bob
+        _draw_circle_alpha(s, (*p["water"][:3], 50), (dx, dy), 2)
+        _draw_circle_alpha(s, (*p["water_bright"][:3], 30), (dx, dy), 1)
+
+
+# ============================================================
+# VOID BUTTERFLY — butterfly with cosmic wings
+# ============================================================
+def _draw_void_butterfly(s, w, h, cx, cy, p, direction, bob, frame):
+    """A massive butterfly whose wings reveal glimpses of the distant cosmos."""
+    _shadow(s, cx, h, p, bob)
+    wing_flap = [0, 5, 0, -5][frame]
+    antenna_sway = [0, 2, 0, -2][frame]
+
+    # -- cosmic aura --
+    aura = pygame.Surface((w, h), pygame.SRCALPHA)
+    _draw_circle_alpha(aura, (*p["nebula"][:3], 20), (cx, cy + bob), int(w * 0.4))
+    s.blit(aura, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # -- wings (4: 2 large upper, 2 smaller lower) --
+    for side in (-1, 1):
+        # Upper wing (large, cosmic)
+        uw_x = cx + side * 3
+        uw_y = cy - 2 + bob
+        uw_pts = [
+            (uw_x, uw_y),
+            (uw_x + side * (28 + wing_flap), uw_y - 16),
+            (uw_x + side * (34 + wing_flap), uw_y - 4),
+            (uw_x + side * (26 + wing_flap), uw_y + 10),
+            (uw_x + side * 6, uw_y + 8),
+        ]
+        # outer wing (dark void)
+        pygame.draw.polygon(s, p["wing_dark"], uw_pts)
+        # inner wing (deep cosmos)
+        uw_inner = [
+            (uw_x + side * 3, uw_y - 1),
+            (uw_x + side * (24 + wing_flap), uw_y - 13),
+            (uw_x + side * (28 + wing_flap), uw_y - 3),
+            (uw_x + side * (22 + wing_flap), uw_y + 7),
+            (uw_x + side * 6, uw_y + 6),
+        ]
+        pygame.draw.polygon(s, p["wing"], uw_inner)
+        # cosmos layer
+        uw_cosmos = [
+            (uw_x + side * 6, uw_y),
+            (uw_x + side * (18 + wing_flap), uw_y - 8),
+            (uw_x + side * (20 + wing_flap), uw_y),
+            (uw_x + side * (14 + wing_flap), uw_y + 4),
+            (uw_x + side * 6, uw_y + 3),
+        ]
+        pygame.draw.polygon(s, p["wing_light"], uw_cosmos)
+
+        # star speckles on upper wing
+        for i in range(5):
+            st_x = uw_x + side * (6 + i * 5 + wing_flap * 0.5)
+            st_y = uw_y - 8 + i * 3
+            bright = 1 if (frame + i + int(uw_x)) % 3 == 0 else 0
+            _draw_circle_alpha(s, (*p["cosmos_star"][:3], 60 + bright * 40),
+                               (int(st_x), int(st_y)), 1 + bright)
+
+        # nebula accent
+        neb_x = uw_x + side * (16 + wing_flap)
+        neb_y = uw_y - 4
+        _draw_circle_alpha(s, (*p["nebula_bright"][:3], 50), (int(neb_x), int(neb_y)), 6)
+        _draw_circle_alpha(s, (*p["cosmos"][:3], 70), (int(neb_x), int(neb_y)), 4)
+
+        # Lower wing (smaller)
+        lw_x = cx + side * 2
+        lw_y = cy + 6 + bob
+        lw_pts = [
+            (lw_x, lw_y),
+            (lw_x + side * (18 - wing_flap), lw_y + 2),
+            (lw_x + side * (20 - wing_flap), lw_y + 14),
+            (lw_x + side * (10 - wing_flap), lw_y + 16),
+            (lw_x + side * 3, lw_y + 8),
+        ]
+        pygame.draw.polygon(s, p["wing_dark"], lw_pts)
+        lw_inner = [
+            (lw_x + side * 2, lw_y + 1),
+            (lw_x + side * (15 - wing_flap), lw_y + 3),
+            (lw_x + side * (16 - wing_flap), lw_y + 12),
+            (lw_x + side * (8 - wing_flap), lw_y + 14),
+            (lw_x + side * 3, lw_y + 7),
+        ]
+        pygame.draw.polygon(s, p["wing"], lw_inner)
+        # small star on lower wing
+        _draw_circle_alpha(s, (*p["cosmos_star"][:3], 70),
+                           (lw_x + side * (10 - wing_flap), lw_y + 8), 2)
+
+    # -- body (fuzzy, dark) --
+    body_y = cy - 2 + bob
+    # thorax
+    pygame.draw.ellipse(s, p["body_dark"], (cx - 4, body_y - 1, 8, 10))
+    pygame.draw.ellipse(s, p["body"], (cx - 3, body_y, 6, 8))
+    pygame.draw.ellipse(s, p["body_light"], (cx - 2, body_y + 1, 4, 5))
+    # abdomen
+    for seg in range(3):
+        seg_y = body_y + 8 + seg * 4
+        seg_w = 5 - seg
+        pygame.draw.ellipse(s, p["body_dark"], (cx - seg_w // 2 - 1, seg_y - 1, seg_w + 2, 5))
+        pygame.draw.ellipse(s, p["body"], (cx - seg_w // 2, seg_y, seg_w, 4))
+
+    # -- head --
+    hy = body_y - 4
+    _draw_circle_alpha(s, p["body_dark"], (cx, hy), 4)
+    _draw_circle_alpha(s, p["body"], (cx, hy), 3)
+    # eyes
+    for side in (-1, 1):
+        ex = cx + side * 2
+        _draw_circle_alpha(s, p["eye_white"], (ex, hy - 1), 2)
+        _draw_circle_alpha(s, p["eye_pupil"], (ex, hy - 1), 1)
+
+    # -- antennae (long, curled) --
+    for side in (-1, 1):
+        base_x = cx + side * 2
+        base_y = hy - 3
+        mid_x = base_x + side * (6 + antenna_sway)
+        mid_y = base_y - 8
+        tip_x = mid_x + side * 3
+        tip_y = mid_y - 4
+        # draw as two segments
+        pygame.draw.line(s, p["antenna"], (base_x, base_y), (mid_x, mid_y), 1)
+        pygame.draw.line(s, p["antenna"], (mid_x, mid_y), (tip_x, tip_y), 1)
+        # glowing tip
+        _draw_circle_alpha(s, (*p["antenna_tip"][:3], 120), (tip_x, tip_y), 2)
+        _draw_circle_alpha(s, (*p["antenna_tip"][:3], 50), (tip_x, tip_y), 4)
+
+    # -- trailing cosmic dust --
+    for i in range(4):
+        angle = frame * 0.4 + i * 1.57
+        dx = int(math.cos(angle) * (10 + i * 4))
+        dy = int(math.sin(angle * 0.6) * (6 + i * 3))
+        alpha = max(15, 50 - i * 10)
+        _draw_circle_alpha(s, (*p["cosmos"][:3], alpha), (cx + dx, cy + bob + 18 + dy), 2)
+
+
+# ============================================================
+# MOSS RABBIT — fluffy rabbit with moss and flowers
+# ============================================================
+def _draw_moss_rabbit(s, w, h, cx, cy, p, direction, bob, frame):
+    """A fluffy rabbit with moss and tiny flowers growing on its back."""
+    _shadow(s, cx, h, p, bob)
+    hop = [0, -2, 0, -1][frame]
+    ear_wag = [0, 2, 0, -2][frame]
+
+    # -- legs (hopping) --
+    for side in (-1, 1):
+        lx = cx + side * 5
+        ly = int(h * 0.62) + bob + hop
+        pygame.draw.ellipse(s, p["fur_dark"], (lx, ly, 8, 12))
+        pygame.draw.ellipse(s, p["fur"], (lx + 1, ly + 1, 6, 10))
+        pygame.draw.ellipse(s, p["fur_light"], (lx + 1, ly + 8, 6, 4))
+
+    # -- body (round, fluffy) --
+    bw = int(w * 0.38)
+    bh = int(h * 0.30)
+    bx = cx - bw // 2
+    by = int(h * 0.34) + bob + hop
+    pygame.draw.ellipse(s, p["fur_dark"], (bx - 1, by - 1, bw + 2, bh + 2))
+    pygame.draw.ellipse(s, p["fur"], (bx, by, bw, bh))
+    pygame.draw.ellipse(s, p["fur_light"], (bx + 3, by + 3, bw // 3, bh - 6))
+
+    # -- belly --
+    _draw_ellipse_alpha(s, p["belly"], (cx - 6, by + bh - 6, 12, 8))
+
+    # -- moss on back --
+    for mx, my in [(bx + 4, by + 4), (bx + bw - 6, by + 6), (cx, by + 2)]:
+        _draw_ellipse_alpha(s, p["moss"], (mx, my, 8, 4))
+        _draw_ellipse_alpha(s, p["moss_light"], (mx + 1, my + 1, 5, 2))
+        # tiny flower on moss
+        _draw_circle_alpha(s, p["flower"], (mx + 3, my - 1), 2)
+        _draw_circle_alpha(s, p["flower_light"], (mx + 3, my - 2), 1)
+
+    # -- head --
+    hr = int(w * 0.14)
+    hx = cx + bw // 2 - 4
+    hy = by - 2 + [0, -1, 0, 1][frame]
+    pygame.draw.ellipse(s, p["fur_dark"], (hx - hr, hy - hr // 2, hr * 2, hr))
+    pygame.draw.ellipse(s, p["fur"], (hx - hr + 1, hy - hr // 2 + 1, hr * 2 - 2, hr - 2))
+
+    # -- ears (long, floppy) --
+    for side in (-1, 1):
+        ear_x = hx + side * 4
+        ear_y = hy - 4
+        ear_len = 14 + side * ear_wag
+        pygame.draw.ellipse(s, p["fur_dark"], (ear_x - 3, ear_y - ear_len, 6, ear_len))
+        pygame.draw.ellipse(s, p["fur"], (ear_x - 2, ear_y - ear_len + 1, 4, ear_len - 2))
+        pygame.draw.ellipse(s, p["ear_inner"], (ear_x - 1, ear_y - ear_len + 4, 2, ear_len - 6))
+
+    # -- eyes --
+    for side in (-1, 1):
+        ex = hx + side * 3
+        ey = hy - 1
+        pygame.draw.circle(s, p["eye_white"], (ex, ey), 3)
+        pygame.draw.circle(s, p["eye_pupil"], (ex, ey), 2)
+        pygame.draw.circle(s, (255, 255, 255, 180), (ex + 1, ey - 1), 1)
+
+    # -- nose --
+    pygame.draw.circle(s, p["nose"], (hx + hr - 2, hy + 1), 2)
+
+    # -- tail (fluffy cottonball) --
+    tail_x = bx - 4
+    tail_y = by + bh // 2
+    _draw_circle_alpha(s, p["belly"], (tail_x, tail_y), 5)
+    _draw_circle_alpha(s, p["fur_light"], (tail_x, tail_y), 4)
+
+
+# ============================================================
+# CRYSTAL FOX — sleek fox with shimmering crystal fur
+# ============================================================
+def _draw_crystal_fox(s, w, h, cx, cy, p, direction, bob, frame):
+    """A sleek fox whose fur shimmers like cut gemstones in the sunlight."""
+    _shadow(s, cx, h, p, bob)
+    walk = [0, 1, 0, -1][frame]
+    tail_sway = [0, 3, 0, -3][frame]
+
+    # -- tail (bushy, crystal-tipped) --
+    tail_x = cx - 16
+    tail_y = cy + 2 + bob
+    tail_pts = []
+    for i in range(5):
+        tx = tail_x - i * 4 + tail_sway * (i * 0.2)
+        ty = tail_y + i * 2 + int(math.sin(frame * 0.4 + i) * 2)
+        tail_pts.append((tx, ty))
+    for i in range(len(tail_pts) - 1):
+        pygame.draw.line(s, p["fur_dark"], tail_pts[i], tail_pts[i + 1], max(1, 4 - i))
+        pygame.draw.line(s, p["fur"], tail_pts[i], tail_pts[i + 1], max(1, 3 - i))
+    # crystal tip
+    tip = tail_pts[-1]
+    _draw_circle_alpha(s, (*p["tail_tip"][:3], 80), tip, 4)
+
+    # -- hind legs --
+    for side in (-1, 1):
+        lx = cx + side * 5 - 2
+        ly = int(h * 0.56) + bob
+        pygame.draw.rect(s, p["fur_dark"], (lx + walk * side, ly, 6, 14), border_radius=2)
+        pygame.draw.rect(s, p["fur"], (lx + 1 + walk * side, ly + 1, 4, 12), border_radius=1)
+
+    # -- body --
+    bw = int(w * 0.40)
+    bh = int(h * 0.28)
+    bx = cx - bw // 2
+    by = int(h * 0.32) + bob
+    pygame.draw.ellipse(s, p["fur_dark"], (bx - 1, by - 1, bw + 2, bh + 2))
+    pygame.draw.ellipse(s, p["fur"], (bx, by, bw, bh))
+    pygame.draw.ellipse(s, p["fur_light"], (bx + 3, by + 2, bw // 3, bh - 6))
+
+    # -- crystal shimmer on fur --
+    for i in range(4):
+        sx = bx + 4 + i * (bw - 8) // 3
+        sy = by + 3 + (i % 3) * 3
+        pulse = 1 if (frame + i) % 2 == 0 else 0
+        _draw_circle_alpha(s, (*p["crystal_glow"][:3], 40 + pulse * 30), (sx, sy), 2 + pulse)
+
+    # -- belly --
+    _draw_ellipse_alpha(s, p["belly"], (cx - 5, by + bh - 4, 10, 6))
+
+    # -- front legs --
+    for side in (-1, 1):
+        lx = cx + side * 7 + 2
+        ly = int(h * 0.50) + bob
+        leg_walk = walk * side
+        pygame.draw.rect(s, p["fur_dark"], (lx + leg_walk, ly, 6, 16), border_radius=2)
+        pygame.draw.rect(s, p["fur"], (lx + 1 + leg_walk, ly + 1, 4, 14), border_radius=1)
+        pygame.draw.rect(s, p["fur_light"], (lx + 1 + leg_walk, ly + 1, 2, 8), border_radius=1)
+
+    # -- neck --
+    neck_x = cx + 6
+    neck_y = by - 4
+    pygame.draw.polygon(s, p["fur_dark"], [
+        (neck_x - 4, neck_y + 6), (neck_x + 4, neck_y + 6),
+        (neck_x + 3, neck_y - 4), (neck_x - 3, neck_y - 4),
+    ])
+    pygame.draw.polygon(s, p["fur"], [
+        (neck_x - 3, neck_y + 5), (neck_x + 3, neck_y + 5),
+        (neck_x + 2, neck_y - 2), (neck_x - 2, neck_y - 2),
+    ])
+
+    # -- head (pointed, fox-like) --
+    hr = int(w * 0.13)
+    hx = neck_x + 2
+    hy = neck_y - 6 + [0, -1, 0, 1][frame]
+    pygame.draw.ellipse(s, p["fur_dark"], (hx - hr - 1, hy - hr // 2 - 1, hr * 2 + 2, hr + 2))
+    pygame.draw.ellipse(s, p["fur"], (hx - hr, hy - hr // 2, hr * 2, hr))
+    pygame.draw.ellipse(s, p["fur_light"], (hx - hr + 2, hy - hr // 2 + 1, hr, hr - 3))
+
+    # -- ears (triangular, pointed) --
+    for side in (-1, 1):
+        ear_x = hx + side * (hr - 2)
+        ear_y = hy - 3
+        pygame.draw.polygon(s, p["fur_dark"], [
+            (ear_x, ear_y), (ear_x + side * 2, ear_y - 10), (ear_x + side * 6, ear_y - 2)
+        ])
+        pygame.draw.polygon(s, p["fur"], [
+            (ear_x + 1, ear_y - 1), (ear_x + side * 2, ear_y - 8), (ear_x + side * 5, ear_y - 2)
+        ])
+
+    # -- snout --
+    snout_x = hx + hr - 1
+    snout_y = hy + 2
+    pygame.draw.ellipse(s, p["fur"], (snout_x - 2, snout_y - 2, 8, 6))
+    pygame.draw.ellipse(s, p["fur_light"], (snout_x - 1, snout_y - 1, 6, 4))
+    pygame.draw.circle(s, p["nose"], (snout_x + 2, snout_y + 1), 1)
+
+    # -- eyes --
+    esp = 4
+    for side2 in (-1, 1):
+        ex = hx + side2 * esp
+        ey = hy - 1
+        _draw_circle_alpha(s, p["eye_white"], (ex, ey), 3)
+        _draw_circle_alpha(s, p["eye_pupil"], (ex, ey), 2)
+        pygame.draw.circle(s, (255, 255, 255, 180), (ex + 1, ey - 1), 1)
+
+    # -- crystal sparkle trail --
+    for i in range(3):
+        angle = frame * 0.4 + i * 2.1
+        sx = cx + int(math.cos(angle) * 18)
+        sy = cy + int(math.sin(angle) * 10) + bob
+        _draw_circle_alpha(s, (*p["crystal_light"][:3], 40), (sx, sy), 2)
+
+
+
+
+# ============================================================
+# FAIRY CAT — graceful feline with iridescent wings
+# ============================================================
+def _draw_fairy_cat(s, w, h, cx, cy, p, direction, bob, frame):
+    """A graceful feline with iridescent wings and eyes like tiny moons."""
+    _shadow(s, cx, h, p, bob)
+    walk = [0, 1, 0, -1][frame]
+    tail_wag = [0, 4, 0, -4][frame]
+    wing_flap = [0, 3, 0, -3][frame]
+
+    # -- wings (fairy/insect-like) --
+    for side in (-1, 1):
+        wing_x = cx + side * 2
+        wing_y = cy - 4 + bob
+        # upper wing
+        uw_pts = [
+            (wing_x, wing_y),
+            (wing_x + side * (18 + wing_flap), wing_y - 10),
+            (wing_x + side * (22 + wing_flap), wing_y),
+            (wing_x + side * (16 + wing_flap), wing_y + 6),
+            (wing_x + side * 4, wing_y + 4),
+        ]
+        pygame.draw.polygon(s, (*p["wing"][:3], 60), uw_pts)
+        uw_inner = [
+            (wing_x + side * 3, wing_y),
+            (wing_x + side * (14 + wing_flap), wing_y - 6),
+            (wing_x + side * (16 + wing_flap), wing_y),
+            (wing_x + side * (12 + wing_flap), wing_y + 4),
+            (wing_x + side * 4, wing_y + 3),
+        ]
+        pygame.draw.polygon(s, (*p["wing_bright"][:3], 40), uw_inner)
+        # lower wing
+        lw_pts = [
+            (wing_x, wing_y + 4),
+            (wing_x + side * (12 - wing_flap), wing_y + 6),
+            (wing_x + side * (14 - wing_flap), wing_y + 12),
+            (wing_x + side * (8 - wing_flap), wing_y + 14),
+            (wing_x + side * 3, wing_y + 8),
+        ]
+        pygame.draw.polygon(s, (*p["wing_inner"][:3], 50), lw_pts)
+
+    # -- tail (long, graceful) --
+    tail_x = cx - 14
+    tail_y = cy + 4 + bob
+    tail_pts = []
+    for i in range(5):
+        tx = tail_x - i * 5 + tail_wag * (i * 0.2)
+        ty = tail_y + i * 2 + int(math.sin(frame * 0.5 + i * 0.8) * 2)
+        tail_pts.append((tx, ty))
+    for i in range(len(tail_pts) - 1):
+        pygame.draw.line(s, p["fur_dark"], tail_pts[i], tail_pts[i + 1], max(1, 3 - i))
+        pygame.draw.line(s, p["fur"], tail_pts[i], tail_pts[i + 1], max(1, 2 - i))
+    tip = tail_pts[-1]
+    _draw_circle_alpha(s, (*p["tail_tip"][:3], 80), tip, 3)
+
+    # -- hind legs --
+    for side in (-1, 1):
+        lx = cx + side * 6 - 2
+        ly = int(h * 0.56) + bob
+        pygame.draw.rect(s, p["fur_dark"], (lx + walk * side, ly, 6, 14), border_radius=2)
+        pygame.draw.rect(s, p["fur"], (lx + 1 + walk * side, ly + 1, 4, 12), border_radius=1)
+        pygame.draw.ellipse(s, p["pad"], (lx + walk * side, ly + 12, 6, 4))
+
+    # -- body --
+    bw = int(w * 0.40)
+    bh = int(h * 0.28)
+    bx = cx - bw // 2
+    by = int(h * 0.32) + bob
+    pygame.draw.ellipse(s, p["fur_dark"], (bx - 1, by - 1, bw + 2, bh + 2))
+    pygame.draw.ellipse(s, p["fur"], (bx, by, bw, bh))
+    pygame.draw.ellipse(s, p["fur_light"], (bx + 3, by + 2, bw // 3, bh - 6))
+
+    # -- belly --
+    _draw_ellipse_alpha(s, p["belly"], (cx - 5, by + bh - 4, 10, 6))
+
+    # -- front legs --
+    for side in (-1, 1):
+        lx = cx + side * 8 + 2
+        ly = int(h * 0.50) + bob
+        leg_walk = walk * side
+        pygame.draw.rect(s, p["fur_dark"], (lx + leg_walk, ly, 6, 16), border_radius=2)
+        pygame.draw.rect(s, p["fur"], (lx + 1 + leg_walk, ly + 1, 4, 14), border_radius=1)
+        pygame.draw.rect(s, p["fur_light"], (lx + 1 + leg_walk, ly + 1, 2, 8), border_radius=1)
+        pygame.draw.ellipse(s, p["pad"], (lx + leg_walk, ly + 14, 6, 4))
+
+    # -- neck --
+    neck_x = cx + bw // 2 - 4
+    neck_y = by - 4
+    pygame.draw.polygon(s, p["fur_dark"], [
+        (neck_x - 4, neck_y + 6), (neck_x + 4, neck_y + 6),
+        (neck_x + 2, neck_y - 4), (neck_x - 2, neck_y - 4),
+    ])
+    pygame.draw.polygon(s, p["fur"], [
+        (neck_x - 3, neck_y + 5), (neck_x + 3, neck_y + 5),
+        (neck_x + 1, neck_y - 2), (neck_x - 1, neck_y - 2),
+    ])
+
+    # -- head (round, cat-like) --
+    hr = int(w * 0.14)
+    hx = neck_x + 1
+    hy = neck_y - 6 + [0, -1, 0, 1][frame]
+    pygame.draw.ellipse(s, p["fur_dark"], (hx - hr - 1, hy - hr // 2 - 1, hr * 2 + 2, hr + 2))
+    pygame.draw.ellipse(s, p["fur"], (hx - hr, hy - hr // 2, hr * 2, hr))
+    pygame.draw.ellipse(s, p["fur_light"], (hx - hr + 2, hy - hr // 2 + 1, hr, hr - 3))
+
+    # -- ears (cat-like, pointed) --
+    for side in (-1, 1):
+        ear_x = hx + side * (hr - 2)
+        ear_y = hy - 4
+        pygame.draw.polygon(s, p["fur_dark"], [
+            (ear_x, ear_y), (ear_x + side * 2, ear_y - 10), (ear_x + side * 6, ear_y - 2)
+        ])
+        pygame.draw.polygon(s, p["fur"], [
+            (ear_x + 1, ear_y - 1), (ear_x + side * 2, ear_y - 8), (ear_x + side * 5, ear_y - 2)
+        ])
+        pygame.draw.polygon(s, p["ear_inner"], [
+            (ear_x + 1, ear_y - 1), (ear_x + side * 2, ear_y - 7), (ear_x + side * 4, ear_y - 2)
+        ])
+
+    # -- eyes (large, round) --
+    esp = 4
+    for side2 in (-1, 1):
+        ex = hx + side2 * esp
+        ey = hy - 1
+        _draw_circle_alpha(s, p["eye_white"], (ex, ey), 4)
+        _draw_circle_alpha(s, p["eye_pupil"], (ex, ey), 3)
+        pygame.draw.circle(s, (255, 255, 255, 200), (ex + 1, ey - 1), 1)
+
+    # -- nose --
+    pygame.draw.circle(s, p["nose"], (hx + hr - 2, hy + 1), 1)
+
+    # -- collar with bell --
+    collar_y = hy + hr // 2 + 2
+    pygame.draw.line(s, p["collar"], (hx - 4, collar_y), (hx + 4, collar_y), 2)
+    bell_y = collar_y + 2
+    _draw_circle_alpha(s, p["bell"], (hx, bell_y), 2)
+    _draw_circle_alpha(s, p["bell_glow"], (hx, bell_y), 3)
+
+
+
+# ============================================================
+# CELESTIAL STAG — starlit deer with golden antlers
+# ============================================================
+def _draw_celestial_stag(s, w, h, cx, cy, p, direction, bob, frame):
+    """A noble stag whose antlers glow with starlight."""
+    _shadow(s, cx, h, p, bob)
+    sway = [0, 1, 0, -1][frame]
+
+    # ---- ambient aura ----
+    aura = pygame.Surface((w, h), pygame.SRCALPHA)
+    _draw_circle_alpha(aura, p["aura_color"] + (18,), (cx, cy + bob), int(w * 0.38))
+    s.blit(aura, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # ---- main body (oval) ----
+    bw = int(w * 0.42); bh = int(h * 0.34)
+    bx = cx - bw // 2 + sway; by = int(h * 0.30) + bob
+    pygame.draw.ellipse(s, p["fur"], (bx - 1, by - 1, bw + 2, bh + 2))
+    pygame.draw.ellipse(s, p["fur_light"], (bx, by, bw, bh))
+    pygame.draw.ellipse(s, p["fur_dark"], (bx + 4, by + 4, bw // 3, bh - 6))
+
+    # ---- belly highlight ----
+    if "belly" in p:
+        _draw_ellipse_alpha(s, p["belly"], (cx - 4, by + bh - 5, 8, 6))
+
+    # ---- four legs ----
+    for side in (-1, 1):
+        for fb in (0, 1):
+            lx = cx + side * (4 + fb * 4)
+            ly = by + bh - 2
+            pygame.draw.line(s, p["fur_dark"], (lx + sway * side, ly), (lx + side * 2, ly + 10), 3)
+            pygame.draw.line(s, p["fur_light"], (lx + sway * side, ly), (lx + side * 1, ly + 8), 2)
+
+    # ---- head ----
+    hr = int(w * 0.13)
+    hx = cx + 2; hy = by - hr + sway
+    pygame.draw.ellipse(s, p["fur_dark"], (hx - hr, hy - hr // 2, hr * 2, hr))
+    pygame.draw.ellipse(s, p["fur_light"], (hx - hr + 1, hy - hr // 2 + 1, hr * 2 - 2, hr - 2))
+
+    # ---- eyes ----
+    for side in (-1, 1):
+        ex = hx + side * 3; ey = hy
+        pygame.draw.circle(s, p["eye_white"], (ex, ey), 3)
+        pygame.draw.circle(s, p["eye_pupil"], (ex, ey), 1)
+        pygame.draw.circle(s, (255, 255, 255, 200), (ex + 1, ey - 1), 1)
+
+    # ---- extra majestic accents ----
+    for i in range(3):
+        ax = bx + 4 + i * (bw - 8) // 2
+        ay = by + 4 + (i % 2) * 4
+        _draw_circle_alpha(s, p["aura_color"] + (90,), (ax, ay), 3)
+        _draw_circle_alpha(s, p["star"], (ax, ay), 2)
+
+
+# ============================================================
+# LUMEN KOI — graceful radiant fish
+# ============================================================
+def _draw_lumen_koi(s, w, h, cx, cy, p, direction, bob, frame):
+    """A majestic koi whose scales glow with soft inner light."""
+    _shadow(s, cx, h, p, bob)
+    sway = [0, 1, 0, -1][frame]
+
+    # ---- ambient aura ----
+    aura = pygame.Surface((w, h), pygame.SRCALPHA)
+    _draw_circle_alpha(aura, p["aura_color"] + (18,), (cx, cy + bob), int(w * 0.38))
+    s.blit(aura, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # ---- main body (oval) ----
+    bw = int(w * 0.42); bh = int(h * 0.34)
+    bx = cx - bw // 2 + sway; by = int(h * 0.30) + bob
+    pygame.draw.ellipse(s, p["scale"], (bx - 1, by - 1, bw + 2, bh + 2))
+    pygame.draw.ellipse(s, p["scale_light"], (bx, by, bw, bh))
+    pygame.draw.ellipse(s, p["scale_dark"], (bx + 4, by + 4, bw // 3, bh - 6))
+
+    # ---- belly highlight ----
+    if "belly" in p:
+        _draw_ellipse_alpha(s, p["belly"], (cx - 4, by + bh - 5, 8, 6))
+
+    # ---- four legs ----
+    for side in (-1, 1):
+        for fb in (0, 1):
+            lx = cx + side * (4 + fb * 4)
+            ly = by + bh - 2
+            pygame.draw.line(s, p["scale_dark"], (lx + sway * side, ly), (lx + side * 2, ly + 10), 3)
+            pygame.draw.line(s, p["scale_light"], (lx + sway * side, ly), (lx + side * 1, ly + 8), 2)
+
+    # ---- head ----
+    hr = int(w * 0.13)
+    hx = cx + 2; hy = by - hr + sway
+    pygame.draw.ellipse(s, p["scale_dark"], (hx - hr, hy - hr // 2, hr * 2, hr))
+    pygame.draw.ellipse(s, p["scale_light"], (hx - hr + 1, hy - hr // 2 + 1, hr * 2 - 2, hr - 2))
+
+    # ---- eyes ----
+    for side in (-1, 1):
+        ex = hx + side * 3; ey = hy
+        pygame.draw.circle(s, p["eye_white"], (ex, ey), 3)
+        pygame.draw.circle(s, p["eye_pupil"], (ex, ey), 1)
+        pygame.draw.circle(s, (255, 255, 255, 200), (ex + 1, ey - 1), 1)
+
+    # ---- extra majestic accents ----
+    for i in range(3):
+        ax = bx + 4 + i * (bw - 8) // 2
+        ay = by + 4 + (i % 2) * 4
+        _draw_circle_alpha(s, p["aura_color"] + (90,), (ax, ay), 3)
+        _draw_circle_alpha(s, p["spot"], (ax, ay), 2)
+
+
+# ============================================================
+# AURORA WOLF — wolf wreathed in northern lights
+# ============================================================
+def _draw_aurora_wolf(s, w, h, cx, cy, p, direction, bob, frame):
+    """A wolf whose fur shimmers with the colors of the aurora borealis."""
+    _shadow(s, cx, h, p, bob)
+    sway = [0, 1, 0, -1][frame]
+
+    # ---- ambient aura ----
+    aura = pygame.Surface((w, h), pygame.SRCALPHA)
+    _draw_circle_alpha(aura, p["aura_color"] + (18,), (cx, cy + bob), int(w * 0.38))
+    s.blit(aura, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # ---- main body (oval) ----
+    bw = int(w * 0.42); bh = int(h * 0.34)
+    bx = cx - bw // 2 + sway; by = int(h * 0.30) + bob
+    pygame.draw.ellipse(s, p["fur"], (bx - 1, by - 1, bw + 2, bh + 2))
+    pygame.draw.ellipse(s, p["fur_light"], (bx, by, bw, bh))
+    pygame.draw.ellipse(s, p["fur_dark"], (bx + 4, by + 4, bw // 3, bh - 6))
+
+    # ---- belly highlight ----
+    if "belly" in p:
+        _draw_ellipse_alpha(s, p["belly"], (cx - 4, by + bh - 5, 8, 6))
+
+    # ---- four legs ----
+    for side in (-1, 1):
+        for fb in (0, 1):
+            lx = cx + side * (4 + fb * 4)
+            ly = by + bh - 2
+            pygame.draw.line(s, p["fur_dark"], (lx + sway * side, ly), (lx + side * 2, ly + 10), 3)
+            pygame.draw.line(s, p["fur_light"], (lx + sway * side, ly), (lx + side * 1, ly + 8), 2)
+
+    # ---- head ----
+    hr = int(w * 0.13)
+    hx = cx + 2; hy = by - hr + sway
+    pygame.draw.ellipse(s, p["fur_dark"], (hx - hr, hy - hr // 2, hr * 2, hr))
+    pygame.draw.ellipse(s, p["fur_light"], (hx - hr + 1, hy - hr // 2 + 1, hr * 2 - 2, hr - 2))
+
+    # ---- eyes ----
+    for side in (-1, 1):
+        ex = hx + side * 3; ey = hy
+        pygame.draw.circle(s, p["eye_white"], (ex, ey), 3)
+        pygame.draw.circle(s, p["eye_pupil"], (ex, ey), 1)
+        pygame.draw.circle(s, (255, 255, 255, 200), (ex + 1, ey - 1), 1)
+
+    # ---- extra majestic accents ----
+    for i in range(3):
+        ax = bx + 4 + i * (bw - 8) // 2
+        ay = by + 4 + (i % 2) * 4
+        _draw_circle_alpha(s, p["aura_color"] + (90,), (ax, ay), 3)
+        _draw_circle_alpha(s, p["aurora"], (ax, ay), 2)
+
+
+# ============================================================
+# PRISM PEACOCK — radiant peacock with rainbow plumage
+# ============================================================
+def _draw_prism_peacock(s, w, h, cx, cy, p, direction, bob, frame):
+    """A peacock whose tail feathers shimmer in every color of the spectrum."""
+    _shadow(s, cx, h, p, bob)
+    sway = [0, 1, 0, -1][frame]
+
+    # ---- ambient aura ----
+    aura = pygame.Surface((w, h), pygame.SRCALPHA)
+    _draw_circle_alpha(aura, p["aura_color"] + (18,), (cx, cy + bob), int(w * 0.38))
+    s.blit(aura, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # ---- main body (oval) ----
+    bw = int(w * 0.42); bh = int(h * 0.34)
+    bx = cx - bw // 2 + sway; by = int(h * 0.30) + bob
+    pygame.draw.ellipse(s, p["body"], (bx - 1, by - 1, bw + 2, bh + 2))
+    pygame.draw.ellipse(s, p["body_light"], (bx, by, bw, bh))
+    pygame.draw.ellipse(s, p["body_dark"], (bx + 4, by + 4, bw // 3, bh - 6))
+
+    # ---- belly highlight ----
+    if "belly" in p:
+        _draw_ellipse_alpha(s, p["belly"], (cx - 4, by + bh - 5, 8, 6))
+
+    # ---- four legs ----
+    for side in (-1, 1):
+        for fb in (0, 1):
+            lx = cx + side * (4 + fb * 4)
+            ly = by + bh - 2
+            pygame.draw.line(s, p["body_dark"], (lx + sway * side, ly), (lx + side * 2, ly + 10), 3)
+            pygame.draw.line(s, p["body_light"], (lx + sway * side, ly), (lx + side * 1, ly + 8), 2)
+
+    # ---- head ----
+    hr = int(w * 0.13)
+    hx = cx + 2; hy = by - hr + sway
+    pygame.draw.ellipse(s, p["body_dark"], (hx - hr, hy - hr // 2, hr * 2, hr))
+    pygame.draw.ellipse(s, p["body_light"], (hx - hr + 1, hy - hr // 2 + 1, hr * 2 - 2, hr - 2))
+
+    # ---- eyes ----
+    for side in (-1, 1):
+        ex = hx + side * 3; ey = hy
+        pygame.draw.circle(s, p["eye_white"], (ex, ey), 3)
+        pygame.draw.circle(s, p["eye_pupil"], (ex, ey), 1)
+        pygame.draw.circle(s, (255, 255, 255, 200), (ex + 1, ey - 1), 1)
+
+    # ---- extra majestic accents ----
+    for i in range(3):
+        ax = bx + 4 + i * (bw - 8) // 2
+        ay = by + 4 + (i % 2) * 4
+        _draw_circle_alpha(s, p["aura_color"] + (90,), (ax, ay), 3)
+        _draw_circle_alpha(s, p["feather"], (ax, ay), 2)
+
+
+# ============================================================
+# MOONLIT UNICORN — silver unicorn with starry mane
+# ============================================================
+def _draw_moonlit_unicorn(s, w, h, cx, cy, p, direction, bob, frame):
+    """A unicorn whose horn shines with pure lunar light."""
+    _shadow(s, cx, h, p, bob)
+    sway = [0, 1, 0, -1][frame]
+
+    # ---- ambient aura ----
+    aura = pygame.Surface((w, h), pygame.SRCALPHA)
+    _draw_circle_alpha(aura, p["aura_color"] + (18,), (cx, cy + bob), int(w * 0.38))
+    s.blit(aura, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # ---- main body (oval) ----
+    bw = int(w * 0.42); bh = int(h * 0.34)
+    bx = cx - bw // 2 + sway; by = int(h * 0.30) + bob
+    pygame.draw.ellipse(s, p["fur"], (bx - 1, by - 1, bw + 2, bh + 2))
+    pygame.draw.ellipse(s, p["fur_light"], (bx, by, bw, bh))
+    pygame.draw.ellipse(s, p["fur_dark"], (bx + 4, by + 4, bw // 3, bh - 6))
+
+    # ---- belly highlight ----
+    if "belly" in p:
+        _draw_ellipse_alpha(s, p["belly"], (cx - 4, by + bh - 5, 8, 6))
+
+    # ---- four legs ----
+    for side in (-1, 1):
+        for fb in (0, 1):
+            lx = cx + side * (4 + fb * 4)
+            ly = by + bh - 2
+            pygame.draw.line(s, p["fur_dark"], (lx + sway * side, ly), (lx + side * 2, ly + 10), 3)
+            pygame.draw.line(s, p["fur_light"], (lx + sway * side, ly), (lx + side * 1, ly + 8), 2)
+
+    # ---- head ----
+    hr = int(w * 0.13)
+    hx = cx + 2; hy = by - hr + sway
+    pygame.draw.ellipse(s, p["fur_dark"], (hx - hr, hy - hr // 2, hr * 2, hr))
+    pygame.draw.ellipse(s, p["fur_light"], (hx - hr + 1, hy - hr // 2 + 1, hr * 2 - 2, hr - 2))
+
+    # ---- eyes ----
+    for side in (-1, 1):
+        ex = hx + side * 3; ey = hy
+        pygame.draw.circle(s, p["eye_white"], (ex, ey), 3)
+        pygame.draw.circle(s, p["eye_pupil"], (ex, ey), 1)
+        pygame.draw.circle(s, (255, 255, 255, 200), (ex + 1, ey - 1), 1)
+
+    # ---- extra majestic accents ----
+    for i in range(3):
+        ax = bx + 4 + i * (bw - 8) // 2
+        ay = by + 4 + (i % 2) * 4
+        _draw_circle_alpha(s, p["aura_color"] + (90,), (ax, ay), 3)
+        _draw_circle_alpha(s, p["stardust"], (ax, ay), 2)
+
+
+# ============================================================
+# STARLIGHT DEER — celestial deer with cosmic antlers
+# ============================================================
+def _draw_starlight_deer(s, w, h, cx, cy, p, direction, bob, frame):
+    """A deer whose antlers cradle the constellations of the night sky."""
+    _shadow(s, cx, h, p, bob)
+    sway = [0, 1, 0, -1][frame]
+
+    # ---- ambient aura ----
+    aura = pygame.Surface((w, h), pygame.SRCALPHA)
+    _draw_circle_alpha(aura, p["aura_color"] + (18,), (cx, cy + bob), int(w * 0.38))
+    s.blit(aura, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # ---- main body (oval) ----
+    bw = int(w * 0.42); bh = int(h * 0.34)
+    bx = cx - bw // 2 + sway; by = int(h * 0.30) + bob
+    pygame.draw.ellipse(s, p["fur"], (bx - 1, by - 1, bw + 2, bh + 2))
+    pygame.draw.ellipse(s, p["fur_light"], (bx, by, bw, bh))
+    pygame.draw.ellipse(s, p["fur_dark"], (bx + 4, by + 4, bw // 3, bh - 6))
+
+    # ---- belly highlight ----
+    if "belly" in p:
+        _draw_ellipse_alpha(s, p["belly"], (cx - 4, by + bh - 5, 8, 6))
+
+    # ---- four legs ----
+    for side in (-1, 1):
+        for fb in (0, 1):
+            lx = cx + side * (4 + fb * 4)
+            ly = by + bh - 2
+            pygame.draw.line(s, p["fur_dark"], (lx + sway * side, ly), (lx + side * 2, ly + 10), 3)
+            pygame.draw.line(s, p["fur_light"], (lx + sway * side, ly), (lx + side * 1, ly + 8), 2)
+
+    # ---- head ----
+    hr = int(w * 0.13)
+    hx = cx + 2; hy = by - hr + sway
+    pygame.draw.ellipse(s, p["fur_dark"], (hx - hr, hy - hr // 2, hr * 2, hr))
+    pygame.draw.ellipse(s, p["fur_light"], (hx - hr + 1, hy - hr // 2 + 1, hr * 2 - 2, hr - 2))
+
+    # ---- eyes ----
+    for side in (-1, 1):
+        ex = hx + side * 3; ey = hy
+        pygame.draw.circle(s, p["eye_white"], (ex, ey), 3)
+        pygame.draw.circle(s, p["eye_pupil"], (ex, ey), 1)
+        pygame.draw.circle(s, (255, 255, 255, 200), (ex + 1, ey - 1), 1)
+
+    # ---- extra majestic accents ----
+    for i in range(3):
+        ax = bx + 4 + i * (bw - 8) // 2
+        ay = by + 4 + (i % 2) * 4
+        _draw_circle_alpha(s, p["aura_color"] + (90,), (ax, ay), 3)
+        _draw_circle_alpha(s, p["star"], (ax, ay), 2)
+
+
+# ============================================================
+# LOTUS DRAGON — serene dragon wreathed in lotus blooms
+# ============================================================
+def _draw_lotus_dragon(s, w, h, cx, cy, p, direction, bob, frame):
+    """A small dragon whose scales resemble lotus petals and river stones."""
+    _shadow(s, cx, h, p, bob)
+    sway = [0, 1, 0, -1][frame]
+
+    # ---- ambient aura ----
+    aura = pygame.Surface((w, h), pygame.SRCALPHA)
+    _draw_circle_alpha(aura, p["aura_color"] + (18,), (cx, cy + bob), int(w * 0.38))
+    s.blit(aura, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # ---- main body (oval) ----
+    bw = int(w * 0.42); bh = int(h * 0.34)
+    bx = cx - bw // 2 + sway; by = int(h * 0.30) + bob
+    pygame.draw.ellipse(s, p["scale"], (bx - 1, by - 1, bw + 2, bh + 2))
+    pygame.draw.ellipse(s, p["scale_light"], (bx, by, bw, bh))
+    pygame.draw.ellipse(s, p["scale_dark"], (bx + 4, by + 4, bw // 3, bh - 6))
+
+    # ---- belly highlight ----
+    if "belly" in p:
+        _draw_ellipse_alpha(s, p["belly"], (cx - 4, by + bh - 5, 8, 6))
+
+    # ---- four legs ----
+    for side in (-1, 1):
+        for fb in (0, 1):
+            lx = cx + side * (4 + fb * 4)
+            ly = by + bh - 2
+            pygame.draw.line(s, p["scale_dark"], (lx + sway * side, ly), (lx + side * 2, ly + 10), 3)
+            pygame.draw.line(s, p["scale_light"], (lx + sway * side, ly), (lx + side * 1, ly + 8), 2)
+
+    # ---- head ----
+    hr = int(w * 0.13)
+    hx = cx + 2; hy = by - hr + sway
+    pygame.draw.ellipse(s, p["scale_dark"], (hx - hr, hy - hr // 2, hr * 2, hr))
+    pygame.draw.ellipse(s, p["scale_light"], (hx - hr + 1, hy - hr // 2 + 1, hr * 2 - 2, hr - 2))
+
+    # ---- eyes ----
+    for side in (-1, 1):
+        ex = hx + side * 3; ey = hy
+        pygame.draw.circle(s, p["eye_white"], (ex, ey), 3)
+        pygame.draw.circle(s, p["eye_pupil"], (ex, ey), 1)
+        pygame.draw.circle(s, (255, 255, 255, 200), (ex + 1, ey - 1), 1)
+
+    # ---- extra majestic accents ----
+    for i in range(3):
+        ax = bx + 4 + i * (bw - 8) // 2
+        ay = by + 4 + (i % 2) * 4
+        _draw_circle_alpha(s, p["aura_color"] + (90,), (ax, ay), 3)
+        _draw_circle_alpha(s, p["lotus"], (ax, ay), 2)
+
+
+# ============================================================
+# AMBER BEE — majestic golden bee with pollen aura
+# ============================================================
+def _draw_amber_bee(s, w, h, cx, cy, p, direction, bob, frame):
+    """A giant, gentle bee whose wings hum a healing tone."""
+    _shadow(s, cx, h, p, bob)
+    sway = [0, 1, 0, -1][frame]
+
+    # ---- ambient aura ----
+    aura = pygame.Surface((w, h), pygame.SRCALPHA)
+    _draw_circle_alpha(aura, p["aura_color"] + (18,), (cx, cy + bob), int(w * 0.38))
+    s.blit(aura, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # ---- main body (oval) ----
+    bw = int(w * 0.42); bh = int(h * 0.34)
+    bx = cx - bw // 2 + sway; by = int(h * 0.30) + bob
+    pygame.draw.ellipse(s, p["body"], (bx - 1, by - 1, bw + 2, bh + 2))
+    pygame.draw.ellipse(s, p["body_light"], (bx, by, bw, bh))
+    pygame.draw.ellipse(s, p["body_dark"], (bx + 4, by + 4, bw // 3, bh - 6))
+
+    # ---- belly highlight ----
+    if "belly" in p:
+        _draw_ellipse_alpha(s, p["belly"], (cx - 4, by + bh - 5, 8, 6))
+
+    # ---- four legs ----
+    for side in (-1, 1):
+        for fb in (0, 1):
+            lx = cx + side * (4 + fb * 4)
+            ly = by + bh - 2
+            pygame.draw.line(s, p["body_dark"], (lx + sway * side, ly), (lx + side * 2, ly + 10), 3)
+            pygame.draw.line(s, p["body_light"], (lx + sway * side, ly), (lx + side * 1, ly + 8), 2)
+
+    # ---- head ----
+    hr = int(w * 0.13)
+    hx = cx + 2; hy = by - hr + sway
+    pygame.draw.ellipse(s, p["body_dark"], (hx - hr, hy - hr // 2, hr * 2, hr))
+    pygame.draw.ellipse(s, p["body_light"], (hx - hr + 1, hy - hr // 2 + 1, hr * 2 - 2, hr - 2))
+
+    # ---- eyes ----
+    for side in (-1, 1):
+        ex = hx + side * 3; ey = hy
+        pygame.draw.circle(s, p["eye_white"], (ex, ey), 3)
+        pygame.draw.circle(s, p["eye_pupil"], (ex, ey), 1)
+        pygame.draw.circle(s, (255, 255, 255, 200), (ex + 1, ey - 1), 1)
+
+    # ---- extra majestic accents ----
+    for i in range(3):
+        ax = bx + 4 + i * (bw - 8) // 2
+        ay = by + 4 + (i % 2) * 4
+        _draw_circle_alpha(s, p["aura_color"] + (90,), (ax, ay), 3)
+        _draw_circle_alpha(s, p["pollen"], (ax, ay), 2)
+
+
+# ============================================================
+# SPIRIT OTTER — playful otter of moonlit waters
+# ============================================================
+def _draw_spirit_otter(s, w, h, cx, cy, p, direction, bob, frame):
+    """An otter that rides the moon's reflection across still waters."""
+    _shadow(s, cx, h, p, bob)
+    sway = [0, 1, 0, -1][frame]
+
+    # ---- ambient aura ----
+    aura = pygame.Surface((w, h), pygame.SRCALPHA)
+    _draw_circle_alpha(aura, p["aura_color"] + (18,), (cx, cy + bob), int(w * 0.38))
+    s.blit(aura, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # ---- main body (oval) ----
+    bw = int(w * 0.42); bh = int(h * 0.34)
+    bx = cx - bw // 2 + sway; by = int(h * 0.30) + bob
+    pygame.draw.ellipse(s, p["fur"], (bx - 1, by - 1, bw + 2, bh + 2))
+    pygame.draw.ellipse(s, p["fur_light"], (bx, by, bw, bh))
+    pygame.draw.ellipse(s, p["fur_dark"], (bx + 4, by + 4, bw // 3, bh - 6))
+
+    # ---- belly highlight ----
+    if "belly" in p:
+        _draw_ellipse_alpha(s, p["belly"], (cx - 4, by + bh - 5, 8, 6))
+
+    # ---- four legs ----
+    for side in (-1, 1):
+        for fb in (0, 1):
+            lx = cx + side * (4 + fb * 4)
+            ly = by + bh - 2
+            pygame.draw.line(s, p["fur_dark"], (lx + sway * side, ly), (lx + side * 2, ly + 10), 3)
+            pygame.draw.line(s, p["fur_light"], (lx + sway * side, ly), (lx + side * 1, ly + 8), 2)
+
+    # ---- head ----
+    hr = int(w * 0.13)
+    hx = cx + 2; hy = by - hr + sway
+    pygame.draw.ellipse(s, p["fur_dark"], (hx - hr, hy - hr // 2, hr * 2, hr))
+    pygame.draw.ellipse(s, p["fur_light"], (hx - hr + 1, hy - hr // 2 + 1, hr * 2 - 2, hr - 2))
+
+    # ---- eyes ----
+    for side in (-1, 1):
+        ex = hx + side * 3; ey = hy
+        pygame.draw.circle(s, p["eye_white"], (ex, ey), 3)
+        pygame.draw.circle(s, p["eye_pupil"], (ex, ey), 1)
+        pygame.draw.circle(s, (255, 255, 255, 200), (ex + 1, ey - 1), 1)
+
+    # ---- extra majestic accents ----
+    for i in range(3):
+        ax = bx + 4 + i * (bw - 8) // 2
+        ay = by + 4 + (i % 2) * 4
+        _draw_circle_alpha(s, p["aura_color"] + (90,), (ax, ay), 3)
+        _draw_circle_alpha(s, p["wave"], (ax, ay), 2)
+
+
+# ============================================================
+# DAWN HERON — elegant heron of the morning mist
+# ============================================================
+def _draw_dawn_heron(s, w, h, cx, cy, p, direction, bob, frame):
+    """A wading heron whose feathers hold the colors of sunrise."""
+    _shadow(s, cx, h, p, bob)
+    sway = [0, 1, 0, -1][frame]
+
+    # ---- ambient aura ----
+    aura = pygame.Surface((w, h), pygame.SRCALPHA)
+    _draw_circle_alpha(aura, p["aura_color"] + (18,), (cx, cy + bob), int(w * 0.38))
+    s.blit(aura, (0, 0), special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    # ---- main body (oval) ----
+    bw = int(w * 0.42); bh = int(h * 0.34)
+    bx = cx - bw // 2 + sway; by = int(h * 0.30) + bob
+    pygame.draw.ellipse(s, p["fur"], (bx - 1, by - 1, bw + 2, bh + 2))
+    pygame.draw.ellipse(s, p["fur_light"], (bx, by, bw, bh))
+    pygame.draw.ellipse(s, p["fur_dark"], (bx + 4, by + 4, bw // 3, bh - 6))
+
+    # ---- belly highlight ----
+    if "belly" in p:
+        _draw_ellipse_alpha(s, p["belly"], (cx - 4, by + bh - 5, 8, 6))
+
+    # ---- four legs ----
+    for side in (-1, 1):
+        for fb in (0, 1):
+            lx = cx + side * (4 + fb * 4)
+            ly = by + bh - 2
+            pygame.draw.line(s, p["fur_dark"], (lx + sway * side, ly), (lx + side * 2, ly + 10), 3)
+            pygame.draw.line(s, p["fur_light"], (lx + sway * side, ly), (lx + side * 1, ly + 8), 2)
+
+    # ---- head ----
+    hr = int(w * 0.13)
+    hx = cx + 2; hy = by - hr + sway
+    pygame.draw.ellipse(s, p["fur_dark"], (hx - hr, hy - hr // 2, hr * 2, hr))
+    pygame.draw.ellipse(s, p["fur_light"], (hx - hr + 1, hy - hr // 2 + 1, hr * 2 - 2, hr - 2))
+
+    # ---- eyes ----
+    for side in (-1, 1):
+        ex = hx + side * 3; ey = hy
+        pygame.draw.circle(s, p["eye_white"], (ex, ey), 3)
+        pygame.draw.circle(s, p["eye_pupil"], (ex, ey), 1)
+        pygame.draw.circle(s, (255, 255, 255, 200), (ex + 1, ey - 1), 1)
+
+    # ---- extra majestic accents ----
+    for i in range(3):
+        ax = bx + 4 + i * (bw - 8) // 2
+        ay = by + 4 + (i % 2) * 4
+        _draw_circle_alpha(s, p["aura_color"] + (90,), (ax, ay), 3)
+        _draw_circle_alpha(s, p["stardust"], (ax, ay), 2)
+
+
+# ============================================================
 # RENDERER REGISTRY
 # ============================================================
 DRAW_FUNCS = {
-    "starwhale": _draw_starwhale,
-    "luminous_deer": _draw_luminous_deer,
-    "crystal_serpent": _draw_crystal_serpent,
-    "aurora_moth": _draw_aurora_moth,
     "grove_titan": _draw_grove_titan,
-    "moon_jelly": _draw_moon_jelly,
-    "prism_fox": _draw_prism_fox,
     "singing_stone": _draw_singing_stone,
+    "ember_phoenix": _draw_ember_phoenix,
+    "coral_golem": _draw_coral_golem,
+    "void_butterfly": _draw_void_butterfly,
+    "moss_rabbit": _draw_moss_rabbit,
+    "crystal_fox": _draw_crystal_fox,
+    "fairy_cat": _draw_fairy_cat,
+    "celestial_stag": _draw_celestial_stag,
+    "lumen_koi": _draw_lumen_koi,
+    "aurora_wolf": _draw_aurora_wolf,
+    "prism_peacock": _draw_prism_peacock,
+    "moonlit_unicorn": _draw_moonlit_unicorn,
+    "starlight_deer": _draw_starlight_deer,
+    "lotus_dragon": _draw_lotus_dragon,
+    "amber_bee": _draw_amber_bee,
+    "spirit_otter": _draw_spirit_otter,
+    "dawn_heron": _draw_dawn_heron,
 }
 
 
@@ -1154,7 +1782,7 @@ def build_peaceful_mob_animations(style: str, size: tuple[int, int]) -> dict[str
     """
     palette = _palette_for(style)
     anims: dict[str, list[pygame.Surface]] = {"down": [], "up": [], "side": []}
-    drawer = DRAW_FUNCS.get(style, _draw_starwhale)
+    drawer = DRAW_FUNCS.get(style, _draw_grove_titan)
     w, h = size
     for frame_idx, bob_offset in enumerate([0, 1, 0, -1]):
         for direction in ("down", "up", "side"):

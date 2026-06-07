@@ -527,6 +527,16 @@ class Game(State):
         # Peaceful majestic mobs (non-aggressive ambient creatures)
         self.peaceful_mobs: list[PeacefulMob] = []
 
+        # Peaceful mob spawn positions per map (center_x, center_y, spread)
+        self.PEACEFUL_MOB_SPAWNS = {
+            "maps/test-map-1.tmx": (600, 600, 500.0),
+            "maps/test-map-2.tmx": (1200, 900, 600.0),
+            "maps/test-map-3.tmx": (800, 700, 500.0),
+        }
+
+        # Maps where peaceful mob spawning is disabled
+        self.NO_PEACEFUL_MOB_MAPS = {"maps/tavern.tmx"}
+
         # Enemy spawning system
         self.enemy_spawn_timer = 0.0
         self.enemy_spawn_interval = 30.0 # seconds
@@ -768,6 +778,9 @@ class Game(State):
         except Exception as exc:
             logger.warning(f"Failed to build gatherable node registries: {exc}")
 
+        # Spawn peaceful mobs for the starting map
+        self._spawn_peaceful_mobs()
+
     def _build_gatherable_registries(self) -> None:
         try:
             from data.gatherable_nodes import load_gatherable_node_defs
@@ -787,6 +800,18 @@ class Game(State):
             registry.add_def(definition)
         total = sum(len(reg.nodes) for reg in self.gatherables.values())
         logger.info(f"Loaded {total} gatherable node(s) across {len(self.gatherables)} map(s)")
+
+    def _spawn_peaceful_mobs(self):
+        """Spawn peaceful mobs for the current map if it has a spawn config."""
+        from src.entities.peaceful_mob import create_all_peaceful_mobs
+        spawn_info = self.PEACEFUL_MOB_SPAWNS.get(self.current_map_path)
+        if spawn_info is None:
+            return
+        if self.current_map_path in self.NO_PEACEFUL_MOB_MAPS:
+            return
+        cx, cy, spread = spawn_info
+        self.peaceful_mobs = create_all_peaceful_mobs(cx, cy, spread)
+        logger.info(f"Spawned {len(self.peaceful_mobs)} peaceful mob(s) for {self.current_map_path}")
 
     def reinit_ui(self):
         self.hud = HUD(self.character, self.app, self.toggle_player_inventory, self.use_skill_slot, open_shop_callback=self.open_shop)
@@ -1449,8 +1474,9 @@ class Game(State):
             # Reset enemies list and spawn default one if needed
             self.enemies = []
 
-            # Clear peaceful mobs on map switch (spawning disabled)
+            # Clear peaceful mobs on map switch, then re-spawn for new map
             self.peaceful_mobs = []
+            self._spawn_peaceful_mobs()
 
             spawn_info = self._get_spawn_info(switched_map_path)
             if switched_map_path not in self.NO_ENEMY_SPAWN_MAPS and spawn_info:
