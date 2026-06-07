@@ -93,6 +93,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.items.items</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_item</span><span class="p">,</span> <span class="n">LightRing</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">database.effects</span><span class="w"> </span><span class="kn">import</span> <span class="n">RegenerationEffect</span><span class="p">,</span> <span class="n">PoisonEffect</span><span class="p">,</span> <span class="n">ConfusionEffect</span><span class="p">,</span> <span class="n">DizzinessEffect</span><span class="p">,</span> <span class="n">SlowEffect</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.enemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enemy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.boss</span><span class="w"> </span><span class="kn">import</span> <span class="n">Boss</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.npc</span><span class="w"> </span><span class="kn">import</span> <span class="n">NPC</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.mage_npc</span><span class="w"> </span><span class="kn">import</span> <span class="n">MageNPC</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.projectile</span><span class="w"> </span><span class="kn">import</span> <span class="n">Arrow</span>
@@ -103,6 +104,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.ai.navigation</span><span class="w"> </span><span class="kn">import</span> <span class="n">NavGrid</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.monster_visuals</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_monster_animations</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.monster_attacks</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_attack_controller</span><span class="p">,</span> <span class="n">AttackContext</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.boss_visuals</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_boss_animations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.entities.boss_attacks</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_boss_attack_controller</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.combat.base_player_combat</span><span class="w"> </span><span class="kn">import</span> <span class="n">PlayerCombatController</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.blackjack</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlackjackGame</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.minigames.roulette</span><span class="w"> </span><span class="kn">import</span> <span class="n">RouletteGame</span>
@@ -257,8 +260,9 @@
 <span class="sd">            Return True if the in-game clock is currently daytime.</span>
 <span class="sd">        _update_game_time(dt):</span>
 <span class="sd">            Advance the in-game clock and update day/night brightness.</span>
-<span class="sd">        _get_spawn_info(map_path):</span>
-<span class="sd">            Resolve the default enemy spawn info for a given map path.</span>
+<span class="sd">        _get_spawn_entries(map_path):</span>
+<span class="sd">            Resolve the configured enemy spawn entries for a given map path</span>
+<span class="sd">            as a list of {&quot;pos&quot;: (x, y), &quot;profile&quot;: &quot;name&quot;} dicts.</span>
 <span class="sd">        _get_camera_offset():</span>
 <span class="sd">            Compute the camera offset (in world space) for this frame.</span>
 <span class="sd">        _make_patrol_points(center, radius):</span>
@@ -798,13 +802,116 @@
                     <span class="p">{</span><span class="s2">&quot;item_id&quot;</span><span class="p">:</span> <span class="s2">&quot;potion_of_confusion&quot;</span><span class="p">,</span> <span class="s2">&quot;chance&quot;</span><span class="p">:</span> <span class="mf">0.15</span><span class="p">},</span>
                 <span class="p">],</span>
             <span class="p">},</span>
+            <span class="s2">&quot;chronos&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;visual_style&quot;</span><span class="p">:</span> <span class="s2">&quot;chronos&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;sprite_set&quot;</span><span class="p">:</span> <span class="s2">&quot;MenHuman1(Recolor)&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;speed&quot;</span><span class="p">:</span> <span class="mf">120.0</span><span class="p">,</span>
+                <span class="s2">&quot;hp&quot;</span><span class="p">:</span> <span class="mi">600</span><span class="p">,</span>
+                <span class="s2">&quot;damage&quot;</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
+                <span class="s2">&quot;animation_speed&quot;</span><span class="p">:</span> <span class="mf">6.0</span><span class="p">,</span>
+                <span class="s2">&quot;animation_size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">160</span><span class="p">,</span> <span class="mi">160</span><span class="p">),</span>
+                <span class="s2">&quot;detection_range&quot;</span><span class="p">:</span> <span class="mf">500.0</span><span class="p">,</span>
+                <span class="s2">&quot;attack_range&quot;</span><span class="p">:</span> <span class="mf">70.0</span><span class="p">,</span>
+                <span class="s2">&quot;ai_profile&quot;</span><span class="p">:</span> <span class="s2">&quot;chronos&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;ai_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;preferred_min&quot;</span><span class="p">:</span> <span class="mf">120.0</span><span class="p">,</span>
+                    <span class="s2">&quot;preferred_max&quot;</span><span class="p">:</span> <span class="mf">250.0</span><span class="p">,</span>
+                    <span class="s2">&quot;orbit_radius&quot;</span><span class="p">:</span> <span class="mf">180.0</span><span class="p">,</span>
+                    <span class="s2">&quot;orbit_interval&quot;</span><span class="p">:</span> <span class="mf">2.5</span><span class="p">,</span>
+                    <span class="s2">&quot;drift_cooldown&quot;</span><span class="p">:</span> <span class="mf">3.0</span><span class="p">,</span>
+                    <span class="s2">&quot;drift_distance&quot;</span><span class="p">:</span> <span class="mf">80.0</span><span class="p">,</span>
+                    <span class="s2">&quot;rift_cooldown&quot;</span><span class="p">:</span> <span class="mf">5.0</span><span class="p">,</span>
+                    <span class="s2">&quot;warp_cooldown&quot;</span><span class="p">:</span> <span class="mf">4.0</span><span class="p">,</span>
+                    <span class="s2">&quot;warp_speed_mult&quot;</span><span class="p">:</span> <span class="mf">2.5</span><span class="p">,</span>
+                    <span class="s2">&quot;warp_duration&quot;</span><span class="p">:</span> <span class="mf">0.6</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;attack_profile&quot;</span><span class="p">:</span> <span class="s2">&quot;chronos&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;attack_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;cooldown_ms&quot;</span><span class="p">:</span> <span class="mi">1200</span><span class="p">,</span>
+                    <span class="s2">&quot;bolt_speed&quot;</span><span class="p">:</span> <span class="mf">450.0</span><span class="p">,</span>
+                    <span class="s2">&quot;bolt_range&quot;</span><span class="p">:</span> <span class="mf">500.0</span><span class="p">,</span>
+                    <span class="s2">&quot;bolt_damage_mult&quot;</span><span class="p">:</span> <span class="mf">0.85</span><span class="p">,</span>
+                    <span class="s2">&quot;slow_duration&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span>
+                    <span class="s2">&quot;slow_factor&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+                    <span class="s2">&quot;melee_damage_mult&quot;</span><span class="p">:</span> <span class="mf">1.2</span><span class="p">,</span>
+                    <span class="s2">&quot;melee_range&quot;</span><span class="p">:</span> <span class="mf">60.0</span><span class="p">,</span>
+                    <span class="s2">&quot;spread_degrees&quot;</span><span class="p">:</span> <span class="mf">5.0</span><span class="p">,</span>
+                    <span class="s2">&quot;burst_cooldown_ms&quot;</span><span class="p">:</span> <span class="mi">3500</span><span class="p">,</span>
+                    <span class="s2">&quot;burst_radius&quot;</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span>
+                    <span class="s2">&quot;burst_damage_mult&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+                    <span class="s2">&quot;rift_cooldown_ms&quot;</span><span class="p">:</span> <span class="mi">4000</span><span class="p">,</span>
+                    <span class="s2">&quot;rift_distance&quot;</span><span class="p">:</span> <span class="mf">150.0</span><span class="p">,</span>
+                    <span class="s2">&quot;storm_cooldown_ms&quot;</span><span class="p">:</span> <span class="mi">6000</span><span class="p">,</span>
+                    <span class="s2">&quot;storm_radius&quot;</span><span class="p">:</span> <span class="mf">140.0</span><span class="p">,</span>
+                    <span class="s2">&quot;storm_damage_mult&quot;</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">,</span>
+                    <span class="s2">&quot;freeze_duration&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span>
+                    <span class="s2">&quot;enrage_speed_mult&quot;</span><span class="p">:</span> <span class="mf">1.6</span><span class="p">,</span>
+                    <span class="s2">&quot;nova_cooldown_ms&quot;</span><span class="p">:</span> <span class="mi">5000</span><span class="p">,</span>
+                    <span class="s2">&quot;nova_bolt_count&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+                    <span class="s2">&quot;nova_bolt_speed&quot;</span><span class="p">:</span> <span class="mf">350.0</span><span class="p">,</span>
+                    <span class="s2">&quot;nova_bolt_range&quot;</span><span class="p">:</span> <span class="mf">300.0</span><span class="p">,</span>
+                    <span class="s2">&quot;nova_damage_mult&quot;</span><span class="p">:</span> <span class="mf">0.7</span><span class="p">,</span>
+                    <span class="s2">&quot;shard_cooldown_ms&quot;</span><span class="p">:</span> <span class="mi">4500</span><span class="p">,</span>
+                    <span class="s2">&quot;shard_count&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+                    <span class="s2">&quot;shard_spread_degrees&quot;</span><span class="p">:</span> <span class="mf">25.0</span><span class="p">,</span>
+                    <span class="s2">&quot;shard_speed&quot;</span><span class="p">:</span> <span class="mf">400.0</span><span class="p">,</span>
+                    <span class="s2">&quot;shard_range&quot;</span><span class="p">:</span> <span class="mf">400.0</span><span class="p">,</span>
+                    <span class="s2">&quot;shard_damage_mult&quot;</span><span class="p">:</span> <span class="mf">0.6</span><span class="p">,</span>
+                    <span class="s2">&quot;cascade_cooldown_ms&quot;</span><span class="p">:</span> <span class="mi">7000</span><span class="p">,</span>
+                    <span class="s2">&quot;cascade_waves&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                    <span class="s2">&quot;cascade_bolts_per_wave&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                    <span class="s2">&quot;cascade_speed&quot;</span><span class="p">:</span> <span class="mf">380.0</span><span class="p">,</span>
+                    <span class="s2">&quot;cascade_range&quot;</span><span class="p">:</span> <span class="mf">450.0</span><span class="p">,</span>
+                    <span class="s2">&quot;cascade_damage_mult&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+                    <span class="s2">&quot;barrage_cooldown_ms&quot;</span><span class="p">:</span> <span class="mi">8000</span><span class="p">,</span>
+                    <span class="s2">&quot;barrage_bolt_count&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span>
+                    <span class="s2">&quot;barrage_speed&quot;</span><span class="p">:</span> <span class="mf">320.0</span><span class="p">,</span>
+                    <span class="s2">&quot;barrage_range&quot;</span><span class="p">:</span> <span class="mf">350.0</span><span class="p">,</span>
+                    <span class="s2">&quot;barrage_damage_mult&quot;</span><span class="p">:</span> <span class="mf">0.45</span><span class="p">,</span>
+                    <span class="s2">&quot;timestop_cooldown_ms&quot;</span><span class="p">:</span> <span class="mi">9000</span><span class="p">,</span>
+                    <span class="s2">&quot;timestop_radius&quot;</span><span class="p">:</span> <span class="mf">120.0</span><span class="p">,</span>
+                    <span class="s2">&quot;timestop_freeze_duration&quot;</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">,</span>
+                    <span class="s2">&quot;timestop_damage_mult&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+                    <span class="s2">&quot;wave_cooldown_ms&quot;</span><span class="p">:</span> <span class="mi">5500</span><span class="p">,</span>
+                    <span class="s2">&quot;wave_radius&quot;</span><span class="p">:</span> <span class="mf">160.0</span><span class="p">,</span>
+                    <span class="s2">&quot;wave_damage_mult&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>
+                    <span class="s2">&quot;rift_cooldown2_ms&quot;</span><span class="p">:</span> <span class="mi">7000</span><span class="p">,</span>
+                    <span class="s2">&quot;rift_duration&quot;</span><span class="p">:</span> <span class="mf">4.0</span><span class="p">,</span>
+                    <span class="s2">&quot;rift_damage_mult&quot;</span><span class="p">:</span> <span class="mf">0.35</span><span class="p">,</span>
+                    <span class="s2">&quot;decay_cooldown_ms&quot;</span><span class="p">:</span> <span class="mi">6500</span><span class="p">,</span>
+                    <span class="s2">&quot;decay_radius&quot;</span><span class="p">:</span> <span class="mf">80.0</span><span class="p">,</span>
+                    <span class="s2">&quot;decay_damage_mult&quot;</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">,</span>
+                    <span class="s2">&quot;reversal_cooldown_ms&quot;</span><span class="p">:</span> <span class="mi">10000</span><span class="p">,</span>
+                    <span class="s2">&quot;reversal_heal&quot;</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span>
+                    <span class="s2">&quot;reversal_damage_mult&quot;</span><span class="p">:</span> <span class="mf">0.6</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;contact_damage&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;is_boss&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;boss_name&quot;</span><span class="p">:</span> <span class="s2">&quot;Chronos the Chronicler of Time&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;drop_chance&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s2">&quot;item_id&quot;</span><span class="p">:</span> <span class="s2">&quot;large_health_potion&quot;</span><span class="p">,</span> <span class="s2">&quot;chance&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">},</span>
+                <span class="p">],</span>
+            <span class="p">},</span>
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">enemy_profile_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">enemy_profiles</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">ENEMY_SPAWNS</span> <span class="o">=</span> <span class="p">{</span>
             <span class="c1"># &quot;maps/test-map-1.tmx&quot;: (400, 300), # Якщо закоментувати цей рядок, ворога на старті не буде</span>
-            <span class="s2">&quot;maps/test-map-2.tmx&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">600</span><span class="p">,</span> <span class="mi">450</span><span class="p">),</span> <span class="s2">&quot;profile&quot;</span><span class="p">:</span> <span class="s2">&quot;trickster&quot;</span><span class="p">},</span>
-            <span class="s2">&quot;maps/test-map-3.tmx&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">300</span><span class="p">,</span> <span class="mi">200</span><span class="p">),</span> <span class="s2">&quot;profile&quot;</span><span class="p">:</span> <span class="s2">&quot;skirmisher&quot;</span><span class="p">},</span>
+            <span class="c1"># Each map can declare multiple distinct enemy spawns (pos + profile).</span>
+            <span class="c1"># Both dict-of-one and list-of-many forms are supported; tuples fall</span>
+            <span class="c1"># back to the &quot;stalker&quot; profile for backward compatibility.</span>
+            <span class="s2">&quot;maps/test-map-2.tmx&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span><span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">600</span><span class="p">,</span> <span class="mi">450</span><span class="p">),</span>   <span class="s2">&quot;profile&quot;</span><span class="p">:</span> <span class="s2">&quot;trickster&quot;</span><span class="p">},</span>
+                <span class="p">{</span><span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1500</span><span class="p">,</span> <span class="mi">1250</span><span class="p">),</span> <span class="s2">&quot;profile&quot;</span><span class="p">:</span> <span class="s2">&quot;stalker&quot;</span><span class="p">},</span>
+                <span class="p">{</span><span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">3000</span><span class="p">,</span> <span class="mi">1800</span><span class="p">),</span> <span class="s2">&quot;profile&quot;</span><span class="p">:</span> <span class="s2">&quot;brute&quot;</span><span class="p">},</span>
+                <span class="p">{</span><span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">3200</span><span class="p">,</span> <span class="mi">400</span><span class="p">),</span>  <span class="s2">&quot;profile&quot;</span><span class="p">:</span> <span class="s2">&quot;phantom&quot;</span><span class="p">},</span>
+            <span class="p">],</span>
+            <span class="s2">&quot;maps/test-map-3.tmx&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span><span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">300</span><span class="p">,</span> <span class="mi">200</span><span class="p">),</span>  <span class="s2">&quot;profile&quot;</span><span class="p">:</span> <span class="s2">&quot;skirmisher&quot;</span><span class="p">},</span>
+                <span class="p">{</span><span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">900</span><span class="p">,</span> <span class="mi">500</span><span class="p">),</span>  <span class="s2">&quot;profile&quot;</span><span class="p">:</span> <span class="s2">&quot;bomber&quot;</span><span class="p">},</span>
+                <span class="p">{</span><span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1400</span><span class="p">,</span> <span class="mi">800</span><span class="p">),</span> <span class="s2">&quot;profile&quot;</span><span class="p">:</span> <span class="s2">&quot;phantom&quot;</span><span class="p">},</span>
+                <span class="p">{</span><span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">2200</span><span class="p">,</span> <span class="mi">1200</span><span class="p">),</span> <span class="s2">&quot;profile&quot;</span><span class="p">:</span> <span class="s2">&quot;chronos&quot;</span><span class="p">,</span> <span class="s2">&quot;is_boss&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+            <span class="p">],</span>
         <span class="p">}</span>
 
         <span class="c1"># NPC spawn positions (pixels). Tavern NPC coordinates corrected to fit map bounds</span>
@@ -832,12 +939,13 @@
         <span class="c1"># Maps where enemy spawning (both default and random) is disabled</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">NO_ENEMY_SPAWN_MAPS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;maps/tavern.tmx&quot;</span><span class="p">,</span> <span class="s2">&quot;maps/test-map-1.tmx&quot;</span><span class="p">}</span>
 
-        <span class="n">spawn_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_spawn_info</span><span class="p">(</span><span class="n">initial_map_path</span><span class="p">)</span>
+        <span class="n">spawn_entries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_spawn_entries</span><span class="p">(</span><span class="n">initial_map_path</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">initial_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">NO_ENEMY_SPAWN_MAPS</span><span class="p">:</span>
-            <span class="n">spawn_info</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="n">spawn_info</span><span class="p">:</span>
-            <span class="n">start_x</span><span class="p">,</span> <span class="n">start_y</span> <span class="o">=</span> <span class="n">spawn_info</span><span class="p">[</span><span class="s2">&quot;pos&quot;</span><span class="p">]</span>
-            <span class="n">default_profile</span> <span class="o">=</span> <span class="n">spawn_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;profile&quot;</span><span class="p">)</span>
+            <span class="n">spawn_entries</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">spawn_entries</span><span class="p">:</span>
+            <span class="n">first</span> <span class="o">=</span> <span class="n">spawn_entries</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">start_x</span><span class="p">,</span> <span class="n">start_y</span> <span class="o">=</span> <span class="n">first</span><span class="p">[</span><span class="s2">&quot;pos&quot;</span><span class="p">]</span>
+            <span class="n">default_profile</span> <span class="o">=</span> <span class="n">first</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;profile&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">start_x</span><span class="p">,</span> <span class="n">start_y</span> <span class="o">=</span> <span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="o">-</span><span class="mi">5000</span>
             <span class="n">default_profile</span> <span class="o">=</span> <span class="kc">None</span>
@@ -845,8 +953,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">hud</span> <span class="o">=</span> <span class="n">HUD</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">,</span> <span class="n">app</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">toggle_player_inventory</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_skill_slot</span><span class="p">,</span> <span class="n">open_shop_callback</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">open_shop</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">enemy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_enemy</span><span class="p">(</span><span class="n">start_x</span><span class="p">,</span> <span class="n">start_y</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="n">default_profile</span><span class="p">)</span>
-        
+
         <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">enemy</span><span class="p">]</span>
+        <span class="c1"># Spawn any additional configured enemies on the starting map.</span>
+        <span class="k">for</span> <span class="n">extra</span> <span class="ow">in</span> <span class="n">spawn_entries</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+            <span class="n">ex</span><span class="p">,</span> <span class="n">ey</span> <span class="o">=</span> <span class="n">extra</span><span class="p">[</span><span class="s2">&quot;pos&quot;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_create_enemy</span><span class="p">(</span><span class="n">ex</span><span class="p">,</span> <span class="n">ey</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="n">extra</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;profile&quot;</span><span class="p">)))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">items</span> <span class="o">=</span> <span class="p">[]</span>
         
         <span class="c1"># Enemy spawning system</span>
@@ -1537,15 +1649,27 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">set_gauge</span><span class="p">(</span><span class="s2">&quot;game_time&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_format_game_time</span><span class="p">())</span></div>
 
 
-<div class="viewcode-block" id="Game._get_spawn_info">
-<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game._get_spawn_info">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_spawn_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="Game._get_spawn_entries">
+<a class="viewcode-back" href="../../../src.core.html#src.core.game.Game._get_spawn_entries">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_spawn_entries</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Normalize the ENEMY_SPAWNS entry for a map into a list of</span>
+<span class="sd">        {&quot;pos&quot;: (x, y), &quot;profile&quot;: &quot;name&quot;} dicts.</span>
+
+<span class="sd">        Supports three legacy forms:</span>
+<span class="sd">          - list of dicts: returned as-is</span>
+<span class="sd">          - single dict: wrapped in a one-element list</span>
+<span class="sd">          - (x, y) tuple: wrapped with the default &quot;stalker&quot; profile</span>
+<span class="sd">        Returns an empty list if the map has no configured spawns.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">spawn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ENEMY_SPAWNS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">map_path</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">spawn</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">spawn</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">entry</span> <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">spawn</span> <span class="k">if</span> <span class="n">entry</span><span class="p">]</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">spawn</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">spawn</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="n">spawn</span><span class="p">,</span> <span class="s2">&quot;profile&quot;</span><span class="p">:</span> <span class="s2">&quot;stalker&quot;</span><span class="p">}</span></div>
+            <span class="k">return</span> <span class="p">[</span><span class="n">spawn</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">[{</span><span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="n">spawn</span><span class="p">,</span> <span class="s2">&quot;profile&quot;</span><span class="p">:</span> <span class="s2">&quot;stalker&quot;</span><span class="p">}]</span></div>
 
 
 <div class="viewcode-block" id="Game._get_camera_offset">
@@ -1741,27 +1865,48 @@
             <span class="n">radius</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;patrol_radius&quot;</span><span class="p">,</span> <span class="mf">120.0</span><span class="p">))</span>
             <span class="n">patrol_points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_patrol_points</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">Vector2</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span> <span class="n">radius</span><span class="p">)</span>
 
-        <span class="n">enemy</span> <span class="o">=</span> <span class="n">Enemy</span><span class="p">(</span>
-            <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>
-            <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
-            <span class="n">sprite_set</span><span class="o">=</span><span class="n">sprite_set</span><span class="p">,</span>
-            <span class="n">speed</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s2">&quot;speed&quot;</span><span class="p">],</span>
-            <span class="n">hp</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s2">&quot;hp&quot;</span><span class="p">],</span>
-            <span class="n">damage</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s2">&quot;damage&quot;</span><span class="p">],</span>
-            <span class="n">animation_size</span><span class="o">=</span><span class="p">(</span><span class="mi">85</span><span class="p">,</span> <span class="mi">85</span><span class="p">),</span>
-            <span class="n">animation_speed</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;animation_speed&quot;</span><span class="p">,</span> <span class="mf">6.0</span><span class="p">),</span>
-            <span class="n">detection_range</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;detection_range&quot;</span><span class="p">,</span> <span class="mf">250.0</span><span class="p">),</span>
-            <span class="n">attack_range</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attack_range&quot;</span><span class="p">,</span> <span class="mf">40.0</span><span class="p">),</span>
-            <span class="n">patrol_points</span><span class="o">=</span><span class="n">patrol_points</span><span class="p">,</span>
-            <span class="n">ai_profile</span><span class="o">=</span><span class="n">ai_profile</span><span class="p">,</span>
-            <span class="n">ai_config</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ai_config&quot;</span><span class="p">),</span>
-            <span class="n">animations</span><span class="o">=</span><span class="n">animations</span><span class="p">,</span>
-            <span class="n">attack_controller</span><span class="o">=</span><span class="n">attack_controller</span><span class="p">,</span>
-            <span class="n">contact_damage</span><span class="o">=</span><span class="n">contact_damage</span><span class="p">,</span>
-            <span class="n">visual_style</span><span class="o">=</span><span class="n">visual_style</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="n">is_boss</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;is_boss&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">anim_size</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;animation_size&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">85</span><span class="p">,</span> <span class="mi">85</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">is_boss</span><span class="p">:</span>
+            <span class="n">boss_name</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;boss_name&quot;</span><span class="p">,</span> <span class="s2">&quot;Boss&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">attack_profile</span><span class="p">:</span>
+                <span class="n">attack_controller</span> <span class="o">=</span> <span class="n">build_boss_attack_controller</span><span class="p">(</span><span class="n">attack_profile</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attack_config&quot;</span><span class="p">))</span>
+            <span class="n">animations</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">visual_style</span><span class="p">:</span>
+                <span class="n">animations</span> <span class="o">=</span> <span class="n">build_boss_animations</span><span class="p">(</span><span class="n">visual_style</span><span class="p">,</span> <span class="n">anim_size</span><span class="p">)</span>
+            <span class="n">enemy</span> <span class="o">=</span> <span class="n">Boss</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">sprite_set</span><span class="o">=</span><span class="n">sprite_set</span><span class="p">,</span>
+                <span class="n">speed</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s2">&quot;speed&quot;</span><span class="p">],</span> <span class="n">hp</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s2">&quot;hp&quot;</span><span class="p">],</span> <span class="n">damage</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s2">&quot;damage&quot;</span><span class="p">],</span>
+                <span class="n">animation_size</span><span class="o">=</span><span class="n">anim_size</span><span class="p">,</span> <span class="n">animation_speed</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;animation_speed&quot;</span><span class="p">,</span> <span class="mf">6.0</span><span class="p">),</span>
+                <span class="n">detection_range</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;detection_range&quot;</span><span class="p">,</span> <span class="mf">250.0</span><span class="p">),</span>
+                <span class="n">attack_range</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attack_range&quot;</span><span class="p">,</span> <span class="mf">40.0</span><span class="p">),</span>
+                <span class="n">boss_name</span><span class="o">=</span><span class="n">boss_name</span><span class="p">,</span>
+                <span class="n">patrol_points</span><span class="o">=</span><span class="n">patrol_points</span><span class="p">,</span> <span class="n">ai_profile</span><span class="o">=</span><span class="n">ai_profile</span><span class="p">,</span>
+                <span class="n">ai_config</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ai_config&quot;</span><span class="p">),</span> <span class="n">animations</span><span class="o">=</span><span class="n">animations</span><span class="p">,</span>
+                <span class="n">attack_controller</span><span class="o">=</span><span class="n">attack_controller</span><span class="p">,</span> <span class="n">contact_damage</span><span class="o">=</span><span class="n">contact_damage</span><span class="p">,</span>
+                <span class="n">visual_style</span><span class="o">=</span><span class="n">visual_style</span><span class="p">,</span>
+                <span class="n">intro_trigger_distance</span><span class="o">=</span><span class="mf">450.0</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">enemy</span> <span class="o">=</span> <span class="n">Enemy</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">sprite_set</span><span class="o">=</span><span class="n">sprite_set</span><span class="p">,</span>
+                <span class="n">speed</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s2">&quot;speed&quot;</span><span class="p">],</span> <span class="n">hp</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s2">&quot;hp&quot;</span><span class="p">],</span> <span class="n">damage</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s2">&quot;damage&quot;</span><span class="p">],</span>
+                <span class="n">animation_size</span><span class="o">=</span><span class="n">anim_size</span><span class="p">,</span> <span class="n">animation_speed</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;animation_speed&quot;</span><span class="p">,</span> <span class="mf">6.0</span><span class="p">),</span>
+                <span class="n">detection_range</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;detection_range&quot;</span><span class="p">,</span> <span class="mf">250.0</span><span class="p">),</span>
+                <span class="n">attack_range</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attack_range&quot;</span><span class="p">,</span> <span class="mf">40.0</span><span class="p">),</span>
+                <span class="n">patrol_points</span><span class="o">=</span><span class="n">patrol_points</span><span class="p">,</span> <span class="n">ai_profile</span><span class="o">=</span><span class="n">ai_profile</span><span class="p">,</span>
+                <span class="n">ai_config</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ai_config&quot;</span><span class="p">),</span> <span class="n">animations</span><span class="o">=</span><span class="n">animations</span><span class="p">,</span>
+                <span class="n">attack_controller</span><span class="o">=</span><span class="n">attack_controller</span><span class="p">,</span> <span class="n">contact_damage</span><span class="o">=</span><span class="n">contact_damage</span><span class="p">,</span>
+                <span class="n">visual_style</span><span class="o">=</span><span class="n">visual_style</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="n">enemy</span><span class="o">.</span><span class="n">target_entity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span>
         <span class="n">enemy</span><span class="o">.</span><span class="n">profile_name</span> <span class="o">=</span> <span class="n">profile_name</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">enemy</span><span class="p">,</span> <span class="n">Boss</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">screen_w</span><span class="p">,</span> <span class="n">screen_h</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">get_surface</span><span class="p">()</span><span class="o">.</span><span class="n">get_size</span><span class="p">()</span>
+                <span class="n">enemy</span><span class="o">.</span><span class="n">set_screen_size</span><span class="p">((</span><span class="n">screen_w</span><span class="p">,</span> <span class="n">screen_h</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
         <span class="k">return</span> <span class="n">enemy</span></div>
 
 
@@ -1973,12 +2118,12 @@
             <span class="c1"># Reset enemies list and spawn default one if needed</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span> <span class="o">=</span> <span class="p">[]</span>
             
-            <span class="n">spawn_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_spawn_info</span><span class="p">(</span><span class="n">switched_map_path</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">switched_map_path</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">NO_ENEMY_SPAWN_MAPS</span> <span class="ow">and</span> <span class="n">spawn_info</span><span class="p">:</span>
-                <span class="n">new_x</span><span class="p">,</span> <span class="n">new_y</span> <span class="o">=</span> <span class="n">spawn_info</span><span class="p">[</span><span class="s2">&quot;pos&quot;</span><span class="p">]</span>
-                <span class="n">profile</span> <span class="o">=</span> <span class="n">spawn_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;profile&quot;</span><span class="p">)</span>
-                <span class="n">default_enemy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_enemy</span><span class="p">(</span><span class="n">new_x</span><span class="p">,</span> <span class="n">new_y</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="n">profile</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">default_enemy</span><span class="p">)</span>
+            <span class="n">spawn_entries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_spawn_entries</span><span class="p">(</span><span class="n">switched_map_path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">switched_map_path</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">NO_ENEMY_SPAWN_MAPS</span> <span class="ow">and</span> <span class="n">spawn_entries</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">spawn_entries</span><span class="p">:</span>
+                    <span class="n">new_x</span><span class="p">,</span> <span class="n">new_y</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="s2">&quot;pos&quot;</span><span class="p">]</span>
+                    <span class="n">profile</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;profile&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_create_enemy</span><span class="p">(</span><span class="n">new_x</span><span class="p">,</span> <span class="n">new_y</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="n">profile</span><span class="p">))</span>
 
             <span class="k">if</span> <span class="n">switched_map_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">NPC_SPAWNS</span><span class="p">:</span>
                     <span class="n">npc_x</span><span class="p">,</span> <span class="n">npc_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">NPC_SPAWNS</span><span class="p">[</span><span class="n">switched_map_path</span><span class="p">]</span>
@@ -2070,7 +2215,21 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">player_combat</span><span class="o">.</span><span class="n">sync_weapon_stats</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">collision_handler</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">obstacles</span><span class="p">)</span>
+        <span class="c1"># Boss intro trigger check</span>
+        <span class="n">intro_active</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">screen_size</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_screen_size&#39;</span><span class="p">,</span> <span class="p">(</span><span class="mi">1280</span><span class="p">,</span> <span class="mi">720</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">enemy</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">enemy</span><span class="p">,</span> <span class="n">Boss</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">enemy</span><span class="o">.</span><span class="n">intro_triggered</span><span class="p">:</span>
+                <span class="n">enemy</span><span class="o">.</span><span class="n">check_intro_trigger</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span> <span class="n">screen_size</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">enemy</span><span class="p">,</span> <span class="n">Boss</span><span class="p">)</span> <span class="ow">and</span> <span class="n">enemy</span><span class="o">.</span><span class="n">is_intro_active</span><span class="p">():</span>
+                <span class="n">intro_active</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="c1"># Freeze player position during intro</span>
+                <span class="n">enemy</span><span class="o">.</span><span class="n">intro</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">enemy</span><span class="o">.</span><span class="n">intro</span><span class="o">.</span><span class="n">finished</span><span class="p">:</span>
+                    <span class="n">intro_active</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">intro_active</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">collision_handler</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">obstacles</span><span class="p">)</span>
 
         <span class="n">mouse_pos</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mouse</span><span class="o">.</span><span class="n">get_pos</span><span class="p">()</span>
         <span class="n">camera_offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_camera_offset</span><span class="p">()</span>
@@ -2397,6 +2556,7 @@
 <div class="viewcode-block" id="Game.draw_scene">
 <a class="viewcode-back" href="../../../src.core.html#src.core.game.Game.draw_scene">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">draw_scene</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_screen_size</span> <span class="o">=</span> <span class="n">screen</span><span class="o">.</span><span class="n">get_size</span><span class="p">()</span>
         <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">clock</span><span class="o">.</span><span class="n">get_time</span><span class="p">()</span> <span class="o">/</span> <span class="mi">1000</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">start_section</span><span class="p">(</span><span class="s2">&quot;game.update&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
@@ -2404,6 +2564,14 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">profiler</span><span class="o">.</span><span class="n">start_section</span><span class="p">(</span><span class="s2">&quot;game.draw&quot;</span><span class="p">)</span>
         <span class="n">camera_offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_camera_offset</span><span class="p">()</span>
+
+        <span class="c1"># Boss intro screen shake</span>
+        <span class="k">for</span> <span class="n">enemy</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">enemy</span><span class="p">,</span> <span class="n">Boss</span><span class="p">)</span> <span class="ow">and</span> <span class="n">enemy</span><span class="o">.</span><span class="n">intro</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">enemy</span><span class="o">.</span><span class="n">intro</span><span class="o">.</span><span class="n">finished</span><span class="p">:</span>
+                <span class="n">shake</span> <span class="o">=</span> <span class="n">enemy</span><span class="o">.</span><span class="n">intro</span><span class="o">.</span><span class="n">get_shake_offset</span><span class="p">()</span>
+                <span class="n">camera_offset</span> <span class="o">=</span> <span class="n">camera_offset</span> <span class="o">+</span> <span class="n">shake</span>
+                <span class="k">break</span>
+
         <span class="n">viewport_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">screen</span><span class="o">.</span><span class="n">get_width</span><span class="p">(),</span> <span class="n">screen</span><span class="o">.</span><span class="n">get_height</span><span class="p">())</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">_is_visible</span><span class="p">(</span><span class="n">entity</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
@@ -2508,6 +2676,17 @@
         <span class="c1"># upper halves of trees / rocks and never get hidden behind</span>
         <span class="c1"># tall tile art.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">draw_fringe_overlay</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">character</span><span class="p">)</span>
+
+        <span class="c1"># Draw HP bars on top of everything (including fringe)</span>
+        <span class="k">for</span> <span class="n">enemy</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">_is_visible</span><span class="p">(</span><span class="n">enemy</span><span class="p">):</span>
+                <span class="n">enemy</span><span class="o">.</span><span class="n">draw_hp_bar</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">camera_offset</span><span class="p">)</span>
+
+        <span class="c1"># Draw boss overlays (intro/phase transitions) on top of everything</span>
+        <span class="k">for</span> <span class="n">enemy</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">enemy</span><span class="p">,</span> <span class="n">Boss</span><span class="p">):</span>
+                <span class="n">enemy</span><span class="o">.</span><span class="n">draw_overlay</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+                <span class="n">enemy</span><span class="o">.</span><span class="n">draw_intro_text</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;gathering&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
