@@ -1668,9 +1668,31 @@ class HUD:
                 pygame.draw.circle(star_surf, (255, 255, 230, alpha), (2, 2), star_size)
                 screen.blit(star_surf, (sx2 - 2, sy2 - 2))
 
-        # Time text
+        # Time text (pushed slightly up to make room for weather text)
         time_text = self.font.render(time_string, True, (245, 245, 245))
-        screen.blit(time_text, (icon_center[0] + icon_radius + 12, icon_center[1] - time_text.get_height() // 2))
+        screen.blit(time_text, (icon_center[0] + icon_radius + 12, icon_center[1] - time_text.get_height() + 4))
+
+        # Weather text (rendered below time text)
+        translate = _
+        weather_text_str = translate("Clear")
+        weather_color = (255, 220, 100)  # default: sunny gold
+        
+        if game_state and hasattr(game_state, "weather") and game_state.weather:
+            weather_state = game_state.weather.current_weather
+            # Determine text & color based on active weather state
+            if weather_state.name == "RAIN":
+                weather_text_str = translate("Rain")
+                weather_color = (100, 180, 255)
+            elif weather_state.name == "STORM":
+                weather_text_str = translate("Storm")
+                weather_color = (200, 100, 255)
+            elif weather_state.name == "FOG":
+                weather_text_str = translate("Fog")
+                weather_color = (180, 180, 185)
+
+        weather_font = cfg.get_font(max(10, int(15 * cfg.ui_scale())))
+        weather_text = weather_font.render(weather_text_str, True, weather_color)
+        screen.blit(weather_text, (icon_center[0] + icon_radius + 12, icon_center[1] + 2))
 
         lives_icon_x, lives_icon_y = self.life_icon_pos
 

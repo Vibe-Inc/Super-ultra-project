@@ -404,6 +404,7 @@ class Character:
         self.spawn_point = self.pos.copy()
         self.base_speed = 200
         self.speed_multiplier = 1.0
+        self.weather_speed_multiplier = 1.0
         self.speed = self.base_speed
         self.sprint_multiplier = 1.8 
         
@@ -1142,6 +1143,7 @@ class Character:
 
         # Speed stats
         self.speed_multiplier = 1.0
+        self.weather_speed_multiplier = 1.0
         self.speed = self.base_speed * self.speed_multiplier
 
         # Fireball
@@ -2549,7 +2551,7 @@ class Character:
         if wants_to_sprint and self.stamina > 0 and self.can_sprint:
             self.is_sprinting = True
 
-        current_speed = self.base_speed * self.speed_multiplier
+        current_speed = self.base_speed * self.speed_multiplier * getattr(self, 'weather_speed_multiplier', 1.0)
         if self.is_sprinting:
             current_speed *= self.sprint_multiplier
         self.speed = current_speed 

@@ -14,6 +14,7 @@ import random
 from src.core.logger import logger
 import src.config as cfg
 from src.core.day_night import DayNightVisuals
+from src.core.weather import WeatherSystem, WeatherState
 from src.core.state import State
 from src.core.save_manager import SaveManager
 from src.entities.character import Character
@@ -267,6 +268,13 @@ class Game(State):
 
         # Majestic day-night visual controller
         self.day_night = DayNightVisuals()
+
+        # Dynamic weather controller
+        self.weather = WeatherSystem(self)
+
+        # Camera shake state
+        self.camera_shake_time = 0.0
+        self.camera_shake_intensity = 0.0
 
         self.enemy_profiles = {
             "brute": {
@@ -1452,7 +1460,13 @@ class Game(State):
             # center map vertically
             camera_y = int((map_height - viewport_height) / 2)
 
-        return pygame.Vector2(camera_x, camera_y)
+        offset = pygame.Vector2(camera_x, camera_y)
+        if getattr(self, 'camera_shake_time', 0.0) > 0.0:
+            import random
+            intensity = getattr(self, 'camera_shake_intensity', 5.0)
+            offset.x += random.uniform(-intensity, intensity)
+            offset.y += random.uniform(-intensity, intensity)
+        return offset
 
     def _make_patrol_points(self, center: pygame.Vector2, radius: float) -> list[tuple[float, float]]:
         return [
@@ -1785,6 +1799,14 @@ class Game(State):
         self._intro_sequence_active = False
 
     def update(self, dt):
+        # Update weather system
+        if hasattr(self, 'weather'):
+            self.weather.update(dt)
+
+        # Update camera shake
+        if getattr(self, 'camera_shake_time', 0.0) > 0.0:
+            self.camera_shake_time = max(0.0, self.camera_shake_time - dt)
+
         # Intro Sequence for test-map-1
         if self.current_map_path == "maps/test-map-1.tmx" and not getattr(self, "intro_played", False) and not getattr(self, "_intro_sequence_active", False):
             self._intro_sequence_active = True
@@ -2358,6 +2380,10 @@ class Game(State):
             if getattr(self.app.INV_manager, 'current_shop_inv', None) is not None:
                 self.app.INV_manager.toggle_trade(self.MAIN_player_inv, self.shop_inv, self.PLAYER_inventory_equipment)
 
+        # Draw weather overlay
+        if hasattr(self, 'weather'):
+            self.weather.draw(screen)
+
         # Dizziness effect (visual)
         if self.character.dizzy:
             alpha = int(100 + 50 * math.sin(pygame.time.get_ticks() * 0.005))
@@ -2635,6 +2661,10 @@ class Game(State):
                 self.character.take_damage(10)
             if event.key == pygame.K_F6:
                 self.character.gain_xp(50)
+            if event.key == pygame.K_F8:
+                if hasattr(self, 'weather') and self.weather:
+                    self.weather.cycle_weather()
+                    logger.info(f"[DEBUG] F8: Cycled weather to {self.weather.current_weather.name}")
             if event.key == pygame.K_F9:
                 self.character.skill_tree_points += 1
                 logger.info(f"[DEBUG] F9: +1 skill tree point. Total: {self.character.skill_tree_points}")
