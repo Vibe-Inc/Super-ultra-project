@@ -7,149 +7,528 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-12-06 11:24+0200\n"
+"POT-Creation-Date: 2026-06-07 23:00+0300\n"
 "PO-Revision-Date: 2025-12-04 00:01+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language: ua\n"
 "Language-Team: ua <LL@li.org>\n"
+"Language: ua\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
-#: src/app.py:79
-msgid "Super coooooool project"
-msgstr "Супер круууутий проект"
+#: database/crafting_tiers_db.py:188
+msgid "[{label}]"
+msgstr "[{label}]"
 
-#: src/inventory/system.py:435
-msgid "Money"
-msgstr "Гроші"
+#: database/crafting_tiers_db.py:188
+msgid "name_key"
+msgstr "Ключ імені"
 
-#: src/items/item_database.py:7
-msgid "Dull Sword"
-msgstr "Тупий меч"
+#: src/app.py:271
+msgid "Codex Arcanum"
+msgstr "Кодекс Таємниць"
 
-#: src/items/item_database.py:12
-msgid "A worn-out sword with a dull blade. Thats about it."
-msgstr "Зношений меч з тупим лезом. Це все."
+#: src/core/achievements.py:31
+msgid "The Journey Begins"
+msgstr "Подорож починається"
 
-#: src/items/item_database.py:22
-msgid "Apple"
-msgstr "Яблуко"
+#: src/core/achievements.py:31
+msgid "Start a new game."
+msgstr "ЗБЕРЕГТИ ГРУ"
 
-#: src/items/item_database.py:27
-msgid "An apple."
-msgstr "Яблуко."
+#: src/core/achievements.py:32
+msgid "First Blood"
+msgstr "Перша кров"
 
-#: src/items/item_database.py:35
-msgid "Moldy Bread"
-msgstr "Цвілий хліб"
+#: src/core/achievements.py:32
+msgid "Defeat your first enemy."
+msgstr "Переможіть свого першого ворога."
 
-#: src/items/item_database.py:40
-msgid "A piece of bread that has gone bad."
-msgstr "Шматок хліба, що зіпсувався."
+#: src/core/achievements.py:33
+msgid "Wealthy"
+msgstr "Багатій"
 
-#: src/items/item_database.py:51
-msgid "Small Health Potion"
-msgstr "Мале зілля здоров'я"
+#: src/core/achievements.py:33
+msgid "Accumulate 1,000 gold."
+msgstr "Накопичте 1000 золота."
 
-#: src/items/item_database.py:56
-msgid "A small potion that restores health."
-msgstr "Мале зілля, що відновлює здоров'я."
+#: src/core/achievements.py:34
+msgid "Lumberjack"
+msgstr "Лісоруб"
 
-#: src/items/item_database.py:64
-msgid "Large Health Potion"
-msgstr "Велике зілля здоров'я"
+#: src/core/achievements.py:34
+msgid "Chop down 10 trees."
+msgstr "Зрубайте 10 дерев."
 
-#: src/items/item_database.py:69
-msgid "A large potion that restores a significant amount of health."
-msgstr "Велике зілля, що відновлює значну кількість здоров'я."
+#: src/core/achievements.py:35
+msgid "Master Angler"
+msgstr "Майстер-рибалка"
 
-#: src/items/item_database.py:77
-msgid "Potion of Confusion"
-msgstr "Зілля плутанини"
+#: src/core/achievements.py:35
+msgid "Catch 10 fish."
+msgstr "Спіймайте 10 рибин."
 
-#: src/items/item_database.py:82
-msgid "A mix oh herbs and spices that causes confusion."
-msgstr "Суміш трав і спецій, що викликає плутанину."
+#: src/core/achievements.py:38
+msgid "Novice Blacksmith"
+msgstr "Початківець-коваль"
 
-#: src/items/items.py:108 src/items/items.py:136
-msgid "Type"
-msgstr "Тип"
+#: src/core/achievements.py:38
+msgid "Craft or smelt 5 items."
+msgstr "Створіть або переплавте 5 предметів."
 
-#: src/items/items.py:108
+#: src/core/achievements.py:39
+msgid "Master Crafter"
+msgstr "Майстер-творець"
+
+#: src/core/achievements.py:39
+msgid "Craft or smelt 50 items."
+msgstr "Створіть або переплавте 50 предметів."
+
+#: src/core/achievements.py:40
+msgid "Exterminator"
+msgstr "Винищувач"
+
+#: src/core/achievements.py:40
+msgid "Defeat 50 enemies."
+msgstr "Переможіть 50 ворогів."
+
+#: src/core/achievements.py:41
+msgid "Monster Hunter"
+msgstr "Мисливець на монстрів"
+
+#: src/core/achievements.py:41
+msgid "Defeat 200 enemies."
+msgstr "Переможіть 200 ворогів."
+
+#: src/core/achievements.py:42
+msgid "High Roller"
+msgstr "Великий гравець"
+
+#: src/core/achievements.py:42
+msgid "Accumulate 10,000 gold."
+msgstr "Накопичте 10 000 золота."
+
+#: src/core/achievements.py:43
+msgid "Tycoon"
+msgstr "Магнат"
+
+#: src/core/achievements.py:43
+msgid "Accumulate 50,000 gold."
+msgstr "Накопичте 50 000 золота."
+
+#: src/core/achievements.py:44
+msgid "Card Shark"
+msgstr "Картяр"
+
+#: src/core/achievements.py:44
+msgid "Win 5 hands in gambling minigames."
+msgstr "Виграйте 5 роздач у міні-іграх на гроші."
+
+#: src/core/achievements.py:45
+msgid "Casino Regular"
+msgstr "Завсідник казино"
+
+#: src/core/achievements.py:45
+msgid "Win 25 hands in gambling minigames."
+msgstr "Виграйте 25 роздач у міні-іграх на гроші."
+
+#: src/core/achievements.py:46
+msgid "Jackpot"
+msgstr "Джекпот"
+
+#: src/core/achievements.py:46
+msgid "Win any bet at the Roulette table."
+msgstr "Виграйте будь-яку ставку за столом рулетки."
+
+#: src/core/achievements.py:47
+msgid "Deforestation"
+msgstr "Знеліснення"
+
+#: src/core/achievements.py:47
+msgid "Chop down 50 trees."
+msgstr "Зрубайте 50 дерев."
+
+#: src/core/achievements.py:48
+msgid "Industrial Logger"
+msgstr "Промисловий лісоруб"
+
+#: src/core/achievements.py:48
+msgid "Chop down 200 trees."
+msgstr "Зрубайте 200 дерев."
+
+#: src/core/achievements.py:49
+msgid "Aquatic Menace"
+msgstr "Водна загроза"
+
+#: src/core/achievements.py:49
+msgid "Catch 50 fish."
+msgstr "Спіймайте 50 рибин."
+
+#: src/core/achievements.py:50
+msgid "Legendary Angler"
+msgstr "Легендарний рибалка"
+
+#: src/core/achievements.py:50
+msgid "Catch 150 fish."
+msgstr "Спіймайте 150 рибин."
+
+#: src/core/achievements.py:51
+msgid "Thirsty"
+msgstr "Спраглий"
+
+#: src/core/achievements.py:51
+msgid "Drink 10 health or buff potions."
+msgstr "Випийте 10 зіллів здоров'я або посилення."
+
+#: src/core/achievements.py:52
+msgid "Potion Addict"
+msgstr "Залежний від зілля"
+
+#: src/core/achievements.py:52
+msgid "Drink 50 potions."
+msgstr "Випийте 50 зіллів."
+
+#: src/core/achievements.py:53
+msgid "Avid Reader"
+msgstr "Завзятий читач"
+
+#: src/core/achievements.py:53
+msgid "Read or unlock 5 wiki/guide articles."
+msgstr "Прочитайте або розблокуйте 5 статей вікі/довідника."
+
+#: src/core/achievements.py:54
+msgid "Scholar"
+msgstr "Вчений"
+
+#: src/core/achievements.py:54
+msgid "Read or unlock 20 wiki/guide articles."
+msgstr "Прочитайте або розблокуйте 20 статей вікі/довідника."
+
+#: src/core/achievements.py:55
+msgid "Lucky Catch"
+msgstr "Вдалий улов"
+
+#: src/core/achievements.py:55
+msgid "Catch a Rare or Legendary fish."
+msgstr "Спіймайте рідкісну або легендарну рибу."
+
+#: src/core/weather.py:469
+msgid "ZAP!"
+msgstr "ДЗИК!"
+
+#: src/inventory/system.py:290
+msgid "LEAVE SHOP"
+msgstr "ПОКИНУТИ МАГАЗИН"
+
+#: src/inventory/system.py:411
+msgid "SKILLS & MAGIC"
+msgstr "НАВИЧКИ ТА МАГІЯ"
+
+#: src/inventory/system.py:418
+msgid "TALENT TREE"
+msgstr "ДЕРЕВО ТАЛАНТІВ"
+
+#: src/inventory/system.py:427 src/ui/menus/arcane_quest_menu.py:1095
+msgid "ARCANE QUESTS"
+msgstr "АРКАННІ КВЕСТИ"
+
+#: src/inventory/system.py:439
+msgid "MYSTERIUM MAGNUM"
+msgstr "ВЕЛИКА ТАЄМНИЦЯ"
+
+#: src/items/items.py:434
 msgid "Weapon"
 msgstr "Зброя"
 
-#: src/items/items.py:108
-msgid "Damage"
-msgstr "Шкода"
-
-#: src/items/items.py:108
+#: src/items/items.py:436 src/items/items.py:438 src/items/items.py:726
+#: src/items/items.py:728 src/items/items.py:893 src/items/items.py:895
 msgid "Durability"
 msgstr "Міцність"
 
-#: src/items/items.py:136
+#: src/items/items.py:446 src/items/items.py:569
+#: src/ui/menus/skillbar_menu.py:818
+msgid "Damage"
+msgstr "Шкода"
+
+#: src/items/items.py:464 src/items/items.py:565 src/items/items.py:743
+#: src/items/items.py:777 src/items/items.py:812 src/items/items.py:904
+#: src/items/items.py:960 src/items/items.py:990
+msgid "Type"
+msgstr "Тип"
+
+#: src/items/items.py:501 src/ui/menus/skillbar_menu.py:820
+msgid "Range"
+msgstr "МОВА"
+
+#: src/items/items.py:502
+msgid "Style"
+msgstr "Тип"
+
+#: src/items/items.py:535
+msgid "Proj. Speed"
+msgstr "Швидкість снаряда"
+
+#: src/items/items.py:565
 msgid "Consumable"
 msgstr "Споживане"
 
-#: src/items/items.py:138
+#: src/items/items.py:567
 msgid "Heal"
 msgstr "Лікування"
 
-#: src/items/items.py:138
+#: src/items/items.py:567 src/items/items.py:569
 msgid "HP"
 msgstr "ОЗ"
 
-#: src/items/items.py:141
+#: src/items/items.py:571
 msgid "Effects"
 msgstr "Ефекти"
 
-#: src/ui/hud.py:75
+#: src/items/items.py:719
+msgid "Helmet"
+msgstr "Лікування"
+
+#: src/items/items.py:719
+msgid "Chestplate"
+msgstr "Нагрудник"
+
+#: src/items/items.py:720
+msgid "Leggings"
+msgstr "НАЛАШТУВАННЯ"
+
+#: src/items/items.py:720
+msgid "Boots"
+msgstr "Черевики"
+
+#: src/items/items.py:721
+msgid "Charm"
+msgstr "Амулет"
+
+#: src/items/items.py:721
+msgid "Gloves"
+msgstr "Рукавиці"
+
+#: src/items/items.py:722 src/items/items.py:812 src/items/items.py:960
+msgid "Ring"
+msgstr "Кільце"
+
+#: src/items/items.py:722
+msgid "Belt"
+msgstr "Пояс"
+
+#: src/items/items.py:737 src/items/items.py:739 src/items/items.py:813
+#: src/items/items.py:961
+msgid "Defense"
+msgstr "Захист"
+
+#: src/items/items.py:743 src/items/items.py:812 src/items/items.py:960
+msgid "Armor"
+msgstr "Броня"
+
+#: src/items/items.py:777
+msgid "Misc"
+msgstr "Різне"
+
+#: src/items/items.py:778 src/items/items.py:814
+msgid "Light Radius"
+msgstr "Радіус освітлення"
+
+#: src/items/items.py:815
+msgid "Light Intensity"
+msgstr "Інтенсивність світла"
+
+#: src/items/items.py:900
+msgid "Power"
+msgstr "Сила"
+
+#: src/items/items.py:904
+msgid "Tool"
+msgstr "Інструмент"
+
+#: src/items/items.py:914
+msgid "Gathers"
+msgstr "Збирає"
+
+#: src/items/items.py:963
+msgid "Gloving Rainbow Aura"
+msgstr "Сяюча райдужна аура"
+
+#: src/items/items.py:990
+msgid "Fish"
+msgstr "Риба"
+
+#: src/minigames/fishing.py:868
+msgid "New fish discovered!"
+msgstr "Відкрито нову рибу!"
+
+#: src/minigames/fishing.py:870
+msgid "Name: {name}"
+msgstr "Назва: {name}"
+
+#: src/minigames/fishing.py:871
+msgid "Rarity: {rarity}"
+msgstr "Рідкість: {rarity}"
+
+#: src/minigames/fishing.py:872 src/ui/menus/collection_book.py:807
+msgid "Difficulty: {d:.2f}"
+msgstr "Складність: {d:.2f}"
+
+#: src/minigames/fishing.py:873 src/ui/menus/collection_book.py:812
+msgid "Speed: {s:.2f}"
+msgstr "Швидкість: {s:.2f}"
+
+#: src/minigames/fishing.py:874
+msgid "Base price: {p} gold"
+msgstr "Базова ціна: {p} золота"
+
+#: src/minigames/fishing.py:876
+msgid "Check your Field Journal to see it again."
+msgstr "Перевірте свій Польовий Журнал, щоб побачити це знову."
+
+#: src/ui/hud.py:135
+msgid "STAMINA"
+msgstr "ВИТРИВАЛІСТЬ"
+
+#: src/ui/hud.py:174
 msgid "INVENTORY"
 msgstr "ІНВЕНТАР"
 
-#: src/ui/menus.py:99
-msgid "START"
-msgstr "СТАРТ"
+#: src/ui/widgets.py:650
+msgid "SHOP"
+msgstr "ОЗ"
 
-#: src/ui/menus.py:109
-msgid "LOAD"
-msgstr "ЗАВАНТАЖИТИ"
+#: src/ui/widgets.py:652
+msgid "PLAY BLACKJACK"
+msgstr "ГРАТИ В БЛЕКДЖЕК"
 
-#: src/ui/menus.py:119
-msgid "EXIT"
-msgstr "ВИХІД"
+#: src/ui/widgets.py:654
+msgid "PLAY ROULETTE"
+msgstr "ГРАТИ В РУЛЕТКУ"
 
-#: src/ui/menus.py:129
-msgid "SETTINGS"
-msgstr "НАЛАШТУВАННЯ"
+#: src/ui/widgets.py:656
+msgid "PLAY POKER"
+msgstr "ГРАТИ В ПОКЕР"
 
-#: src/ui/menus.py:139
-msgid "CREDITS"
-msgstr "ТИТРИ"
+#: src/ui/widgets.py:658
+msgid "CONFIRM"
+msgstr "ПІДТВЕРДИТИ"
 
-#: src/ui/menus.py:155
-msgid "Our logo that we need to think of"
-msgstr "Наш логотип, який нам ще треба придумати"
+#: src/ui/widgets.py:661
+msgid "CRAFT RUNE"
+msgstr "СТВОРИТИ РУНУ"
 
-#: src/ui/menus.py:244 src/ui/menus.py:356 src/ui/menus.py:501
+#: src/ui/widgets.py:663
+msgid "ENCHANT WEAPON"
+msgstr "Зброя"
+
+#: src/ui/widgets.py:665
+msgid "PLAY ARCHEOLOGIUM"
+msgstr "ГРАТИ В АРХЕОЛОГІУМ"
+
+#: src/ui/menus/collection_book.py:208 src/ui/widgets.py:671
+msgid "CLOSE"
+msgstr "ЗАКРИТИ"
+
+#: src/ui/menus/achievements_menu.py:36 src/ui/menus/arcane_quest_menu.py:138
+#: src/ui/menus/credits_menu.py:82 src/ui/menus/mysterium_magnum.py:91
+#: src/ui/menus/save_load_menu.py:176 src/ui/menus/settings_menu.py:96
+#: src/ui/menus/settings_menu.py:195 src/ui/menus/skilltree_menu.py:222
+#: src/ui/menus/wiki_menu.py:530
 msgid "BACK"
 msgstr "НАЗАД"
 
-#: src/ui/menus.py:254
-msgid "LANG"
-msgstr "МОВА"
+#: src/ui/menus/achievements_menu.py:273 src/ui/menus/main_menu.py:110
+msgid "ACHIEVEMENTS"
+msgstr "ДОСЯГНЕННЯ"
 
-#: src/ui/menus.py:277
-msgid "Brightness"
-msgstr "Яскравість"
+#: src/ui/menus/achievements_menu.py:334
+msgid "Keep playing to reveal this achievement."
+msgstr "Продовжуйте грати, щоб відкрити це досягнення."
 
-#: src/ui/menus.py:289
-msgid "Music volume"
-msgstr "Гучність музики"
+#: src/ui/menus/arcane_quest_menu.py:267 src/ui/menus/arcane_quest_menu.py:293
+#: src/ui/menus/arcane_quest_menu.py:335
+msgid "Hunt {n}"
+msgstr "Полювати на {n}"
 
-#: src/ui/menus.py:365
+#: src/ui/menus/arcane_quest_menu.py:268 src/ui/menus/arcane_quest_menu.py:294
+#: src/ui/menus/arcane_quest_menu.py:336
+msgid "Kill {c}x {n}"
+msgstr "Вбити {c}x {n}"
+
+#: src/ui/menus/arcane_quest_menu.py:693
+msgid "CLAIM"
+msgstr "ОТРИМАТИ"
+
+#: src/ui/menus/arcane_quest_menu.py:693
+msgid "DONE"
+msgstr "Гроші"
+
+#: src/ui/menus/arcane_quest_menu.py:751 src/ui/menus/arcane_quest_menu.py:757
+msgid "Reroll Quests"
+msgstr "Перезапустити квести"
+
+#: src/ui/menus/arcane_quest_menu.py:751 src/ui/menus/arcane_quest_menu.py:757
+msgid "Available: {n}/{m}"
+msgstr "Доступно: {n}/{m}"
+
+#: src/ui/menus/arcane_quest_menu.py:753
+msgid "Reroll Unavailable"
+msgstr "Перезапуск недоступний"
+
+#: src/ui/menus/arcane_quest_menu.py:753
+msgid "No rerolls remaining"
+msgstr "Не залишилось перезапусків"
+
+#: src/ui/menus/arcane_quest_menu.py:757
+msgid "Cooldown: {m}:{s:02d}"
+msgstr "Перезарядка: {m}:{s:02d}"
+
+#: src/ui/menus/arcane_quest_menu.py:1300
+msgid "{cur}/{max}"
+msgstr "{cur}/{max}"
+
+#: src/ui/menus/arcane_quest_menu.py:1344
+msgid "{m}:{s:02d}"
+msgstr "{m}:{s:02d}"
+
+#: src/ui/menus/arcane_quest_menu.py:1358
+msgid "CLAIMED"
+msgstr "ОТРИМАНО"
+
+#: src/ui/menus/collection_book.py:217 src/ui/menus/recipe_book.py:261
+msgid "<- PREV"
+msgstr "<- ПОПЕРЕД"
+
+#: src/ui/menus/collection_book.py:226 src/ui/menus/recipe_book.py:269
+msgid "NEXT ->"
+msgstr "НАСТУП ->"
+
+#: src/ui/menus/collection_book.py:632
+msgid "FIELD JOURNAL"
+msgstr "ПОЛЬОВИЙ ЖУРНАЛ"
+
+#: src/ui/menus/collection_book.py:648
+msgid "— Fish Collection —"
+msgstr "— Колекція Риб —"
+
+#: src/ui/menus/collection_book.py:803
+msgid "Rarity: {r}"
+msgstr "Рідкість: {r}"
+
+#: src/ui/menus/collection_book.py:817
+msgid "Price: {p}g"
+msgstr "Ціна: {p}з"
+
+#: src/ui/menus/collection_book.py:851
+msgid "×{count}"
+msgstr "×{count}"
+
+#: src/ui/menus/collection_book.py:860
+msgid "Not yet caught"
+msgstr "Ще не спіймано"
+
+#: src/ui/menus/credits_menu.py:93
 msgid ""
 "CREDITS:\n"
 "Vibe inc idea, production and execution\n"
@@ -165,42 +544,2494 @@ msgstr ""
 "Головний спонсор: Vibe inc\n"
 "Особлива подяка Vibe inc"
 
-#: src/ui/menus.py:437
+#: src/ui/menus/location_map_menu.py:22
+msgid "Peaceful Forest"
+msgstr "Мирний ліс"
+
+#: src/ui/menus/location_map_menu.py:29
+msgid "Temple"
+msgstr "Тип"
+
+#: src/ui/menus/location_map_menu.py:36
+msgid "Dark Cave"
+msgstr "Темна печера"
+
+#: src/ui/menus/location_map_menu.py:190
+msgid "Travel Map"
+msgstr "Карта подорожей"
+
+#: src/ui/menus/location_map_menu.py:334
+msgid "You are here"
+msgstr "Ви тут"
+
+#: src/ui/menus/location_map_menu.py:337
+msgid "Click to travel"
+msgstr "Натисніть для подорожі"
+
+#: src/ui/menus/location_map_menu.py:340
+msgid "Blocked"
+msgstr "Заблоковано"
+
+#: src/ui/menus/location_map_menu.py:392
+msgid "ESC to go back"
+msgstr "ESC для повернення"
+
+#: src/ui/menus/main_menu.py:104
+msgid "START"
+msgstr "СТАРТ"
+
+#: src/ui/menus/main_menu.py:107
+msgid "LOAD"
+msgstr "ЗАВАНТАЖИТИ"
+
+#: src/ui/menus/main_menu.py:113 src/ui/menus/settings_menu.py:334
+msgid "SETTINGS"
+msgstr "НАЛАШТУВАННЯ"
+
+#: src/ui/menus/main_menu.py:116
+msgid "CREDITS"
+msgstr "ТИТРИ"
+
+#: src/ui/menus/main_menu.py:119 src/ui/menus/skillbar_menu.py:147
+msgid "EXIT"
+msgstr "ВИХІД"
+
+#: src/ui/menus/main_menu.py:131
+msgid "Our logo that we need to think of"
+msgstr "Наш логотип, який нам ще треба придумати"
+
+#: src/ui/menus/main_menu.py:454
+msgid "An Epic Adventure Awaits"
+msgstr "Епічна пригода чекає"
+
+#: src/ui/menus/mysterium_magnum.py:105
+msgid "⟐ Reveal Secret ⟐"
+msgstr "⟐ Відкрити секрет ⟐"
+
+#: src/ui/menus/mysterium_magnum.py:121
+msgid "⟐ View All Cards ⟐"
+msgstr "⟐ Переглянути всі карти ⟐"
+
+#: src/ui/menus/mysterium_magnum.py:235
+msgid ""
+"The Fool walks where angels fear to tread. A blank slate, full of potential."
+msgstr ""
+"Дурень іде туди, куди бояться ступити ангели. Чистий аркуш, повний "
+"потенціалу."
+
+#: src/ui/menus/mysterium_magnum.py:236
+msgid "The Magician channels the elements. Your mana reganition quickens."
+msgstr "Маг направляє стихії. Відновлення вашої мани прискорюється."
+
+#: src/ui/menus/mysterium_magnum.py:237
+msgid ""
+"The High Priestess guards the temple of inner wisdom. Stamina flows "
+"abundantly."
+msgstr ""
+"Верховна Жриця охороняє храм внутрішньої мудрості. Витривалість тече рясно."
+
+#: src/ui/menus/mysterium_magnum.py:238
+msgid "The Empress nurtures all life. Your wounds mend more swiftly."
+msgstr "Імператриця плекає все живе. Ваші рани гояться швидше."
+
+#: src/ui/menus/mysterium_magnum.py:239
+msgid "The Emperor imposes order upon chaos. Your steps grow swifter."
+msgstr "Імператор наводить порядок у хаосі. Ваші кроки стають швидшими."
+
+#: src/ui/menus/mysterium_magnum.py:240
+msgid ""
+"The Hierophant speaks in riddles and parables. Your strikes carry more "
+"weight."
+msgstr ""
+"Ієрофант говорить загадками та притчами. Ваші удари несуть більшу вагу."
+
+#: src/ui/menus/mysterium_magnum.py:241
+msgid "The Lovers bind fate to choice. Your reflexes sharpen."
+msgstr "Закохані пов'язують долю з вибором. Ваші рефлекси загострюються."
+
+#: src/ui/menus/mysterium_magnum.py:242
+msgid "The Chariot triumphs through will alone. Forward, always faster."
+msgstr "Колісниця перемагає лише волею. Вперед, завжди швидше."
+
+#: src/ui/menus/mysterium_magnum.py:243
+msgid "Justice weighs all deeds. Your skills recover more swiftly."
+msgstr "Справедливість зважує всі вчинки. Ваші навички відновлюються швидше."
+
+#: src/ui/menus/mysterium_magnum.py:244
+msgid "The Hermit seeks truth in solitude. Light your own lantern."
+msgstr "Відлюдник шукає істину в самоті. Запаліть свій власний ліхтар."
+
+#: src/ui/menus/mysterium_magnum.py:245
+msgid "The Wheel of Fortune turns endlessly. Fortune favours the swift."
+msgstr "Колесо Фортуни нескінченно обертається. Фортуна сприяє швидким."
+
+#: src/ui/menus/mysterium_magnum.py:246
+msgid "Strength is not merely muscle — it is the courage to strike true."
+msgstr "Сила — це не просто м'язи, це мужність бити вірно."
+
+#: src/ui/menus/mysterium_magnum.py:247
+msgid ""
+"The Hanged Man sees the world upside down. Patience hastens all things."
+msgstr "Повішений бачить світ догори дригом. Терпіння прискорює все."
+
+#: src/ui/menus/mysterium_magnum.py:248
+msgid ""
+"Death is not the end, but a transformation. Let the old self fall away."
+msgstr "Смерть — це не кінець, а трансформація. Нехай старе «я» відпаде."
+
+#: src/ui/menus/mysterium_magnum.py:249
+msgid "Temperance blends opposites into harmony. Your body mends itself."
+msgstr "Помірність поєднує протилежності в гармонію. Ваше тіло зцілює себе."
+
+#: src/ui/menus/mysterium_magnum.py:250
+msgid "The Devil binds with chains of illusion. Break free — strike faster."
+msgstr "Диявол зв'язує ланцюгами ілюзій. Звільніться — бийте швидше."
+
+#: src/ui/menus/mysterium_magnum.py:251
+msgid ""
+"The Tower falls so that something new may rise. Destruction fuels your "
+"blows."
+msgstr ""
+"Вежа падає, щоб могло піднятися щось нове. Руйнування живить ваші удари."
+
+#: src/ui/menus/mysterium_magnum.py:252
+msgid ""
+"The Star shines in the darkest night. Hope is a compass that never fails."
+msgstr ""
+"Зірка світить у найтемнішу ніч. Надія — це компас, який ніколи не підводить."
+
+#: src/ui/menus/mysterium_magnum.py:253
+msgid "The Moon reveals what lurks beneath. The dark grants you resilience."
+msgstr "Місяць відкриває те, що ховається внизу. Темрява дарує вам стійкість."
+
+#: src/ui/menus/mysterium_magnum.py:254
+msgid "The Sun banishes all doubt. Warmth and speed flood your veins."
+msgstr "Сонце проганяє всі сумніви. Тепло та швидкість наповнюють ваші вени."
+
+#: src/ui/menus/mysterium_magnum.py:255
+msgid "Judgement calls all to account. Rise and be swift."
+msgstr "Суд закликає всіх до відповіді. Встаньте і будьте швидкими."
+
+#: src/ui/menus/mysterium_magnum.py:256
+msgid "The World completes the great cycle. All paths converge in you."
+msgstr "Світ завершує великий цикл. Всі шляхи сходяться в вас."
+
+#: src/ui/menus/mysterium_magnum.py:731
+msgid "⟐ All Arcana ⟐"
+msgstr "⟐ Всі Аркани ⟐"
+
+#: src/ui/menus/mysterium_magnum.py:2215
+msgid "⟐ Mysterium Magnum ⟐"
+msgstr "⟐ Велика Таємниця ⟐"
+
+#: src/ui/menus/mysterium_magnum.py:2242
+msgid "Secrets await within the cards..."
+msgstr "Таємниці чекають у картах..."
+
+#: src/ui/menus/mysterium_magnum.py:2250
+msgid "The Mysterium Magnum is a deck of 22 arcana,"
+msgstr "Велика Таємниця — це колода з 22 арканів,"
+
+#: src/ui/menus/mysterium_magnum.py:2251
+msgid "each holding a fragment of forgotten power."
+msgstr "кожен з яких містить уламок забутої сили."
+
+#: src/ui/menus/mysterium_magnum.py:2252
+msgid "Reveal them, and their essence binds to you."
+msgstr "Відкрийте їх, і їхня сутність зв'яжеться з вами."
+
+#: src/ui/menus/mysterium_magnum.py:2309
+msgid "Purple Stars"
+msgstr "Пурпурові зірки"
+
+#: src/ui/menus/pause_menu.py:98
 msgid "SAVE"
 msgstr "ЗБЕРЕГТИ"
 
-#: src/ui/menus.py:447
+#: src/ui/menus/pause_menu.py:102
+msgid "WIKI"
+msgstr "ВІКІ"
+
+#: src/ui/menus/pause_menu.py:106
 msgid "RESUME"
 msgstr "ПРОДОВЖИТИ"
 
-#: src/ui/menus.py:457
+#: src/ui/menus/pause_menu.py:110
 msgid "MAIN MENU"
 msgstr "ГОЛОВНЕ МЕНЮ"
 
-#: src/ui/menus.py:518
+#: src/ui/menus/pause_menu.py:291
+msgid "PAUSED"
+msgstr "Зайнято"
+
+#: src/ui/menus/recipe_book.py:252
+msgid "CLOSE BOOK"
+msgstr "ЗАКРИТИ КНИГУ"
+
+#: src/ui/menus/recipe_book.py:833
+msgid "RECIPE BOOK"
+msgstr "КНИГА РЕЦЕПТІВ"
+
+#: src/ui/menus/recipe_book.py:865
+msgid "— Crafting Compendium —"
+msgstr "— Збірник Крафту —"
+
+#: src/ui/menus/save_load_menu.py:138
 msgid "Slot"
 msgstr "Слот"
 
-#: src/ui/menus.py:520
+#: src/ui/menus/save_load_menu.py:140
 msgid "Used"
 msgstr "Зайнято"
 
-#: src/ui/menus.py:522
+#: src/ui/menus/save_load_menu.py:142
 msgid "Empty"
 msgstr "Порожньо"
 
-#: src/ui/menus.py:542
+#: src/ui/menus/save_load_menu.py:161
 msgid "DEL"
 msgstr "ВИДАЛИТИ"
 
-#: src/ui/menus.py:579
+#: src/ui/menus/save_load_menu.py:380
 msgid "SAVE GAME"
 msgstr "ЗБЕРЕГТИ ГРУ"
 
-#: src/ui/menus.py:579
+#: src/ui/menus/save_load_menu.py:380
 msgid "LOAD GAME"
 msgstr "ЗАВАНТАЖИТИ ГРУ"
+
+#: src/ui/menus/settings_menu.py:92 src/ui/menus/settings_menu.py:194
+msgid "LANG"
+msgstr "МОВА"
+
+#: src/ui/menus/settings_menu.py:351
+msgid "Brightness"
+msgstr "Яскравість"
+
+#: src/ui/menus/settings_menu.py:352
+msgid "Music volume"
+msgstr "Гучність музики"
+
+#: src/ui/menus/skillbar_menu.py:485 src/ui/menus/wiki_menu.py:358
+#: src/ui/menus/wiki_menu.py:957
+msgid "Dash"
+msgstr "Ривок"
+
+#: src/ui/menus/skillbar_menu.py:486
+msgid "Quick burst of movement"
+msgstr "Швидкий сплеск руху"
+
+#: src/ui/menus/skillbar_menu.py:730
+msgid "✦ Skillbar ✦"
+msgstr "✦ Панель навичок ✦"
+
+#: src/ui/menus/skillbar_menu.py:747
+msgid "Drag skills between the bar and storage"
+msgstr "Перетягніть навички між панеллю та сховищем"
+
+#: src/ui/menus/skillbar_menu.py:814
+msgid "Cooldown"
+msgstr "Перезарядка"
+
+#: src/ui/menus/skillbar_menu.py:816
+msgid "Mana Cost"
+msgstr "Вартість мани"
+
+#: src/ui/menus/skillbar_menu.py:822
+msgid "Duration"
+msgstr "Тривалість"
+
+#: src/ui/menus/skillbar_menu.py:844
+msgid "Storage"
+msgstr "Сховище"
+
+#: src/ui/menus/skillbar_menu.py:849
+msgid "No unused skills"
+msgstr "Немає невикористаних навичок"
+
+#: src/ui/menus/skillbar_menu.py:898
+msgid "6 active slots"
+msgstr "6 активних слотів"
+
+#: src/ui/menus/skillbar_menu.py:907
+msgid "Unused skills"
+msgstr "Невикористані навички"
+
+#: src/ui/menus/skilltree_menu.py:244
+msgid "Respec (0 Gold)"
+msgstr "Скинути (0 золота)"
+
+#: src/ui/menus/skilltree_menu.py:1143
+msgid "Fireball Mastery"
+msgstr "Майстерність Вогняної Кулі"
+
+#: src/ui/menus/skilltree_menu.py:1143
+msgid ""
+"Unlocks the Fireball skill — launch an explosive fireball dealing 28 damage "
+"with area effect and knockback."
+msgstr ""
+"Розблоковує навичку Вогняна Куля — запускає вибухову вогняну кулю, яка "
+"завдає 28 шкоди по області та відкидає."
+
+#: src/ui/menus/skilltree_menu.py:1144 src/ui/menus/wiki_menu.py:354
+#: src/ui/menus/wiki_menu.py:832
+msgid "Flame Shield"
+msgstr "Вогняний Щит"
+
+#: src/ui/menus/skilltree_menu.py:1144
+msgid "Surrounds you with flames, dealing 8 damage/sec to nearby enemies."
+msgstr "Оточує вас полум'ям, завдаючи 8 шкоди в секунду сусіднім ворогам."
+
+#: src/ui/menus/skilltree_menu.py:1145
+msgid "Pyromancer's Fury"
+msgstr "Лють Піроманта"
+
+#: src/ui/menus/skilltree_menu.py:1145
+msgid "Fire skills deal 25% more damage and have 15% larger area."
+msgstr ""
+"Вогняні навички завдають на 25% більше шкоди та мають на 15% більшу площу."
+
+#: src/ui/menus/skilltree_menu.py:1148 src/ui/menus/wiki_menu.py:354
+#: src/ui/menus/wiki_menu.py:840
+msgid "Frost Nova"
+msgstr "Морозна Нова"
+
+#: src/ui/menus/skilltree_menu.py:1148
+msgid "Unlocks Frost Nova — freeze all enemies within radius for 3 seconds."
+msgstr ""
+"Розблоковує Морозну Нову — заморожує всіх ворогів у радіусі на 3 секунди."
+
+#: src/ui/menus/skilltree_menu.py:1149 src/ui/menus/wiki_menu.py:354
+#: src/ui/menus/wiki_menu.py:849
+msgid "Ice Armor"
+msgstr "Крижана Броня"
+
+#: src/ui/menus/skilltree_menu.py:1149
+msgid "Grants a shield of ice absorbing 30 damage and slowing attackers."
+msgstr "Дає крижаний щит, який поглинає 30 шкоди та сповільнює нападників."
+
+#: src/ui/menus/skilltree_menu.py:1150 src/ui/menus/wiki_menu.py:355
+#: src/ui/menus/wiki_menu.py:858
+msgid "Glacial Cascade"
+msgstr "Льодовиковий Каскад"
+
+#: src/ui/menus/skilltree_menu.py:1150
+msgid "Ice shards cascade outward dealing 35 damage and freezing enemies."
+msgstr ""
+"Осколки льоду летять назовні, завдаючи 35 шкоди та заморожуючи ворогів."
+
+#: src/ui/menus/skilltree_menu.py:1153 src/ui/menus/wiki_menu.py:355
+#: src/ui/menus/wiki_menu.py:868
+msgid "Chain Lightning"
+msgstr "Ланцюгова Блискавка"
+
+#: src/ui/menus/skilltree_menu.py:1153
+msgid "Unlocks Chain Lightning — bolt jumps between up to 5 enemies."
+msgstr "Розблоковує Ланцюгову Блискавку — розряд перестрибує між 5 ворогами."
+
+#: src/ui/menus/skilltree_menu.py:1154
+msgid "Static Field"
+msgstr "Статичне Поле"
+
+#: src/ui/menus/skilltree_menu.py:1154
+msgid "Passive: 12% chance to shock attackers, dealing 20 damage."
+msgstr "Пасивно: 12% шанс шокувати нападників, завдаючи 20 шкоди."
+
+#: src/ui/menus/skilltree_menu.py:1155 src/ui/menus/wiki_menu.py:355
+#: src/ui/menus/wiki_menu.py:877
+msgid "Thunderstrike"
+msgstr "Громовий Удар"
+
+#: src/ui/menus/skilltree_menu.py:1155
+msgid "Call down lightning for 55 damage in a column from above."
+msgstr "Викликає блискавку, яка завдає 55 шкоди у стовпі зверху."
+
+#: src/ui/menus/skilltree_menu.py:1158 src/ui/menus/wiki_menu.py:356
+#: src/ui/menus/wiki_menu.py:885
+msgid "Entangling Roots"
+msgstr "Обплутуючі Корені"
+
+#: src/ui/menus/skilltree_menu.py:1158
+msgid "Unlocks root trap that immobilizes enemies for 4 seconds."
+msgstr "Розблоковує пастку з коренів, яка паралізує ворогів на 4 секунди."
+
+#: src/ui/menus/skilltree_menu.py:1159
+msgid "Regeneration"
+msgstr "Регенерація"
+
+#: src/ui/menus/skilltree_menu.py:1159
+msgid "Passive: regenerate 3 HP per second at all times."
+msgstr "Пасивно: відновлює 3 ОЗ за секунду постійно."
+
+#: src/ui/menus/skilltree_menu.py:1160 src/ui/menus/wiki_menu.py:356
+#: src/ui/menus/wiki_menu.py:894
+msgid "Summon Spirit"
+msgstr "Призов Духа"
+
+#: src/ui/menus/skilltree_menu.py:1160
+msgid "Summon a nature spirit that attacks for 15 damage."
+msgstr "Призиває духа природи, який атакує на 15 шкоди."
+
+#: src/ui/menus/skilltree_menu.py:1163 src/ui/menus/wiki_menu.py:356
+#: src/ui/menus/wiki_menu.py:903
+msgid "Shadow Step"
+msgstr "Тіньовий Крок"
+
+#: src/ui/menus/skilltree_menu.py:1163
+msgid "Unlocks teleport through shadows, becoming invulnerable briefly."
+msgstr ""
+"Розблоковує телепортацію через тіні, стаючи на короткий час невразливим."
+
+#: src/ui/menus/skilltree_menu.py:1164
+msgid "Poison Blade"
+msgstr "Отруйний Клинок"
+
+#: src/ui/menus/skilltree_menu.py:1164
+msgid "Attacks apply poison dealing 6 damage/sec for 5 seconds."
+msgstr ""
+"Атаки накладають отруту, завдаючи 6 шкоди в секунду протягом 5 секунд."
+
+#: src/ui/menus/skilltree_menu.py:1165 src/ui/menus/wiki_menu.py:357
+#: src/ui/menus/wiki_menu.py:912
+msgid "Dark Pact"
+msgstr "Темний Пакт"
+
+#: src/ui/menus/skilltree_menu.py:1165
+msgid "Sacrifice 10% HP to deal 60 shadow damage to all nearby enemies."
+msgstr ""
+"Пожертвуйте 10% ОЗ, щоб завдати 60 шкоди від тіні всім навколишнім ворогам."
+
+#: src/ui/menus/skilltree_menu.py:1168 src/ui/menus/wiki_menu.py:357
+#: src/ui/menus/wiki_menu.py:921
+msgid "Arcane Missiles"
+msgstr "Магічні Снаряди"
+
+#: src/ui/menus/skilltree_menu.py:1168
+msgid "Unlocks homing arcane missiles dealing 22 damage each."
+msgstr "Розблоковує самонавідні магічні снаряди, що завдають по 22 шкоди."
+
+#: src/ui/menus/skilltree_menu.py:1169
+msgid "Mana Flow"
+msgstr "Потік Мани"
+
+#: src/ui/menus/skilltree_menu.py:1169
+msgid "Passive: skill cooldowns reduced by 20%."
+msgstr "Пасивно: час перезарядки навичок зменшено на 20%."
+
+#: src/ui/menus/skilltree_menu.py:1170 src/ui/menus/wiki_menu.py:357
+#: src/ui/menus/wiki_menu.py:930
+msgid "Mystic Barrier"
+msgstr "Містичний Бар'єр"
+
+#: src/ui/menus/skilltree_menu.py:1170
+msgid "Creates a barrier that reflects 30% of incoming damage."
+msgstr "Створює бар'єр, який відбиває 30% отриманої шкоди."
+
+#: src/ui/menus/skilltree_menu.py:1175 src/ui/menus/wiki_menu.py:358
+#: src/ui/menus/wiki_menu.py:939
+msgid "Berserker's Rage"
+msgstr "Лють Берсерка"
+
+#: src/ui/menus/skilltree_menu.py:1175
+msgid ""
+"Massive damage boost (+50%) but take 20% more damage. The fury consumes you."
+msgstr ""
+"Значне посилення шкоди (+50%), але ви отримуєте на 20% більше шкоди. Лють "
+"поглинає вас."
+
+#: src/ui/menus/skilltree_menu.py:1176
+msgid "Eternal Fortress"
+msgstr "Вічна Фортеця"
+
+#: src/ui/menus/skilltree_menu.py:1176
+msgid "+80% defense and +40 max HP, but movement speed reduced by 15%."
+msgstr "+80% захисту та +40 макс. ОЗ, але швидкість руху зменшена на 15%."
+
+#: src/ui/menus/skilltree_menu.py:1177
+msgid "Soul Harvest"
+msgstr "Жнива Душ"
+
+#: src/ui/menus/skilltree_menu.py:1177
+msgid "Each kill restores 5 HP and grants +2% damage for 8 seconds (stacks)."
+msgstr ""
+"Кожне вбивство відновлює 5 ОЗ і дає +2% до шкоди на 8 секунд "
+"(накопичується)."
+
+#: src/ui/menus/skilltree_menu.py:1178
+msgid "Void Walker"
+msgstr "Мандрівник Порожнечі"
+
+#: src/ui/menus/skilltree_menu.py:1178
+msgid ""
+"Teleport on dodge. +30% dodge chance. Leave afterimage dealing 18 damage."
+msgstr ""
+"Телепортація при ухиленні. +30% шанс ухилення. Залишає після себе ілюзію, що"
+" завдає 18 шкоди."
+
+#: src/ui/menus/skilltree_menu.py:1179
+msgid "Elemental Mastery"
+msgstr "Стихійна Майстерність"
+
+#: src/ui/menus/skilltree_menu.py:1179
+msgid "All elemental damage +35%. Unlock dual-element combo attacks."
+msgstr "Вся стихійна шкода +35%. Розблоковує подвійні комбо-атаки стихій."
+
+#: src/ui/menus/skilltree_menu.py:1180 src/ui/menus/wiki_menu.py:358
+#: src/ui/menus/wiki_menu.py:948
+msgid "Chrono Shift"
+msgstr "Хронозсув"
+
+#: src/ui/menus/skilltree_menu.py:1180
+msgid "Slow time for 3 seconds. +25% attack speed. Cooldown: 30 seconds."
+msgstr ""
+"Уповільнює час на 3 секунди. +25% швидкості атаки. Перезарядка: 30 секунд."
+
+#: src/ui/menus/skilltree_menu.py:1213 src/ui/menus/skilltree_menu.py:3211
+msgid "Core"
+msgstr "Ядро"
+
+#: src/ui/menus/skilltree_menu.py:1214
+msgid "The heart of your power. Unlocks paths to all branches of mastery."
+msgstr "Серце вашої сили. Відкриває шляхи до всіх гілок майстерності."
+
+#: src/ui/menus/skilltree_menu.py:1233
+msgid "Vitality I"
+msgstr "Живучість I"
+
+#: src/ui/menus/skilltree_menu.py:1233
+msgid "Stamina I"
+msgstr "Витривалість I"
+
+#: src/ui/menus/skilltree_menu.py:1233
+msgid "Might I"
+msgstr "Міць I"
+
+#: src/ui/menus/skilltree_menu.py:1233
+msgid "Recovery I"
+msgstr "Відновлення I"
+
+#: src/ui/menus/skilltree_menu.py:1234
+msgid "Swiftness I"
+msgstr "Прудкість I"
+
+#: src/ui/menus/skilltree_menu.py:1234
+msgid "Power I"
+msgstr "Сила I"
+
+#: src/ui/menus/skilltree_menu.py:1234
+msgid "Agility I"
+msgstr "Міцність"
+
+#: src/ui/menus/skilltree_menu.py:1234
+msgid "Alacrity I"
+msgstr "Жвавість I"
+
+#: src/ui/menus/skilltree_menu.py:1235
+msgid "Reach I"
+msgstr "Досяжність I"
+
+#: src/ui/menus/skilltree_menu.py:1235
+msgid "Endurance I"
+msgstr "Витривалість I"
+
+#: src/ui/menus/skilltree_menu.py:1235
+msgid "Wisdom I"
+msgstr "Мудрість I"
+
+#: src/ui/menus/skilltree_menu.py:1235
+msgid "Mastery I"
+msgstr "Майстерність I"
+
+#: src/ui/menus/skilltree_menu.py:1238 src/ui/menus/skilltree_menu.py:1440
+msgid "+10 Max HP"
+msgstr "+10 макс. ОЗ"
+
+#: src/ui/menus/skilltree_menu.py:1238
+msgid "+8 Max Stamina"
+msgstr "+8 макс. витривалості"
+
+#: src/ui/menus/skilltree_menu.py:1238 src/ui/menus/skilltree_menu.py:1481
+msgid "+3 Attack Damage"
+msgstr "+3 до шкоди від атак"
+
+#: src/ui/menus/skilltree_menu.py:1238
+msgid "+1.0 HP/s"
+msgstr "+1.0 ОЗ/с"
+
+#: src/ui/menus/skilltree_menu.py:1239
+msgid "+2% Move Speed"
+msgstr "+2% швидкості руху"
+
+#: src/ui/menus/skilltree_menu.py:1239 src/ui/menus/skilltree_menu.py:1339
+msgid "+3 Fireball Damage"
+msgstr "+3 до шкоди від Вогняної Кулі"
+
+#: src/ui/menus/skilltree_menu.py:1240 src/ui/menus/skilltree_menu.py:1482
+msgid "+5 Attack Range"
+msgstr "+5 до дальності атаки"
+
+#: src/ui/menus/skilltree_menu.py:1240 src/ui/menus/skilltree_menu.py:1444
+#: src/ui/menus/skilltree_menu.py:1482
+msgid "+3% Attack Speed"
+msgstr "+3% швидкості атаки"
+
+#: src/ui/menus/skilltree_menu.py:1240 src/ui/menus/skilltree_menu.py:1439
+#: src/ui/menus/skilltree_menu.py:1481 src/ui/menus/skilltree_menu.py:1482
+#: src/ui/menus/skilltree_menu.py:1484
+msgid "+5 Max HP"
+msgstr "+5 макс. ОЗ"
+
+#: src/ui/menus/skilltree_menu.py:1241 src/ui/menus/skilltree_menu.py:1340
+#: src/ui/menus/skilltree_menu.py:1440
+msgid "+3 Frost Nova Damage"
+msgstr "+3 до шкоди від Морозної Нови"
+
+#: src/ui/menus/skilltree_menu.py:1241 src/ui/menus/skilltree_menu.py:1341
+msgid "+3 Chain Lightning Damage"
+msgstr "+3 до шкоди від Ланцюгової Блискавки"
+
+#: src/ui/menus/skilltree_menu.py:1271
+msgid "Path Node"
+msgstr "Вузол Шляху"
+
+#: src/ui/menus/skilltree_menu.py:1272
+msgid "Opens the way to greater power in this branch."
+msgstr "Відкриває шлях до більшої сили в цій гілці."
+
+#: src/ui/menus/skilltree_menu.py:1331
+msgid "Fire Power"
+msgstr "Вогняна Сила"
+
+#: src/ui/menus/skilltree_menu.py:1331
+msgid "Fire Blast"
+msgstr "Вогняний Вибух"
+
+#: src/ui/menus/skilltree_menu.py:1332
+msgid "Frost Power"
+msgstr "Морозна Сила"
+
+#: src/ui/menus/skilltree_menu.py:1332
+msgid "Permafrost"
+msgstr "Вічна Мерзлота"
+
+#: src/ui/menus/skilltree_menu.py:1333
+msgid "Spark"
+msgstr "СТАРТ"
+
+#: src/ui/menus/skilltree_menu.py:1333
+msgid "Arc"
+msgstr "Дуга"
+
+#: src/ui/menus/skilltree_menu.py:1334
+msgid "Vitality"
+msgstr "Живучість"
+
+#: src/ui/menus/skilltree_menu.py:1334
+msgid "Spirit Power"
+msgstr "Сила Духа"
+
+#: src/ui/menus/skilltree_menu.py:1335
+msgid "Venom"
+msgstr "Отрута"
+
+#: src/ui/menus/skilltree_menu.py:1335
+msgid "Dark Power"
+msgstr "Темна Сила"
+
+#: src/ui/menus/skilltree_menu.py:1336
+msgid "Missile Power"
+msgstr "Сила Снарядів"
+
+#: src/ui/menus/skilltree_menu.py:1336
+msgid "Arcane Flow"
+msgstr "Магічний Потік"
+
+#: src/ui/menus/skilltree_menu.py:1339
+msgid "+5% Fireball Radius"
+msgstr "+5% радіус Вогняної Кулі"
+
+#: src/ui/menus/skilltree_menu.py:1340
+msgid "+0.5s Freeze Duration"
+msgstr "+0.5с тривалість заморожування"
+
+#: src/ui/menus/skilltree_menu.py:1341
+msgid "+1 Chain Bounce"
+msgstr "+1 відскок ланцюга"
+
+#: src/ui/menus/skilltree_menu.py:1342 src/ui/menus/skilltree_menu.py:1481
+#: src/ui/menus/skilltree_menu.py:1485
+msgid "+0.5 HP/s Regen"
+msgstr "+0.5 реген. ОЗ/с"
+
+#: src/ui/menus/skilltree_menu.py:1342
+msgid "+3 Summon Spirit Damage"
+msgstr "+3 шкоди Призову Духа"
+
+#: src/ui/menus/skilltree_menu.py:1343
+msgid "+2 Poison DPS"
+msgstr "+2 шкоди від отрути за сек"
+
+#: src/ui/menus/skilltree_menu.py:1343
+msgid "+5 Dark Pact Damage"
+msgstr "+5 шкоди Темного Пакту"
+
+#: src/ui/menus/skilltree_menu.py:1344
+msgid "+3 Arcane Missiles Damage"
+msgstr "+3 шкоди Магічних Снарядів"
+
+#: src/ui/menus/skilltree_menu.py:1344
+msgid "-3% Skill Cooldowns"
+msgstr "-3% перезарядки навичок"
+
+#: src/ui/menus/skilltree_menu.py:1384
+msgid "Crossroads"
+msgstr "Перехрестя"
+
+#: src/ui/menus/skilltree_menu.py:1385
+msgid "A junction between two paths of power."
+msgstr "З'єднання між двома шляхами сили."
+
+#: src/ui/menus/skilltree_menu.py:1431
+msgid "Rage Vitality"
+msgstr "Міцність"
+
+#: src/ui/menus/skilltree_menu.py:1431
+msgid "Rage Duration"
+msgstr "Тривалість Люті"
+
+#: src/ui/menus/skilltree_menu.py:1431
+msgid "Rage Recovery"
+msgstr "Відновлення Люті"
+
+#: src/ui/menus/skilltree_menu.py:1432
+msgid "Fortress HP"
+msgstr "ОЗ Фортеці"
+
+#: src/ui/menus/skilltree_menu.py:1432
+msgid "Frost Ward"
+msgstr "Морозний Оберег"
+
+#: src/ui/menus/skilltree_menu.py:1432
+msgid "Fortress Speed"
+msgstr "Швидкість Фортеці"
+
+#: src/ui/menus/skilltree_menu.py:1433
+msgid "Harvest HP"
+msgstr "ОЗ Жнив"
+
+#: src/ui/menus/skilltree_menu.py:1433
+msgid "Harvest Power"
+msgstr "Сила Жнив"
+
+#: src/ui/menus/skilltree_menu.py:1433
+msgid "Harvest Time"
+msgstr "Час Жнив"
+
+#: src/ui/menus/skilltree_menu.py:1434
+msgid "Walker Dodge"
+msgstr "Ухилення Мандрівника"
+
+#: src/ui/menus/skilltree_menu.py:1434
+msgid "Walker Range"
+msgstr "Дальність Мандрівника"
+
+#: src/ui/menus/skilltree_menu.py:1434
+msgid "Walker Strike"
+msgstr "Удар Мандрівника"
+
+#: src/ui/menus/skilltree_menu.py:1435
+msgid "Mastery Power"
+msgstr "Сила Майстерності"
+
+#: src/ui/menus/skilltree_menu.py:1435
+msgid "Mastery Window"
+msgstr "Вікно Майстерності"
+
+#: src/ui/menus/skilltree_menu.py:1435
+msgid "Mastery Strike"
+msgstr "Удар Майстерності"
+
+#: src/ui/menus/skilltree_menu.py:1436
+msgid "Shift Time"
+msgstr "Час Зсуву"
+
+#: src/ui/menus/skilltree_menu.py:1436
+msgid "Shift Speed"
+msgstr "Швидкість Зсуву"
+
+#: src/ui/menus/skilltree_menu.py:1436
+msgid "Shift Recovery"
+msgstr "Відновлення Зсуву"
+
+#: src/ui/menus/skilltree_menu.py:1439
+msgid "+1s Rage Duration"
+msgstr "+1с тривалість Люті"
+
+#: src/ui/menus/skilltree_menu.py:1439
+msgid "-1s Rage Cooldown"
+msgstr "-1с перезарядка Люті"
+
+#: src/ui/menus/skilltree_menu.py:1440 src/ui/menus/skilltree_menu.py:1481
+#: src/ui/menus/skilltree_menu.py:1485
+msgid "+1% Move Speed"
+msgstr "+1% швидкості руху"
+
+#: src/ui/menus/skilltree_menu.py:1441
+msgid "+1 HP/Kill"
+msgstr "+1 ОЗ за вбивство"
+
+#: src/ui/menus/skilltree_menu.py:1441
+msgid "+1% Stack Damage"
+msgstr "+1% шкоди від заряду"
+
+#: src/ui/menus/skilltree_menu.py:1441
+msgid "+1s Stack Duration"
+msgstr "+1с тривалість заряду"
+
+#: src/ui/menus/skilltree_menu.py:1442
+msgid "+5% Dodge"
+msgstr "+5% ухилення"
+
+#: src/ui/menus/skilltree_menu.py:1442
+msgid "+30px Teleport"
+msgstr "+30px телепортації"
+
+#: src/ui/menus/skilltree_menu.py:1442
+msgid "+3 Afterimage Damage"
+msgstr "+3 шкоди ілюзії"
+
+#: src/ui/menus/skilltree_menu.py:1443
+msgid "+3% Elemental"
+msgstr "+3% стихійної"
+
+#: src/ui/menus/skilltree_menu.py:1443
+msgid "+0.5s Combo"
+msgstr "+0.5с комбо"
+
+#: src/ui/menus/skilltree_menu.py:1443
+msgid "+5 Combo Damage"
+msgstr "+5 шкоди від комбо"
+
+#: src/ui/menus/skilltree_menu.py:1444
+msgid "+0.5s Shift"
+msgstr "+0.5с зсуву"
+
+#: src/ui/menus/skilltree_menu.py:1444
+msgid "-2s Shift Cooldown"
+msgstr "-2с перезарядки зсуву"
+
+#: src/ui/menus/skilltree_menu.py:1474
+msgid "Iron Will"
+msgstr "Залізна Воля"
+
+#: src/ui/menus/skilltree_menu.py:1474
+msgid "Swift Feet"
+msgstr "Швидкі Ноги"
+
+#: src/ui/menus/skilltree_menu.py:1474
+msgid "Sharp Mind"
+msgstr "Гострий Розум"
+
+#: src/ui/menus/skilltree_menu.py:1474
+msgid "Tough Skin"
+msgstr "Міцна Шкіра"
+
+#: src/ui/menus/skilltree_menu.py:1475
+msgid "Quick Hands"
+msgstr "Швидкі Руки"
+
+#: src/ui/menus/skilltree_menu.py:1475
+msgid "Eagle Eye"
+msgstr "Орлине Око"
+
+#: src/ui/menus/skilltree_menu.py:1475
+msgid "Stone Heart"
+msgstr "СТАРТ"
+
+#: src/ui/menus/skilltree_menu.py:1475
+msgid "Flame Touch"
+msgstr "Дотик Полум'я"
+
+#: src/ui/menus/skilltree_menu.py:1476
+msgid "Frost Bite"
+msgstr "Укус Морозу"
+
+#: src/ui/menus/skilltree_menu.py:1476
+msgid "Thunder Palm"
+msgstr "Громова Долоня"
+
+#: src/ui/menus/skilltree_menu.py:1476
+msgid "Vine Grip"
+msgstr "Хватка Лози"
+
+#: src/ui/menus/skilltree_menu.py:1476
+msgid "Shadow Veil"
+msgstr "Тіньова Завіса"
+
+#: src/ui/menus/skilltree_menu.py:1477
+msgid "Arcane Touch"
+msgstr "Магічний Дотик"
+
+#: src/ui/menus/skilltree_menu.py:1477
+msgid "Steel Spine"
+msgstr "Сталевий Хребет"
+
+#: src/ui/menus/skilltree_menu.py:1477
+msgid "Wind Step"
+msgstr "Крок Вітру"
+
+#: src/ui/menus/skilltree_menu.py:1477
+msgid "Ember Soul"
+msgstr "Душа Вуглинки"
+
+#: src/ui/menus/skilltree_menu.py:1478
+msgid "Ice Blood"
+msgstr "Крижана Кров"
+
+#: src/ui/menus/skilltree_menu.py:1478
+msgid "Storm Core"
+msgstr "Ядро Шторму"
+
+#: src/ui/menus/skilltree_menu.py:1482
+msgid "+2 Fireball Damage"
+msgstr "+2 шкоди Вогняної Кулі"
+
+#: src/ui/menus/skilltree_menu.py:1483
+msgid "+2 Frost Nova Damage"
+msgstr "+2 шкоди Морозної Нови"
+
+#: src/ui/menus/skilltree_menu.py:1483
+msgid "+2 Chain Lightning Damage"
+msgstr "+2 шкоди Ланцюгової Блискавки"
+
+#: src/ui/menus/skilltree_menu.py:1483 src/ui/menus/skilltree_menu.py:1484
+msgid "+5 Max Stamina"
+msgstr "+5 макс. витривалості"
+
+#: src/ui/menus/skilltree_menu.py:1484
+msgid "+2 Arcane Missiles Damage"
+msgstr "+2 шкоди Магічних Снарядів"
+
+#: src/ui/menus/skilltree_menu.py:1485
+msgid "+2 Dark Pact Damage"
+msgstr "+2 шкоди Темного Пакту"
+
+#: src/ui/menus/skilltree_menu.py:1486
+msgid "+3 Thunderstrike Damage"
+msgstr "+3 шкоди Громового Удару"
+
+#: src/ui/menus/skilltree_menu.py:1623 src/ui/menus/skilltree_menu.py:1635
+msgid "Respec Skill Tree"
+msgstr "Скинути Дерево Навичок"
+
+#: src/ui/menus/skilltree_menu.py:1623
+msgid "You have not spent any skill points yet."
+msgstr "Ви ще не витратили жодного очка навичок."
+
+#: src/ui/menus/skilltree_menu.py:1636
+msgid "Not enough gold to respec!"
+msgstr "Недостатньо золота для скидання!"
+
+#: src/ui/menus/skilltree_menu.py:1637
+msgid "Required"
+msgstr "Потрібно"
+
+#: src/ui/menus/skilltree_menu.py:1637 src/ui/menus/skilltree_menu.py:1638
+#: src/ui/menus/skilltree_menu.py:1650 src/ui/menus/skilltree_menu.py:1651
+msgid "Gold"
+msgstr "Золото"
+
+#: src/ui/menus/skilltree_menu.py:1638
+msgid "You have"
+msgstr "Ви маєте"
+
+#: src/ui/menus/skilltree_menu.py:1648
+msgid "Confirm Respec"
+msgstr "Підтвердити скидання"
+
+#: src/ui/menus/skilltree_menu.py:1649
+msgid "Reset all skill points and refund them?"
+msgstr "Скинути всі очки навичок і повернути їх?"
+
+#: src/ui/menus/skilltree_menu.py:1650
+msgid "Cost"
+msgstr "Вартість"
+
+#: src/ui/menus/skilltree_menu.py:1651
+msgid "Your Gold"
+msgstr "Ваше золото"
+
+#: src/ui/menus/skilltree_menu.py:1654
+msgid "RESPEC"
+msgstr "ПРОДОВЖИТИ"
+
+#: src/ui/menus/skilltree_menu.py:1706
+msgid "You must unlock an adjacent node first."
+msgstr "Ви повинні спочатку розблокувати сусідній вузол."
+
+#: src/ui/menus/skilltree_menu.py:1717
+msgid "Not enough points to unlock this node."
+msgstr "Недостатньо очок для розблокування цього вузла."
+
+#: src/ui/menus/skilltree_menu.py:3135
+msgid "✦ Skill Tree ✦"
+msgstr "✦ Дерево Навичок ✦"
+
+#: src/ui/menus/skilltree_menu.py:3152
+msgid "Scroll · zoom  |  Right-drag · pan  |  Click · inspect"
+msgstr ""
+"Скрол · масштаб  |  Права кнопка миші · панорамування  |  Клік · перевірка"
+
+#: src/ui/menus/skilltree_menu.py:3162
+msgid "Talent Points"
+msgstr "Очки талантів"
+
+#: src/ui/menus/skilltree_menu.py:3179
+msgid "Respec"
+msgstr "ПРОДОВЖИТИ"
+
+#: src/ui/menus/skilltree_menu.py:3183
+msgid "Select a node to inspect"
+msgstr "Виберіть вузол для перевірки"
+
+#: src/ui/menus/skilltree_menu.py:3212
+msgid "Minor"
+msgstr "Незначний"
+
+#: src/ui/menus/skilltree_menu.py:3213
+msgid "Notable"
+msgstr "Значний"
+
+#: src/ui/menus/skilltree_menu.py:3214
+msgid "Keystone"
+msgstr "Ключовий"
+
+#: src/ui/menus/skilltree_menu.py:3216
+msgid "Unknown"
+msgstr "Невідомий"
+
+#: src/ui/menus/skilltree_menu.py:3236
+msgid "Unlocked"
+msgstr "Розблоковано"
+
+#: src/ui/menus/skilltree_menu.py:3236
+msgid "Locked"
+msgstr "ЗАВАНТАЖИТИ"
+
+#: src/ui/menus/skilltree_menu.py:3244
+msgid "point(s)"
+msgstr "очок"
+
+#: src/ui/menus/skilltree_menu.py:3267
+msgid "Connections:"
+msgstr "Зв'язки:"
+
+#: src/ui/menus/skilltree_menu.py:3281
+msgid "✓ Unlocked"
+msgstr "✓ Розблоковано"
+
+#: src/ui/menus/skilltree_menu.py:3283
+msgid "Unlock"
+msgstr "Розблокувати"
+
+#: src/ui/menus/smeltery.py:1402
+msgid "SMELTERY"
+msgstr "ПЛАВИЛЬНЯ"
+
+#: src/ui/menus/smeltery.py:1449
+msgid "Use the 3x3 crafting grid below to shape items."
+msgstr "Використовуйте сітку 3x3 нижче для створення предметів."
+
+#: src/ui/menus/smeltery.py:1451
+msgid "Drag items between the grid and your inventory to craft."
+msgstr "Перетягніть предмети між сіткою та інвентарем для створення."
+
+#: src/ui/menus/smeltery.py:1482
+msgid "Input"
+msgstr "Вхід"
+
+#: src/ui/menus/smeltery.py:1483 src/ui/menus/smeltery.py:1505
+msgid "Output"
+msgstr "Вихід"
+
+#: src/ui/menus/smeltery.py:1503
+msgid "Ore"
+msgstr "Руда"
+
+#: src/ui/menus/smeltery.py:1504
+msgid "Fuel"
+msgstr "Паливо"
+
+#: src/ui/menus/smeltery.py:1666
+msgid "Damaged"
+msgstr "Шкода"
+
+#: src/ui/menus/smeltery.py:1667
+msgid "Material"
+msgstr "Матеріал"
+
+#: src/ui/menus/smeltery.py:1668
+msgid "Repaired"
+msgstr "Відремонтовано"
+
+#: src/ui/menus/smeltery.py:1701
+msgid "Repairing... {pct:.0f}%"
+msgstr "Ремонт... {pct:.0f}%"
+
+#: src/ui/menus/smeltery.py:1710
+msgid "Invalid combination"
+msgstr "Невірна комбінація"
+
+#: src/ui/menus/smeltery.py:1719
+msgid "Already fully repaired"
+msgstr "Вже повністю відремонтовано"
+
+#: src/ui/menus/smeltery.py:1723
+msgid "Will restore {pct:.0f}% durability"
+msgstr "Відновить {pct:.0f}% міцності"
+
+#: src/ui/menus/smeltery.py:1726
+msgid "Add a repair material (iron / steel ingot)"
+msgstr "Додайте матеріал для ремонту (залізний/сталевий злиток)"
+
+#: src/ui/menus/smeltery.py:1729
+msgid "Place a damaged item to begin"
+msgstr "Помістіть пошкоджений предмет для початку"
+
+#: src/ui/menus/smeltery.py:1779
+msgid "Smelting Lv. {lvl}"
+msgstr "Рівень плавки {lvl}"
+
+#: src/ui/menus/smeltery.py:1781
+msgid "Smelting Lv. {lvl} (MAX)"
+msgstr "Рівень плавки {lvl} (МАКС)"
+
+#: src/ui/menus/smeltery.py:1789
+msgid "MAX"
+msgstr "МАКС"
+
+#: src/ui/menus/smeltery.py:1792
+msgid "{cur} / {target} XP"
+msgstr "{cur} / {target} ДОСВ"
+
+#: src/ui/menus/wiki_menu.py:347 src/ui/menus/wiki_menu.py:568
+msgid "Foes of the Realm"
+msgstr "Вороги Королівства"
+
+#: src/ui/menus/wiki_menu.py:348 src/ui/menus/wiki_menu.py:655
+msgid "The Brute"
+msgstr "Громило"
+
+#: src/ui/menus/wiki_menu.py:348 src/ui/menus/wiki_menu.py:666
+msgid "The Venomous"
+msgstr "Отруйний"
+
+#: src/ui/menus/wiki_menu.py:348 src/ui/menus/wiki_menu.py:676
+msgid "The Arcanist"
+msgstr "Арканіст"
+
+#: src/ui/menus/wiki_menu.py:348 src/ui/menus/wiki_menu.py:687
+msgid "The Trickster"
+msgstr "Трюкач"
+
+#: src/ui/menus/wiki_menu.py:348 src/ui/menus/wiki_menu.py:696
+msgid "The Bomber"
+msgstr "Підривник"
+
+#: src/ui/menus/wiki_menu.py:349 src/ui/menus/wiki_menu.py:707
+msgid "The Stalker"
+msgstr "Сталкер"
+
+#: src/ui/menus/wiki_menu.py:349 src/ui/menus/wiki_menu.py:718
+msgid "The Skirmisher"
+msgstr "Застрільник"
+
+#: src/ui/menus/wiki_menu.py:349 src/ui/menus/wiki_menu.py:731
+msgid "The Guardian"
+msgstr "Вартовий"
+
+#: src/ui/menus/wiki_menu.py:350 src/ui/menus/wiki_menu.py:742
+msgid "The Phantom"
+msgstr "Фантом"
+
+#: src/ui/menus/wiki_menu.py:350 src/ui/menus/wiki_menu.py:752
+msgid "The Titan"
+msgstr "Титан"
+
+#: src/ui/menus/wiki_menu.py:350 src/ui/menus/wiki_menu.py:762
+msgid "The Cryomancer"
+msgstr "Кріомант"
+
+#: src/ui/menus/wiki_menu.py:351 src/ui/menus/wiki_menu.py:771
+msgid "The Shadowmancer"
+msgstr "Тіньовий Маг"
+
+#: src/ui/menus/wiki_menu.py:351 src/ui/menus/wiki_menu.py:781
+msgid "The Revenant"
+msgstr "Повсталий"
+
+#: src/ui/menus/wiki_menu.py:351 src/ui/menus/wiki_menu.py:791
+msgid "The Molten"
+msgstr "Розплавлений"
+
+#: src/ui/menus/wiki_menu.py:352 src/ui/menus/wiki_menu.py:800
+msgid "The Stormcaller"
+msgstr "Вісник Бурі"
+
+#: src/ui/menus/wiki_menu.py:352 src/ui/menus/wiki_menu.py:810
+msgid "The Plaguebearer"
+msgstr "Чумоносець"
+
+#: src/ui/menus/wiki_menu.py:353 src/ui/menus/wiki_menu.py:569
+msgid "Spells of Power"
+msgstr "Заклинання Сили"
+
+#: src/ui/menus/wiki_menu.py:354 src/ui/menus/wiki_menu.py:824
+msgid "Fireball"
+msgstr "Вогняна Куля"
+
+#: src/ui/menus/wiki_menu.py:359 src/ui/menus/wiki_menu.py:570
+msgid "Curse & Blessing"
+msgstr "Прокляття та Благословення"
+
+#: src/ui/menus/wiki_menu.py:360 src/ui/menus/wiki_menu.py:970
+msgid "Boon: Regeneration"
+msgstr "Благо: Регенерація"
+
+#: src/ui/menus/wiki_menu.py:360 src/ui/menus/wiki_menu.py:979
+msgid "Bane: Poison"
+msgstr "Прокляття: Отрута"
+
+#: src/ui/menus/wiki_menu.py:360 src/ui/menus/wiki_menu.py:990
+msgid "Bane: Burn"
+msgstr "Прокляття: Опік"
+
+#: src/ui/menus/wiki_menu.py:361 src/ui/menus/wiki_menu.py:1000
+msgid "Bane: Confusion"
+msgstr "Зілля плутанини"
+
+#: src/ui/menus/wiki_menu.py:361 src/ui/menus/wiki_menu.py:1011
+msgid "Bane: Dizziness"
+msgstr "Прокляття: Запаморочення"
+
+#: src/ui/menus/wiki_menu.py:361 src/ui/menus/wiki_menu.py:1022
+msgid "Bane: Slow"
+msgstr "Прокляття: Сповільнення"
+
+#: src/ui/menus/wiki_menu.py:362 src/ui/menus/wiki_menu.py:1033
+msgid "Bane: Freeze & Root"
+msgstr "Прокляття: Заморожування та Укорінення"
+
+#: src/ui/menus/wiki_menu.py:363 src/ui/menus/wiki_menu.py:571
+msgid "Adventurer's Handbook"
+msgstr "Довідник шукача пригод"
+
+#: src/ui/menus/wiki_menu.py:364 src/ui/menus/wiki_menu.py:1050
+msgid "1. Movement & Navigation"
+msgstr "1. Рух та Навігація"
+
+#: src/ui/menus/wiki_menu.py:364 src/ui/menus/wiki_menu.py:1060
+msgid "2. Combat Basics"
+msgstr "2. Основи Бою"
+
+#: src/ui/menus/wiki_menu.py:365 src/ui/menus/wiki_menu.py:1072
+msgid "3. Skills & Hotbar"
+msgstr "3. Навички та Панель"
+
+#: src/ui/menus/wiki_menu.py:365 src/ui/menus/wiki_menu.py:1083
+msgid "4. Inventory & Items"
+msgstr "ІНВЕНТАР"
+
+#: src/ui/menus/wiki_menu.py:366 src/ui/menus/wiki_menu.py:1095
+msgid "5. Crafting & Recipes"
+msgstr "5. Крафт та Рецепти"
+
+#: src/ui/menus/wiki_menu.py:366 src/ui/menus/wiki_menu.py:1107
+msgid "6. Leveling & Experience"
+msgstr "6. Підвищення рівня та Досвід"
+
+#: src/ui/menus/wiki_menu.py:367 src/ui/menus/wiki_menu.py:1122
+msgid "7. Day & Night Cycle"
+msgstr "7. Цикл дня і ночі"
+
+#: src/ui/menus/wiki_menu.py:367 src/ui/menus/wiki_menu.py:1133
+msgid "8. Enemies & Threat Assessment"
+msgstr "8. Вороги та Оцінка Загроз"
+
+#: src/ui/menus/wiki_menu.py:368 src/ui/menus/wiki_menu.py:1154
+msgid "9. Respeccing & Strategy"
+msgstr "9. Скидання навичок та Стратегія"
+
+#: src/ui/menus/wiki_menu.py:368 src/ui/menus/wiki_menu.py:1165
+msgid "10. Final Words"
+msgstr "10. Останні слова"
+
+#: src/ui/menus/wiki_menu.py:369 src/ui/menus/wiki_menu.py:572
+msgid "Master's Forge"
+msgstr "Кузня Майстра"
+
+#: src/ui/menus/wiki_menu.py:370 src/ui/menus/wiki_menu.py:1177
+msgid "1. The Smeltery Unveiled"
+msgstr "1. Відкриття Плавильні"
+
+#: src/ui/menus/wiki_menu.py:370 src/ui/menus/wiki_menu.py:1188
+msgid "2. Workbench & Shaping"
+msgstr "2. Верстак та Формування"
+
+#: src/ui/menus/wiki_menu.py:371 src/ui/menus/wiki_menu.py:1199
+msgid "3. Coke Oven & Fuel"
+msgstr "3. Коксова Піч та Паливо"
+
+#: src/ui/menus/wiki_menu.py:371 src/ui/menus/wiki_menu.py:1210
+msgid "4. Blast Furnace & Alloys"
+msgstr "4. Доменна Піч та Сплави"
+
+#: src/ui/menus/wiki_menu.py:372 src/ui/menus/wiki_menu.py:1222
+msgid "5. Anvil & Restoration"
+msgstr "5. Ковадло та Відновлення"
+
+#: src/ui/menus/wiki_menu.py:372 src/ui/menus/wiki_menu.py:1235
+msgid "6. Smelting Skill & Mastery"
+msgstr "6. Навичка Плавильника та Майстерність"
+
+#: src/ui/menus/wiki_menu.py:373 src/ui/menus/wiki_menu.py:1250
+msgid "7. Minigames & Refinement"
+msgstr "7. Міні-ігри та Вдосконалення"
+
+#: src/ui/menus/wiki_menu.py:373 src/ui/menus/wiki_menu.py:1265
+msgid "8. Forgemaster's Secrets"
+msgstr "8. Секрети Майстра-коваля"
+
+#: src/ui/menus/wiki_menu.py:533
+msgid "<< PREV"
+msgstr "<< ПОПЕРЕД"
+
+#: src/ui/menus/wiki_menu.py:536
+msgid "NEXT >>"
+msgstr "НАСТУП >>"
+
+#: src/ui/menus/wiki_menu.py:539
+msgid "CONTENTS"
+msgstr "ЗМІСТ"
+
+#: src/ui/menus/wiki_menu.py:546
+msgid ">> BEGIN ADVENTURE"
+msgstr ">> ПОЧАТИ ПРИГОДУ"
+
+#: src/ui/menus/wiki_menu.py:568
+msgid "Bestiary"
+msgstr "СТАРТ"
+
+#: src/ui/menus/wiki_menu.py:569
+msgid "Magic"
+msgstr "Магія"
+
+#: src/ui/menus/wiki_menu.py:570
+msgid "Alterations"
+msgstr "Зміни"
+
+#: src/ui/menus/wiki_menu.py:571
+msgid "Guide"
+msgstr "Посібник"
+
+#: src/ui/menus/wiki_menu.py:572
+msgid "Smeltery"
+msgstr "Плавильня"
+
+#: src/ui/menus/wiki_menu.py:656
+msgid ""
+"They say the first Brute was born from a boulder struck by lightning—a creature of fury and stone. These hulking warriors patrol the old roads with a single purpose: to crush anything that moves.\n"
+"\n"
+"A Brute does not rush. It stalks. It waits. And when the moment is right, it charges with the force of an avalanche. Its Slam attack deals heavy damage with knockback and leaves you slowed, unable to dodge the next blow.\n"
+"\n"
+"Abilities: Charge (2.4× speed, 220 range), Slam (1.5× damage, knockback, slow 1.5s). Health: 160. Speed: 110.\n"
+"\n"
+"Tactics: Dodge sideways when it charges—never backward. After a missed charge, the Brute is vulnerable. Strike hard and retreat before the Slam lands."
+msgstr ""
+"Кажуть, перший Громило народився з валуна, в який вдарила блискавка — істота гніву і каменю. Ці здоровенні воїни патрулюють старі дороги з єдиною метою: розчавити все, що рухається.\n"
+"\n"
+"Громило не поспішає. Він переслідує. Він чекає. А коли настає слушний момент, він нападає з силою лавини. Його удар об землю завдає значної шкоди з відкиданням і сповільнює вас, позбавляючи можливості ухилитися від наступного удару.\n"
+"\n"
+"Здібності: Заряд (швидкість 2.4×, дальність 220), Удар об землю (шкода 1.5×, відкидання, сповільнення 1.5с). Здоров'я: 160. Швидкість: 110.\n"
+"\n"
+"Тактика: Ухиляйтеся вбік під час його заряду — ніколи назад. Після промаху Громило вразливий. Бийте сильно і відступайте до наступного удару."
+
+#: src/ui/menus/wiki_menu.py:667
+msgid ""
+"In the swamplands where even the trees have learned to bite, the Venomous make their dens. These serpentine hunters rely on venom to weaken their prey before closing in for the kill.\n"
+"\n"
+"A single scratch sends poison surging through your veins—a creeping decay that grows stronger the longer you ignore it. The poison stacks, and a prolonged encounter with multiple Venomous foes can overwhelm even the hardiest adventurer.\n"
+"\n"
+"Abilities: Poison Strike (4s, 5 DPS per stack). Health: 95. Speed: 130.\n"
+"\n"
+"Tactics: Antidotes are non-negotiable. Use ranged attacks to avoid contact poison. If poisoned, retreat and cure before re-engaging."
+msgstr ""
+"У болотах, де навіть дерева навчилися кусати, отруйні будують свої лігва. Ці змієподібні мисливці покладаються на отруту, щоб послабити свою здобич перед вирішальним ударом.\n"
+"\n"
+"Одинока подряпина посилає отруту по ваших венах — повзуче розкладання, яке посилюється, чим довше ви його ігноруєте. Отрута накопичується, і тривала сутичка з кількома отруйними ворогами може приголомшити навіть найвитривалішого шукача пригод.\n"
+"\n"
+"Здібності: Отруйний удар (4с, 5 шкоди/с за стадію). Здоров'я: 95. Швидкість: 130.\n"
+"\n"
+"Тактика: Антидоти не підлягають обговоренню. Використовуйте дальні атаки, щоб уникнути отрути від дотику. Якщо отруїлися, відступіть і вилікуйтеся перед новим боєм."
+
+#: src/ui/menus/wiki_menu.py:677
+msgid ""
+"Magic is a gift, they say. But some gifts come with a price. The Arcanists are former students who delved too deep and emerged with minds scorched by forbidden knowledge.\n"
+"\n"
+"These robed figures hurl bolts of searing flame with uncanny aim and endless patience. They prefer to keep their distance, kiting relentlessly while their Arcane Bolt burns through your defenses.\n"
+"\n"
+"Abilities: Arcane Bolt (480 speed, 560 range, burn 3.2s). Health: 80. Speed: 115.\n"
+"\n"
+"Tactics: Close the distance quickly—Arcanists are fragile once engaged in melee. Use Shadow Step or Dash to close the gap, then interrupt their casting."
+msgstr ""
+"Кажуть, магія — це дар. Але за деякі дари доводиться платити. Арканісти — це колишні студенти, які занурилися надто глибоко і повернулися з розумом, обпаленим забороненими знаннями.\n"
+"\n"
+"Ці постаті в мантіях кидають кулі палючого полум'я з неймовірною влучністю та нескінченним терпінням. Вони воліють триматися на відстані, невпинно відступаючи, поки їх Арканна Куля пропалює ваш захист.\n"
+"\n"
+"Здібності: Арканна Куля (швидкість 480, дальність 560, опік 3.2с). Здоров'я: 80. Швидкість: 115.\n"
+"\n"
+"Тактика: Швидко скоротіть дистанцію — Арканісти крихкі в ближньому бою. Використовуйте Тіньовий Крок або Ривок, щоб наблизитися, а потім перервіть їх чаклування."
+
+#: src/ui/menus/wiki_menu.py:688
+msgid ""
+"Beware the laughter in the dark. The Tricksters delight in confusion and disarray, weaving shadows into cruel pranks that leave their victims lost and helpless.\n"
+"\n"
+"Their touch clouds the mind—suddenly left is right, forward is back. They blink in and out of visibility, making them maddeningly difficult to pin down.\n"
+"\n"
+"Abilities: Blink (240 range), Confuse (2.8s), Dizzy (2.2s). Health: 75. Speed: 150.\n"
+"\n"
+"Tactics: Predict their Blink destination and strike preemptively. If Confused, consciously invert your inputs. Their low health makes them quick to eliminate."
+msgstr ""
+"Остерігайтеся сміху в темряві. Трюкачі насолоджуються плутаниною та безладом, сплітаючи тіні в жорстокі витівки, які залишають їхніх жертв загубленими і безпорадними.\n"
+"\n"
+"Їхній дотик затуманює розум — раптово ліворуч стає праворуч, вперед стає назад. Вони блимають, з'являючись і зникаючи, через що їх до божевілля важко зловити.\n"
+"\n"
+"Здібності: Блимання (дальність 240), Плутанина (2.8с), Запаморочення (2.2с). Здоров'я: 75. Швидкість: 150.\n"
+"\n"
+"Тактика: Передбачте місце призначення їхнього Блимання і нанесіть превентивний удар. Якщо спантеличені, свідомо інвертуйте своє управління. Їхнє низьке здоров'я дозволяє швидко їх усунути."
+
+#: src/ui/menus/wiki_menu.py:697
+msgid ""
+"A hiss of steam, a flicker of arc-light—the Bomber lumbers in on riveted peg legs. Brass-plated and pressure-sealed, these wandering automatons keep their distance while lobbing timed bombs that arc through the air with deceptive grace.\n"
+"\n"
+"The bombs have a 0.9-second fuse, giving you just enough time to react—if you are paying attention. The blast radius is punishing, and the knockback can send you into the path of other enemies.\n"
+"\n"
+"Abilities: Timed Bomb (95 blast radius, 80 knockback, 0.9s fuse). Health: 125. Speed: 105.\n"
+"\n"
+"Tactics: Stay mobile. Never stand still—Bombers lead their targets. Close the distance aggressively; Bombers are vulnerable in close quarters."
+msgstr ""
+"Шипіння пари, мерехтіння дугового світла — Підривник кульгає на своїх заклепаних милицях. Вкриті латунню і герметичні, ці блукаючі автомати тримаються на відстані, кидаючи бомби з годинниковим механізмом, які летять по дузі з оманливою грацією.\n"
+"\n"
+"Бомби мають запобіжник на 0.9 секунди, даючи вам якраз достатньо часу, щоб зреагувати — якщо ви уважні. Радіус вибуху жахливий, а відкидання може відправити вас прямо на інших ворогів.\n"
+"\n"
+"Здібності: Бомба з годинниковим механізмом (радіус вибуху 95, відкидання 80, запобіжник 0.9с). Здоров'я: 125. Швидкість: 105.\n"
+"\n"
+"Тактика: Будьте мобільними. Ніколи не стійте на місці — Підривники випереджають свої цілі. Швидко скорочуйте дистанцію; Підривники вразливі на ближній відстані."
+
+#: src/ui/menus/wiki_menu.py:708
+msgid ""
+"Where shadow pools deep and torchlight fails, the Stalker waits—patient, silent, and unseen. Cloaked and masked, these grim assassins favor the blade over brute strength.\n"
+"\n"
+"They remember your last position long after you have broken line of sight, pursuing with relentless precision. When cut off from their target, they are quick to re-pick a fresh path, making them nearly impossible to shake.\n"
+"\n"
+"Abilities: Blade Strike (40 range), Memory Trail (3s pursuit after losing sight), Repath (0.5s). Health: 110. Speed: 120.\n"
+"\n"
+"Tactics: Breaking line of sight is not enough—keep moving for a full 3 seconds after losing them. Use tight corners and doors to break the Memory Trail."
+msgstr ""
+"Там, де збираються глибокі тіні і згасає світло смолоскипів, чекає Сталкер — терплячий, мовчазний і непомітний. У плащах і масках, ці похмурі вбивці віддають перевагу клинку над грубою силою.\n"
+"\n"
+"Вони пам'ятають вашу останню позицію ще довго після того, як ви зникли з поля зору, переслідуючи з невблаганною точністю. Коли їх відрізають від цілі, вони швидко знаходять новий шлях, що робить втечу від них майже неможливою.\n"
+"\n"
+"Здібності: Удар клинком (дальність 40), Слід пам'яті (переслідування 3с після втрати з поля зору), Зміна шляху (0.5с). Здоров'я: 110. Швидкість: 120.\n"
+"\n"
+"Тактика: Просто зникнути з поля зору недостатньо — продовжуйте рухатися цілих 3 секунди після того, як втратите їх. Використовуйте вузькі кути та двері, щоб розірвати Слід пам'яті."
+
+#: src/ui/menus/wiki_menu.py:719
+msgid ""
+"Swift as the raptor it resembles, the Skirmisher darts across the battlefield with javelin raised and crest fluttering. These winged hunters prefer to keep their distance—harrying from the fringes, circling, striking, and vanishing before the counter-blow can land.\n"
+"\n"
+"Tribal warpaint marks the kills they have claimed, and their javelins find their mark with unsettling accuracy. They orbit their prey at a preferred range, always just out of reach.\n"
+"\n"
+"Abilities: Javelin Toss (35 range), Orbit (preferred 80–170, radius 130). Health: 85. Speed: 140.\n"
+"\n"
+"Tactics: Close in to force them into melee, but watch for the Javelin Toss as you approach. Ranged users should lead their shots—their orbit pattern is predictable."
+msgstr ""
+"Спритний, як хижак, на якого він схожий, Застрільник метається по полю бою з піднятим списом і тріпотливим гребенем. Ці крилаті мисливці воліють триматися на відстані — турбуючи з флангів, кружляючи, наносячи удари і зникаючи до того, як зможе прилетіти удар у відповідь.\n"
+"\n"
+"Племінне бойове забарвлення відзначає вбивства, які вони здійснили, а їхні списи знаходять ціль з тривожною точністю. Вони обертаються навколо своєї здобичі на бажаній відстані, завжди залишаючись поза досяжністю.\n"
+"\n"
+"Здібності: Кидок списа (дальність 35), Орбіта (бажана 80-170, радіус 130). Здоров'я: 85. Швидкість: 140.\n"
+"\n"
+"Тактика: Наближайтеся, щоб змусити їх до ближнього бою, але стежте за Кидком списа по мірі наближення. Гравцям на дальній дистанції слід вести стрілянину на випередження — їхня траєкторія орбіти передбачувана."
+
+#: src/ui/menus/wiki_menu.py:732
+msgid ""
+"Forged in the fires of a forgotten forge, the Guardian is a hulking iron sentinel bound to a place of power. Steam hisses from brass-banded joints and copper pistons pump with every ponderous step.\n"
+"\n"
+"It will not stray far from its post—its leash is short and its duty absolute. But woe to any intruder that crosses the threshold it defends. The Guardian's Heavy Slam sends adventurers flying, and it pursues with relentless, mechanical patience.\n"
+"\n"
+"Abilities: Heavy Slam (45 range, knockback), Guard Post (radius 320, leash 90), Patrol Wait (0.8s). Health: 140. Speed: 100.\n"
+"\n"
+"Tactics: If possible, avoid engaging Guardians on their home turf. If you must fight, bait the Heavy Slam and strike during the recovery."
+msgstr ""
+"Викуваний у полум'ї забутої кузні, Вартовий — це незграбний залізний страж, прив'язаний до місця сили. Пара шипить з його суглобів, перев'язаних латунню, і мідні поршні качають з кожним важким кроком.\n"
+"\n"
+"Він не відійде далеко від свого посту — його прив'язь коротка, а його обов'язок абсолютний. Але горе тому порушнику, який перетне поріг, що він захищає. Важкий удар Вартового відправляє шукачів пригод у політ, і він переслідує з невблаганним, механічним терпінням.\n"
+"\n"
+"Здібності: Важкий удар (дальність 45, відкидання), Охоронний пост (радіус 320, прив'язь 90), Очікування патруля (0.8с). Здоров'я: 140. Швидкість: 100.\n"
+"\n"
+"Тактика: Якщо можливо, уникайте боїв з Вартовими на їхній території. Якщо вам доводиться битися, приманюйте Важкий удар і нападайте під час їхнього відновлення."
+
+#: src/ui/menus/wiki_menu.py:743
+msgid ""
+"Some wounds never heal. Some souls never leave. The Phantoms are the remnants of mages who tried to cheat death.\n"
+"\n"
+"Bound to the world by spectral chains, they drift through walls and memory alike, draining life force with a touch that feels like a winter breeze—cold, brief, and leaving you weaker.\n"
+"\n"
+"Abilities: Life Drain (280 speed, heal 35% of damage), Slow (1.5s, 0.65x). Health: 100. Speed: 105.\n"
+"\n"
+"Tactics: Keep moving to avoid Life Drain. Ranged attacks are preferred—Phantoms are fragile if you keep your distance."
+msgstr ""
+"Деякі рани ніколи не гояться. Деякі душі ніколи не йдуть. Фантоми — це залишки магів, які намагалися обдурити смерть.\n"
+"\n"
+"Прив'язані до світу примарними ланцюгами, вони дрейфують через стіни та пам'ять, витягаючи життєві сили своїм дотиком, що нагадує зимовий вітерець — холодний, короткий, що залишає вас слабкішими.\n"
+"\n"
+"Здібності: Витягування життя (швидкість 280, лікування 35% від шкоди), Сповільнення (1.5с, 0.65x). Здоров'я: 100. Швидкість: 105.\n"
+"\n"
+"Тактика: Продовжуйте рухатися, щоб уникнути Витягування життя. Віддавайте перевагу дальнім атакам — Фантоми крихкі, якщо ви тримаєтеся на відстані."
+
+#: src/ui/menus/wiki_menu.py:753
+msgid ""
+"The mountains remember the Titans—ancient stone colossi carved by a forgotten race to guard the old roads.\n"
+"\n"
+"Moss and time have worn their features smooth, but the runes etched into their hide still pulse with amber light. When a Titan stomps, the ground itself trembles, and roots erupt to hold you in place.\n"
+"\n"
+"Abilities: Stomp (50 range, knockback 45, root 2.5s), Charge (2× speed, 320 cooldown). Health: 220. Speed: 75.\n"
+"\n"
+"Tactics: The Titan is slow—use hit-and-run tactics. Dodge the Charge sideways and stay outside Stomp range to avoid the root."
+msgstr ""
+"Гори пам'ятають Титанів — стародавніх кам'яних колосів, висічених забутою расою для охорони старих доріг.\n"
+"\n"
+"Мох і час згладили їхні риси, але руни, витравлені на їхній шкурі, все ще пульсують янтарним світлом. Коли Титан тупає, сама земля тремтить, і корені вириваються, щоб утримати вас на місці.\n"
+"\n"
+"Здібності: Тупання (дальність 50, відкидання 45, укорінення 2.5с), Заряд (швидкість 2×, перезарядка 320). Здоров'я: 220. Швидкість: 75.\n"
+"\n"
+"Тактика: Титан повільний — використовуйте тактику «вдар і тікай». Ухиляйтеся від Заряду вбік і тримайтеся поза радіусом Тупання, щоб уникнути укорінення."
+
+#: src/ui/menus/wiki_menu.py:763
+msgid ""
+"In the northern ruins where snow falls even in summer, the Cryomancers hold court.\n"
+"\n"
+"These ice-weavers were once scholars of a frost school that has long since crumbled. Now they guard their frozen libraries with jagged shards of crystallized mana. Up close, they unleash a biting nova that freezes blood in the veins.\n"
+"\n"
+"Abilities: Ice Shard (420 speed, 500 range, slow 2.5s), Frost Nova (80 radius, freeze 2s). Health: 85. Speed: 110.\n"
+"\n"
+"Tactics: Close the distance quickly to avoid Ice Shard spam, but be ready to dodge Frost Nova when you arrive—the freeze is lethal."
+msgstr ""
+"У північних руїнах, де сніг іде навіть улітку, правлять Кріоманти.\n"
+"\n"
+"Ці ткачі льоду колись були учнями школи морозу, яка вже давно зруйнована. Тепер вони охороняють свої замерзлі бібліотеки зазубреними осколками кристалізованої мани. Зблизька вони випускають кусючу нову, яка заморожує кров у жилах.\n"
+"\n"
+"Здібності: Крижаний осколок (швидкість 420, дальність 500, сповільнення 2.5с), Морозна Нова (радіус 80, заморожування 2с). Здоров'я: 85. Швидкість: 110.\n"
+"\n"
+"Тактика: Швидко скорочуйте дистанцію, щоб уникнути спаму Крижаними осколками, але будьте готові ухилитися від Морозної Нови, коли прибудете — заморожування смертельне."
+
+#: src/ui/menus/wiki_menu.py:772
+msgid ""
+"The Shadowmancers speak in whispers to things that dwell between the stars. Their bodies are merely vessels for the void they serve.\n"
+"\n"
+"They flicker and vanish when threatened, reappearing at a safe distance before loosing bolts of concentrated shadow that infest the mind with confusion. To face one is to question your own senses.\n"
+"\n"
+"Abilities: Shadow Bolt (450 speed, 480 range, confuse 3s), Void Escape (260 range teleport). Health: 75. Speed: 125.\n"
+"\n"
+"Tactics: Pressure them relentlessly to limit Void Escape options. If confused, retreat until the effect clears before re-engaging."
+msgstr ""
+"Тіньові маги розмовляють пошепки з істотами, що мешкають між зірками. Їхні тіла — лише посудини для порожнечі, якій вони служать.\n"
+"\n"
+"Вони мерехтять і зникають при загрозі, знову з'являючись на безпечній відстані, перш ніж випустити стріли концентрованої тіні, які заражають розум плутаниною. Зустрітися з ними — означає поставити під сумнів власні почуття.\n"
+"\n"
+"Здібності: Тіньова Стріла (швидкість 450, дальність 480, плутанина 3с), Втеча в Порожнечу (телепорт на 260 дальності). Здоров'я: 75. Швидкість: 125.\n"
+"\n"
+"Тактика: Невпинно тисніть на них, щоб обмежити варіанти Втечі в Порожнечу. Якщо заплуталися, відступіть, поки ефект не пройде, перш ніж знову вступати в бій."
+
+#: src/ui/menus/wiki_menu.py:782
+msgid ""
+"A revenant is what happens when a warrior’s rage outlives their flesh. These undying soldiers remember only the fight.\n"
+"\n"
+"Every strike heals them, siphoning life from the wound they just opened. And should you manage to bring one low, its undying will ignites—a surge of pale green soul-fire that restores it to fighting form.\n"
+"\n"
+"Abilities: Lifesteal Slash (30% heal, bleed 3s), Undying Will (35% heal, 2.5s immunity, 15s cooldown). Health: 130. Speed: 110.\n"
+"\n"
+"Tactics: Burst damage is key—save your strongest attacks for after Undying Will expires. Avoid trading hits while it is active."
+msgstr ""
+"Повсталий — це те, що трапляється, коли лють воїна переживає його плоть. Ці невмирущі солдати пам'ятають лише битву.\n"
+"\n"
+"Кожен удар лікує їх, витягуючи життя з рани, яку вони щойно завдали. А якщо вам вдасться їх звалити, запалюється їхня невмируща воля — сплеск блідо-зеленого вогню душі, який повертає їх до бойової форми.\n"
+"\n"
+"Здібності: Удар з Викраденням Життя (лікування 30%, кровотеча 3с), Невмируща Воля (лікування 35%, імунітет 2.5с, перезарядка 15с). Здоров'я: 130. Швидкість: 110.\n"
+"\n"
+"Тактика: Ключем є вибухова шкода — збережіть свої найсильніші атаки на час після закінчення дії Невмирущої Волі. Уникайте обміну ударами, поки вона активна."
+
+#: src/ui/menus/wiki_menu.py:792
+msgid ""
+"Deep within the earth, where pressure cooks stone into magma, the Molten were born.\n"
+"\n"
+"These hulking fire elementals are living forges. Lava pulses through cracks in their rocky hides, and they burn everything they touch. When angered, they release a searing nova or charge with the unstoppable force of a landslide.\n"
+"\n"
+"Abilities: Fire Nova (100 radius, burn 3.5s, 6 DPS), Lava Charge (2.5× speed, 350 cooldown). Health: 150. Speed: 100.\n"
+"\n"
+"Tactics: Keep your distance to avoid Fire Nova. When it uses Lava Charge, sidestep and punish the lengthy recovery."
+msgstr ""
+"Глибоко в надрах землі, де тиск варить камінь у магму, народилися Розплавлені.\n"
+"\n"
+"Ці здоровенні вогняні елементалі є живими кузнями. Лава пульсує крізь тріщини в їхніх кам'янистих шкурах, і вони спалюють усе, до чого торкаються. Коли вони розлючені, вони випускають палючу нову або мчать із нестримною силою зсуву ґрунту.\n"
+"\n"
+"Здібності: Вогняна Нова (радіус 100, опік 3.5с, 6 шкоди/с), Лавовий Заряд (швидкість 2.5×, перезарядка 350). Здоров'я: 150. Швидкість: 100.\n"
+"\n"
+"Тактика: Тримайтеся на відстані, щоб уникнути Вогняної Нови. Коли він використовує Лавовий Заряд, відійдіть убік і покарайте за тривале відновлення."
+
+#: src/ui/menus/wiki_menu.py:801
+msgid ""
+"High atop jagged peaks that pierce the clouds, the Stormcallers conduct their eternal symphony of lightning.\n"
+"\n"
+"These robed tempests hurl crackling bolts that dance with wild energy. If you close the distance, they release a static field that scrambles the senses, leaving you disoriented and vulnerable.\n"
+"\n"
+"Abilities: Chain Lightning (500 speed, 520 range, dizzy 1.8s), Static Field (90 radius, 3s cooldown). Health: 80. Speed: 115.\n"
+"\n"
+"Tactics: Stay spread out to minimize Chain Lightning bounces. Close range triggers Static Field, so time your approach carefully."
+msgstr ""
+"Високо на нерівних вершинах, що пронизують хмари, Вісники Бурі диригують своєю вічною симфонією блискавок.\n"
+"\n"
+"Ці урагани в мантіях кидають тріскучі блискавки, що танцюють із дикою енергією. Якщо ви скоротите дистанцію, вони випустять статичне поле, яке заплутує почуття, залишаючи вас дезорієнтованими та вразливими.\n"
+"\n"
+"Здібності: Ланцюгова Блискавка (швидкість 500, дальність 520, запаморочення 1.8с), Статичне Поле (радіус 90, перезарядка 3с). Здоров'я: 80. Швидкість: 115.\n"
+"\n"
+"Тактика: Залишайтеся розпорошеними, щоб мінімізувати відскоки Ланцюгової Блискавки. Близька відстань активує Статичне Поле, тому ретельно розраховуйте свій підхід."
+
+#: src/ui/menus/wiki_menu.py:811
+msgid ""
+"The Plaguebearers were once healers—until they tried to cure a disease that had no cure. Now they are its carriers.\n"
+"\n"
+"Robes caked with filth and malice, these wretched casters lob clouds of pestilence that poison the air. At close range they erupt in a pestilent nova that saps strength and leaves a creeping sickness in its wake.\n"
+"\n"
+"Abilities: Plague Cloud (380 speed, 460 range, poison 4s, 5.5 DPS), Pestilence Nova (100 radius, slow 2s). Health: 110. Speed: 105.\n"
+"\n"
+"Tactics: Antidotes are essential. Stay mobile to avoid Plague Clouds and close the gap quickly before Pestilence Nova recharges."
+msgstr ""
+"Чумоносці колись були цілителями — поки не спробували вилікувати хворобу, від якої немає ліків. Тепер вони є її носіями.\n"
+"\n"
+"Вкриті брудом та злістю мантії, ці жалюгідні чаклуни кидають хмари зарази, що отруюють повітря. На близькій відстані вони вибухають чумною новою, яка висмоктує сили та залишає за собою повзучу хворобу.\n"
+"\n"
+"Здібності: Чумна Хмара (швидкість 380, дальність 460, отрута 4с, 5.5 шкоди/с), Нова Зарази (радіус 100, сповільнення 2с). Здоров'я: 110. Швидкість: 105.\n"
+"\n"
+"Тактика: Антидоти обов'язкові. Залишайтеся мобільними, щоб уникати Чумних Хмар, і швидко скорочуйте дистанцію до того, як Нова Зарази перезарядиться."
+
+#: src/ui/menus/wiki_menu.py:825
+msgid ""
+"The quintessence of destructive magic. A roaring sphere of condensed flame that erupts in glorious conflagration upon impact.\n"
+"\n"
+"Summon a fireball that travels toward your target and explodes on contact, scorching everything in its blast radius. No other spell announces your presence with such authority.\n"
+"\n"
+"Damage: 28 base (area). Range: 520. Knockback: moderate. Pyromancer's Fury: +25% damage. Use it to break enemy formations or punish clustered foes."
+msgstr ""
+"Квінтесенція руйнівної магії. Ревуча сфера ущільненого полум'я, яка вибухає яскравою пожежею при зіткненні.\n"
+"\n"
+"Прикличте вогняну кулю, яка летить до цілі і вибухає при контакті, спалюючи все у радіусі вибуху. Жодне інше заклинання не заявляє про вашу присутність з такою авторитетністю.\n"
+"\n"
+"Шкода: базова 28 (площа). Дальність: 520. Відкидання: помірне. Лють Піроманта: +25% шкоди. Використовуйте його, щоб розбивати ворожі формації або карати скупчення ворогів."
+
+#: src/ui/menus/wiki_menu.py:833
+msgid ""
+"A wreath of protective flames that scorches any foe foolish enough to approach.\n"
+"\n"
+"Wreathe yourself in roaring fire for 6 seconds. Enemies within melee range take continuous burn damage, making this ideal for brawling against groups or deterring aggressive pursuers. The flames do not discriminate—stand too close to allies and they too will feel the heat.\n"
+"\n"
+"Damage: 8/sec to nearby enemies. Duration: 6 seconds. Combines well with Ice Armor for a fire-and-ice defensive shell."
+msgstr ""
+"Вінок захисного полум'я, що обпікає будь-якого ворога, достатньо дурного, щоб наблизитись.\n"
+"\n"
+"Огорніть себе ревучим вогнем на 6 секунд. Вороги в радіусі ближнього бою отримують безперервну шкоду від опіків, що робить його ідеальним для бійок з групами або відлякування агресивних переслідувачів. Полум'я не розрізняє — стійте занадто близько до союзників, і вони також відчують жар.\n"
+"\n"
+"Шкода: 8/сек близьким ворогам. Тривалість: 6 секунд. Добре комбінується з Крижаною Бронею для вогняно-крижаної захисної оболонки."
+
+#: src/ui/menus/wiki_menu.py:841
+msgid ""
+"A razored ring of ice that erupts from your body and expands outward, flash-freezing everything it touches.\n"
+"\n"
+"In an instant, a circle of crystalline frost explodes from the caster, freezing enemies solid for 3 seconds. Frozen enemies cannot move or act, making them easy targets for follow-up attacks. The freeze breaks early if the target takes significant damage, so time your burst carefully.\n"
+"\n"
+"Radius: 150. Freeze: 3 seconds. Excellent setup for Fireball—freeze first, then detonate."
+msgstr ""
+"Гостре кільце льоду, яке виривається з вашого тіла і розширюється назовні, миттєво заморожуючи все, до чого торкнеться.\n"
+"\n"
+"В одну мить коло кристалічного морозу вибухає з заклинателя, заморожуючи ворогів на 3 секунди. Заморожені вороги не можуть рухатися або діяти, що робить їх легкими цілями для наступних атак. Заморожування розбивається раніше, якщо ціль отримує значну шкоду, тому ретельно розраховуйте свій вибух.\n"
+"\n"
+"Радіус: 150. Заморожування: 3 секунди. Відмінна підготовка до Вогняної Кулі — спершу заморозьте, потім підірвіть."
+
+#: src/ui/menus/wiki_menu.py:850
+msgid ""
+"A cloak of crystalline frost that wraps around you, absorbing incoming blows and punishing those who strike you.\n"
+"\n"
+"For 8 seconds, Ice Armor absorbs up to 30 damage before shattering. While active, any melee attacker within 80 pixels is slowed by half, giving you precious space to reposition or counterattack. The absorption applies before your health pool—every point of damage blocked is a point you do not feel.\n"
+"\n"
+"Absorbs up to 30 damage. Duration: 8s. Attackers within 80px slowed by half. A must-have for melee-range mages."
+msgstr ""
+"Плащ з кристалічного морозу, який огортає вас, поглинаючи вхідні удари і караючи тих, хто б'є вас.\n"
+"\n"
+"На 8 секунд Крижана Броня поглинає до 30 шкоди перед тим, як розбитися. Поки вона активна, будь-який нападник у ближньому бою в межах 80 пікселів уповільнюється вдвічі, даючи вам дорогоцінний простір для зміни позиції або контратаки. Поглинання застосовується перед запасом здоров'я — кожне заблоковане очко шкоди це очко, якого ви не відчуваєте.\n"
+"\n"
+"Поглинає до 30 шкоди. Тривалість: 8с. Нападники в межах 80 пікселів сповільнюються вдвічі. Обов'язкова річ для магів на близькій дистанції."
+
+#: src/ui/menus/wiki_menu.py:859
+msgid ""
+"A torrent of razor-sharp ice shards that races forward in a widening cone, shredding everything in its path.\n"
+"\n"
+"Launch a cascade of glacial fragments that travels in a broad arc, dealing 35 damage to all enemies caught in its path. The piercing cold freezes targets for 2 seconds—shorter than Frost Nova but applied at range. The cascade travels far and wide, making it exceptional for corridor fighting and thinning approaching hordes.\n"
+"\n"
+"Damage: 35. Freeze: 2 seconds. Wide arc, long range. Ideal for controlling chokepoints."
+msgstr ""
+"Потік гострих, як бритва, крижаних осколків, який мчить вперед конусом, що розширюється, шматуючи все на своєму шляху.\n"
+"\n"
+"Запустіть каскад льодовикових фрагментів, що летить по широкій дузі, завдаючи 35 шкоди всім ворогам на своєму шляху. Пронизливий холод заморожує цілі на 2 секунди — менше, ніж Морозна Нова, але на відстані. Каскад летить далеко й широко, що робить його винятковим для боїв у коридорах та проріджування орд, що наближаються.\n"
+"\n"
+"Шкода: 35. Заморожування: 2 секунди. Широка дуга, велика дальність. Ідеально підходить для контролю вузьких місць."
+
+#: src/ui/menus/wiki_menu.py:869
+msgid ""
+"A crackling bolt of lightning that leaps from the caster to the nearest foe, then arcs to the next, and the next.\n"
+"\n"
+"Chain Lightning seeks out enemies with unerring accuracy. The initial strike hits your closest target within 550 range, then arcs up to 180 units to the next, chaining across up to 5 enemies. Each strike deals 22 damage—less than a Fireball, but the total damage across a full chain is devastating.\n"
+"\n"
+"Damage: 22/strike. Range: 550. Chain radius: 180. Max chains: 5. Excels against tightly packed groups."
+msgstr ""
+"Тріскуча блискавка, яка стрибає від заклинателя до найближчого ворога, потім дугою до наступного, і так далі.\n"
+"\n"
+"Ланцюгова Блискавка шукає ворогів із безпомилковою точністю. Початковий удар вражає вашу найближчу ціль у радіусі 550, потім б'є дугою до 180 одиниць до наступної, з'єднуючи до 5 ворогів. Кожен удар завдає 22 шкоди — менше, ніж Вогняна Куля, але загальна шкода за весь ланцюг є руйнівною.\n"
+"\n"
+"Шкода: 22/удар. Дальність: 550. Радіус ланцюга: 180. Макс. ланцюгів: 5. Ефективна проти щільно розташованих груп ворогів."
+
+#: src/ui/menus/wiki_menu.py:878
+msgid ""
+"A column of pure lightning that crashes down from the heavens, dealing catastrophic single-target damage.\n"
+"\n"
+"Call upon the sky itself to smite a target within 600 range. The strike lands with a 100-radius blast, dealing 55 damage—the hardest-hitting single-instance spell in the arcane arsenal. Use it to eliminate high-priority targets before they close to melee range.\n"
+"\n"
+"Damage: 55. Radius: 100. Range: 600. Best reserved for elite enemies and bosses."
+msgstr ""
+"Стовп чистої блискавки, що обрушується з небес, завдаючи катастрофічної шкоди по одиночній цілі.\n"
+"\n"
+"Покличте саме небо, щоб вразити ціль у радіусі 600. Удар приземляється вибухом радіусом 100, завдаючи 55 шкоди — найсильніше заклинання миттєвої дії в арканному арсеналі. Використовуйте його, щоб ліквідовувати цілі високого пріоритету до того, як вони наблизяться на відстань ближнього бою.\n"
+"\n"
+"Шкода: 55. Радіус: 100. Дальність: 600. Найкраще зберегти для елітних ворогів і босів."
+
+#: src/ui/menus/wiki_menu.py:886
+msgid ""
+"Ancient tendrils erupt from the soil beneath your target, grasping and holding them in place.\n"
+"\n"
+"Call upon the deep earth to bind your enemies. Roots erupt in a 140-radius area at a target location up to 500 units away, holding all caught enemies for 4 seconds. Rooted enemies cannot move but can still attack and use abilities. The roots are vulnerable to fire—a clever foe can burn their way free.\n"
+"\n"
+"Root duration: 4 seconds. Radius: 140. Range: 500. Combines with Fireball or Glacial Cascade for devastating area combos."
+msgstr ""
+"Стародавні вусики вириваються з ґрунту під вашою ціллю, хапаючи та утримуючи їх на місці.\n"
+"\n"
+"Покличте глибинну землю, щоб зв'язати ваших ворогів. Корені вириваються на площі радіусом 140 у цільовому місці на відстані до 500 одиниць, утримуючи всіх спійманих ворогів на 4 секунди. Укорінені вороги не можуть рухатися, але все ще можуть атакувати і використовувати здібності. Корені вразливі до вогню — хитрий ворог може спалити собі шлях на волю.\n"
+"\n"
+"Тривалість укорінення: 4 секунди. Радіус: 140. Дальність: 500. Комбінується з Вогняною Кулею або Льодовиковим Каскадом для нищівних комбо по області."
+
+#: src/ui/menus/wiki_menu.py:895
+msgid ""
+"A nature spirit fights at your side—a flickering wisp of leaves and ancient light that harries your enemies.\n"
+"\n"
+"Summon a loyal nature spirit from the woodland realm. The spirit lasts 10 seconds, automatically attacking nearby foes for 15 damage per strike. It cannot be targeted or killed, making it a reliable source of supplementary damage. The spirit follows you and prioritizes enemies you are currently fighting.\n"
+"\n"
+"Spirit Damage: 15 per strike. Duration: 10 seconds. Invaluable for split focus—let the spirit harass while you prepare a heavy spell."
+msgstr ""
+"Дух природи б'ється на вашому боці — мерехтливий вогник листя та стародавнього світла, який переслідує ваших ворогів.\n"
+"\n"
+"Прикличте вірного духа природи з лісового царства. Дух живе 10 секунд, автоматично атакуючи найближчих ворогів на 15 шкоди за удар. Його не можна взяти на ціль чи вбити, що робить його надійним джерелом додаткової шкоди. Дух слідує за вами та надає пріоритет ворогам, з якими ви зараз б'єтесь.\n"
+"\n"
+"Шкода духа: 15 за удар. Тривалість: 10 секунд. Неоціненний для розподілу уваги — нехай дух переслідує, поки ви готуєте важке заклинання."
+
+#: src/ui/menus/wiki_menu.py:904
+msgid ""
+"Dissolve into shadow and reform a short distance away, leaving your enemies grasping at nothing.\n"
+"\n"
+"Shadow Step is your ultimate mobility tool. Vanish into darkness at your current location and reappear up to 300 units away in the direction of your choosing. For 0.5 seconds after arrival, you are completely invulnerable—long enough to absorb a killing blow or dodge a telegraphed attack.\n"
+"\n"
+"Range: 300. Invulnerability: 0.5s after arrival. Use to escape deadly situations or reposition for a counterattack."
+msgstr ""
+"Розчиніться в тіні та з'явіться на короткій відстані, залишаючи ваших ворогів хапати порожнечу.\n"
+"\n"
+"Тіньовий Крок — це ваш найкращий інструмент мобільності. Зникніть у темряві на вашому поточному місці та з'явіться на відстані до 300 одиниць у вибраному вами напрямку. На 0.5 секунди після прибуття ви стаєте повністю невразливими — достатньо часу, щоб витримати смертельний удар або ухилитися від явної атаки.\n"
+"\n"
+"Дальність: 300. Невразливість: 0.5с після прибуття. Використовуйте для втечі від смертельних ситуацій або зміни позиції для контратаки."
+
+#: src/ui/menus/wiki_menu.py:913
+msgid ""
+"A forbidden pact that rips life force from the caster and detonates it in a burst of shadow energy.\n"
+"\n"
+"Sacrifice 10% of your maximum health to unleash a blast of shadow damage—60 damage to all enemies within a 150-radius area. The health cost is paid instantly and cannot be mitigated. Dark Pact deals the highest area burst damage of any spell, but the price is steep. Use it when the risk is worth the reward.\n"
+"\n"
+"Cost: 10% max HP. Damage: 60 shadow. Radius: 150. Always carry health potions when this spell is in your arsenal."
+msgstr ""
+"Заборонений пакт, який вириває життєву силу з заклинателя і детонує її спалахом тіньової енергії.\n"
+"\n"
+"Пожертвуйте 10% вашого максимального здоров'я, щоб випустити вибух тіньової шкоди — 60 шкоди всім ворогам у радіусі 150. Вартість здоров'я стягується миттєво і не може бути пом'якшена. Темний Пакт завдає найбільшої шкоди по області серед усіх заклинань, але ціна висока. Використовуйте його, коли ризик вартий нагороди.\n"
+"\n"
+"Вартість: 10% макс. ОЗ. Шкода: 60 тіньова. Радіус: 150. Завжди носіть зілля здоров'я, коли це заклинання у вашому арсеналі."
+
+#: src/ui/menus/wiki_menu.py:922
+msgid ""
+"Five homing projectiles of pure arcane energy that seek out your enemies with unerring accuracy.\n"
+"\n"
+"Launch a volley of 5 arcane missiles that each deal 14 damage. The missiles automatically track the nearest enemy within range, curving through the air to find their mark. They can strike multiple targets or focus fire on a single foe. Against a lone enemy, the full volley delivers 70 damage.\n"
+"\n"
+"Projectiles: 5. Damage: 14 each (70 total if all hit). Homing: yes. They seek, they find, they destroy."
+msgstr ""
+"П'ять самонавідних снарядів чистої арканної енергії, що шукають ваших ворогів з безпомилковою точністю.\n"
+"\n"
+"Випустіть залп із 5 арканних снарядів, кожен з яких завдає 14 шкоди. Снаряди автоматично відстежують найближчого ворога в радіусі дії, летячи по кривій, щоб знайти свою ціль. Вони можуть вразити кілька цілей або зосередити вогонь на одному ворозі. Проти одного ворога повний залп завдає 70 шкоди.\n"
+"\n"
+"Снарядів: 5. Шкода: 14 кожен (загалом 70, якщо всі влучать). Самонавідні: так. Вони шукають, знаходять, знищують."
+
+#: src/ui/menus/wiki_menu.py:931
+msgid ""
+"A shimmering ward of pure arcane energy that surrounds you, reflecting a portion of incoming damage back at your attackers.\n"
+"\n"
+"For 5 seconds, Mystic Barrier reduces all damage you take and reflects 30% of it back to the source. The reflected damage scales with the incoming hit—the harder they strike, the more they feel. This does not prevent the damage to you, so it is a gamble: you survive the hit, and they feel the sting.\n"
+"\n"
+"Duration: 5s. Reflection: 30% of incoming. Use against hard-hitting enemies to turn their strength against them."
+msgstr ""
+"Мерехтливий захист із чистої арканної енергії, що оточує вас, відбиваючи частину вхідної шкоди назад нападникам.\n"
+"\n"
+"На 5 секунд Містичний Бар'єр зменшує всю отримувану вами шкоду та відбиває 30% її назад до джерела. Відбита шкода масштабується залежно від вхідного удару — чим сильніше вони б'ють, тим більше вони відчувають. Це не запобігає шкоді для вас, тому це ризик: ви виживаєте після удару, а вони відчувають біль.\n"
+"\n"
+"Тривалість: 5с. Відбиття: 30% від вхідної. Використовуйте проти ворогів з сильними ударами, щоб обернути їхню силу проти них."
+
+#: src/ui/menus/wiki_menu.py:940
+msgid ""
+"Raw, untamed fury surges through your veins—your attacks hit harder, but your defenses crack.\n"
+"\n"
+"Enter a berserker trance for 8 seconds. All damage you deal is increased by 50%, but all damage you take is increased by 20%. This is the glass cannon's signature—devastating power at a perilous cost. Activate it when you know you can end the fight before the enemy ends you.\n"
+"\n"
+"Duration: 8s. Cooldown: 20s. Damage dealt: +50%. Damage taken: +20%. Pair with defensive abilities to offset the vulnerability."
+msgstr ""
+"Груба, неприборкана лють вирує у ваших венах — ваші атаки стають сильнішими, але ваш захист тріщить.\n"
+"\n"
+"Увійдіть у транс берсерка на 8 секунд. Вся завдана вами шкода збільшується на 50%, але вся отримана вами шкода збільшується на 20%. Це візитна картка скляної гармати — руйнівна сила за небезпечну ціну. Активуйте його, коли знаєте, що можете закінчити бій до того, як ворог покінчить з вами.\n"
+"\n"
+"Тривалість: 8с. Перезарядка: 20с. Завдана шкода: +50%. Отримана шкода: +20%. Поєднуйте із захисними здібностями, щоб компенсувати вразливість."
+
+#: src/ui/menus/wiki_menu.py:949
+msgid ""
+"Bend the flow of time itself, slowing the world around you to a crawl while you move with supernatural swiftness.\n"
+"\n"
+"For 3 seconds, Chrono Shift reduces enemy movement speed by half while increasing your attack speed by 25%. The effect is immediate and disorienting—enemies appear to wade through molasses while you dance between their attacks. The long cooldown means you must choose your moment carefully.\n"
+"\n"
+"Duration: 3s. Enemies: half speed. Your attack speed: +25%. Cooldown: 30s. The ultimate tool for outmaneuvering overwhelming odds."
+msgstr ""
+"Зігніть потік самого часу, сповільнюючи світ навколо себе до повзання, поки ви рухаєтеся з надприродною швидкістю.\n"
+"\n"
+"На 3 секунди Хронозсув знижує швидкість руху ворогів вдвічі, одночасно збільшуючи вашу швидкість атаки на 25%. Ефект миттєвий і дезорієнтаційний — вороги, здається, бредуть крізь патоку, поки ви танцюєте між їхніми атаками. Довга перезарядка означає, що ви повинні вибирати момент ретельно.\n"
+"\n"
+"Тривалість: 3с. Вороги: половинна швидкість. Ваша швидкість атаки: +25%. Перезарядка: 30с. Найкращий інструмент для маневрування проти переважних сил."
+
+#: src/ui/menus/wiki_menu.py:958
+msgid ""
+"Propels the user forward in a burst of speed—a short, sharp lunge that can mean the difference between life and death.\n"
+"\n"
+"Dash grants an instant burst of movement in the direction you are facing. It covers moderate ground in a fraction of a second, passing through enemies and projectiles without taking damage during the dash. The cooldown is short, encouraging frequent use.\n"
+"\n"
+"Distance is safety. Speed is life. Use Dash to close gaps, evade attacks, or reposition in the heat of battle."
+msgstr ""
+"Кидає користувача вперед у сплеску швидкості — короткий, різкий випад, який може означати різницю між життям і смертю.\n"
+"\n"
+"Ривок дає миттєвий сплеск руху в напрямку, куди ви дивитесь. Він покриває помірну відстань за частку секунди, проходячи крізь ворогів і снаряди без отримання шкоди під час ривка. Перезарядка коротка, що заохочує часте використання.\n"
+"\n"
+"Відстань — це безпека. Швидкість — це життя. Використовуйте Ривок, щоб скоротити дистанцію, уникнути атак або змінити позицію в запалі бою."
+
+#: src/ui/menus/wiki_menu.py:971
+msgid ""
+"Accelerated healing that restores health with every heartbeat of the caster.\n"
+"\n"
+"Regeneration is a beneficial effect that restores a set amount of health each second over its duration. It stacks with passive health recovery and other healing sources. The effect can be applied through potions, spells, food, or environmental effects such as resting at a campfire.\n"
+"\n"
+"Rate: ~5 HP per second. Duration varies by source. A steady flow of vitality that keeps you in the fight longer.\n"
+"\n"
+"Tip: Let regeneration top you off between fights to conserve potions."
+msgstr ""
+"Прискорене зцілення, яке відновлює здоров'я з кожним ударом серця заклинателя.\n"
+"\n"
+"Регенерація — це корисний ефект, який відновлює певну кількість здоров'я кожну секунду протягом свого існування. Він накопичується з пасивним відновленням здоров'я та іншими джерелами лікування. Ефект може бути застосований через зілля, заклинання, їжу або вплив середовища, наприклад, відпочинок біля багаття.\n"
+"\n"
+"Швидкість: ~5 ОЗ на секунду. Тривалість залежить від джерела. Постійний потік життєвих сил, який утримує вас у бою довше.\n"
+"\n"
+"Порада: Дозвольте регенерації поповнювати вас між боями, щоб зберегти зілля."
+
+#: src/ui/menus/wiki_menu.py:980
+msgid ""
+"Creeping death that seeps into the victim's bloodstream, dealing damage over time until cured or expired.\n"
+"\n"
+"Poison is a stacking damage-over-time effect. Each application adds a stack, and each stack deals independent damage per tick. The damage grows more dangerous as stacks accumulate—a single Venomous strike may apply one stack, but repeated hits can stack poison to lethal levels quickly.\n"
+"\n"
+"Duration: 4s per stack. Damage: ~5 DPS per stack. Antidotes remove all poison stacks instantly and are worth their weight in gold. Without antidotes, you must wait for the poison to run its course.\n"
+"\n"
+"Tip: Always carry antidotes before exploring swamp biomes."
+msgstr ""
+"Повзуча смерть, яка проникає в кров жертви, завдаючи шкоди з часом, поки не буде вилікувана або не закінчиться дія.\n"
+"\n"
+"Отрута — це ефект шкоди з часом, що накопичується. Кожне застосування додає заряд, і кожен заряд завдає незалежної шкоди за тик. Шкода стає небезпечнішою з накопиченням зарядів — один Отруйний удар може додати один заряд, але повторні удари можуть швидко накопичити отруту до смертельного рівня.\n"
+"\n"
+"Тривалість: 4с за заряд. Шкода: ~5 шкоди/с за заряд. Антидоти миттєво знімають усі заряди отрути і на вагу золота. Без антидотів ви повинні чекати, поки отрута закінчить свою дію.\n"
+"\n"
+"Порада: Завжди носіть антидоти перед тим, як досліджувати болотні біоми."
+
+#: src/ui/menus/wiki_menu.py:991
+msgid ""
+"Fire remembers. The Burn effect lingers long after the initial blast, consuming its victim in persistent flame.\n"
+"\n"
+"Burn is a damage-over-time effect applied by fire-based attacks and environmental hazards such as lava pools and fire traps. Unlike poison, burn does not stack—instead, a fresh application refreshes the duration. The damage per tick is higher than poison, making it more dangerous in short bursts.\n"
+"\n"
+"Duration: ~3.2s per application. Damage: higher DPS than poison. Can be extinguished by rolling or submerging in water.\n"
+"\n"
+"Tip: If you catch fire, roll to put it out. Standing still is a death sentence."
+msgstr ""
+"Вогонь пам'ятає. Ефект опіку затримується ще довго після початкового вибуху, поглинаючи свою жертву в стійкому полум'ї.\n"
+"\n"
+"Опік — це ефект шкоди з часом, що застосовується атаками на основі вогню та небезпеками навколишнього середовища, такими як басейни з лавою та вогняні пастки. На відміну від отрути, опік не накопичується — натомість нове застосування оновлює тривалість. Шкода за тик вища, ніж у отрути, що робить його більш небезпечним у коротких сплесках.\n"
+"\n"
+"Тривалість: ~3.2с за застосування. Шкода: вища шкода за секунду, ніж від отрути. Можна згасити, зробивши перекат або занурившись у воду.\n"
+"\n"
+"Порада: Якщо ви загорілися, зробіть перекат, щоб згасити вогонь. Стояти на місці — смертний вирок."
+
+#: src/ui/menus/wiki_menu.py:1001
+msgid ""
+"Inverts your controls—up becomes down, left becomes right, and your muscle memory becomes your enemy.\n"
+"\n"
+"Confusion is a disorienting status effect that reverses all directional input for approximately 3 seconds. Every instinct you have developed will betray you. The effect is applied by Trickster enemies and certain shadow-based traps. There is no direct cure—you must wait it out.\n"
+"\n"
+"Duration: ~3s. Effect: directional inversion. No antidote exists. Trust nothing, not even your own hands.\n"
+"\n"
+"Tip: Invert your own thinking. If you need to go left, press right. It takes practice, but it can save your life."
+msgstr ""
+"Інвертує ваше управління — вгору стає вниз, ліворуч стає праворуч, і ваша м'язова пам'ять стає вашим ворогом.\n"
+"\n"
+"Плутанина — це дезорієнтуючий статусний ефект, який змінює на протилежні всі напрямки руху приблизно на 3 секунди. Кожен інстинкт, який ви розвинули, зрадить вас. Ефект накладається ворогами Трюкачами та деякими пастками на основі тіней. Прямих ліків немає — ви повинні перечекати це.\n"
+"\n"
+"Тривалість: ~3с. Ефект: інверсія напрямку. Антидоту не існує. Не довіряйте нічому, навіть власним рукам.\n"
+"\n"
+"Порада: Змініть власне мислення. Якщо вам потрібно йти ліворуч, натисніть праворуч. Для цього потрібна практика, але це може врятувати вам життя."
+
+#: src/ui/menus/wiki_menu.py:1012
+msgid ""
+"The world spins around you. Colors smear and blur. Combat becomes a nauseating ordeal.\n"
+"\n"
+"Dizziness impairs your visual clarity, making it difficult to judge distances and track enemy movements. The screen wobbles and your character's movement becomes slightly sluggish. Often paired with Confusion by Trickster enemies—together, they create a deadly cocktail of disorientation.\n"
+"\n"
+"Duration: ~2.2s. Effect: visual distortion, slight movement impairment. Often applied alongside Confusion.\n"
+"\n"
+"Tip: If both Confusion and Dizziness are active, retreat to a safe area and wait for both to expire. Fighting through both is a fool's errand."
+msgstr ""
+"Світ кружляє навколо вас. Кольори розмазуються і розмиваються. Бій стає нудотним випробуванням.\n"
+"\n"
+"Запаморочення погіршує вашу візуальну чіткість, що ускладнює оцінку відстані та відстеження рухів ворогів. Екран хитається, і рух вашого персонажа стає трохи млявим. Часто поєднується з Плутаниною ворогами Трюкачами — разом вони створюють смертельний коктейль дезорієнтації.\n"
+"\n"
+"Тривалість: ~2.2с. Ефект: візуальне спотворення, легке порушення руху. Часто застосовується разом з Плутаниною.\n"
+"\n"
+"Порада: Якщо і Плутанина, і Запаморочення активні, відступіть у безпечну зону і зачекайте, поки обидва не минуть. Битися під їхнім впливом — безглузда справа."
+
+#: src/ui/menus/wiki_menu.py:1023
+msgid ""
+"A creeping weight settles into your limbs, slowing your movement to a crawl.\n"
+"\n"
+"Slow reduces your movement speed by approximately 50% for its duration. The effect can be applied by environmental hazards (deep snow, mud, water), enemy attacks (Ice-based spells, certain creature abilities), or traps. In combat, being slowed is exceptionally dangerous—you cannot dodge, you cannot kite, and you cannot retreat.\n"
+"\n"
+"Duration: ~1.5s to 4s depending on source. Speed reduction: ~50%. Some sources also reduce attack speed.\n"
+"\n"
+"Tip: Speed is life. To be slowed is to be marked for death. Carry cleansing items or avoid hazards that apply this effect."
+msgstr ""
+"Повзуча важкість осідає у ваших кінцівках, сповільнюючи ваш рух до повзання.\n"
+"\n"
+"Сповільнення зменшує вашу швидкість руху приблизно на 50% протягом свого дії. Ефект може застосовуватися небезпеками навколишнього середовища (глибокий сніг, бруд, вода), атаками ворогів (крижані заклинання, здібності певних істот) або пастками. У бою бути сповільненим надзвичайно небезпечно — ви не можете ухилитися, не можете маневрувати і не можете відступити.\n"
+"\n"
+"Тривалість: від ~1.5с до 4с залежно від джерела. Зменшення швидкості: ~50%. Деякі джерела також знижують швидкість атаки.\n"
+"\n"
+"Порада: Швидкість — це життя. Бути сповільненим означає бути відміченим для смерті. Носіть предмети для очищення або уникайте небезпек, які застосовують цей ефект."
+
+#: src/ui/menus/wiki_menu.py:1034
+msgid ""
+"Two faces of the same cursed coin. Both leave you utterly unable to move, and both are followed by a killing blow.\n"
+"\n"
+"Freeze encases the target in solid ice, preventing all movement and actions for its duration. The ice can be broken early by taking enough damage—make sure your allies are ready to shatter it. Root binds the target's feet to the earth, preventing movement but allowing attacks and abilities to be used. Root is applied by Entangling Roots and similar nature-based abilities.\n"
+"\n"
+"Freeze duration: 2–3 seconds. Breaks on sufficient damage.\n"
+"Root duration: 4 seconds. Movement only is blocked; attacks and abilities still work.\n"
+"\n"
+"Tip: A frozen or rooted fighter is a dead fighter. Prioritize cleansing or avoiding these effects above all others."
+msgstr ""
+"Два боки однієї проклятої монети. Обидва роблять вас абсолютно нездатними рухатися, і за обома слідує смертельний удар.\n"
+"\n"
+"Заморожування поміщає ціль у твердий лід, перешкоджаючи всім рухам і діям протягом своєї тривалості. Лід може бути розбитий раніше при отриманні достатньої шкоди — переконайтеся, що ваші союзники готові розбити його. Укорінення прив'язує ноги цілі до землі, перешкоджаючи руху, але дозволяючи використовувати атаки та здібності. Укорінення накладається Обплутуючими Коренями та подібними здібностями на основі природи.\n"
+"\n"
+"Тривалість заморожування: 2–3 секунди. Розбивається від достатньої шкоди.\n"
+"Тривалість укорінення: 4 секунди. Тільки рух заблоковано; атаки та здібності все ще працюють.\n"
+"\n"
+"Порада: Заморожений або укорінений боєць — мертвий боєць. Надавайте пріоритет очищенню або уникненню цих ефектів понад усе."
+
+#: src/ui/menus/wiki_menu.py:1051
+msgid ""
+"The world is vast and unforgiving. Mastery of movement is your first and most essential skill.\n"
+"\n"
+"Use the WASD keys to navigate—W for north, A for west, S for south, D for east. Hold Shift to sprint, granting you burst speed at the cost of stamina. The yellow stamina bar above your hotbar depletes with every sprinting step and refills when you walk or stand still.\n"
+"\n"
+"Walk into doorways and map edges to transition between areas. Some transitions are one-way—once you descend into a dungeon, the only way out is through.\n"
+"\n"
+"Tip: Keep your stamina reserve for combat. A tired warrior is a dead warrior."
+msgstr ""
+"Світ величезний і безжалісний. Майстерність руху — це ваша перша і найважливіша навичка.\n"
+"\n"
+"Використовуйте клавіші WASD для навігації — W на північ, A на захід, S на південь, D на схід. Утримуйте Shift, щоб бігти швидше, що дає вам ривок швидкості ціною витривалості. Жовта смужка витривалості над вашою панеллю виснажується з кожним кроком бігу і поповнюється, коли ви йдете або стоїте на місці.\n"
+"\n"
+"Йдіть у дверні отвори та краї карти, щоб переходити між зонами. Деякі переходи односторонні — як тільки ви спускаєтеся в підземелля, єдиний вихід — пройти наскрізь.\n"
+"\n"
+"Порада: Зберігайте резерв витривалості для бою. Втомлений воїн — мертвий воїн."
+
+#: src/ui/menus/wiki_menu.py:1061
+msgid ""
+"The world does not wait for you to be ready. Learn the rhythm of battle or be consumed by it.\n"
+"\n"
+"Left-click any nearby enemy to perform a basic attack. Your health bar (red) sits at the top of the screen—when it empties, you fall. Your stamina bar (yellow) sits just above the hotbar—it fuels both sprinting and special maneuvers. Let neither run dry in a fight.\n"
+"\n"
+"When your health reaches zero, you respawn at your last activated save point. Enemies you have slain stay dead, but their patrols will be reinforced. Death is a setback, not an ending.\n"
+"\n"
+"Tip: Kite enemies one at a time when possible. Two foes are twice the trouble; three is a grave."
+msgstr ""
+"Світ не чекає, поки ви будете готові. Вивчіть ритм битви, інакше ви будете поглинуті нею.\n"
+"\n"
+"Клацніть лівою кнопкою миші по будь-якому ворогу поблизу, щоб виконати базову атаку. Ваша смужка здоров'я (червона) знаходиться у верхній частині екрана — коли вона порожніє, ви падаєте. Ваша смужка витривалості (жовта) знаходиться прямо над панеллю — вона живить як біг, так і спеціальні маневри. Не дозволяйте жодній з них спорожніти в бою.\n"
+"\n"
+"Коли ваше здоров'я досягає нуля, ви відроджуєтесь на своїй останній активованій точці збереження. Убиті вами вороги залишаються мертвими, але їхні патрулі будуть посилені. Смерть — це невдача, а не кінець.\n"
+"\n"
+"Порада: Заманюйте ворогів по одному, коли це можливо. Два вороги — подвійна проблема; три — це могила."
+
+#: src/ui/menus/wiki_menu.py:1073
+msgid ""
+"Your arsenal of abilities is bound to the hotbar—quick access slots that mean the difference between victory and defeat.\n"
+"\n"
+"Press keys 1 through 6 to activate the skill in the corresponding hotbar slot. Skills range from offensive spells to defensive wards to mobility tools. Each skill has its own cooldown, shown as a dimming icon that slowly brightens as it becomes available again.\n"
+"\n"
+"Open the Skill Tree from your inventory screen to spend points earned through leveling. Branches include Fire, Ice, Lightning, Nature, Shadow, and Arcane—each with its own philosophy and power.\n"
+"\n"
+"Tip: Build synergy. A Frost Nova to freeze, then a Fireball for double impact."
+msgstr ""
+"Ваш арсенал здібностей прив'язаний до панелі навичок — слотів швидкого доступу, що означають різницю між перемогою та поразкою.\n"
+"\n"
+"Натисніть клавіші від 1 до 6, щоб активувати навичку у відповідному слоті панелі. Навички варіюються від атакуючих заклинань до захисних оберегів і засобів мобільності. Кожна навичка має свою перезарядку, що показано у вигляді затемненої іконки, яка повільно світлішає по мірі того, як вона знову стає доступною.\n"
+"\n"
+"Відкрийте Дерево Навичок з екрана інвентарю, щоб витратити очки, зароблені підвищенням рівня. Гілки включають Вогонь, Лід, Блискавку, Природу, Тінь та Аркану — кожна зі своєю власною філософією і силою.\n"
+"\n"
+"Порада: Створюйте синергію. Морозна Нова, щоб заморозити, потім Вогняна Куля для подвійного удару."
+
+#: src/ui/menus/wiki_menu.py:1084
+msgid ""
+"Your pack is your lifeline—every potion, weapon, and trinket you carry may tip the scales of fate.\n"
+"\n"
+"Press E to open your inventory. Here you can equip weapons and armor, consume potions by right-clicking, and inspect every item in your possession. Hover your cursor over any item to see its detailed stats, flavor text, and sell value. Drag items with the left mouse button to rearrange your pack or move them between your inventory and other containers.\n"
+"\n"
+"Equipment slots include head, chest, legs, feet, main hand, and off-hand. Unequip items by dragging them back to your pack.\n"
+"\n"
+"Tip: Keep at least three health potions on you at all times. The wilderness is not merciful."
+msgstr ""
+"Ваш рюкзак — це ваша лінія життя: кожне зілля, зброя та брелок, які ви несете, можуть схилити шальки долі.\n"
+"\n"
+"Натисніть E, щоб відкрити інвентар. Тут ви можете оснастити себе зброєю та бронею, споживати зілля правою кнопкою миші та перевіряти кожен предмет у вашому володінні. Наведіть курсор на будь-який предмет, щоб побачити його детальні характеристики, опис та вартість продажу. Перетягуйте предмети лівою кнопкою миші, щоб змінити їх розташування в рюкзаку або перемістити між інвентарем та іншими контейнерами.\n"
+"\n"
+"Слоти спорядження включають голову, груди, ноги, стопи, головну і другу руку. Зніміть предмети, перетягнувши їх назад у рюкзак.\n"
+"\n"
+"Порада: Завжди тримайте при собі щонайменше три зілля здоров'я. Дика природа не милосердна."
+
+#: src/ui/menus/wiki_menu.py:1096
+msgid ""
+"Creation is survival. From the humblest bandage to the mightiest blade, everything must be forged.\n"
+"\n"
+"Open your inventory and you will find a 3×3 crafting grid. Place ingredients in the correct pattern, and the result appears in the output slot. Drag it into your pack to claim your creation.\n"
+"\n"
+"The Recipe Book, accessible from the crafting interface, records every recipe you have discovered. Some recipes are learned from scrolls and schematics found in the world. Others must be discovered through bold experimentation—place unfamiliar combinations in the grid and see what emerges.\n"
+"\n"
+"Tip: The grid is small, but the possibilities are endless. Try every combination you can imagine."
+msgstr ""
+"Створення — це виживання. Від найскромнішої пов'язки до наймогутнішого клинка — все має бути викуване.\n"
+"\n"
+"Відкрийте свій інвентар, і ви знайдете сітку для крафту 3×3. Покладіть інгредієнти у правильному порядку, і результат з'явиться в слоті виводу. Перетягніть його до свого рюкзака, щоб отримати своє творіння.\n"
+"\n"
+"Книга Рецептів, доступна з інтерфейсу крафту, записує кожен знайдений вами рецепт. Деякі рецепти можна дізнатися зі сувоїв та схем, знайдених у світі. Інші мають бути відкриті через сміливі експерименти — розмістіть незнайомі комбінації в сітці і подивіться, що вийде.\n"
+"\n"
+"Порада: Сітка маленька, але можливості безмежні. Спробуйте кожну комбінацію, яку можете собі уявити."
+
+#: src/ui/menus/wiki_menu.py:1108
+msgid ""
+"Every battle fought, every enemy vanquished, every challenge overcome—all of it feeds the fire of your growth.\n"
+"\n"
+"Defeat enemies to earn experience points (XP). Your progress is tracked in the XP bar at the bottom of the screen. When it fills, you gain a level, which grants +20 maximum health and one Skill Tree point to spend on new abilities or enhance existing ones.\n"
+"\n"
+"The Skill Tree branches into six schools of power:\n"
+"• Fire — Raw destructive force and area denial.\n"
+"• Ice — Crowd control and defensive fortitude.\n"
+"• Lightning — Speed and chain damage.\n"
+"• Nature — Summoning and sustained warfare.\n"
+"• Shadow — Deception and high-risk, high-reward tactics.\n"
+"• Arcane — Utility and raw magical power.\n"
+"\n"
+"Tip: You cannot max every branch in a single playthrough. Choose your path wisely."
+msgstr ""
+"Кожна битва, кожен переможений ворог, кожне подолане випробування — усе це живить вогонь вашого зростання.\n"
+"\n"
+"Перемагайте ворогів, щоб заробляти очки досвіду (XP). Ваш прогрес відстежується у смужці XP внизу екрана. Коли вона заповниться, ви отримаєте рівень, що дає +20 максимального здоров'я та одне очко Дерева Навичок, яке можна витратити на нові здібності або покращення наявних.\n"
+"\n"
+"Дерево Навичок розгалужується на шість шкіл сили:\n"
+"• Вогонь — Груба руйнівна сила та контроль території.\n"
+"• Лід — Контроль натовпу та захисна стійкість.\n"
+"• Блискавка — Швидкість та ланцюгова шкода.\n"
+"• Природа — Призов та затяжні бої.\n"
+"• Тінь — Обман і тактики з високим ризиком і високою винагородою.\n"
+"• Аркана — Утилітарність та груба магічна сила.\n"
+"\n"
+"Порада: Ви не можете повністю прокачати кожну гілку за одне проходження. Обирайте свій шлях з розумом."
+
+#: src/ui/menus/wiki_menu.py:1123
+msgid ""
+"The sun rises and sets in this world, and with the changing light comes shifting danger.\n"
+"\n"
+"The full day-night cycle spans roughly 24 minutes of real time. During the day, visibility is high and most enemies follow predictable patrol routes. As dusk falls, shadows lengthen and the creatures of the dark stir.\n"
+"\n"
+"At night, many enemies become more aggressive—their detection range increases, their damage may rise, and new nocturnal foes emerge from their lairs. The undead, in particular, grow bolder under the cover of darkness.\n"
+"\n"
+"Tip: If you hear howling at night, find shelter or light a torch. Some horrors only hunt in the dark."
+msgstr ""
+"Сонце сходить і заходить у цьому світі, і зі зміною світла приходить мінлива небезпека.\n"
+"\n"
+"Повний цикл день-ніч триває приблизно 24 хвилини реального часу. Вдень видимість висока, і більшість ворогів слідують передбачуваним маршрутам патрулювання. З настанням сутінків тіні подовжуються, і істоти темряви прокидаються.\n"
+"\n"
+"Вночі багато ворогів стають більш агресивними — радіус їхнього виявлення збільшується, їхня шкода може зрости, і нові нічні вороги з'являються зі своїх лігв. Немертві, зокрема, стають сміливішими під покривом темряви.\n"
+"\n"
+"Порада: Якщо ви чуєте виття вночі, знайдіть укриття або запаліть смолоскип. Деякі жахи полюють лише в темряві."
+
+#: src/ui/menus/wiki_menu.py:1134
+msgid ""
+"The realm is teeming with threats, each with its own deadly habits. Know your enemy before it knows you.\n"
+"\n"
+"• Brutes — Slow but devastating. Their Charge attack covers ground quickly. Dodge sideways, never backward. Strike after they miss.\n"
+"• Venomous — Their poison stacks quickly. Bring antidotes to every swamp encounter. Ranged attacks are safest.\n"
+"• Arcanists — Deadly at range, vulnerable up close. Close the distance and interrupt their casting.\n"
+"• Tricksters — Unpredictable and maddening. Predict their Blink destination and strike first.\n"
+"• Bombers — Timed bombs with a wide blast radius. Stay mobile and never stand still.\n"
+"• Stalkers — They remember your position. Breaking line of sight is not enough—keep moving for three seconds.\n"
+"• Skirmishers — Ranged harriers that orbit at a distance. Close in to force them into melee.\n"
+"• Guardians — Immobile sentinels. Lure them to the edge of their leash range if you must engage.\n"
+"\n"
+"Tip: Knowledge is armor. Study each entry in the Bestiary before venturing into unknown territory."
+msgstr ""
+"Королівство кишить погрозами, кожна зі своїми смертельними звичками. Знайте свого ворога раніше, ніж він дізнається про вас.\n"
+"\n"
+"• Громили — Повільні, але руйнівні. Їхня атака Заряд швидко долає дистанцію. Ухиляйтеся вбік, ніколи назад. Нападайте після їхнього промаху.\n"
+"• Отруйні — Їхня отрута накопичується швидко. Беріть антидоти в кожну зустріч на болоті. Найбезпечнішими є дальні атаки.\n"
+"• Арканісти — Смертельні на відстані, вразливі зблизька. Швидко скоротіть дистанцію і перервіть їхні чари.\n"
+"• Трюкачі — Непередбачувані і дратівливі. Передбачте місце їхнього Блимання і бийте першим.\n"
+"• Підривники — Бомби з годинниковим механізмом із широким радіусом вибуху. Залишайтеся рухливими і ніколи не стійте на місці.\n"
+"• Сталкери — Вони пам'ятають вашу позицію. Просто зникнути з поля зору недостатньо — продовжуйте рухатися три секунди.\n"
+"• Застрільники — Дальні противники, які обертаються на відстані. Наблизьтесь, щоб змусити їх битися у ближньому бою.\n"
+"• Вартові — Нерухомі вартові. Заманіть їх на край їхньої зони, якщо вам доведеться вступити в бій.\n"
+"\n"
+"Порада: Знання — це броня. Вивчіть кожен запис у Бестіарії, перш ніж вирушати на невідому територію."
+
+#: src/ui/menus/wiki_menu.py:1155
+msgid ""
+"No path is set in stone. The wise warrior evolves with every battle.\n"
+"\n"
+"Your Skill Tree points shape your playstyle. A focused build—investing deeply in a single school—unlocks powerful tier-3 and tier-4 abilities that a generalist cannot reach. A spread build offers flexibility, letting you adapt to any situation with a broad toolkit.\n"
+"\n"
+"If you find your choices no longer serve you, the respec option allows you to reclaim all spent Skill Tree points and redistribute them. Visit the appropriate NPC or use the respec option in the Skill Tree menu.\n"
+"\n"
+"Tip: Respeccing is not failure. It is refinement. The best warriors adapt their build to the challenges ahead."
+msgstr ""
+"Жоден шлях не викарбуваний у камені. Мудрий воїн розвивається з кожною битвою.\n"
+"\n"
+"Ваші очки Дерева Навичок формують ваш стиль гри. Сфокусована збірка — глибоке вкладення в одну школу — відкриває потужні здібності рівня 3 і 4, недоступні для універсала. Розподілена збірка пропонує гнучкість, дозволяючи вам адаптуватися до будь-якої ситуації за допомогою широкого інструментарію.\n"
+"\n"
+"Якщо ви виявите, що ваш вибір більше не працює, опція скидання навичок дозволяє вам повернути всі витрачені очки і перерозподілити їх. Відвідайте відповідного NPC або скористайтеся опцією скидання у меню Дерева Навичок.\n"
+"\n"
+"Порада: Скидання навичок — це не поразка. Це вдосконалення. Найкращі воїни адаптують свою збірку до майбутніх викликів."
+
+#: src/ui/menus/wiki_menu.py:1166
+msgid ""
+"The road ahead is long and lined with peril. You will fall. You will rise. You will fall again—and still, you will rise.\n"
+"\n"
+"Remember: every potion crafted, every skill unlocked, every enemy studied is a thread in the tapestry of your legend. The world remembers what you do. The Codex Arcanum records your discoveries. The forge awaits your hand.\n"
+"\n"
+"Their mistakes are your lessons. Their triumphs are your inheritance.\n"
+"\n"
+"Now go. The realm awaits—and it has never been ready for you."
+msgstr ""
+"Попереду довгий шлях, сповнений небезпек. Ви будете падати. Ви будете підійматися. Ви впадете знову — і все одно підніметеся.\n"
+"\n"
+"Пам'ятайте: кожне створене зілля, кожна розблокована навичка, кожен вивчений ворог — це нитка у гобелені вашої легенди. Світ пам'ятає, що ви робите. Codex Arcanum записує ваші відкриття. Кузня чекає на ваші руки.\n"
+"\n"
+"Їхні помилки — це ваші уроки. Їхні тріумфи — це ваша спадщина.\n"
+"\n"
+"А тепер ідіть. Королівство чекає — і воно ніколи не було готове до вас."
+
+#: src/ui/menus/wiki_menu.py:1178
+msgid ""
+"Deep within the earth, where molten stone flows like rivers of fire, the first smeltery was kindled by dwarven forgemasters of old. Today, you stand at the threshold of that ancient craft.\n"
+"\n"
+"The Smeltery is a workstation of unparalleled power. Approach any smeltery tile and press E to open its panel. Within, four stations await:\n"
+"\n"
+"⚙ Workbench — Shape raw materials into tools of war.\n"
+"⚙ Coke Oven — Smelt ores with patient flame.\n"
+"⚙ Blast Furnace — Forge alloys of legend.\n"
+"⚙ Anvil — Restore the fallen to glory.\n"
+"\n"
+"Each station serves a purpose. Master them all, and the very metal will bend to your will."
+msgstr ""
+"Глибоко в надрах землі, де розплавлений камінь тече, мов річки вогню, перша плавильня була запалена майстрами-гномами в давнину. Сьогодні ви стоїте на порозі цього стародавнього ремесла.\n"
+"\n"
+"Плавильня — це робоча станція неперевершеної сили. Підійдіть до будь-якої плитки плавильні і натисніть E, щоб відкрити її панель. Всередині на вас чекають чотири станції:\n"
+"\n"
+"⚙ Верстак — Перетворюйте сировину на інструменти війни.\n"
+"⚙ Коксова Піч — Плавіть руди терплячим полум'ям.\n"
+"⚙ Доменна Піч — Куйте легендарні сплави.\n"
+"⚙ Ковадло — Відновіть славу полеглим.\n"
+"\n"
+"Кожна станція має своє призначення. Опануйте їх усі, і самий метал скориться вашій волі."
+
+#: src/ui/menus/wiki_menu.py:1189
+msgid ""
+"The Workbench is your foundation. Here, in the 3×3 crafting grid, raw ingredients are arranged in sacred patterns to produce arms, armor, and arcane components.\n"
+"\n"
+"Unlike standard crafting, the smeltery workbench accesses recipes that require smeltery-processed materials — ingots forged in the coke oven, alloys from the blast furnace, and metals refined through the heat of experience.\n"
+"\n"
+"Drag items between the grid and your inventory. The output slot will reveal the result when the arrangement matches a known pattern. Experiment freely — the forge rewards curiosity.\n"
+"\n"
+"Tip: Keep your recipe book close. It highlights which recipes call for smeltery-crafted components."
+msgstr ""
+"Верстак — це ваша основа. Тут, у сітці для крафту 3×3, сировинні інгредієнти розташовуються у священних візерунках, щоб створювати зброю, броню та магічні компоненти.\n"
+"\n"
+"На відміну від звичайного крафту, верстак плавильні має доступ до рецептів, які вимагають матеріалів, оброблених у плавильні — злитків, викуваних у коксовій печі, сплавів з доменної печі та металів, очищених у запалі досвіду.\n"
+"\n"
+"Перетягуйте предмети між сіткою та вашим інвентарем. Слот виводу покаже результат, коли розташування збігатиметься з відомим візерунком. Експериментуйте вільно — кузня винагороджує цікавість.\n"
+"\n"
+"Порада: Тримайте свою книгу рецептів під рукою. Вона показує, які рецепти вимагають компонентів, створених у плавильні."
+
+#: src/ui/menus/wiki_menu.py:1200
+msgid ""
+"The Coke Oven is the first pillar of pyromancy. A simple furnace: input on the left, output on the right, and a hungry flame between them.\n"
+"\n"
+"Deposit raw ore into the input slot. The oven consumes it, and after a patient wait, pure smelted material appears in the output. The progress bar glows with the heat of your patience.\n"
+"\n"
+"The oven's beauty lies in its simplicity. One input, one output, and the quiet certainty of transformation. Load it with ore, tend to other stations, and return to collect your bounty.\n"
+"\n"
+"A single batch consumes one unit of input and produces one unit of refined material. The oven will automatically resume the next batch if more input is waiting."
+msgstr ""
+"Коксова піч — це перший стовп піромантії. Проста піч: вхід ліворуч, вихід праворуч, і голодне полум'я між ними.\n"
+"\n"
+"Покладіть сиру руду у вхідний слот. Піч споживає її, і після терплячого очікування чистий плавлений матеріал з'являється на виході. Індикатор прогресу світиться жаром вашого терпіння.\n"
+"\n"
+"Краса печі полягає в її простоті. Один вхід, один вихід і тиха впевненість у перетворенні. Завантажте її рудою, займіться іншими станціями і поверніться, щоб зібрати свою нагороду.\n"
+"\n"
+"Одна партія споживає одну одиницю сировини і виробляє одну одиницю очищеного матеріалу. Піч автоматично почне наступну партію, якщо чекає ще сировина."
+
+#: src/ui/menus/wiki_menu.py:1211
+msgid ""
+"Where the coke oven merely purifies, the Blast Furnace creates something greater than the sum of its parts.\n"
+"\n"
+"Two input slots: ore on top, fuel below. The furnace combines them in a roaring marriage of elements, producing alloys of superior quality. Steel, darksteel, and stranger metals await those who discover the right combinations.\n"
+"\n"
+"The fuel slot accepts coal or other combustible materials. Each fuel has its own burning properties. Experiment with different ore-fuel pairs to unlock new recipes.\n"
+"\n"
+"High-tier alloys may trigger a Smeltery Minigame upon completion — a chance to refine the batch further through quick thinking and steady hands. Success yields bonus ingots and additional smelting experience.\n"
+"\n"
+"The blast furnace also locks its input slots while a job runs. Plan your batches wisely."
+msgstr ""
+"Там, де коксова піч лише очищає, Доменна Піч створює щось більше, ніж сума її частин.\n"
+"\n"
+"Два слоти вводу: руда зверху, паливо знизу. Піч поєднує їх у ревучому шлюбі елементів, створюючи сплави найвищої якості. Сталь, темна сталь та більш дивні метали чекають тих, хто знайде правильні комбінації.\n"
+"\n"
+"Слот для палива приймає вугілля або інші горючі матеріали. Кожне паливо має власні властивості горіння. Експериментуйте з різними парами руда-паливо, щоб розблокувати нові рецепти.\n"
+"\n"
+"Сплави високого рівня можуть запускати міні-гру Плавильні після завершення — шанс ще більше вдосконалити партію завдяки швидкому мисленню та твердим рукам. Успіх приносить бонусні злитки та додатковий досвід плавки.\n"
+"\n"
+"Доменна піч також блокує свої слоти вводу під час виконання роботи. Плануйте свої партії розумно."
+
+#: src/ui/menus/wiki_menu.py:1223
+msgid ""
+"The Anvil is a sanctuary for the broken. Here, damaged weapons, armor, and tools are returned to their former glory.\n"
+"\n"
+"Three slots serve this purpose:\n"
+"• Damaged Item (left) — Place the battered weapon or armor here.\n"
+"• Material (center) — Iron ingots, steel ingots, or other repair materials.\n"
+"• Repaired Output (right) — Collect the restored item.\n"
+"\n"
+"The anvil consumes the repair material immediately and begins its work. A progress bar tracks the restoration. The status line below previews the durability recovery.\n"
+"\n"
+"Not all items are repairable. Unbreakable artifacts and fully intact gear cannot be placed on the anvil. Likewise, only certain materials can serve as repair agents.\n"
+"\n"
+"A word of caution: removing the damaged item mid-repair cancels the job and the material is lost. Choose your repairs with care."
+msgstr ""
+"Ковадло — це святилище для зламаних речей. Тут пошкоджена зброя, броня та інструменти повертаються до своєї колишньої слави.\n"
+"\n"
+"Для цієї мети служать три слоти:\n"
+"• Пошкоджений предмет (ліворуч) — покладіть сюди побиту зброю або броню.\n"
+"• Матеріал (у центрі) — залізні злитки, сталеві злитки або інші матеріали для ремонту.\n"
+"• Відремонтований результат (праворуч) — заберіть відновлений предмет.\n"
+"\n"
+"Ковадло миттєво споживає матеріал для ремонту і починає свою роботу. Смужка прогресу відстежує відновлення. Рядок статусу нижче попередньо показує відновлення міцності.\n"
+"\n"
+"Не всі предмети підлягають ремонту. Невразливі артефакти та повністю ціле спорядження не можна покласти на ковадло. Так само, лише певні матеріали можуть служити для ремонту.\n"
+"\n"
+"Застереження: вилучення пошкодженого предмета посеред ремонту скасовує роботу, а матеріал втрачається. Вибирайте ремонт ретельно."
+
+#: src/ui/menus/wiki_menu.py:1236
+msgid ""
+"Every ingot forged, every alloy refined, every item repaired feeds your Smelting Skill. This hidden art grows with you, granting greater rewards as your mastery deepens.\n"
+"\n"
+"The skill bar at the bottom of the smeltery panel shows your current level and experience progress:\n"
+"\n"
+"• Smelting Lv. X — Your current rank in the forgemaster's craft.\n"
+"• Progress Bar — Tracks advancement to the next level.\n"
+"• XP Counter — Current / required experience.\n"
+"\n"
+"Higher levels unlock:\n"
+"• Better minigame rewards (bonus ingots per success)\n"
+"• Higher-tier item crafting chances\n"
+"• Increased respect among the world's merchants\n"
+"\n"
+"The path of the forgemaster is one of patience and persistence. Smelt often. Smelt well. The metal remembers."
+msgstr ""
+"Кожен викуваний злиток, кожен очищений сплав, кожен відремонтований предмет живить вашу навичку плавки. Це приховане мистецтво росте разом з вами, даруючи більші нагороди у міру поглиблення вашої майстерності.\n"
+"\n"
+"Шкала навичок у нижній частині панелі плавильні показує ваш поточний рівень і прогрес досвіду:\n"
+"\n"
+"• Рівень плавки X — ваш поточний ранг у ремеслі коваля.\n"
+"• Шкала прогресу — відстежує просування до наступного рівня.\n"
+"• Лічильник XP — поточний / необхідний досвід.\n"
+"\n"
+"Вищі рівні розблоковують:\n"
+"• Кращі нагороди за міні-ігри (бонусні злитки за успіх)\n"
+"• Шанси створення предметів вищого рівня\n"
+"• Підвищену повагу серед світових торговців\n"
+"\n"
+"Шлях майстра-коваля — це шлях терпіння та наполегливості. Плавіть часто. Плавіть добре. Метал пам'ятає."
+
+#: src/ui/menus/wiki_menu.py:1251
+msgid ""
+"When the Blast Furnace completes a high-tier alloy, the forge itself may challenge you to prove your worth through a Smeltery Minigame.\n"
+"\n"
+"These are brief, interactive trials that test your reflexes and focus:\n"
+"\n"
+"• Tending the Fire — Stoke the flames at just the right moment. Too weak and the metal cools. Too strong and it burns.\n"
+"• Iron Forge — Strike the glowing ingot while the hammer's rhythm matches the heartbeat of the forge.\n"
+"• Arcane Crucible — Channel magical energy into the molten pool, stabilizing its arcane resonance.\n"
+"• Quench & Temper — Plunge the hot metal into the quenching bath at the precise temperature for optimal hardening.\n"
+"\n"
+"Success yields bonus output — extra ingots, improved quality, and bonus smelting XP. Failure grants nothing but experience. Every attempt refines the forgemaster."
+msgstr ""
+"Коли доменна піч завершує сплав високого рівня, сама кузня може кинути вам виклик, щоб ви довели свою цінність через міні-гру плавильні.\n"
+"\n"
+"Це короткі інтерактивні випробування, що перевіряють ваші рефлекси та концентрацію:\n"
+"\n"
+"• Догляд за вогнем — роздмухайте полум'я у потрібний момент. Занадто слабко — і метал охолоне. Занадто сильно — і він згорить.\n"
+"• Залізна кузня — вдарте по сяючому злитку, поки ритм молота збігається з серцебиттям кузні.\n"
+"• Арканний тигель — направляйте магічну енергію в розплавлений басейн, стабілізуючи його арканний резонанс.\n"
+"• Загартовування та відпуск — занурте гарячий метал у ванну для загартовування при точній температурі для оптимального загартовування.\n"
+"\n"
+"Успіх приносить додатковий вихід — додаткові злитки, покращена якість і бонусний досвід плавки. Невдача не дає нічого, крім досвіду. Кожна спроба вдосконалює коваля."
+
+#: src/ui/menus/wiki_menu.py:1266
+msgid ""
+"The greatest smelters know that the forge is not merely a tool — it is a partner. Here are the secrets whispered among master forgemasters:\n"
+"\n"
+"✦ The Blast Furnace respects efficiency. Fuel lasts longer when the furnace is kept running. Batch processing is the mark of a master.\n"
+"\n"
+"✦ Anvil repairs consume material upfront. Always inspect the preview before committing. A single ingot can restore a legendary blade to full power.\n"
+"\n"
+"✦ Minigames scale with your Smelting Level. A level 50 forgemaster extracts far more bonus ingots than a novice. Persevere.\n"
+"\n"
+"✦ The Workbench grid can combine smeltery outputs into finished gear. Plan your production chain: mine → smelt → alloy → craft.\n"
+"\n"
+"✦ Some recipes are not discovered but inherited. Seek ancient texts and lost schematics in your adventures. The Codex Arcanum remembers all.\n"
+"\n"
+"The forge awaits. Make it sing."
+msgstr ""
+"Найбільші плавильники знають, що кузня — це не просто інструмент, це партнер. Ось секрети, якими перешіптуються майстри-ковалі:\n"
+"\n"
+"✦ Доменна піч поважає ефективність. Паливо вистачає надовше, якщо піч постійно працює. Пакетна обробка — це ознака майстра.\n"
+"\n"
+"✦ Ремонт на ковадлі споживає матеріал одразу. Завжди перевіряйте попередній перегляд перед підтвердженням. Єдиний злиток може відновити легендарний клинок до повної сили.\n"
+"\n"
+"✦ Міні-ігри масштабуються з вашим рівнем плавки. Майстер плавки 50 рівня отримує набагато більше бонусних злитків, ніж новачок. Будьте наполегливими.\n"
+"\n"
+"✦ Сітка верстака може поєднувати результати плавильні в готове спорядження. Плануйте свій ланцюжок виробництва: видобуток → плавка → сплав → крафт.\n"
+"\n"
+"✦ Деякі рецепти не відкриваються, а успадковуються. Шукайте стародавні тексти та втрачені схеми у своїх пригодах. Кодекс Таємниць пам'ятає все.\n"
+"\n"
+"Кузня чекає. Змусьте її співати."
+
+#: src/ui/menus/wiki_menu.py:1384 src/ui/menus/wiki_menu.py:1387
+#: src/ui/menus/wiki_menu.py:1811
+msgid "The Adventurer's Codex"
+msgstr "Кодекс Шукача Пригод"
+
+#: src/ui/menus/wiki_menu.py:1398 src/ui/menus/wiki_menu.py:1814
+msgid "An in-game compendium of knowledge"
+msgstr "Внутрішньоігровий збірник знань"
+
+#: src/ui/menus/wiki_menu.py:1457
+msgid "Codex Arcanum — First Edition"
+msgstr "Кодекс Таємниць — Перше Видання"
+
+#: src/ui/menus/wiki_menu.py:1558
+msgid "Select an entry to read"
+msgstr "Оберіть запис для читання"
+
+#: src/ui/menus/wiki_menu.py:1740
+msgid "Page {}/{}"
+msgstr "Сторінка {}/{}"
 
 #~ msgid "name"
 #~ msgstr "Шкода"
 
+#~ msgid "Super coooooool project"
+#~ msgstr "Супер круууутий проект"
+
+#~ msgid "Dull Sword"
+#~ msgstr "Тупий меч"
+
+#~ msgid "A worn-out sword with a dull blade. Thats about it."
+#~ msgstr "Зношений меч з тупим лезом. Це все."
+
+#~ msgid "Apple"
+#~ msgstr "Яблуко"
+
+#~ msgid "An apple."
+#~ msgstr "Яблуко."
+
+#~ msgid "Moldy Bread"
+#~ msgstr "Цвілий хліб"
+
+#~ msgid "A piece of bread that has gone bad."
+#~ msgstr "Шматок хліба, що зіпсувався."
+
+#~ msgid "Small Health Potion"
+#~ msgstr "Мале зілля здоров'я"
+
+#~ msgid "A small potion that restores health."
+#~ msgstr "Мале зілля, що відновлює здоров'я."
+
+#~ msgid "Large Health Potion"
+#~ msgstr "Велике зілля здоров'я"
+
+#~ msgid "A large potion that restores a significant amount of health."
+#~ msgstr "Велике зілля, що відновлює значну кількість здоров'я."
+
+#~ msgid "A mix oh herbs and spices that causes confusion."
+#~ msgstr "Суміш трав і спецій, що викликає плутанину."
