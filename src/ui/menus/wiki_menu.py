@@ -1472,7 +1472,7 @@ class WikiMenu(Menu):
                 screen.blit(ar, (er.right - ar.get_width() - 14,
                                  er.y + (er.height - ar.get_height()) // 2 + int(math.sin(t * 4) * 3)))
 
-            self._toc_entry_rects.append((er, i + 1))
+            self._toc_entry_rects.append((er, i))
 
         hs = self.font_small.render(_("Select an entry to read"), True, self.ink_light)
         hs.set_alpha(int(140 + 60 * math.sin(t * 0.8)))
@@ -1698,7 +1698,7 @@ class WikiMenu(Menu):
             if hasattr(self, '_toc_entry_rects'):
                 for er, idx in self._toc_entry_rects:
                     if er.collidepoint(event.pos):
-                        self._toc_hover = idx - 1; break
+                        self._toc_hover = idx; break
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 if self._show_toc and self._sub_page > 0:
