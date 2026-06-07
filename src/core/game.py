@@ -1636,6 +1636,27 @@ class Game(State):
         screen.blit(shadow, (text_rect.x + 1, text_rect.y + 1))
         screen.blit(text, text_rect)
 
+    def _draw_chest_hint(self, screen, camera_offset):
+        if self.app.INV_manager.chest_opened:
+            return
+        tile_pos = self._find_nearby_chest_tile()
+        if tile_pos is None:
+            return
+        screen_x = int(tile_pos.x - camera_offset.x)
+        screen_y = int(tile_pos.y - camera_offset.y)
+        font = cfg.tooltip_font_CREDITS
+        text = font.render("Press E", True, (255, 240, 200))
+        shadow = font.render("Press E", True, (0, 0, 0))
+        text_rect = text.get_rect(midtop=(screen_x, screen_y + 32))
+        pad_x = int(8 * cfg.ui_scale())
+        pad_y = int(4 * cfg.ui_scale())
+        bg_rect = text_rect.inflate(pad_x * 2, pad_y * 2)
+        bg_surf = pygame.Surface(bg_rect.size, pygame.SRCALPHA)
+        pygame.draw.rect(bg_surf, (0, 0, 0, 160), bg_surf.get_rect(), border_radius=6)
+        screen.blit(bg_surf, bg_rect.topleft)
+        screen.blit(shadow, (text_rect.x + 1, text_rect.y + 1))
+        screen.blit(text, text_rect)
+
     def _update_projectiles(self, dt):
         if not self.projectiles:
             return
@@ -2965,6 +2986,12 @@ class Game(State):
         try:
             if getattr(self, 'smeltery', None) and not self.smeltery.is_open:
                 self._draw_smeltery_hint(screen, camera_offset)
+        except Exception:
+            pass
+
+        # "Press E" hint above the nearest chest tile.
+        try:
+            self._draw_chest_hint(screen, camera_offset)
         except Exception:
             pass
 
