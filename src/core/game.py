@@ -25,7 +25,7 @@ from src.entities.enemy import Enemy
 from src.entities.npc import NPC
 from src.entities.mage_npc import MageNPC
 from src.entities.projectile import Arrow
-from src.entities.peaceful_mob import PeacefulMob, create_peaceful_mob
+from src.entities.peaceful_mob import PeacefulMob, create_peaceful_mob, PEACEFUL_MOB_REGISTRY
 from src.ui.hud import HUD
 from src.ui.widgets import Dialog
 from src.ui.debug_menu import SpawnMenu, EffectsMenu
@@ -719,9 +719,9 @@ class Game(State):
         # Blackjack game state (None when not playing)
         self.blackjack_game = None
 
-        # Debug menu for spawning mobs
+        # Debug menu for spawning mobs (enemies + peaceful mobs)
         self.spawn_menu = SpawnMenu(
-            self.enemy_profile_names,
+            self.enemy_profile_names + sorted(PEACEFUL_MOB_REGISTRY.keys()),
             on_spawn=self._debug_spawn_enemy,
             on_close=lambda: None
         )
@@ -1367,6 +1367,16 @@ class Game(State):
         offset_x = 100
         spawn_x = self.character.pos.x + offset_x
         spawn_y = self.character.pos.y
+
+        # Peaceful mob spawn
+        if profile_name in PEACEFUL_MOB_REGISTRY:
+            from src.entities.peaceful_mob import create_peaceful_mob
+            mob = create_peaceful_mob(spawn_x, spawn_y, profile_name)
+            self.peaceful_mobs.append(mob)
+            logger.info(f"[DEBUG] Spawned peaceful mob {profile_name} at ({spawn_x}, {spawn_y})")
+            return
+
+        # Enemy spawn
         new_enemy = self._create_enemy(spawn_x, spawn_y, profile=profile_name)
         self.enemies.append(new_enemy)
         logger.info(f"[DEBUG] Spawned {profile_name} at ({spawn_x}, {spawn_y})")
