@@ -26,6 +26,7 @@ from src.entities.boss import Boss
 from src.entities.npc import NPC
 from src.entities.mage_npc import MageNPC
 from src.entities.projectile import Arrow
+from src.entities.peaceful_mob import PeacefulMob, create_peaceful_mob, PEACEFUL_MOB_REGISTRY
 from src.ui.hud import HUD
 from src.ui.widgets import Dialog
 from src.ui.debug_menu import SpawnMenu, EffectsMenu
@@ -886,7 +887,19 @@ class Game(State):
             ex, ey = extra["pos"]
             self.enemies.append(self._create_enemy(ex, ey, profile=extra.get("profile")))
         self.items = []
-        
+
+        # Peaceful majestic mobs (non-aggressive ambient creatures)
+        self.peaceful_mobs: list[PeacefulMob] = []
+
+        # Peaceful mob spawn points per map (single mob, random type, like enemies)
+        self.PEACEFUL_MOB_SPAWNS = {
+            "maps/test-map-2.tmx": (1100, 800),
+            "maps/test-map-3.tmx": (700, 600),
+        }
+
+        # Maps where peaceful mob spawning is disabled
+        self.NO_PEACEFUL_MOB_MAPS = {"maps/tavern.tmx", "maps/test-map-1.tmx"}
+
         # Enemy spawning system
         self.enemy_spawn_timer = 0.0
         self.enemy_spawn_interval = 30.0 # seconds
@@ -1075,9 +1088,10 @@ class Game(State):
         # Crafting "Tempering" minigame state (None when not playing)
         self.crafting_minigame = None
 
-        # Debug menu for spawning mobs
+        # Debug menu for spawning mobs (enemies + peaceful mobs)
         self.spawn_menu = SpawnMenu(
-            self.enemy_profile_names,
+            ["--- ENEMIES ---"] + self.enemy_profile_names
+            + ["--- PEACEFUL ---"] + sorted(PEACEFUL_MOB_REGISTRY.keys()),
             on_spawn=self._debug_spawn_enemy,
             on_close=lambda: None
         )
@@ -1133,6 +1147,9 @@ class Game(State):
         except Exception as exc:
             logger.warning(f"Failed to build gatherable node registries: {exc}")
 
+        # Spawn peaceful mobs for the starting map
+        self._spawn_peaceful_mobs()
+
     def _build_gatherable_registries(self) -> None:
         try:
             from data.gatherable_nodes import load_gatherable_node_defs
@@ -1152,6 +1169,40 @@ class Game(State):
             registry.add_def(definition)
         total = sum(len(reg.nodes) for reg in self.gatherables.values())
         logger.info(f"Loaded {total} gatherable node(s) across {len(self.gatherables)} map(s)")
+
+    def _spawn_peaceful_mobs(self):
+        """Spawn a single peaceful mob on the current map (random type, like enemies)."""
+        from src.entities.peaceful_mob import PEACEFUL_MOB_REGISTRY, create_peaceful_mob
+        spawn_info = self.PEACEFUL_MOB_SPAWNS.get(self.current_map_path)
+        if not spawn_info:
+            return
+        if self.current_map_path in self.NO_PEACEFUL_MOB_MAPS:
+            return
+
+        x, y = spawn_info
+        mob_type = random.choice(list(PEACEFUL_MOB_REGISTRY.keys()))
+
+        if not self._check_position_collision(
+            pygame.Rect(x, y, 40, 40),
+            getattr(self, 'obstacles', []) or [],
+            getattr(self, 'nav_grid', None),
+        ):
+            mob = create_peaceful_mob(x, y, mob_type)
+            self.peaceful_mobs = [mob]
+            logger.info(f"Spawned {mob_type} on {self.current_map_path}")
+        else:
+            logger.warning(f"Peaceful mob spawn position ({x}, {y}) blocked on {self.current_map_path}")
+
+    def _check_position_collision(self, rect: pygame.Rect, obstacles: list, nav_grid) -> bool:
+        """Check if a rectangle collides with obstacles or is on an unwalkable tile."""
+        for wall in obstacles:
+            if rect.colliderect(wall):
+                return True
+        if nav_grid:
+            cell = nav_grid.world_to_cell(pygame.Vector2(rect.x, rect.y))
+            if not nav_grid.is_walkable(cell):
+                return True
+        return False
 
     def reinit_ui(self):
         self.hud = HUD(self.character, self.app, self.toggle_player_inventory, self.use_skill_slot, open_shop_callback=self.open_shop)
@@ -1425,6 +1476,24 @@ class Game(State):
         except Exception:
             return None
 
+    def _find_nearby_peaceful_mob(self) -> PeacefulMob | None:
+        """Find the closest PeacefulMob within interaction range, or None."""
+        INTERACT_RANGE = 80.0
+        sq = INTERACT_RANGE * INTERACT_RANGE
+        player_center = self.character.get_center()
+        best: PeacefulMob | None = None
+        best_dist = sq + 1
+        for mob in self.peaceful_mobs:
+            mob_center = pygame.Vector2(
+                mob.pos.x + mob.image.get_width() // 2,
+                mob.pos.y + mob.image.get_height() // 2,
+            )
+            d2 = (mob_center - player_center).length_squared()
+            if d2 <= sq and d2 < best_dist:
+                best = mob
+                best_dist = d2
+        return best
+
     def _draw_smeltery_hint(self, screen, camera_offset):
         """Show a floating 'Press E to use Smeltery' hint above the
         nearest smeltery tile when the player is in range."""
@@ -1453,8 +1522,9 @@ class Game(State):
         if not self.projectiles:
             return
 
+        targets = self.enemies + self.peaceful_mobs
         for projectile in self.projectiles:
-            projectile.update(dt, self.obstacles, self.enemies)
+            projectile.update(dt, self.obstacles, targets)
 
         # Handle thrown weapon landings
         for projectile in self.projectiles[:]:
@@ -1881,6 +1951,16 @@ class Game(State):
         offset_x = 100
         spawn_x = self.character.pos.x + offset_x
         spawn_y = self.character.pos.y
+
+        # Peaceful mob spawn
+        if profile_name in PEACEFUL_MOB_REGISTRY:
+            from src.entities.peaceful_mob import create_peaceful_mob
+            mob = create_peaceful_mob(spawn_x, spawn_y, profile_name)
+            self.peaceful_mobs.append(mob)
+            logger.info(f"[DEBUG] Spawned peaceful mob {profile_name} at ({spawn_x}, {spawn_y})")
+            return
+
+        # Enemy spawn
         new_enemy = self._create_enemy(spawn_x, spawn_y, profile=profile_name)
         self.enemies.append(new_enemy)
         logger.info(f"[DEBUG] Spawned {profile_name} at ({spawn_x}, {spawn_y})")
@@ -1994,6 +2074,54 @@ class Game(State):
         """Callback to finish the intro sequence and unlock the game."""
         self.intro_played = True
         self._intro_sequence_active = False
+    def _get_drop_chance_for_peaceful_mob(self, mob: PeacefulMob) -> list[dict]:
+        from src.entities.peaceful_mob import PEACEFUL_MOB_REGISTRY
+        if mob is None:
+            return []
+        config = PEACEFUL_MOB_REGISTRY.get(mob.mob_type, {})
+        return config.get("drop_chance", []) or []
+
+    def _drop_peaceful_mob_loot(self, mob: PeacefulMob) -> None:
+        from src.entities.dropped_item import DroppedItem
+        from src.items.items import create_item
+
+        drop_entries = self._get_drop_chance_for_peaceful_mob(mob)
+        if not drop_entries:
+            return
+
+        base_x, base_y = mob.get_rect().center
+
+        placed = 0
+        for entry in drop_entries:
+            if not isinstance(entry, dict):
+                continue
+            item_id = entry.get("item_id")
+            if not item_id:
+                continue
+            chance = float(entry.get("chance", 0.0))
+            if chance <= 0.0:
+                continue
+            if random.random() > chance:
+                continue
+            amount = int(entry.get("amount", 1))
+            if amount <= 0:
+                amount = 1
+
+            item_obj = create_item(item_id)
+            if item_obj is None:
+                logger.warning(f"Peaceful mob drop skipped: could not create item '{item_id}'")
+                continue
+
+            spread = 18
+            offset_x = random.randint(-spread, spread)
+            offset_y = random.randint(-spread // 2, spread // 2)
+            drop = DroppedItem(base_x + offset_x, base_y + offset_y, item_obj, amount)
+            self.items.append(drop)
+            placed += 1
+            logger.info(
+                f"Peaceful mob '{mob.mob_type}' dropped "
+                f"{amount}x {item_id} at ({base_x + offset_x}, {base_y + offset_y})"
+            )
 
     def update(self, dt):
         # Intro Sequence for test-map-1
@@ -2056,6 +2184,10 @@ class Game(State):
                     new_x, new_y = entry["pos"]
                     profile = entry.get("profile")
                     self.enemies.append(self._create_enemy(new_x, new_y, profile=profile))
+
+            # Clear peaceful mobs on map switch, then re-spawn for new map
+            self.peaceful_mobs = []
+            self._spawn_peaceful_mobs()
 
             if switched_map_path in self.NPC_SPAWNS:
                     npc_x, npc_y = self.NPC_SPAWNS[switched_map_path]
@@ -2248,6 +2380,10 @@ class Game(State):
         # Update summoned spirits
         self._update_spirits(dt)
 
+        # Update peaceful mobs (collision-aware movement like enemies)
+        for mob in self.peaceful_mobs:
+            mob.update(dt, self.character, self.enemies, self.collision_handler, self.obstacles)
+
         self.collision_handler.check_interactions(
             self.character, self.enemies, self.items
         )
@@ -2321,6 +2457,12 @@ class Game(State):
                 self._drop_enemy_loot(enemy)
 
                 self.enemies.remove(enemy)
+
+        # Remove dead peaceful mobs (drop loot, then despawn)
+        for mob in self.peaceful_mobs[:]:
+            if mob.is_dead():
+                self._drop_peaceful_mob_loot(mob)
+                self.peaceful_mobs.remove(mob)
 
         self.npc.update(self.character.pos)
         self.card_npc.update(self.character.pos)
@@ -2430,6 +2572,7 @@ class Game(State):
         self.app.profiler.set_gauge("projectiles", len(self.projectiles))
         self.app.profiler.set_gauge("enemy_projectiles", len(self.enemy_projectiles))
         self.app.profiler.set_gauge("spirits", len(self.spirits))
+        self.app.profiler.set_gauge("peaceful_mobs", len(self.peaceful_mobs))
 
     def _apply_ice_armor_slow(self, dt):
         """Slow enemies near the player while Ice Armor is active."""
@@ -2529,6 +2672,13 @@ class Game(State):
         for enemy in self.enemies:
             if _is_visible(enemy):
                 enemy.draw(screen, camera_offset)
+
+        # Draw peaceful mobs
+        for mob in self.peaceful_mobs:
+            try:
+                mob.draw(screen, camera_offset)
+            except Exception:
+                pass
 
         for projectile in self.projectiles:
             if _is_visible(projectile):
@@ -2903,6 +3053,11 @@ class Game(State):
                     self.app.current_dialog = Dialog(self.app, self.npc.dialog_lines, on_close=on_close, on_shop=self.open_shop, show_shop=self.npc.is_merchant)
                 elif self._find_nearby_smeltery_tile() is not None and getattr(self, "smeltery", None):
                     self.smeltery.open()
+                elif self._find_nearby_peaceful_mob() is not None:
+                    mob = self._find_nearby_peaceful_mob()
+                    msg = mob.on_player_interact(self.character)
+                    if msg:
+                        self.app.current_dialog = Dialog(self.app, [msg])
                 else:
                     # Otherwise toggle the player's inventory (open/close)
                     self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
