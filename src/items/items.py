@@ -416,6 +416,9 @@ class Weapon(Item, DurabilityMixin):
             self._base_max_durability = int(self.max_durability)
         except Exception:
             self._base_max_durability = 1
+        
+        # Socketed rune (limit 1)
+        self.socketed_rune = row.get("socketed_rune", None)
 
     @property
     def display_name(self):
@@ -443,10 +446,25 @@ class Weapon(Item, DurabilityMixin):
         damage_str = f"{_('Damage')}: {self.damage}"
         if base_damage != self.damage:
             damage_str += f"  (base {base_damage})"
+            
+        socket_str = ""
+        if hasattr(self, "socketed_rune") and self.socketed_rune:
+            if self.socketed_rune == "fire_rune":
+                socket_str = "[Socket: Fire Rune] - 10% chance to Burn\n"
+            elif self.socketed_rune == "ice_rune":
+                socket_str = "[Socket: Ice Rune] - 10% chance to Slow\n"
+            elif self.socketed_rune == "lightning_rune":
+                socket_str = "[Socket: Lightning Rune] - 10% chance to Daze\n"
+            elif self.socketed_rune == "void_rune":
+                socket_str = "[Socket: Void Rune] - 10% chance to Curse\n"
+            else:
+                socket_str = f"[Socket: {self.socketed_rune}]\n"
+                
         return (
             f"{_('Type')}: {weapon_label}\n"
             f"{damage_str}\n"
             f"{dur_str}\n"
+            f"{socket_str}"
         )
 
 

@@ -238,7 +238,18 @@ class SkillTreeMenu(Menu):
             cfg.corner_radius,
             on_click=self._unlock_selected,
         )
-        self.buttons = [self.exit_button, self.unlock_button]
+        # Respec button placed above the unlock button in the sidebar
+        self.respec_button = Button(
+            pygame.Rect(0, 0, exit_width, exit_height),
+            _("Respec (0 Gold)"),
+            (130, 100, 40),
+            (170, 130, 60),
+            cfg.button_font,
+            cfg.text_color,
+            cfg.corner_radius,
+            on_click=self._respec_clicked,
+        )
+        self.buttons = [self.exit_button, self.unlock_button, self.respec_button]
 
         self.zoom = 1.0
         self.min_zoom = 0.5
@@ -1588,6 +1599,93 @@ class SkillTreeMenu(Menu):
         adjacent = self._get_adjacent_nodes(node_id)
         return bool(adjacent & unlocked)
 
+    def _get_spent_points(self):
+        unlocked = self._get_unlocked_nodes()
+        cost_map = {"minor": 1, "major": 2, "keystone": 3, "core": 0}
+        spent = 0
+        for node_id in unlocked:
+            node = self.nodes_by_id.get(node_id)
+            if node:
+                kind = node.get("kind")
+                spent += cost_map.get(kind, 1)
+        return spent
+
+    def _respec_clicked(self):
+        character = self._character()
+        if not character:
+            return
+
+        spent = self._get_spent_points()
+        if spent <= 0:
+            from src.ui.widgets import Dialog
+            self.app.current_dialog = Dialog(
+                self.app,
+                [_("Respec Skill Tree"), _("You have not spent any skill points yet.")]
+            )
+            return
+
+        cost = spent * 100
+        gold = getattr(self.app, "money", 0)
+
+        if gold < cost:
+            from src.ui.widgets import Dialog
+            self.app.current_dialog = Dialog(
+                self.app,
+                [
+                    _("Respec Skill Tree"),
+                    _("Not enough gold to respec!"),
+                    f"{_('Required')}: {cost} {_('Gold')}",
+                    f"{_('You have')}: {gold} {_('Gold')}"
+                ]
+            )
+            return
+
+        # Player has spent points and has enough gold -> Show confirmation dialogue
+        from src.ui.widgets import Dialog
+        self.app.current_dialog = Dialog(
+            self.app,
+            [
+                _("Confirm Respec"),
+                _("Reset all skill points and refund them?"),
+                f"{_('Cost')}: {cost} {_('Gold')}",
+                f"{_('Your Gold')}: {gold} {_('Gold')}"
+            ],
+            show_confirm=True,
+            confirm_label=_("RESPEC"),
+            on_confirm=lambda: self._execute_respec(spent, cost)
+        )
+
+    def _execute_respec(self, spent, cost):
+        character = self._character()
+        if not character:
+            return
+
+        # 1. Deduct gold
+        self.app.money = max(0, self.app.money - cost)
+
+        # 2. Refund skill points
+        character.skill_tree_points = getattr(character, "skill_tree_points", 0) + spent
+
+        # 3. Clear unlocked nodes (except "core")
+        character.skill_tree_unlocked = {"core"}
+
+        # 4. Call reset_skill_tree on character to reset stats and skills
+        if hasattr(character, "reset_skill_tree"):
+            character.reset_skill_tree()
+
+        # 5. Clear selection in UI
+        self.selected_node_id = None
+        self.target_zoom = 1.0
+        self.target_pan_offset = pygame.Vector2(0, 0)
+
+        # 6. Trigger unlock animation effect at the core node for visual feedback
+        self._spawn_unlock_effect("core")
+        # Flash the screen
+        self.screen_flash_alpha = 0.8
+        self.screen_flash_timer = 0.5
+
+        logger.info(f"Respec complete: refunded {spent} points, cost {cost} gold.")
+
     def _unlock_selected(self):
         selected = self.nodes_by_id.get(self.selected_node_id)
         if selected is None:
@@ -1916,6 +2014,19 @@ class SkillTreeMenu(Menu):
                 exit_height,
             )
             self.unlock_button._update_text_surface()
+        except Exception:
+            pass
+
+        # position respec button above unlock button
+        try:
+            respec_y = self.unlock_button.rect.y - exit_height - int(8 * scale)
+            self.respec_button.rect = pygame.Rect(
+                self.sidebar_rect.centerx - exit_width // 2,
+                respec_y,
+                exit_width,
+                exit_height,
+            )
+            self.respec_button._update_text_surface()
         except Exception:
             pass
 
@@ -3062,6 +3173,11 @@ class SkillTreeMenu(Menu):
             pygame.draw.line(screen, (70, 60, 90, alpha), (x, py), (x, py + 1))
         py += 8
 
+        # Update respec button state and text
+        spent_pts = self._get_spent_points()
+        respec_cost = spent_pts * 100
+        self.respec_button.set_text(f"{_('Respec')} ({respec_cost} Gold)")
+
         if selected_node is None:
             # Show empty state hint
             empty = self.small_font.render(_("Select a node to inspect"), True, (110, 110, 135))
@@ -3165,6 +3281,8 @@ class SkillTreeMenu(Menu):
                 self.unlock_button.set_text(_("✓ Unlocked"))
             else:
                 self.unlock_button.set_text(f"{_('Unlock')} ◆ {cost}")
+
+
 
     def draw(self, screen: pygame.Surface):
         self.layout(screen)
@@ -3348,6 +3466,10 @@ class SkillTreeMenu(Menu):
                 self.unlock_button.draw(screen)
             except Exception:
                 pass
+        try:
+            self.respec_button.draw(screen)
+        except Exception:
+            pass
         self.exit_button.draw(screen)
 
         # Draw dialog on top if one is active
