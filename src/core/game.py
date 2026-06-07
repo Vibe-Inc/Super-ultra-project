@@ -2189,13 +2189,6 @@ class Game(State):
             self.peaceful_mobs = []
             self._spawn_peaceful_mobs()
 
-            spawn_info = self._get_spawn_info(switched_map_path)
-            if switched_map_path not in self.NO_ENEMY_SPAWN_MAPS and spawn_info:
-                new_x, new_y = spawn_info["pos"]
-                profile = spawn_info.get("profile")
-                default_enemy = self._create_enemy(new_x, new_y, profile=profile)
-                self.enemies.append(default_enemy)
-
             if switched_map_path in self.NPC_SPAWNS:
                     npc_x, npc_y = self.NPC_SPAWNS[switched_map_path]
                     # Clamp NPC to the new map bounds so it is visible
