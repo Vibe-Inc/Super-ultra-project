@@ -450,21 +450,17 @@ class PeacefulMob:
     # ----------------------------------------------------------
 
     @staticmethod
-    def _create_heart_surface(size: int, color: tuple) -> pygame.Surface:
-        surf = pygame.Surface((size, size), pygame.SRCALPHA)
+    def _heart_polygon(size: int) -> list[tuple[int, int]]:
         cx = size // 2
         cy = size // 2
-        r = max(size // 5, 2)
-        lobe_off = r // 2
-        pygame.draw.circle(surf, color, (cx - lobe_off, cy - r // 3), r)
-        pygame.draw.circle(surf, color, (cx + lobe_off, cy - r // 3), r)
-        pts = [
-            (cx - r, cy - r // 3),
-            (cx + r, cy - r // 3),
-            (cx, cy + r),
-        ]
-        pygame.draw.polygon(surf, color, pts)
-        return surf
+        scale = size / 34.0
+        pts = []
+        for i in range(60):
+            t = 2 * math.pi * i / 60
+            x = 16 * (math.sin(t) ** 3)
+            y = 13 * math.cos(t) - 5 * math.cos(2 * t) - 2 * math.cos(3 * t) - math.cos(4 * t)
+            pts.append((cx + int(x * scale), cy + int(-y * scale)))
+        return pts
 
     # ----------------------------------------------------------
     # FLOATING TEXT
@@ -486,7 +482,7 @@ class PeacefulMob:
         self.floating_texts.append({
             "type": "heart",
             "size": size,
-            "heart_surf": self._create_heart_surface(size, color),
+            "pts": self._heart_polygon(size),
             "x": self.pos.x + self.image.get_width() // 2,
             "y": self.pos.y - 10,
             "color": color,
@@ -508,9 +504,11 @@ class PeacefulMob:
             sx = int(ft["x"] - cam.x)
             sy = int(ft["y"] - cam.y)
             if ft.get("type") == "heart":
-                heart = ft["heart_surf"].copy()
-                heart.set_alpha(alpha)
-                screen.blit(heart, (sx - ft["size"] // 2, sy))
+                s = ft["size"]
+                tmp = pygame.Surface((s, s), pygame.SRCALPHA)
+                offset_pts = [(px, py) for px, py in ft["pts"]]
+                pygame.draw.polygon(tmp, (*ft["color"], alpha), offset_pts)
+                screen.blit(tmp, (sx - s // 2, sy))
             else:
                 try:
                     font = pygame.font.Font(None, 18)
