@@ -980,7 +980,6 @@ class FishingController:
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 3 and self.state in ("ready", "idle"):
                 if not self._can_fish():
-                    self.ui.show_result("Equip and select a Fishing Rod first!", success=False, duration=3.0)
                     return False
                 target_world = pygame.Vector2(event.pos) + self.game._get_camera_offset()
                 self.cast(target_world)

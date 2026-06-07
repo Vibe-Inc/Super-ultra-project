@@ -733,16 +733,32 @@ class CollectionBookMenu(Menu):
 
         bg_lift = int(20 * hover_amount)
         if is_caught:
-            card_bg = (238 + bg_lift, 225 + bg_lift // 2, 198 + bg_lift)
+            card_bg = (
+                min(255, max(0, 238 + bg_lift)),
+                min(255, max(0, 225 + bg_lift // 2)),
+                min(255, max(0, 198 + bg_lift))
+            )
         else:
-            card_bg = (225 + bg_lift, 215 + bg_lift // 2, 195 + bg_lift)
+            card_bg = (
+                min(255, max(0, 225 + bg_lift)),
+                min(255, max(0, 215 + bg_lift // 2)),
+                min(255, max(0, 195 + bg_lift))
+            )
         card_rect = pygame.Rect(sx, sy, sw, sh)
         pygame.draw.rect(surf, card_bg, card_rect, border_radius=int(10 * scale))
 
         if is_caught:
-            border = (180 + int(40 * hover_amount), 195 + int(40 * hover_amount), 210 + int(45 * hover_amount))
+            border = (
+                min(255, max(0, 180 + int(40 * hover_amount))),
+                min(255, max(0, 195 + int(40 * hover_amount))),
+                min(255, max(0, 210 + int(45 * hover_amount)))
+            )
         else:
-            border = (140 + int(40 * hover_amount), 150 + int(50 * hover_amount), 160 + int(60 * hover_amount))
+            border = (
+                min(255, max(0, 140 + int(40 * hover_amount))),
+                min(255, max(0, 150 + int(50 * hover_amount))),
+                min(255, max(0, 160 + int(60 * hover_amount)))
+            )
         pygame.draw.rect(surf, border, card_rect, width=2, border_radius=int(10 * scale))
 
         inner = card_rect.inflate(-int(5 * scale), -int(5 * scale))
