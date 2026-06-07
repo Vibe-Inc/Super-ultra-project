@@ -67,9 +67,7 @@ class Star:
         if sz <= 1.5:
             surf.set_at((px, py), (*self.color, alpha))
         else:
-            s = pygame.Surface((int(sz * 2), int(sz * 2)), pygame.SRCALPHA)
-            pygame.draw.circle(s, (*self.color, alpha), (int(sz), int(sz)), int(sz))
-            surf.blit(s, (px - int(sz), py - int(sz)))
+            pygame.draw.circle(surf, (*self.color, alpha), (px, py), int(sz))
 
 
 class LightRay:
@@ -171,13 +169,11 @@ class AmbientEmber:
         a = int(self.alpha * (0.6 + 0.4 * math.sin(t * 1.5 + self.phase)))
         a = max(0, min(255, a))
         sz = self.size
-        s = pygame.Surface((int(sz * 2 + 2), int(sz * 2 + 2)), pygame.SRCALPHA)
         for ri in range(int(sz), 0, -1):
             ratio = ri / sz
             ca = int(a * (1 - ratio))
-            pygame.draw.circle(s, (*self.color, max(0, min(255, ca))),
-                               (int(sz + 1), int(sz + 1)), ri)
-        surf.blit(s, (int(self.x - sz), int(self.y - sz)))
+            pygame.draw.circle(surf, (*self.color, max(0, min(255, ca))),
+                               (int(self.x), int(self.y)), ri)
 
 
 class FloatingOrb:
@@ -293,10 +289,8 @@ class LaunchBurst:
             return
         a = int(255 * (self.lt / self.max_lt))
         sz = max(1, int(self.size * (self.lt / self.max_lt)))
-        c = (*self.color[:3], a)
-        s = pygame.Surface((sz * 2, sz * 2), pygame.SRCALPHA)
-        pygame.draw.circle(s, c, (sz, sz), sz)
-        surf.blit(s, (int(self.x) - sz, int(self.y) - sz))
+        pygame.draw.circle(surf, (*self.color[:3], a),
+                           (int(self.x), int(self.y)), sz)
 
 
 def render_shimmer_text(font, text, base_color, t, intensity=0.15):

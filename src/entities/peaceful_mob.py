@@ -29,7 +29,10 @@ if TYPE_CHECKING:
 # MOB TYPE REGISTRY
 # ============================================================
 
+CAT_SOUNDS = ["nyaa", "purrr", "meow", "mrrrow", "prrr", "mew", "nya~"]
+
 PEACEFUL_MOB_REGISTRY: dict[str, dict] = {
+
     "grove_titan": {
         "name": "Grove Titan",
         "description": "A small, gentle tree creature that waddles and hums.",
@@ -139,9 +142,23 @@ PEACEFUL_MOB_REGISTRY: dict[str, dict] = {
         "wander_pause": 2.2,
         "idle_behavior": "prowl",
     },
+    "tavern_cat": {
+        "name": "Tavern Cat",
+        "description": "A plump orange tabby cat that prowls the tavern in search of handouts and warm hearths.",
+        "hp": 25,
+        "speed": 52,
+        "animation_size": (70, 66),
+        "animation_speed": 7,
+        "curiosity_range": 180.0,
+        "shyness_range": 50.0,
+        "wander_radius": 320.0,
+        "wander_pause": 1.6,
+        "idle_behavior": "prowl",
+    },
 
 }
 
+COMMON_MOB_TYPES = [k for k in PEACEFUL_MOB_REGISTRY if k != "tavern_cat"]
 
 # ============================================================
 # PEACEFUL MOB CLASS
@@ -248,6 +265,13 @@ class PeacefulMob:
 
         # Floating texts
         self.floating_texts: list[dict] = []
+
+        # Bubble speech
+        self.bubble_text: str | None = None
+        self.bubble_timer: float = 0.0
+        self.bubble_display_timer: float = 0.0
+        self.bubble_interval: float = random.uniform(4.0, 8.0)
+        self.bubble_duration: float = 2.5
 
         # Interaction state
         self.interaction_cooldown: float = 0.0
@@ -424,8 +448,21 @@ class PeacefulMob:
         return best
 
     # ----------------------------------------------------------
-    # FLOATING TEXT
+    # HEART SURFACE
     # ----------------------------------------------------------
+
+    @staticmethod
+    def _heart_polygon(size: int) -> list[tuple[int, int]]:
+        cx = size // 2
+        cy = size // 2
+        scale = size / 34.0
+        pts = []
+        for i in range(60):
+            t = 2 * math.pi * i / 60
+            x = 16 * (math.sin(t) ** 3)
+            y = 13 * math.cos(t) - 5 * math.cos(2 * t) - 2 * math.cos(3 * t) - math.cos(4 * t)
+            pts.append((cx + int(x * scale), cy + int(-y * scale)))
+        return pts
 
     # ----------------------------------------------------------
     # FLOATING TEXT
@@ -435,6 +472,19 @@ class PeacefulMob:
         """Queue a floating text popup."""
         self.floating_texts.append({
             "text": text,
+            "x": self.pos.x + self.image.get_width() // 2,
+            "y": self.pos.y - 10,
+            "color": color,
+            "life": 1.5,
+            "max_life": 1.5,
+            "vy": -30,
+        })
+
+    def _spawn_floating_heart(self, size: int, color: tuple):
+        self.floating_texts.append({
+            "type": "heart",
+            "size": size,
+            "pts": self._heart_polygon(size),
             "x": self.pos.x + self.image.get_width() // 2,
             "y": self.pos.y - 10,
             "color": color,
@@ -455,13 +505,81 @@ class PeacefulMob:
             alpha = max(0, min(255, int(255 * (ft["life"] / ft["max_life"]))))
             sx = int(ft["x"] - cam.x)
             sy = int(ft["y"] - cam.y)
-            try:
-                font = pygame.font.Font(None, 18)
-                surf = font.render(ft["text"], True, ft["color"])
-                surf.set_alpha(alpha)
-                screen.blit(surf, (sx - surf.get_width() // 2, sy))
-            except Exception:
-                pass
+            if ft.get("type") == "heart":
+                s = ft["size"]
+                tmp = pygame.Surface((s, s), pygame.SRCALPHA)
+                offset_pts = [(px, py) for px, py in ft["pts"]]
+                pygame.draw.polygon(tmp, (*ft["color"], alpha), offset_pts)
+                screen.blit(tmp, (sx - s // 2, sy))
+            else:
+                try:
+                    font = pygame.font.Font(None, 18)
+                    surf = font.render(ft["text"], True, ft["color"])
+                    surf.set_alpha(alpha)
+                    screen.blit(surf, (sx - surf.get_width() // 2, sy))
+                except Exception:
+                    pass
+
+    # ----------------------------------------------------------
+    # SPEECH BUBBLE (tavern cat only)
+    # ----------------------------------------------------------
+
+    def _update_bubble(self, dt: float):
+        if self.mob_type != "tavern_cat":
+            self.bubble_text = None
+            return
+
+        self.bubble_timer += dt
+        self.bubble_display_timer = max(0, self.bubble_display_timer - dt)
+
+        if self.bubble_display_timer > 0:
+            return
+        if self.bubble_text is not None:
+            self.bubble_text = None
+            self.bubble_timer = 0.0
+            self.bubble_interval = random.uniform(4.0, 8.0)
+            return
+
+        if self.bubble_timer >= self.bubble_interval:
+            self.bubble_text = random.choice(CAT_SOUNDS)
+            self.bubble_display_timer = self.bubble_duration
+            self.bubble_timer = 0.0
+
+    def _draw_bubble(self, screen: pygame.Surface, cam: pygame.Vector2):
+        if not self.bubble_text:
+            return
+        font = pygame.font.Font(None, 20)
+        text_surf = font.render(self.bubble_text, True, (30, 30, 30))
+        padding = 8
+        bubble_w = text_surf.get_width() + padding * 2
+        bubble_h = text_surf.get_height() + padding * 2
+
+        sx = int(self.pos.x - cam.x) + self.image.get_width() // 2 - bubble_w // 2
+        sy = int(self.pos.y - cam.y) - bubble_h - 12
+
+        bubble_rect = pygame.Rect(sx, sy, bubble_w, bubble_h)
+        # Tail triangle pointing down
+        tail_points = [
+            (sx + bubble_w // 2 - 5, sy + bubble_h),
+            (sx + bubble_w // 2 + 5, sy + bubble_h),
+            (sx + bubble_w // 2, sy + bubble_h + 8),
+        ]
+
+        pygame.draw.rect(screen, (255, 255, 255), bubble_rect, border_radius=6)
+        pygame.draw.rect(screen, (60, 60, 60), bubble_rect, 2, border_radius=6)
+        pygame.draw.polygon(screen, (255, 255, 255), tail_points)
+        pygame.draw.polygon(screen, (60, 60, 60), tail_points, 2)
+        screen.blit(text_surf, (sx + padding, sy + padding))
+
+    # ----------------------------------------------------------
+    # PET
+    # ----------------------------------------------------------
+
+    def pet(self):
+        """Pet this mob — spawns a heart floating text."""
+        self.interaction_cooldown = 2.0
+        self._spawn_floating_heart(22, (255, 60, 100))
+        self._spawn_floating_heart(16, (255, 130, 160))
 
     # ----------------------------------------------------------
     # INTERACTION
@@ -487,7 +605,7 @@ class PeacefulMob:
             "moss_rabbit": "The Moss Rabbit twitches its nose. Tiny flower petals fall from its furry back.",
             "crystal_fox": "The Crystal Fox flicks its tail. Shimmering prismatic light dances across its fur.",
             "fairy_cat": "The Fairy Cat purrs and rubs against your leg. The tiny bells on its collar chime softly.",
-
+            "tavern_cat": "The Tavern Cat purrs loudly and weaves between your ankles. You can hear it meowing for scraps.",
         }
 
         msg = interactions.get(self.mob_type, f"The {self.name} regards you serenely.")
@@ -567,6 +685,9 @@ class PeacefulMob:
                 self.frame_index = (self.frame_index + 1) % len(self.animations[self.direction])
             self.image = self.animations[self.direction][self.frame_index]
 
+        # Speech bubble
+        self._update_bubble(dt)
+
         # Floating texts
         self._update_floating_texts(dt)
 
@@ -596,6 +717,12 @@ class PeacefulMob:
         if self.max_hp > 0:
             health_width = int(bar_width * (self.hp / self.max_hp))
             pygame.draw.rect(screen, (0, 255, 0), (bar_x, bar_y, health_width, bar_height))
+
+        # Speech bubble
+        self._draw_bubble(screen, camera_offset)
+
+        # Floating texts (hearts, etc.)
+        self._draw_floating_texts(screen, camera_offset)
 
 
 # ============================================================
