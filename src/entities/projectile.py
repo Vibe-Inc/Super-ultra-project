@@ -1,7 +1,7 @@
 import math
 import random
 import pygame
-from database.effects import BurnEffect, FreezeEffect, SlowEffect, RootEffect
+from database.effects import BurnEffect, ConfusionEffect, DizzinessEffect, FreezeEffect, PoisonEffect, SlowEffect, RootEffect
 from src.core.logger import logger
 
 
@@ -3487,3 +3487,376 @@ class ElementalBurst:
                 (240, 240, 180, w_alpha),
             ])
             pygame.draw.line(screen, w_color, (cx, cy), (int(wx), int(wy)), max(1, int(2 * (1 - progress))))
+
+
+class IceShard:
+    """
+    Ice projectile fired by cryomancer enemies. Applies slow on hit.
+
+    Attributes:
+        pos (pygame.Vector2): Current position.
+        direction (pygame.Vector2): Normalized travel direction.
+        speed (float): Travel speed in pixels per second.
+        max_range (float): Maximum travel distance.
+        damage (int): Damage on hit.
+        slow_duration (float): Duration of the slow effect.
+        slow_factor (float): Speed multiplier of the slow.
+        traveled (float): Distance traveled so far.
+        alive (bool): Whether the projectile is active.
+        animation_time (float): Visual animation timer.
+        trail (list): Position history for visual trail.
+    """
+    def __init__(self, pos, direction, speed, max_range, damage, slow_duration, slow_factor):
+        self.pos = pygame.Vector2(pos)
+        self.direction = pygame.Vector2(direction)
+        if self.direction.length_squared() == 0:
+            self.direction = pygame.Vector2(1, 0)
+        else:
+            self.direction = self.direction.normalize()
+        self.speed = speed
+        self.max_range = max_range
+        self.damage = damage
+        self.slow_duration = slow_duration
+        self.slow_factor = slow_factor
+        self.traveled = 0.0
+        self.alive = True
+        self.animation_time = 0.0
+        self.trail = []
+        self.trail_length = 10
+
+    def _size(self):
+        return 12, 8
+
+    def get_rect(self):
+        w, h = self._size()
+        rect = pygame.Rect(0, 0, w, h)
+        rect.center = (int(self.pos.x), int(self.pos.y))
+        return rect
+
+    def update(self, dt, obstacles, player):
+        if not self.alive:
+            return
+        self.animation_time += dt
+        movement = self.direction * self.speed * dt
+        self.pos += movement
+        self.traveled += movement.length()
+        self.trail.append(pygame.Vector2(self.pos))
+        if len(self.trail) > self.trail_length:
+            self.trail.pop(0)
+        rect = self.get_rect()
+        for wall in obstacles:
+            if rect.colliderect(wall):
+                self.alive = False
+                return
+        if player and rect.colliderect(player.get_rect()):
+            if self.damage > 0:
+                player.take_damage(self.damage)
+            if self.slow_duration > 0:
+                player.add_effect(SlowEffect(self.slow_duration, self.slow_factor))
+            self.alive = False
+            return
+        if self.traveled >= self.max_range:
+            self.alive = False
+
+    def draw(self, screen, camera_offset=None):
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+        cx = int(self.pos.x - camera_offset.x)
+        cy = int(self.pos.y - camera_offset.y)
+        t = self.animation_time
+        pulse = 0.7 + 0.3 * math.sin(t * 15)
+        for i, pos in enumerate(self.trail):
+            ratio = i / len(self.trail) if self.trail else 0
+            alpha = int(60 * ratio)
+            r = int(2 + 3 * ratio)
+            ts = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
+            pygame.draw.circle(ts, (150, 210, 255, alpha), (r, r), r)
+            screen.blit(ts, (pos.x - r - camera_offset.x, pos.y - r - camera_offset.y))
+        glow_sz = int(10 + 4 * pulse)
+        gs = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+        pygame.draw.circle(gs, (180, 220, 255, int(40 + 25 * pulse)), (glow_sz, glow_sz), glow_sz)
+        screen.blit(gs, (cx - glow_sz, cy - glow_sz))
+        d = self.direction
+        perp = pygame.Vector2(-d.y, d.x)
+        tip = (cx + d.x * 8, cy + d.y * 8)
+        left = (cx + perp.x * 4 - d.x * 4, cy + perp.y * 4 - d.y * 4)
+        right = (cx - perp.x * 4 - d.x * 4, cy - perp.y * 4 - d.y * 4)
+        back = (cx - d.x * 6, cy - d.y * 6)
+        pts = [tip, left, back, right]
+        pygame.draw.polygon(screen, (200, 235, 255), pts)
+        pygame.draw.polygon(screen, (150, 200, 255), pts, 1)
+        pygame.draw.circle(screen, (240, 250, 255), (cx, cy), 3)
+        pygame.draw.circle(screen, (255, 255, 255), (cx, cy), 1)
+
+
+class ShadowBolt:
+    """
+    Shadow projectile fired by shadowmancer enemies. Applies confusion on hit.
+
+    Attributes:
+        pos (pygame.Vector2): Current position.
+        direction (pygame.Vector2): Normalized travel direction.
+        speed (float): Travel speed in pixels per second.
+        max_range (float): Maximum travel distance.
+        damage (int): Damage on hit.
+        confuse_duration (float): Duration of the confusion effect.
+        traveled (float): Distance traveled so far.
+        alive (bool): Whether the projectile is active.
+        animation_time (float): Visual animation timer.
+        trail (list): Position history for visual trail.
+    """
+    def __init__(self, pos, direction, speed, max_range, damage, confuse_duration):
+        self.pos = pygame.Vector2(pos)
+        self.direction = pygame.Vector2(direction)
+        if self.direction.length_squared() == 0:
+            self.direction = pygame.Vector2(1, 0)
+        else:
+            self.direction = self.direction.normalize()
+        self.speed = speed
+        self.max_range = max_range
+        self.damage = damage
+        self.confuse_duration = confuse_duration
+        self.traveled = 0.0
+        self.alive = True
+        self.animation_time = 0.0
+        self.trail = []
+        self.trail_length = 12
+
+    def _size(self):
+        return 14, 8
+
+    def get_rect(self):
+        w, h = self._size()
+        rect = pygame.Rect(0, 0, w, h)
+        rect.center = (int(self.pos.x), int(self.pos.y))
+        return rect
+
+    def update(self, dt, obstacles, player):
+        if not self.alive:
+            return
+        self.animation_time += dt
+        movement = self.direction * self.speed * dt
+        self.pos += movement
+        self.traveled += movement.length()
+        self.trail.append(pygame.Vector2(self.pos))
+        if len(self.trail) > self.trail_length:
+            self.trail.pop(0)
+        rect = self.get_rect()
+        for wall in obstacles:
+            if rect.colliderect(wall):
+                self.alive = False
+                return
+        if player and rect.colliderect(player.get_rect()):
+            if self.damage > 0:
+                player.take_damage(self.damage)
+            if self.confuse_duration > 0:
+                player.add_effect(ConfusionEffect(self.confuse_duration))
+            self.alive = False
+            return
+        if self.traveled >= self.max_range:
+            self.alive = False
+
+    def draw(self, screen, camera_offset=None):
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+        cx = int(self.pos.x - camera_offset.x)
+        cy = int(self.pos.y - camera_offset.y)
+        t = self.animation_time
+        pulse = 0.6 + 0.4 * math.sin(t * 14)
+        for i, pos in enumerate(self.trail):
+            ratio = i / len(self.trail) if self.trail else 0
+            alpha = int(70 * ratio)
+            r = int(2 + 3 * ratio)
+            ts = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
+            wobble = math.sin(t * 10 + i * 0.8) * 2
+            pygame.draw.circle(ts, (100, 40, 160, alpha), (r + int(wobble), r), r)
+            screen.blit(ts, (pos.x - r - camera_offset.x + wobble, pos.y - r - camera_offset.y))
+        glow_sz = int(12 + 5 * pulse)
+        gs = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+        pygame.draw.circle(gs, (120, 40, 180, int(40 + 30 * pulse)), (glow_sz, glow_sz), glow_sz)
+        screen.blit(gs, (cx - glow_sz, cy - glow_sz))
+        ring_r = int(7 + 3 * pulse)
+        ring_a = int(50 + 30 * pulse)
+        pygame.draw.circle(screen, (140, 60, 200, ring_a), (cx, cy), ring_r, 2)
+        body_r = 6
+        pygame.draw.circle(screen, (80, 30, 140), (cx, cy), body_r)
+        pygame.draw.circle(screen, (140, 60, 200), (cx, cy), body_r - 2)
+        inner_r = max(1, body_r - 4)
+        pygame.draw.circle(screen, (200, 140, 255), (cx, cy), inner_r)
+        pygame.draw.circle(screen, (240, 200, 255), (cx, cy), max(1, inner_r // 2))
+        for i in range(3):
+            sa = t * 5 + i * math.pi * 2 / 3
+            sd = 10 + 3 * math.sin(t * 4 + i)
+            sx = cx + int(math.cos(sa) * sd)
+            sy = cy + int(math.sin(sa) * sd)
+            ss = 2
+            sa_alpha = int(160 + 60 * math.sin(t * 7 + i * 2))
+            pygame.draw.circle(screen, (180, 100, 240, sa_alpha), (sx, sy), ss)
+
+
+# ============================================================
+# CHAIN LIGHTNING BOLT — stormcaller projectile that stuns
+# ============================================================
+class ChainLightningBolt:
+    """Lightning bolt projectile that applies dizziness on hit."""
+    def __init__(self, origin, direction, speed, max_range, damage, dizzy_duration):
+        self.pos = pygame.Vector2(origin)
+        self.direction = pygame.Vector2(direction).normalize()
+        self.speed = speed
+        self.max_range = max_range
+        self.damage = damage
+        self.dizzy_duration = dizzy_duration
+        self.alive = True
+        self.traveled = 0.0
+        self.trail = []
+        self.animation_time = 0.0
+        self._zigzag_offset = 0.0
+        self._last_zigzag = 0
+
+    def get_rect(self):
+        rect = pygame.Rect(0, 0, 8, 8)
+        rect.center = (int(self.pos.x), int(self.pos.y))
+        return rect
+
+    def update(self, dt, obstacles, player):
+        if not self.alive:
+            return
+        self.animation_time += dt
+        self.traveled += self.speed * dt
+        self.pos += self.direction * self.speed * dt
+        self.trail.append(pygame.Vector2(self.pos))
+        if len(self.trail) > 12:
+            self.trail.pop(0)
+        # zigzag lightning wobble
+        self._zigzag_offset = math.sin(self.animation_time * 30) * 4
+        # hit player
+        pr = player.get_rect()
+        bolt_rect = pygame.Rect(int(self.pos.x) - 4, int(self.pos.y) - 4, 8, 8)
+        if bolt_rect.colliderect(pr):
+            if self.damage > 0:
+                player.take_damage(self.damage)
+            if self.dizzy_duration > 0:
+                player.add_effect(DizzinessEffect(self.dizzy_duration))
+            self.alive = False
+            return
+        if self.traveled >= self.max_range:
+            self.alive = False
+
+    def draw(self, screen, camera_offset=None):
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+        t = self.animation_time
+        # main bolt — jagged line from trail
+        if len(self.trail) >= 2:
+            for i in range(len(self.trail) - 1):
+                p1 = self.trail[i]
+                p2 = self.trail[i + 1]
+                ratio = i / len(self.trail)
+                a = int(255 * ratio)
+                # perp wobble for lightning shape
+                wobble = math.sin(t * 30 + i * 2.5) * 5
+                perp_x = -self.direction.y * wobble
+                perp_y = self.direction.x * wobble
+                sx1 = int(p1.x - camera_offset.x + perp_x)
+                sy1 = int(p1.y - camera_offset.y + perp_y)
+                sx2 = int(p2.x - camera_offset.x + perp_x)
+                sy2 = int(p2.y - camera_offset.y + perp_y)
+                pygame.draw.line(screen, (100, 180, 255, a), (sx1, sy1), (sx2, sy2), 3)
+                pygame.draw.line(screen, (220, 240, 255, a), (sx1, sy1), (sx2, sy2), 1)
+        # glow at tip
+        cx = int(self.pos.x - camera_offset.x)
+        cy = int(self.pos.y - camera_offset.y)
+        glow_sz = int(10 + 4 * math.sin(t * 20))
+        gs = pygame.Surface((glow_sz * 2, glow_sz * 2), pygame.SRCALPHA)
+        pygame.draw.circle(gs, (100, 200, 255, int(60 + 30 * math.sin(t * 15))),
+                           (glow_sz, glow_sz), glow_sz)
+        screen.blit(gs, (cx - glow_sz, cy - glow_sz))
+        pygame.draw.circle(screen, (180, 220, 255), (cx, cy), 4)
+        pygame.draw.circle(screen, (240, 250, 255), (cx, cy), 2)
+        # branching sparks
+        for i in range(3):
+            spark_angle = t * 12 + i * 2.09
+            spark_d = 8 + math.sin(t * 10 + i) * 3
+            sx = cx + int(math.cos(spark_angle) * spark_d)
+            sy = cy + int(math.sin(spark_angle) * spark_d)
+            pygame.draw.line(screen, (150, 200, 255, 180), (cx, cy), (sx, sy), 1)
+
+
+# ============================================================
+# PLAGUE CLOUD — plaguebearer projectile that poisons on hit
+# ============================================================
+class PlagueCloud:
+    """Toxic cloud projectile that applies poison and slow on hit."""
+    def __init__(self, origin, direction, speed, max_range, damage, poison_duration, poison_dps):
+        self.pos = pygame.Vector2(origin)
+        self.direction = pygame.Vector2(direction).normalize()
+        self.speed = speed
+        self.max_range = max_range
+        self.damage = damage
+        self.poison_duration = poison_duration
+        self.poison_dps = poison_dps
+        self.alive = True
+        self.traveled = 0.0
+        self.trail = []
+        self.animation_time = 0.0
+
+    def get_rect(self):
+        rect = pygame.Rect(0, 0, 20, 20)
+        rect.center = (int(self.pos.x), int(self.pos.y))
+        return rect
+
+    def update(self, dt, obstacles, player):
+        if not self.alive:
+            return
+        self.animation_time += dt
+        self.traveled += self.speed * dt
+        self.pos += self.direction * self.speed * dt
+        self.trail.append(pygame.Vector2(self.pos))
+        if len(self.trail) > 10:
+            self.trail.pop(0)
+        pr = player.get_rect()
+        cloud_rect = pygame.Rect(int(self.pos.x) - 10, int(self.pos.y) - 10, 20, 20)
+        if cloud_rect.colliderect(pr):
+            if self.damage > 0:
+                player.take_damage(self.damage)
+            if self.poison_duration > 0:
+                player.add_effect(PoisonEffect(self.poison_duration, self.poison_dps))
+            self.alive = False
+            return
+        if self.traveled >= self.max_range:
+            self.alive = False
+
+    def draw(self, screen, camera_offset=None):
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+        t = self.animation_time
+        cx = int(self.pos.x - camera_offset.x)
+        cy = int(self.pos.y - camera_offset.y)
+        # toxic trail
+        for i, pos in enumerate(self.trail):
+            ratio = i / len(self.trail) if self.trail else 0
+            a = int(100 * ratio)
+            r = int(2 + 5 * ratio)
+            tx = int(pos.x - camera_offset.x)
+            ty = int(pos.y - camera_offset.y)
+            wobble = math.sin(t * 6 + i * 0.9) * 3
+            pygame.draw.circle(screen, (80, 160, 60, a), (tx + int(wobble), ty), r)
+        # main cloud body — layered circles
+        pulse = 0.7 + 0.3 * math.sin(t * 8)
+        for layer in range(3):
+            lr = int((8 + layer * 3) * pulse)
+            la = int(180 - layer * 40)
+            off_x = int(math.sin(t * 5 + layer) * 3)
+            off_y = int(math.cos(t * 4 + layer) * 2)
+            pygame.draw.circle(screen, (70 + layer * 20, 140 - layer * 10, 50 + layer * 10, la),
+                               (cx + off_x, cy + off_y), lr)
+        # bright center
+        pygame.draw.circle(screen, (120, 200, 80), (cx, cy), 4)
+        pygame.draw.circle(screen, (180, 240, 140), (cx, cy), 2)
+        # toxic drip particles
+        for i in range(3):
+            drip_angle = t * 3 + i * 2.09
+            drip_d = 12 + math.sin(t * 4 + i) * 3
+            dx = cx + int(math.cos(drip_angle) * drip_d)
+            dy = cy + int(math.sin(drip_angle) * drip_d) + 4
+            pygame.draw.circle(screen, (100, 180, 60, 150), (dx, dy), 2)

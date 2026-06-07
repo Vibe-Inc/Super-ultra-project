@@ -725,7 +725,576 @@ def _draw_bomber_strike(screen, cx, cy, direction, progress, strength, enemy):
 
 
 # ============================================================
-# GENERIC FALLBACK — basic curved slash
+# PHANTOM DRAIN — spectral beam that siphons life
+# ============================================================
+def _draw_phantom_drain(screen, cx, cy, direction, progress, strength, enemy):
+    rng = _seeded(enemy, 88)
+
+    # spectral beam from caster outward
+    beam_len = int(50 * strength * progress)
+    target_x = cx + int(direction.x * beam_len)
+    target_y = cy + int(direction.y * beam_len)
+
+    # outer dark aura
+    for layer in range(3):
+        lf = 1.0 - layer * 0.2
+        a = int(120 * (1 - progress) * lf)
+        r = int((14 + 20 * progress) * lf * strength)
+        _aa_circle(screen, (80, 40, 120, a), (cx, cy), r)
+
+    # spectral beam (pulsing wavy line)
+    if progress > 0.1:
+        bp = (progress - 0.1) / 0.9
+        num_pts = 12
+        pts = []
+        for i in range(num_pts + 1):
+            t = i / num_pts
+            bx = cx + int(direction.x * t * beam_len)
+            by = cy + int(direction.y * t * beam_len)
+            # perpendicular wave
+            wave = math.sin(t * 8 + progress * 12) * (6 + progress * 8) * strength
+            perp_x = -direction.y
+            perp_y = direction.x
+            bx += int(perp_x * wave)
+            by += int(perp_y * wave)
+            pts.append((bx, by))
+        if len(pts) >= 2:
+            # dark beam
+            for i in range(len(pts) - 1):
+                ba = int(200 * (1 - bp))
+                _aa_line(screen, (100, 40, 160, ba), pts[i], pts[i + 1], 4)
+                _aa_line(screen, (180, 120, 240, ba), pts[i], pts[i + 1], 2)
+                _aa_line(screen, (220, 180, 255, ba // 2), pts[i], pts[i + 1], 1)
+
+        # spectral wisps orbiting the beam
+        for wi in range(4):
+            angle = progress * 6 + wi * 1.57
+            wr = int(10 + progress * 12 * strength)
+            wx = cx + int(direction.x * beam_len * 0.5 + math.cos(angle) * wr)
+            wy = cy + int(direction.y * beam_len * 0.5 + math.sin(angle) * wr)
+            ws = max(1, int(3 * (1 - progress)))
+            _aa_circle(screen, (160, 100, 220, int(180 * (1 - progress))), (wx, wy), ws)
+
+    # drain effect at target (pulsing purple ring)
+    if progress > 0.3:
+        dp = (progress - 0.3) / 0.7
+        ring_r = int((8 + 18 * dp) * strength)
+        _aa_circle(screen, (180, 100, 255, int(200 * (1 - dp))), (target_x, target_y), ring_r, 2)
+        _aa_circle(screen, (140, 60, 200, int(160 * (1 - dp))), (target_x, target_y), ring_r // 2, 1)
+
+    # life essence particles flowing back to caster
+    if progress > 0.4:
+        lp = (progress - 0.4) / 0.6
+        for i in range(6):
+            pp = (lp - i * 0.06) * 1.3
+            if pp < 0 or pp > 1:
+                continue
+            dist = (1 - pp) * beam_len
+            px = cx + int(direction.x * dist)
+            py = cy + int(direction.y * dist)
+            _aa_circle(screen, (100, 255, 120, int(200 * (1 - pp))), (px, py), max(1, int(2 * (1 - pp))))
+
+
+# ============================================================
+# TITAN STOMP — ground-shattering AoE slam
+# ============================================================
+def _draw_titan_stomp(screen, cx, cy, direction, progress, strength, enemy):
+    rng = _seeded(enemy, 99)
+
+    # Phase A: heavy wind-up (0 .. 0.3)
+    if progress < 0.35:
+        p = progress / 0.35
+        # rising dust cloud
+        for i in range(4):
+            ang = rng.uniform(0, math.tau)
+            d = 6 + p * 14
+            dx = cx + int(math.cos(ang) * d)
+            dy = cy - int(p * 16 * strength) + int(math.sin(ang) * d * 0.4)
+            r = max(2, int(6 * (1 - p) * strength))
+            _aa_circle(screen, (140, 130, 110, int(180 * (1 - p))), (dx, dy), r)
+
+    # Phase B: impact shockwave (0.25 .. 1.0)
+    if progress >= 0.25:
+        p = (progress - 0.25) / 0.75
+
+        # expanding ground shockwave rings
+        for i in range(3):
+            ri_p = max(0.0, min(1.0, p - i * 0.15))
+            if ri_p <= 0:
+                continue
+            r = int((30 + 130 * ri_p) * strength)
+            a = int(220 * (1 - ri_p))
+            _ground_shockwave(screen, cx, cy + int(20 * strength), r,
+                              (140, 130, 110, a), (180, 170, 150, a // 4))
+            # inner ring highlight
+            if r > 10:
+                _ground_shockwave(screen, cx, cy + int(20 * strength), r - 4,
+                                  (200, 190, 170, int(a * 0.6)))
+
+        # central impact flash
+        flash_p = _curve(p, 0.12)
+        if flash_p > 0:
+            flash_r = int(25 * flash_p * strength)
+            _aa_circle(screen, (220, 210, 180, int(200 * flash_p)), (cx, cy + int(16 * strength)), flash_r)
+            _aa_circle(screen, (255, 240, 200, int(220 * flash_p)), (cx, cy + int(16 * strength)), flash_r // 2)
+
+        # radiating crack lines
+        crack_p = max(0.0, min(1.0, (progress - 0.28) / 0.5))
+        if crack_p > 0:
+            for i in range(10):
+                ang = i * math.tau / 10 + rng.uniform(-0.12, 0.12)
+                rr = int((18 + 100 * crack_p) * strength)
+                ex = cx + int(math.cos(ang) * rr)
+                ey = cy + int(22 * strength) + int(math.sin(ang) * rr * 0.45)
+                _aa_line(screen, (100, 90, 75, int(200 * (1 - crack_p))),
+                         (cx, cy + int(22 * strength)), (ex, ey),
+                         max(1, int(3 * (1 - crack_p))))
+                _aa_line(screen, (180, 170, 150, int(150 * (1 - crack_p))),
+                         (cx, cy + int(22 * strength)), (ex, ey), 1)
+
+        # debris chunks flying
+        for i in range(12):
+            cp = (p - i * 0.03) * 1.4
+            if cp < 0 or cp > 1:
+                continue
+            ang = rng.uniform(0, math.tau)
+            dist = 10 + cp * 70 * strength
+            dx2 = cx + int(math.cos(ang) * dist)
+            dy2 = cy + int(22 * strength) + int(math.sin(ang) * dist * 0.4) - int(cp * 25)
+            chunk_r = max(1, int(3 * (1 - cp)))
+            col = rng.choice([(140, 130, 110), (110, 100, 88), (180, 170, 150)])
+            _aa_circle(screen, (*col, int(220 * (1 - cp))), (dx2, dy2), chunk_r)
+
+        # dust cloud rising
+        if progress > 0.4:
+            sp = (progress - 0.4) / 0.6
+            for i in range(5):
+                off = (i - 2) * 10
+                sy_off = cy - int(sp * 22 * strength) + int(6 * math.sin(sp * 5 + i))
+                _aa_circle(screen, (150, 140, 120, int(100 * (1 - sp))),
+                           (cx + off, sy_off + int(12 * strength)),
+                           int((5 + sp * 10) * strength))
+
+
+# ============================================================
+# CRYOMANCER NOVA — close-range frost explosion + ice shards
+# ============================================================
+def _draw_cryomancer_nova(screen, cx, cy, direction, progress, strength, enemy):
+    rng = _seeded(enemy, 110)
+
+    # expanding frost nova rings
+    for layer in range(4):
+        lf = 1.0 - layer * 0.18
+        r = int((15 + 55 * progress) * strength * lf)
+        a = int(180 * (1 - progress) * lf)
+        _aa_circle(screen, (140, 200, 255, a), (cx, cy), r, max(1, int(3 * lf)))
+        if r > 8:
+            _aa_circle(screen, (200, 240, 255, a // 2), (cx, cy), r - 4, max(1, int(2 * lf)))
+
+    # inner bright core
+    if progress < 0.5:
+        cp = progress / 0.5
+        core_r = int((4 + 12 * cp) * strength)
+        _aa_circle(screen, (220, 245, 255, int(220 * (1 - cp))), (cx, cy), core_r)
+
+    # ice crystal shards flying outward
+    if progress > 0.15:
+        ip = (progress - 0.15) / 0.85
+        for i in range(8):
+            angle = i * math.tau / 8 + rng.uniform(-0.15, 0.15)
+            dist = (8 + ip * 55 * strength)
+            ix = cx + int(math.cos(angle) * dist)
+            iy = cy + int(math.sin(angle) * dist)
+            shard_len = int(8 * (1 - ip) * strength)
+            # crystal diamond shape
+            tip = (ix + int(math.cos(angle) * shard_len), iy + int(math.sin(angle) * shard_len))
+            back = (ix - int(math.cos(angle) * shard_len // 2), iy - int(math.sin(angle) * shard_len // 2))
+            perp = (int(-math.sin(angle) * 3), int(math.cos(angle) * 3))
+            a = int(220 * (1 - ip))
+            _aa_polygon(screen, (160, 220, 255, a),
+                        [(ix, iy), (tip[0] + perp[0], tip[1] + perp[1]), back])
+            _aa_polygon(screen, (220, 245, 255, a),
+                        [(ix, iy), (tip[0] - perp[0], tip[1] - perp[1]), back])
+            # bright tip
+            _aa_circle(screen, (255, 255, 255, a), tip, max(1, int(2 * (1 - ip))))
+
+    # frost sparkles
+    for i in range(10):
+        sp = (progress - i * 0.04) * 1.3
+        if sp < 0 or sp > 1:
+            continue
+        ang = rng.uniform(0, math.tau)
+        d = 6 + sp * 50 * strength
+        sx = cx + int(math.cos(ang) * d)
+        sy = cy + int(math.sin(ang) * d)
+        sz = max(1, int(3 * (1 - sp)))
+        _aa_polygon(screen, (220, 250, 255, int(200 * (1 - sp))),
+                    [(sx, sy - sz), (sx + sz, sy), (sx, sy + sz), (sx - sz, sy)])
+
+    # cold mist at feet
+    if progress > 0.3:
+        mp = (progress - 0.3) / 0.7
+        for i in range(4):
+            off = (i - 1.5) * 10
+            my = cy + int(18 * strength) - int(mp * 8)
+            mr = int((6 + mp * 12) * strength)
+            _aa_ellipse(screen, (200, 230, 255, int(100 * (1 - mp))),
+                        (cx + off - mr // 2, my - mr // 4, mr, mr // 2))
+
+
+# ============================================================
+# SHADOWMANCER BLINK — teleport + shadow energy burst
+# ============================================================
+def _draw_shadowmancer_blink(screen, cx, cy, direction, progress, strength, enemy):
+    rng = _seeded(enemy, 120)
+
+    # Phase A: shadow vortex forming (0 .. 0.35)
+    if progress < 0.40:
+        p = progress / 0.40
+        # swirling shadow particles
+        for i in range(8):
+            angle = p * 4.0 + i * math.tau / 8
+            r = int((20 - p * 10) * strength)
+            sx = cx + int(math.cos(angle) * r)
+            sy = cy + int(math.sin(angle) * r)
+            _aa_circle(screen, (60, 20, 100, int(200 * (1 - p))), (sx, sy),
+                       max(2, int(5 * (1 - p) * strength)))
+        # central void
+        void_r = int((4 + p * 12) * strength)
+        _aa_circle(screen, (30, 10, 50, int(220 * (1 - p))), (cx, cy), void_r)
+
+    # Phase B: blink flash (0.25 .. 0.65)
+    if 0.25 <= progress < 0.70:
+        p = (progress - 0.25) / 0.45
+        # purple flash burst
+        flash_r = int((25 + 40 * _curve(p, 0.3)) * strength)
+        _aa_circle(screen, (160, 80, 220, int(200 * (1 - _curve(p, 0.3)))),
+                   (cx, cy), flash_r)
+        # shadow energy ring
+        ring_r = int((15 + 35 * p) * strength)
+        _impact_ring(screen, cx, cy, ring_r,
+                     (120, 40, 180, int(220 * (1 - p))), width=3)
+
+        # outward shadow bolts
+        for i in range(6):
+            angle = i * math.tau / 6 + rng.uniform(-0.12, 0.12)
+            dist = 8 + p * 40 * strength
+            bx = cx + int(math.cos(angle) * dist)
+            by = cy + int(math.sin(angle) * dist)
+            _aa_line(screen, (100, 40, 160, int(220 * (1 - p))),
+                     (cx, cy), (bx, by), max(1, int(3 * (1 - p))))
+            _aa_circle(screen, (180, 100, 240, int(200 * (1 - p))), (bx, by),
+                       max(1, int(3 * (1 - p))))
+
+    # Phase C: shadow trail dissipating (0.5 .. 1.0)
+    if progress > 0.5:
+        sp = (progress - 0.5) / 0.5
+        # shadow particles fading away
+        for i in range(10):
+            fp = (sp - i * 0.05) * 1.3
+            if fp < 0 or fp > 1:
+                continue
+            ang = rng.uniform(0, math.tau)
+            d = 10 + fp * 55 * strength
+            fx = cx + int(math.cos(ang) * d)
+            fy = cy + int(math.sin(ang) * d)
+            fs = max(1, int(4 * (1 - fp) * strength))
+            _aa_circle(screen, (80, 30, 120, int(180 * (1 - fp))), (fx, fy), fs)
+            # bright purple core
+            _aa_circle(screen, (180, 100, 240, int(140 * (1 - fp))), (fx, fy), max(1, fs - 1))
+
+    # residual shadow on ground
+    if progress > 0.6:
+        gp = (progress - 0.6) / 0.4
+        _ground_shockwave(screen, cx, cy + int(18 * strength),
+                          int((10 + 20 * gp) * strength),
+                          (80, 30, 120, int(160 * (1 - gp))),
+                          (40, 15, 60, int(80 * (1 - gp))))
+
+
+# ============================================================
+# REVENANT SLASH — cursed soul slash with green lifesteal particles
+# ============================================================
+def _draw_revenant_slash(screen, cx, cy, direction, progress, strength, enemy):
+    rng = _seeded(enemy, 130)
+    fwd_angle_deg = math.degrees(math.atan2(direction.y, direction.x))
+
+    # dark crescent slash
+    sweep_deg = 150
+    radius = int(44 * strength)
+    _slash_arc(screen, cx, cy, fwd_angle_deg, sweep_deg, radius + 4, progress * 1.1,
+               (30, 40, 35, int(220 * (1 - progress))), width=8, layers=2)
+    _slash_arc(screen, cx, cy, fwd_angle_deg, sweep_deg, radius, progress * 1.1,
+               (100, 200, 150, int(220 * (1 - progress))), width=5, layers=3)
+    _slash_arc(screen, cx, cy, fwd_angle_deg, sweep_deg, radius - 3, progress * 1.1,
+               (180, 255, 200, int(200 * (1 - progress))), width=2, layers=2)
+
+    # green lifesteal particles flowing back to caster
+    if progress > 0.3:
+        lp = (progress - 0.3) / 0.7
+        for i in range(8):
+            pp = (lp - i * 0.05) * 1.3
+            if pp < 0 or pp > 1:
+                continue
+            ang = rng.uniform(0, math.tau)
+            d = 10 + pp * 40 * strength
+            lx = cx + int(math.cos(ang) * d)
+            ly = cy + int(math.sin(ang) * d) - int(pp * 10)
+            _aa_circle(screen, (80, 255, 140, int(200 * (1 - pp))), (lx, ly), max(1, int(3 * (1 - pp))))
+
+    # dark energy sparks
+    for i in range(6):
+        sp = (progress - i * 0.04) * 1.3
+        if sp < 0 or sp > 1:
+            continue
+        ang = rng.uniform(0, math.tau)
+        d = 8 + sp * 35 * strength
+        sx = cx + int(math.cos(ang) * d)
+        sy = cy + int(math.sin(ang) * d)
+        _aa_circle(screen, (60, 180, 120, int(220 * (1 - sp))), (sx, sy), max(1, int(2 * (1 - sp))))
+
+
+# ============================================================
+# REVENANT UNDYING — soul surge when undying will triggers
+# ============================================================
+def _draw_revenant_undying(screen, cx, cy, direction, progress, strength, enemy):
+    rng = _seeded(enemy, 131)
+
+    # soul energy burst outward
+    for layer in range(4):
+        lf = 1.0 - layer * 0.2
+        r = int((20 + 50 * progress) * strength * lf)
+        a = int(200 * (1 - progress) * lf)
+        _aa_circle(screen, (80, 220, 160, a), (cx, cy), r, max(1, int(3 * lf)))
+
+    # bright soul pulse
+    flash_p = _curve(progress, 0.2)
+    if flash_p > 0:
+        _aa_circle(screen, (140, 255, 200, int(220 * flash_p)),
+                   (cx, cy), int(20 * flash_p * strength))
+
+    # soul particles spiraling inward (healing)
+    for i in range(10):
+        angle = progress * 6 + i * 0.63
+        r = int((40 - progress * 30) * strength)
+        sx = cx + int(math.cos(angle) * r)
+        sy = cy + int(math.sin(angle) * r)
+        _aa_circle(screen, (100, 255, 180, int(200 * (1 - progress))), (sx, sy), max(1, int(3 * (1 - progress))))
+
+    # rune ring
+    rune_r = int((15 + 25 * progress) * strength)
+    _impact_ring(screen, cx, cy, rune_r,
+                 (80, 200, 150, int(220 * (1 - progress))), width=2)
+
+
+# ============================================================
+# MOLTEN NOVA — fire explosion with lava splatter
+# ============================================================
+def _draw_molten_nova(screen, cx, cy, direction, progress, strength, enemy):
+    rng = _seeded(enemy, 140)
+
+    # expanding fire rings
+    for layer in range(3):
+        lf = 1.0 - layer * 0.2
+        r = int((15 + 55 * progress) * strength * lf)
+        a = int(200 * (1 - progress) * lf)
+        _aa_circle(screen, (255, 140, 30, a), (cx, cy), r, max(1, int(3 * lf)))
+        if r > 8:
+            _aa_circle(screen, (255, 200, 80, a // 2), (cx, cy), r - 4, max(1, int(2 * lf)))
+
+    # inner bright core
+    if progress < 0.4:
+        cp = progress / 0.4
+        core_r = int((5 + 14 * cp) * strength)
+        _aa_circle(screen, (255, 230, 140, int(220 * (1 - cp))), (cx, cy), core_r)
+        _aa_circle(screen, (255, 255, 220, int(200 * (1 - cp))), (cx, cy), core_r // 2)
+
+    # lava splatter
+    if progress > 0.15:
+        lp = (progress - 0.15) / 0.85
+        for i in range(10):
+            sp = (lp - i * 0.04) * 1.3
+            if sp < 0 or sp > 1:
+                continue
+            ang = rng.uniform(0, math.tau)
+            d = 8 + sp * 50 * strength
+            lx = cx + int(math.cos(ang) * d)
+            ly = cy + int(math.sin(ang) * d)
+            lr = max(1, int(4 * (1 - sp)))
+            col = rng.choice([(255, 140, 30), (255, 100, 20), (255, 180, 60)])
+            _aa_circle(screen, (*col, int(220 * (1 - sp))), (lx, ly), lr)
+
+    # embers rising
+    for i in range(8):
+        ep = (progress - i * 0.04) * 1.2
+        if ep < 0 or ep > 1:
+            continue
+        ang = rng.uniform(-math.pi, 0)
+        dist = 10 + ep * 40 * strength
+        ex = cx + int(math.cos(ang) * dist)
+        ey = cy + int(math.sin(ang) * dist) - int(ep * 20)
+        _aa_circle(screen, (255, 180, 60, int(200 * (1 - ep))), (ex, ey), max(1, int(2 * (1 - ep))))
+
+
+# ============================================================
+# MOLTEN SLAM — charge impact with ground裂 crack lines
+# ============================================================
+def _draw_molten_slam(screen, cx, cy, direction, progress, strength, enemy):
+    rng = _seeded(enemy, 141)
+    fwd_angle_deg = math.degrees(math.atan2(direction.y, direction.x))
+
+    # bright impact flash
+    flash_p = _curve(progress, 0.15)
+    if flash_p > 0:
+        _aa_circle(screen, (255, 220, 140, int(220 * flash_p)),
+                   (cx, cy), int(22 * flash_p * strength))
+        _aa_circle(screen, (255, 140, 30, int(200 * flash_p)),
+                   (cx, cy), int(14 * flash_p * strength))
+
+    # forward sweep arc
+    sweep_deg = 120
+    radius = int(42 * strength)
+    _slash_arc(screen, cx, cy, fwd_angle_deg, sweep_deg, radius, progress * 1.15,
+               (255, 120, 30, int(220 * (1 - progress))), width=6, layers=3)
+    _slash_arc(screen, cx, cy, fwd_angle_deg, sweep_deg, radius - 3, progress * 1.15,
+               (255, 200, 80, int(200 * (1 - progress))), width=2, layers=2)
+
+    # expanding fire ring
+    ring_r = int((10 + 40 * progress) * strength)
+    _impact_ring(screen, cx, cy, ring_r,
+                 (255, 140, 30, int(220 * (1 - progress))), width=3)
+
+    # ground crack lines
+    crack_p = max(0.0, min(1.0, (progress - 0.2) / 0.6))
+    if crack_p > 0:
+        for i in range(8):
+            ang = i * math.tau / 8 + rng.uniform(-0.12, 0.12)
+            rr = int((15 + 60 * crack_p) * strength)
+            ex = cx + int(math.cos(ang) * rr)
+            ey = cy + int(math.sin(ang) * rr * 0.45)
+            _aa_line(screen, (255, 160, 50, int(200 * (1 - crack_p))),
+                     (cx, cy), (ex, ey), max(1, int(2 * (1 - crack_p))))
+
+    # lava droplets
+    for i in range(6):
+        dp = (progress - i * 0.05) * 1.2
+        if dp < 0 or dp > 1:
+            continue
+        ang = rng.uniform(0, math.tau)
+        d = 10 + dp * 45 * strength
+        dx = cx + int(math.cos(ang) * d)
+        dy = cy + int(math.sin(ang) * d)
+        _aa_circle(screen, (255, 100, 20, int(220 * (1 - dp))), (dx, dy), max(1, int(3 * (1 - dp))))
+
+
+# ============================================================
+# STORMCALLER FIELD — static electricity burst
+# ============================================================
+def _draw_stormcaller_field(screen, cx, cy, direction, progress, strength, enemy):
+    rng = _seeded(enemy, 150)
+
+    # expanding static rings
+    for layer in range(3):
+        lf = 1.0 - layer * 0.2
+        r = int((15 + 50 * progress) * strength * lf)
+        a = int(180 * (1 - progress) * lf)
+        _aa_circle(screen, (100, 180, 255, a), (cx, cy), r, max(1, int(3 * lf)))
+
+    # lightning bolts branching outward
+    bolt_p = max(0.0, min(1.0, progress * 1.2))
+    for i in range(6):
+        angle = i * math.tau / 6 + rng.uniform(-0.15, 0.15)
+        length = int((15 + 40 * bolt_p) * strength)
+        # jagged lightning line
+        pts = [(cx, cy)]
+        bx, by = cx, cy
+        segments = 4
+        for seg in range(segments):
+            seg_len = length // segments
+            bx += int(math.cos(angle) * seg_len + rng.uniform(-5, 5))
+            by += int(math.sin(angle) * seg_len + rng.uniform(-5, 5))
+            pts.append((bx, by))
+        a = int(220 * (1 - bolt_p))
+        for j in range(len(pts) - 1):
+            _aa_line(screen, (140, 200, 255, a), pts[j], pts[j + 1], 2)
+            _aa_line(screen, (220, 240, 255, a), pts[j], pts[j + 1], 1)
+        # bright tip
+        _aa_circle(screen, (200, 230, 255, a), pts[-1], max(1, int(3 * (1 - bolt_p))))
+
+    # central flash
+    flash_p = _curve(progress, 0.15)
+    if flash_p > 0:
+        _aa_circle(screen, (200, 230, 255, int(200 * flash_p)),
+                   (cx, cy), int(15 * flash_p * strength))
+
+    # electric sparks
+    for i in range(8):
+        sp = (progress - i * 0.03) * 1.3
+        if sp < 0 or sp > 1:
+            continue
+        ang = rng.uniform(0, math.tau)
+        d = 8 + sp * 40 * strength
+        sx = cx + int(math.cos(ang) * d)
+        sy = cy + int(math.sin(ang) * d)
+        _aa_circle(screen, (180, 220, 255, int(220 * (1 - sp))), (sx, sy), max(1, int(2 * (1 - sp))))
+
+
+# ============================================================
+# PLAGUEBEARER NOVA — toxic pestilence explosion
+# ============================================================
+def _draw_plaguebearer_nova(screen, cx, cy, direction, progress, strength, enemy):
+    rng = _seeded(enemy, 160)
+
+    # expanding toxic rings
+    for layer in range(3):
+        lf = 1.0 - layer * 0.2
+        r = int((15 + 55 * progress) * strength * lf)
+        a = int(180 * (1 - progress) * lf)
+        _aa_circle(screen, (120, 180, 50, a), (cx, cy), r, max(1, int(3 * lf)))
+        if r > 8:
+            _aa_circle(screen, (160, 220, 80, a // 2), (cx, cy), r - 4, max(1, int(2 * lf)))
+
+    # inner toxic core
+    if progress < 0.4:
+        cp = progress / 0.4
+        core_r = int((5 + 12 * cp) * strength)
+        _aa_circle(screen, (160, 220, 80, int(200 * (1 - cp))), (cx, cy), core_r)
+
+    # poison cloud puffs
+    if progress > 0.15:
+        cp = (progress - 0.15) / 0.85
+        for i in range(8):
+            pp = (cp - i * 0.04) * 1.3
+            if pp < 0 or pp > 1:
+                continue
+            ang = rng.uniform(0, math.tau)
+            d = 10 + pp * 50 * strength
+            px = cx + int(math.cos(ang) * d)
+            py = cy + int(math.sin(ang) * d)
+            pr = max(2, int(8 * (1 - pp)))
+            col = rng.choice([(120, 180, 50), (100, 160, 40), (140, 200, 60)])
+            _aa_circle(screen, (*col, int(180 * (1 - pp))), (px, py), pr)
+
+    # toxic drip particles
+    for i in range(6):
+        dp = (progress - i * 0.05) * 1.2
+        if dp < 0 or dp > 1:
+            continue
+        ang = rng.uniform(0, math.tau)
+        d = 8 + dp * 40 * strength
+        dx = cx + int(math.cos(ang) * d)
+        dy = cy + int(math.sin(ang) * d) + int(dp * 15)
+        _aa_circle(screen, (140, 200, 60, int(200 * (1 - dp))), (dx, dy), max(1, int(3 * (1 - dp))))
+
+    # sickly green mist at ground
+    if progress > 0.3:
+        mp = (progress - 0.3) / 0.7
+        for i in range(4):
+            off = (i - 1.5) * 10
+            my = cy + int(16 * strength) - int(mp * 6)
+            mr = int((6 + mp * 14) * strength)
+            _aa_ellipse(screen, (120, 180, 50, int(90 * (1 - mp))),
+                        (cx + off - mr // 2, my - mr // 4, mr, mr // 2))
 # ============================================================
 def _draw_generic_strike(screen, cx, cy, direction, progress, strength, enemy):
     fwd_angle_deg = math.degrees(math.atan2(direction.y, direction.x))
@@ -753,5 +1322,15 @@ _DISPATCH = {
     "guardian_smash": _draw_guardian_smash,
     "arcanist_burst": _draw_arcanist_burst,
     "bomber_strike": _draw_bomber_strike,
+    "phantom_drain": _draw_phantom_drain,
+    "titan_stomp": _draw_titan_stomp,
+    "cryomancer_nova": _draw_cryomancer_nova,
+    "shadowmancer_blink": _draw_shadowmancer_blink,
+    "revenant_slash": _draw_revenant_slash,
+    "revenant_undying": _draw_revenant_undying,
+    "molten_nova": _draw_molten_nova,
+    "molten_slam": _draw_molten_slam,
+    "stormcaller_field": _draw_stormcaller_field,
+    "plaguebearer_nova": _draw_plaguebearer_nova,
     "generic_strike": _draw_generic_strike,
 }
