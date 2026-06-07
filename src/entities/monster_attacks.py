@@ -1378,6 +1378,8 @@ class PlaguebearerAttack(BaseAttack):
         self.last_attack_time = context.now_ms
 
 
+
+
 def build_attack_controller(profile: str | None, config: dict | None = None) -> BaseAttack | None:
     name = (profile or "").lower()
     if name == "brute":

@@ -22,6 +22,7 @@ from src.inventory.system import MAIN_player_inventory, MAIN_player_inventory_eq
 from src.items.items import create_item, LightRing
 from database.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, DizzinessEffect, SlowEffect
 from src.entities.enemy import Enemy
+from src.entities.boss import Boss
 from src.entities.npc import NPC
 from src.entities.mage_npc import MageNPC
 from src.entities.projectile import Arrow
@@ -32,6 +33,8 @@ from src.core.collision_system import CollisionSystem
 from src.ai.navigation import NavGrid
 from src.entities.monster_visuals import build_monster_animations
 from src.entities.monster_attacks import build_attack_controller, AttackContext
+from src.entities.boss_visuals import build_boss_animations
+from src.entities.boss_attacks import build_boss_attack_controller
 from src.combat.base_player_combat import PlayerCombatController
 from src.minigames.blackjack import BlackjackGame
 from src.minigames.roulette import RouletteGame
@@ -724,6 +727,50 @@ class Game(State):
                     {"item_id": "potion_of_confusion", "chance": 0.15},
                 ],
             },
+            "chronos": {
+                "visual_style": "chronos",
+                "sprite_set": "MenHuman1(Recolor)",
+                "speed": 120.0,
+                "hp": 600,
+                "damage": 25,
+                "animation_speed": 6.0,
+                "animation_size": (160, 160),
+                "detection_range": 500.0,
+                "attack_range": 70.0,
+                "ai_profile": "stalker",
+                "ai_config": {
+                    "preferred_min": 80.0,
+                    "preferred_max": 200.0,
+                    "orbit_radius": 150.0,
+                },
+                "attack_profile": "chronos",
+                "attack_config": {
+                    "cooldown_ms": 1200,
+                    "bolt_speed": 450.0,
+                    "bolt_range": 500.0,
+                    "bolt_damage_mult": 0.85,
+                    "slow_duration": 2.0,
+                    "slow_factor": 0.5,
+                    "melee_damage_mult": 1.2,
+                    "melee_range": 60.0,
+                    "burst_cooldown_ms": 3500,
+                    "burst_radius": 100.0,
+                    "burst_damage_mult": 1.0,
+                    "rift_cooldown_ms": 4000,
+                    "rift_distance": 150.0,
+                    "storm_cooldown_ms": 6000,
+                    "storm_radius": 140.0,
+                    "storm_damage_mult": 1.5,
+                    "freeze_duration": 2.0,
+                    "enrage_speed_mult": 1.6,
+                },
+                "contact_damage": True,
+                "is_boss": True,
+                "boss_name": "Chronos the Chronicler of Time",
+                "drop_chance": [
+                    {"item_id": "large_health_potion", "chance": 1.0},
+                ],
+            },
         }
         self.enemy_profile_names = list(self.enemy_profiles.keys())
 
@@ -742,6 +789,7 @@ class Game(State):
                 {"pos": (300, 200),  "profile": "skirmisher"},
                 {"pos": (900, 500),  "profile": "bomber"},
                 {"pos": (1400, 800), "profile": "phantom"},
+                {"pos": (2200, 1200), "profile": "chronos", "is_boss": True},
             ],
         }
 
@@ -1601,25 +1649,40 @@ class Game(State):
             radius = float(settings.get("patrol_radius", 120.0))
             patrol_points = self._make_patrol_points(pygame.Vector2(x, y), radius)
 
-        enemy = Enemy(
-            x=x,
-            y=y,
-            sprite_set=sprite_set,
-            speed=settings["speed"],
-            hp=settings["hp"],
-            damage=settings["damage"],
-            animation_size=(85, 85),
-            animation_speed=settings.get("animation_speed", 6.0),
-            detection_range=settings.get("detection_range", 250.0),
-            attack_range=settings.get("attack_range", 40.0),
-            patrol_points=patrol_points,
-            ai_profile=ai_profile,
-            ai_config=settings.get("ai_config"),
-            animations=animations,
-            attack_controller=attack_controller,
-            contact_damage=contact_damage,
-            visual_style=visual_style,
-        )
+        is_boss = settings.get("is_boss", False)
+        anim_size = settings.get("animation_size", (85, 85))
+        if is_boss:
+            boss_name = settings.get("boss_name", "Boss")
+            if attack_profile:
+                attack_controller = build_boss_attack_controller(attack_profile, settings.get("attack_config"))
+            animations = None
+            if visual_style:
+                animations = build_boss_animations(visual_style, anim_size)
+            enemy = Boss(
+                x=x, y=y, sprite_set=sprite_set,
+                speed=settings["speed"], hp=settings["hp"], damage=settings["damage"],
+                animation_size=anim_size, animation_speed=settings.get("animation_speed", 6.0),
+                detection_range=settings.get("detection_range", 250.0),
+                attack_range=settings.get("attack_range", 40.0),
+                boss_name=boss_name,
+                patrol_points=patrol_points, ai_profile=ai_profile,
+                ai_config=settings.get("ai_config"), animations=animations,
+                attack_controller=attack_controller, contact_damage=contact_damage,
+                visual_style=visual_style,
+                intro_trigger_distance=450.0,
+            )
+        else:
+            enemy = Enemy(
+                x=x, y=y, sprite_set=sprite_set,
+                speed=settings["speed"], hp=settings["hp"], damage=settings["damage"],
+                animation_size=anim_size, animation_speed=settings.get("animation_speed", 6.0),
+                detection_range=settings.get("detection_range", 250.0),
+                attack_range=settings.get("attack_range", 40.0),
+                patrol_points=patrol_points, ai_profile=ai_profile,
+                ai_config=settings.get("ai_config"), animations=animations,
+                attack_controller=attack_controller, contact_damage=contact_damage,
+                visual_style=visual_style,
+            )
         enemy.target_entity = self.character
         enemy.profile_name = profile_name
         return enemy
@@ -1912,7 +1975,21 @@ class Game(State):
 
         self.player_combat.sync_weapon_stats()
 
-        self.character.update(dt, self.collision_handler, self.obstacles)
+        # Boss intro trigger check
+        intro_active = False
+        screen_size = getattr(self, '_screen_size', (1280, 720))
+        for enemy in self.enemies:
+            if isinstance(enemy, Boss) and not enemy.intro_triggered:
+                enemy.check_intro_trigger(self.character.pos, screen_size)
+            if isinstance(enemy, Boss) and enemy.is_intro_active():
+                intro_active = True
+                # Freeze player position during intro
+                enemy.intro.update(dt)
+                if enemy.intro.finished:
+                    intro_active = False
+
+        if not intro_active:
+            self.character.update(dt, self.collision_handler, self.obstacles)
 
         mouse_pos = pygame.mouse.get_pos()
         camera_offset = self._get_camera_offset()
@@ -2212,6 +2289,7 @@ class Game(State):
         self.spirits = [s for s in self.spirits if s.alive]
 
     def draw_scene(self, screen):
+        self._screen_size = screen.get_size()
         dt = self.app.clock.get_time() / 1000
         self.app.profiler.start_section("game.update")
         self.update(dt)
@@ -2219,6 +2297,14 @@ class Game(State):
 
         self.app.profiler.start_section("game.draw")
         camera_offset = self._get_camera_offset()
+
+        # Boss intro screen shake
+        for enemy in self.enemies:
+            if isinstance(enemy, Boss) and enemy.intro is not None and not enemy.intro.finished:
+                shake = enemy.intro.get_shake_offset()
+                camera_offset = camera_offset + shake
+                break
+
         viewport_rect = pygame.Rect(0, 0, screen.get_width(), screen.get_height())
 
         def _is_visible(entity) -> bool:
@@ -2302,6 +2388,11 @@ class Game(State):
                 self.character.draw(screen, camera_offset)
             elif kind == 'item':
                 entry[2].draw(screen, camera_offset)
+
+        # Draw boss intro text OVER entities (name + title)
+        for enemy in self.enemies:
+            if isinstance(enemy, Boss):
+                enemy.draw_intro_text(screen)
 
         try:
             if getattr(self, 'fishing', None):
