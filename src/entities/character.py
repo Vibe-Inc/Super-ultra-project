@@ -1092,6 +1092,108 @@ class Character:
         logger.info("Player learned Chrono Shift!")
         self._try_open_magic_article("Chrono Shift")
 
+    def reset_skill_tree(self):
+        """Reset all skill tree unlocks, refund spent points, and restore base stats."""
+        # 1. Reset skills in skillbook
+        self.skillbook = [
+            {
+                "skill_id": "dash",
+                "name": "Dash",
+                "description": "Quick burst of movement",
+                "color": (86, 132, 186),
+                "accent": (220, 235, 255),
+            },
+        ]
+        
+        # Unbind any removed skills from the skillbar
+        for i in range(len(self.skillbar)):
+            skill = self.skillbar[i]
+            if skill and skill.get("skill_id") != "dash":
+                self.skillbar[i] = None
+
+        # 2. Reset passives
+        self.pyromancers_fury = False
+        self.static_field = False
+        self.regeneration = False
+        self.poison_blade = False
+        self.mana_flow = False
+        self.eternal_fortress = False
+        self.soul_harvest = False
+        self.void_walker = False
+        self.elemental_mastery = False
+
+        # 3. Reset base stats and skill-tree modified stats
+        # Max HP base = 100 + (level - 1) * 20
+        self.max_hp = 100 + (self.level - 1) * 20
+        self.hp = min(self.hp, self.max_hp)
+
+        # Max Stamina base = 100
+        self.max_stamina = 100
+        self.stamina = min(self.stamina, self.max_stamina)
+
+        # Melee stats
+        self.base_attack_damage = 15
+        self.attack_damage = self.base_attack_damage
+        self.attack_range = 65
+        self.attack_cooldown_mult = 1.0
+
+        # Regeneration stats
+        self.regeneration_hp_per_sec = 3.0
+
+        # Speed stats
+        self.speed_multiplier = 1.0
+        self.speed = self.base_speed * self.speed_multiplier
+
+        # Fireball
+        self.fireball_damage = 28
+        self.fireball_blast_radius = 110.0
+
+        # Frost Nova
+        self.frost_nova_damage = 0
+        self.frost_nova_freeze_duration = 3.0
+
+        # Glacial Cascade
+        self.glacial_cascade_damage = 35
+
+        # Chain Lightning
+        self.chain_lightning_damage = 22
+        self.chain_lightning_max_targets = 5
+
+        # Thunderstrike
+        self.thunderstrike_damage = 55
+
+        # Summon Spirit
+        self.summon_spirit_damage = 15
+
+        # Poison Blade
+        self.poison_blade_damage_per_sec = 6.0
+
+        # Dark Pact
+        self.dark_pact_damage = 60
+
+        # Arcane Missiles
+        self.arcane_missiles_damage = 14
+
+        # Cooldown multi
+        self.skill_cooldown_mult = 1.0
+
+        # Satellite / keystone specific stats
+        self.berserkers_rage_duration_bonus = 0.0
+        self.berserkers_rage_cooldown_bonus = 0
+        self.soul_harvest_hp_per_kill = 5
+        self.soul_harvest_damage_per_stack = 0.02
+        self.soul_harvest_duration = 8.0
+        self.void_walker_dodge_chance = 0.3
+        self.void_walker_teleport_range = 200.0
+        self.void_walker_afterimage_damage = 18
+        self.elemental_damage_mult = 1.35
+        self.combo_window = 3.0
+        self.combo_damage_bonus = 0
+        self.chrono_shift_duration_bonus = 0.0
+        self.chrono_shift_cooldown_bonus = 0
+
+        logger.info("Skill tree has been respec'd and player stats have been reset to base.")
+
     def get_skill_in_slot(self, slot_index):
         if 0 <= slot_index < len(self.skillbar):
             return self.skillbar[slot_index]
