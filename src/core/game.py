@@ -19,7 +19,7 @@ from src.core.state import State
 from src.core.save_manager import SaveManager
 from src.entities.character import Character
 from src.map.map import LocalMap
-from src.inventory.system import MAIN_player_inventory, MAIN_player_inventory_equipment, ShopInventory, MAIN_player_hotbar
+from src.inventory.system import MAIN_player_inventory, MAIN_player_inventory_equipment, ShopInventory, MAIN_player_hotbar, ChestInventory
 from src.items.items import create_item, LightRing
 from database.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, DizzinessEffect, SlowEffect
 from src.entities.enemy import Enemy
@@ -260,6 +260,7 @@ class Game(State):
         self.hotbar = MAIN_player_hotbar(app)
         self.app.INV_manager.hotbar = self.hotbar
         self.app.INV_manager.add_active_inventory(self.hotbar)
+        self._chest_data = {}
         self.player_combat = PlayerCombatController(self)
 
         self.projectiles = []
@@ -1249,6 +1250,9 @@ class Game(State):
             self.app.INV_manager.current_shop_inv.pos_y = self.MAIN_player_inv.pos_y
 
     def toggle_player_inventory(self):
+        if self.app.INV_manager.chest_opened and self.app.INV_manager.current_chest_inv:
+            self.close_chest(self.app.INV_manager.current_chest_inv)
+            return
         self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
         # Guide: Inventory & Items — first inventory open
         if not self._triggered_guide_inventory:
@@ -1514,6 +1518,81 @@ class Game(State):
             return best_pos
         except Exception:
             return None
+
+    # ------------------------------------------------------------------ #
+    # Chest interaction helpers                                          #
+    # ------------------------------------------------------------------ #
+
+    CHEST_TILE_PROPERTY = "is_chest"
+    CHEST_INTERACT_RADIUS = 48.0
+
+    def _is_chest_tile(self, world_pos):
+        try:
+            if not getattr(self, "map", None) or not getattr(self.map, "current_map", None):
+                return False
+            tmx_map = self.map.current_map
+            tmx = getattr(tmx_map, "tmxdata", None) or getattr(tmx_map, "get_tmx_data", lambda: None)()
+            if not tmx:
+                return False
+            tile_x = int(world_pos.x // tmx.tilewidth)
+            tile_y = int(world_pos.y // tmx.tileheight)
+            for layer in tmx.layers:
+                if not isinstance(layer, pytmx.TiledTileLayer):
+                    continue
+                try:
+                    gid = layer.data[tile_y][tile_x]
+                except (IndexError, TypeError):
+                    continue
+                if not gid:
+                    continue
+                tile_properties = tmx.get_tile_properties_by_gid(gid)
+                if not tile_properties:
+                    continue
+                val = tile_properties.get(self.CHEST_TILE_PROPERTY)
+                if isinstance(val, str):
+                    if val.strip().lower() in ("true", "1", "yes"):
+                        return True
+                elif val:
+                    return True
+        except Exception:
+            pass
+        return False
+
+    def _find_nearby_chest_tile(self):
+        try:
+            tmx_map = getattr(self.map, "current_map", None)
+            if not tmx_map:
+                return None
+            tmx = getattr(tmx_map, "tmxdata", None) or tmx_map.get_tmx_data()
+            if not tmx:
+                return None
+            tile_w = tmx.tilewidth
+            tile_h = tmx.tileheight
+            center = self.character.get_center()
+            cx = int(center.x // tile_w)
+            cy = int(center.y // tile_h)
+            r = 2
+            best_pos = None
+            best_dist = None
+            for ty in range(max(0, cy - r), cy + r + 1):
+                for tx in range(max(0, cx - r), cx + r + 1):
+                    world_x = tx * tile_w + tile_w // 2
+                    world_y = ty * tile_h + tile_h // 2
+                    if self._is_chest_tile(pygame.Vector2(world_x, world_y)):
+                        d = (world_x - center.x) ** 2 + (world_y - center.y) ** 2
+                        if best_dist is None or d < best_dist:
+                            best_dist = d
+                            best_pos = pygame.Vector2(world_x, world_y)
+            if best_pos is None:
+                return None
+            if best_dist is not None and best_dist > (self.CHEST_INTERACT_RADIUS ** 2):
+                return None
+            return best_pos
+        except Exception:
+            return None
+
+    def close_chest(self, chest_inv):
+        self.app.INV_manager.close_chest(chest_inv)
 
     def _find_nearby_peaceful_mob(self) -> PeacefulMob | None:
         """Find the closest PeacefulMob within interaction range, or None."""
@@ -2249,7 +2328,10 @@ class Game(State):
             logger.info(f"Map switched to {switched_map_path}. Respawning enemy...")
             self.obstacles = self.map.get_obstacles()
             self._rebuild_nav_grid()
-            
+
+            # Clear chest data for the new map
+            self._chest_data = {}
+
             # Reset enemies list and spawn default one if needed
             self.enemies = []
             
@@ -3103,7 +3185,9 @@ class Game(State):
                     ach_mgr.unlock(random.choice(locked_ids))
 
             if event.key == pygame.K_ESCAPE:
-                if self.app.INV_manager.player_inventory_opened:
+                if self.app.INV_manager.chest_opened and self.app.INV_manager.current_chest_inv:
+                    self.close_chest(self.app.INV_manager.current_chest_inv)
+                elif self.app.INV_manager.player_inventory_opened:
                     self.app.INV_manager.toggle_inventory(self.MAIN_player_inv, self.PLAYER_inventory_equipment)
                 else:
                     self.app.manager.set_state("pause")
@@ -3144,8 +3228,12 @@ class Game(State):
                 self.use_skill_slot(5)
             
             if event.key == pygame.K_e:
-                # Mage NPC interaction (highest priority)
-                if self.mage_npc.is_interactable:
+                # Chest panel open? close it first (highest priority)
+                if self.app.INV_manager.chest_opened:
+                    if self.app.INV_manager.current_chest_inv:
+                        self.close_chest(self.app.INV_manager.current_chest_inv)
+                # Mage NPC interaction
+                elif self.mage_npc.is_interactable:
                     dialog_lines = self._get_mage_npc_dialog()
 
                     def on_mage_close():
@@ -3207,6 +3295,22 @@ class Game(State):
                     self.app.current_dialog = Dialog(self.app, self.npc.dialog_lines, on_close=on_close, on_shop=self.open_shop, show_shop=self.npc.is_merchant)
                 elif self._find_nearby_smeltery_tile() is not None and getattr(self, "smeltery", None):
                     self.smeltery.open()
+                elif self._find_nearby_chest_tile() is not None:
+                    chest_pos = self._find_nearby_chest_tile()
+                    tmx_map = getattr(self.map, "current_map", None)
+                    tmx = getattr(tmx_map, "tmxdata", None) or tmx_map.get_tmx_data()
+                    tile_w = tmx.tilewidth if tmx else 16
+                    tile_h = tmx.tileheight if tmx else 16
+                    tile_x = int(chest_pos.x // tile_w)
+                    tile_y = int(chest_pos.y // tile_h)
+                    tile_key = (tile_x, tile_y)
+                    if tile_key not in self._chest_data:
+                        chest_inv = ChestInventory(self.app, tile_key)
+                        self._chest_data[tile_key] = chest_inv
+                    chest_inv = self._chest_data[tile_key]
+                    self.app.INV_manager.toggle_chest(
+                        self.MAIN_player_inv, chest_inv
+                    )
                 elif self._find_nearby_peaceful_mob() is not None:
                     mob = self._find_nearby_peaceful_mob()
                     msg = mob.on_player_interact(self.character)

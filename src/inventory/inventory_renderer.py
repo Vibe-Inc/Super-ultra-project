@@ -1,7 +1,7 @@
 import math
 import pygame
 import src.config as cfg
-from src.inventory.system import ShopInventory, MAIN_player_inventory, MAIN_player_hotbar, MAIN_player_inventory_equipment, CraftingGrid
+from src.inventory.system import ShopInventory, MAIN_player_inventory, MAIN_player_hotbar, MAIN_player_inventory_equipment, CraftingGrid, ChestInventory
 
 
 def _item_has_durability(item) -> bool:
@@ -1015,6 +1015,147 @@ class InventoryRenderer:
         label_x = rect.centerx - label_surf.get_width() // 2
         label_y = rect.bottom + 2
         screen.blit(label_surf, (label_x, label_y))
+
+    def draw_unified_chest(self, screen, chest_inv: ChestInventory, pl_inv: MAIN_player_inventory):
+        sc = cfg.ui_scale()
+        slot = chest_inv.slot_size
+        border = chest_inv.border
+
+        player_w = (slot + border) * pl_inv.columns
+        chest_w = (slot + border) * chest_inv.columns
+        gap = int(40 * sc)
+        pad = int(24 * sc)
+        title_h = int(70 * sc)
+        total_w = player_w + gap + chest_w + pad * 2
+        grid_h = (slot + border) * pl_inv.rows + border
+        total_h = grid_h + pad * 2 + title_h
+
+        inv_top = pl_inv.pos_y
+        left_x = pl_inv.pos_x
+        right_x = chest_inv.pos_x
+        panel_x = left_x - pad
+        panel_y = inv_top - pad - title_h
+        bg_rect = pygame.Rect(panel_x, panel_y, total_w, total_h)
+
+        t = pygame.time.get_ticks() / 1000.0
+        pulse = (math.sin(t * 0.003) + 1) / 2
+
+        # ── Radiant warm aura ──
+        aura_size = int(bg_rect.width * 2.0)
+        aura_surf = pygame.Surface((aura_size, aura_size), pygame.SRCALPHA)
+        aura_alpha = int(30 + 25 * pulse)
+        for r in range(aura_size // 2, 0, -1):
+            a = int(aura_alpha * (1.0 - r / (aura_size // 2)))
+            if a > 0:
+                pygame.draw.circle(aura_surf, (*cfg.CHEST_GLOW_COLOR, a), (aura_size // 2, aura_size // 2), r)
+        screen.blit(aura_surf, (bg_rect.centerx - aura_size // 2, bg_rect.centery - aura_size // 2))
+
+        # ── Panel shadow ──
+        shadow = pygame.Surface((bg_rect.width, bg_rect.height), pygame.SRCALPHA)
+        pygame.draw.rect(shadow, (0, 0, 0, 140), shadow.get_rect(), border_radius=cfg.CHEST_BORDER_RADIUS)
+        screen.blit(shadow, (bg_rect.x + cfg.CHEST_SHADOW_OFFSET, bg_rect.y + cfg.CHEST_SHADOW_OFFSET))
+
+        # ── Panel background ──
+        panel = pygame.Surface((bg_rect.width, bg_rect.height), pygame.SRCALPHA)
+        pygame.draw.rect(panel, cfg.CHEST_BG_COLOR, panel.get_rect(), border_radius=cfg.CHEST_BORDER_RADIUS)
+        screen.blit(panel, bg_rect.topleft)
+
+        # ── Wood grain ──
+        grain_surf = pygame.Surface((bg_rect.width, bg_rect.height), pygame.SRCALPHA)
+        for gi in range(8):
+            gy = int(bg_rect.height * 0.1 + gi * bg_rect.height * 0.1)
+            alpha = max(5, int(15 - gi * 1.5))
+            gc = (0, 0, 0, alpha)
+            pygame.draw.line(grain_surf, gc, (0, gy), (bg_rect.width, gy), 1)
+            for wavy in range(3):
+                wx = int(bg_rect.width * 0.15 + wavy * bg_rect.width * 0.35)
+                pygame.draw.arc(grain_surf, gc,
+                                (wx - int(20 * sc), gy - int(4 * sc), int(40 * sc), int(8 * sc)),
+                                0, 3.14, 1)
+        screen.blit(grain_surf, bg_rect.topleft)
+
+        # ── Outer ornate triple-gold frame ──
+        for fi in range(3):
+            frect = pygame.Rect(bg_rect.x - fi, bg_rect.y - fi,
+                                bg_rect.width + fi * 2, bg_rect.height + fi * 2)
+            fc = [cfg.CHEST_GOLD_LIGHT, cfg.CHEST_GOLD, cfg.CHEST_GOLD_DARK][fi]
+            bw = max(1, int(3 * sc - fi * 0.5))
+            pygame.draw.rect(screen, fc, frect, width=bw,
+                             border_radius=cfg.CHEST_BORDER_RADIUS - fi * 2)
+
+        # ── Corner gems ──
+        gem_size = max(1, int(5 * sc + pulse * 2))
+        gem_colors = [cfg.CHEST_GEM_RED, cfg.CHEST_GEM_GREEN, cfg.CHEST_GEM_BLUE, cfg.CHEST_GEM_RED]
+        for gi, (gx, gy) in enumerate([
+            (bg_rect.x, bg_rect.y), (bg_rect.right, bg_rect.y),
+            (bg_rect.x, bg_rect.bottom), (bg_rect.right, bg_rect.bottom)
+        ]):
+            gc = gem_colors[gi]
+            lighter = tuple(min(255, c + 80) for c in gc)
+            darker = tuple(max(0, c - 40) for c in gc)
+            pts_top = [(gx, gy - gem_size), (gx - gem_size, gy), (gx + gem_size, gy)]
+            pts_bot = [(gx - gem_size, gy), (gx + gem_size, gy), (gx, gy + gem_size)]
+            pygame.draw.polygon(screen, lighter, pts_top)
+            pygame.draw.polygon(screen, darker, pts_bot)
+            spark_sz = max(1, gem_size // 2)
+            spark_surf = pygame.Surface((spark_sz * 4, spark_sz * 4), pygame.SRCALPHA)
+            spark_alpha = int(180 * pulse)
+            pygame.draw.circle(spark_surf, (255, 255, 255, spark_alpha), (spark_sz * 2, spark_sz * 2), spark_sz)
+            screen.blit(spark_surf, (gx - spark_sz * 2, gy - spark_sz * 2))
+
+        # ── Divider between sections ──
+        divider_x = left_x + player_w + gap // 2
+        pygame.draw.line(screen, cfg.CHEST_GOLD, (divider_x, inv_top - int(4 * sc)),
+                         (divider_x, inv_top + grid_h - border + int(4 * sc)),
+                         max(1, int(2 * sc)))
+        pygame.draw.line(screen, cfg.CHEST_GOLD_DARK, (divider_x + 1, inv_top - int(4 * sc)),
+                         (divider_x + 1, inv_top + grid_h - border + int(4 * sc)),
+                         max(1, int(1 * sc)))
+
+        # ── Section labels ──
+        label_font = cfg.INV_nums_font
+        inv_label = label_font.render("YOUR ITEMS", True, cfg.CHEST_GOLD_LIGHT)
+        chest_label = label_font.render("CHEST", True, cfg.CHEST_GOLD_LIGHT)
+        screen.blit(inv_label, (left_x, inv_top - int(22 * sc)))
+        screen.blit(chest_label, (right_x, inv_top - int(22 * sc)))
+
+        # ── Title ──
+        title_font = cfg.tooltip_font_CREDITS
+        title = "TREASURE CHEST"
+        title_surf = title_font.render(title, True, cfg.CHEST_TITLE_COLOR)
+        shadow_surf = title_font.render(title, True, (0, 0, 0))
+        title_x = bg_rect.centerx - title_surf.get_width() // 2
+        title_y = bg_rect.y + int(12 * sc)
+        screen.blit(shadow_surf, (title_x + 1, title_y + 1))
+        screen.blit(title_surf, (title_x, title_y))
+
+        # ── Draw grids at their actual positions ──
+        self.draw_base_inventory(screen, pl_inv)
+        self.draw_base_inventory(screen, chest_inv)
+
+        # ── Sparkle dots ──
+        for si in range(6):
+            angle = si * 1.047 + t * 0.4
+            dist = bg_rect.width * 0.55
+            sx = bg_rect.centerx + int(math.cos(angle) * dist)
+            sy = bg_rect.centery + int(math.sin(angle) * dist)
+            dot_s = max(1, int(2 * sc + pulse * 1.2))
+            da = int(120 + 100 * pulse)
+            dot_surf = pygame.Surface((dot_s * 4, dot_s * 4), pygame.SRCALPHA)
+            pygame.draw.circle(dot_surf, (*cfg.CHEST_GOLD_LIGHT, da), (dot_s * 2, dot_s * 2), dot_s)
+            screen.blit(dot_surf, (sx - dot_s * 2, sy - dot_s * 2))
+
+        # ── Close button ──
+        if getattr(chest_inv, 'close_button', None):
+            chest_inv.close_button.rect.topleft = (
+                bg_rect.right - chest_inv.close_button.rect.width - int(16 * sc),
+                bg_rect.bottom - chest_inv.close_button.rect.height - int(16 * sc)
+            )
+            try:
+                chest_inv.close_button._update_text_surface()
+            except Exception:
+                pass
+            chest_inv.close_button.draw(screen)
 
     def draw_hotbar(self, screen, inv: MAIN_player_hotbar):
         inv.update_position()
