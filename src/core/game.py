@@ -236,6 +236,7 @@ class Game(State):
         self.intro_played = False
         self._intro_sequence_active = False
         self.map = LocalMap("Level1", initial_map_path)
+        self.discovered_locations = {"peaceful_forest"}
 
         self.collision_handler = CollisionSystem()
         
@@ -862,7 +863,7 @@ class Game(State):
         }
 
         # Maps where enemy spawning (both default and random) is disabled
-        self.NO_ENEMY_SPAWN_MAPS = {"maps/tavern.tmx", "maps/test-map-1.tmx"}
+        self.NO_ENEMY_SPAWN_MAPS = {"maps/tavern.tmx", "maps/test-map-1.tmx", "maps/test-map-4.tmx"}
 
         spawn_entries = self._get_spawn_entries(initial_map_path)
         if initial_map_path in self.NO_ENEMY_SPAWN_MAPS:
@@ -1435,8 +1436,8 @@ class Game(State):
         screen_x = int(tile_pos.x - camera_offset.x)
         screen_y = int(tile_pos.y - camera_offset.y)
         font = cfg.tooltip_font_CREDITS
-        text = font.render(_("Press E to use Smeltery"), True, (255, 240, 200))
-        shadow = font.render(_("Press E to use Smeltery"), True, (0, 0, 0))
+        text = font.render(("Press E to use Smeltery"), True, (255, 240, 200))
+        shadow = font.render(("Press E to use Smeltery"), True, (0, 0, 0))
         text_rect = text.get_rect(midbottom=(screen_x, screen_y - 8))
         # Soft backdrop pill for legibility.
         pad_x = int(8 * cfg.ui_scale())
@@ -1547,6 +1548,71 @@ class Game(State):
         if isinstance(spawn, dict):
             return [spawn]
         return [{"pos": spawn, "profile": "stalker"}]
+
+    def _place_npcs_for_map(self, map_path):
+        if map_path in self.NPC_SPAWNS:
+            nx, ny = self.NPC_SPAWNS[map_path]
+            try:
+                if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                    mw = self.map.current_map.pixel_width
+                    mh = self.map.current_map.pixel_height
+                    nw = self.npc.image.get_width()
+                    nh = self.npc.image.get_height()
+                    nx = max(0, min(nx, mw - nw))
+                    ny = max(0, min(ny, mh - nh))
+            except Exception:
+                pass
+            self.npc.pos = pygame.Vector2(nx, ny)
+        else:
+            self.npc.pos = pygame.Vector2(-5000, -5000)
+
+        if map_path in self.CARD_NPC_SPAWNS:
+            cx, cy = self.CARD_NPC_SPAWNS[map_path]
+            try:
+                if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                    mw = self.map.current_map.pixel_width
+                    mh = self.map.current_map.pixel_height
+                    cw = self.card_npc.image.get_width()
+                    ch = self.card_npc.image.get_height()
+                    cx = max(0, min(cx, mw - cw))
+                    cy = max(0, min(cy, mh - ch))
+            except Exception:
+                pass
+            self.card_npc.pos = pygame.Vector2(cx, cy)
+        else:
+            self.card_npc.pos = pygame.Vector2(-5000, -5000)
+
+        if map_path in self.FISHING_NPC_SPAWNS:
+            fx, fy = self.FISHING_NPC_SPAWNS[map_path]
+            try:
+                if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                    mw = self.map.current_map.pixel_width
+                    mh = self.map.current_map.pixel_height
+                    fw = self.fishing_npc.image.get_width()
+                    fh = self.fishing_npc.image.get_height()
+                    fx = max(0, min(fx, mw - fw))
+                    fy = max(0, min(fy, mh - fh))
+            except Exception:
+                pass
+            self.fishing_npc.pos = pygame.Vector2(fx, fy)
+        else:
+            self.fishing_npc.pos = pygame.Vector2(-5000, -5000)
+
+        if map_path in self.MAGE_NPC_SPAWNS:
+            mx, my = self.MAGE_NPC_SPAWNS[map_path]
+            try:
+                if self.map.current_map and self.map.current_map.pixel_width and self.map.current_map.pixel_height:
+                    mw = self.map.current_map.pixel_width
+                    mh = self.map.current_map.pixel_height
+                    mw_img = self.mage_npc.image.get_width()
+                    mh_img = self.mage_npc.image.get_height()
+                    mx = max(0, min(mx, mw - mw_img))
+                    my = max(0, min(my, mh - mh_img))
+            except Exception:
+                pass
+            self.mage_npc.pos = pygame.Vector2(mx, my)
+        else:
+            self.mage_npc.pos = pygame.Vector2(-5000, -5000)
 
     def _get_camera_offset(self) -> pygame.Vector2:
         viewport_width, viewport_height = self.app.screen.get_size()
@@ -1933,7 +1999,7 @@ class Game(State):
         # Intro Sequence for test-map-1
         if self.current_map_path == "maps/test-map-1.tmx" and not getattr(self, "intro_played", False) and not getattr(self, "_intro_sequence_active", False):
             self._intro_sequence_active = True
-            
+
             # Set player lying down (facing down, frame 0)
             self.character.direction = "down"
             self.character.frame_index = 0
@@ -1954,9 +2020,28 @@ class Game(State):
             SaveManager.save_settings(self.app)
             tr.try_open(self.app, "guide", "1. Movement & Navigation")
 
-        switched_map_path = self.map.update(self.character)
+        result = self.map.update(self.character)
 
-        if switched_map_path:
+        if isinstance(result, tuple) and result[0] == "location_transition":
+            target_loc = result[1]
+            if target_loc not in self.discovered_locations:
+                self.discovered_locations.add(target_loc)
+            tmx = self.map.current_map.get_tmx_data()
+            if tmx:
+                mw = tmx.width * tmx.tilewidth
+                mh = tmx.height * tmx.tileheight
+                cx, cy = mw // 2, mh // 2
+                dx = cx - self.character.pos.x
+                dy = cy - self.character.pos.y
+                dist = max(1, (dx * dx + dy * dy) ** 0.5)
+                push = 120.0
+                self.character.pos.x += (dx / dist) * push
+                self.character.pos.y += (dy / dist) * push
+            self.app.manager.set_state("location_map")
+            return
+
+        if result:
+            switched_map_path = result
             self.current_map_path = switched_map_path
             logger.info(f"Map switched to {switched_map_path}. Respawning enemy...")
             self.obstacles = self.map.get_obstacles()
@@ -2279,7 +2364,13 @@ class Game(State):
         except Exception:
             pass
 
-        # Safety: if current map defines an NPC spawn but NPC is far away (not placed), place it
+        # Safety: hide NPC if it should NOT be on this map, else place it
+        try:
+            if self.current_map_path not in self.NPC_SPAWNS and (self.npc.pos.x > -1000 or self.npc.pos.y > -1000):
+                self.npc.pos = pygame.Vector2(-5000, -5000)
+                logger.info(f"Safety hid NPC on {self.current_map_path}")
+        except Exception:
+            pass
         try:
             if self.current_map_path in self.NPC_SPAWNS and (self.npc.pos.x < -1000 or self.npc.pos.y < -1000):
                 nx, ny = self.NPC_SPAWNS[self.current_map_path]
@@ -2288,7 +2379,13 @@ class Game(State):
         except Exception:
             pass
 
-        # Safety: place card NPC if it should be on this map but is far away
+        # Safety: hide card NPC if it should NOT be on this map, else place it
+        try:
+            if self.current_map_path not in self.CARD_NPC_SPAWNS and (self.card_npc.pos.x > -1000 or self.card_npc.pos.y > -1000):
+                self.card_npc.pos = pygame.Vector2(-5000, -5000)
+                logger.info(f"Safety hid card NPC on {self.current_map_path}")
+        except Exception:
+            pass
         try:
             if self.current_map_path in self.CARD_NPC_SPAWNS and (self.card_npc.pos.x < -1000 or self.card_npc.pos.y < -1000):
                 cnx, cny = self.CARD_NPC_SPAWNS[self.current_map_path]
@@ -2297,6 +2394,13 @@ class Game(State):
         except Exception:
             pass
 
+        # Safety: hide fishing NPC if it should NOT be on this map
+        try:
+            if self.current_map_path not in self.FISHING_NPC_SPAWNS and (self.fishing_npc.pos.x > -1000 or self.fishing_npc.pos.y > -1000):
+                self.fishing_npc.pos = pygame.Vector2(-5000, -5000)
+                logger.info(f"Safety hid fishing NPC on {self.current_map_path}")
+        except Exception:
+            pass
         # Safety: place fishing NPC if it should be on this map but is far away
         try:
             if self.current_map_path in self.FISHING_NPC_SPAWNS and (self.fishing_npc.pos.x < -1000 or self.fishing_npc.pos.y < -1000):
@@ -2306,6 +2410,13 @@ class Game(State):
         except Exception:
             pass
 
+        # Safety: hide mage NPC if it should NOT be on this map
+        try:
+            if self.current_map_path not in self.MAGE_NPC_SPAWNS and (self.mage_npc.pos.x > -1000 or self.mage_npc.pos.y > -1000):
+                self.mage_npc.pos = pygame.Vector2(-5000, -5000)
+                logger.info(f"Safety hid mage NPC on {self.current_map_path}")
+        except Exception:
+            pass
         # Safety: place mage NPC if it should be on this map but is far away
         try:
             if self.current_map_path in self.MAGE_NPC_SPAWNS and (self.mage_npc.pos.x < -1000 or self.mage_npc.pos.y < -1000):
