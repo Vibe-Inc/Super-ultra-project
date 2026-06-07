@@ -145,114 +145,208 @@ GLOBAL_SHAKE = ScreenShake()
 # Drawing Helpers
 # ============================================================================
 
-# ---- Background cache (rebuilt only on screen-size change) ----
+# ---- Background cache (rebuilt on resize) ----
 _bg_cache_key = None
 _bg_cache_grad = None
 _bg_cache_vig = None
 
 def _draw_majestic_background(surface):
-    """Draw a stunning atmospheric forge background, optimised for 60 fps.
+    """Draw a stunning, atmospheric forge background — no circles.
 
-    Features (all within budget):
-    - Cached deep gradient + cinematic vignette (rebuild on resize only)
-    - 3 pulsing radial heat fires drawn with additive blending
-    - 3-lane animated lava glow at the bottom
-    - 3-layer parallax embers (100 total) with glow halos on near embers
+    Everything is built from gradients, rectangles, and lines for a
+    painterly, natural look:
+
+    1. Deep smoothstep gradient (black -> deep red -> molten amber)
+    2. Vertical heat columns rising from the bottom (gradient rects)
+    3. Animated lava flow at the very bottom (horizontal gradient bands)
+    4. Heat shimmer wavy lines
+    5. 180 floating embers (small rectangles / dots)
+    6. Drifting smoke layers
+    7. Spark motes
+    8. Cinematic vignette with warm side tint
     """
     global _bg_cache_key, _bg_cache_grad, _bg_cache_vig
     w, h = surface.get_size()
     time_ms = pygame.time.get_ticks()
     t = time_ms * 0.001
 
-    # ---- 1. Cached gradient + vignette ----
+    # ── 1. Cached gradient + vignette ───────────────────────────────
     cache_key = (w, h)
     if _bg_cache_key != cache_key:
         _bg_cache_key = cache_key
+        # Smoothstep gradient: dark abyss -> deep crimson -> molten amber
         g = pygame.Surface((w, h), pygame.SRCALPHA)
         for y in range(0, h, 2):
             ratio = y / float(h)
             sr = ratio * ratio * (3.0 - 2.0 * ratio)
-            r = int(8 + 65 * sr)
-            gc = int(2 + 22 * sr)
-            b = int(12 + 12 * sr)
-            a = int(235 - 30 * sr)
+            r = int(8 + 50 * min(1.0, sr * 2.2) + 25 * sr)
+            gc = int(3 + 8 * min(1.0, sr * 2.0) + 15 * sr)
+            b = int(14 - 10 * sr + 6 * (1.0 - sr))
+            a = int(245 - 30 * sr)
             col = (min(255, r), max(0, gc), max(0, b), a)
             pygame.draw.line(g, col, (0, y), (w, y))
             if y + 1 < h:
                 pygame.draw.line(g, col, (0, y + 1), (w, y + 1))
         _bg_cache_grad = g
+        # Cinematic vignette
         v = pygame.Surface((w, h), pygame.SRCALPHA)
-        edge = max(18, int(min(w, h) * 0.10))
+        edge = max(24, int(min(w, h) * 0.13))
         for i in range(edge):
             frac = i / float(edge)
-            a = int((1.0 - frac) ** 2 * 60)
+            a = int((1.0 - frac) ** 2 * 75)
             pygame.draw.line(v, (0, 0, 0, a), (0, i), (w, i))
             pygame.draw.line(v, (0, 0, 0, a), (0, h - 1 - i), (w, h - 1 - i))
             pygame.draw.line(v, (0, 0, 0, a), (i, 0), (i, h))
             pygame.draw.line(v, (0, 0, 0, a), (w - 1 - i, 0), (w - 1 - i, h))
-        for i in range(min(edge, 25)):
-            a = int((1.0 - i / 25.0) * 14)
-            pygame.draw.line(v, (180, 60, 15, a), (i, 0), (i, h))
-            pygame.draw.line(v, (180, 60, 15, a), (w - 1 - i, 0), (w - 1 - i, h))
+        # Warm side tint
+        for i in range(min(edge, 40)):
+            frac = i / 40.0
+            a = int((1.0 - frac) * 20)
+            pygame.draw.line(v, (190, 65, 15, a), (i, 0), (i, h))
+            pygame.draw.line(v, (190, 65, 15, a), (w - 1 - i, 0), (w - 1 - i, h))
+        # Bottom warmth
+        for i in range(min(edge, 35)):
+            frac = i / 35.0
+            a = int((1.0 - frac) * 16)
+            pygame.draw.line(v, (210, 80, 20, a), (0, h - 1 - i), (w, h - 1 - i))
         _bg_cache_vig = v
     surface.blit(_bg_cache_grad, (0, 0))
 
-    # ---- 2. Pulsing bottom heat glow (additive, no per-pixel work) ----
+    # ── 2. Vertical heat columns (rising from bottom) ───────────────
+    #     These are tall vertical gradient rects at various x positions,
+    #     fading from bright at bottom to transparent at top.
     heat = pygame.Surface((w, h), pygame.SRCALPHA)
-    bottom_p = (math.sin(t * 0.7) + 1) * 0.5
-    pygame.draw.circle(heat, (200, 65, 18, int(30 + 25 * bottom_p)),
-                       (w // 2, int(h * 1.15)), int(h * 0.50))
-    mid_p = (math.sin(t * 1.1 + 1.5) + 1) * 0.5
-    pygame.draw.circle(heat, (140, 35, 12, int(22 + 18 * mid_p)),
-                       (int(w * 0.22), int(h * 0.95)), int(h * 0.35))
-    pygame.draw.circle(heat, (140, 35, 12, int(22 + 18 * mid_p)),
-                       (int(w * 0.78), int(h * 0.95)), int(h * 0.35))
-    pygame.draw.circle(heat, (255, 80, 20, int(18 + 12 * bottom_p)),
-                       (w // 2, int(h * 1.05)), int(h * 0.25))
-    surface.blit(heat, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+    columns = [
+        # (x_frac, width_frac, max_height_frac, colour, pulse_speed, phase)
+        (0.50, 0.18, 0.70, (180, 55, 12),  0.60, 0.0),
+        (0.22, 0.12, 0.55, (140, 35, 10),  0.75, 1.3),
+        (0.78, 0.12, 0.55, (140, 35, 10),  0.80, 2.8),
+        (0.38, 0.10, 0.45, (200, 70, 18),  0.55, 3.5),
+        (0.62, 0.10, 0.45, (200, 70, 18),  0.50, 4.2),
+        (0.10, 0.08, 0.35, (100, 20, 60),  0.40, 1.8),
+        (0.90, 0.08, 0.35, (100, 20, 60),  0.45, 3.0),
+    ]
+    for cx_frac, cw_frac, ch_frac, col, spd, ph in columns:
+        p = (math.sin(time_ms * 0.001 * spd + ph) + 1) * 0.5
+        col_x = int(w * cx_frac - w * cw_frac * 0.5)
+        col_w = max(4, int(w * cw_frac))
+        col_h = int(h * (ch_frac + 0.05 * p))
+        col_y = h - col_h
+        alpha = int(22 + 18 * p)
+        # Build a vertical gradient rect: bright at bottom, transparent at top
+        col_sf = pygame.Surface((col_w, col_h), pygame.SRCALPHA)
+        for yy in range(col_h):
+            yr = yy / float(col_h)  # 0=top, 1=bottom
+            fade = yr * yr  # quadratic fade — bright at bottom
+            a = int(alpha * fade)
+            pygame.draw.line(col_sf, (*col, a), (0, yy), (col_w, yy))
+        surface.blit(col_sf, (col_x, col_y), special_flags=pygame.BLEND_RGBA_ADD)
 
-    # ---- 3. Animated lava glow bands (3 lanes, simple rects) ----
+    # ── 3. Lava flow at the very bottom ─────────────────────────────
     lava = pygame.Surface((w, h), pygame.SRCALPHA)
-    for li in range(3):
-        seed = li * 7919
-        ry = int(h * (0.84 + li * 0.05))
-        pulse = (math.sin(t * (1.2 + li * 0.4) + seed) + 1) * 0.5
-        a = int(18 + 14 * pulse)
-        band_h = 6 + li * 2
-        # Scrolling glow
-        offset = int((t * (10 + li * 5) * (li % 2 * 2 - 1)) % (w + 200)) - 100
-        for seg in range(4):
-            sx = (offset + seg * (w // 3)) % (w + 200) - 100
-            seg_p = (math.sin(t * 2.0 + seg * 0.9 + seed) + 1) * 0.5
-            sa = int(a * (0.5 + 0.5 * seg_p))
-            pygame.draw.rect(lava, (255, int(80 + 40 * seg_p), 15, sa),
-                             (sx, ry - band_h // 2, w // 4, band_h), border_radius=3)
+    lava_y_start = int(h * 0.88)
+    lava_h = h - lava_y_start
+    # Base dark-red glow
+    for yy in range(lava_h):
+        yr = yy / float(lava_h)
+        a = int(30 + 40 * yr)
+        pygame.draw.line(lava, (180, int(40 + 20 * yr), 8, a),
+                         (0, lava_y_start + yy), (w, lava_y_start + yy))
+    # Animated bright flowing bands on top of the base
+    for li in range(5):
+        seed = li * 4919
+        ry = lava_y_start + int(lava_h * (0.15 + li * 0.15))
+        base_a = int(12 + 8 * math.sin(t * (0.8 + li * 0.2) + seed))
+        speed = (6 + li * 3) * (1 if li % 2 == 0 else -1)
+        offset = int((t * speed) % (w + 200)) - 100
+        seg_w = max(20, w // 5)
+        for seg in range(5):
+            sx = (offset + seg * seg_w) % (w + 200) - 100
+            seg_p = (math.sin(t * 1.5 + seg * 0.8 + seed) + 1) * 0.5
+            sa = int(base_a * (0.3 + 0.7 * seg_p))
+            # Bright core
+            pygame.draw.rect(lava, (255, int(80 + 40 * seg_p), 12, sa),
+                             (sx, ry - 2, seg_w, 4), border_radius=2)
+            # Wider glow
+            ga = max(1, sa // 3)
+            pygame.draw.rect(lava, (255, int(50 + 25 * seg_p), 8, ga),
+                             (sx - 3, ry - 5, seg_w + 6, 10), border_radius=3)
     surface.blit(lava, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
 
-    # ---- 4. Ember system (3 depth layers, 100 total) ----
+    # ── 4. Heat shimmer lines ───────────────────────────────────────
+    haze = pygame.Surface((w, h), pygame.SRCALPHA)
+    for band_i in range(5):
+        by = int(h * (0.30 + band_i * 0.10))
+        bh_band = max(1, int(h * 0.015))
+        wave = math.sin(t * 1.2 + band_i * 1.0) * 5
+        ha = int(5 + 4 * math.sin(t * 0.6 + band_i))
+        for bx in range(0, w, 4):
+            oy = int(math.sin(bx * 0.012 + t * 1.6 + band_i) * 3 + wave)
+            pygame.draw.line(haze, (255, 160, 60, ha),
+                             (bx, by + oy), (bx + 2, by + oy + bh_band))
+    surface.blit(haze, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+
+    # ── 5. Embers (180 across 4 depth layers, small squares + glow) ─
     embers_surf = pygame.Surface((w, h), pygame.SRCALPHA)
     ember_layers = [
-        (45, 8,   1, (20, 75),  10, 0.001, 150),
-        (35, 20,  2, (40, 130), 18, 0.002, 90),
-        (20, 45,  3, (60, 220), 28, 0.003, 60),
+        (60,  6,  1, (15, 60),   8,  0.0008, 160, (255, 90, 25)),
+        (50,  14, 2, (30, 100),  14, 0.0014, 110, (255, 135, 35)),
+        (40,  28, 3, (45, 160),  20, 0.0020, 75,  (255, 180, 55)),
+        (30,  50, 3, (60, 220),  28, 0.0028, 48,  (255, 215, 95)),
     ]
-    for li, (count, spd, sz, al_r, wb_amp, wb_freq, y_off) in enumerate(ember_layers):
+    for li, (count, spd, base_sz, al_r, wb_amp, wb_freq, y_off, ecol) in enumerate(ember_layers):
         for i in range(count):
             seed = i * (3571 + li * 7331)
             ex = (seed * 19) % w
             ey = h - ((t * spd + seed * 83) % (h + y_off))
             wb = math.sin(time_ms * wb_freq + i * 0.7 + li) * wb_amp
-            flicker = abs(math.sin(time_ms * (0.001 + li * 0.0005) + i * 0.5))
+            flicker = abs(math.sin(time_ms * (0.001 + li * 0.0004) + i * 0.5))
             al = int(flicker * (al_r[1] - al_r[0]) + al_r[0])
-            cg = int(100 + 60 * li)
-            pygame.draw.circle(embers_surf, (255, cg, 25, al),
-                               (int(ex + wb), int(ey)), sz)
-            if li == 2 and sz > 1:
-                pygame.draw.circle(embers_surf, (255, cg, 25, max(1, al // 4)),
-                                   (int(ex + wb), int(ey)), sz * 3)
+            sz = base_sz + (seed % max(1, base_sz))
+            px = int(ex + wb)
+            py = int(ey)
+            # Draw as small rect (not circle)
+            embers_surf.fill((*ecol, al), (px - sz // 2, py - sz // 2, sz, sz))
+            # Glow: larger transparent rect
+            if li >= 1 and sz > 1:
+                gsz = sz * 3
+                ga = max(1, al // 4)
+                embers_surf.fill((*ecol, ga), (px - gsz // 2, py - gsz // 2, gsz, gsz))
     surface.blit(embers_surf, (0, 0))
 
-    # ---- 5. Vignette (cached) ----
+    # ── 6. Drifting smoke layers ────────────────────────────────────
+    smoke = pygame.Surface((w, h), pygame.SRCALPHA)
+    for si in range(10):
+        seed = si * 5381
+        base_y = int(h * (0.45 + (seed % 35) * 0.01) - (t * (2.5 + seed % 4)) % (h * 0.55))
+        if base_y < -50 or base_y > h + 20:
+            continue
+        sx = (seed * 37 + int(t * (1.5 + seed % 3))) % (w + 80) - 40
+        sw = 60 + (seed % 50)
+        sh = 20 + (seed % 15)
+        sa = int(4 + 3 * math.sin(t * 0.4 + si))
+        # Draw as a wide transparent rect
+        smoke.fill((18, 15, 20, sa), (sx, base_y, sw, sh))
+    surface.blit(smoke, (0, 0))
+
+    # ── 7. Spark motes ──────────────────────────────────────────────
+    sparks = pygame.Surface((w, h), pygame.SRCALPHA)
+    for si in range(20):
+        seed = si * 9973
+        spd_x = (seed % 10) - 5
+        spd_y = -(7 + seed % 12)
+        sx = int((seed * 19 + t * spd_x * 7) % w)
+        sy = int(h - ((t * abs(spd_y) + seed * 53) % (h * 0.75)))
+        sa = int(abs(math.sin(time_ms * 0.003 + si * 1.2)) * 170 + 35)
+        # Tiny bright rect (1x1 or 2x2)
+        sparks.fill((255, int(210 + 30 * math.sin(si)), int(90 + 20 * math.sin(si * 0.6)), sa),
+                     (sx, sy, 2, 2))
+        # Soft glow around
+        ga = max(1, sa // 5)
+        sparks.fill((255, int(180 + 20 * math.sin(si)), 60, ga), (sx - 2, sy - 2, 6, 6))
+    surface.blit(sparks, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+
+    # ── 8. Vignette (cached) ────────────────────────────────────────
     surface.blit(_bg_cache_vig, (0, 0))
 
 
@@ -648,53 +742,81 @@ def _draw_zone_gauge(surface, rect, value, zone_center, zone_width,
 def _draw_result_overlay(surface, panel_rect, outcome, outcome_color,
                          bonus_text, bonus_color, font_large, font_medium,
                          time_ms=0, bonus_icons=0):
-    """Draw a dramatic result display with glow, ornaments, and text."""
+    """Draw a majestic, full-panel result display with dramatic glow,
+    animated ornaments, XP bar, and bonus icons."""
     pr = panel_rect
+    cx = pr.centerx
 
-    # Outcome text with glow
+    # --- Dramatic animated background glow behind text ---
+    if time_ms:
+        pulse = int(abs(math.sin(time_ms * 0.003)) * 20 + 40)
+        glow_surf = pygame.Surface((pr.width - 40, 80), pygame.SRCALPHA)
+        pygame.draw.rect(glow_surf, (outcome_color[0], outcome_color[1], outcome_color[2], pulse),
+                         glow_surf.get_rect(), border_radius=16)
+        surface.blit(glow_surf, (pr.x + 20, pr.y + 95))
+
+    # --- Title glow layer ---
     out_glow = font_large.render(outcome, True, outcome_color)
-    out_glow.set_alpha(70)
-    surface.blit(out_glow, (pr.centerx - out_glow.get_width() // 2 + 2, pr.y + 118))
+    out_glow.set_alpha(60)
+    surface.blit(out_glow, (cx - out_glow.get_width() // 2 + 2, pr.y + 108))
     out_surf = font_large.render(outcome, True, outcome_color)
-    surface.blit(out_surf, (pr.centerx - out_surf.get_width() // 2, pr.y + 116))
+    surface.blit(out_surf, (cx - out_surf.get_width() // 2, pr.y + 106))
 
-    # Decorative lines flanking the outcome
-    line_w = max(10, (pr.width - out_surf.get_width()) // 2 - 40)
-    line_y = pr.y + 116 + out_surf.get_height() // 2
-    # Left line
-    lx1 = pr.centerx - out_surf.get_width() // 2 - 14
-    lx0 = lx1 - line_w
-    pygame.draw.line(surface, (140, 100, 60), (lx0, line_y), (lx1, line_y), 1)
-    # Right line
-    rx1 = pr.centerx + out_surf.get_width() // 2 + 14
-    rx0 = rx1 + line_w
-    pygame.draw.line(surface, (140, 100, 60), (rx1, line_y), (rx0, line_y), 1)
-    # Small diamonds at line ends
+    # --- Ornate decorative divider below outcome ---
+    div_y = pr.y + 106 + out_surf.get_height() + 14
+    div_w = min(pr.width - 60, 320)
+    div_x = cx - div_w // 2
+
+    # Left decorative line
+    lx1 = cx - out_surf.get_width() // 2 - 18
+    lx0 = max(div_x, lx1 - div_w // 3)
+    pygame.draw.line(surface, (140, 100, 60), (lx0, div_y), (lx1, div_y), 2)
+    # Right decorative line
+    rx1 = cx + out_surf.get_width() // 2 + 18
+    rx0 = min(div_x + div_w, rx1 + div_w // 3)
+    pygame.draw.line(surface, (140, 100, 60), (rx1, div_y), (rx0, div_y), 2)
+    # Center diamond ornament
+    ds = 8
+    diamond = [(cx, div_y - ds), (cx + ds, div_y),
+               (cx, div_y + ds), (cx - ds, div_y)]
+    pygame.draw.polygon(surface, (200, 160, 75), diamond)
+    pygame.draw.polygon(surface, (255, 230, 160), diamond, 1)
+    # Small accent diamonds at line ends
     for dx in [lx0, rx0]:
-        ds = 3
         pygame.draw.polygon(surface, ORNAMENT_GOLD,
-                            [(dx, line_y - ds), (dx + ds, line_y),
-                             (dx, line_y + ds), (dx - ds, line_y)])
+                            [(dx, div_y - 3), (dx + 3, div_y),
+                             (dx, div_y + 3), (dx - 3, div_y)])
 
-    # Bonus text
+    # --- Bonus text with XP amount ---
+    info_y = div_y + 22
     if bonus_text:
         bt = font_medium.render(bonus_text, True, bonus_color)
-        surface.blit(bt, (pr.centerx - bt.get_width() // 2, pr.y + 130 + out_surf.get_height() + 8))
+        surface.blit(bt, (cx - bt.get_width() // 2, info_y))
+        info_y += bt.get_height() + 8
 
-    # Bonus icons (small glowing circles)
+    # --- XP earned indicator ---
+    if bonus_icons > 0 or (bonus_text and "xp" in bonus_text.lower()):
+        xp_label = font_medium.render("XP Earned", True, (255, 215, 90))
+        surface.blit(xp_label, (cx - xp_label.get_width() // 2, info_y))
+        info_y += xp_label.get_height() + 6
+
+    # --- Bonus reward icons (ornate glowing diamonds) ---
     if bonus_icons > 0:
-        icon_y = pr.y + 130 + out_surf.get_height() + 8
-        if bonus_text:
-            icon_y += font_medium.size(bonus_text)[1] + 6
-        icon_start_x = pr.centerx - bonus_icons * 12
+        icon_start_x = cx - bonus_icons * 20
         for i in range(bonus_icons):
-            ix = icon_start_x + i * 24
-            # Glow
-            igr = pygame.Surface((14, 14), pygame.SRCALPHA)
-            pygame.draw.circle(igr, (255, 200, 80, 80), (7, 7), 7)
-            surface.blit(igr, (ix - 1, icon_y - 1))
-            pygame.draw.circle(surface, BAR_BULLSEYE, (ix + 5, icon_y + 5), 5)
-            pygame.draw.circle(surface, (255, 240, 180), (ix + 5, icon_y + 5), 5, 1)
+            ix = icon_start_x + i * 40
+            iy = info_y
+            # Outer glow
+            igr = pygame.Surface((24, 24), pygame.SRCALPHA)
+            pygame.draw.circle(igr, (255, 200, 80, 70), (12, 12), 12)
+            surface.blit(igr, (ix - 2, iy - 2))
+            # Diamond shape
+            pygame.draw.polygon(surface, BAR_BULLSEYE,
+                                [(ix + 5, iy), (ix + 10, iy + 5),
+                                 (ix + 5, iy + 10), (ix, iy + 5)])
+            pygame.draw.polygon(surface, (255, 240, 180),
+                                [(ix + 5, iy), (ix + 10, iy + 5),
+                                 (ix + 5, iy + 10), (ix, iy + 5)], 1)
 
 
 def _draw_strike_pips(surface, center_x, y, results, num_strikes, font_small):
@@ -847,7 +969,7 @@ class TendingFireMinigame:
         self.font_small  = cfg.get_font(max(8,  int(18 * cfg.ui_scale())))
 
         panel_w = int(sw * 0.62)
-        panel_h = int(sh * 0.58)
+        panel_h = int(sh * 0.72)
         self.panel_rect = pygame.Rect(
             (sw - panel_w) // 2,
             (sh - panel_h) // 2,
@@ -855,7 +977,7 @@ class TendingFireMinigame:
         )
         bar_h = int(panel_h * 0.62)
         bar_x = self.panel_rect.centerx - self.BAR_WIDTH // 2
-        bar_y = self.panel_rect.y + int(panel_h * 0.30)
+        bar_y = self.panel_rect.y + int(panel_h * 0.28)
         self.bar_rect = pygame.Rect(bar_x, bar_y, self.BAR_WIDTH, bar_h)
 
         self.phase = self.PHASE_INTRO
@@ -1152,7 +1274,7 @@ class ForgeMinigame:
         self.font_small  = cfg.get_font(max(8,  int(18 * cfg.ui_scale())))
 
         panel_w = int(sw * 0.78)
-        panel_h = int(sh * 0.50)
+        panel_h = int(sh * 0.65)
         self.panel_rect = pygame.Rect(
             (sw - panel_w) // 2,
             (sh - panel_h) // 2,
@@ -1162,7 +1284,7 @@ class ForgeMinigame:
         bar_h = max(28, int(36 * cfg.ui_scale()))
         self.bar_rect = pygame.Rect(
             self.panel_rect.centerx - bar_w // 2,
-            self.panel_rect.y + int(panel_h * 0.55),
+            self.panel_rect.y + int(panel_h * 0.50),
             bar_w, bar_h,
         )
 
@@ -1325,7 +1447,7 @@ class ForgeMinigame:
         mouse_pos = pygame.mouse.get_pos()
 
         # Strike indicators (ornate diamonds)
-        _draw_strike_pips(surface, pr.centerx, pr.y + 78,
+        _draw_strike_pips(surface, pr.centerx, pr.y + 95,
                           self.results, self.NUM_STRIKES, self.font_small)
 
         # Majestic zone bar
@@ -1413,7 +1535,7 @@ class QuenchMinigame:
         self.font_small  = cfg.get_font(max(8,  int(18 * cfg.ui_scale())))
 
         panel_w = int(sw * 0.72)
-        panel_h = int(sh * 0.46)
+        panel_h = int(sh * 0.60)
         self.panel_rect = pygame.Rect(
             (sw - panel_w) // 2,
             (sh - panel_h) // 2,
@@ -1423,7 +1545,7 @@ class QuenchMinigame:
         bar_h = max(40, int(50 * cfg.ui_scale()))
         self.bar_rect = pygame.Rect(
             self.panel_rect.centerx - bar_w // 2,
-            self.panel_rect.y + int(panel_h * 0.50),
+            self.panel_rect.y + int(panel_h * 0.48),
             bar_w, bar_h,
         )
 
@@ -1681,7 +1803,7 @@ class PatternMinigame:
         self.font_small  = cfg.get_font(max(8,  int(18 * cfg.ui_scale())))
 
         panel_w = int(sw * 0.72)
-        panel_h = int(sh * 0.52)
+        panel_h = int(sh * 0.65)
         self.panel_rect = pygame.Rect(
             (sw - panel_w) // 2,
             (sh - panel_h) // 2,
@@ -1690,7 +1812,7 @@ class PatternMinigame:
 
         self.track_rect = pygame.Rect(
             self.panel_rect.x + int(40 * cfg.ui_scale()),
-            self.panel_rect.centery - int(10 * cfg.ui_scale()),
+            self.panel_rect.centery - int(8 * cfg.ui_scale()),
             self.panel_rect.width - int(80 * cfg.ui_scale()),
             int(36 * cfg.ui_scale()),
         )
@@ -2246,7 +2368,7 @@ class BellowsMinigame:
         self.font_small  = cfg.get_font(max(8,  int(18 * cfg.ui_scale())))
 
         panel_w = int(sw * 0.60)
-        panel_h = int(sh * 0.54)
+        panel_h = int(sh * 0.68)
         self.panel_rect = pygame.Rect(
             (sw - panel_w) // 2,
             (sh - panel_h) // 2,
@@ -2255,7 +2377,7 @@ class BellowsMinigame:
         gauge_w = 28
         gauge_h = int(panel_h * 0.60)
         gauge_x = self.panel_rect.centerx - gauge_w // 2
-        gauge_y = self.panel_rect.y + int(panel_h * 0.28)
+        gauge_y = self.panel_rect.y + int(panel_h * 0.26)
         self.gauge_rect = pygame.Rect(gauge_x, gauge_y, gauge_w, gauge_h)
 
         self.phase = self.PHASE_INTRO
@@ -2479,19 +2601,19 @@ class TemperMinigame:
         self.font_small  = cfg.get_font(max(8,  int(18 * cfg.ui_scale())))
 
         panel_w = int(sw * 0.60)
-        panel_h = int(sh * 0.52)
+        panel_h = int(sh * 0.65)
         self.panel_rect = pygame.Rect(
             (sw - panel_w) // 2,
             (sh - panel_h) // 2,
             panel_w, panel_h,
         )
 
-        self.ingot_centre = (self.panel_rect.centerx, self.panel_rect.centery + 20)
+        self.ingot_centre = (self.panel_rect.centerx, self.panel_rect.centery + 24)
         self.ingot_radius = int(72 * cfg.ui_scale())
 
         self.target_swatch_rect = pygame.Rect(
             self.panel_rect.centerx - int(30 * cfg.ui_scale()),
-            self.panel_rect.y + int(28 * cfg.ui_scale()),
+            self.panel_rect.y + int(44 * cfg.ui_scale()),
             int(60 * cfg.ui_scale()),
             int(24 * cfg.ui_scale()),
         )
@@ -2678,7 +2800,7 @@ class TemperMinigame:
         stage_str = "Stage %d / %d" % (self.stage_index + 1, self.STAGES)
         ss = self.font_medium.render(stage_str, True, TEXT_LIGHT)
         surface.blit(ss, (pr.centerx - ss.get_width() // 2,
-                          self.target_swatch_rect.bottom + 6))
+                          self.target_swatch_rect.bottom + 10))
 
         # Target swatch with glow
         sw = self.target_swatch_rect

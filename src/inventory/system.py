@@ -967,25 +967,7 @@ class CraftingGrid(Inventory):
         output_rect = pygame.Rect(self.output_pos_x, self.output_pos_y, self.slot_size, self.slot_size)
         if output_rect.collidepoint(mouse_x, mouse_y) and event.button == 1:
             if self.output_slot and not manager.selected_item:
-                manager.selected_item = self.output_slot
-                self.output_slot = None
-                
-                # Guide: Crafting & Recipes — first item crafted
-                gs = self.app.manager.states.get("gameplay")
-                if gs and not gs._triggered_guide_crafting:
-                    gs._triggered_guide_crafting = True
-                    self.app.article_tracker.try_open(self.app, "guide", "5. Crafting & Recipes")
-                
-                for col in range(3):
-                    for row in range(3):
-                        if self.items[col][row]:
-                            self.items[col][row][1] -= 1
-                            if self.items[col][row][1] <= 0:
-                                self.items[col][row] = None
-                self.check_recipes()
-                # Snapshot the crafted item so we can grant XP and log
-                # the rolled tier before the output slot is cleared.
-                crafted_item = self.output_slot[0] if self.output_slot else None
+                crafted_item = self.output_slot[0]
 
                 # If this is a weapon / armor / tool and the gameplay
                 # state exposes a crafting minigame launcher, route the
@@ -995,6 +977,7 @@ class CraftingGrid(Inventory):
                 # ``on_close`` callback is responsible for consuming
                 # the grid ingredients, placing the (possibly re-tiered)
                 # item into the cursor, and awarding smelting XP.
+                use_minigame = False
                 try:
                     from src.items.items import Weapon, Armor, Tool
                     gameplay = self.app.manager.states.get("gameplay") if self.app is not None else None
@@ -1006,6 +989,7 @@ class CraftingGrid(Inventory):
                         and callable(launcher)
                         and existing_minigame is None
                     ):
+                        use_minigame = True
                         smelting_level = 1
                         try:
                             char = getattr(gameplay, "character", None)
@@ -1014,14 +998,44 @@ class CraftingGrid(Inventory):
                         except Exception:
                             smelting_level = 1
                         launcher(crafted_item, self._finalize_craft_after_minigame, smelting_level)
-                        return
                 except Exception:
-                    # Fall through to the normal synchronous flow if
-                    # anything goes wrong while wiring up the minigame.
                     pass
 
-                # No minigame path: take the item immediately as before.
-                self._finalize_craft_after_minigame(crafted_item, 1.0)
+                if not use_minigame:
+                    # Normal synchronous flow: place item in cursor,
+                    # consume grid ingredients, award base XP.
+                    manager.selected_item = self.output_slot
+                    self.output_slot = None
+
+                    gs = self.app.manager.states.get("gameplay")
+                    if gs and not gs._triggered_guide_crafting:
+                        gs._triggered_guide_crafting = True
+                        self.app.article_tracker.try_open(self.app, "guide", "5. Crafting & Recipes")
+
+                    for col in range(3):
+                        for row in range(3):
+                            if self.items[col][row]:
+                                self.items[col][row][1] -= 1
+                                if self.items[col][row][1] <= 0:
+                                    self.items[col][row] = None
+                    self.check_recipes()
+
+                    # Award base smelting XP for the craft.
+                    try:
+                        from src.systems.smelting_skill import XP_PER_CRAFT
+                        from src.items.items import Weapon, Armor, Tool
+                        if crafted_item is not None and isinstance(crafted_item, (Weapon, Armor, Tool)):
+                            char = getattr(self.app.manager.states.get("gameplay"), "character", None)
+                            skill = getattr(char, "smelting_skill", None) if char is not None else None
+                            if skill is not None:
+                                scaled_xp = max(0, int(round(XP_PER_CRAFT * 1.0)))
+                                if scaled_xp > 0:
+                                    levels_gained = skill.add_xp(scaled_xp)
+                                    if levels_gained:
+                                        from src.core.logger import logger as _logger
+                                        _logger.info(f"Smelting skill reached level {skill.level}")
+                    except Exception:
+                        pass
             return
 
         super().inventory_interactions(event, manager)
