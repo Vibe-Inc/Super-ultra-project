@@ -2965,6 +2965,10 @@
         <span class="k">for</span> <span class="n">enemy</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enemies</span><span class="p">[:]:</span>
             <span class="k">if</span> <span class="n">enemy</span><span class="o">.</span><span class="n">is_dead</span><span class="p">():</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Enemy defeated!&quot;</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">enemy</span><span class="p">,</span> <span class="s2">&quot;ai_profile&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;chronos&quot;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="s2">&quot;ending_animation&quot;</span><span class="p">)</span>
+
                 <span class="bp">self</span><span class="o">.</span><span class="n">_kill_count</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">achievement_manager</span><span class="o">.</span><span class="n">unlock</span><span class="p">(</span><span class="s2">&quot;first_blood&quot;</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">achievement_manager</span><span class="o">.</span><span class="n">add_progress</span><span class="p">(</span><span class="s2">&quot;exterminator&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>

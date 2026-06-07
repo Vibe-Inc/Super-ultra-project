@@ -101,6 +101,11 @@
     <span class="n">base_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)))</span>
     <span class="n">locales_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_dir</span><span class="p">,</span> <span class="s1">&#39;locales&#39;</span><span class="p">)</span>
 
+    <span class="c1"># Update global environment for gettext.gettext() to pick up the correct language</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;LANGUAGE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lang_code</span>
+    <span class="n">gettext</span><span class="o">.</span><span class="n">bindtextdomain</span><span class="p">(</span><span class="s1">&#39;messages&#39;</span><span class="p">,</span> <span class="n">locales_dir</span><span class="p">)</span>
+    <span class="n">gettext</span><span class="o">.</span><span class="n">textdomain</span><span class="p">(</span><span class="s1">&#39;messages&#39;</span><span class="p">)</span>
+
     <span class="k">try</span><span class="p">:</span>
         <span class="n">language</span> <span class="o">=</span> <span class="n">gettext</span><span class="o">.</span><span class="n">translation</span><span class="p">(</span><span class="s1">&#39;messages&#39;</span><span class="p">,</span> <span class="n">localedir</span><span class="o">=</span><span class="n">locales_dir</span><span class="p">,</span> <span class="n">languages</span><span class="o">=</span><span class="p">[</span><span class="n">lang_code</span><span class="p">])</span>
         <span class="n">language</span><span class="o">.</span><span class="n">install</span><span class="p">()</span>
@@ -108,6 +113,7 @@
     <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
         <span class="c1"># Fallback to null translation (English/default) if file not found</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Translation for &#39;</span><span class="si">{</span><span class="n">lang_code</span><span class="si">}</span><span class="s2">&#39; not found. Falling back to default.&quot;</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;LANGUAGE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;en&#39;</span>
         <span class="n">gettext</span><span class="o">.</span><span class="n">install</span><span class="p">(</span><span class="s1">&#39;messages&#39;</span><span class="p">,</span> <span class="n">localedir</span><span class="o">=</span><span class="n">locales_dir</span><span class="p">,</span> <span class="n">languages</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;en&#39;</span><span class="p">])</span>
         <span class="n">_current_translation</span> <span class="o">=</span> <span class="n">gettext</span><span class="o">.</span><span class="n">NullTranslations</span><span class="p">()</span></div>
 
