@@ -184,8 +184,9 @@ class Game(State):
             Return True if the in-game clock is currently daytime.
         _update_game_time(dt):
             Advance the in-game clock and update day/night brightness.
-        _get_spawn_info(map_path):
-            Resolve the default enemy spawn info for a given map path.
+        _get_spawn_entries(map_path):
+            Resolve the configured enemy spawn entries for a given map path
+            as a list of {"pos": (x, y), "profile": "name"} dicts.
         _get_camera_offset():
             Compute the camera offset (in world space) for this frame.
         _make_patrol_points(center, radius):
@@ -728,8 +729,20 @@ class Game(State):
 
         self.ENEMY_SPAWNS = {
             # "maps/test-map-1.tmx": (400, 300), # Якщо закоментувати цей рядок, ворога на старті не буде
-            "maps/test-map-2.tmx": {"pos": (600, 450), "profile": "trickster"},
-            "maps/test-map-3.tmx": {"pos": (300, 200), "profile": "skirmisher"},
+            # Each map can declare multiple distinct enemy spawns (pos + profile).
+            # Both dict-of-one and list-of-many forms are supported; tuples fall
+            # back to the "stalker" profile for backward compatibility.
+            "maps/test-map-2.tmx": [
+                {"pos": (600, 450),   "profile": "trickster"},
+                {"pos": (1500, 1250), "profile": "stalker"},
+                {"pos": (3000, 1800), "profile": "brute"},
+                {"pos": (3200, 400),  "profile": "phantom"},
+            ],
+            "maps/test-map-3.tmx": [
+                {"pos": (300, 200),  "profile": "skirmisher"},
+                {"pos": (900, 500),  "profile": "bomber"},
+                {"pos": (1400, 800), "profile": "phantom"},
+            ],
         }
 
         # NPC spawn positions (pixels). Tavern NPC coordinates corrected to fit map bounds
@@ -757,12 +770,13 @@ class Game(State):
         # Maps where enemy spawning (both default and random) is disabled
         self.NO_ENEMY_SPAWN_MAPS = {"maps/tavern.tmx", "maps/test-map-1.tmx"}
 
-        spawn_info = self._get_spawn_info(initial_map_path)
+        spawn_entries = self._get_spawn_entries(initial_map_path)
         if initial_map_path in self.NO_ENEMY_SPAWN_MAPS:
-            spawn_info = None
-        if spawn_info:
-            start_x, start_y = spawn_info["pos"]
-            default_profile = spawn_info.get("profile")
+            spawn_entries = []
+        if spawn_entries:
+            first = spawn_entries[0]
+            start_x, start_y = first["pos"]
+            default_profile = first.get("profile")
         else:
             start_x, start_y = -5000, -5000
             default_profile = None
@@ -770,8 +784,12 @@ class Game(State):
         self.hud = HUD(self.character, app, self.toggle_player_inventory, self.use_skill_slot, open_shop_callback=self.open_shop)
 
         self.enemy = self._create_enemy(start_x, start_y, profile=default_profile)
-        
+
         self.enemies = [self.enemy]
+        # Spawn any additional configured enemies on the starting map.
+        for extra in spawn_entries[1:]:
+            ex, ey = extra["pos"]
+            self.enemies.append(self._create_enemy(ex, ey, profile=extra.get("profile")))
         self.items = []
         
         # Enemy spawning system
@@ -1381,13 +1399,25 @@ class Game(State):
 
         self.app.profiler.set_gauge("game_time", self._format_game_time())
 
-    def _get_spawn_info(self, map_path: str) -> dict | None:
+    def _get_spawn_entries(self, map_path: str) -> list[dict]:
+        """
+        Normalize the ENEMY_SPAWNS entry for a map into a list of
+        {"pos": (x, y), "profile": "name"} dicts.
+
+        Supports three legacy forms:
+          - list of dicts: returned as-is
+          - single dict: wrapped in a one-element list
+          - (x, y) tuple: wrapped with the default "stalker" profile
+        Returns an empty list if the map has no configured spawns.
+        """
         spawn = self.ENEMY_SPAWNS.get(map_path)
         if not spawn:
-            return None
+            return []
+        if isinstance(spawn, list):
+            return [entry for entry in spawn if entry]
         if isinstance(spawn, dict):
-            return spawn
-        return {"pos": spawn, "profile": "stalker"}
+            return [spawn]
+        return [{"pos": spawn, "profile": "stalker"}]
 
     def _get_camera_offset(self) -> pygame.Vector2:
         viewport_width, viewport_height = self.app.screen.get_size()
@@ -1785,12 +1815,12 @@ class Game(State):
             # Reset enemies list and spawn default one if needed
             self.enemies = []
             
-            spawn_info = self._get_spawn_info(switched_map_path)
-            if switched_map_path not in self.NO_ENEMY_SPAWN_MAPS and spawn_info:
-                new_x, new_y = spawn_info["pos"]
-                profile = spawn_info.get("profile")
-                default_enemy = self._create_enemy(new_x, new_y, profile=profile)
-                self.enemies.append(default_enemy)
+            spawn_entries = self._get_spawn_entries(switched_map_path)
+            if switched_map_path not in self.NO_ENEMY_SPAWN_MAPS and spawn_entries:
+                for entry in spawn_entries:
+                    new_x, new_y = entry["pos"]
+                    profile = entry.get("profile")
+                    self.enemies.append(self._create_enemy(new_x, new_y, profile=profile))
 
             if switched_map_path in self.NPC_SPAWNS:
                     npc_x, npc_y = self.NPC_SPAWNS[switched_map_path]
