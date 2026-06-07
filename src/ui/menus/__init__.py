@@ -21,6 +21,7 @@ from src.ui.menus.arcane_quest_menu import ArcaneQuestMenu
 from src.ui.menus.mysterium_magnum import MysteriumMagnumMenu
 from src.ui.menus.location_map_menu import LocationMapMenu
 from src.ui.menus.intro_animation import IntroAnimation
+from src.ui.menus.temple_intro_animation import TempleIntroAnimation
 from src.ui.menus.achievements_menu import AchievementsMenu
 
 __all__ = [
@@ -39,5 +40,6 @@ __all__ = [
     "MysteriumMagnumMenu",
     "LocationMapMenu",
     "IntroAnimation",
+    "TempleIntroAnimation",
     "AchievementsMenu",
 ]
