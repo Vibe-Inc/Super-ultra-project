@@ -603,16 +603,7 @@ class Enemy:
             screen.blit(surf, (sx - surf_size // 2, sy - surf_size // 2),
                         special_flags=pygame.BLEND_ALPHA_SDL2)
 
-        bar_width = 40
-        bar_height = 5
-        bar_x = self.pos.x - camera_offset.x + (85 - bar_width) // 2
-        bar_y = self.pos.y - camera_offset.y - 10
-
-        pygame.draw.rect(screen, (255, 0, 0), (bar_x, bar_y, bar_width, bar_height))
-
-        if self.max_hp > 0:
-            health_width = int(bar_width * (self.hp / self.max_hp))
-            pygame.draw.rect(screen, (0, 255, 0), (bar_x, bar_y, health_width, bar_height))
+        self.draw_hp_bar(screen, camera_offset)
 
         # Stun visual effect (spinning stars above enemy)
         if self.stun_timer > 0:
@@ -633,3 +624,17 @@ class Enemy:
                 pygame.draw.polygon(surf, (255, 255, 100, star_alpha), pts)
                 screen.blit(surf, (sx2 - star_r, sy2 - star_r),
                             special_flags=pygame.BLEND_ALPHA_SDL2)
+
+    def draw_hp_bar(self, screen: pygame.Surface, camera_offset=None):
+        if camera_offset is None:
+            camera_offset = pygame.Vector2(0, 0)
+        bar_width = 40
+        bar_height = 5
+        bar_x = self.pos.x - camera_offset.x + (85 - bar_width) // 2
+        bar_y = self.pos.y - camera_offset.y - 10
+
+        pygame.draw.rect(screen, (255, 0, 0), (bar_x, bar_y, bar_width, bar_height))
+
+        if self.max_hp > 0:
+            health_width = int(bar_width * (self.hp / self.max_hp))
+            pygame.draw.rect(screen, (0, 255, 0), (bar_x, bar_y, health_width, bar_height))

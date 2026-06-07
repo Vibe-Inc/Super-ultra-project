@@ -22,6 +22,7 @@ from src.inventory.system import MAIN_player_inventory, MAIN_player_inventory_eq
 from src.items.items import create_item, LightRing
 from database.effects import RegenerationEffect, PoisonEffect, ConfusionEffect, DizzinessEffect, SlowEffect
 from src.entities.enemy import Enemy
+from src.entities.boss import Boss
 from src.entities.npc import NPC
 from src.entities.mage_npc import MageNPC
 from src.entities.projectile import Arrow
@@ -32,6 +33,8 @@ from src.core.collision_system import CollisionSystem
 from src.ai.navigation import NavGrid
 from src.entities.monster_visuals import build_monster_animations
 from src.entities.monster_attacks import build_attack_controller, AttackContext
+from src.entities.boss_visuals import build_boss_animations
+from src.entities.boss_attacks import build_boss_attack_controller
 from src.combat.base_player_combat import PlayerCombatController
 from src.minigames.blackjack import BlackjackGame
 from src.minigames.roulette import RouletteGame
@@ -184,8 +187,9 @@ class Game(State):
             Return True if the in-game clock is currently daytime.
         _update_game_time(dt):
             Advance the in-game clock and update day/night brightness.
-        _get_spawn_info(map_path):
-            Resolve the default enemy spawn info for a given map path.
+        _get_spawn_entries(map_path):
+            Resolve the configured enemy spawn entries for a given map path
+            as a list of {"pos": (x, y), "profile": "name"} dicts.
         _get_camera_offset():
             Compute the camera offset (in world space) for this frame.
         _make_patrol_points(center, radius):
@@ -723,13 +727,116 @@ class Game(State):
                     {"item_id": "potion_of_confusion", "chance": 0.15},
                 ],
             },
+            "chronos": {
+                "visual_style": "chronos",
+                "sprite_set": "MenHuman1(Recolor)",
+                "speed": 120.0,
+                "hp": 600,
+                "damage": 25,
+                "animation_speed": 6.0,
+                "animation_size": (160, 160),
+                "detection_range": 500.0,
+                "attack_range": 70.0,
+                "ai_profile": "chronos",
+                "ai_config": {
+                    "preferred_min": 120.0,
+                    "preferred_max": 250.0,
+                    "orbit_radius": 180.0,
+                    "orbit_interval": 2.5,
+                    "drift_cooldown": 3.0,
+                    "drift_distance": 80.0,
+                    "rift_cooldown": 5.0,
+                    "warp_cooldown": 4.0,
+                    "warp_speed_mult": 2.5,
+                    "warp_duration": 0.6,
+                },
+                "attack_profile": "chronos",
+                "attack_config": {
+                    "cooldown_ms": 1200,
+                    "bolt_speed": 450.0,
+                    "bolt_range": 500.0,
+                    "bolt_damage_mult": 0.85,
+                    "slow_duration": 2.0,
+                    "slow_factor": 0.5,
+                    "melee_damage_mult": 1.2,
+                    "melee_range": 60.0,
+                    "spread_degrees": 5.0,
+                    "burst_cooldown_ms": 3500,
+                    "burst_radius": 100.0,
+                    "burst_damage_mult": 1.0,
+                    "rift_cooldown_ms": 4000,
+                    "rift_distance": 150.0,
+                    "storm_cooldown_ms": 6000,
+                    "storm_radius": 140.0,
+                    "storm_damage_mult": 1.5,
+                    "freeze_duration": 2.0,
+                    "enrage_speed_mult": 1.6,
+                    "nova_cooldown_ms": 5000,
+                    "nova_bolt_count": 8,
+                    "nova_bolt_speed": 350.0,
+                    "nova_bolt_range": 300.0,
+                    "nova_damage_mult": 0.7,
+                    "shard_cooldown_ms": 4500,
+                    "shard_count": 5,
+                    "shard_spread_degrees": 25.0,
+                    "shard_speed": 400.0,
+                    "shard_range": 400.0,
+                    "shard_damage_mult": 0.6,
+                    "cascade_cooldown_ms": 7000,
+                    "cascade_waves": 3,
+                    "cascade_bolts_per_wave": 3,
+                    "cascade_speed": 380.0,
+                    "cascade_range": 450.0,
+                    "cascade_damage_mult": 0.5,
+                    "barrage_cooldown_ms": 8000,
+                    "barrage_bolt_count": 12,
+                    "barrage_speed": 320.0,
+                    "barrage_range": 350.0,
+                    "barrage_damage_mult": 0.45,
+                    "timestop_cooldown_ms": 9000,
+                    "timestop_radius": 120.0,
+                    "timestop_freeze_duration": 1.5,
+                    "timestop_damage_mult": 0.5,
+                    "wave_cooldown_ms": 5500,
+                    "wave_radius": 160.0,
+                    "wave_damage_mult": 0.8,
+                    "rift_cooldown2_ms": 7000,
+                    "rift_duration": 4.0,
+                    "rift_damage_mult": 0.35,
+                    "decay_cooldown_ms": 6500,
+                    "decay_radius": 80.0,
+                    "decay_damage_mult": 0.3,
+                    "reversal_cooldown_ms": 10000,
+                    "reversal_heal": 40,
+                    "reversal_damage_mult": 0.6,
+                },
+                "contact_damage": True,
+                "is_boss": True,
+                "boss_name": "Chronos the Chronicler of Time",
+                "drop_chance": [
+                    {"item_id": "large_health_potion", "chance": 1.0},
+                ],
+            },
         }
         self.enemy_profile_names = list(self.enemy_profiles.keys())
 
         self.ENEMY_SPAWNS = {
             # "maps/test-map-1.tmx": (400, 300), # Якщо закоментувати цей рядок, ворога на старті не буде
-            "maps/test-map-2.tmx": {"pos": (600, 450), "profile": "trickster"},
-            "maps/test-map-3.tmx": {"pos": (300, 200), "profile": "skirmisher"},
+            # Each map can declare multiple distinct enemy spawns (pos + profile).
+            # Both dict-of-one and list-of-many forms are supported; tuples fall
+            # back to the "stalker" profile for backward compatibility.
+            "maps/test-map-2.tmx": [
+                {"pos": (600, 450),   "profile": "trickster"},
+                {"pos": (1500, 1250), "profile": "stalker"},
+                {"pos": (3000, 1800), "profile": "brute"},
+                {"pos": (3200, 400),  "profile": "phantom"},
+            ],
+            "maps/test-map-3.tmx": [
+                {"pos": (300, 200),  "profile": "skirmisher"},
+                {"pos": (900, 500),  "profile": "bomber"},
+                {"pos": (1400, 800), "profile": "phantom"},
+                {"pos": (2200, 1200), "profile": "chronos", "is_boss": True},
+            ],
         }
 
         # NPC spawn positions (pixels). Tavern NPC coordinates corrected to fit map bounds
@@ -757,12 +864,13 @@ class Game(State):
         # Maps where enemy spawning (both default and random) is disabled
         self.NO_ENEMY_SPAWN_MAPS = {"maps/tavern.tmx", "maps/test-map-1.tmx"}
 
-        spawn_info = self._get_spawn_info(initial_map_path)
+        spawn_entries = self._get_spawn_entries(initial_map_path)
         if initial_map_path in self.NO_ENEMY_SPAWN_MAPS:
-            spawn_info = None
-        if spawn_info:
-            start_x, start_y = spawn_info["pos"]
-            default_profile = spawn_info.get("profile")
+            spawn_entries = []
+        if spawn_entries:
+            first = spawn_entries[0]
+            start_x, start_y = first["pos"]
+            default_profile = first.get("profile")
         else:
             start_x, start_y = -5000, -5000
             default_profile = None
@@ -770,8 +878,12 @@ class Game(State):
         self.hud = HUD(self.character, app, self.toggle_player_inventory, self.use_skill_slot, open_shop_callback=self.open_shop)
 
         self.enemy = self._create_enemy(start_x, start_y, profile=default_profile)
-        
+
         self.enemies = [self.enemy]
+        # Spawn any additional configured enemies on the starting map.
+        for extra in spawn_entries[1:]:
+            ex, ey = extra["pos"]
+            self.enemies.append(self._create_enemy(ex, ey, profile=extra.get("profile")))
         self.items = []
         
         # Enemy spawning system
@@ -1416,13 +1528,25 @@ class Game(State):
 
         self.app.profiler.set_gauge("game_time", self._format_game_time())
 
-    def _get_spawn_info(self, map_path: str) -> dict | None:
+    def _get_spawn_entries(self, map_path: str) -> list[dict]:
+        """
+        Normalize the ENEMY_SPAWNS entry for a map into a list of
+        {"pos": (x, y), "profile": "name"} dicts.
+
+        Supports three legacy forms:
+          - list of dicts: returned as-is
+          - single dict: wrapped in a one-element list
+          - (x, y) tuple: wrapped with the default "stalker" profile
+        Returns an empty list if the map has no configured spawns.
+        """
         spawn = self.ENEMY_SPAWNS.get(map_path)
         if not spawn:
-            return None
+            return []
+        if isinstance(spawn, list):
+            return [entry for entry in spawn if entry]
         if isinstance(spawn, dict):
-            return spawn
-        return {"pos": spawn, "profile": "stalker"}
+            return [spawn]
+        return [{"pos": spawn, "profile": "stalker"}]
 
     def _get_camera_offset(self) -> pygame.Vector2:
         viewport_width, viewport_height = self.app.screen.get_size()
@@ -1606,27 +1730,48 @@ class Game(State):
             radius = float(settings.get("patrol_radius", 120.0))
             patrol_points = self._make_patrol_points(pygame.Vector2(x, y), radius)
 
-        enemy = Enemy(
-            x=x,
-            y=y,
-            sprite_set=sprite_set,
-            speed=settings["speed"],
-            hp=settings["hp"],
-            damage=settings["damage"],
-            animation_size=(85, 85),
-            animation_speed=settings.get("animation_speed", 6.0),
-            detection_range=settings.get("detection_range", 250.0),
-            attack_range=settings.get("attack_range", 40.0),
-            patrol_points=patrol_points,
-            ai_profile=ai_profile,
-            ai_config=settings.get("ai_config"),
-            animations=animations,
-            attack_controller=attack_controller,
-            contact_damage=contact_damage,
-            visual_style=visual_style,
-        )
+        is_boss = settings.get("is_boss", False)
+        anim_size = settings.get("animation_size", (85, 85))
+        if is_boss:
+            boss_name = settings.get("boss_name", "Boss")
+            if attack_profile:
+                attack_controller = build_boss_attack_controller(attack_profile, settings.get("attack_config"))
+            animations = None
+            if visual_style:
+                animations = build_boss_animations(visual_style, anim_size)
+            enemy = Boss(
+                x=x, y=y, sprite_set=sprite_set,
+                speed=settings["speed"], hp=settings["hp"], damage=settings["damage"],
+                animation_size=anim_size, animation_speed=settings.get("animation_speed", 6.0),
+                detection_range=settings.get("detection_range", 250.0),
+                attack_range=settings.get("attack_range", 40.0),
+                boss_name=boss_name,
+                patrol_points=patrol_points, ai_profile=ai_profile,
+                ai_config=settings.get("ai_config"), animations=animations,
+                attack_controller=attack_controller, contact_damage=contact_damage,
+                visual_style=visual_style,
+                intro_trigger_distance=450.0,
+            )
+        else:
+            enemy = Enemy(
+                x=x, y=y, sprite_set=sprite_set,
+                speed=settings["speed"], hp=settings["hp"], damage=settings["damage"],
+                animation_size=anim_size, animation_speed=settings.get("animation_speed", 6.0),
+                detection_range=settings.get("detection_range", 250.0),
+                attack_range=settings.get("attack_range", 40.0),
+                patrol_points=patrol_points, ai_profile=ai_profile,
+                ai_config=settings.get("ai_config"), animations=animations,
+                attack_controller=attack_controller, contact_damage=contact_damage,
+                visual_style=visual_style,
+            )
         enemy.target_entity = self.character
         enemy.profile_name = profile_name
+        if isinstance(enemy, Boss):
+            try:
+                screen_w, screen_h = pygame.display.get_surface().get_size()
+                enemy.set_screen_size((screen_w, screen_h))
+            except Exception:
+                pass
         return enemy
 
     def spawn_random_enemy(self):
@@ -1820,12 +1965,12 @@ class Game(State):
             # Reset enemies list and spawn default one if needed
             self.enemies = []
             
-            spawn_info = self._get_spawn_info(switched_map_path)
-            if switched_map_path not in self.NO_ENEMY_SPAWN_MAPS and spawn_info:
-                new_x, new_y = spawn_info["pos"]
-                profile = spawn_info.get("profile")
-                default_enemy = self._create_enemy(new_x, new_y, profile=profile)
-                self.enemies.append(default_enemy)
+            spawn_entries = self._get_spawn_entries(switched_map_path)
+            if switched_map_path not in self.NO_ENEMY_SPAWN_MAPS and spawn_entries:
+                for entry in spawn_entries:
+                    new_x, new_y = entry["pos"]
+                    profile = entry.get("profile")
+                    self.enemies.append(self._create_enemy(new_x, new_y, profile=profile))
 
             if switched_map_path in self.NPC_SPAWNS:
                     npc_x, npc_y = self.NPC_SPAWNS[switched_map_path]
@@ -1917,7 +2062,21 @@ class Game(State):
 
         self.player_combat.sync_weapon_stats()
 
-        self.character.update(dt, self.collision_handler, self.obstacles)
+        # Boss intro trigger check
+        intro_active = False
+        screen_size = getattr(self, '_screen_size', (1280, 720))
+        for enemy in self.enemies:
+            if isinstance(enemy, Boss) and not enemy.intro_triggered:
+                enemy.check_intro_trigger(self.character.pos, screen_size)
+            if isinstance(enemy, Boss) and enemy.is_intro_active():
+                intro_active = True
+                # Freeze player position during intro
+                enemy.intro.update(dt)
+                if enemy.intro.finished:
+                    intro_active = False
+
+        if not intro_active:
+            self.character.update(dt, self.collision_handler, self.obstacles)
 
         mouse_pos = pygame.mouse.get_pos()
         camera_offset = self._get_camera_offset()
@@ -2229,6 +2388,7 @@ class Game(State):
         self.spirits = [s for s in self.spirits if s.alive]
 
     def draw_scene(self, screen):
+        self._screen_size = screen.get_size()
         dt = self.app.clock.get_time() / 1000
         self.app.profiler.start_section("game.update")
         self.update(dt)
@@ -2236,6 +2396,14 @@ class Game(State):
 
         self.app.profiler.start_section("game.draw")
         camera_offset = self._get_camera_offset()
+
+        # Boss intro screen shake
+        for enemy in self.enemies:
+            if isinstance(enemy, Boss) and enemy.intro is not None and not enemy.intro.finished:
+                shake = enemy.intro.get_shake_offset()
+                camera_offset = camera_offset + shake
+                break
+
         viewport_rect = pygame.Rect(0, 0, screen.get_width(), screen.get_height())
 
         def _is_visible(entity) -> bool:
@@ -2340,6 +2508,17 @@ class Game(State):
         # upper halves of trees / rocks and never get hidden behind
         # tall tile art.
         self.map.draw_fringe_overlay(screen, camera_offset, self.character)
+
+        # Draw HP bars on top of everything (including fringe)
+        for enemy in self.enemies:
+            if _is_visible(enemy):
+                enemy.draw_hp_bar(screen, camera_offset)
+
+        # Draw boss overlays (intro/phase transitions) on top of everything
+        for enemy in self.enemies:
+            if isinstance(enemy, Boss):
+                enemy.draw_overlay(screen)
+                enemy.draw_intro_text(screen)
 
         try:
             if getattr(self, 'gathering', None):
