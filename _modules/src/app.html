@@ -184,6 +184,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">icon</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;assets/ui/smug.png&quot;</span><span class="p">)</span>
         <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_icon</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">icon</span><span class="p">)</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_custom_cursor</span><span class="p">()</span>
+
         <span class="n">i18n</span><span class="o">.</span><span class="n">install_language</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">LANGUAGE</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">create_logo</span><span class="p">()</span>
 
@@ -486,6 +488,17 @@
         <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">music</span><span class="o">.</span><span class="n">set_volume</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">MUSIC_VOLUME</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio</span> <span class="o">==</span> <span class="s2">&quot;on&quot;</span> <span class="k">else</span> <span class="mf">0.0</span><span class="p">)</span>
         <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">music</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span></div>
 
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_set_custom_cursor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+            <span class="n">cursor_dir</span> <span class="o">=</span> <span class="s2">&quot;assets/misc&quot;</span>
+            <span class="n">pngs</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">cursor_dir</span><span class="p">)</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.png&quot;</span><span class="p">)]</span>
+            <span class="k">if</span> <span class="n">pngs</span><span class="p">:</span>
+                <span class="n">img</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cursor_dir</span><span class="p">,</span> <span class="n">pngs</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+                <span class="n">pygame</span><span class="o">.</span><span class="n">mouse</span><span class="o">.</span><span class="n">set_cursor</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">cursors</span><span class="o">.</span><span class="n">Cursor</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="n">img</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">img</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
 
 <div class="viewcode-block" id="App.run">
 <a class="viewcode-back" href="../../src.html#src.app.App.run">[docs]</a>
