@@ -159,6 +159,28 @@ def seed_materials(db):
         description="A cold, crystalline rune. Can be socketed into a weapon by an Enchanter."
     )
 
+    _ensure_placeholder_image("assets/items/resources/lightning_rune.png", (220, 220, 50), "LN")
+    db.add_generic_item(
+        item_id="lightning_rune",
+        item_type="resource",
+        name="Lightning Rune",
+        image_path="assets/items/resources/lightning_rune.png",
+        price=150,
+        max_stack=10,
+        description="A crackling rune radiating static electricity. Can be socketed into a weapon by an Enchanter."
+    )
+
+    _ensure_placeholder_image("assets/items/resources/void_rune.png", (100, 30, 150), "VR")
+    db.add_generic_item(
+        item_id="void_rune",
+        item_type="resource",
+        name="Void Rune",
+        image_path="assets/items/resources/void_rune.png",
+        price=150,
+        max_stack=10,
+        description="A dark, pulsating rune of pure void energy. Can be socketed into a weapon by an Enchanter."
+    )
+
 
 if __name__ == "__main__":
     from database.GP_database import Gp_database

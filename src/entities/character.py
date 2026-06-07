@@ -2068,6 +2068,10 @@ class Character:
             effects_to_apply.append({"type": "burn", "duration": 5.0, "damage_per_sec": 3.0, "chance": 0.10})
         elif socketed_rune == "ice_rune":
             effects_to_apply.append({"type": "slow", "duration": 3.0, "speed_multiplier": 0.5, "chance": 0.10})
+        elif socketed_rune == "lightning_rune":
+            effects_to_apply.append({"type": "dizziness", "duration": 2.0, "chance": 0.10})
+        elif socketed_rune == "void_rune":
+            effects_to_apply.append({"type": "curse", "duration": 5.0, "chance": 0.10})
             
         if not effects_to_apply:
             return

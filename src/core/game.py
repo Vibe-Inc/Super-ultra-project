@@ -970,6 +970,7 @@ class Game(State):
         self.crafting_minigame = None
         self.rune_minigame = None
         self.enchanting_menu = None
+        self.rune_selection_menu = None
 
         # Debug menu for spawning mobs
         self.spawn_menu = SpawnMenu(
@@ -1211,18 +1212,23 @@ class Game(State):
         )
 
     def open_rune_crafting(self):
-        from src.minigames.rune_drawing import RuneDrawingMinigame
-        import random
-        rune_type = random.choice(["fire_rune", "ice_rune"])
-        def on_close(won):
-            self.rune_minigame = None
-            if won:
-                from src.items.items import create_item
-                rune = create_item(rune_type)
-                if self.app.INV_manager:
-                    self.app.INV_manager.add_item_to_inventory(rune, 1, self.MAIN_player_inv, self.hotbar)
-                logger.info(f"Crafted a {rune_type}")
-        self.rune_minigame = RuneDrawingMinigame(self.app, rune_type=rune_type, on_close=on_close)
+        from src.ui.menus.rune_selection_menu import RuneSelectionMenu
+        def on_rune_selected(rune_type):
+            from src.minigames.rune_drawing import RuneDrawingMinigame
+            def on_close(won):
+                self.rune_minigame = None
+                if won:
+                    from src.items.items import create_item
+                    rune = create_item(rune_type)
+                    from src.inventory.system import CraftingLogic
+                    if not CraftingLogic.add_crafted_item(self.MAIN_player_inv, rune, 1):
+                        if hasattr(self, 'hotbar') and self.hotbar:
+                            CraftingLogic.add_crafted_item(self.hotbar, rune, 1)
+                    logger.info(f"Crafted a {rune_type}")
+            self.rune_minigame = RuneDrawingMinigame(self.app, rune_type=rune_type, on_close=on_close)
+            
+        self.rune_selection_menu = RuneSelectionMenu(self.app, on_select=on_rune_selected)
+        self.rune_selection_menu.open()
 
     def open_enchanting_menu(self):
         from src.ui.menus.enchanting_menu import EnchantingMenu
@@ -2153,10 +2159,13 @@ class Game(State):
             pass
 
         try:
-            if getattr(self, 'enchanting_menu', None):
+            if getattr(self, "enchanting_menu", None) and self.enchanting_menu.is_open:
                 self.enchanting_menu.update(dt)
         except Exception:
             pass
+            
+        if getattr(self, "rune_selection_menu", None) and self.rune_selection_menu.is_open:
+            self.rune_selection_menu.update(dt)
 
         # Tick the smeltery overlay so coke oven / blast furnace jobs
         # continue to advance even while the overlay is closed.
@@ -2478,11 +2487,13 @@ class Game(State):
             except Exception:
                 pass
                 
-        if getattr(self, 'enchanting_menu', None):
-            try:
-                self.enchanting_menu.draw(screen)
-            except Exception:
-                pass
+        if getattr(self, "enchanting_menu", None) and self.enchanting_menu.is_open:
+            self.enchanting_menu.draw(screen)
+            
+        if getattr(self, "rune_selection_menu", None) and self.rune_selection_menu.is_open:
+            self.rune_selection_menu.draw(screen)
+                
+        # Draw debug spawn / effects menus
         # Draw debug spawn / effects menus
         self.spawn_menu.draw(screen)
         try:
@@ -2550,12 +2561,13 @@ class Game(State):
             except Exception:
                 pass
 
-        if getattr(self, 'enchanting_menu', None) and getattr(self.enchanting_menu, 'is_open', False):
-            try:
-                self.enchanting_menu.handle_event(event)
+        if getattr(self, "enchanting_menu", None) and self.enchanting_menu.is_open:
+            if self.enchanting_menu.handle_event(event):
                 return
-            except Exception:
-                pass
+                
+        if getattr(self, "rune_selection_menu", None) and self.rune_selection_menu.is_open:
+            if self.rune_selection_menu.handle_event(event):
+                return
 
         if getattr(self.app, 'current_dialog', None):
             try:

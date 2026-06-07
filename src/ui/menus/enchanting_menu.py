@@ -100,7 +100,7 @@ class EnchantingMenu:
         runes = []
         try:
             # We display all available rune types in the game
-            runes = [create_item("fire_rune"), create_item("ice_rune")]
+            runes = [create_item("fire_rune"), create_item("ice_rune"), create_item("lightning_rune"), create_item("void_rune")]
         except Exception as e:
             logger.error(f"Error getting runes: {e}")
         return runes
@@ -403,7 +403,7 @@ class EnchantingMenu:
         
         if can_enchant:
             base_col = (130, 80, 255) if btn_hov else (100, 50, 200)
-            glow_col = (int(base_col[0] + pulse * 40), int(base_col[1] + pulse * 40), int(base_col[2] + pulse * 40))
+            glow_col = (min(255, int(base_col[0] + pulse * 40)), min(255, int(base_col[1] + pulse * 40)), min(255, int(base_col[2] + pulse * 40)))
             self._draw_glowing_rect(surface, enchant_btn, glow_col, radius=12, glow_amount=15)
         else:
             pygame.draw.rect(surface, (50, 50, 60), enchant_btn, border_radius=12)

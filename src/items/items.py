@@ -453,6 +453,10 @@ class Weapon(Item, DurabilityMixin):
                 socket_str = "[Socket: Fire Rune] - 10% chance to Burn\n"
             elif self.socketed_rune == "ice_rune":
                 socket_str = "[Socket: Ice Rune] - 10% chance to Slow\n"
+            elif self.socketed_rune == "lightning_rune":
+                socket_str = "[Socket: Lightning Rune] - 10% chance to Daze\n"
+            elif self.socketed_rune == "void_rune":
+                socket_str = "[Socket: Void Rune] - 10% chance to Curse\n"
             else:
                 socket_str = f"[Socket: {self.socketed_rune}]\n"
                 
