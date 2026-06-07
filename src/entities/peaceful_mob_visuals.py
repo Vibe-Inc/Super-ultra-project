@@ -180,9 +180,9 @@ def _draw_circle_alpha(surface, color, center, radius):
         pygame.draw.circle(surface, color, center, radius)
 
 
-def _shadow(surface, cx, h, p, bob=0):
-    """Draw a soft ground shadow."""
-    y = h - 10 + bob
+def _shadow(surface, cx, h, p, bob=0, foot_y=None):
+    """Draw a soft ground shadow. ``foot_y`` overrides the automatic bottom-edge offset."""
+    y = (foot_y + bob) if foot_y is not None else (h - 10 + bob)
     _draw_ellipse_alpha(surface, p["shadow"], (cx - 18, y, 36, 12))
 
 
@@ -191,7 +191,7 @@ def _shadow(surface, cx, h, p, bob=0):
 # ============================================================
 def _draw_grove_titan(s, w, h, cx, cy, p, direction, bob, frame):
     """A small, gentle tree-like creature that waddles and hums."""
-    _shadow(s, cx, h, p, bob)
+    _shadow(s, cx, h, p, bob, foot_y=h - 14)
     walk = [0, 1, 0, -1][frame]
     sway = [0, 2, 0, -2][frame]
 
@@ -305,7 +305,7 @@ def _draw_grove_titan(s, w, h, cx, cy, p, direction, bob, frame):
 # ============================================================
 def _draw_singing_stone(s, w, h, cx, cy, p, direction, bob, frame):
     """A gentle living rock creature that hums melodically, with glowing runes."""
-    _shadow(s, cx, h, p, bob)
+    _shadow(s, cx, h, p, bob, foot_y=int(h * 0.28) + int(h * 0.48) - 2)
     bob = [0, 1, 0, -1][frame]
 
     # -- body (rounded boulder shape) --
@@ -415,7 +415,7 @@ def _draw_singing_stone(s, w, h, cx, cy, p, direction, bob, frame):
 # ============================================================
 def _draw_ember_phoenix(s, w, h, cx, cy, p, direction, bob, frame):
     """A radiant bird of gentle flame that radiates warmth and healing light."""
-    _shadow(s, cx, h, p, bob)
+    _shadow(s, cx, h, p, bob, foot_y=int(h * 0.60))
     wing_flap = [0, 5, 0, -5][frame]
     head_bob = [0, -1, 0, 1][frame]
 
@@ -545,7 +545,7 @@ def _draw_ember_phoenix(s, w, h, cx, cy, p, direction, bob, frame):
 # ============================================================
 def _draw_coral_golem(s, w, h, cx, cy, p, direction, bob, frame):
     """A living coral formation that pulses with deep ocean energy."""
-    _shadow(s, cx, h, p, bob)
+    _shadow(s, cx, h, p, bob, foot_y=int(h * 0.28) + int(h * 0.42))
     pulse = [0, 1, 0, -1][frame]
 
     # -- ocean energy glow --
@@ -632,7 +632,7 @@ def _draw_coral_golem(s, w, h, cx, cy, p, direction, bob, frame):
 # ============================================================
 def _draw_void_butterfly(s, w, h, cx, cy, p, direction, bob, frame):
     """A massive butterfly whose wings reveal glimpses of the distant cosmos."""
-    _shadow(s, cx, h, p, bob)
+    _shadow(s, cx, h, p, bob, foot_y=int(h * 0.55))
     wing_flap = [0, 5, 0, -5][frame]
     antenna_sway = [0, 2, 0, -2][frame]
 
@@ -763,7 +763,7 @@ def _draw_void_butterfly(s, w, h, cx, cy, p, direction, bob, frame):
 # ============================================================
 def _draw_moss_rabbit(s, w, h, cx, cy, p, direction, bob, frame):
     """A fluffy rabbit with moss and tiny flowers growing on its back."""
-    _shadow(s, cx, h, p, bob)
+    _shadow(s, cx, h, p, bob, foot_y=int(h * 0.62) + 12)
     hop = [0, -2, 0, -1][frame]
     ear_wag = [0, 2, 0, -2][frame]
 
@@ -834,7 +834,7 @@ def _draw_moss_rabbit(s, w, h, cx, cy, p, direction, bob, frame):
 # ============================================================
 def _draw_crystal_fox(s, w, h, cx, cy, p, direction, bob, frame):
     """A sleek fox whose fur shimmers like cut gemstones in the sunlight."""
-    _shadow(s, cx, h, p, bob)
+    _shadow(s, cx, h, p, bob, foot_y=int(h * 0.56) + 14)
     walk = [0, 1, 0, -1][frame]
     tail_sway = [0, 3, 0, -3][frame]
 
@@ -950,7 +950,7 @@ def _draw_crystal_fox(s, w, h, cx, cy, p, direction, bob, frame):
 # ============================================================
 def _draw_fairy_cat(s, w, h, cx, cy, p, direction, bob, frame):
     """A graceful feline with iridescent wings and eyes like tiny moons."""
-    _shadow(s, cx, h, p, bob)
+    _shadow(s, cx, h, p, bob, foot_y=int(h * 0.56) + 14)
     walk = [0, 1, 0, -1][frame]
     tail_wag = [0, 4, 0, -4][frame]
     wing_flap = [0, 3, 0, -3][frame]
