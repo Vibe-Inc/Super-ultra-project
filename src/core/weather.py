@@ -27,40 +27,64 @@ class WeatherSystem:
         self.weather_duration = 300.0  # 5 minutes in real-time seconds
         self.weather_timer = self.weather_duration
         
-        # Rain particles (screen-space for performance)
-        self.rain_particles = []  # dicts: {x, y, speed, len, width, alpha}
-        self.max_rain_particles = 250
+        # Rain particles: 3-layer parallax (0=background, 1=midground, 2=foreground)
+        self.rain_particles = []  # dicts: {x, y, speed, len, width, alpha, layer}
+        self.max_rain_particles = 120
         
         # Rain splashes (screen-space)
         self.splashes = []  # dicts: {x, y, radius, max_radius, alpha}
         
-        # Rain puddles (world-space)
+        # Rain puddles (world-space) - Capped to 8 max for clean visual flow
         self.puddles = []  # dicts: {pos: Vector2, radius, max_radius, alpha, ripples: list}
+        self.max_puddles = 8
         self.puddle_spawn_timer = 0.0
         
-        # Fog clouds (screen-space)
-        self.fog_clouds = []  # dicts: {x, y, radius, vx, vy, alpha, pulse}
+        # Pre-cache soft fog cloud surfaces for optimization and beauty
+        self.fog_surfaces = []
+        self._precache_fog_surfaces()
+        
+        # Fog clouds list
+        self.fog_clouds = []  # dicts: {x, y, vx, vy, size_idx, alpha, pulse_speed, pulse_offset}
         self._init_fog_clouds()
         
         # Lightning / Thunder settings
         self.lightning_flash_time = 0.0
         self.lightning_flash_max = 0.0
+        self.lightning_flash_intensity = 0.0
+        self.flash_sequence = []  # list of dicts for double-strobe effect
         self.lightning_timer = random.uniform(15.0, 30.0)
-        self.lightning_strike_pos = None  # World position of strike
+        self.lightning_strike_pos = None  # World position
         self.lightning_strike_timer = 0.0
+        self.lightning_branches = []  # side branches of lightning bolt
+
+    def _precache_fog_surfaces(self):
+        """Create a cache of soft radial fog clouds so we don't draw slow vector circles at runtime."""
+        self.fog_surfaces = []
+        sizes = [450, 600, 800]
+        for size in sizes:
+            surf = pygame.Surface((size, size), pygame.SRCALPHA)
+            cx, cy = size // 2, size // 2
+            # Draw concentric circles with quad-fading transparency
+            for r in range(cx, 0, -5):
+                frac = r / cx
+                # Quad-fade creates a very soft cloud-like edge
+                alpha = int((1.0 - frac) * (1.0 - frac) * 35)
+                if alpha > 0:
+                    pygame.draw.circle(surf, (225, 235, 245, alpha), (cx, cy), r)
+            self.fog_surfaces.append(surf)
 
     def _init_fog_clouds(self):
         self.fog_clouds = []
-        # Increased fog clouds from 8 to 12 for denser fog
-        for _ in range(12):
+        # 10 large drifting volumetric clouds
+        for _ in range(10):
             self.fog_clouds.append({
-                'x': random.uniform(0, cfg.SCREEN_WIDTH),
-                'y': random.uniform(0, cfg.SCREEN_HEIGHT),
-                'radius': random.uniform(280, 480),  # Increased radius for greater visibility
-                'vx': random.uniform(12, 30),
-                'vy': random.uniform(-6, 6),
-                'alpha': random.uniform(40, 75),  # Increased alpha for dense, prominent fog
-                'pulse_speed': random.uniform(0.4, 1.2),
+                'x': random.uniform(-100, cfg.SCREEN_WIDTH + 100),
+                'y': random.uniform(-100, cfg.SCREEN_HEIGHT + 100),
+                'vx': random.uniform(8, 18),
+                'vy': random.uniform(-4, 4),
+                'size_idx': random.choice([0, 1, 2]),
+                'alpha_mult': random.uniform(0.7, 1.3),
+                'pulse_speed': random.uniform(0.3, 0.8),
                 'pulse_offset': random.uniform(0, math.pi * 2)
             })
 
@@ -78,9 +102,10 @@ class WeatherSystem:
         # Clean up some states
         if state != WeatherState.STORM:
             self.lightning_flash_time = 0.0
+            self.flash_sequence.clear()
             self.lightning_strike_pos = None
             
-        # Clear puddles if transitioning to CLEAR/FOG (they will evaporate)
+        # Evaporate puddles when clearing
         if state == WeatherState.CLEAR or state == WeatherState.FOG:
             for puddle in self.puddles:
                 puddle['evaporating'] = True
@@ -88,7 +113,6 @@ class WeatherSystem:
             for puddle in self.puddles:
                 puddle['evaporating'] = False
 
-        # Apply stat changes immediately
         self.apply_weather_gameplay_effects()
 
     def cycle_weather(self):
@@ -123,16 +147,12 @@ class WeatherSystem:
         if hasattr(self.game, 'enemies') and self.game.enemies:
             for enemy in self.game.enemies:
                 enemy.weather_speed_multiplier = speed_mult
-                # Keep base detection range
                 base_range = getattr(enemy, 'base_detection_range', enemy.detection_range)
                 enemy.detection_range = base_range * detect_mult
 
     def update(self, dt: float):
-        # Apply weather cycles
         self.weather_timer -= dt
         if self.weather_timer <= 0:
-            # Roll for new weather
-            # 50% Clear, 20% Rain, 15% Storm, 15% Fog
             roll = random.random()
             if roll < 0.50:
                 self.change_weather(WeatherState.CLEAR)
@@ -143,17 +163,14 @@ class WeatherSystem:
             else:
                 self.change_weather(WeatherState.FOG)
 
-        # Enforce weather effects on entities periodically
         self.apply_weather_gameplay_effects()
 
-        # If indoors, we update timers but skip visual updates/particles
         if self.is_indoors():
             self.rain_particles.clear()
             self.splashes.clear()
             self.puddles.clear()
             return
 
-        # Update visual elements
         self._update_rain(dt)
         self._update_puddles(dt)
         self._update_fog(dt)
@@ -161,62 +178,83 @@ class WeatherSystem:
 
     def _update_rain(self, dt: float):
         is_raining = self.current_weather in (WeatherState.RAIN, WeatherState.STORM)
-        # Increased particle count from 150/300 to 250/450 for highly visible rain
-        self.max_rain_particles = 450 if self.current_weather == WeatherState.STORM else 250
+        self.max_rain_particles = 240 if self.current_weather == WeatherState.STORM else 100
         
-        # Spawn rain particles
+        # Spawn rain particles with layered depth
         if is_raining and len(self.rain_particles) < self.max_rain_particles:
-            spawn_count = min(30, self.max_rain_particles - len(self.rain_particles))
+            spawn_count = min(20, self.max_rain_particles - len(self.rain_particles))
             for _ in range(spawn_count):
+                # Randomly assign depth layer (0=back, 1=mid, 2=front)
+                layer = random.choices([0, 1, 2], weights=[0.5, 0.35, 0.15])[0]
+                
+                if layer == 0:  # Background: small, slow, faded
+                    speed = random.uniform(650, 850)
+                    length = random.uniform(10, 15)
+                    width = 1.0
+                    alpha = random.uniform(60, 100)
+                elif layer == 1:  # Midground: normal
+                    speed = random.uniform(950, 1150)
+                    length = random.uniform(18, 28)
+                    width = 2.0
+                    alpha = random.uniform(110, 150)
+                else:  # Foreground: large, thick, fast
+                    speed = random.uniform(1300, 1600)
+                    length = random.uniform(32, 45)
+                    width = 3.2
+                    alpha = random.uniform(150, 200)
+
                 self.rain_particles.append({
                     'x': random.uniform(-100, cfg.SCREEN_WIDTH + 100),
                     'y': random.uniform(-50, 0),
-                    'speed': random.uniform(900, 1300),  # Slightly faster falling rain
-                    'len': random.uniform(20, 38),       # Longer rain streaks
-                    'width': random.uniform(1.8, 3.2),   # Thicker rain streaks for visibility
-                    'alpha': random.uniform(140, 220)    # Highly opaque particles
+                    'speed': speed,
+                    'len': length,
+                    'width': width,
+                    'alpha': alpha,
+                    'layer': layer
                 })
 
-        # Update rain particles
-        wind = 250.0 if self.current_weather == WeatherState.STORM else 80.0
+        # Update rain particles (wind wobbles angle slightly over time)
+        time_sec = pygame.time.get_ticks() * 0.001
+        base_wind = 220.0 if self.current_weather == WeatherState.STORM else 60.0
+        wind_wobble = math.sin(time_sec * 0.8) * 30.0
+        wind = base_wind + wind_wobble
+
         for p in self.rain_particles[:]:
-            p['x'] += wind * dt
+            p['x'] += wind * (p['speed'] / 1000.0) * dt  # parallax wind
             p['y'] += p['speed'] * dt
             if p['y'] > cfg.SCREEN_HEIGHT:
                 self.rain_particles.remove(p)
-                # Spawn splash on bottom of screen occasionally
-                if random.random() < 0.5:
+                # Foreground and midground particles make splashes
+                if p['layer'] > 0 and random.random() < 0.35:
                     self.splashes.append({
                         'x': p['x'],
-                        'y': cfg.SCREEN_HEIGHT - random.uniform(0, 15),
+                        'y': cfg.SCREEN_HEIGHT - random.uniform(0, 12),
                         'radius': 1.0,
-                        'max_radius': random.uniform(6, 12),  # Larger splashes
-                        'alpha': p['alpha']
+                        'max_radius': random.uniform(5, 10) if p['layer'] == 2 else random.uniform(3, 6),
+                        'alpha': p['alpha'] * 0.8
                     })
 
         # Update splashes
         for s in self.splashes[:]:
-            s['radius'] += 20.0 * dt
-            s['alpha'] -= 250 * dt
+            s['radius'] += 18.0 * dt
+            s['alpha'] -= 300 * dt
             if s['alpha'] <= 0 or s['radius'] >= s['max_radius']:
                 self.splashes.remove(s)
 
     def _update_puddles(self, dt: float):
         is_raining = self.current_weather in (WeatherState.RAIN, WeatherState.STORM)
         
-        # Spawn puddles in world coordinates near the player, checking collisions
-        if is_raining and len(self.puddles) < 25:  # Increased max puddles to 25
+        # Spawn puddles - limited to max_puddles (8) to be "not so many" and optimized
+        if is_raining and len(self.puddles) < self.max_puddles:
             self.puddle_spawn_timer += dt
-            if self.puddle_spawn_timer >= 0.8:      # Spawn more frequently
+            if self.puddle_spawn_timer >= 2.0:
                 self.puddle_spawn_timer = 0.0
                 player = self.game.character
                 
-                # Attempt to find a valid coordinate
-                for _ in range(25):
-                    px = player.pos.x + random.uniform(-650, 650)
-                    py = player.pos.y + random.uniform(-450, 450)
+                for _ in range(30):
+                    px = player.pos.x + random.uniform(-500, 500)
+                    py = player.pos.y + random.uniform(-350, 350)
                     
-                    # Verify map boundaries
                     map_w = cfg.SCREEN_WIDTH
                     map_h = cfg.SCREEN_HEIGHT
                     if self.game.map.current_map:
@@ -226,23 +264,22 @@ class WeatherSystem:
                     px = max(50, min(px, map_w - 50))
                     py = max(50, min(py, map_h - 50))
 
-                    # 1. Point & bounding rect check against all collidable obstacles (Wall layer, collision boxes)
-                    puddle_r = 30.0
-                    puddle_rect = pygame.Rect(px - puddle_r, py - puddle_r / 2, puddle_r * 2, puddle_r)
+                    # Bounding box collision check (30x16)
+                    p_radius = 28.0
+                    puddle_rect = pygame.Rect(px - p_radius, py - p_radius / 2, p_radius * 2, p_radius)
                     if puddle_rect.collidelist(self.game.obstacles) != -1:
                         continue
 
-                    # 2. Check current map data for collidable tiles and the Details Fringe Layer
+                    # Tile Layer check
                     if self.game.map.current_map and self.game.map.current_map.game_map:
                         tmx_data = self.game.map.current_map.game_map
                         tile_x = int(px // tmx_data.tilewidth)
                         tile_y = int(py // tmx_data.tileheight)
                         
-                        # Clip check
                         if not (0 <= tile_x < tmx_data.width and 0 <= tile_y < tmx_data.height):
                             continue
                             
-                        is_invalid_tile = False
+                        is_invalid = False
                         for layer in tmx_data.layers:
                             if isinstance(layer, pytmx.TiledTileLayer):
                                 try:
@@ -250,25 +287,23 @@ class WeatherSystem:
                                 except IndexError:
                                     gid = 0
                                 if gid > 0:
-                                    # Reject if tile is on the details fringe layer
                                     if layer.name.strip().lower() == "details fringe layer":
-                                        is_invalid_tile = True
+                                        is_invalid = True
                                         break
-                                    # Reject if tile property is set as collidable
                                     props = tmx_data.get_tile_properties_by_gid(gid)
                                     if props and props.get("collidable"):
-                                        is_invalid_tile = True
+                                        is_invalid = True
                                         break
-                        if is_invalid_tile:
+                        if is_invalid:
                             continue
 
-                    # Spot is valid, spawn puddle!
+                    # Spawn puddle!
                     self.puddles.append({
                         'pos': pygame.Vector2(px, py),
                         'radius': 1.0,
-                        'max_radius': random.uniform(18, 35),
+                        'max_radius': random.uniform(16, 26),
                         'alpha': 0.0,
-                        'max_alpha': random.uniform(90, 140),  # More visible puddles
+                        'max_alpha': random.uniform(70, 110),
                         'ripples': [],
                         'ripple_timer': 0.0,
                         'evaporating': False
@@ -277,7 +312,6 @@ class WeatherSystem:
 
         # Update puddles
         for p in self.puddles[:]:
-            # Evaporation vs growth
             if p.get('evaporating', False):
                 p['alpha'] -= 20 * dt
                 p['radius'] -= 3 * dt
@@ -286,25 +320,25 @@ class WeatherSystem:
                     continue
             else:
                 if p['radius'] < p['max_radius']:
-                    p['radius'] += 4.0 * dt
+                    p['radius'] += 3.0 * dt
                 if p['alpha'] < p['max_alpha']:
-                    p['alpha'] += 25 * dt
+                    p['alpha'] += 20 * dt
 
-            # Add ripples occasionally if raining
+            # Ripples spawning
             if is_raining:
                 p['ripple_timer'] += dt
-                if p['ripple_timer'] >= random.uniform(0.3, 0.7):
+                if p['ripple_timer'] >= random.uniform(0.5, 0.9):
                     p['ripple_timer'] = 0.0
                     p['ripples'].append({
                         'radius': 1.0,
-                        'max_radius': p['radius'] * random.uniform(0.6, 0.95),
+                        'max_radius': p['radius'] * random.uniform(0.65, 0.95),
                         'alpha': p['alpha']
                     })
 
             # Update ripples
             for r in p['ripples'][:]:
-                r['radius'] += 15 * dt
-                r['alpha'] -= 250 * dt
+                r['radius'] += 10 * dt
+                r['alpha'] -= 200 * dt
                 if r['alpha'] <= 0 or r['radius'] >= r['max_radius']:
                     p['ripples'].remove(r)
 
@@ -314,56 +348,99 @@ class WeatherSystem:
             cloud['y'] += cloud['vy'] * dt
             
             # Wrap around boundaries
-            if cloud['x'] - cloud['radius'] > cfg.SCREEN_WIDTH:
-                cloud['x'] = -cloud['radius']
-            elif cloud['x'] + cloud['radius'] < 0:
-                cloud['x'] = cfg.SCREEN_WIDTH + cloud['radius']
+            size = 450 + cloud['size_idx'] * 175
+            if cloud['x'] - size > cfg.SCREEN_WIDTH:
+                cloud['x'] = -size
+            elif cloud['x'] + size < 0:
+                cloud['x'] = cfg.SCREEN_WIDTH + size
                 
-            if cloud['y'] - cloud['radius'] > cfg.SCREEN_HEIGHT:
-                cloud['y'] = -cloud['radius']
-            elif cloud['y'] + cloud['radius'] < 0:
-                cloud['y'] = cfg.SCREEN_HEIGHT + cloud['radius']
+            if cloud['y'] - size > cfg.SCREEN_HEIGHT:
+                cloud['y'] = -size
+            elif cloud['y'] + size < 0:
+                cloud['y'] = cfg.SCREEN_HEIGHT + size
 
     def _update_lightning(self, dt: float):
         if self.current_weather != WeatherState.STORM:
             return
 
-        # Lightning strike animation
+        # Strike visual update
         if self.lightning_strike_pos:
             self.lightning_strike_timer -= dt
             if self.lightning_strike_timer <= 0:
                 self.lightning_strike_pos = None
+                self.lightning_branches.clear()
 
-        self.lightning_flash_time -= dt
+        # Update lightning flash phases
+        if self.lightning_flash_time > 0:
+            self.lightning_flash_time -= dt
+        else:
+            if self.flash_sequence:
+                flash = self.flash_sequence.pop(0)
+                self.lightning_flash_time = flash['dur']
+                self.lightning_flash_max = flash['dur']
+                self.lightning_flash_intensity = flash['intensity']
+
         self.lightning_timer -= dt
-        
         if self.lightning_timer <= 0:
-            # Trigger lightning flash!
-            self.lightning_timer = random.uniform(10.0, 20.0)  # More frequent lightning strikes
-            self.lightning_flash_max = random.uniform(0.35, 0.65)  # Longer flash duration
-            self.lightning_flash_time = self.lightning_flash_max
+            self.lightning_timer = random.uniform(10.0, 18.0)
             
-            # Camera Shake (dramatic screen rumble)
-            shake_intensity = random.uniform(12.0, 22.0)  # Stronger screen shake
-            self.game.camera_shake_time = 0.6
-            self.game.camera_shake_intensity = shake_intensity
+            # Create Realistic Double-Strobe Flash Sequence
+            # First bright flash, small gap, second slightly longer/dimmer flash
+            self.flash_sequence = [
+                {'dur': 0.12, 'intensity': 1.0},
+                {'dur': 0.08, 'intensity': 0.0},
+                {'dur': 0.25, 'intensity': 0.7}
+            ]
             
-            # Spawn lightning strike in world coordinates near the screen viewport
+            # Trigger double screen rumble
+            self.game.camera_shake_time = 0.55
+            self.game.camera_shake_intensity = random.uniform(10.0, 18.0)
+            
+            # Calculate strike position
             player = self.game.character
-            offset_x = random.uniform(-450, 450)
-            offset_y = random.uniform(-350, 350)
+            offset_x = random.uniform(-400, 400)
+            offset_y = random.uniform(-300, 300)
             strike_world = player.get_center() + pygame.Vector2(offset_x, offset_y)
             self.lightning_strike_pos = strike_world
-            self.lightning_strike_timer = 0.22  # Longer strike line persistence
+            self.lightning_strike_timer = 0.22
+            
+            # Generate Branching Bolts!
+            self.lightning_branches = []
+            steps = 7
+            start_x = strike_world.x + random.uniform(-100, 100)
+            start_y = -50
+            
+            main_path = [(start_x, start_y)]
+            for i in range(1, steps + 1):
+                pct = i / steps
+                tx = start_x + (strike_world.x - start_x) * pct
+                ty = -50 + (strike_world.y - (-50)) * pct
+                if i < steps:
+                    tx += random.uniform(-35, 35)
+                main_path.append((tx, ty))
 
-            # Lightning damage to player/enemies nearby
-            strike_radius = 60.0
-            # Damage player
+            # Spawn 2 side branches branching off nodes of the main path
+            for b_idx in range(2):
+                node_idx = random.randint(2, 4)
+                if node_idx < len(main_path):
+                    node = main_path[node_idx]
+                    branch = [node]
+                    curr_x, curr_y = node
+                    branch_steps = 3
+                    for j in range(1, branch_steps + 1):
+                        curr_x += random.uniform(-60, 60) + (100 if b_idx == 0 else -100) * (j / branch_steps)
+                        curr_y += random.uniform(30, 80)
+                        branch.append((curr_x, curr_y))
+                    self.lightning_branches.append(branch)
+
+            self.lightning_branches.append(main_path)  # Main branch is last in array
+
+            # Damage check
+            strike_radius = 65.0
             if player.get_center().distance_to(strike_world) < strike_radius:
                 player.take_damage(15, ignore_invulnerability=True)
-                player.add_floating_text(_("ZAP!"), player.pos.x, player.pos.y - 40, (150, 220, 255), 1.5, 26)
+                player.add_floating_text(_("ZAP!"), player.pos.x, player.pos.y - 40, (160, 215, 255), 1.5, 26)
             
-            # Damage enemies
             for enemy in list(self.game.enemies):
                 if enemy.pos.distance_to(strike_world) < strike_radius:
                     enemy.take_damage(25)
@@ -376,115 +453,145 @@ class WeatherSystem:
 
         camera_offset = self.game._get_camera_offset()
         
-        # 1. Draw Puddles (in world-space)
+        # 1. Draw Puddles (world-space)
         for p in self.puddles:
             screen_pos = p['pos'] - camera_offset
-            # Clip check
             r = int(p['radius'])
             if r <= 0:
                 continue
             if -r < screen_pos.x < cfg.SCREEN_WIDTH + r and -r < screen_pos.y < cfg.SCREEN_HEIGHT + r:
                 puddle_surf = pygame.Surface((r * 2, r), pygame.SRCALPHA)
                 
-                # Darker indigo-grey reflection with environment tint
-                env_tint = cfg.ENVIRONMENT_TINT
-                base_color = (
-                    max(10, min(50, env_tint[0] // 5)),
-                    max(20, min(70, env_tint[1] // 4)),
-                    max(40, min(95, env_tint[2] // 3)),
-                    int(p['alpha'])
-                )
-                
+                # Base puddle color: deeply glassy and slightly reflective
+                base_color = (25, 35, 55, int(p['alpha'] * 0.85))
                 pygame.draw.ellipse(puddle_surf, base_color, (0, 0, r * 2, r))
                 
-                # Draw ripples inside this puddle
+                # Soft outer rim to blend with ground
+                rim_color = (80, 110, 140, int(p['alpha'] * 0.4))
+                pygame.draw.ellipse(puddle_surf, rim_color, (0, 0, r * 2, r), max(1, r // 10))
+                
+                # Specular light highlight/glint on top-left of puddle (stunning visual touch!)
+                shine_alpha = int(p['alpha'] * 0.6)
+                if shine_alpha > 0:
+                    shine_r = max(3, r // 3)
+                    # Soft gradient glint
+                    shine_color = (255, 255, 255, shine_alpha)
+                    pygame.draw.ellipse(
+                        puddle_surf, 
+                        shine_color, 
+                        (r - shine_r - r // 2.5, r // 4 - shine_r // 3, shine_r * 2, shine_r)
+                    )
+                    # Core bright highlight inside the glint
+                    core_r = max(1, shine_r // 2)
+                    core_color = (255, 255, 255, int(p['alpha'] * 0.95))
+                    pygame.draw.ellipse(
+                        puddle_surf, 
+                        core_color, 
+                        (r - shine_r - r // 2.5 + core_r, r // 4 - shine_r // 3 + core_r // 2, core_r * 2, core_r)
+                    )
+                
+                # Draw concentric ripples with smooth anti-aliased look
                 for rip in p['ripples']:
                     rip_r = int(rip['radius'])
                     if rip_r > 0:
-                        # Thicker ripple color for visibility
-                        rip_color = (150, 190, 235, int(rip['alpha']))
-                        pygame.draw.ellipse(puddle_surf, rip_color, (r - rip_r, r // 2 - rip_r // 2, rip_r * 2, rip_r), 2)
+                        # Ripple ring with expanding fade
+                        rip_alpha = int(rip['alpha'] * 0.9)
+                        if rip_alpha > 0:
+                            rip_color = (160, 200, 240, rip_alpha)
+                            thickness = max(1, int((rip['max_radius'] - rip_r) / rip['max_radius'] * 3))
+                            pygame.draw.ellipse(puddle_surf, rip_color, (r - rip_r, r // 2 - rip_r // 2, rip_r * 2, rip_r), thickness)
                 
                 screen.blit(puddle_surf, (screen_pos.x - r, screen_pos.y - r // 2))
 
-        # 2. Draw Lightning Strike Line (world-space)
-        if self.lightning_strike_pos:
-            strike_pos = self.lightning_strike_pos - camera_offset
-            # Draw a jagged line from screen top down to strike_pos
-            points = []
-            steps = 8
-            current_x = strike_pos.x + random.uniform(-120, 120)  # Start from top with drift
-            current_y = -50
-            points.append((current_x, current_y))
-            
-            for i in range(1, steps):
-                target_pct = i / steps
-                target_x = current_x + (strike_pos.x - current_x) * target_pct
-                target_y = -50 + (strike_pos.y - (-50)) * target_pct
-                # Add jagged wobble
-                target_x += random.uniform(-40, 40)
-                points.append((target_x, target_y))
-            points.append((strike_pos.x, strike_pos.y))
-            
-            # Draw outer glow and inner core lines
-            if len(points) >= 2:
-                # Thicker visual lines for strikes
-                pygame.draw.lines(screen, (80, 160, 255, 140), False, points, 9)
-                pygame.draw.lines(screen, (255, 255, 255, 255), False, points, 3)
-                # Spawn a bright impact circle
-                pygame.draw.circle(screen, (255, 255, 255), (int(strike_pos.x), int(strike_pos.y)), 20)
-                pygame.draw.circle(screen, (150, 220, 255, 180), (int(strike_pos.x), int(strike_pos.y)), 45)
+        # 2. Draw Branching Lightning Strike Bolts (world-space)
+        if self.lightning_strike_pos and self.lightning_branches:
+            for idx, path in enumerate(self.lightning_branches):
+                is_main = (idx == len(self.lightning_branches) - 1)
+                
+                # Project path points to screen coordinates
+                scr_points = [(pt[0] - camera_offset.x, pt[1] - camera_offset.y) for pt in path]
+                
+                if len(scr_points) >= 2:
+                    if is_main:
+                        # Main bolt (thick glow + inner white core)
+                        pygame.draw.lines(screen, (75, 155, 255, 140), False, scr_points, 9)
+                        pygame.draw.lines(screen, (255, 255, 255, 255), False, scr_points, 3)
+                    else:
+                        # Side branches (thin faded blue/white discharge)
+                        pygame.draw.lines(screen, (100, 175, 255, 90), False, scr_points, 4)
+                        pygame.draw.lines(screen, (255, 255, 255, 180), False, scr_points, 1)
 
-        # 3. Draw Rain particles (screen-space)
+            # Draw Ground Impact Blast Ring
+            impact_pos = self.lightning_strike_pos - camera_offset
+            pygame.draw.circle(screen, (255, 255, 255, 255), (int(impact_pos.x), int(impact_pos.y)), 18)
+            pygame.draw.circle(screen, (130, 205, 255, 160), (int(impact_pos.x), int(impact_pos.y)), 40)
+
+        # 3. Draw Parallax Rain (screen-space)
         if self.current_weather in (WeatherState.RAIN, WeatherState.STORM):
-            # Draw particles
             rain_surf = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
-            wind_dx = 5 if self.current_weather == WeatherState.STORM else 1.8
+            
+            # Dynamic wind vector matching updates
+            time_sec = pygame.time.get_ticks() * 0.001
+            base_wind = 220.0 if self.current_weather == WeatherState.STORM else 60.0
+            wind = base_wind + math.sin(time_sec * 0.8) * 30.0
+            dx_factor = wind / 1000.0
+
             for p in self.rain_particles:
+                # Calculate tilted end point based on wind
+                start_x, start_y = p['x'], p['y']
+                end_x = start_x + (p['len'] * dx_factor)
+                end_y = start_y + p['len']
+                
                 pygame.draw.line(
                     rain_surf,
-                    (130, 180, 240, int(p['alpha'])),
-                    (p['x'], p['y']),
-                    (p['x'] - p['len'] * wind_dx / 10, p['y'] + p['len']),
+                    (130, 180, 242, int(p['alpha'])),
+                    (start_x, start_y),
+                    (end_x, end_y),
                     int(p['width'])
                 )
-            # Draw splashes
+            
+            # Draw splash rings
             for s in self.splashes:
                 pygame.draw.ellipse(
                     rain_surf,
-                    (160, 200, 250, int(s['alpha'])),
+                    (160, 205, 255, int(s['alpha'])),
                     (s['x'] - s['radius'], s['y'] - s['radius'] / 2, s['radius'] * 2, s['radius']),
-                    2  # Thicker splash rings
+                    2
                 )
             screen.blit(rain_surf, (0, 0))
 
-        # 4. Draw Fog overlay (screen-space)
+        # 4. Draw Volumetric Fog (Drifting pre-cached surfaces) - OPTIMIZED & BEAUTIFUL
         if self.current_weather == WeatherState.FOG:
-            fog_surf = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
             t = pygame.time.get_ticks() * 0.001
+            
+            # Add a faint full-screen fog tint
+            ambient_fog = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+            ambient_fog.fill((210, 220, 230, 45))
+            screen.blit(ambient_fog, (0, 0))
+            
             for cloud in self.fog_clouds:
-                # Add pulse to radius and alpha
-                pulse = math.sin(t * cloud['pulse_speed'] + cloud['pulse_offset']) * 0.15
-                radius = int(cloud['radius'] * (1.0 + pulse))
-                alpha = int(cloud['alpha'] * (1.0 + pulse))
-                alpha = max(5, min(100, alpha))
+                surf = self.fog_surfaces[cloud['size_idx']]
                 
-                # Fog color matches twilight/daytime slightly
-                fog_col = (200, 208, 220, alpha)
-                pygame.draw.circle(fog_surf, fog_col, (int(cloud['x']), int(cloud['y'])), radius)
-            screen.blit(fog_surf, (0, 0))
+                # Pulse alpha slightly
+                pulse = math.sin(t * cloud['pulse_speed'] + cloud['pulse_offset']) * 0.15
+                alpha_pct = max(0.5, min(1.5, cloud['alpha_mult'] * (1.0 + pulse)))
+                
+                # Fast blit with per-surface alpha
+                surf.set_alpha(int(255 * alpha_pct * 0.5))  # Higher alpha for visibility
+                screen.blit(surf, (int(cloud['x']), int(cloud['y'])))
+                surf.set_alpha(None)
 
         # 5. Draw Storm screen ambient darkening
         if self.current_weather == WeatherState.STORM:
             ambient_dark = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
-            # Storm clouds tint the environment significantly darker indigo for dramatic visibility
-            ambient_dark.fill((8, 4, 25, 110))
+            ambient_dark.fill((6, 3, 20, 110))
             screen.blit(ambient_dark, (0, 0))
 
-        # 6. Draw Lightning Flash (full screen alpha overlay)
-        if self.lightning_flash_time > 0:
+        # 6. Draw Lightning Flash (full screen double-strobe)
+        if self.lightning_flash_time > 0 and self.lightning_flash_intensity > 0:
             pct = self.lightning_flash_time / self.lightning_flash_max
-            flash_alpha = int(pct * 240)  # Brighter whiteout flash
-            flash_surf = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
-            flash_surf.fill((255, 255, 255, flash_alpha))
-            screen.blit(flash_surf, (0, 0))
+            flash_alpha = int(pct * 230 * self.lightning_flash_intensity)
+            if flash_alpha > 0:
+                flash_surf = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+                flash_surf.fill((255, 255, 255, flash_alpha))
+                screen.blit(flash_surf, (0, 0))
