@@ -28,6 +28,12 @@ import pygame
 from dataclasses import dataclass
 from typing import Optional, List
 
+# Ensure _ is available for gettext translations
+try:
+    _
+except NameError:
+    from gettext import gettext as _
+
 try:
     from src.items.items import create_item
 except Exception:
@@ -468,6 +474,23 @@ class FishingController:
 
         self.fish_types: List[FishType] = self._load_fish_from_db()
 
+    def reset(self):
+        """Reset the fishing state machine to idle and clear any active cast.
+
+        Called automatically during map transitions so the player can
+        start a fresh cast on the new map.
+        """
+        self.state = "idle"
+        self.bobber = None
+        self.active_fish = None
+        self.bobber_timer = 0.0
+        self.seek_timer = 0.0
+        self.catch_fill = 0.0
+        self.catch_fill_max = 100.0
+        self.ui.show_hit_timer = 0.0
+        self.ui.result_timer = 0.0
+        self.ui.result_message = ""
+
     def _load_fish_from_db(self) -> List[FishType]:
         """Load all fish from the database and convert to ``FishType``.
 
@@ -610,6 +633,7 @@ class FishingController:
             dir_vec.scale_to_length(max_range)
         bob_pos = player_center + dir_vec
         if not self._is_fishable_tile(bob_pos):
+            self.ui.show_result("Must cast into water!", success=False, duration=2.0)
             return
         self.bobber = Bobber(bob_pos.x, bob_pos.y)
         self.state = "casting"
@@ -843,6 +867,7 @@ class FishingController:
                     pass
         self.state = "idle"
         self.bobber = None
+        self.active_fish = None
 
     def _show_first_catch_info(self, fish):
         """Show a dialog with the fish's details when caught for the first time."""
@@ -935,18 +960,31 @@ class FishingController:
             return False
 
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_f and self.state in ("ready", "idle"):
-                mouse_pos = pygame.mouse.get_pos()
-                target_world = pygame.Vector2(mouse_pos) + self.game._get_camera_offset()
+            if event.key == pygame.K_f:
+                if self.state not in ("ready", "idle"):
+                    self.ui.show_result("Finish fishing first!", success=False, duration=2.0)
+                    return True
+                if not self._can_fish():
+                    self.ui.show_result("Equip and select a Fishing Rod first!", success=False, duration=3.0)
+                    return False
+                try:
+                    direction = self.game.character.get_forward_direction()
+                    if direction.length_squared() == 0:
+                        direction = pygame.Vector2(0, 1)
+                    target_world = self.game.character.get_center() + direction * 100
+                except Exception:
+                    mouse_pos = pygame.mouse.get_pos()
+                    target_world = pygame.Vector2(mouse_pos) + self.game._get_camera_offset()
                 self.cast(target_world)
-                return self.state == "casting"
+                return True
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 3 and self.state in ("ready", "idle"):
                 if not self._can_fish():
+                    self.ui.show_result("Equip and select a Fishing Rod first!", success=False, duration=3.0)
                     return False
                 target_world = pygame.Vector2(event.pos) + self.game._get_camera_offset()
                 self.cast(target_world)
-                return self.state == "casting"
+                return True
         return False
 
 

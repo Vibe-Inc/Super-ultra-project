@@ -45,6 +45,7 @@ from src.minigames.roulette import RouletteGame
 from src.minigames.poker import PokerGame
 from src.minigames.crafting import CraftingMinigame
 from src.minigames.gathering import GatheringController
+from src.minigames.fishing import FishingController
 from src.minigames.archeologium import ArcheologiumMinigame
 from src.world.gatherable_nodes import GatherableNodeRegistry
 from src.ui.menus.smeltery import SmelteryMenu
@@ -2561,6 +2562,13 @@ class Game(State):
             switched_map_path = result
             self.current_map_path = switched_map_path
             logger.info(f"Map switched to {switched_map_path}. Respawning enemy...")
+
+            # Reset fishing state so the player can cast again on the new map
+            if getattr(self, 'fishing', None):
+                try:
+                    self.fishing.reset()
+                except Exception:
+                    pass
             self.obstacles = self.map.get_obstacles()
             self._rebuild_nav_grid()
 
